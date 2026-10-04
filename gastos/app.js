@@ -3421,6 +3421,7 @@
     menu.hidden = true;
     const action = b.dataset.action;
     if (action === 'install') installApp();
+    else if (action === 'tour') startTour();
     else if (action === 'budget') openBudget();
     else if (action === 'goal') openGoal();
     else if (action === 'report') openReport();
@@ -3661,6 +3662,166 @@
   const acao = params.get('acao');
   runSplash(params.has('novo') || !!acao);
   if (params.has('novo') || acao) history.replaceState(null, '', location.pathname);
+  /* ---------------- Tour guiado ---------------- */
+  const TOUR = [
+    { title: 'Bem-vindo ao tour', text: 'Vou te mostrar, passo a passo, as principais ferramentas do Nexa Money: <b>para que servem</b> e <b>como usar</b>. Toque em Prosseguir para começar.' },
+    { sel: '#quickInput', pad: 10, box: '#quickForm .quick__field', title: 'Lançamento rápido', text: 'Para registrar um gasto em segundos. Escreva do jeito que você fala, por exemplo <b>“uber 23,50 ontem”</b> ou <b>“salário 3000”</b>, e toque na seta. O app entende o valor, a data e a categoria.' },
+    { sel: '#quickMic', title: 'Lançar por voz', text: 'Toque no microfone e diga o gasto, como <b>“mercado cento e vinte reais”</b>. O app transforma a sua fala em lançamento.' },
+    { sel: '#quickScan', title: 'Ler comprovante', text: 'Tire uma foto de um cupom ou comprovante. O app lê o valor e a data da imagem e já preenche o lançamento para você conferir.' },
+    { sel: '#btnAdd', title: 'Novo lançamento completo', text: 'O botão <b>+</b> abre o formulário completo: valor, categoria, data, observação e foto do recibo. Use quando quiser registrar com todos os detalhes.' },
+    { sel: '.hero', title: 'Resumo do mês', text: 'Aqui você vê quanto já gastou no mês, as <b>entradas</b>, as <b>saídas</b> e o <b>saldo</b>. Toque em <b>Orçamento</b> para definir um teto e acompanhar a barra de progresso.' },
+    { sel: '#forecastPanel', title: 'Previsão do fim do mês', text: 'Com base no seu ritmo de gastos e nos fixos que ainda vão cair, o app estima como o mês vai terminar.' },
+    { sel: '#goalsPanel', title: 'Metas de economia', text: 'Crie objetivos, como uma viagem ou reserva de emergência, e vá guardando aos poucos. O anel mostra quanto falta para chegar lá.' },
+    { sel: '#debtsPanel', title: 'Quem me deve', text: 'Anote quem te deve, quanto e até quando. Você recebe aviso no dia combinado e pode cobrar pelo WhatsApp com uma mensagem pronta, inclusive com a sua chave Pix.' },
+    { sel: '#btnLimits', box: (el) => el.closest('.panel'), title: 'Gastos por categoria', text: 'O gráfico mostra para onde o dinheiro está indo. Em <b>Limites</b> você define um valor máximo para cada categoria e o app avisa quando estiver chegando perto.' },
+    { sel: '#dayMode', box: (el) => el.closest('.panel'), title: 'Gastos por dia', text: 'O calendário pinta os dias conforme o quanto você gastou. Toque em um dia para ver os lançamentos dele, ou troque para <b>Colunas</b>.' },
+    { sel: '#btnReport', title: 'Relatório do mês', text: 'Gera um resumo bonito do mês em imagem ou PDF, pronto para salvar ou compartilhar.' },
+    { sel: '.tab[data-view="gastos"]', view: 'gastos', title: 'Lista de gastos', text: 'Todos os lançamentos do mês, separados por dia. Busque pelo nome, filtre por categoria e toque em um item para editar ou apagar.' },
+    { sel: '.tab[data-view="lembretes"]', view: 'lembretes', title: 'Lembretes de contas', text: 'Cadastre contas como aluguel, cartão e internet com a data de vencimento. O app te avisa antes para nada passar do prazo.' },
+    { sel: '.tab[data-view="calc"]', view: 'calc', title: 'Calculadora', text: 'Faça contas rápidas sem sair do app. Use o botão de tela cheia para teclas maiores e lance o resultado direto como gasto.' },
+    { sel: '#btnNotif', view: 'resumo', title: 'Notificações', text: 'Toque no sino para ativar ou desativar os avisos de lembretes, cobranças e limites. Azul significa ligado.' },
+    { sel: '#btnPrivacy', title: 'Modo privacidade', text: 'O olho esconde todos os valores da tela. Ótimo para abrir o app perto de outras pessoas.' },
+    { sel: '#btnMenu', title: 'Mais opções', text: 'Aqui ficam orçamento, fixos, categorias, cartão de crédito, backup e este tour, caso queira rever quando quiser.' },
+    { title: 'Tudo pronto!', text: 'Agora é com você. Comece lançando seu primeiro gasto e acompanhe suas finanças com clareza. 💜', last: true },
+  ];
+  let tour = null;
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  function tourSteps() {
+    return TOUR.filter((st) => {
+      if (!st.sel) return true;
+      const el = $(st.sel);
+      return el && !el.hidden && !el.closest('[hidden]');
+    });
+  }
+
+  function startTour() {
+    if (tour) return;
+    const root = document.createElement('div');
+    root.className = 'tour';
+    root.innerHTML = `
+      <div class="tour__spot"></div>
+      <div class="tour__bubble" role="dialog" aria-modal="true" aria-live="polite">
+        <i class="tour__arrow"></i>
+        <div class="tour__head"><span class="tour__count"></span><button type="button" class="tour__skip">Pular tour</button></div>
+        <h3 class="tour__title"></h3>
+        <p class="tour__text"></p>
+        <div class="tour__foot">
+          <div class="tour__dots"></div>
+          <div class="tour__btns"><button type="button" class="tour__back" aria-label="Voltar"><svg class="ic"><use href="#i-left"/></svg></button><button type="button" class="tour__next">Prosseguir<svg class="ic"><use href="#i-right"/></svg></button></div>
+        </div>
+      </div>`;
+    document.body.appendChild(root);
+    const steps = tourSteps();
+    const startView = ui.view;
+    tour = { root, steps, i: -1, startView, el: null, box: null };
+    root.querySelector('.tour__dots').innerHTML = steps.map(() => '<i></i>').join('');
+    root.querySelector('.tour__next').addEventListener('click', () => tourGo(tour.i + 1));
+    root.querySelector('.tour__back').addEventListener('click', () => tourGo(tour.i - 1));
+    root.querySelector('.tour__skip').addEventListener('click', endTour);
+    root.addEventListener('click', (e) => { if (e.target === root) root.querySelector('.tour__bubble').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.03)' }, { transform: 'scale(1)' }], { duration: 260, easing: 'ease-out' }); });
+    window.addEventListener('resize', tourPlace);
+    window.addEventListener('scroll', tourPlace, { passive: true });
+    document.addEventListener('keydown', tourKey);
+    document.documentElement.classList.add('is-touring');
+    requestAnimationFrame(() => { root.classList.add('is-on'); tourGo(0); });
+  }
+
+  function tourKey(e) {
+    if (!tour) return;
+    if (e.key === 'Escape') endTour();
+    else if (e.key === 'ArrowRight' || e.key === 'Enter') { e.preventDefault(); tourGo(tour.i + 1); }
+    else if (e.key === 'ArrowLeft') tourGo(tour.i - 1);
+  }
+
+  function endTour() {
+    if (!tour) return;
+    const { root, startView } = tour;
+    tour = null;
+    window.removeEventListener('resize', tourPlace);
+    window.removeEventListener('scroll', tourPlace);
+    document.removeEventListener('keydown', tourKey);
+    document.documentElement.classList.remove('is-touring');
+    root.classList.remove('is-on');
+    root.classList.add('is-leaving');
+    if (ui.view !== startView) setView(startView);
+    setTimeout(() => root.remove(), 450);
+  }
+
+  async function tourGo(n) {
+    if (!tour || tour.busy) return;
+    const { steps, root } = tour;
+    if (n >= steps.length) { endTour(); return; }
+    if (n < 0) return;
+    tour.busy = true;
+    const bubble = root.querySelector('.tour__bubble');
+    if (tour.i >= 0) { bubble.classList.add('is-out'); await wait(200); }
+    tour.i = n;
+    const st = steps[n];
+    if (st.view && ui.view !== st.view) setView(st.view);
+    if (!st.view && st.sel && ui.view !== 'resumo' && !$(st.sel).closest('.tabbar, header.top')) setView('resumo');
+    tour.el = st.sel ? $(st.sel) : null;
+    tour.box = tour.el ? (typeof st.box === 'function' ? st.box(tour.el) : st.box ? $(st.box) : tour.el) : null;
+    if (tour.box) {
+      const r = tour.box.getBoundingClientRect();
+      const fixed = !!tour.box.closest('.tabbar, header.top');
+      const head = $('header.top').offsetHeight + 18;
+      if (!fixed && (r.top < head || r.bottom > innerHeight - 250)) {
+        window.scrollTo({ top: Math.max(0, scrollY + r.top - head), behavior: 'smooth' });
+        await wait(480);
+      }
+    }
+    root.querySelector('.tour__count').textContent = `${n + 1} de ${steps.length}`;
+    root.querySelector('.tour__title').textContent = st.title;
+    root.querySelector('.tour__text').innerHTML = st.text;
+    root.querySelector('.tour__back').hidden = n === 0;
+    root.querySelector('.tour__skip').hidden = n === steps.length - 1;
+    const next = root.querySelector('.tour__next');
+    next.firstChild.textContent = n === steps.length - 1 ? 'Começar a usar' : n === 0 ? 'Começar tour' : 'Prosseguir';
+    root.querySelectorAll('.tour__dots i').forEach((d, k) => { d.className = k === n ? 'is-on' : k < n ? 'is-done' : ''; });
+    root.classList.toggle('is-center', !tour.box);
+    tourPlace();
+    bubble.classList.remove('is-out');
+    bubble.classList.remove('is-in');
+    void bubble.offsetWidth;
+    bubble.classList.add('is-in');
+    setTimeout(() => next.focus({ preventScroll: true }), 60);
+    tour.busy = false;
+  }
+
+  function tourPlace() {
+    if (!tour) return;
+    const { root, box } = tour;
+    const spot = root.querySelector('.tour__spot');
+    const bubble = root.querySelector('.tour__bubble');
+    const arrow = root.querySelector('.tour__arrow');
+    const W = innerWidth, H = innerHeight, g = 16;
+    if (!box) {
+      spot.style.cssText = `top:${H / 2}px;left:${W / 2}px;width:0;height:0;border-radius:50%`;
+      bubble.style.top = `${Math.max(g, (H - bubble.offsetHeight) / 2)}px`;
+      bubble.style.left = `${Math.max(g, (W - bubble.offsetWidth) / 2)}px`;
+      arrow.hidden = true;
+      return;
+    }
+    const st = tour.steps[tour.i];
+    const pad = st.pad ?? 8;
+    const r = box.getBoundingClientRect();
+    const top = Math.max(6, r.top - pad), left = Math.max(6, r.left - pad);
+    const bottom = Math.min(H - 6, r.bottom + pad), right = Math.min(W - 6, r.right + pad);
+    const radius = Math.min(26, parseFloat(getComputedStyle(box).borderRadius) + pad || 16);
+    spot.style.cssText = `top:${top}px;left:${left}px;width:${right - left}px;height:${bottom - top}px;border-radius:${radius}px`;
+    const bh = bubble.offsetHeight, bw = bubble.offsetWidth;
+    const below = H - bottom >= bh + 26 || top < bh + 26 && H - bottom > top;
+    const by = below ? Math.min(bottom + 16, H - bh - g) : Math.max(g, top - bh - 16);
+    const cx = (left + right) / 2;
+    const bx = Math.min(Math.max(g, cx - bw / 2), W - bw - g);
+    bubble.style.top = `${by}px`;
+    bubble.style.left = `${bx}px`;
+    arrow.hidden = false;
+    arrow.className = `tour__arrow ${below ? 'is-up' : 'is-down'}`;
+    arrow.style.left = `${Math.min(Math.max(22, cx - bx), bw - 22)}px`;
+  }
+
   if (params.has('novo')) openExpense();
   else if (acao === 'cobranca') openDebt();
   else if (acao === 'rapido') setTimeout(() => quickInput.focus(), 300);
