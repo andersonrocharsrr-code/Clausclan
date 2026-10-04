@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Meus Gastos</title>
+  <meta name="description" content="Organize seus gastos do mês com orçamento, calculadora automática e lembretes por data.">
+  <meta name="theme-color" content="#f6f7fb" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d1017" media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top__inner">
+      <h1 class="brand"><img src="icon.svg" alt="" width="30" height="30"> Meus Gastos</h1>
+      <div class="top__actions">
+        <button class="icon-btn" id="btnNotif" type="button" title="Ativar lembretes" aria-label="Ativar lembretes">🔔</button>
+        <button class="icon-btn" id="btnTheme" type="button" title="Tema claro/escuro" aria-label="Alternar tema">🌓</button>
+        <button class="icon-btn" id="btnMenu" type="button" aria-label="Mais opções" aria-haspopup="true" aria-expanded="false">⋯</button>
+        <div class="menu" id="menu" hidden>
+          <button type="button" data-action="budget">🎯 Definir orçamento do mês</button>
+          <button type="button" data-action="export-csv">📊 Exportar gastos do mês (.csv)</button>
+          <button type="button" data-action="export-ics">📅 Lembretes p/ calendário (.ics)</button>
+          <button type="button" data-action="export-json">💾 Fazer backup (.json)</button>
+          <button type="button" data-action="import-json">📂 Restaurar backup</button>
+        </div>
+        <input type="file" id="fileImport" accept="application/json,.json" hidden>
+      </div>
+    </div>
+    <div class="wrap month">
+      <button class="icon-btn" id="prevMonth" type="button" aria-label="Mês anterior">‹</button>
+      <button class="month__label" id="monthLabel" type="button" title="Voltar para o mês atual">—</button>
+      <button class="icon-btn" id="nextMonth" type="button" aria-label="Próximo mês">›</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- ============ RESUMO ============ -->
+    <section class="view is-active" id="view-resumo" aria-label="Resumo">
+      <article class="hero">
+        <div class="hero__row">
+          <div>
+            <span class="label">Gasto no mês</span>
+            <strong class="hero__value" id="sumMonth">R$ 0,00</strong>
+            <span class="hero__cmp" id="sumCmp"></span>
+          </div>
+          <button class="chip" id="btnBudget" type="button">🎯 Orçamento</button>
+        </div>
+        <div class="progress" id="budgetBar" hidden><span></span></div>
+        <p class="hero__note" id="budgetNote"></p>
+      </article>
+
+      <div class="stats">
+        <article class="stat"><span class="label">Média por dia</span><strong id="statAvg">—</strong></article>
+        <article class="stat"><span class="label">Projeção do mês</span><strong id="statProj">—</strong></article>
+        <article class="stat"><span class="label">Maior gasto</span><strong id="statMax">—</strong></article>
+        <article class="stat"><span class="label">Lançamentos</span><strong id="statCount">0</strong></article>
+      </div>
+
+      <article class="panel">
+        <header class="panel__head"><h2>Por categoria</h2></header>
+        <div id="catBreakdown" class="bars"></div>
+      </article>
+
+      <article class="panel">
+        <header class="panel__head">
+          <h2>Próximos lembretes</h2>
+          <button class="link" type="button" data-goto="lembretes">Ver todos</button>
+        </header>
+        <div id="nextReminders" class="mini-list"></div>
+      </article>
+    </section>
+
+    <!-- ============ GASTOS ============ -->
+    <section class="view" id="view-gastos" aria-label="Gastos">
+      <div class="toolbar">
+        <input type="search" id="fSearch" placeholder="Buscar gasto…" aria-label="Buscar gasto">
+        <div class="chips" id="fCats" role="group" aria-label="Filtrar por categoria"></div>
+      </div>
+      <div id="expList" class="days" aria-live="polite"></div>
+      <p id="expEmpty" class="empty" hidden>Nenhum gasto neste mês ainda.<br>Toque em <strong>+</strong> para lançar o primeiro.</p>
+    </section>
+
+    <!-- ============ LEMBRETES ============ -->
+    <section class="view" id="view-lembretes" aria-label="Lembretes">
+      <div class="section-head">
+        <p class="muted">Contas e pagamentos com data marcada. Você recebe um aviso no horário escolhido.</p>
+        <button class="btn btn--soft" type="button" id="btnAddRem">+ Lembrete</button>
+      </div>
+      <div id="remList" class="cards-list"></div>
+      <p id="remEmpty" class="empty" hidden>Nenhum lembrete.<br>Crie um para aluguel, cartão, internet…</p>
+    </section>
+
+    <!-- ============ CALCULADORA ============ -->
+    <section class="view" id="view-calc" aria-label="Calculadora">
+      <div class="calc-grid">
+        <article class="panel calc">
+          <div class="calc__screen">
+            <div class="calc__expr" id="calcExpr" aria-live="polite">&nbsp;</div>
+            <div class="calc__result" id="calcResult">0</div>
+          </div>
+          <div class="calc__keys" id="calcKeys">
+            <button type="button" data-k="C" class="k k--fn">C</button>
+            <button type="button" data-k="(" class="k k--fn">(</button>
+            <button type="button" data-k=")" class="k k--fn">)</button>
+            <button type="button" data-k="back" class="k k--fn" aria-label="Apagar">⌫</button>
+            <button type="button" data-k="7" class="k">7</button>
+            <button type="button" data-k="8" class="k">8</button>
+            <button type="button" data-k="9" class="k">9</button>
+            <button type="button" data-k="/" class="k k--op" aria-label="Dividir">÷</button>
+            <button type="button" data-k="4" class="k">4</button>
+            <button type="button" data-k="5" class="k">5</button>
+            <button type="button" data-k="6" class="k">6</button>
+            <button type="button" data-k="*" class="k k--op" aria-label="Multiplicar">×</button>
+            <button type="button" data-k="1" class="k">1</button>
+            <button type="button" data-k="2" class="k">2</button>
+            <button type="button" data-k="3" class="k">3</button>
+            <button type="button" data-k="-" class="k k--op" aria-label="Menos">−</button>
+            <button type="button" data-k="%" class="k k--fn">%</button>
+            <button type="button" data-k="0" class="k">0</button>
+            <button type="button" data-k="," class="k">,</button>
+            <button type="button" data-k="+" class="k k--op" aria-label="Mais">+</button>
+            <button type="button" data-k="=" class="k k--eq">=</button>
+          </div>
+          <button type="button" class="btn btn--soft btn--block" id="calcUse">Lançar como gasto</button>
+          <div class="calc__hist" id="calcHist"></div>
+        </article>
+
+        <article class="panel split">
+          <header class="panel__head"><h2>Dividir a conta</h2></header>
+          <div class="split__fields">
+            <label>Total <input id="spTotal" inputmode="decimal" placeholder="0,00"></label>
+            <label>Pessoas <input id="spPeople" type="number" min="1" value="2"></label>
+            <label>Gorjeta / taxa (%) <input id="spTip" type="number" min="0" step="1" value="10"></label>
+          </div>
+          <div class="split__out">
+            <div><span class="label">Total com taxa</span><strong id="spOutTotal">R$ 0,00</strong></div>
+            <div><span class="label">Cada um paga</span><strong id="spOutEach" class="accent">R$ 0,00</strong></div>
+          </div>
+          <button type="button" class="btn btn--soft btn--block" id="spUse">Lançar minha parte</button>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <button class="fab" id="btnAdd" type="button" aria-label="Novo gasto">+</button>
+
+  <nav class="tabbar" aria-label="Seções">
+    <button type="button" class="tab is-active" data-view="resumo"><span>📊</span>Resumo</button>
+    <button type="button" class="tab" data-view="gastos"><span>🧾</span>Gastos</button>
+    <button type="button" class="tab" data-view="lembretes"><span>🔔</span>Lembretes<em id="remBadge" hidden></em></button>
+    <button type="button" class="tab" data-view="calc"><span>🧮</span>Calculadora</button>
+  </nav>
+
+  <!-- ============ DIÁLOGO: GASTO ============ -->
+  <dialog id="dlgExp" class="dlg">
+    <form id="formExp" method="dialog" class="form">
+      <header class="form__head">
+        <h2 id="dlgExpTitle">Novo gasto</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Fechar">✕</button>
+      </header>
+
+      <label class="amount">
+        <span class="label">Valor — pode digitar contas, ex.: 32,90+15*2</span>
+        <input name="amount" id="expAmount" inputmode="decimal" autocomplete="off" placeholder="0,00" required>
+        <output id="expAmountOut" class="amount__out"></output>
+      </label>
+
+      <label>Descrição
+        <input name="title" maxlength="80" placeholder="Ex.: Almoço, Uber, Farmácia" required>
+      </label>
+
+      <fieldset class="cat-pick">
+        <legend>Categoria</legend>
+        <div class="cat-pick__grid" id="catPick"></div>
+      </fieldset>
+
+      <div class="form__row">
+        <label>Data <input type="date" name="date" required></label>
+        <label>Pagamento
+          <select name="method">
+            <option>Pix</option>
+            <option>Débito</option>
+            <option>Crédito</option>
+            <option>Dinheiro</option>
+            <option>Boleto</option>
+          </select>
+        </label>
+      </div>
+
+      <label id="instWrap">Parcelas
+        <select name="installments" id="expInst">
+          <option value="1">À vista</option>
+        </select>
+        <small class="hint" id="instHint"></small>
+      </label>
+
+      <label>Observação <input name="notes" maxlength="160" placeholder="Opcional"></label>
+
+      <footer class="form__foot">
+        <button type="button" class="btn btn--danger-ghost" id="expDelete" hidden>Excluir</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn--ghost" data-close>Cancelar</button>
+        <button type="submit" class="btn btn--primary">Salvar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ============ DIÁLOGO: LEMBRETE ============ -->
+  <dialog id="dlgRem" class="dlg">
+    <form id="formRem" method="dialog" class="form">
+      <header class="form__head">
+        <h2 id="dlgRemTitle">Novo lembrete</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Fechar">✕</button>
+      </header>
+      <label>O que pagar <input name="title" maxlength="80" placeholder="Ex.: Aluguel, Cartão, Internet" required></label>
+      <div class="form__row">
+        <label>Valor (opcional)
+          <input name="amount" id="remAmount" inputmode="decimal" autocomplete="off" placeholder="0,00">
+          <output id="remAmountOut" class="amount__out amount__out--sm"></output>
+        </label>
+        <label>Categoria <select name="category" id="remCat"></select></label>
+      </div>
+      <div class="form__row">
+        <label>Data <input type="date" name="date" required></label>
+        <label>Horário <input type="time" name="time" value="09:00" required></label>
+      </div>
+      <div class="form__row">
+        <label>Avisar
+          <select name="remind">
+            <option value="0">No horário</option>
+            <option value="60">1 hora antes</option>
+            <option value="1440" selected>1 dia antes</option>
+            <option value="2880">2 dias antes</option>
+            <option value="4320">3 dias antes</option>
+            <option value="10080">1 semana antes</option>
+          </select>
+        </label>
+        <label>Repetir
+          <select name="repeat">
+            <option value="none">Não repete</option>
+            <option value="weekly">Toda semana</option>
+            <option value="monthly" selected>Todo mês</option>
+            <option value="yearly">Todo ano</option>
+          </select>
+        </label>
+      </div>
+      <footer class="form__foot">
+        <button type="button" class="btn btn--danger-ghost" id="remDelete" hidden>Excluir</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn--ghost" data-close>Cancelar</button>
+        <button type="submit" class="btn btn--primary">Salvar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ============ DIÁLOGO: ORÇAMENTO ============ -->
+  <dialog id="dlgBudget" class="dlg dlg--sm">
+    <form id="formBudget" method="dialog" class="form">
+      <header class="form__head">
+        <h2>Orçamento mensal</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Fechar">✕</button>
+      </header>
+      <p class="muted">Quanto você quer gastar no máximo por mês? O app calcula quanto ainda pode gastar por dia.</p>
+      <label>Limite do mês
+        <input name="budget" id="budgetInput" inputmode="decimal" placeholder="Ex.: 3000" autocomplete="off">
+        <output id="budgetOut" class="amount__out amount__out--sm"></output>
+      </label>
+      <footer class="form__foot">
+        <button type="button" class="btn btn--danger-ghost" id="budgetClear">Remover</button>
+        <span class="spacer"></span>
+        <button type="submit" class="btn btn--primary">Salvar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
