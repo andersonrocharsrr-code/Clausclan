@@ -1,0 +1,15 @@
+{
+  "name": "Último Dia",
+  "short_name": "Último Dia",
+  "description": "Sobrevivência zumbi: explore, saqueie, construa e aguente o máximo de dias.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#121512",
+  "theme_color": "#121512",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
