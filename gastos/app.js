@@ -446,6 +446,10 @@
     const left = current ? dim - now.getDate() + 1 : past ? 0 : dim;
 
     $('#sumMonth').textContent = money(total);
+    $('#sumMonth').dataset.cents = total;
+    $('#flowIn').dataset.cents = income;
+    $('#flowOut').dataset.cents = total;
+    $('#flowBal').dataset.cents = income - total;
     $('#heroLabel').textContent = `Gasto em ${fmtMonthName.format(monthDate(ui.month))}`;
     $('#flowIn').textContent = money(income);
     $('#flowOut').textContent = money(total);
@@ -3597,10 +3601,53 @@
     if (!document.hidden) { launchFixed(); checkReminders(); checkDebts(); checkDaily(); render(); }
   });
 
-  // Atalho vindo da tela inicial do celular: ?novo=1
-  // Atalhos do ícone e notificações abrem o app com ?novo=1 ou ?acao=...
+  /* ---------------- Abertura do app ---------------- */
+  const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Números do cartão principal contam do zero até o valor.
+  function countUp(el, cents, fmt, ms = 900) {
+    if (!el || state.privacy || !cents) return;
+    const t0 = performance.now();
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / ms);
+      el.textContent = fmt(Math.round(cents * (1 - (1 - k) ** 3)));
+      if (k < 1) requestAnimationFrame(step);
+    };
+    el.textContent = fmt(0);
+    requestAnimationFrame(step);
+  }
+  // Depois da abertura: cartões entram em sequência, gráficos se desenham e os números contam.
+  function playEntrance() {
+    document.body.classList.add('app-enter');
+    $$('.view.is-active > *').forEach((el, i) => el.style.setProperty('--i', Math.min(i, 8)));
+    render();
+    if (!reduceMotion()) {
+      countUp($('#sumMonth'), Number($('#sumMonth').dataset.cents), money, 1000);
+      countUp($('#flowIn'), Number($('#flowIn').dataset.cents), money);
+      countUp($('#flowOut'), Number($('#flowOut').dataset.cents), money);
+      countUp($('#flowBal'), Number($('#flowBal').dataset.cents), signed);
+    }
+    setTimeout(() => document.body.classList.remove('app-enter'), 1600);
+  }
+  function runSplash(skip) {
+    const splash = $('#splash');
+    if (!splash) return;
+    if (skip) { splash.remove(); return; }
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      splash.classList.add('is-leaving');
+      playEntrance();
+      setTimeout(() => splash.remove(), 520);
+    };
+    splash.addEventListener('click', finish); // um toque pula a abertura
+    setTimeout(finish, reduceMotion() ? 350 : 1650);
+  }
+
+  // Atalhos do ícone e notificações abrem o app com ?novo=1 ou ?acao=... (sem abertura, para ser rápido).
   const params = new URLSearchParams(location.search);
   const acao = params.get('acao');
+  runSplash(params.has('novo') || !!acao);
   if (params.has('novo') || acao) history.replaceState(null, '', location.pathname);
   if (params.has('novo')) openExpense();
   else if (acao === 'cobranca') openDebt();
