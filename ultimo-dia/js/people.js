@@ -89,9 +89,11 @@ function gcache(L, key, make) {
   if (!v) { if (c.size > 24) c.clear(); v = make(); c.set(key, v); }
   return v;
 }
-function limb(g, ax, ay, bx, by, cx, cy, w, col) { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.lineTo(cx, cy); g.stroke(); }
+function limb(g, ax, ay, bx, by, cx, cy, w, col) {
+  g.strokeStyle = 'rgba(18,14,10,.62)'; g.lineWidth = w + 1.5 * K; g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.lineTo(cx, cy); g.stroke(); // contorno
+  g.strokeStyle = col; g.lineWidth = w; g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.lineTo(cx, cy); g.stroke(); }
 function drawPerson(x, y, z, a, o) {
-  const L = o.look, s = K * (o.scale || 1), zb = !!o.zombie;
+  const L = o.look, s = K * 1.1 * (o.scale || 1), zb = !!o.zombie;
   const fx = Math.cos(a) - Math.sin(a), fy = (Math.cos(a) + Math.sin(a)) / 2, fl = Math.hypot(fx, fy) || 1, dx = fx / fl, dy = fy / fl;
   const front = dy > -0.2, prof = Math.abs(dx); // de frente / de perfil
   const g = ctx;
@@ -156,7 +158,7 @@ function drawPerson(x, y, z, a, o) {
     else if (sleeve === 'short') { limb(g, A.shx, A.shy, A.ex, A.ey, A.hx, A.hy, lw * 0.92, far ? shade(L.skin, -0.2) : L.skin); g.strokeStyle = far ? shade(up, -0.25) : up; g.lineWidth = lw * 1.12; g.beginPath(); g.moveTo(A.shx, A.shy); g.lineTo(lerp(A.shx, A.ex, 0.55), lerp(A.shy, A.ey, 0.55)); g.stroke(); }
     else limb(g, A.shx, A.shy, A.ex, A.ey, A.hx, A.hy, lw * 1.05, far ? shade(up, -0.25) : up);
     if (zb && L.blood > 0.6 && A.sg === -1) { g.strokeStyle = 'rgba(100,14,10,.7)'; g.lineWidth = lw * 0.9; g.beginPath(); g.moveTo(lerp(A.ex, A.hx, 0.4), lerp(A.ey, A.hy, 0.4)); g.lineTo(A.hx, A.hy); g.stroke(); }
-    g.fillStyle = far ? shade(L.skin, -0.2) : L.skin; g.beginPath(); g.arc(A.hx, A.hy, 2.7 * s, 0, 7); g.fill();
+    g.fillStyle = far ? shade(L.skin, -0.2) : L.skin; g.beginPath(); g.arc(A.hx, A.hy, 2.7 * s, 0, 7); g.fill(); g.strokeStyle = 'rgba(18,14,10,.5)'; g.lineWidth = 0.9 * K; g.stroke();
   };
   const arms = [armPos(-1), armPos(1)];
   // o braço do lado para onde ele olha fica atrás do corpo quando está de perfil ou de costas
@@ -178,7 +180,7 @@ function drawPerson(x, y, z, a, o) {
   const waistW = bw * (L.build > 1.3 ? 1.05 : 0.78);
   const torso = () => { g.beginPath(); g.moveTo(-bw, shY + 2 * s); g.quadraticCurveTo(-bw, shY - 2 * s, -bw * 0.6, shY - 2 * s); g.lineTo(bw * 0.6, shY - 2 * s); g.quadraticCurveTo(bw, shY - 2 * s, bw, shY + 2 * s); g.lineTo(waistW, waistY); g.lineTo(-waistW, waistY); g.closePath(); };
   const gr = gcache(L, 't' + L.shirt + bw.toFixed(1), () => { const q = g.createLinearGradient(-bw, 0, bw, 0); q.addColorStop(0, shade(L.shirt, 0.14)); q.addColorStop(0.6, L.shirt); q.addColorStop(1, shade(L.shirt, -0.28)); return q; });
-  torso(); g.fillStyle = gr; g.fill(); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 1 * s; g.stroke();
+  torso(); g.fillStyle = gr; g.fill(); g.strokeStyle = 'rgba(18,14,10,.62)'; g.lineWidth = 1.5 * K; g.stroke();
   if (L.build > 1.3) { g.fillStyle = shade(L.shirt, -0.1); g.beginPath(); g.ellipse(dx * 2 * s, -34 * s, waistW * 0.9, 7 * s, 0, 0, 7); g.fill(); } // barriga
   g.save(); torso(); g.clip();
   if (L.type === 'xadrez') { g.strokeStyle = shade(L.shirt, -0.35); g.lineWidth = 1.2 * s; g.beginPath(); for (let k = -10; k <= 10; k += 4) { g.moveTo(k * s, shY - 3 * s); g.lineTo(k * s, waistY); } for (let k = shY; k < waistY; k += 4 * s) { g.moveTo(-bw, k); g.lineTo(bw, k); } g.stroke(); }
@@ -214,7 +216,7 @@ function drawPerson(x, y, z, a, o) {
   const hr = 7.2 * s;
   const hg = gcache(L, 'h' + L.skin + hr.toFixed(1), () => { const q = g.createRadialGradient(-2.5 * s, -2.5 * s, 1, 0, 0, hr); q.addColorStop(0, shade(L.skin, 0.12)); q.addColorStop(1, shade(L.skin, -0.15)); return q; });
   g.fillStyle = hg; g.beginPath(); g.ellipse(0, 0, hr * (1 - 0.06 * prof), hr * 1.05, 0, 0, 7); g.fill();
-  g.strokeStyle = 'rgba(0,0,0,.3)'; g.lineWidth = 1 * s; g.stroke();
+  g.strokeStyle = 'rgba(18,14,10,.6)'; g.lineWidth = 1.5 * K; g.stroke();
   // orelhas
   g.fillStyle = shade(L.skin, -0.1);
   if (prof < 0.7 || !front) { g.beginPath(); g.ellipse(-hr * 0.98, 0.8 * s, 1.6 * s, 2.4 * s, 0, 0, 7); g.fill(); g.beginPath(); g.ellipse(hr * 0.98, 0.8 * s, 1.6 * s, 2.4 * s, 0, 0, 7); g.fill(); }

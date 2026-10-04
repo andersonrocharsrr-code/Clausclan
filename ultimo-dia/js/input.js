@@ -74,7 +74,7 @@ function joyStart(e) {
   }
   if (e.clientX > VW * 0.5) return;
   joyId = e.pointerId; joyO = { x: e.clientX, y: e.clientY };
-  joy.style.left = (joyO.x - 60) + 'px'; joy.style.top = (joyO.y - 60) + 'px'; joy.classList.add('on');
+  joy.style.left = (joyO.x - 62) + 'px'; joy.style.top = (joyO.y - 62) + 'px'; joy.classList.add('on');
   G.input.kbd = false;
   joyMove(e);
 }

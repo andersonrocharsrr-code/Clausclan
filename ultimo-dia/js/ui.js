@@ -96,7 +96,8 @@ UI.hud = function (dt) {
   } else w.innerHTML = '<b>✊ Mãos vazias</b><span>empurrão</span>';
   $('#btnReload').hidden = !(it && ITEMS[it.k].wp && ITEMS[it.k].wp.gun) || p.inCar;
   $('#btnAttack').hidden = !!p.inCar;
-  $('#btnAttack').textContent = it && ITEMS[it.k].throw ? '🍾' : it && ITEMS[it.k].wp && ITEMS[it.k].wp.gun ? '🔫' : it ? '🪓' : '✊';
+  const ak = G.buildSel ? 'ok' : it && ITEMS[it.k].throw ? 'throw' : it && ITEMS[it.k].wp && ITEMS[it.k].wp.gun ? 'gun' : it && BLADES.has(it.k) ? 'blade' : it ? 'melee' : 'fist';
+  if (ak !== lastAtk) { lastAtk = ak; $('#btnAttack').innerHTML = `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ATK_ICONS[ak]}</svg><em>${ak === 'ok' ? 'Construir' : ak === 'gun' ? 'Atirar' : ak === 'throw' ? 'Arremessar' : 'Atacar'}</em>`; }
   // interação
   const inter = interactions();
   G.interactCache = inter;
@@ -114,6 +115,17 @@ UI.hud = function (dt) {
   if (S.notes.length && S.base && dist(p.x, p.y, S.base.x, S.base.y) < 12) { for (const n of S.notes.splice(0)) say('📝 ' + n, 'bad'); }
 };
 $('#moodles').addEventListener('click', (e) => { const b = e.target.closest('.mood'); if (b && UI.moods) { const m = UI.moods[+b.dataset.m]; if (m) say(`${m.i} ${m.l}: ${m.d}`); } });
+// ícones do botão de ação, conforme o que está na mão
+const BLADES = new Set(['faca', 'faca_cozinha', 'facao', 'lanca']);
+const ATK_ICONS = {
+  fist: '<path d="M7 11V7.5a1.5 1.5 0 0 1 3 0V11"/><path d="M10 10V6.5a1.5 1.5 0 0 1 3 0V10"/><path d="M13 10V7a1.5 1.5 0 0 1 3 0v3"/><path d="M16 10.5V9a1.5 1.5 0 0 1 3 0v4.5a7 7 0 0 1-7 7h-1a6 6 0 0 1-6-6V12a2 2 0 0 1 2-2h3a2 2 0 0 1 0 4H9"/>',
+  melee: '<path d="m14 12-8.5 8.5a2.1 2.1 0 1 1-3-3L11 9"/><path d="M15 13 9 7l4-4 6 6h3a8 8 0 0 1-7 7z"/>',
+  blade: '<path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="m13 19 6-6"/><path d="m16 16 4 4"/><path d="m19 21 2-2"/>',
+  gun: '<path d="M3 7h17v4h-6l-1.5 2H10l-1 6H5l1.2-6L3 11z"/><path d="M10 13v-2"/><path d="M20 7V5"/>',
+  throw: '<path d="M10 2h4"/><path d="M10.5 2v4.5L8 10v10.5A1.5 1.5 0 0 0 9.5 22h5a1.5 1.5 0 0 0 1.5-1.5V10l-2.5-3.5V2"/><path d="M8 14h8"/>',
+  ok: '<path d="M20 6 9 17l-5-5"/>',
+};
+let lastAtk = '';
 UI.refreshButtons = function () {
   $('#btnSneak').classList.toggle('on', !!G.input.sneak);
   $('#btnRun').classList.toggle('on', !!G.input.runToggle);
