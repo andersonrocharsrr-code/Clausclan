@@ -1,7 +1,7 @@
 /* Service worker: o jogo abre e funciona offline. */
-const CACHE = 'ultimo-dia-v2';
+const CACHE = 'ultimo-dia-v3';
 // Os arquivos levam "?v=" no index.html: ao mudar a versão, o celular nunca mistura arquivos antigos e novos.
-const FILES = ['./', 'index.html', 'style.css?v=2', 'js/data.js?v=2', 'js/audio.js?v=2', 'js/world.js?v=2', 'js/sim.js?v=2', 'js/render.js?v=2', 'js/input.js?v=2', 'js/ui.js?v=2', 'js/main.js?v=2', 'icon.svg', 'manifest.webmanifest'];
+const FILES = ['./', 'index.html', 'style.css?v=3', 'js/data.js?v=3', 'js/audio.js?v=3', 'js/world.js?v=3', 'js/sim.js?v=3', 'js/render.js?v=3', 'js/input.js?v=3', 'js/ui.js?v=3', 'js/main.js?v=3', 'icon.svg', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));

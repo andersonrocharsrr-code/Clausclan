@@ -284,7 +284,7 @@ function updateNeeds(gm) {
   let regen = p.hun > 25 && p.thi > 25 && p.temp > 25 && p.temp < 80 ? (sleeping ? 0.07 : 0.03) : 0;
   for (let i = p.wounds.length - 1; i >= 0; i--) {
     const w = p.wounds[i];
-    if (w.bl) { p.hp -= gm * (w.k === 'arranhao' ? 0.025 : w.k === 'tiro' ? 0.12 : 0.07); regen = 0; }
+    if (w.bl) { p.hp -= gm * (w.k === 'arranhao' ? 0.03 : w.k === 'tiro' ? 0.16 : 0.1); regen = 0; }
     if (w.glass && !p.sleeping && G.input.moving) p.hp -= gm * 0.01;
     if (w.infAt && S.time > w.infAt && !w.dis) { w.inf = 1; w.infAt = 0; say('Um ferimento infeccionou!', 'bad'); }
     if (w.band && !w.dirty && S.time - w.bandT > 1080) { w.dirty = 1; if (!w.dis && chance(0.3)) w.infAt = S.time + 240; }
@@ -355,6 +355,16 @@ function vehAt(x, y, r, skip) {
   }
   return null;
 }
+function unstick(e, who) {
+  if (!blockedAt(e.x, e.y, e.r, who)) return false;
+  const tx = Math.floor(e.x), ty = Math.floor(e.y);
+  for (let r = 0; r <= 2; r++) for (let a = -r; a <= r; a++) for (let b = -r; b <= r; b++) {
+    if (Math.max(Math.abs(a), Math.abs(b)) !== r) continue;
+    const x = tx + a + 0.5, y = ty + b + 0.5;
+    if (!blockedAt(x, y, e.r, who)) { e.x = x; e.y = y; return true; }
+  }
+  return false;
+}
 function moveEnt(e, dx, dy, who) {
   let moved = false;
   const skip = e === S.player ? S.player.inCar : null;
@@ -382,7 +392,7 @@ function updatePlayer(dt) {
     if (p.action && !p.action.move) cancelAction();
     let spd = 2.6;
     const running = G.input.run && p.sta > 1 && !G.input.sneak;
-    if (running) { spd = 4.3; p.sta = Math.max(0, p.sta - dt * (invOver() ? 22 : 13)); }
+    if (running) { spd = 4.3; p.sta = Math.max(0, p.sta - dt * (invOver() ? 18 : 9.5)); }
     if (G.input.sneak) spd = 1.5;
     if (invOver()) spd *= 0.65;
     if (p.pain > 50) spd *= 0.85; if (p.hp < 30) spd *= 0.85; if (p.ene < 10) spd *= 0.8;
@@ -440,16 +450,21 @@ function attack() {
   const p = S.player;
   if (p.atkCd > 0 || p.sleeping || p.inCar) return;
   const it = weapon(), d = it ? ITEMS[it.k].wp : null;
+  if (p.action && p.action.reload) return; // segurar o ataque não interrompe a recarga
   if (p.action) cancelAction();
   if (d && d.gun) {
     autoAim(d.range);
-    if (!it.a) { p.atkCd = 0.4; sfx('vazio'); makeNoise(p.x, p.y, 2, false); say('Sem munição! Recarregue.'); G.input.attack = false; return; }
+    if (!it.a) {
+      p.atkCd = 0.4; sfx('vazio'); makeNoise(p.x, p.y, 2, false);
+      if (countItem(d.ammo)) reload(); else { say('Sem munição!'); G.input.attack = false; }
+      return;
+    }
     shoot(it, d);
     if (!d.auto) G.input.attack = false;
     return;
   }
   if (it && ITEMS[it.k].throw) { G.input.attack = false; throwMolotov(it); return; }
-  const wp = d || { dmg: 3, rng: 0.85, cd: 0.6, kb: 0.8, hits: 2, down: 0.15, shove: 1 };
+  const wp = d || { dmg: 5, rng: 0.85, cd: 0.6, kb: 0.8, hits: 2, down: 0.22, shove: 1 };
   autoAim(wp.rng + 1.5);
   const sk = lvl('combate');
   const tired = p.sta < 15;
@@ -488,10 +503,12 @@ function hitTarget(z, dmg, kb, down, crit) {
   const p = S.player;
   if (z.kind) { hurtNpc(z, dmg, true); return; }
   const a = Math.atan2(z.y - p.y, z.x - p.x);
+  const heavy = z.t === 'brutamontes'; // pesado: quase não recua nem cai
+  if (heavy) { kb *= 0.25; down = down && chance(0.2); }
   z.hp -= dmg;
   moveEnt(z, Math.cos(a) * kb * 0.7, Math.sin(a) * kb * 0.7, 'climb');
   if (ZT[z.t]) { // zumbi
-    z.stun = 0.35 + kb * 0.3; if (down) z.down = 2.6;
+    z.stun = heavy ? 0.12 : 0.35 + kb * 0.3; if (down) z.down = 2.6;
     if (z.st !== 'chase') { z.st = 'chase'; z.seeT = 6; }
     addBlood(z.x, z.y, 1);
     float(z.x, z.y - 0.5, crit ? 'CRÍTICO' : Math.round(dmg), crit ? '#ffd24a' : '#ff8a7a');
@@ -586,7 +603,7 @@ function reload() {
   startAction('Recarregando', tm, () => {
     sfx('recarga');
     const n = Math.min(d.mag - it.a, countItem(d.ammo)); takeItem(d.ammo, n); it.a += n; addXP('tiro', 0.5);
-  }, { move: 1 });
+  }, { move: 1, reload: 1 });
 }
 function throwMolotov(it) {
   const p = S.player;
@@ -714,15 +731,15 @@ function zombieSees(z, tx, ty, r) {
 }
 function hitObstacle(z, br) {
   const i = br.i, x = i % MAP_W, y = Math.floor(i / MAP_W);
-  const dmg = 9 * (ZT[z.t].breaker || 1) * rnd(0.7, 1.3);
+  const dmg = 5 * (ZT[z.t].breaker || 1) * rnd(0.7, 1.3);
   z.cd = 1.3;
   if (br.kind === 'obj') {
     const o = S.objs[i]; o.hp = (o.hp || FURN[o.t].hp || 100) - dmg;
     if (o.hp <= 0) { delete S.objs[i]; if (o.items && o.items.length) dropBag(x, y, o.items); say(`Os zumbis derrubaram: ${FURN[o.t].n.toLowerCase()}!`, 'bad'); G.chunkDirty(x, y); }
   } else {
     const s = S.ts[i];
-    if (s.bar) { s.bhp = (s.bhp || 80) - dmg; if (s.bhp <= 0) { s.bar--; s.bhp = s.bar ? 80 : 0; G.chunkDirty(x, y); if (dist2(x, y, S.player.x, S.player.y) < 400) say('Uma barricada caiu!', 'bad'); } }
-    else if (br.kind === 'win') { breakWindow(x, y); }
+    if (s.bar) { s.bhp = (s.bhp || BAR_HP) - dmg; if (s.bhp <= 0) { s.bar--; s.bhp = s.bar ? BAR_HP : 0; G.chunkDirty(x, y); if (dist2(x, y, S.player.x, S.player.y) < 400) say('Uma barricada caiu!', 'bad'); } }
+    else if (br.kind === 'win') { s.hp = (s.hp || 40) - dmg; if (s.hp <= 0) breakWindow(x, y); }
     else { s.hp -= dmg; if (s.hp <= 0) { s.open = 1; s.broken = 1; s.lock = 0; G.chunkDirty(x, y); if (dist2(x, y, S.player.x, S.player.y) < 400) say('Os zumbis arrombaram uma porta!', 'bad'); } }
   }
   if (br.kind !== 'win' || S.ts[i].bar) sfx('pancada', x + 0.5, y + 0.5, { range: 25 });
@@ -731,7 +748,7 @@ function hitObstacle(z, br) {
 }
 function zombieAttack(z) {
   const p = S.player, d = ZT[z.t];
-  z.cd = 1.25;
+  z.cd = 1.4;
   if (p.inCar) {
     const v = p.inCar; v.hp -= 4 * d.dmg;
     if (v.hp < VT[v.t].hp * 0.25 && chance(0.15)) { say('Eles quebraram o vidro!', 'bad'); woundFromZombie(z, 1); }
@@ -739,13 +756,13 @@ function zombieAttack(z) {
   }
   if (p.sleeping) wake('Um zumbi te atacou enquanto dormia!');
   const adj = S.zs.filter((o) => dist2(o.x, o.y, p.x, p.y) < 1.4 && !o.down).length;
-  if (!chance(0.42 + (adj - 1) * 0.1 + (p.fear > 70 ? 0.05 : 0) - (G.input.moving && G.input.run ? 0.15 : 0))) { float(p.x, p.y - 0.6, 'esquivou', '#cfd'); return; }
+  if (!chance(0.36 + (adj - 1) * 0.08 + (p.fear > 70 ? 0.05 : 0) - (G.input.moving && G.input.run ? 0.15 : 0))) { float(p.x, p.y - 0.6, 'esquivou', '#cfd'); return; }
   woundFromZombie(z, adj);
 }
 function woundFromZombie(z, adj) {
   const p = S.player, d = ZT[z.t];
   p.fear = clamp(p.fear + 18, 0, 100); p.str = clamp(p.str + 4, 0, 100);
-  if (adj >= 4 && chance(0.3)) { say('A multidão te derrubou...', 'bad'); hurtPlayer(200, 'devorado'); return; }
+  if (adj >= 5 && chance(0.12)) { say('A multidão te derrubou...', 'bad'); hurtPlayer(200, 'devorado'); return; }
   const r = R();
   const k = r < 0.1 * (adj > 2 ? 1.8 : 1) ? 'mordida' : r < 0.42 ? 'corte' : 'arranhao';
   if (chance(protection() * (k === 'mordida' ? 0.8 : 1))) { float(p.x, p.y - 0.6, 'a roupa protegeu', '#cde'); hurtPlayer(2 * d.dmg, 'ferimentos'); return; }
@@ -798,7 +815,8 @@ function updateZombies(dt) {
       if (z.seeT <= 0 && d > 3) { z.st = 'hunt'; z.huntT = 15; }
       else {
         z.tx = p.x; z.ty = p.y;
-        if (d < 0.62 + zd.r + (p.inCar ? VT[p.inCar.t].wid / 2 : 0)) { if (z.cd <= 0) zombieAttack(z); z.a = Math.atan2(p.y - z.y, p.x - z.x); continue; }
+        if (d > 1.4) z.adj = 0;
+        if (d < 0.62 + zd.r + (p.inCar ? VT[p.inCar.t].wid / 2 : 0)) { if (!z.adj) { z.adj = 1; z.cd = Math.max(z.cd, 0.55); } if (z.cd <= 0) zombieAttack(z); z.a = Math.atan2(p.y - z.y, p.x - z.x); continue; }
         const zx = Math.floor(z.x), zy = Math.floor(z.y);
         const here = flowAt(zx, zy);
         if (here < INF && !p.inCar && !(d < 5 && clearLine(z.x, z.y, p.x, p.y))) {
@@ -842,7 +860,7 @@ function updateZombies(dt) {
       const mx = (gx / l) * spd * dt, my = (gy / l) * spd * dt;
       const wasIn = z.inside && bldAt(Math.floor(z.x), Math.floor(z.y)) >= 0;
       const ox = z.x, oy = z.y;
-      const moved = moveEnt(z, mx, my, 'climb');
+      const moved = moveEnt(z, mx, my, 'climb') || unstick(z, 'climb');
       // zumbis "de dentro" não saem sozinhos ao vaguear
       if (z.st === 'idle' && wasIn && bldAt(Math.floor(z.x), Math.floor(z.y)) < 0) { z.x = ox; z.y = oy; z.wa = rnd(0, 6.28); }
       if (!moved && z.st === 'idle') z.wa = rnd(0, 6.28);
@@ -1028,7 +1046,7 @@ function npcAttack(n, target) {
     makeNoise(n.x, n.y, ITEMS[n.wp].wp.noise); sfx('tiro', n.x, n.y, { k: n.wp, range: 60 });
     G.tracers.push({ x0: n.x, y0: n.y, x1: target.x + rnd(-0.4, 0.4), y1: target.y + rnd(-0.4, 0.4), t: 0.07 });
     n.ammo--;
-    if (!chance(target === S.player ? 0.42 : 0.6)) return;
+    if (!chance(target === S.player ? 0.3 : 0.6)) return;
   } else if (dist(n.x, n.y, target.x, target.y) > 1.1) return;
   else sfx('acerto', target.x, target.y);
   if (target === S.player) {
@@ -1307,7 +1325,7 @@ function blockedEntityAt(x, y) {
 }
 function unbar(x, y) {
   const s = tsAt(x, y);
-  startAction('Removendo tábuas', 3, () => { s.bar--; s.bhp = s.bar ? 80 : 0; giveItem(newItem('tabua', { q: chance(0.6) ? 2 : 1 })); if (chance(0.5)) giveItem(newItem('prego', { q: 2 })); G.chunkDirty(x, y); }, { noise: 5, snd: 'martelo' });
+  startAction('Removendo tábuas', 3, () => { s.bar--; s.bhp = s.bar ? BAR_HP : 0; giveItem(newItem('tabua', { q: chance(0.6) ? 2 : 1 })); if (chance(0.5)) giveItem(newItem('prego', { q: 2 })); G.chunkDirty(x, y); }, { noise: 5, snd: 'martelo' });
 }
 function objOpts(o, x, y) {
   const d = FURN[o.t], p = S.player, out = [];
@@ -1502,7 +1520,7 @@ function build(r) {
     const err2 = canBuild(r, x, y); if (err2) return say(err2);
     for (const [k, q] of Object.entries(r.need)) takeItem(k, q);
     const i = ix(x, y);
-    if (r.on === 'abertura') { const s = S.ts[i]; s.bar = (s.bar || 0) + 1; s.bhp = 80 + lvl('carpintaria') * 15; s.open = 0; }
+    if (r.on === 'abertura') { const s = S.ts[i]; s.bar = (s.bar || 0) + 1; s.bhp = BAR_HP + lvl('carpintaria') * 25; s.open = 0; }
     else {
       const o = { t: r.k, hp: (FURN[r.k].hp || 100) * (1 + lvl('carpintaria') * 0.1) };
       if (r.k === 'bau') o.items = [];
@@ -1645,7 +1663,7 @@ function hourly() {
   S.hordes = S.hordes.filter((h) => !h.dead);
   // ataque de saqueadores à base
   const h = hourOf();
-  if (S.base && dayOf() >= 4 && (h >= 22 || h < 3) && S.time > S.nextRaid) {
+  if (S.base && dayOf() >= 6 && (h >= 22 || h < 3) && S.time > S.nextRaid) {
     S.nextRaid = S.time + rint(2, 4) * 1440;
     if (chance(0.45 + dayOf() * 0.02)) raid();
   }
@@ -1667,8 +1685,8 @@ function daily() {
   if (S.flags.lastDay === day) return; S.flags.lastDay = day;
   say(`☀️ Dia ${day}. Você sobreviveu mais uma noite.`, 'good');
   // novos zumbis chegam pelas estradas
-  const n = Math.min(10 + day * 2, 40);
-  if (S.zs.length < 750) for (let k = 0; k < n; k++) { const e = edgePoint(); const z = addZombie(e[0], e[1]); z.st = 'hunt'; z.tx = rint(35, 110); z.ty = rint(35, 110); z.huntT = 1e9; }
+  const n = Math.min(6 + day, 20);
+  if (S.zs.length < 600) for (let k = 0; k < n; k++) { const e = edgePoint(); const z = addZombie(e[0], e[1]); z.st = 'hunt'; z.tx = rint(35, 110); z.ty = rint(35, 110); z.huntT = 1e9; }
   spawnAnimals(3);
   // sobreviventes: comida, destino, comércio
   for (const npc of S.npcs) {
@@ -1712,11 +1730,11 @@ function hordeTarget() {
   return [rint(34, 108), rint(34, 108)];
 }
 function spawnHorde() {
-  S.nextHorde = S.time + Math.max(18, 48 - dayOf() * 2) * 60 * rnd(0.8, 1.2);
-  if (S.zs.length > 800) return;
+  S.nextHorde = S.time + Math.max(24, 54 - dayOf() * 2) * 60 * rnd(0.8, 1.2);
+  if (S.zs.length > 650) return;
   const e = edgePoint(), t = hordeTarget();
   const h = { id: S.nid++, tx: t[0], ty: t[1] };
-  const n = Math.min(14 + dayOf() * 3, 50);
+  const n = Math.min(12 + dayOf() * 2, 35);
   for (let k = 0; k < n; k++) {
     const z = addZombie(clamp(e[0] + rnd(-3, 3), 4, MAP_W - 5), clamp(e[1] + rnd(-3, 3), 4, MAP_H - 5));
     if (blockedAt(z.x, z.y, 0.3)) { z.x = e[0]; z.y = e[1]; }

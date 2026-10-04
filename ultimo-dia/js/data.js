@@ -5,6 +5,7 @@ const TILE = 32;            // tamanho base do tile em px
 const MAP_W = 150, MAP_H = 150;
 const START_MIN = 8 * 60;   // o jogo começa às 08:00 do dia 1
 const SAVE_KEY = 'ultimo-dia-v1';
+const BAR_HP = 160; // resistência de cada camada de barricada
 
 // Tiles do terreno
 const TL = { GRASS: 0, ROAD: 1, WALK: 2, DIRT: 3, WATER: 4, TREE: 5, FLOOR: 6, WALL: 7, DOOR: 8, WINDOW: 9, FIELD: 10, SAND: 11, PARK: 12, BURNT: 13, RUBBLE: 14, TILEF: 15, BUSH: 16 };
@@ -171,10 +172,10 @@ const FURN = {
   arbusto: { n: 'Arbusto de frutas', solid: 1, berry: 1, col: '#3f7a3a', ic: '🫐' },
 
   // construídos pelo jogador
-  muro: { n: 'Muro de madeira', solid: 1, build: 1, hp: 260, opaque: 1, col: '#8a5f36', wood: 2, nail: 3 },
-  muro_metal: { n: 'Muro de metal', solid: 1, build: 1, hp: 520, opaque: 1, col: '#7f878d', scrap: 4 },
-  cerca: { n: 'Cerca', solid: 1, build: 1, hp: 120, col: '#a07445', wood: 1, nail: 1 },
-  portao: { n: 'Portão', solid: 1, build: 1, hp: 240, gate: 1, col: '#7a5230', wood: 3, nail: 4 },
+  muro: { n: 'Muro de madeira', solid: 1, build: 1, hp: 400, opaque: 1, col: '#8a5f36', wood: 2, nail: 3 },
+  muro_metal: { n: 'Muro de metal', solid: 1, build: 1, hp: 800, opaque: 1, col: '#7f878d', scrap: 4 },
+  cerca: { n: 'Cerca', solid: 1, build: 1, hp: 160, col: '#a07445', wood: 1, nail: 1 },
+  portao: { n: 'Portão', solid: 1, build: 1, hp: 360, gate: 1, col: '#7a5230', wood: 3, nail: 4 },
   bau: { n: 'Baú', solid: 1, build: 1, cont: 1, cap: 60, hp: 120, col: '#9c6b3c', ic: '🧳', wood: 2, nail: 3 },
   cama_imp: { n: 'Cama improvisada', solid: 1, build: 1, bed: 0.85, hp: 60, col: '#8d8a6a', ic: '🛏️', wood: 2, cloth: 2 },
   fogueira: { n: 'Fogão improvisado', solid: 1, build: 1, stove: 'lenha', hp: 100, col: '#5f5a55', ic: '🔥', scrap: 2 },
@@ -193,7 +194,7 @@ const LOOT = {
   pia: { n: [0, 2], t: [['trapo', 3, 1, 2], ['desinfetante', 1], ['garrafa_vazia', 1]] },
   roupas: { n: [0, 3], t: [['moletom', 4], ['jaqueta', 1], ['capa_chuva', 2], ['mochila', 2], ['bolsa', 2], ['trapo', 4, 1, 4], ['capacete', 1], ['mochila_grande', 0.4]] },
   estante: { n: [0, 3], t: [['revista', 4], ['hq', 3], ['livro_carp', 1], ['livro_mec', 1], ['livro_med', 1], ['livro_agro', 1], ['livro_pesca', 1], ['radio', 1], ['lanterna', 1], ['pilhas', 1, 1, 4]] },
-  banheiro: { n: [0, 3], t: [['bandagem', 3, 1, 3], ['analgesico', 3], ['desinfetante', 2], ['calmante', 1], ['antibiotico', 0.5], ['trapo', 1, 1, 2]] },
+  banheiro: { n: [0, 2], t: [['bandagem', 3, 1, 2], ['analgesico', 3], ['desinfetante', 2], ['calmante', 1], ['antibiotico', 0.5], ['trapo', 1, 1, 2]] },
   mesa: { n: [0, 2], t: [['revista', 2], ['cigarro', 2], ['isqueiro', 1], ['chave_fenda', 1], ['pilhas', 1, 1, 2], ['chave_carro', 1.2], ['lanterna', 0.6], ['biscoito', 1]] },
   mercado: { n: [1, 5], t: [['feijao', 5], ['sopa', 4], ['atum', 4], ['pessego', 3], ['biscoito', 5], ['salgadinho', 5], ['chocolate', 3], ['refri', 5], ['suco', 3], ['garrafa', 3], ['pao', 2], ['abridor', 1], ['fosforos', 1], ['pilhas', 1, 1, 4], ['semente_tomate', 0.5, 2, 5], ['semente_cenoura', 0.5, 2, 5]] },
   balcao: { n: [0, 4], t: [['cigarro', 4], ['isqueiro', 3], ['pilhas', 2, 1, 4], ['chocolate', 2], ['lanterna', 1], ['revista', 1], ['chave_carro', 0.5], ['galao', 1]] },
@@ -209,7 +210,7 @@ const LOOT = {
   porta_malas: { n: [0, 3], t: [['galao', 2], ['pneu', 1], ['bateria', 0.4], ['mochila', 1], ['garrafa', 1], ['salgadinho', 1], ['chave_inglesa', 1], ['corda', 1], ['lona', 0.6], ['taco', 0.6]] },
   viatura: { n: [1, 3], t: [['espingarda', 1], ['cartucho', 2, 4, 12], ['mun9', 2, 6, 20], ['colete', 0.5], ['lanterna', 1], ['bandagem', 1, 1, 2]] },
   ambulancia: { n: [1, 4], t: [['bandagem', 3, 1, 4], ['desinfetante', 2], ['analgesico', 2], ['antibiotico', 1], ['sutura', 1], ['tala', 1]] },
-  zumbi: { n: [0, 2], t: [['chave_carro', 1.4], ['cigarro', 1], ['isqueiro', 1], ['chocolate', 1], ['pilhas', 0.6, 1, 2], ['bandagem', 0.6], ['analgesico', 0.4], ['mun9', 0.3, 3, 8], ['faca_cozinha', 0.3], ['garrafa', 0.5]] },
+  zumbi: { n: [0, 2], t: [['chave_carro', 0.4], ['cigarro', 1], ['isqueiro', 1], ['chocolate', 1], ['pilhas', 0.6, 1, 2], ['bandagem', 0.6], ['analgesico', 0.4], ['mun9', 0.3, 3, 8], ['faca_cozinha', 0.3], ['garrafa', 0.5]] },
 };
 
 /* ---------- Construções (modo de construção) ----------

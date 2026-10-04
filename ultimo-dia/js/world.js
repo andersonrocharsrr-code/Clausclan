@@ -247,7 +247,7 @@ function genWorld(seed, prof) {
       if (side === 'n') { dx = x + off; dy = y; } else if (side === 's') { dx = x + off; dy = y + h - 1; }
       else if (side === 'w') { dx = x; dy = y + off; } else { dx = x + w - 1; dy = y + off; }
       tiles[ix(dx, dy)] = TL.DOOR;
-      S.ts[ix(dx, dy)] = { hp: 160, open: 0, bar: 0, lock: t === 'abandonada' ? 0 : (chance(0.3) ? 1 : 0) };
+      S.ts[ix(dx, dy)] = { hp: 220, open: 0, bar: 0, lock: t === 'abandonada' ? 0 : (chance(0.3) ? 1 : 0) };
       doors.push([dx, dy]);
     };
     const mid = (doorSide === 'n' || doorSide === 's') ? Math.floor(w / 2) : Math.floor(h / 2);
@@ -262,7 +262,7 @@ function genWorld(seed, prof) {
     tiles[ix(x, y)] = TL.WINDOW;
     const broken = t === 'abandonada' ? chance(0.6) : chance(0.05);
     S.ts[ix(x, y)] = { hp: 40, broken: broken ? 1 : 0, bar: t === 'abandonada' && !broken && chance(0.4) ? 1 : 0, bhp: 0, open: 0 };
-    if (S.ts[ix(x, y)].bar) S.ts[ix(x, y)].bhp = 80;
+    if (S.ts[ix(x, y)].bar) S.ts[ix(x, y)].bhp = BAR_HP;
   }
   function freeSpots(id, n) {
     // tiles internos encostados numa parede, longe das portas
