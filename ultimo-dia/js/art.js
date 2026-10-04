@@ -540,15 +540,9 @@ function flatRoof(g, B, W, H, R) {
   const base = { hospital: '#d9dedd', mercado: '#a7a8a2', posto: '#b5b3ad', delegacia: '#9fa3a3', oficina: '#8f918c', escola: '#b0a58f', fabrica: '#7f827e' }[B.t];
   g.fillStyle = base; g.fillRect(0, 0, W, H);
   for (let k = 0; k < W * H / 60; k++) { g.fillStyle = k % 2 ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.08)'; g.fillRect(R(k * 2 + 100) * W, R(k * 2 + 101) * H, 1.5, 1.5); }
-  // mureta
-  g.strokeStyle = shade(base, 0.25); g.lineWidth = 5; g.strokeRect(2.5, 2.5, W - 5, H - 5);
-  g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; g.strokeRect(6, 6, W - 12, H - 12);
+  // juntas da manta
+  g.strokeStyle = 'rgba(0,0,0,.07)'; g.lineWidth = 1; g.beginPath(); for (let k = 16; k < W; k += 32) { g.moveTo(k, 0); g.lineTo(k, H); } g.stroke();
   g.strokeStyle = 'rgba(0,0,0,.5)'; g.lineWidth = 1.5; g.strokeRect(0.75, 0.75, W - 1.5, H - 1.5);
-  const ac = (x, y) => {
-    g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(x + 3, y + 3, 22, 16);
-    g.fillStyle = '#c9cccd'; g.fillRect(x, y, 22, 16); g.fillStyle = '#8d9295'; circ(g, x + 7, y + 8, 5.5); g.fillStyle = '#5d6265'; circ(g, x + 7, y + 8, 2);
-    g.fillStyle = 'rgba(0,0,0,.2)'; for (let k = 0; k < 4; k++) g.fillRect(x + 14, y + 3 + k * 3, 6, 1);
-  };
   const sign = (txt, bg, fg) => {
     const fs = Math.min(H * 0.28, W / (txt.length * 0.72));
     g.font = `900 ${fs}px Nunito, Arial Black, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
@@ -563,17 +557,11 @@ function flatRoof(g, B, W, H, R) {
     g.fillStyle = '#fff'; g.font = `900 ${r}px Nunito, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('H', cx, cy + 1);
     const c = Math.min(W, H) * 0.18, ccx = W * 0.25, ccy = H * 0.6;
     g.fillStyle = '#fff'; g.fillRect(ccx - c, ccy - c, c * 2, c * 2); g.fillStyle = '#d7332a'; g.fillRect(ccx - c * 0.25, ccy - c * 0.8, c * 0.5, c * 1.6); g.fillRect(ccx - c * 0.8, ccy - c * 0.25, c * 1.6, c * 0.5);
-    ac(W * 0.42, H * 0.12); ac(W * 0.55, H * 0.12);
   } else if (B.t === 'fabrica') {
     g.fillStyle = 'rgba(130,170,190,.75)'; for (let k = 0; k < 3; k++) { const y = H * (0.2 + k * 0.25); g.fillRect(W * 0.12, y, W * 0.5, 8); g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(W * 0.12, y + 7, W * 0.5, 1); g.fillStyle = 'rgba(130,170,190,.75)'; }
-    for (const [cx, cy] of [[W * 0.8, H * 0.3], [W * 0.8, H * 0.65]]) { g.fillStyle = 'rgba(0,0,0,.35)'; circ(g, cx + 5, cy + 5, 14); g.fillStyle = '#7a5040'; circ(g, cx, cy, 14); g.fillStyle = '#5a3a30'; circ(g, cx, cy, 10); g.fillStyle = '#151210'; circ(g, cx, cy, 7); }
   } else {
     const txt = { mercado: ['MERCADO', '#2e7d4f', '#fff'], delegacia: ['POLÍCIA', '#1f3d7a', '#fff'], escola: ['ESCOLA', '#e0a82e', '#2a2a2a'], oficina: ['OFICINA', '#d0682a', '#fff'], posto: ['POSTO', '#c0392b', '#fff'] }[B.t];
     if (txt) sign(...txt);
-    const n = Math.max(1, Math.floor(W * H / 9000));
-    for (let k = 0; k < n; k++) ac(10 + R(k + 3) * (W - 40), H * 0.55 + R(k + 9) * (H * 0.4 - 22));
-    for (let k = 0; k < 3; k++) { g.fillStyle = '#6f7476'; circ(g, 12 + R(k + 30) * (W - 24), 12 + R(k + 40) * (H - 24), 3); g.fillStyle = '#3d4244'; circ(g, 12 + R(k + 30) * (W - 24), 12 + R(k + 40) * (H - 24), 1.5); }
-    if (B.t === 'delegacia') { g.strokeStyle = '#666'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(W - 14, 12); g.lineTo(W - 14, 30); g.stroke(); g.fillStyle = '#d33'; circ(g, W - 14, 12, 2.5); }
   }
 }
 

@@ -6,6 +6,7 @@ const CH = 8; // tiles por bloco de chão cacheado
 const chunks = new Map();
 const cv = document.getElementById('game');
 const ctx = cv.getContext('2d');
+rg = ctx; // telhados (buildings.js) desenham aqui por padrão
 const fogCv = document.createElement('canvas'), fctx = fogCv.getContext('2d');
 const lightCv = document.createElement('canvas'), lctx = lightCv.getContext('2d');
 let VW = 0, VH = 0, DPR = 1, RES = 1, K = 1;
@@ -49,6 +50,17 @@ function faceQuad(f, x0, y0, x1, y1, u0, u1, z0, z1, fill) {
   const pt = (u, z) => (f === 'L' ? [PX(lerp(x0, x1, u), y1), PY(lerp(x0, x1, u), y1, z)] : [PX(x1, lerp(y0, y1, u)), PY(x1, lerp(y0, y1, u), z)]);
   poly([...pt(u0, z0), ...pt(u1, z0), ...pt(u1, z1), ...pt(u0, z1)], fill);
 }
+// várias linhas horizontais numa face de um ladrilho, num traço só
+const SIDING_Z = [0.37, 0.585, 0.8, 1.015, 1.23, 1.445];
+const SLATS = [0.62, 0.78, 0.94, 1.1, 1.26];
+function faceLines(f, x, y, zs, col, spans = [[0, 1]]) {
+  ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.beginPath();
+  for (const [u0, u1] of spans) {
+    const [ax, ay, bx, by] = f === 'L' ? [x + u0, y + 1, x + u1, y + 1] : [x + 1, y + u0, x + 1, y + u1];
+    for (const z of zs) { ctx.moveTo(PX(ax, ay), PY(ax, ay, z)); ctx.lineTo(PX(bx, by), PY(bx, by, z)); }
+  }
+  ctx.stroke();
+}
 function faceLine(f, x0, y0, x1, y1, z, col, w) {
   ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath();
   if (f === 'L') { ctx.moveTo(PX(x0, y1), PY(x0, y1, z)); ctx.lineTo(PX(x1, y1), PY(x1, y1, z)); }
@@ -61,7 +73,7 @@ G.chunkDirty = (x, y) => {
   for (const [a, b] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) { const c = chunks.get(Math.floor((x + a) / CH) * 100 + Math.floor((y + b) / CH)); if (c) c.dirty = 1; }
 };
 G.chunkDirtyAll = () => { for (const c of chunks.values()) c.dirty = 1; };
-G.resetChunks = () => { chunks.clear(); G.resetRoofs(); };
+G.resetChunks = () => { chunks.clear(); G.resetRoofs(); if (G.resetRoofSprites) G.resetRoofSprites(); };
 const FLAT_OBJ = new Set(['cadaver', 'bolsa_chao', 'horta']);
 function getChunk(cx, cy) {
   const k = cx * 100 + cy;
@@ -162,7 +174,11 @@ function drawWallIso(x, y, t, B, cut, roofed) {
   const horiz = isWallish(x - 1, y) || isWallish(x + 1, y);
   const s = S.ts[ix(x, y)] || {};
   if (t === TL.DOOR) {
-    if (!cut) isoBox(x, y, x + 1, y + 1, 1.3, h, top, showL ? left : null, showR ? right : null); // verga
+    if (!cut) { // degrau do lado de fora
+      const out = horiz ? (S.room[ix(x, y + 1)] === 0 ? 1 : S.room[ix(x, y - 1)] === 0 ? -1 : 0) : (S.room[ix(x + 1, y)] === 0 ? 1 : S.room[ix(x - 1, y)] === 0 ? -1 : 0);
+      if (out) { const st = '#a9a49a'; if (horiz) isoBox(x + 0.08, out > 0 ? y + 1 : y - 0.32, x + 0.92, out > 0 ? y + 1.32 : y, 0, 0.07, st, shade(st, -0.2), shade(st, -0.35)); else isoBox(out > 0 ? x + 1 : x - 0.32, y + 0.08, out > 0 ? x + 1.32 : x, y + 0.92, 0, 0.07, st, shade(st, -0.2), shade(st, -0.35)); }
+    }
+    if (!cut) { isoBox(x, y, x + 1, y + 1, 1.3, h, top, showL ? left : null, showR ? right : null); for (const [f, sh] of [['L', showL], ['R', showR]]) if (sh) faceQuad(f, x, y, x + 1, y + 1, 0, 1, 1.3, 1.4, shade(TRIM(B), f === 'L' ? -0.12 : -0.3)); } // verga com batente
     const dc = '#7a5232', dh = cut ? CUT_H : 1.3;
     if (!s.broken) {
       if (s.open) { if (horiz) isoBox(x, y + 0.5, x + 0.12, y + 1.35, 0, dh, shade(dc, 0.1), dc, shade(dc, -0.3)); else isoBox(x + 0.5, y, x + 1.35, y + 0.12, 0, dh, shade(dc, 0.1), dc, shade(dc, -0.3)); }
@@ -176,23 +192,42 @@ function drawWallIso(x, y, t, B, cut, roofed) {
   } else {
     isoBox(x, y, x + 1, y + 1, 0, h, top, showL ? left : null, showR ? right : null);
     if (!cut) {
+      const flat = FLAT.has(B.t), trim = TRIM(B);
       for (const [f, show] of [['L', showL], ['R', showR]]) {
         if (!show) continue;
-        for (let k = 1; k < 4; k++) faceLine(f, x, y, x + 1, y + 1, k * 0.42, 'rgba(0,0,0,.08)', 1);
-        faceLine(f, x, y, x + 1, y + 1, 0.03, 'rgba(0,0,0,.35)', 2);
+        const fs = f === 'L' ? -0.12 : -0.32;
+        if (B.t === 'celeiro') { ctx.strokeStyle = 'rgba(0,0,0,.16)'; ctx.lineWidth = 1; ctx.beginPath(); for (let u = 0.2; u < 1; u += 0.2) { const ax = f === 'L' ? x + u : x + 1, ay = f === 'L' ? y + 1 : y + u; ctx.moveTo(PX(ax, ay), PY(ax, ay, 0.15)); ctx.lineTo(PX(ax, ay), PY(ax, ay, h)); } ctx.stroke(); }
+        else if (flat) { faceLine(f, x, y, x + 1, y + 1, 0.9, 'rgba(0,0,0,.1)', 1); faceQuad(f, x, y, x + 1, y + 1, 0, 1, h - 0.22, h, shade(BAND(B), fs)); }
+        else faceLines(f, x, y, SIDING_Z, 'rgba(0,0,0,.1)');
+        // base de alvenaria
+        faceQuad(f, x, y, x + 1, y + 1, 0, 1, 0, 0.16, shade(flat ? '#8a8780' : '#7d756a', fs));
+        faceLine(f, x, y, x + 1, y + 1, 0.16, 'rgba(0,0,0,.25)', 1);
+        // cantoneiras nas pontas da parede
+        const endA = f === 'L' ? !isWallish(x - 1, y) : !isWallish(x, y - 1), endB = f === 'L' ? !isWallish(x + 1, y) : !isWallish(x, y + 1);
+        if (endA) faceQuad(f, x, y, x + 1, y + 1, 0, 0.07, 0.16, h, shade(trim, fs));
+        if (endB) faceQuad(f, x, y, x + 1, y + 1, 0.93, 1, 0.16, h, shade(trim, fs));
       }
       if (t === TL.WINDOW) {
         const f = horiz ? 'L' : 'R';
         if ((f === 'L' && showL) || (f === 'R' && showR)) {
-          faceQuad(f, x, y, x + 1, y + 1, 0.14, 0.86, 0.5, 1.38, '#e9e6de');
+          const fs = f === 'L' ? -0.08 : -0.26, trim = TRIM(B), house = B.t === 'casa' || B.t === 'fazenda';
+          if (house) { const sc = shutterCol(B); faceQuad(f, x, y, x + 1, y + 1, 0.0, 0.12, 0.5, 1.38, shade(sc, fs)); faceQuad(f, x, y, x + 1, y + 1, 0.88, 1.0, 0.5, 1.38, shade(sc, fs)); faceLines(f, x, y, SLATS, 'rgba(0,0,0,.2)', [[0.02, 0.1], [0.9, 0.98]]); }
+          faceQuad(f, x, y, x + 1, y + 1, 0.14, 0.86, 0.5, 1.38, shade(trim, fs));
           if (s.broken || s.open) {
             faceQuad(f, x, y, x + 1, y + 1, 0.2, 0.8, 0.56, 1.32, '#1d1b19');
             if (s.glass) { faceQuad(f, x, y, x + 1, y + 1, 0.2, 0.32, 0.56, 0.75, 'rgba(200,230,245,.8)'); faceQuad(f, x, y, x + 1, y + 1, 0.66, 0.8, 1.1, 1.32, 'rgba(200,230,245,.8)'); }
           } else {
-            faceQuad(f, x, y, x + 1, y + 1, 0.2, 0.8, 0.56, 1.32, f === 'L' ? '#7d9fb2' : '#5f8296');
-            faceQuad(f, x, y, x + 1, y + 1, 0.3, 0.42, 0.62, 1.26, 'rgba(255,255,255,.28)');
-            faceQuad(f, x, y, x + 1, y + 1, 0.485, 0.515, 0.56, 1.32, '#e9e6de');
+            faceQuad(f, x, y, x + 1, y + 1, 0.2, 0.8, 0.56, 1.32, f === 'L' ? '#4f6a7a' : '#3e5664');
+            faceQuad(f, x, y, x + 1, y + 1, 0.2, 0.8, 0.94, 1.32, f === 'L' ? '#86a8ba' : '#6a8c9e'); // céu refletido em cima
+            if (!FLAT.has(B.t)) { const cc = curtainCol(B); faceQuad(f, x, y, x + 1, y + 1, 0.2, 0.3, 0.56, 1.32, shade(cc, fs)); faceQuad(f, x, y, x + 1, y + 1, 0.7, 0.8, 0.56, 1.32, shade(cc, fs)); }
+            faceQuad(f, x, y, x + 1, y + 1, 0.34, 0.44, 0.62, 1.26, 'rgba(255,255,255,.2)');
+            faceQuad(f, x, y, x + 1, y + 1, 0.485, 0.515, 0.56, 1.32, shade(trim, fs));
+            faceQuad(f, x, y, x + 1, y + 1, 0.2, 0.8, 0.93, 0.96, shade(trim, fs));
           }
+        }
+        if ((f === 'L' && showL) || (f === 'R' && showR)) { // peitoril saliente
+          const tr = TRIM(B);
+          if (f === 'L') isoBox(x + 0.1, y + 1, x + 0.9, y + 1.07, 0.44, 0.5, shade(tr, 0.05), shade(tr, -0.2), shade(tr, -0.35)); else isoBox(x + 1, y + 0.1, x + 1.07, y + 0.9, 0.44, 0.5, shade(tr, 0.05), shade(tr, -0.2), shade(tr, -0.35));
         }
         if (s.bar) planks(f, x, y, s.bar, false);
       }
@@ -200,6 +235,13 @@ function drawWallIso(x, y, t, B, cut, roofed) {
   }
   if (roofed && !cut && B.whole !== frameNo) roofTile(x, y, B);
 }
+// acabamentos por prédio
+const TRIM = (B) => B.trim || (B.trim = { celeiro: '#ece4d4', abandonada: '#8a8276', hospital: '#f4f6f6', delegacia: '#8f8a7e', mercado: '#e8e4da', posto: '#f0ede6', escola: '#efe6d2', oficina: '#7f7a70', fabrica: '#6f716c', igreja: '#d8cfba' }[B.t] || '#efeae0');
+const BAND = (B) => ({ hospital: '#3f8f88', delegacia: '#2f3d55', mercado: '#2e7d4f', posto: '#c0392b', escola: '#c27a2e', oficina: '#d0682a', fabrica: '#5f6a5f' }[B.t] || '#777');
+const SHUTTERS = ['#3e5a46', '#5a3a2e', '#2f4a62', '#6a5a3a', '#4a4a4e'];
+const CURTAINS = ['#c9b48a', '#a85a4a', '#8a9aa8', '#d8d0c0', '#7a8a5a'];
+const shutterCol = (B) => SHUTTERS[Math.floor(hk(B.x, B.y, 11) * SHUTTERS.length)];
+const curtainCol = (B) => CURTAINS[Math.floor(hk(B.x, B.y, 13) * CURTAINS.length)];
 function planks(f, x, y, n, cut) {
   const zs = cut ? [0.12] : [0.45, 0.85, 1.2];
   for (let k = 0; k < Math.min(n, zs.length); k++) {
@@ -220,13 +262,12 @@ function roofTile(x, y, B) {
 }
 // telhado do prédio inteiro de uma vez (quando nada dele está recortado)
 function drawWholeRoof(B) {
+  if (!FLAT.has(B.t)) return drawRoofCached(B);
   const bi = S.bld.indexOf(B), rc = roofCanvas(bi, RES);
   tileXform(B.x, B.y, WALL_H);
   ctx.drawImage(rc, 0, 0, rc.width, rc.height, -0.15, -0.15, B.w * 32 + 0.3, B.h * 32 + 0.3);
   resetXform();
-  const rc2 = B.t === 'celeiro' ? '#a8322a' : B.roof;
-  isoBox(B.x, B.y + B.h - 0.02, B.x + B.w, B.y + B.h + 0.04, WALL_H - 0.12, WALL_H, null, shade(rc2, -0.45), null);
-  isoBox(B.x + B.w - 0.02, B.y, B.x + B.w + 0.04, B.y + B.h, WALL_H - 0.12, WALL_H, null, null, shade(rc2, -0.55));
+  drawFlatRoofExtras(B);
 }
 function drawLamp(x, y, lit) {
   let dx = 0, dy = 0; for (const [a, b] of N4) if (tileAt(x + a, y + b) === TL.ROAD) { dx = a; dy = b; }
