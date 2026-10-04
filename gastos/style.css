@@ -993,6 +993,14 @@ button, .k, .tab, .fab, .chip, .seg__btn { touch-action: manipulation; -webkit-u
 @keyframes enter-up { from { opacity: 0; transform: translate(-50%, 24px); } to { opacity: 1; transform: translate(-50%, 0); } }
 @keyframes enter-rise { from { opacity: 0; transform: translateY(22px) scale(.98); } to { opacity: 1; transform: none; } }
 
+/* ---------- Marca Nexa Money no topo ---------- */
+.brand__mark {
+  width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; flex: none;
+  background: radial-gradient(circle at 55% 45%, rgba(124, 58, 237, .55), transparent 70%), linear-gradient(135deg, #1c1236, #0a0714);
+  box-shadow: 0 6px 16px -6px rgba(124, 58, 237, .8);
+}
+.brand em { font-style: normal; color: var(--accent); }
+
 /* ---------- Toast ---------- */
 .toast {
   position: fixed; left: 16px; right: 16px; bottom: calc(104px + env(safe-area-inset-bottom));

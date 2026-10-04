@@ -1,4 +1,4 @@
-/* Meus Gastos — controle de gastos e entradas com orçamento, limites por categoria,
+/* Nexa Money — controle de gastos e entradas com orçamento, limites por categoria,
    fixos automáticos, lançamento rápido, faturas do cartão, comprovantes e lembretes.
    Os dados ficam salvos no próprio navegador (localStorage; fotos no IndexedDB). */
 (() => {
@@ -1600,7 +1600,7 @@
       return;
     }
     if (Notification.permission === 'denied') {
-      toast('As notificações estão bloqueadas. Libere nas configurações do celular para o app Meus Gastos.');
+      toast('As notificações estão bloqueadas. Libere nas configurações do celular para o app Nexa Money.');
       return;
     }
     if (Notification.permission === 'default') {
@@ -1616,7 +1616,7 @@
     beep();
     toast('Lembretes ligados 🔔 Você será avisado no horário escolhido.');
     // Só na primeira vez: um aviso de exemplo, que some sozinho.
-    if (first) notify('Meus Gastos', 'Pronto! Os lembretes vão aparecer assim.', 'teste', { quiet: true });
+    if (first) notify('Nexa Money', 'Pronto! Os lembretes vão aparecer assim.', 'teste', { quiet: true });
   }
 
   function disableAlerts() {
@@ -2556,7 +2556,7 @@
     g.addColorStop(0, '#7c6cff'); g.addColorStop(0.5, '#5b4cf0'); g.addColorStop(1, '#9b3cf0');
     ctx.fillStyle = g;
     rr(0, 0, REPORT_W, 470, [0, 0, 48, 48]); ctx.fill();
-    text('MEUS GASTOS', P, 92, F(700, 28), 'rgba(255,255,255,.8)');
+    text('NEXA MONEY', P, 92, F(700, 28), 'rgba(255,255,255,.8)');
     text(cap(fmtMonth.format(new Date(y0, m0 - 1, 1))), P, 150, F(800, 46), '#fff');
     text('Gasto no mês', P, 232, F(500, 32), 'rgba(255,255,255,.88)');
     text(money(total), P, 338, F(800, 104), '#fff');
@@ -2644,7 +2644,7 @@
       text('Nenhum lançamento neste mês.', REPORT_W / 2, y + 40, F(600, 32), C.muted, 'center');
       y += 100;
     }
-    text(`Gerado pelo app Meus Gastos em ${fmtDM.format(new Date())}/${new Date().getFullYear()}`, REPORT_W / 2, y + 30, F(500, 26), C.muted, 'center');
+    text(`Gerado pelo app Nexa Money em ${fmtDM.format(new Date())}/${new Date().getFullYear()}`, REPORT_W / 2, y + 30, F(500, 26), C.muted, 'center');
     y += 80;
 
     const out = document.createElement('canvas');
@@ -2705,7 +2705,7 @@
   async function openReport() {
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
     openImage({
-      canvas: buildReport(), title: 'Relatório do mês', name: `meus-gastos-${ui.month}`,
+      canvas: buildReport(), title: 'Relatório do mês', name: `nexa-money-${ui.month}`,
       text: `Meus gastos de ${fmtMonth.format(monthDate(ui.month))}`,
     });
   }
@@ -2716,7 +2716,7 @@
     const file = new File([blob], `${name}.png`, { type: 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
-        await navigator.share({ files: [file], title: 'Meus Gastos', text });
+        await navigator.share({ files: [file], title: 'Nexa Money', text });
       } catch (err) {
         if (err.name !== 'AbortError') { downloadBlob(blob, file.name); toast('Imagem salva. Agora é só enviar.'); }
       }
@@ -2814,7 +2814,7 @@
         y += h + 40;
       }
       const now = new Date();
-      text(`Emitido em ${fmtDM.format(now)}/${now.getFullYear()} pelo app Meus Gastos`, W / 2, y + 30, F(500, 26), '#6b7280', 'center');
+      text(`Emitido em ${fmtDM.format(now)}/${now.getFullYear()} pelo app Nexa Money`, W / 2, y + 30, F(500, 26), '#6b7280', 'center');
       y += 80;
       const out = document.createElement('canvas');
       out.width = W;
@@ -3444,7 +3444,7 @@
         expenses: state.expenses, reminders: state.reminders, budget: state.budget, catBudgets: state.catBudgets,
         fixed: state.fixed, customCats: state.customCats, card: state.card, goals: state.goals, debts: state.debts, pixKey: state.pixKey, daily: state.daily, photos: pics,
       };
-      download(`meus-gastos-backup-${dateISO(new Date())}.json`, JSON.stringify(data), 'application/json');
+      download(`nexa-money-backup-${dateISO(new Date())}.json`, JSON.stringify(data), 'application/json');
     } else if (action === 'import-json') {
       $('#fileImport').click();
     }
@@ -3507,7 +3507,7 @@
     const icsDate = (iso) => iso.replace(/[-:]/g, '') + '00';
     const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
     const RRULE = { weekly: 'FREQ=WEEKLY', monthly: 'FREQ=MONTHLY', yearly: 'FREQ=YEARLY' };
-    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Meus Gastos//PT-BR', 'CALSCALE:GREGORIAN'];
+    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Nexa Money//PT-BR', 'CALSCALE:GREGORIAN'];
     for (const r of state.reminders) {
       const end = new Date(new Date(r.due).getTime() + 30 * MIN);
       const title = `Pagar: ${r.title}${r.amount != null ? ` (${money(r.amount)})` : ''}`;
@@ -3530,7 +3530,7 @@
   window.addEventListener('appinstalled', () => {
     installEvent = null;
     updateInstallItem();
-    toast('App instalado! Procure o ícone "Meus Gastos" na tela inicial.');
+    toast('App instalado! Procure o ícone "Nexa Money" na tela inicial.');
   });
 
   async function installApp() {
@@ -3554,7 +3554,7 @@
         : ['Toque no menu <strong>⋮</strong> do navegador (Chrome).',
           'Escolha <strong>“Instalar app”</strong> ou <strong>“Adicionar à tela inicial”</strong>.',
           'Confirme em <strong>Instalar</strong>.'];
-    $('#installSteps').innerHTML = steps.concat('Pronto: abra pelo ícone <strong>Meus Gastos</strong> — ele abre em tela cheia, como um app.')
+    $('#installSteps').innerHTML = steps.concat('Pronto: abra pelo ícone <strong>Nexa Money</strong> — ele abre em tela cheia, como um app.')
       .map((t) => `<li><span>${t}</span></li>`).join('');
     $('#dlgInstall').showModal();
   }
@@ -3628,20 +3628,32 @@
     }
     setTimeout(() => document.body.classList.remove('app-enter'), 1600);
   }
+  // Abertura (N se desenhando) → tela de início → "Acessar meu painel" → painel com a entrada animada.
   function runSplash(skip) {
     const splash = $('#splash');
+    const welcome = $('#welcome');
     if (!splash) return;
-    if (skip) { splash.remove(); return; }
+    if (skip) { splash.remove(); welcome.remove(); return; }
+    const showWelcome = () => {
+      welcome.hidden = false;
+      welcome.classList.add('is-in');
+      $('#welcomeGo').focus({ preventScroll: true });
+    };
     let done = false;
     const finish = () => {
       if (done) return;
       done = true;
+      showWelcome();
       splash.classList.add('is-leaving');
-      playEntrance();
-      setTimeout(() => splash.remove(), 520);
+      setTimeout(() => splash.remove(), 560);
     };
     splash.addEventListener('click', finish); // um toque pula a abertura
-    setTimeout(finish, reduceMotion() ? 350 : 1650);
+    setTimeout(finish, reduceMotion() ? 350 : 2600);
+    $('#welcomeGo').addEventListener('click', () => {
+      welcome.classList.add('is-leaving');
+      playEntrance();
+      setTimeout(() => welcome.remove(), 520);
+    });
   }
 
   // Atalhos do ícone e notificações abrem o app com ?novo=1 ou ?acao=... (sem abertura, para ser rápido).

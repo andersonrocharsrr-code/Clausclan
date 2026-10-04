@@ -1,16 +1,16 @@
 {
   "id": "./",
-  "name": "Meus Gastos",
-  "short_name": "Meus Gastos",
-  "description": "Controle de gastos e entradas com orçamento, metas, calculadora automática e lembretes.",
+  "name": "Nexa Money",
+  "short_name": "Nexa Money",
+  "description": "Nexa Money: domine suas finanças — gastos, entradas, metas, cobranças e lembretes.",
   "lang": "pt-BR",
   "dir": "ltr",
   "start_url": "./?source=app",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#5b4cf0",
-  "theme_color": "#5b4cf0",
+  "background_color": "#07060d",
+  "theme_color": "#07060d",
   "categories": [
     "finance",
     "productivity"
