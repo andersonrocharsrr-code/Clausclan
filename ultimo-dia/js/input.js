@@ -12,7 +12,7 @@ function updateMoveFromKeys() {
   if (keys.has('KeyD') || keys.has('ArrowRight')) x++;
   if (keys.has('KeyW') || keys.has('ArrowUp')) y--;
   if (keys.has('KeyS') || keys.has('ArrowDown')) y++;
-  if (x || y || G.input.kbd) { const l = Math.hypot(x, y) || 1; G.input.mv = { x: x / l, y: y / l }; G.input.kbd = true; }
+  if (x || y || G.input.kbd) { const l = Math.hypot(x, y) || 1; G.input.smv = { x: x / l, y: y / l }; G.input.mv = screenDirToWorld(x / l, y / l); G.input.kbd = true; }
 }
 window.addEventListener('keydown', (e) => {
   if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
@@ -36,8 +36,8 @@ window.addEventListener('keydown', (e) => {
     case 'KeyR': reload(); break;
     case 'KeyF': UI.toggleLight(); break;
     case 'KeyZ': UI.sleepHere(); break;
-    case 'Equal': case 'NumpadAdd': G.zoom = Math.min(1.8, G.zoom * 1.12); break;
-    case 'Minus': case 'NumpadSubtract': G.zoom = Math.max(0.55, G.zoom / 1.12); break;
+    case 'Equal': case 'NumpadAdd': zoomBy(1.15); break;
+    case 'Minus': case 'NumpadSubtract': zoomBy(1 / 1.15); break;
   }
 });
 window.addEventListener('keyup', (e) => {
@@ -45,7 +45,7 @@ window.addEventListener('keyup', (e) => {
   if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') G.input.run = false;
   if (e.code === 'Space') G.input.attack = false;
   updateMoveFromKeys();
-  if (!keys.size && G.input.kbd) G.input.mv = { x: 0, y: 0 };
+  if (!keys.size && G.input.kbd) { G.input.mv = { x: 0, y: 0 }; G.input.smv = { x: 0, y: 0 }; }
 });
 window.addEventListener('blur', () => { keys.clear(); G.input.mv = { x: 0, y: 0 }; G.input.attack = false; G.input.run = false; });
 
@@ -59,7 +59,8 @@ cv.addEventListener('mousedown', (e) => {
 });
 window.addEventListener('mouseup', (e) => { if (e.button === 0) G.input.attack = false; });
 cv.addEventListener('contextmenu', (e) => e.preventDefault());
-cv.addEventListener('wheel', (e) => { G.zoom = clamp(G.zoom * (e.deltaY > 0 ? 0.9 : 1.1), 0.55, 1.8); e.preventDefault(); }, { passive: false });
+function zoomBy(f) { G.zoom = clamp(G.zoom * f, 0.45, 2.4); }
+cv.addEventListener('wheel', (e) => { zoomBy(e.deltaY > 0 ? 0.9 : 1.1); e.preventDefault(); }, { passive: false });
 
 /* ---------- joystick de toque ---------- */
 const joy = document.getElementById('joy'), knob = document.getElementById('joyKnob');
@@ -83,7 +84,7 @@ function joyMove(e) {
   if (l > JR) { dx *= JR / l; dy *= JR / l; }
   knob.style.transform = `translate(${dx}px, ${dy}px)`;
   const m = Math.min(1, l / JR);
-  G.input.mv = m < 0.15 ? { x: 0, y: 0 } : { x: (dx / (Math.hypot(dx, dy) || 1)) * m, y: (dy / (Math.hypot(dx, dy) || 1)) * m };
+  G.input.mv = m < 0.15 ? { x: 0, y: 0 } : screenDirToWorld((dx / (Math.hypot(dx, dy) || 1)) * m, (dy / (Math.hypot(dx, dy) || 1)) * m);
   // empurrar até a borda = correr
   G.input.runJoy = m > 0.97;
 }
@@ -92,10 +93,21 @@ function joyEnd(e) {
   joyId = null; G.input.mv = { x: 0, y: 0 }; G.input.runJoy = false;
   knob.style.transform = ''; joy.classList.remove('on');
 }
-cv.addEventListener('pointerdown', (e) => { if (e.pointerType !== 'mouse') joyStart(e); });
-window.addEventListener('pointermove', (e) => { if (e.pointerType !== 'mouse') joyMove(e); });
-window.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') joyEnd(e); });
-window.addEventListener('pointercancel', (e) => { if (e.pointerType !== 'mouse') joyEnd(e); });
+const pinch = new Map(); let pinchD = 0;
+function pinchDist() { const a = [...pinch.values()]; return a.length >= 2 ? Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y) : 0; }
+cv.addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'mouse') return;
+  if (e.clientX > VW * 0.5 || joyId !== null) { pinch.set(e.pointerId, { x: e.clientX, y: e.clientY }); pinchD = pinchDist(); if (pinch.size >= 2) return; }
+  joyStart(e);
+});
+window.addEventListener('pointermove', (e) => {
+  if (e.pointerType === 'mouse') return;
+  if (pinch.has(e.pointerId)) { pinch.set(e.pointerId, { x: e.clientX, y: e.clientY }); const d = pinchDist(); if (d && pinchD) { zoomBy(d / pinchD); pinchD = d; } return; }
+  joyMove(e);
+});
+const pEnd = (e) => { if (e.pointerType === 'mouse') return; pinch.delete(e.pointerId); pinchD = pinchDist(); joyEnd(e); };
+window.addEventListener('pointerup', pEnd);
+window.addEventListener('pointercancel', pEnd);
 
 /* ---------- botões da tela ---------- */
 function holdBtn(el, on, off) {
@@ -106,6 +118,6 @@ function holdBtn(el, on, off) {
 }
 function inputFrame() {
   // mira do mouse convertida para o mundo a cada quadro
-  G.input.aimAt = !touchMode && G.mouse && S && !S.player.inCar ? screenToWorld(G.mouse.x, G.mouse.y) : null;
+  G.input.aimAt = !touchMode && G.mouse && S && !S.player.inCar ? screenToWorld(G.mouse.x, G.mouse.y, 0.9) : null;
   if (touchMode) G.input.run = G.input.runToggle || G.input.runJoy;
 }

@@ -188,12 +188,12 @@ UI.openInventory = function () {
     if (!p.inv.length) h += '<p class="empty">Mochila vazia. Revire armários, geladeiras e corpos.</p>';
     for (const c of CAT_ORDER) {
       if (!groups[c]) continue;
-      h += `<h4>${CAT_LBL[c]}</h4><div class="items">`;
+      h += `<h4>${CAT_LBL[c]}</h4><div class="items"><div class="thead"><span class="ic"></span><span class="nm">Item</span><span class="ct">Categoria</span><span class="wt">Peso</span></div>`;
       for (const it of groups[c]) {
         const sl = equippedSlot(it), f = fresh(it);
         h += `<div class="item ${openItem === it ? 'open' : ''} ${f === 2 ? 'rot' : ''}">
           <button class="item__row" data-a="${UI.act(() => { openItem = openItem === it ? null : it; draw(); })}">
-            <span class="ic">${ITEMS[it.k].i}</span><span class="nm">${esc(itemName(it))}${sl ? ' <em class="tag">equipado</em>' : ''}</span><span class="wt">${fmtKg(itemW(it))}</span>
+            <span class="ic">${ITEMS[it.k].i}</span><span class="nm">${esc(itemName(it))}${sl ? ' <em class="tag">equipado</em>' : ''}</span><span class="ct">${CAT_LBL[ITEMS[it.k].cat] || ''}</span><span class="wt">${fmtKg(itemW(it))}</span>
           </button>
           ${openItem === it ? `<div class="item__acts">${itemActions(it).map(([l, fn]) => `<button data-a="${UI.act(fn)}">${esc(l)}</button>`).join('')}</div>` : ''}
         </div>`;
@@ -302,9 +302,9 @@ UI.openContainer = function (c) {
     const w = listW(list), pw = listW(p.inv), pc = capacity();
     let h = `<div class="cols"><section><h4>${esc(name)} <small>${fmtKg(w)}${cap < 900 ? ' / ' + fmtKg(cap) : ''}</small></h4>`;
     if (list.length) h += `<button class="all" data-a="${UI.act(() => { for (const it of list.slice()) { list.splice(list.indexOf(it), 1); giveItem(it); } sfx('pegar'); draw(); })}">Pegar tudo</button>`;
-    h += '<div class="items">' + (list.length ? list.map((it) => `<button class="item__row ${fresh(it) === 2 ? 'rot' : ''}" data-a="${UI.act(() => { list.splice(list.indexOf(it), 1); giveItem(it); sfx('pegar'); if (it.k === 'chave_carro' && !it.kid) assignKey(it, p.x, p.y); draw(); })}"><span class="ic">${ITEMS[it.k].i}</span><span class="nm">${esc(itemName(it))}</span><span class="wt">${fmtKg(itemW(it))} ›</span></button>`).join('') : '<p class="empty">Vazio.</p>') + '</div></section>';
+    h += '<div class="items">' + (list.length ? list.map((it) => `<button class="item__row ${fresh(it) === 2 ? 'rot' : ''}" data-a="${UI.act(() => { list.splice(list.indexOf(it), 1); giveItem(it); sfx('pegar'); if (it.k === 'chave_carro' && !it.kid) assignKey(it, p.x, p.y); draw(); })}"><span class="ic">${ITEMS[it.k].i}</span><span class="nm">${esc(itemName(it))}</span><span class="ct">${CAT_LBL[ITEMS[it.k].cat] || ''}</span><span class="wt">${fmtKg(itemW(it))} ›</span></button>`).join('') : '<p class="empty">Vazio.</p>') + '</div></section>';
     h += `<section><h4>Você <small class="${pw > pc ? 'over' : ''}">${fmtKg(pw)} / ${fmtKg(pc)}</small></h4><div class="items">`;
-    h += p.inv.map((it) => `<button class="item__row" data-a="${UI.act(() => { if (cap < 900 && listW(list) + itemW(it) > cap) return say('Não cabe.'); removeItem(it); addTo(list, it); draw(); })}"><span class="ic">${ITEMS[it.k].i}</span><span class="nm">${esc(itemName(it))}${equippedSlot(it) ? ' <em class="tag">eq.</em>' : ''}</span><span class="wt">‹ ${fmtKg(itemW(it))}</span></button>`).join('') + '</div></section></div>';
+    h += p.inv.map((it) => `<button class="item__row" data-a="${UI.act(() => { if (cap < 900 && listW(list) + itemW(it) > cap) return say('Não cabe.'); removeItem(it); addTo(list, it); draw(); })}"><span class="ic">${ITEMS[it.k].i}</span><span class="nm">${esc(itemName(it))}${equippedSlot(it) ? ' <em class="tag">eq.</em>' : ''}</span><span class="ct">${CAT_LBL[ITEMS[it.k].cat] || ''}</span><span class="wt">‹ ${fmtKg(itemW(it))}</span></button>`).join('') + '</div></section></div>';
     $('#panelBody').innerHTML = h;
   };
   UI.open('Saquear', '', { redraw: draw, cls: 'wide' });
@@ -377,8 +377,6 @@ UI.openMenu = function () {
     <button class="opt" data-a="${UI.act(() => UI.openHelp())}">❓ Como jogar</button>
     <button class="opt" data-a="${UI.act(() => { saveGame(); say('Jogo salvo.'); UI.closePanel(); })}">💾 Salvar agora</button>
     <button class="opt" data-a="${UI.act(() => UI.sleepHere())}">😴 Dormir no chão</button>
-    <button class="opt" data-a="${UI.act(() => { G.zoom = clamp(G.zoom * 1.15, 0.55, 1.8); })}">🔍 Aproximar</button>
-    <button class="opt" data-a="${UI.act(() => { G.zoom = clamp(G.zoom / 1.15, 0.55, 1.8); })}">🔭 Afastar</button>
     <button class="opt danger" data-a="${UI.act(() => { if (confirm('Desistir deste mundo? O progresso será apagado.')) { deleteSave(); location.reload(); } })}">☠️ Desistir e recomeçar</button>
   </div>`, { cls: 'small' });
 };
@@ -395,6 +393,7 @@ UI.openHelp = function () {
   UI.open('Como jogar', `<div class="help">
     <p><b>Objetivo:</b> sobreviver o máximo de dias. Não existe vitória — só quanto tempo você aguenta.</p>
     <p><b>Celular:</b> arraste o lado esquerdo para andar (até a borda = correr). Botões à direita: atacar, usar, correr, agachar, mochila e construir.</p>
+    <p><b>Câmera:</b> isométrica. Aproxime e afaste com dois dedos na metade direita da tela, com a roda do mouse, com + e − ou com os botões ＋ e −.</p>
     <p><b>Computador:</b> WASD anda · Shift corre · C agacha · mouse mira · clique ataca · E usa · I mochila · B constrói · M mapa · H saúde · R recarrega · F lanterna.</p>
     <p><b>Barulho atrai zumbis.</b> Tiros, carros, vidro quebrando, martelo e geradores chamam atenção. O anel branco mostra até onde o som foi.</p>
     <p><b>Saque:</b> chegue perto de armários, geladeiras e corpos e toque em Usar. Portas trancadas: pé de cabra ou quebre a janela (cuidado com os cacos).</p>
@@ -524,6 +523,8 @@ $('#btnInv').addEventListener('click', () => UI.openInventory());
 $('#btnBuild').addEventListener('click', () => UI.openBuild());
 $('#btnMap').addEventListener('click', () => UI.openMap());
 $('#btnMenu').addEventListener('click', () => UI.openMenu());
+$('#btnZoomIn').addEventListener('click', () => zoomBy(1.2));
+$('#btnZoomOut').addEventListener('click', () => zoomBy(1 / 1.2));
 $('#btnReload').addEventListener('click', () => reload());
 $('#btnLight').addEventListener('click', () => UI.toggleLight());
 $('#btnRun').addEventListener('click', () => { G.input.runToggle = !G.input.runToggle; if (G.input.runToggle) G.input.sneak = false; UI.refreshButtons(); });

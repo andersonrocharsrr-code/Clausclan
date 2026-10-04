@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <title>Último Dia</title>
   <meta name="description" content="Sobrevivência zumbi: explore a cidade, saqueie, construa, cuide dos ferimentos e aguente o máximo de dias.">
-  <meta name="theme-color" content="#121512">
+  <meta name="theme-color" content="#161614">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&family=Special+Elite&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;500;700&family=Roboto+Mono:wght@400;500&family=Special+Elite&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
   <canvas id="game"></canvas>
@@ -28,6 +28,10 @@
       <button id="btnMap" class="round" aria-label="Mapa">🗺️</button>
       <button id="btnLight" class="round" aria-label="Lanterna">🔦</button>
       <button id="btnMenu" class="round" aria-label="Menu">⋯</button>
+    </div>
+    <div class="zoom">
+      <button id="btnZoomIn" class="round" aria-label="Aproximar">＋</button>
+      <button id="btnZoomOut" class="round" aria-label="Afastar">－</button>
     </div>
     <div id="toasts" aria-live="polite"></div>
 
@@ -91,14 +95,15 @@
     </div>
   </div>
 
-  <script src="js/data.js?v=3"></script>
-  <script src="js/audio.js?v=3"></script>
-  <script src="js/world.js?v=3"></script>
-  <script src="js/sim.js?v=3"></script>
-  <script src="js/render.js?v=3"></script>
-  <script src="js/input.js?v=3"></script>
-  <script src="js/ui.js?v=3"></script>
-  <script src="js/main.js?v=3"></script>
+  <script src="js/data.js?v=5"></script>
+  <script src="js/audio.js?v=5"></script>
+  <script src="js/world.js?v=5"></script>
+  <script src="js/sim.js?v=5"></script>
+  <script src="js/art.js?v=5"></script>
+  <script src="js/render.js?v=5"></script>
+  <script src="js/input.js?v=5"></script>
+  <script src="js/ui.js?v=5"></script>
+  <script src="js/main.js?v=5"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
