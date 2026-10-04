@@ -1,13 +1,13 @@
-/* Último Dia — desenho: terreno em blocos cacheados, entidades, luz, clima e efeitos. */
+/* Último Dia — desenho: terreno em blocos cacheados, entidades, luz, clima e efeitos (a arte fica em art.js). */
 'use strict';
 
-const CH = 16; // tiles por bloco cacheado
+const CH = 12; // tiles por bloco cacheado
 const chunks = new Map();
 const cv = document.getElementById('game');
 const ctx = cv.getContext('2d');
 const lightCv = document.createElement('canvas');
 const lctx = lightCv.getContext('2d');
-let VW = 0, VH = 0, DPR = 1, Z = 32;
+let VW = 0, VH = 0, DPR = 1, Z = 32, RES = 1;
 G.cam = { x: 0, y: 0 }; G.zoom = 1;
 
 function resize() {
@@ -20,28 +20,23 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
-G.chunkDirty = (x, y) => { const k = Math.floor(x / CH) * 100 + Math.floor(y / CH); const c = chunks.get(k); if (c) c.dirty = 1; };
-G.chunkDirtyAll = () => { for (const c of chunks.values()) c.dirty = 1; };
-G.resetChunks = () => chunks.clear();
-
-/* ---------- cores ---------- */
-function hash(x, y) { let h = (x * 374761393 + y * 668265263) ^ (S.seed | 0); h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
-const TCOL = {
-  [TL.GRASS]: ['#5f8a45', '#638f48', '#5a8442', '#668f4a'], [TL.ROAD]: ['#3d4043', '#3f4245', '#3b3e41'], [TL.WALK]: ['#9a9a92', '#a09f97'],
-  [TL.DIRT]: ['#8a6b47', '#8f7049', '#866843'], [TL.WATER]: ['#2f6f9a', '#31739f'], [TL.SAND]: ['#d4c08a', '#cfbb85'], [TL.PARK]: ['#55585b', '#585b5e'],
-  [TL.BURNT]: ['#2d2a27', '#33302c', '#282522'], [TL.RUBBLE]: ['#5a5550', '#625c56'], [TL.FIELD]: ['#6e5236', '#735638'],
+G.chunkDirty = (x, y) => {
+  // o tile e os vizinhos (sombras, meio-fio e cantos dependem deles)
+  for (const [a, b] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) { const c = chunks.get(Math.floor((x + a) / CH) * 100 + Math.floor((y + b) / CH)); if (c) c.dirty = 1; }
 };
+G.chunkDirtyAll = () => { for (const c of chunks.values()) c.dirty = 1; };
+G.resetChunks = () => { chunks.clear(); G.resetRoofs(); };
 
 /* ---------- blocos de terreno ---------- */
 function getChunk(cx, cy) {
   const k = cx * 100 + cy;
   let c = chunks.get(k);
   if (!c) {
-    if (chunks.size > 24) { // descarta o mais antigo
+    if (chunks.size > 30) { // descarta o mais antigo
       let old = null, ot = 1e18; for (const [kk, cc] of chunks) if (cc.used < ot) { ot = cc.used; old = kk; }
       chunks.delete(old);
     }
-    const canvas = document.createElement('canvas'); canvas.width = canvas.height = CH * TILE;
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = Math.ceil(CH * TILE * RES);
     c = { canvas, ctx: canvas.getContext('2d'), dirty: 1, used: 0 };
     chunks.set(k, c);
   }
@@ -50,8 +45,7 @@ function getChunk(cx, cy) {
   return c;
 }
 function drawChunk(c, cx, cy) {
-  const g = c.ctx; g.clearRect(0, 0, CH * TILE, CH * TILE);
-  g.textAlign = 'center'; g.textBaseline = 'middle';
+  const g = c.ctx; g.setTransform(RES, 0, 0, RES, 0, 0); g.clearRect(0, 0, CH * TILE, CH * TILE);
   for (let ty = 0; ty < CH; ty++) for (let tx = 0; tx < CH; tx++) {
     const x = cx * CH + tx, y = cy * CH + ty; if (!inb(x, y)) continue;
     drawTile(g, x, y, tx * TILE, ty * TILE);
@@ -61,225 +55,6 @@ function drawChunk(c, cx, cy) {
     const o = S.objs[ix(x, y)]; if (o) drawObj(g, o, x, y, tx * TILE, ty * TILE);
   }
 }
-function floorCol(x, y) {
-  const b = bldAt(x, y); if (b < 0) return '#9a8a74';
-  return BTYPES[S.bld[b].t].floor;
-}
-function drawTile(g, x, y, px, py) {
-  const t = S.tiles[ix(x, y)], h = hash(x, y), T = TILE;
-  const base = (k) => { const a = TCOL[k]; g.fillStyle = a[Math.floor(h * a.length)]; g.fillRect(px, py, T, T); };
-  switch (t) {
-    case TL.GRASS: case TL.TREE: case TL.BUSH:
-      base(TL.GRASS);
-      if (h > 0.6) { g.fillStyle = 'rgba(40,70,30,.35)'; for (let k = 0; k < 3; k++) g.fillRect(px + ((h * 97 * (k + 1)) % 28), py + ((h * 53 * (k + 2)) % 28), 2, 4); }
-      if (h < 0.05) { g.fillStyle = '#e8d860'; g.fillRect(px + 10, py + 12, 3, 3); }
-      if (t === TL.TREE) {
-        g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(px + 18, py + 20, 15, 12, 0, 0, 7); g.fill();
-        g.fillStyle = h > 0.5 ? '#2f5a2c' : '#35632f'; g.beginPath(); g.arc(px + 16, py + 15, 15, 0, 7); g.fill();
-        g.fillStyle = h > 0.5 ? '#3d7337' : '#447b3a'; g.beginPath(); g.arc(px + 13, py + 12, 9, 0, 7); g.fill();
-      }
-      if (t === TL.BUSH) {
-        g.fillStyle = '#2f6a2f'; g.beginPath(); g.arc(px + 16, py + 17, 11, 0, 7); g.fill();
-        const s = S.ts[ix(x, y)]; if (!s || !s.f || S.time - s.f > 2880) { g.fillStyle = '#5a3a9a'; for (let k = 0; k < 5; k++) { g.beginPath(); g.arc(px + 9 + ((h * 131 * (k + 1)) % 14), py + 10 + ((h * 71 * (k + 3)) % 13), 2.2, 0, 7); g.fill(); } }
-      }
-      break;
-    case TL.ROAD: {
-      base(TL.ROAD);
-      const r = (a, b) => tileAt(a, b) === TL.ROAD;
-      g.fillStyle = '#d8b84a';
-      if (r(x, y - 1) && !r(x, y - 2) && !r(x, y + 1) && r(x - 1, y) && r(x + 1, y) && x % 2 === 0) g.fillRect(px + 4, py - 1, 16, 2);
-      if (r(x - 1, y) && !r(x - 2, y) && !r(x + 1, y) && r(x, y - 1) && r(x, y + 1) && y % 2 === 0) g.fillRect(px - 1, py + 4, 2, 16);
-      if (h < 0.08) { g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(px + 6, py + 8, 10, 6); }
-      break;
-    }
-    case TL.WALK: base(TL.WALK); g.strokeStyle = 'rgba(0,0,0,.12)'; g.strokeRect(px + 0.5, py + 0.5, T - 1, T - 1); break;
-    case TL.PARK: base(TL.PARK); if (x % 3 === 0) { g.fillStyle = 'rgba(255,255,255,.5)'; g.fillRect(px, py + 2, 2, 12); } break;
-    case TL.WATER: base(TL.WATER); g.fillStyle = 'rgba(255,255,255,.08)'; g.fillRect(px + (h * 20 | 0), py + 8 + (h * 14 | 0), 9, 2); break;
-    case TL.FIELD: {
-      base(TL.FIELD);
-      g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(px, py + 6, T, 3); g.fillRect(px, py + 22, T, 3);
-      const s = S.ts[ix(x, y)]; const cut = s && s.f && S.time - s.f < 5 * 1440;
-      g.fillStyle = cut ? '#7a8a3a' : '#5d9a3a';
-      for (const [a, b] of [[6, 4], [18, 4], [12, 20], [26, 20]]) { g.fillRect(px + a, py + b - (cut ? 0 : 6), 3, cut ? 4 : 12); if (!cut) { g.fillStyle = '#e0c040'; g.fillRect(px + a + 2, py + b - 2, 3, 5); g.fillStyle = '#5d9a3a'; } }
-      break;
-    }
-    case TL.SAND: base(TL.SAND); break;
-    case TL.DIRT: base(TL.DIRT); break;
-    case TL.BURNT: base(TL.BURNT); g.fillStyle = 'rgba(80,70,60,.4)'; g.fillRect(px + (h * 22 | 0), py + (h * 17 | 0), 6, 4); break;
-    case TL.RUBBLE: base(TL.RUBBLE); g.fillStyle = '#3a3633'; g.fillRect(px + 4, py + 6, 8, 6); g.fillRect(px + 18, py + 16, 9, 7); break;
-    case TL.FLOOR: case TL.TILEF: {
-      g.fillStyle = floorCol(x, y); g.fillRect(px, py, T, T);
-      const bt = bldAt(x, y) >= 0 ? S.bld[bldAt(x, y)].t : '';
-      g.fillStyle = 'rgba(0,0,0,.08)';
-      if (['casa', 'abandonada', 'fazenda', 'igreja', 'escola'].includes(bt)) { for (let k = 0; k < 4; k++) g.fillRect(px, py + k * 8 + ((x % 2) * 4), T, 1); }
-      else { g.fillRect(px, py, T, 1); g.fillRect(px, py, 1, T); }
-      if (bt === 'abandonada' && h < 0.3) { g.fillStyle = 'rgba(60,40,20,.3)'; g.fillRect(px + 5, py + 9, 12, 7); }
-      break;
-    }
-    case TL.WALL: drawWall(g, x, y, px, py); break;
-    case TL.DOOR: {
-      g.fillStyle = floorCol(x, y); g.fillRect(px, py, T, T);
-      const s = S.ts[ix(x, y)] || {};
-      const horiz = isWallish(x - 1, y) || isWallish(x + 1, y);
-      g.fillStyle = s.broken ? '#4a3626' : '#7a4f2c';
-      if (s.broken) { g.fillRect(px + 3, py + 13, 8, 3); g.fillRect(px + 18, py + 17, 9, 3); }
-      else if (s.open) { if (horiz) g.fillRect(px + 1, py + 1, 5, T - 2); else g.fillRect(px + 1, py + 1, T - 2, 5); }
-      else { if (horiz) { g.fillRect(px, py + 11, T, 10); g.fillStyle = '#d8b04a'; g.fillRect(px + 24, py + 15, 3, 3); } else { g.fillRect(px + 11, py, 10, T); g.fillStyle = '#d8b04a'; g.fillRect(px + 15, py + 24, 3, 3); } }
-      if (s.bar) drawPlanks(g, px, py, s.bar, horiz);
-      break;
-    }
-    case TL.WINDOW: {
-      drawWall(g, x, y, px, py);
-      const s = S.ts[ix(x, y)] || {};
-      const horiz = isWallish(x - 1, y) || isWallish(x + 1, y);
-      const [gx, gy, gw, gh] = horiz ? [px + 3, py + 11, T - 6, 10] : [px + 11, py + 3, 10, T - 6];
-      if (s.broken || s.open) { g.fillStyle = floorCol(x, y); g.fillRect(gx, gy, gw, gh); if (s.glass) { g.fillStyle = 'rgba(190,225,245,.8)'; g.fillRect(gx + 2, gy + 2, 3, 2); g.fillRect(gx + gw - 6, gy + gh - 4, 4, 2); } }
-      else { g.fillStyle = '#9cc7e0'; g.fillRect(gx, gy, gw, gh); g.fillStyle = 'rgba(255,255,255,.5)'; g.fillRect(gx + 2, gy + 2, horiz ? 6 : 3, horiz ? 3 : 6); }
-      if (s.bar) drawPlanks(g, px, py, s.bar, horiz);
-      break;
-    }
-  }
-}
-function isWallish(x, y) { const t = tileAt(x, y); return t === TL.WALL || t === TL.WINDOW || t === TL.DOOR; }
-function drawWall(g, x, y, px, py) {
-  const b = bldAt(x, y), roof = b >= 0 ? S.bld[b].roof : '#555';
-  g.fillStyle = '#2e2a28'; g.fillRect(px, py, TILE, TILE);
-  g.fillStyle = shade(roof, -0.25); g.fillRect(px + 2, py + 2, TILE - 4, TILE - 4);
-}
-function drawPlanks(g, px, py, n, horiz) {
-  g.fillStyle = '#a77a45'; g.strokeStyle = '#5a3e1e'; g.lineWidth = 1;
-  for (let k = 0; k < n; k++) {
-    g.save(); g.translate(px + 16, py + 16); g.rotate((horiz ? 0 : Math.PI / 2) + (k - 1) * 0.35);
-    g.fillRect(-17, -3.5, 34, 7); g.strokeRect(-17, -3.5, 34, 7); g.fillStyle = '#555'; g.fillRect(-13, -1, 2, 2); g.fillRect(11, -1, 2, 2); g.fillStyle = '#a77a45';
-    g.restore();
-  }
-}
-function shade(hex, f) {
-  const n = parseInt(hex.slice(1), 16); let r = n >> 16, gg = (n >> 8) & 255, b = n & 255;
-  if (f < 0) { r *= 1 + f; gg *= 1 + f; b *= 1 + f; } else { r += (255 - r) * f; gg += (255 - gg) * f; b += (255 - b) * f; }
-  return `rgb(${r | 0},${gg | 0},${b | 0})`;
-}
-function drawObj(g, o, x, y, px, py) {
-  const d = FURN[o.t]; if (!d) return;
-  const T = TILE;
-  switch (o.t) {
-    case 'cadaver': {
-      g.save(); g.translate(px + 16, py + 16); g.rotate(o.a || 0);
-      g.fillStyle = 'rgba(110,10,10,.55)'; g.beginPath(); g.ellipse(2, 3, 14, 10, 0, 0, 7); g.fill();
-      const s = o.big ? 1.3 : 1;
-      g.fillStyle = o.shirt || '#555'; g.fillRect(-9 * s, -5 * s, 14 * s, 10 * s);
-      g.fillStyle = '#7f8f72'; g.beginPath(); g.arc(9 * s, 0, 4.5 * s, 0, 7); g.fill();
-      g.fillRect(-14 * s, -4 * s, 6 * s, 3 * s); g.fillRect(-14 * s, 1 * s, 6 * s, 3 * s);
-      g.restore(); return;
-    }
-    case 'bolsa_chao': g.font = '16px sans-serif'; g.fillText('👜', px + 16, py + 17); return;
-    case 'horta': {
-      g.fillStyle = '#5a3e26'; g.fillRect(px + 2, py + 2, T - 4, T - 4);
-      g.fillStyle = 'rgba(0,0,0,.2)'; for (let k = 0; k < 3; k++) g.fillRect(px + 4, py + 7 + k * 8, T - 8, 2);
-      if (o.p) {
-        const pl = PLANTS[o.p], f = Math.min(1, o.g / pl.h);
-        g.fillStyle = o.rot ? '#6a5a3a' : '#4f9a3a';
-        for (const [a, b] of [[9, 9], [22, 9], [9, 22], [22, 22]]) { g.beginPath(); g.arc(px + a, py + b, 2 + f * 5, 0, 7); g.fill(); if (f >= 1 && !o.rot) { g.fillStyle = pl.col; g.beginPath(); g.arc(px + a + 2, py + b + 1, 2.6, 0, 7); g.fill(); g.fillStyle = '#4f9a3a'; } }
-      }
-      return;
-    }
-    case 'muro': case 'muro_metal':
-      g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(px + 2, py + 4, T, T);
-      g.fillStyle = d.col; g.fillRect(px, py, T, T);
-      g.fillStyle = 'rgba(0,0,0,.25)'; for (let k = 1; k < 4; k++) g.fillRect(px, py + k * 8, T, 1);
-      if (o.t === 'muro_metal') { g.fillStyle = '#9aa2a8'; g.fillRect(px + 3, py + 3, 4, 4); g.fillRect(px + 25, py + 25, 4, 4); }
-      return;
-    case 'cerca':
-      g.fillStyle = d.col; g.fillRect(px, py + 13, T, 3); g.fillRect(px, py + 21, T, 3);
-      g.fillStyle = '#6e4b2a'; g.fillRect(px + 3, py + 9, 4, 18); g.fillRect(px + 25, py + 9, 4, 18); return;
-    case 'portao':
-      g.fillStyle = d.col;
-      if (o.open) { g.fillRect(px, py, 5, T); g.fillStyle = '#c9a54a'; g.fillRect(px + 1, py + 14, 3, 4); }
-      else { g.fillRect(px, py + 6, T, 20); g.fillStyle = 'rgba(0,0,0,.25)'; for (let k = 1; k < 4; k++) g.fillRect(px + k * 8, py + 6, 1, 20); g.fillStyle = '#c9a54a'; g.fillRect(px + 14, py + 14, 4, 4); }
-      return;
-    case 'torre':
-      g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(px + 4, py + 6, T, T);
-      g.fillStyle = d.col; g.fillRect(px, py, 4, T); g.fillRect(px + T - 4, py, 4, T); g.fillRect(px, py, T, 4); g.fillRect(px, py + T - 4, T, 4);
-      g.strokeStyle = d.col; g.lineWidth = 2; g.beginPath(); g.moveTo(px, py); g.lineTo(px + T, py + T); g.moveTo(px + T, py); g.lineTo(px, py + T); g.stroke();
-      return;
-    case 'bomba':
-      g.fillStyle = '#c9c9c4'; g.fillRect(px + 4, py + 4, T - 8, T - 8);
-      g.fillStyle = d.col; g.fillRect(px + 8, py + 6, T - 16, T - 12); g.fillStyle = '#222'; g.fillRect(px + 11, py + 10, 10, 5);
-      return;
-    case 'arbusto': return;
-  }
-  // móveis genéricos
-  const inset = d.build ? 2 : 3;
-  g.fillStyle = 'rgba(0,0,0,.28)'; g.fillRect(px + inset + 2, py + inset + 3, T - inset * 2, T - inset * 2);
-  g.fillStyle = d.col; g.fillRect(px + inset, py + inset, T - inset * 2, T - inset * 2);
-  g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(px + inset, py + inset, T - inset * 2, 3);
-  if (d.bed) { g.fillStyle = '#eef0f2'; g.fillRect(px + inset + 2, py + inset + 2, 9, T - inset * 2 - 4); }
-  if (o.t === 'fogueira' && o.lit) { g.fillStyle = '#ff9a3a'; g.beginPath(); g.arc(px + 16, py + 16, 6, 0, 7); g.fill(); }
-  if (d.ic) { g.font = '15px sans-serif'; g.fillText(d.ic, px + 16, py + 17); }
-  if (d.cont && o.items && !o.items.length && !d.build) { g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(px + 22, py + 4, 6, 6); }
-}
-
-/* ---------- entidades ---------- */
-function drawHuman(x, y, a, o) {
-  const s = (o.scale || 1) * Z / TILE;
-  ctx.save(); ctx.translate(x, y);
-  ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(2 * s, 3 * s, 10 * s, 8 * s, 0, 0, 7); ctx.fill();
-  ctx.rotate(a);
-  if (o.down) {
-    ctx.fillStyle = o.body; ctx.fillRect(-12 * s, -6 * s, 18 * s, 12 * s);
-    ctx.fillStyle = o.skin; ctx.beginPath(); ctx.arc(10 * s, 0, 5.5 * s, 0, 7); ctx.fill();
-    ctx.restore(); return;
-  }
-  const sw = Math.sin(o.t || 0) * 3 * s;
-  // braços
-  ctx.fillStyle = o.skin;
-  if (o.zombie) { ctx.fillRect(2 * s, -9 * s + sw * 0.3, 11 * s, 3.5 * s); ctx.fillRect(2 * s, 5.5 * s - sw * 0.3, 11 * s, 3.5 * s); }
-  else { ctx.fillRect(-2 * s + sw, -10 * s, 7 * s, 3.5 * s); ctx.fillRect(-2 * s - sw, 6.5 * s, 7 * s, 3.5 * s); }
-  // corpo
-  ctx.fillStyle = o.body; ctx.beginPath(); ctx.ellipse(0, 0, 6.5 * s, 10 * s, 0, 0, 7); ctx.fill();
-  if (o.zombie) { ctx.fillStyle = 'rgba(90,10,10,.55)'; ctx.fillRect(-3 * s, -4 * s, 3 * s, 5 * s); }
-  // arma
-  if (o.weapon) {
-    ctx.fillStyle = o.gun ? '#222' : '#8a8a8a';
-    if (o.gun) ctx.fillRect(6 * s, 4 * s, 12 * s, 3 * s); else ctx.fillRect(4 * s, 6 * s, 13 * s, 2.5 * s);
-  }
-  // cabeça
-  ctx.fillStyle = o.skin; ctx.beginPath(); ctx.arc(1 * s, 0, 5.5 * s, 0, 7); ctx.fill();
-  ctx.fillStyle = o.hair || 'rgba(0,0,0,0)'; ctx.beginPath(); ctx.arc(-0.5 * s, 0, 5 * s, Math.PI * 0.5, Math.PI * 1.5); ctx.fill();
-  if (o.zombie && o.eyes) { ctx.fillStyle = o.eyes; ctx.fillRect(4 * s, -2.5 * s, 1.8 * s, 1.8 * s); ctx.fillRect(4 * s, 1 * s, 1.8 * s, 1.8 * s); }
-  ctx.restore();
-}
-function drawVehicle(v, sx, sy) {
-  const d = VT[v.t], s = Z;
-  ctx.save(); ctx.translate(sx, sy); ctx.rotate(v.a);
-  const L = d.len * s, W = d.wid * s;
-  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(-L / 2 + 3, -W / 2 + 4, L, W);
-  // pneus
-  ctx.fillStyle = '#151515';
-  const tw = Math.max(4, s * 0.22), th = Math.max(3, s * 0.12);
-  if (d.moto) { ctx.fillRect(L / 2 - tw, -th / 2, tw, th); ctx.fillRect(-L / 2, -th / 2, tw, th); }
-  else for (const [a, b] of [[0.32, -0.5], [0.32, 0.5], [-0.32, -0.5], [-0.32, 0.5]]) ctx.fillRect(a * L - tw / 2, b * W - th / 2, tw, th);
-  ctx.fillStyle = v.hp <= 0 ? '#3a3633' : v.col;
-  roundRect(-L / 2, -W / 2 + (d.moto ? W * 0.15 : 0), L, d.moto ? W * 0.7 : W, s * 0.18); ctx.fill();
-  if (!d.moto) {
-    ctx.fillStyle = v.t === 'caminhao' || v.t === 'caminhonete' || v.t === 'ambulancia' ? shade(v.col, -0.12) : shade(v.col, 0.12);
-    if (v.t === 'caminhonete') ctx.fillRect(-L / 2 + 3, -W / 2 + 3, L * 0.42, W - 6);
-    else if (v.t === 'caminhao') ctx.fillRect(-L / 2 + 2, -W / 2 + 2, L * 0.66, W - 4);
-    else ctx.fillRect(-L * 0.22, -W / 2 + 3, L * 0.42, W - 6);
-    ctx.fillStyle = v.hp < VT[v.t].hp * 0.3 ? '#6a7a80' : '#22313a';
-    const wx = v.t === 'caminhao' ? L * 0.2 : v.t === 'trator' ? -L * 0.05 : L * 0.12;
-    ctx.fillRect(wx, -W / 2 + 4, L * 0.12, W - 8);
-    if (v.t === 'ambulancia') { ctx.fillStyle = '#d33'; ctx.fillRect(-L * 0.18, -3, L * 0.16, 6); ctx.fillRect(-L * 0.18 + L * 0.05, -W * 0.3, L * 0.06, W * 0.6); }
-    if (VT[v.t].siren) { const on = v === S.player.inCar && v.on && Math.floor(performance.now() / 250) % 2; ctx.fillStyle = on ? '#4af' : '#246'; ctx.fillRect(-2, -W / 2 + 4, 5, W / 2 - 4); ctx.fillStyle = on ? '#246' : '#f44'; ctx.fillRect(-2, 0, 5, W / 2 - 4); }
-    if (v.t === 'trator') { ctx.fillStyle = '#111'; ctx.fillRect(-L / 2 - 2, -W / 2 - 3, L * 0.4, 5); ctx.fillRect(-L / 2 - 2, W / 2 - 2, L * 0.4, 5); }
-  } else { ctx.fillStyle = '#333'; ctx.fillRect(-L * 0.1, -W * 0.4, L * 0.25, W * 0.8); }
-  // faróis
-  ctx.fillStyle = v.lights || (v.on && daylight() < 0.5) ? '#fff7c0' : '#ccc';
-  ctx.fillRect(L / 2 - 3, -W / 2 + 2, 3, 4); ctx.fillRect(L / 2 - 3, W / 2 - 6, 3, 4);
-  ctx.fillStyle = '#a22'; ctx.fillRect(-L / 2, -W / 2 + 2, 2, 4); ctx.fillRect(-L / 2, W / 2 - 6, 2, 4);
-  ctx.restore();
-}
-function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
 /* ---------- quadro ---------- */
 const PROF_SHIRT = { policial: '#2f4a7a', carpinteiro: '#9a6a3a', mecanico: '#3a5a7a', enfermeira: '#5ab0a0', agricultor: '#7a8a3a', escoteiro: '#5a7a4a', desempregado: '#8a5a7a' };
@@ -287,6 +62,10 @@ let rainDrops = [];
 function render(now) {
   const p = S.player;
   Z = Math.max(18, Math.min(46, Math.min(VW, VH) / (touchMode ? 15 : 17))) * G.zoom;
+  // resolução dos blocos acompanha o zoom e a tela (nítido no celular)
+  const want = clamp(Math.round(Z * DPR / TILE * 2) / 2, 1, 2);
+  if (want !== RES) { RES = want; chunks.clear(); G.resetRoofs(); }
+  if (treeRes !== RES) buildTreeSprites(RES);
   const lead = p.inCar ? 1.2 : 0.4;
   const tx = p.x + Math.cos(p.a) * lead * (p.inCar ? Math.min(1, Math.abs(p.inCar.sp) / 4) : 0), ty = p.y + Math.sin(p.a) * lead * (p.inCar ? Math.min(1, Math.abs(p.inCar.sp) / 4) : 0);
   G.cam.x += (tx - G.cam.x) * 0.15; G.cam.y += (ty - G.cam.y) * 0.15;
@@ -297,7 +76,7 @@ function render(now) {
   const sx = (x) => x * Z + ox, sy = (y) => y * Z + oy;
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.fillStyle = '#0d0f0c'; ctx.fillRect(0, 0, VW, VH);
-  ctx.imageSmoothingEnabled = false;
+  ctx.imageSmoothingEnabled = true;
   const x0 = Math.floor((0 - ox) / Z) - 1, y0 = Math.floor((0 - oy) / Z) - 1, x1 = Math.ceil((VW - ox) / Z) + 1, y1 = Math.ceil((VH - oy) / Z) + 1;
   // terreno
   for (let cy = Math.floor(Math.max(0, y0) / CH); cy <= Math.floor(Math.min(MAP_H - 1, y1) / CH); cy++)
@@ -305,7 +84,6 @@ function render(now) {
       const c = getChunk(cx, cy);
       ctx.drawImage(c.canvas, Math.round(sx(cx * CH)), Math.round(sy(cy * CH)), Math.ceil(CH * Z) + 1, Math.ceil(CH * Z) + 1);
     }
-  ctx.imageSmoothingEnabled = true;
   // sangue
   for (const b of S.blood) {
     if (b[0] < x0 || b[0] > x1 || b[1] < y0 || b[1] > y1) continue;
@@ -318,6 +96,16 @@ function render(now) {
     ctx.fillStyle = err ? 'rgba(220,60,50,.35)' : 'rgba(90,220,120,.35)'; ctx.strokeStyle = err ? '#e55' : '#6e6';
     ctx.fillRect(sx(bx), sy(by), Z, Z); ctx.lineWidth = 2; ctx.strokeRect(sx(bx) + 1, sy(by) + 1, Z - 2, Z - 2);
   }
+  // árvores: sombras no chão (as copas vêm depois das pessoas)
+  const trees = [];
+  for (let yy = Math.max(0, y0 - 1); yy <= Math.min(MAP_H - 1, y1 + 1); yy++) for (let xx = Math.max(0, x0 - 1); xx <= Math.min(MAP_W - 1, x1 + 1); xx++) {
+    if (S.tiles[ix(xx, yy)] !== TL.TREE) continue;
+    const tr = treeAt(xx, yy); tr.x = xx + 0.5 + tr.ox; tr.y = yy + 0.5 + tr.oy; trees.push(tr);
+  }
+  ctx.fillStyle = 'rgba(8,20,8,.3)';
+  ctx.beginPath();
+  for (const tr of trees) { const ex = sx(tr.x + 0.3 * tr.s), ey = sy(tr.y + 0.35 * tr.s), rx = Z * 0.95 * tr.s; ctx.moveTo(ex + rx, ey); ctx.ellipse(ex, ey, rx, Z * 0.8 * tr.s, 0, 0, Math.PI * 2); }
+  ctx.fill();
   // veículos
   for (const v of S.vehs) {
     if (v.x < x0 - 2 || v.x > x1 + 2 || v.y < y0 - 2 || v.y > y1 + 2) continue;
@@ -338,31 +126,41 @@ function render(now) {
   for (const z of S.zs) {
     if (z.x < x0 || z.x > x1 || z.y < y0 || z.y > y1 || !seesAt(z.x, z.y)) continue;
     const d = ZT[z.t];
-    drawHuman(sx(z.x), sy(z.y), z.a, { zombie: 1, body: z.shirt, skin: d.col, hair: '#3a3a2a', down: z.down > 0, scale: z.t === 'brutamontes' ? 1.45 : 1, t: t * (d.spd * 4) + z.seed, eyes: z.t === 'corredor' ? '#ff3a2a' : z.st === 'chase' ? '#d0d090' : null });
+    drawHuman(sx(z.x), sy(z.y), z.a, { zombie: 1, body: z.shirt, skin: d.col, hair: z.seed % 3 ? HAIR[z.seed % HAIR.length] : null, down: z.down > 0, scale: z.t === 'brutamontes' ? 1.45 : 1, t: t * (d.spd * 4) + z.seed, eyes: z.t === 'corredor' ? '#ff3a2a' : z.st === 'chase' ? '#d0d090' : null });
   }
   // sobreviventes
   ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
   for (const n of S.npcs) {
     if (n.dead || n.away || n.inCar || !seesAt(n.x, n.y) || n.x < x0 || n.x > x1 || n.y < y0 || n.y > y1) continue;
     const w = n.wp && ITEMS[n.wp];
-    drawHuman(sx(n.x), sy(n.y), n.a, { body: NPC_KINDS[n.kind].col, skin: '#d9a77a', hair: '#3a2a1a', t: t * 6, weapon: !!w, gun: w && w.wp && w.wp.gun });
+    drawHuman(sx(n.x), sy(n.y), n.a, { body: NPC_KINDS[n.kind].col, skin: ['#d9a77a', '#a8754a', '#7a5032', '#e8c4a0'][n.id % 4], hair: HAIR[n.id % HAIR.length], t: t * 6, weapon: !!w, gun: w && w.wp && w.wp.gun, pack: n.kind === 'comerciante' ? '#6a5a3a' : null });
     if (dist(n.x, n.y, p.x, p.y) < 7) { ctx.font = `700 ${Math.max(10, Z * 0.32)}px Nunito, sans-serif`; ctx.fillStyle = n.hostile ? '#ff8a7a' : '#fff'; ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.lineWidth = 3; const lb = n.name + (n.st === 'seguir' ? ' ★' : ''); ctx.strokeText(lb, sx(n.x), sy(n.y) - Z * 0.45); ctx.fillText(lb, sx(n.x), sy(n.y) - Z * 0.45); }
   }
   // jogador
   if (!p.inCar) {
     const it = p.eq.mao;
-    drawHuman(sx(p.x), sy(p.y), p.a, { body: p.hitT > 0 ? '#c44' : PROF_SHIRT[p.prof] || '#556', skin: '#e0b08a', hair: '#2a1d14', t: G.input.moving ? t * (G.input.run ? 14 : 9) : 0, weapon: !!it, gun: it && ITEMS[it.k].wp && ITEMS[it.k].wp.gun, down: p.sleeping });
+    drawHuman(sx(p.x), sy(p.y), p.a, { body: p.hitT > 0 ? '#c44' : PROF_SHIRT[p.prof] || '#556', skin: '#e0b08a', hair: '#2a1d14', pack: p.eq.costas ? '#4a5a3a' : null, t: G.input.moving ? t * (G.input.run ? 14 : 9) : 0, weapon: !!it, gun: it && ITEMS[it.k].wp && ITEMS[it.k].wp.gun, down: p.sleeping });
   }
-  // telhados por cima do que não se vê
+  // telhados por cima do que não se vê (desenho do prédio inteiro, recortado por tile)
   const inB = bldAt(Math.floor(p.x), Math.floor(p.y));
-  for (let yy = Math.max(0, y0); yy <= Math.min(MAP_H - 1, y1); yy++) for (let xx = Math.max(0, x0); xx <= Math.min(MAP_W - 1, x1); xx++) {
-    const i = ix(xx, yy), b = S.room[i] - 1; if (b < 0 || b === inB) continue;
-    if (G.vis[i]) continue;
-    const tt = S.tiles[i]; if (tt === TL.BURNT || tt === TL.RUBBLE) continue;
-    const B = S.bld[b];
-    ctx.fillStyle = (xx + yy) % 2 ? B.roof : shade(B.roof, -0.06);
-    ctx.fillRect(sx(xx) - 0.5, sy(yy) - 0.5, Z + 1, Z + 1);
-    if (yy === B.y || xx === B.x || xx === B.x + B.w - 1 || yy === B.y + B.h - 1) { ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(sx(xx), sy(yy), Z, Z); }
+  const roofHere = (i) => { const b = S.room[i] - 1; if (b < 0 || b === inB) return -1; if (G.vis[i] && dist2(i % MAP_W + 0.5, Math.floor(i / MAP_W) + 0.5, p.x, p.y) < 49) return -1; const tt = S.tiles[i]; return tt === TL.BURNT || tt === TL.RUBBLE ? -1 : b; };
+  for (let yy = Math.max(0, y0); yy <= Math.min(MAP_H - 1, y1); yy++) {
+    let xx = Math.max(0, x0); const xe = Math.min(MAP_W - 1, x1);
+    while (xx <= xe) {
+      const b = roofHere(ix(xx, yy)); if (b < 0) { xx++; continue; }
+      let e = xx; while (e + 1 <= xe && roofHere(ix(e + 1, yy)) === b) e++;
+      const B = S.bld[b], rc = roofCanvas(b, RES), k = TILE * RES;
+      ctx.drawImage(rc, (xx - B.x) * k, (yy - B.y) * k, (e - xx + 1) * k, k, sx(xx) - 0.3, sy(yy) - 0.3, (e - xx + 1) * Z + 0.6, Z + 0.6);
+      xx = e + 1;
+    }
+  }
+  // copas das árvores (ficam transparentes quando o jogador passa embaixo)
+  for (const tr of trees) {
+    const spr = treeSprites[tr.k][tr.v], sz = Z * 2.4 * tr.s;
+    const near = dist2(tr.x, tr.y, p.x, p.y) < 1.6 * 1.6 && !p.inCar;
+    if (near) ctx.globalAlpha = 0.45;
+    ctx.drawImage(spr, sx(tr.x) - sz / 2, sy(tr.y) - sz / 2, sz, sz);
+    if (near) ctx.globalAlpha = 1;
   }
   // fogo
   for (const k of Object.keys(S.fires)) {
@@ -388,9 +186,9 @@ function render(now) {
   for (let yy = Math.max(0, y0); yy <= Math.min(MAP_H - 1, y1); yy++) {
     let run = -1;
     for (let xx = Math.max(0, x0); xx <= Math.min(MAP_W - 1, x1) + 1; xx++) {
-      const hidden = xx <= Math.min(MAP_W - 1, x1) && !G.vis[ix(xx, yy)];
+      const hidden = xx <= Math.min(MAP_W - 1, x1) && !G.vis[ix(xx, yy)] && roofHere(ix(xx, yy)) < 0;
       if (hidden && run < 0) run = xx;
-      if (!hidden && run >= 0) { ctx.fillRect(sx(run) - 0.5, sy(yy) - 0.5, (xx - run) * Z + 1, Z + 1); run = -1; }
+      if (!hidden && run >= 0) { const ya = Math.round(sy(yy)), xa = Math.round(sx(run)); ctx.fillRect(xa, ya, Math.round(sx(xx)) - xa, Math.round(sy(yy + 1)) - ya); run = -1; }
     }
   }
   // iluminação noturna
@@ -416,6 +214,16 @@ function render(now) {
       if (!((o.t === 'fogueira' && o.lit) || (o.t === 'gerador' && o.on))) continue;
       const i = +k, fx = i % MAP_W + 0.5, fy = Math.floor(i / MAP_W) + 0.5; if (fx > x0 - 12 && fx < x1 + 12 && fy > y0 - 12 && fy < y1 + 12) hole(sx(fx), sy(fy), Z * (o.t === 'gerador' ? 12 : 4), 0.85);
     }
+    // postes de rua (enquanto houver energia)
+    const lamps = [];
+    if (dl < 0.6 && gridPower()) {
+      const LM = lampMap();
+      for (let yy = Math.max(0, y0 - 3); yy <= Math.min(MAP_H - 1, y1 + 3); yy++) for (let xx = Math.max(0, x0 - 3); xx <= Math.min(MAP_W - 1, x1 + 3); xx++) {
+        if (!LM[ix(xx, yy)]) continue;
+        let dx = 0, dy = 0; for (const [a, b] of N4) if (tileAt(xx + a, yy + b) === TL.ROAD) { dx = a; dy = b; }
+        const lx = xx + 0.5 + dx * 0.375, ly = yy + 0.5 + dy * 0.375; lamps.push([lx, ly]); hole(sx(lx), sy(ly), Z * 3.8, 0.7);
+      }
+    }
     // casas com luz
     if (dl < 0.5) for (const [bi, B] of S.bld.entries()) {
       if (!B.lit || B.x > x1 || B.x + B.w < x0 || B.y > y1 || B.y + B.h < y0) continue;
@@ -423,6 +231,7 @@ function render(now) {
       lctx.fillStyle = 'rgba(0,0,0,.8)'; lctx.fillRect(sx(B.x) / 2, sy(B.y) / 2, B.w * Z / 2, B.h * Z / 2);
     }
     ctx.drawImage(lightCv, 0, 0, VW, VH);
+    for (const [lx, ly] of lamps) { const gr = ctx.createRadialGradient(sx(lx), sy(ly), 0, sx(lx), sy(ly), Z * 2.6); gr.addColorStop(0, 'rgba(255,214,140,.22)'); gr.addColorStop(1, 'rgba(255,214,140,0)'); ctx.fillStyle = gr; ctx.fillRect(sx(lx) - Z * 2.6, sy(ly) - Z * 2.6, Z * 5.2, Z * 5.2); }
     if (dl < 0.5) for (const B of S.bld) { if (!B.lit || B.x > x1 || B.x + B.w < x0 || B.y > y1 || B.y + B.h < y0 || !powered(B.x, B.y)) continue; ctx.fillStyle = 'rgba(255,200,110,.08)'; ctx.fillRect(sx(B.x), sy(B.y), B.w * Z, B.h * Z); }
   }
   // chuva
