@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="style.css?v=11">
+  <link rel="stylesheet" href="style.css?v=12">
   <!-- Garante ícones do tamanho certo mesmo antes do CSS carregar. -->
   <style>.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}</style>
 </head>
@@ -674,7 +674,28 @@
       <label>Referente a <input name="desc" maxlength="60" placeholder="Ex.: almoço, empréstimo, conta dividida"></label>
       <div class="form__row">
         <label>Data <input type="date" name="date" required></label>
-        <label>Combinado para (opcional) <input type="date" name="due"></label>
+        <label>Combinado para (opcional) <input type="date" name="due" id="debtDue"></label>
+      </div>
+      <div class="debt-notify" id="debtNotifyBox">
+        <label class="switch">
+          <input type="checkbox" name="notify" id="debtNotify">
+          <span class="switch__ui" aria-hidden="true"></span>
+          <span class="switch__text"><strong>Avisar no dia combinado</strong><small id="debtNotifyHint">Notificação com vibração no dia do pagamento</small></span>
+        </label>
+        <label class="debt-notify__time" id="debtTimeWrap" hidden>Horário do aviso <input type="time" name="notifyTime" value="09:00"></label>
+      </div>
+      <div class="msg-box">
+        <span class="label">Mensagem do WhatsApp</span>
+        <div class="chips" id="msgTemplates" role="group" aria-label="Modelos de mensagem"></div>
+        <textarea name="message" id="debtMsg" rows="4" maxlength="500" placeholder="Escreva a mensagem que será enviada"></textarea>
+        <div class="msg-vars" id="msgVars">
+          <span>Toque para inserir:</span>
+          <button type="button" data-var="{nome}">nome</button>
+          <button type="button" data-var="{valor}">valor</button>
+          <button type="button" data-var="{motivo}">motivo</button>
+          <button type="button" data-var="{data}">data</button>
+        </div>
+        <div class="msg-preview"><span class="label">Prévia</span><p id="debtMsgPreview"></p></div>
       </div>
       <footer class="form__foot">
         <button type="button" class="btn btn--danger-ghost" id="debtDelete" hidden>Excluir</button>
@@ -751,6 +772,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="app.js?v=11"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>
