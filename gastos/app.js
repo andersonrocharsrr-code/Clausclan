@@ -1992,32 +1992,59 @@
     renderCalc();
   }
 
-  // Teclas respondem no toque (pointerdown), sem esperar o "clique" — fica mais rápido e fluido.
+  // Teclas: o dedo encostando só marca a tecla; o valor entra ao SOLTAR em cima dela.
+  // Se o dedo se mover (para rolar a tela) ou o toque for cancelado, nada é digitado.
   const calcKeys = $('#calcKeys');
+  const MOVE_TOLERANCE = 10; // px que o dedo pode "tremer" sem cancelar o toque
+  let touch = null; // { b, id, x, y, repeated }
   let holdTimer = null;
   let holdRepeat = null;
   let lastPointer = 0;
   const stopHold = () => { clearTimeout(holdTimer); clearInterval(holdRepeat); holdTimer = holdRepeat = null; };
-  function flash(b) {
-    b.classList.add('is-pressed');
-    setTimeout(() => b.classList.remove('is-pressed'), 110);
-    if (navigator.vibrate) navigator.vibrate(6);
+  function endTouch() {
+    stopHold();
+    if (touch) touch.b.classList.remove('is-pressed');
+    touch = null;
   }
   calcKeys.addEventListener('pointerdown', (e) => {
     const b = e.target.closest('[data-k]');
     if (!b || e.button > 0) return;
-    e.preventDefault();
-    lastPointer = Date.now();
-    flash(b);
-    press(b.dataset.k);
-    // Segurar o ⌫ apaga em sequência.
+    endTouch();
+    touch = { b, id: e.pointerId, x: e.clientX, y: e.clientY, repeated: false };
+    b.classList.add('is-pressed');
+    // Segurar o ⌫ (sem mover o dedo) apaga em sequência.
     if (b.dataset.k === 'back') {
-      stopHold();
-      holdTimer = setTimeout(() => { holdRepeat = setInterval(() => (calc ? press('back') : stopHold()), 70); }, 380);
+      holdTimer = setTimeout(() => {
+        if (!touch || touch.b !== b) return;
+        touch.repeated = true;
+        press('back');
+        holdRepeat = setInterval(() => (calc ? press('back') : stopHold()), 70);
+      }, 450);
     }
   });
-  ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => calcKeys.addEventListener(ev, stopHold));
-  // Teclado / leitor de tela (Enter/Espaço). O "click" que o celular gera logo após o toque é ignorado,
+  calcKeys.addEventListener('pointermove', (e) => {
+    if (!touch || e.pointerId !== touch.id) return;
+    if (Math.hypot(e.clientX - touch.x, e.clientY - touch.y) > MOVE_TOLERANCE) endTouch();
+  });
+  calcKeys.addEventListener('pointerup', (e) => {
+    if (!touch || e.pointerId !== touch.id) return;
+    const { b, repeated, x, y } = touch;
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    const sameKey = under && under.closest('[data-k]') === b;
+    const still = Math.hypot(e.clientX - x, e.clientY - y) <= MOVE_TOLERANCE;
+    endTouch();
+    lastPointer = Date.now();
+    if (!sameKey || !still || repeated) return;
+    press(b.dataset.k);
+    b.classList.add('is-pressed');
+    setTimeout(() => b.classList.remove('is-pressed'), 90);
+    if (navigator.vibrate) navigator.vibrate(6);
+  });
+  // Rolagem da tela, outro dedo ou saída do botão cancelam o toque.
+  ['pointercancel', 'pointerleave'].forEach((ev) => calcKeys.addEventListener(ev, (e) => {
+    if (touch && e.pointerId === touch.id) endTouch();
+  }));
+  // Teclado / leitor de tela (Enter/Espaço). O "click" que o navegador gera logo após o toque é ignorado,
   // senão cada tecla contaria duas vezes.
   calcKeys.addEventListener('click', (e) => {
     const b = e.target.closest('[data-k]');
