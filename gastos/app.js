@@ -79,7 +79,7 @@
 
   function load() {
     const empty = {
-      expenses: [], reminders: [], budget: 0, theme: 'auto', calcHist: [],
+      expenses: [], reminders: [], budget: 0, theme: 'auto', themeV: 2, calcHist: [],
       catBudgets: {}, fixed: [], customCats: [], card: { close: 0, due: 0 }, goals: [], debts: [], notifyOn: true, notifyTested: false,
       privacy: false, pixKey: '', daily: { on: false, time: '21:00', last: '' },
     };
@@ -100,7 +100,12 @@
       expenses: Array.isArray(data.expenses) ? data.expenses : [],
       reminders: Array.isArray(data.reminders) ? data.reminders : [],
       budget: Number(data.budget) || 0,
-      theme: ['light', 'dark'].includes(data.theme) ? data.theme : (base.theme || 'auto'),
+      // v2: o tema "claro" salvo antes volta para "automático" uma vez. Com o celular no modo escuro,
+      // alguns navegadores escurecem o tema claro à força e as barras e gráficos somem.
+      theme: data.themeV === 2
+        ? (['light', 'dark'].includes(data.theme) ? data.theme : 'auto')
+        : (data.theme === 'dark' ? 'dark' : 'auto'),
+      themeV: 2,
       calcHist: Array.isArray(data.calcHist) ? data.calcHist.slice(0, 8) : (base.calcHist || []),
       catBudgets: obj(data.catBudgets),
       fixed: Array.isArray(data.fixed) ? data.fixed : [],
@@ -713,7 +718,7 @@
     const months = Array.from({ length: 6 }, (_, i) => shiftMonth(ui.month, i - 5));
     const data = months.map((k) => ({ k, out: sum(monthOut(k)), in: sum(monthIn(k)) }));
     const max = Math.max(1, ...data.map((d) => Math.max(d.out, d.in)));
-    const compact = (c) => (state.privacy ? '•••' : c >= 100000 ? `${num.format(Math.round(c / 100000) / 10)} mil` : money(c).replace(/,\d\d$/, ''));
+    const compact = (c) => (state.privacy ? '•••' : c >= 100000 ? `${num.format(Math.round(c / 10000) / 10)} mil` : money(c).replace(/,\d\d$/, ''));
     $('#compare').innerHTML = data.map((d) => `
       <div class="cmp${d.k === ui.month ? ' is-sel' : ''}" title="${cap(fmtMonth.format(monthDate(d.k)))}: saídas ${money(d.out)} · entradas ${money(d.in)}">
         <div class="cmp__bars">
@@ -3400,7 +3405,10 @@
     state.theme = { auto: 'light', light: 'dark', dark: 'auto' }[state.theme];
     applyTheme();
     save();
-    toast(`Tema ${THEME_LABEL[state.theme]}.`);
+    const sysDark = matchMedia('(prefers-color-scheme: dark)').matches;
+    toast(state.theme === 'light' && sysDark
+      ? 'Tema claro. Com o celular no modo escuro, o navegador pode escurecer as cores; use o automático para ver o tema escuro do app.'
+      : `Tema ${THEME_LABEL[state.theme]}.`);
   });
 
   /* ---------------- Menu ---------------- */
