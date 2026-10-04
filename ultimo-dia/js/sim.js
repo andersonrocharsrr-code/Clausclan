@@ -58,7 +58,7 @@ function float(x, y, text, col) { G.floats.push({ x, y, text, col: col || '#fff'
 function broadcast(msg) {
   S.radioLog.unshift({ t: S.time, msg }); S.radioLog.length = Math.min(S.radioLog.length, 30);
   const r = S.player.inv.find((i) => i.k === 'radio');
-  if (r && (r.c || 0) > 0) say('📻 ' + msg, 'radio');
+  if (r && (r.c || 0) > 0) { sfx('radio'); say('📻 ' + msg, 'radio'); }
 }
 function dirName(dx, dy) {
   const a = Math.atan2(dy, dx), n = ['leste', 'sudeste', 'sul', 'sudoeste', 'oeste', 'noroeste', 'norte', 'nordeste'];
@@ -89,7 +89,7 @@ const lvl = (k) => S.player.sk[k].l;
 function addXP(k, n) {
   const s = S.player.sk[k]; if (!s || s.l >= 5) return;
   s.xp += n * S.player.learn;
-  while (s.l < 5 && s.xp >= SKILL_XP[s.l + 1]) { s.l++; say(`${SKILLS[k].i} ${SKILLS[k].n} subiu para o nível ${s.l}!`, 'good'); }
+  while (s.l < 5 && s.xp >= SKILL_XP[s.l + 1]) { s.l++; sfx('nivel'); say(`${SKILLS[k].i} ${SKILLS[k].n} subiu para o nível ${s.l}!`, 'good'); }
 }
 
 /* ---------- inventário ---------- */
@@ -157,13 +157,14 @@ function eat(it) {
   if (chance(sick)) { p.sick = clamp(p.sick + 35, 0, 100); say('Isso não caiu bem...', 'bad'); }
   else if (f === 0 && (d.food.str || 0) < 0) say('Gostoso.');
   if (d.can && !hasTag('abridor')) {/* nunca chega aqui */}
+  sfx(d.cat === 'bebida' ? 'beber' : 'comer');
   removeItem(it);
   if (d.can && chance(0.5)) {/* lata vazia descartada */}
   return true;
 }
 function drinkFrom(it) {
   const p = S.player; if (!it.w) return false;
-  it.w--; p.thi = clamp(p.thi + 22, 0, 100);
+  it.w--; p.thi = clamp(p.thi + 22, 0, 100); sfx('beber');
   if (it.dirty && chance(0.55)) { p.sick = clamp(p.sick + 40, 0, 100); say('A água estava contaminada...', 'bad'); }
   if (it.w <= 0) it.dirty = 0;
   return true;
@@ -239,6 +240,7 @@ function nearFire(x, y, r = 3) {
   return false;
 }
 function hurtPlayer(dmg, cause) {
+  sfx('dor');
   const p = S.player; p.hp -= dmg; G.shake = Math.min(0.4, G.shake + dmg / 40); p.hitT = 0.3;
   if (p.sleeping) wake('Você acordou com dor!');
   if (p.action) cancelAction();
@@ -334,6 +336,7 @@ function updateAction(dt) {
   const p = S.player, a = p.action; if (!a) return;
   a.t += dt;
   if (a.noise) { a.nt -= dt; if (a.nt <= 0) { a.nt = 1.2; makeNoise(p.x, p.y, a.noise); } }
+  if (a.snd) { a.st = (a.st || 0) - dt; if (a.st <= 0) { a.st = a.snd === 'machado' ? 0.7 : 0.45; sfx(a.snd); } }
   if (a.t >= a.d) { p.action = null; a.fn(); G.interactCache = null; }
 }
 
@@ -397,6 +400,8 @@ function updatePlayer(dt) {
       if (s && s.glass && chance(0.4)) { addWound('vidro', { glass: 1 }); hurtPlayer(5, 'sangue'); say('Você se cortou nos cacos da janela!', 'bad'); }
     }
     // barulho dos passos
+    G.acc.step = (G.acc.step || 0) - dt;
+    if (G.acc.step <= 0) { G.acc.step = running ? 0.28 : G.input.sneak ? 0.6 : 0.42; sfx('passo', null, null, { run: running, grass: [TL.GRASS, TL.FIELD, TL.DIRT, TL.SAND].includes(tile), vol: G.input.sneak ? 0.35 : 1 }); }
     G.acc.noise -= dt;
     if (G.acc.noise <= 0) { G.acc.noise = 0.6; const r = running ? 7 : G.input.sneak ? 0 : 2.5 - lvl('furtividade') * 0.3; if (r > 0) makeNoise(p.x, p.y, r, false); if (G.input.sneak) addXP('furtividade', 0.15); }
     if (!running) p.sta = Math.min(100, p.sta + dt * 7);
@@ -438,7 +443,7 @@ function attack() {
   if (p.action) cancelAction();
   if (d && d.gun) {
     autoAim(d.range);
-    if (!it.a) { p.atkCd = 0.4; makeNoise(p.x, p.y, 2, false); say('Sem munição! Recarregue.'); G.input.attack = false; return; }
+    if (!it.a) { p.atkCd = 0.4; sfx('vazio'); makeNoise(p.x, p.y, 2, false); say('Sem munição! Recarregue.'); G.input.attack = false; return; }
     shoot(it, d);
     if (!d.auto) G.input.attack = false;
     return;
@@ -450,6 +455,7 @@ function attack() {
   const tired = p.sta < 15;
   p.atkCd = wp.cd * (tired ? 1.5 : 1) * (1 - sk * 0.04);
   p.sta = Math.max(0, p.sta - (6 + (it ? ITEMS[it.k].w * 3 : 0)) * (1 - sk * 0.06));
+  sfx('golpe');
   G.fx.push({ k: 'swing', x: p.x, y: p.y, a: p.a, r: wp.rng + 0.3, t: 0, d: 0.18 });
   const cands = targetsNear(p.x, p.y, wp.rng + 0.6).filter((z) => {
     const dd = dist(z.x, z.y, p.x, p.y); if (dd > wp.rng + (z.r || 0.3)) return false;
@@ -460,7 +466,7 @@ function attack() {
     const tx = Math.floor(p.x + Math.cos(p.a) * 0.9), ty = Math.floor(p.y + Math.sin(p.a) * 0.9);
     const t = tileAt(tx, ty), s = tsAt(tx, ty);
     if (t === TL.WINDOW && s && !s.broken && !s.bar && !s.open) { breakWindow(tx, ty); }
-    else if (t === TL.DOOR && s && !s.open && it) { s.hp -= wp.dmg * 0.6; makeNoise(tx + 0.5, ty + 0.5, 9); float(tx + 0.5, ty + 0.3, 'pou!', '#ddd'); if (s.hp <= 0) { s.open = 1; s.broken = 1; s.lock = 0; say('A porta cedeu.'); } }
+    else if (t === TL.DOOR && s && !s.open && it) { sfx('pancada', tx + 0.5, ty + 0.5); s.hp -= wp.dmg * 0.6; makeNoise(tx + 0.5, ty + 0.5, 9); float(tx + 0.5, ty + 0.3, 'pou!', '#ddd'); if (s.hp <= 0) { s.open = 1; s.broken = 1; s.lock = 0; say('A porta cedeu.'); } }
     return;
   }
   makeNoise(p.x, p.y, 4, false);
@@ -469,6 +475,7 @@ function attack() {
     if (z.down > 0) dmg *= 2;
     const crit = chance((wp.crit || 0) + sk * 0.03 + (z.st !== 'chase' ? 0.2 : 0));
     if (crit && !wp.shove) dmg *= 3;
+    sfx('acerto', z.x, z.y, { blade: !!(it && ITEMS[it.k].tags && ITEMS[it.k].tags.includes('corte')) });
     hitTarget(z, dmg, wp.kb * (1 + sk * 0.05), chance((wp.down || 0) + sk * 0.03), crit);
     if (it) {
       it.d -= chance(sk * 0.08) ? 0 : 1;
@@ -495,7 +502,7 @@ function hitTarget(z, dmg, kb, down, crit) {
 }
 function killZombie(z) {
   const i = S.zs.indexOf(z); if (i < 0) return;
-  S.zs.splice(i, 1); S.stats.kills++; S.player.kills++;
+  S.zs.splice(i, 1); S.stats.kills++; S.player.kills++; sfx('esmaga', z.x, z.y);
   addBlood(z.x, z.y, 3);
   addXP(S.player.eq.mao && ITEMS[S.player.eq.mao.k].wp && ITEMS[S.player.eq.mao.k].wp.gun ? 'tiro' : 'combate', 3);
   dropCorpse(z.x, z.y, rollLoot('zumbi'), z);
@@ -530,14 +537,14 @@ function addBlood(x, y, n) {
 }
 function breakWindow(x, y) {
   const s = tsAt(x, y); if (!s) return;
-  s.broken = 1; s.glass = 1; s.open = 0;
+  s.broken = 1; s.glass = 1; s.open = 0; sfx('vidro', x + 0.5, y + 0.5, { range: 35 });
   makeNoise(x + 0.5, y + 0.5, 11);
   float(x + 0.5, y + 0.3, 'CRASH', '#cfe8ff');
   G.chunkDirty(x, y);
 }
 function shoot(it, d) {
   const p = S.player, sk = lvl('tiro');
-  it.a--; p.atkCd = d.cd * (1 - sk * 0.05);
+  it.a--; p.atkCd = d.cd * (1 - sk * 0.05); sfx('tiro', null, null, { k: it.k });
   it.d -= 1; if (it.d <= 0) { say(`${ITEMS[it.k].n} emperrou de vez!`, 'bad'); removeItem(it); }
   makeNoise(p.x, p.y, d.noise);
   G.flash = 0.06; G.shake = Math.min(0.5, G.shake + (d.pel ? 0.25 : 0.12));
@@ -575,7 +582,9 @@ function reload() {
   if (it.a >= d.mag) return say('Arma já carregada.');
   const have = countItem(d.ammo); if (!have) return say(`Sem ${ITEMS[d.ammo].n.toLowerCase()}.`);
   const tm = (d.pel ? 0.5 * (d.mag - it.a) : 1.6) * (1 - lvl('tiro') * 0.08);
+  sfx('recarga');
   startAction('Recarregando', tm, () => {
+    sfx('recarga');
     const n = Math.min(d.mag - it.a, countItem(d.ammo)); takeItem(d.ammo, n); it.a += n; addXP('tiro', 0.5);
   }, { move: 1 });
 }
@@ -587,9 +596,10 @@ function throwMolotov(it) {
   let t = 1; const dx = Math.cos(p.a), dy = Math.sin(p.a);
   for (; t < 7; t += 0.2) if (isSolid(Math.floor(p.x + dx * t), Math.floor(p.y + dy * t))) { t -= 0.3; break; }
   const x = p.x + dx * t, y = p.y + dy * t;
+  sfx('arremesso');
   G.fx.push({ k: 'throw', x0: p.x, y0: p.y, x1: x, y1: y, t: 0, d: 0.35 });
   setTimeoutGame(0.35, () => {
-    makeNoise(x, y, 10);
+    makeNoise(x, y, 10); sfx('vidro', x, y); sfx('fogo', x, y);
     for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) if (a === 0 || b === 0 || chance(0.5)) igniteTile(Math.floor(x) + a, Math.floor(y) + b, true);
   });
   addXP('sobrevivencia', 1);
@@ -636,7 +646,7 @@ function updateFires(dt) {
 }
 function explode(x, y) {
   const o = S.objs[ix(x, y)]; if (o) delete S.objs[ix(x, y)];
-  makeNoise(x, y, 40); G.flash = 0.25; G.shake = 0.6;
+  makeNoise(x, y, 40); G.flash = 0.25; G.shake = 0.6; sfx('explosao', x, y, { range: 70 });
   for (let a = -2; a <= 2; a++) for (let b = -2; b <= 2; b++) igniteTile(x + a, y + b, true);
   const p = S.player; if (dist2(p.x, p.y, x, y) < 9) hurtPlayer(40, 'explosão');
   for (const z of S.zs.slice()) if (dist2(z.x, z.y, x, y) < 9) { z.hp -= 120; if (z.hp <= 0) killZombie(z); }
@@ -715,6 +725,7 @@ function hitObstacle(z, br) {
     else if (br.kind === 'win') { breakWindow(x, y); }
     else { s.hp -= dmg; if (s.hp <= 0) { s.open = 1; s.broken = 1; s.lock = 0; G.chunkDirty(x, y); if (dist2(x, y, S.player.x, S.player.y) < 400) say('Os zumbis arrombaram uma porta!', 'bad'); } }
   }
+  if (br.kind !== 'win' || S.ts[i].bar) sfx('pancada', x + 0.5, y + 0.5, { range: 25 });
   if (chance(0.5)) makeNoise(x + 0.5, y + 0.5, 6, false);
   G.fx.push({ k: 'bang', x: x + 0.5, y: y + 0.5, t: 0, d: 0.25 });
 }
@@ -739,6 +750,7 @@ function woundFromZombie(z, adj) {
   const k = r < 0.1 * (adj > 2 ? 1.8 : 1) ? 'mordida' : r < 0.42 ? 'corte' : 'arranhao';
   if (chance(protection() * (k === 'mordida' ? 0.8 : 1))) { float(p.x, p.y - 0.6, 'a roupa protegeu', '#cde'); hurtPlayer(2 * d.dmg, 'ferimentos'); return; }
   addWound(k);
+  sfx('mordida');
   const inf = { mordida: 1, corte: 0.25, arranhao: 0.07 }[k];
   if (chance(inf) && !p.knox) { p.knox = 1; p.knoxT = 0; }
   say(k === 'mordida' ? 'Você foi MORDIDO!' : k === 'corte' ? 'Um zumbi rasgou sua pele!' : 'Você levou um arranhão.', 'bad');
@@ -895,12 +907,12 @@ function startEngine() {
   const p = S.player, v = p.inCar; if (!v) return;
   if (v.on) { v.on = 0; return say('Motor desligado.'); }
   if (!hasKey(v)) return say('Sem a chave. Tente ligação direta (Mecânica 1 + chave de fenda).');
-  if (v.bat < 12) { makeNoise(v.x, v.y, 3); return say('Clic... clic... A bateria está fraca.', 'bad'); }
+  if (v.bat < 12) { sfx('clique'); makeNoise(v.x, v.y, 3); return say('Clic... clic... A bateria está fraca.', 'bad'); }
   v.bat -= 3;
   if (v.eng <= 0) return say('O motor está destruído.', 'bad');
-  if (v.fuel <= 0) { makeNoise(v.x, v.y, 6); return say('O motor gira mas não pega. Tanque vazio.', 'bad'); }
-  if (v.eng < 25 && chance(0.5)) { makeNoise(v.x, v.y, 8); return say('O motor engasgou. Tente de novo.'); }
-  v.on = 1; makeNoise(v.x, v.y, 10); say('Vrrrum! Motor ligado.', 'good');
+  if (v.fuel <= 0) { sfx('partida', null, null, { ok: false }); makeNoise(v.x, v.y, 6); return say('O motor gira mas não pega. Tanque vazio.', 'bad'); }
+  if (v.eng < 25 && chance(0.5)) { sfx('partida', null, null, { ok: false }); makeNoise(v.x, v.y, 8); return say('O motor engasgou. Tente de novo.'); }
+  v.on = 1; sfx('partida', null, null, { ok: true }); makeNoise(v.x, v.y, 10); say('Vrrrum! Motor ligado.', 'good');
 }
 function hotwire() {
   const p = S.player, v = p.inCar; if (!v) return;
@@ -941,7 +953,7 @@ function drive(dt) {
   if (vehHits(v, nx, ny)) {
     const s = Math.abs(v.sp);
     if (s > 3) {
-      v.hp -= s * 3; v.eng = Math.max(0, v.eng - s * 0.9); makeNoise(v.x, v.y, 12); G.shake = 0.4;
+      v.hp -= s * 3; v.eng = Math.max(0, v.eng - s * 0.9); makeNoise(v.x, v.y, 12); G.shake = 0.4; sfx('batida');
       say('Batida!', 'bad');
       if (s > 7.5) { hurtPlayer(s * 1.8, 'acidente'); if (chance(0.3) && !d.moto) addWound('fratura'); if (d.moto) addWound('corte'); }
     }
@@ -954,7 +966,7 @@ function drive(dt) {
     if (Math.abs(lx) < d.len / 2 + z.r && Math.abs(ly) < d.wid / 2 + z.r) {
       const sp = Math.abs(v.sp);
       if (sp > 1.6) {
-        z.hp -= sp * 11; z.down = 2.5; v.hp -= 2 * (d.strong ? 0.3 : 1); v.sp *= d.strong ? 0.97 : 0.85; addBlood(z.x, z.y, 2);
+        sfx('pancada', z.x, z.y); z.hp -= sp * 11; z.down = 2.5; v.hp -= 2 * (d.strong ? 0.3 : 1); v.sp *= d.strong ? 0.97 : 0.85; addBlood(z.x, z.y, 2);
         if (z.hp <= 0) killZombie(z);
       }
       const push = Math.sign(ly || 1) * 0.12; moveEnt(z, -Math.sin(v.a) * push, Math.cos(v.a) * push, 'climb');
@@ -986,7 +998,7 @@ function vehHits(v, x, y) {
 }
 function updateVehicles(dt) {
   for (const v of S.vehs) {
-    if (v.alarmT > 0) { v.alarmT -= dt; v.an = (v.an || 0) - dt; if (v.an <= 0) { v.an = 2; makeNoise(v.x, v.y, 28); } }
+    if (v.alarmT > 0) { v.alarmT -= dt; v.an = (v.an || 0) - dt; if (v.an <= 0) { v.an = 1; makeNoise(v.x, v.y, 28); sfx('alarme', v.x, v.y, { range: 45 }); } }
     if (v !== S.player.inCar && v.on) { v.fuel = Math.max(0, v.fuel - 0.0015 * dt); if (v.fuel <= 0) v.on = 0; }
   }
 }
@@ -1013,11 +1025,12 @@ function npcAttack(n, target) {
   n.cd = n.wp && ITEMS[n.wp] && ITEMS[n.wp].wp && ITEMS[n.wp].wp.gun ? 1.4 : 1.0;
   const gun = n.wp && ITEMS[n.wp].wp && ITEMS[n.wp].wp.gun;
   if (gun) {
-    makeNoise(n.x, n.y, ITEMS[n.wp].wp.noise);
+    makeNoise(n.x, n.y, ITEMS[n.wp].wp.noise); sfx('tiro', n.x, n.y, { k: n.wp, range: 60 });
     G.tracers.push({ x0: n.x, y0: n.y, x1: target.x + rnd(-0.4, 0.4), y1: target.y + rnd(-0.4, 0.4), t: 0.07 });
     n.ammo--;
     if (!chance(target === S.player ? 0.42 : 0.6)) return;
   } else if (dist(n.x, n.y, target.x, target.y) > 1.1) return;
+  else sfx('acerto', target.x, target.y);
   if (target === S.player) {
     if (S.player.inCar) { S.player.inCar.hp -= 8; return; }
     const k = gun ? 'tiro' : chance(0.6) ? 'corte' : 'arranhao';
@@ -1270,11 +1283,11 @@ function tileOpts(x, y) {
   if (t === TL.DOOR) {
     if (s.bar) { if (tool) o.push({ l: `Remover barricada (${s.bar})`, fn: () => unbar(x, y) }); }
     else if (s.broken) o.push({ l: 'Porta arrombada', fn: () => {} });
-    else if (s.open) o.push({ l: 'Fechar porta', fn: () => { if (blockedEntityAt(x, y)) return say('Tem algo no caminho.'); s.open = 0; makeNoise(x + 0.5, y + 0.5, 3, false); G.chunkDirty(x, y); } });
+    else if (s.open) o.push({ l: 'Fechar porta', fn: () => { if (blockedEntityAt(x, y)) return say('Tem algo no caminho.'); s.open = 0; sfx('porta', x + 0.5, y + 0.5, { close: 1 }); makeNoise(x + 0.5, y + 0.5, 3, false); G.chunkDirty(x, y); } });
     else if (s.lock) {
       o.push({ l: 'Porta trancada', fn: () => say('Trancada. Arrombe com um pé de cabra, ou entre pela janela.') });
-      if (hasTag('alavanca')) o.push({ l: 'Arrombar com pé de cabra', fn: () => startAction('Arrombando', 3.5, () => { s.lock = 0; s.open = 1; makeNoise(x + 0.5, y + 0.5, 8); G.chunkDirty(x, y); say('Porta aberta.'); }, { noise: 4 }) });
-    } else o.push({ l: 'Abrir porta', fn: () => { s.open = 1; makeNoise(x + 0.5, y + 0.5, 3, false); G.chunkDirty(x, y); } });
+      if (hasTag('alavanca')) o.push({ l: 'Arrombar com pé de cabra', fn: () => startAction('Arrombando', 3.5, () => { s.lock = 0; s.open = 1; makeNoise(x + 0.5, y + 0.5, 8); G.chunkDirty(x, y); say('Porta aberta.'); }, { noise: 4, snd: 'pancada' }) });
+    } else o.push({ l: 'Abrir porta', fn: () => { s.open = 1; sfx('porta', x + 0.5, y + 0.5); makeNoise(x + 0.5, y + 0.5, 3, false); G.chunkDirty(x, y); } });
   } else if (t === TL.WINDOW) {
     if (s.bar) { if (tool) o.push({ l: `Remover barricada (${s.bar})`, fn: () => unbar(x, y) }); else o.push({ l: 'Janela com barricada', fn: () => say('Preciso de martelo ou pé de cabra para tirar as tábuas.') }); }
     else if (s.broken) {
@@ -1294,14 +1307,14 @@ function blockedEntityAt(x, y) {
 }
 function unbar(x, y) {
   const s = tsAt(x, y);
-  startAction('Removendo tábuas', 3, () => { s.bar--; s.bhp = s.bar ? 80 : 0; giveItem(newItem('tabua', { q: chance(0.6) ? 2 : 1 })); if (chance(0.5)) giveItem(newItem('prego', { q: 2 })); G.chunkDirty(x, y); }, { noise: 5 });
+  startAction('Removendo tábuas', 3, () => { s.bar--; s.bhp = s.bar ? 80 : 0; giveItem(newItem('tabua', { q: chance(0.6) ? 2 : 1 })); if (chance(0.5)) giveItem(newItem('prego', { q: 2 })); G.chunkDirty(x, y); }, { noise: 5, snd: 'martelo' });
 }
 function objOpts(o, x, y) {
   const d = FURN[o.t], p = S.player, out = [];
   if (d.cont) out.push({ l: o.t === 'cadaver' ? 'Revistar corpo' : o.t === 'bolsa_chao' ? 'Ver itens' : `Abrir ${d.n.toLowerCase()}`, fn: () => G.onContainer && G.onContainer({ o, x, y }) });
   if (d.bed) out.push({ l: 'Dormir', fn: () => startSleep(d.bed) });
   if (d.water) {
-    if (waterOn()) { out.push({ l: 'Beber da torneira', fn: () => { p.thi = 100; say('Água fresca.'); } }); out.push({ l: 'Encher garrafas', fn: () => fillBottles(false) }); }
+    if (waterOn()) { out.push({ l: 'Beber da torneira', fn: () => { p.thi = 100; sfx('beber'); say('Água fresca.'); } }); out.push({ l: 'Encher garrafas', fn: () => fillBottles(false) }); }
     else out.push({ l: 'Torneira seca', fn: () => say('A água foi cortada. Procure rios, chuva ou garrafas.') });
   }
   if (d.stove) {
@@ -1326,7 +1339,7 @@ function objOpts(o, x, y) {
     out.push({ l: 'Encher garrafas', fn: () => { let n = 0; for (const it of p.inv) if (it.k === 'garrafa' || it.k === 'regador') while ((it.w || 0) < ITEMS[it.k].water && o.water >= 1) { it.w = (it.w || 0) + 1; it.dirty = 0; o.water--; n++; } say(n ? 'Garrafas cheias.' : 'Sem água ou sem garrafas.'); } });
   }
   if (d.bench) out.push({ l: 'Usar bancada', fn: () => G.onCraft && G.onCraft(true) });
-  if (d.gate) out.push({ l: o.open ? 'Fechar portão' : 'Abrir portão', fn: () => { if (o.open && blockedEntityAt(x, y)) return say('Tem algo no caminho.'); o.open = o.open ? 0 : 1; makeNoise(x + 0.5, y + 0.5, 3, false); G.chunkDirty(x, y); } });
+  if (d.gate) out.push({ l: o.open ? 'Fechar portão' : 'Abrir portão', fn: () => { if (o.open && blockedEntityAt(x, y)) return say('Tem algo no caminho.'); o.open = o.open ? 0 : 1; sfx('porta', x + 0.5, y + 0.5, { close: !o.open }); makeNoise(x + 0.5, y + 0.5, 3, false); G.chunkDirty(x, y); } });
   if (d.tower) out.push({ l: 'Subir na torre', fn: () => { p.x = x + 0.5; p.y = y + 0.5; say('Lá de cima dá para ver longe.'); } });
   // desmontar
   if (!['cadaver', 'bolsa_chao', 'bomba', 'arbusto'].includes(o.t) && (d.wood || d.scrap || d.cloth)) {
@@ -1348,7 +1361,7 @@ function dismantle(o, x, y) {
     if (o.t === 'gerador') giveItem(newItem('gerador'));
     addXP('carpintaria', 3); G.chunkDirty(x, y);
     say('Desmontado: ' + (got.join(', ') || 'nada útil') + '.');
-  }, { noise: 7 });
+  }, { noise: 7, snd: 'martelo' });
 }
 function vehOpts(v) {
   const out = [{ l: 'Entrar', fn: () => enterVehicle(v) }, { l: 'Porta-malas', fn: () => G.onContainer && G.onContainer({ v }) }, { l: 'Mecânica e peças', fn: () => G.onVehicle && G.onVehicle(v) }];
@@ -1359,8 +1372,8 @@ function carOpts(v) {
   out.push({ l: v.on ? 'Desligar motor' : 'Ligar motor', fn: startEngine });
   if (!hasKey(v)) out.push({ l: 'Ligação direta', fn: hotwire });
   out.push({ l: v.lights ? 'Apagar faróis' : 'Acender faróis', fn: () => { v.lights = v.lights ? 0 : 1; } });
-  if (VT[v.t].siren) out.push({ l: 'Ligar sirene (atrai zumbis!)', fn: () => { makeNoise(v.x, v.y, 45); say('UIIIUUUIII!'); } });
-  out.push({ l: 'Buzinar', fn: () => { makeNoise(v.x, v.y, 22); say('BIIIP!'); } });
+  if (VT[v.t].siren) out.push({ l: 'Ligar sirene (atrai zumbis!)', fn: () => { makeNoise(v.x, v.y, 45); sfx('sirene'); say('UIIIUUUIII!'); } });
+  out.push({ l: 'Buzinar', fn: () => { makeNoise(v.x, v.y, 22); sfx('buzina'); say('BIIIP!'); } });
   out.push({ l: 'Sair', fn: exitVehicle });
   return out;
 }
@@ -1372,7 +1385,7 @@ function chop(x, y) {
     const q = rint(1, 2); giveItem(newItem('tronco', { q })); addXP('sobrevivencia', 3); addXP('carpintaria', 1);
     const ax = hasTag('machado'); if (ax && ax.d != null) { ax.d -= 2; if (ax.d <= 0) { say('O machado quebrou!', 'bad'); removeItem(ax); } }
     say(`+${q} tronco(s). Use um serrote para virar tábuas.`);
-  }, { noise: 9 });
+  }, { noise: 9, snd: 'machado' });
 }
 function forage(x, y) {
   const i = ix(x, y); const s = S.ts[i] || (S.ts[i] = {});
@@ -1500,7 +1513,7 @@ function build(r) {
     }
     addXP(r.sk[0], 4 + r.t * 0.6); S.stats.made++;
     G.chunkDirty(x, y); say(`${r.n}: pronto!`, 'good');
-  }, { noise: r.noise });
+  }, { noise: r.noise, snd: r.k === 'horta' ? 'machado' : 'martelo' });
 }
 function craft(c) {
   for (const t of c.tools) if (!hasTag(t)) return say(`Falta ferramenta: ${toolName(t)}.`);
@@ -1513,6 +1526,7 @@ function craft(c) {
   if (galao) galao.f -= c.fuel;
   const [k, q] = c.out;
   if (ITEMS[k].st) giveItem(newItem(k, { q })); else for (let n = 0; n < q; n++) giveItem(newItem(k, c.empty ? { w: 0 } : { d: ITEMS[k].wp ? ITEMS[k].wp.dur : undefined }));
+  sfx(c.k === 'tabuas' ? 'serra' : 'pegar');
   if (c.sk) addXP(c.sk, c.xp || 2);
   say(`Feito: ${ITEMS[k].n}.`, 'good');
 }
@@ -1789,7 +1803,7 @@ function step(dt) {
   S.rain += (rainT - S.rain) * Math.min(1, dt * 0.05); S.fog += (fogT - S.fog) * Math.min(1, dt * 0.05);
   if (rk === 'tempestade' && chance(dt * 0.02)) {
     G.flash = 0.18; const a = rnd(0, 6.28), x = p.x + Math.cos(a) * rnd(10, 30), y = p.y + Math.sin(a) * rnd(10, 30);
-    makeNoise(x, y, 16, false);
+    makeNoise(x, y, 16, false); setTimeoutGame(rnd(0.2, 1.2), () => sfx('trovao'));
     if (chance(0.06)) igniteTile(Math.floor(x), Math.floor(y));
   }
   for (let k = timers.length - 1; k >= 0; k--) { timers[k].t -= dt; if (timers[k].t <= 0) { const f = timers[k].fn; timers.splice(k, 1); f(); } }

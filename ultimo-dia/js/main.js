@@ -12,6 +12,7 @@ function frame(now) {
     }
     visT -= dt; if (visT <= 0) { visT = 0.08; computeVis(); }
     updateFx(dt);
+    audioFrame(dt);
     render(now);
     UI.hud(dt);
     saveT += dt; if (saveT > 30) { saveT = 0; saveGame(); }

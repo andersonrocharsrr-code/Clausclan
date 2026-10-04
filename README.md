@@ -144,4 +144,8 @@ Abra `ultimo-dia/index.html` por um servidor (GitHub Pages, ou `python3 -m http.
 - **Sobreviventes**: comerciantes (troca com crédito), famílias que pedem remédios e depois aparecem na sua base
   pedindo para entrar, sobreviventes que podem entrar no grupo, pedidos de socorro e saqueadores que assaltam você
   e atacam a base.
+- **Som**: todos os efeitos são sintetizados na hora (Web Audio, sem arquivos): tiros diferentes por arma, golpes,
+  vidro quebrando, portas, gemidos dos zumbis com direção e distância, passos, martelo, machado, motor que acelera,
+  batidas, buzina, sirene, alarme, trovão, chuva, vento, fogo, gerador, grilos à noite e coração quando a saúde
+  está baixa. Liga/desliga no menu ⋯.
 - O jogo salva sozinho no aparelho. A morte é permanente.

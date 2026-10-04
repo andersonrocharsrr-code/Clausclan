@@ -23,7 +23,6 @@ G.onSay = (msg, kind) => {
 
 /* ---------- painel genérico ---------- */
 UI.open = function (title, html, opts = {}) {
-  this.acts = {}; this.aid = 0;
   const p = $('#panel');
   $('#panelTitle').innerHTML = title;
   $('#panelTabs').innerHTML = opts.tabs ? opts.tabs.map((t) => `<button class="ptab ${t.on ? 'on' : ''}" data-a="${this.act(t.fn)}">${t.l}</button>`).join('') : '';
@@ -34,12 +33,12 @@ UI.open = function (title, html, opts = {}) {
 };
 UI.redraw = function () { if (this.cur && this.panelOpen()) this.cur(); };
 UI.closePanel = function () {
-  $('#panel').hidden = true; this.cur = null; G.paused = false;
+  $('#panel').hidden = true; this.cur = null; G.paused = false; this.acts = {};
   if (this.onClose) { const f = this.onClose; this.onClose = null; f(); }
 };
 $('#panel').addEventListener('click', (e) => {
   const b = e.target.closest('[data-a]');
-  if (b) { const f = UI.acts[b.dataset.a]; if (f) { f(b); } return; }
+  if (b) { const f = UI.acts[b.dataset.a]; if (f) { sfx('ui'); f(b); } return; }
   if (e.target.closest('[data-close]') || e.target.classList.contains('panel__backdrop')) UI.closePanel();
 });
 
@@ -302,8 +301,8 @@ UI.openContainer = function (c) {
   const draw = () => {
     const w = listW(list), pw = listW(p.inv), pc = capacity();
     let h = `<div class="cols"><section><h4>${esc(name)} <small>${fmtKg(w)}${cap < 900 ? ' / ' + fmtKg(cap) : ''}</small></h4>`;
-    if (list.length) h += `<button class="all" data-a="${UI.act(() => { for (const it of list.slice()) { list.splice(list.indexOf(it), 1); giveItem(it); } draw(); })}">Pegar tudo</button>`;
-    h += '<div class="items">' + (list.length ? list.map((it) => `<button class="item__row ${fresh(it) === 2 ? 'rot' : ''}" data-a="${UI.act(() => { list.splice(list.indexOf(it), 1); giveItem(it); if (it.k === 'chave_carro' && !it.kid) assignKey(it, p.x, p.y); draw(); })}"><span class="ic">${ITEMS[it.k].i}</span><span class="nm">${esc(itemName(it))}</span><span class="wt">${fmtKg(itemW(it))} ›</span></button>`).join('') : '<p class="empty">Vazio.</p>') + '</div></section>';
+    if (list.length) h += `<button class="all" data-a="${UI.act(() => { for (const it of list.slice()) { list.splice(list.indexOf(it), 1); giveItem(it); } sfx('pegar'); draw(); })}">Pegar tudo</button>`;
+    h += '<div class="items">' + (list.length ? list.map((it) => `<button class="item__row ${fresh(it) === 2 ? 'rot' : ''}" data-a="${UI.act(() => { list.splice(list.indexOf(it), 1); giveItem(it); sfx('pegar'); if (it.k === 'chave_carro' && !it.kid) assignKey(it, p.x, p.y); draw(); })}"><span class="ic">${ITEMS[it.k].i}</span><span class="nm">${esc(itemName(it))}</span><span class="wt">${fmtKg(itemW(it))} ›</span></button>`).join('') : '<p class="empty">Vazio.</p>') + '</div></section>';
     h += `<section><h4>Você <small class="${pw > pc ? 'over' : ''}">${fmtKg(pw)} / ${fmtKg(pc)}</small></h4><div class="items">`;
     h += p.inv.map((it) => `<button class="item__row" data-a="${UI.act(() => { if (cap < 900 && listW(list) + itemW(it) > cap) return say('Não cabe.'); removeItem(it); addTo(list, it); draw(); })}"><span class="ic">${ITEMS[it.k].i}</span><span class="nm">${esc(itemName(it))}${equippedSlot(it) ? ' <em class="tag">eq.</em>' : ''}</span><span class="wt">‹ ${fmtKg(itemW(it))}</span></button>`).join('') + '</div></section></div>';
     $('#panelBody').innerHTML = h;
@@ -374,6 +373,7 @@ UI.openRadio = function () {
 UI.openMenu = function () {
   UI.open('Pausa', `<div class="opts">
     <button class="opt" data-a="${UI.act(() => UI.closePanel())}">▶ Continuar</button>
+    <button class="opt" data-a="${UI.act(() => { SOUND.unlock(); SOUND.setOn(!SOUND.on); UI.openMenu(); })}">${SOUND.on ? '🔊 Som: ligado' : '🔇 Som: desligado'}</button>
     <button class="opt" data-a="${UI.act(() => UI.openHelp())}">❓ Como jogar</button>
     <button class="opt" data-a="${UI.act(() => { saveGame(); say('Jogo salvo.'); UI.closePanel(); })}">💾 Salvar agora</button>
     <button class="opt" data-a="${UI.act(() => UI.sleepHere())}">😴 Dormir no chão</button>
