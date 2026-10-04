@@ -39,26 +39,31 @@ e acesse `http://localhost:8000/contas/`). No celular, use "Adicionar à tela in
 
 ---
 
-# Meus Gastos — controle de gastos (`gastos/`)
+# Meus Gastos — controle de gastos e entradas (`gastos/`)
 
-App web instalável (PWA, sem build) para organizar **gastos do mês**, com **orçamento**,
-**calculadora automática** e **lembretes por data**. Visual limpo, com tema claro/escuro.
+App web instalável (PWA, sem build) para organizar **gastos e entradas do mês**, com **orçamento**,
+**limites por categoria**, **calculadora automática** e **lembretes por data**. Visual limpo, tema claro/escuro.
 
 Abra `gastos/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server` na raiz e acesse
 `http://localhost:8000/gastos/`). No celular, use "Adicionar à tela inicial" para instalar.
 
 ## O que faz
-- **Resumo do mês**: total gasto, comparação com o mês anterior, média por dia, projeção do mês,
-  maior gasto e gráfico por categoria. Navegue entre meses com ‹ ›.
-- **Orçamento**: defina um limite mensal e o app calcula sozinho quanto ainda pode gastar **por dia**.
-- **Calculadora automática**: os campos de valor aceitam contas (`32,90+15*2`, `100+10%`) e mostram o
-  resultado na hora. Há também uma calculadora completa (com histórico e teclado) e a ferramenta
-  **Dividir a conta** (total + taxa ÷ pessoas).
-- **Parcelamento**: no crédito, escolha 2x–24x; o valor é dividido e cada parcela cai no mês certo.
-- **Lembretes** com data, horário, antecedência (no horário até 1 semana antes) e repetição
-  semanal/mensal/anual. Toque em 🔔 para permitir notificações. "Paguei" lança o gasto e agenda o próximo.
-- Exportar gastos do mês para planilha (`.csv`), lembretes para o calendário (`.ics`) e backup `.json`.
+- **Lançamento rápido**: digite uma frase como `uber 23,50 ontem`, `mercado 89,90`, `tênis 300 3x` ou
+  `+3500 salário`. O app reconhece valor (aceita contas), categoria, data (hoje, ontem, dia da semana, 10/03),
+  forma de pagamento e parcelas.
+- **Entradas**: salário, freelance, vendas… O Resumo mostra entradas, saídas e **saldo** do mês.
+- **Orçamento e limites por categoria**: limite geral do mês e limites como "Mercado até R$ 800".
+  Avisa ao passar de 80% e de 100%.
+- **Fixos automáticos**: ligue "Repetir todo mês" (aluguel, internet, salário) e o app lança sozinho no dia.
+- **Resumo do mês**: destaques automáticos (variação por categoria, quanto guardou, ritmo de gastos),
+  gráfico por categoria, gastos por dia e **últimos 6 meses** (saídas x entradas).
+- **Faturas do cartão**: com o dia de fechamento e vencimento, soma compras no crédito e parcelas na fatura certa.
+- **Categorias personalizadas** com nome, cor e ícone.
+- **Foto do comprovante** em cada lançamento (fica salva no aparelho e vai junto no backup).
+- **Calculadora** com histórico e **Dividir a conta**; parcelamento no crédito (2x–24x).
+- **Lembretes** com data, horário, antecedência e repetição; "Paguei" lança o gasto e agenda o próximo.
+- Exportar o mês para planilha (`.csv`), lembretes para o calendário (`.ics`) e backup `.json` completo.
 
 ## Observações
-- Os dados ficam salvos **somente neste navegador/aparelho** (localStorage). Faça backup de vez em quando.
+- Os dados ficam salvos **somente neste navegador/aparelho**. Faça backup de vez em quando (menu ⋯).
 - Para avisos garantidos com o app fechado, exporte os lembretes para o calendário (menu ⋯).
