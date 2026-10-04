@@ -1567,27 +1567,23 @@
     const lit = night || ph === 'tarde';
     const R = (a, b) => rand(a, b).toFixed(1);
 
-    let s = `<defs>
+    let s = '';
+    const L = [];
+    const cut = (k, d) => { L.push({ k, d, svg: s }); s = ''; };
+    const defs = `<defs>
       <linearGradient id="scSky" gradientUnits="userSpaceOnUse" x1="0" y1="-300" x2="0" y2="520">
         <stop offset="0" stop-color="${sky[0]}"/><stop offset=".6" stop-color="${sky[1]}"/><stop offset="1" stop-color="${sky[2]}"/></linearGradient>
       <linearGradient id="scGround" gradientUnits="userSpaceOnUse" x1="0" y1="480" x2="0" y2="860">
         <stop offset="0" stop-color="#9fd16f"/><stop offset="1" stop-color="#5fa548"/></linearGradient>
       <radialGradient id="scGlow"><stop offset="0" stop-color="#fff6c8" stop-opacity=".9"/><stop offset="1" stop-color="#fff6c8" stop-opacity="0"/></radialGradient>
       <radialGradient id="scWarm"><stop offset="0" stop-color="#ffd86b" stop-opacity=".75"/><stop offset="1" stop-color="#ffb84a" stop-opacity="0"/></radialGradient>
-      <radialGradient id="scVig" cx=".5" cy=".45" r=".75"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="${night ? 0.5 : 0.22}"/></radialGradient>
       <linearGradient id="scRay" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
       <pattern id="scTiles" width="14" height="9" patternUnits="userSpaceOnUse"><path d="M0,9 Q3.5,3 7,9 Q10.5,3 14,9" fill="none" stroke="#a5402a" stroke-width="1.2"/></pattern>
       <pattern id="scPlanks" width="10" height="9" patternUnits="userSpaceOnUse"><line x1="0" y1="8.5" x2="10" y2="8.5" stroke="#e6d4ae" stroke-width="1"/></pattern>
-      <filter id="scBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
-      <filter id="scTint" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${night
-        ? '0.42 0 0 0 0.02  0 0.48 0 0 0.05  0 0 0.7 0 0.13  0 0 0 1 0'
-        : ph === 'tarde' ? '1 0 0 0 0.05  0 0.86 0 0 0.02  0 0 0.72 0 0  0 0 0 1 0'
-          : '1 0 0 0 0.03  0 0.92 0 0 0.02  0 0 0.86 0 0.03  0 0 0 1 0'}"/></filter>
     </defs>`;
 
     // ---- Céu ----
-    s += `<g class="sc-pl" data-d=".05"><g class="sc-in-sky">
-      <rect x="-1200" y="-1200" width="2800" height="1800" fill="url(#scSky)"/>`;
+    s += `<rect x="-1200" y="-1200" width="2800" height="1800" fill="url(#scSky)"/>`;
     if (night) {
       for (let k = 0; k < 70; k++) s += `<circle class="sc-star" cx="${R(-700, 1100)}" cy="${R(-500, 360)}" r="${R(0.5, 1.6)}" fill="#fff" style="animation-delay:-${R(0, 4)}s"/>`;
       s += `<circle cx="${bx}" cy="${by}" r="70" fill="url(#scGlow)" opacity=".5"/>
@@ -1596,13 +1592,9 @@
       s += `<circle class="sc-sunglow" cx="${bx}" cy="${by}" r="110" fill="url(#scGlow)"/>
         <circle cx="${bx}" cy="${by}" r="26" fill="${ph === 'dia' ? '#fff3b0' : '#ffd27a'}"/>`;
     }
-    s += `</g></g>`;
-
-    // tudo que recebe a luz do momento (noite azulada, fim de tarde dourado)
-    s += `<g class="sc-cam"><g ${ph === 'dia' && !rain ? '' : 'filter="url(#scTint)"'}>`;
+    cut('sky', 0.05);
 
     // ---- Nuvens ----
-    s += `<g class="sc-pl" data-d=".1">`;
     [[60, 1, 70, 5], [150, 1.4, 95, 40], [230, 0.8, 80, 20], [110, 0.7, 120, 70]].forEach(([y, sc, dur, del]) => {
       s += `<g class="sc-cloud" style="animation-duration:${dur}s;animation-delay:-${del}s"><g transform="translate(0,${y}) scale(${sc})" fill="#fff" opacity="${rain ? 0.95 : 0.85}">
         <ellipse rx="46" ry="16"/><ellipse cx="22" cy="-12" rx="26" ry="18"/><ellipse cx="-20" cy="-8" rx="22" ry="14"/><ellipse cx="44" cy="-2" rx="18" ry="10"/></g></g>`;
@@ -1612,18 +1604,19 @@
         <path transform="translate(16,10)" d="M0,0 q3,-3 6,0 q3,-3 6,0" stroke="#3d4b5c" stroke-width="1.3" fill="none"/>
         <path transform="translate(-10,14)" d="M0,0 q3,-3 6,0 q3,-3 6,0" stroke="#3d4b5c" stroke-width="1.2" fill="none"/></g>`;
     }
-    s += `</g>`;
+    cut('clouds', 0.1);
 
     // ---- Morros ao longe ----
-    s += `<g class="sc-pl" data-d=".18"><g class="sc-in-far">
+    s += `
       <path d="M-1200,440 C-600,380 -200,420 0,410 C80,398 140,372 200,392 C260,412 320,378 400,386 C620,396 900,368 1600,410 L1600,620 L-1200,620 Z" fill="#a7cfa0"/>
       ${[[-60, 404], [-40, 406], [12, 408], [26, 406], [250, 404], [262, 406], [430, 390], [446, 393], [470, 396]].map(([x, y]) => poplar(x, y, 1, '#82b47a')).join('')}
       <g transform="translate(330,392)"><path d="M-3,30 L-1,0 L1,0 L3,30" stroke="#8a8c86" stroke-width="1.4" fill="none"/>
         <g class="blades">${[0, 90, 180, 270].map((a) => `<path transform="rotate(${a})" d="M0,0 L-1.6,-11 L1.6,-11 Z" fill="#f4f1ea"/>`).join('')}<circle r="1.4" fill="#777"/></g></g>
-      </g></g>`;
+      `;
+    cut('far', 0.18);
 
     // ---- Campos do meio ----
-    s += `<g class="sc-pl" data-d=".3"><g class="sc-in-mid">
+    s += `
       <path d="M-1200,480 C-500,440 -100,470 40,452 C120,440 180,452 240,460 C310,468 360,444 420,448 C760,466 1000,436 1600,462 L1600,640 L-1200,640 Z" fill="#8fc46a"/>
       <path d="M-120,470 C-20,456 60,450 120,452 M-140,484 C-30,470 60,462 130,464 M260,466 C330,470 400,452 520,452 M250,480 C340,482 420,466 560,464" stroke="#b7d98a" stroke-width="5" fill="none" stroke-linecap="round" opacity=".8"/>
       <path d="M150,456 C190,450 230,456 250,462 L250,470 C220,466 180,462 150,466 Z" fill="#e3c76a" opacity=".85"/>
@@ -1631,17 +1624,19 @@
       ${bigTree(92, 552, 52, ['#3b7a33', '#4c9a3f', '#6bb653'], 1.2)}
       ${bigTree(318, 548, 58, ['#336f2e', '#45903a', '#64ae4f'], 2.4)}
       ${poplar(140, 470, 2.4, '#5fa04a')}${poplar(286, 474, 2.1, '#5a9a46')}
-      </g></g>`;
+      `;
+    cut('mid', 0.3);
 
     // ---- Chão ----
-    s += `<g class="sc-pl" data-d=".42"><g class="sc-in-ground">
+    s += `
       <path d="M-1200,510 C-300,486 100,476 200,492 C320,508 700,474 1600,500 L1600,1700 L-1200,1700 Z" fill="url(#scGround)"/>
       <path d="M182,576 L218,576 C232,640 262,730 300,860 L100,860 C138,730 168,640 182,576 Z" fill="#ead3a0"/>
       ${[[196, 600, 9], [210, 630, 11], [188, 664, 12], [214, 700, 14], [180, 742, 15], [222, 790, 17], [168, 830, 18]].map(([x, y, r]) => `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r * 0.45}" fill="#d9bd85"/>`).join('')}
       ${[...Array(26)].map((_, k) => `<path d="M${R(-200, 600)},${R(560, 840)} l2,-6 l2,6" stroke="#5f9f44" stroke-width="1.4" fill="none"/>`).join('')}
       <ellipse cx="200" cy="572" rx="150" ry="14" fill="#2c4a1a" opacity=".18"/>
       ${[[112, 572, '#f58ab0'], [124, 576, '#fff3a0'], [136, 573, '#f58ab0'], [264, 573, '#b49cf2'], [276, 577, '#fff'], [288, 572, '#b49cf2']].map(([x, y, c]) => `<circle cx="${x}" cy="${y - 4}" r="6" fill="#4c9a3f"/><circle cx="${x}" cy="${y - 6}" r="2" fill="${c}"/>`).join('')}
-      </g></g>`;
+      `;
+    cut('ground', 0.42);
 
     // ---- Casa ----
     const guard = '<rect x="88" y="300" width="252" height="290" fill="none"/>';
@@ -1654,7 +1649,7 @@
       <path d="M19,0 V34 M0,15 H38" stroke="#fffaf0" stroke-width="2.4"/>
       <rect x="-5" y="36" width="48" height="8" rx="2" fill="#a8774c"/>
       ${[0, 8, 16, 24, 32, 40].map((fx, k) => `<circle cx="${fx - 1}" cy="35" r="3.6" fill="#4c9a3f"/><circle cx="${fx - 1}" cy="33.4" r="1.8" fill="${['#ef5a6f', '#fff3a0', '#f58ab0'][k % 3]}"/>`).join('')}</g>`;
-    s += `<g class="sc-pl" data-d=".5"><g class="sc-in-house">${guard}
+    s += `${guard}
       <rect x="248" y="366" width="20" height="50" fill="#a0523a"/><rect x="245" y="362" width="26" height="7" rx="2" fill="#86412d"/>
       <g class="sc-smoke" fill="#fff">${[0, 1, 2, 3].map((k) => `<circle cx="258" cy="356" r="7" style="animation-delay:${k * 1.2}s"/>`).join('')}</g>
       <path d="M300,446 L330,430 L330,546 L300,562 Z" fill="#e2cfa6"/>
@@ -1687,10 +1682,11 @@
         <rect x="-8" y="-30" width="15" height="16" rx="3" fill="#e2453a" opacity=".85"/></g></g>
       <path d="M108,560 C100,530 112,505 104,480" stroke="#4c8a3a" stroke-width="2.4" fill="none"/>
       ${[[104, 486], [110, 500], [102, 514], [108, 528], [103, 544]].map(([x, y], k) => `<circle cx="${x}" cy="${y}" r="4.4" fill="#5aa848"/><circle cx="${x + 2}" cy="${y - 1}" r="1.6" fill="${k % 2 ? '#f58ab0' : '#fff'}"/>`).join('')}
-      </g></g>`;
+      `;
+    cut('house', 0.5);
 
     // ---- Vida: cachorro e galinhas ----
-    s += `<g class="sc-pl" data-d=".62"><g class="sc-in-life">
+    s += `
       <g class="sc-dog" transform="translate(262,614)"><g class="sc-dog-body">
         <ellipse cx="2" cy="1" rx="22" ry="5" fill="#1d3a12" opacity=".2"/>
         <path class="sc-tail" d="M14,-8 q14,-4 16,-18" stroke="#c98a3c" stroke-width="5" stroke-linecap="round" fill="none"/>
@@ -1706,14 +1702,17 @@
           <path class="sc-tongue" d="M-10,7 q1.5,5 4,0" fill="#ef7a8a"/></g>
       </g></g>
       ${[[112, 640, 3.2, false], [146, 664, 3.6, true], [86, 680, 3.9, false]].map(([x, y, sc, fl]) => `<g class="animal" transform="translate(${x},${y}) scale(${fl ? -sc : sc},${sc})">${animalSVG('galinha')}</g>`).join('')}
-      </g></g>`;
+      `;
+    cut('life', 0.62);
 
     // ---- Árvores da frente ----
     const swing = `<g class="sc-swing"><path d="M${74},-118 V-36" stroke="#6b4a2c" stroke-width="1.6"/><path d="M${84},-118 V-36" stroke="#6b4a2c" stroke-width="1.6"/>
       <ellipse cx="79" cy="-28" rx="13" ry="11" fill="none" stroke="#333" stroke-width="7"/><ellipse cx="79" cy="-28" rx="13" ry="11" fill="none" stroke="#4a4a4a" stroke-width="2"/></g>
       <path d="M0,-118 Q40,-128 92,-120" stroke="#7b5233" stroke-width="8" fill="none" stroke-linecap="round"/>`;
-    s += `<g class="sc-pl" data-d=".85"><g class="sc-in-tl">${bigTree(-34, 724, 96, ['#2f6a2a', '#3f8a35', '#5aa848'], 0.4, swing)}</g></g>`;
-    s += `<g class="sc-pl" data-d=".85"><g class="sc-in-tr">${bigTree(446, 742, 104, ['#2c6328', '#3c8433', '#58a446'], 1.7)}</g></g>`;
+    s += bigTree(-34, 724, 96, ['#2f6a2a', '#3f8a35', '#5aa848'], 0.4, swing);
+    cut('tl', 0.85);
+    s += bigTree(446, 742, 104, ['#2c6328', '#3c8433', '#58a446'], 1.7);
+    cut('tr', 0.85);
 
     // ---- Cerca, flores e capim na frente ----
     const pickets = (x0, x1) => {
@@ -1721,7 +1720,7 @@
       for (let x = x0; x < x1; x += 15) p += `<path d="M${x},748 L${x},696 L${x + 4.5},689 L${x + 9},696 L${x + 9},748 Z" fill="#fffaf0" stroke="#e0d4bb" stroke-width=".8"/>`;
       return p;
     };
-    s += `<g class="sc-pl" data-d="1"><g class="sc-in-front">
+    s += `
       ${[340, 362, 382].map((x, k) => `<g transform="translate(${x},${700 - k * 8})"><g class="sc-sway" style="animation-delay:-${k}s">
         <path d="M0,40 Q3,0 0,-40" stroke="#4f8a35" stroke-width="3" fill="none"/><ellipse cx="7" cy="-6" rx="8" ry="3" fill="#5aa848"/><ellipse cx="-7" cy="10" rx="8" ry="3" fill="#5aa848"/>
         ${[...Array(12)].map((_, a) => `<ellipse transform="translate(0,-44) rotate(${a * 30})" cy="-8" rx="3" ry="6" fill="#f7c928"/>`).join('')}<circle cy="-44" r="7" fill="#6b4220"/></g></g>`).join('')}
@@ -1730,26 +1729,27 @@
         <rect x="-14" y="-16" width="28" height="17" rx="8" fill="#3f8fd0"/><rect x="-14" y="-8" width="28" height="9" fill="#3f8fd0"/>
         <path class="sc-mailflag" d="M12,-14 V-26 H20 V-20 H12" fill="#e2453a"/></g>
       ${[...Array(18)].map((_, k) => flower(-40 + k * 26 + (k > 7 ? 60 : 0), 772 + (k % 3) * 9, ['#ef5a6f', '#f58ab0', '#fff', '#b49cf2', '#f7a03c'][k % 5], 14 + (k % 4) * 3, k)).join('')}
-      ${[...Array(130)].map((_, k) => { const x = -1000 + k * 18 + rand(-4, 4); const h = rand(16, 30); return `<path class="sc-sway" style="animation-delay:-${R(0, 3)}s" d="M${x.toFixed(1)},860 Q${(x + 3).toFixed(1)},${(840 - h / 2).toFixed(1)} ${(x + rand(-6, 8)).toFixed(1)},${(840 - h).toFixed(1)} Q${(x + 6).toFixed(1)},${(840 - h / 2).toFixed(1)} ${(x + 8).toFixed(1)},860 Z" fill="${k % 2 ? '#4f9a3c' : '#62ad48'}"/>`; }).join('')}
-      </g></g>`;
-    s += `</g>`; // fim do filtro de luz
+      ${[...Array(130)].map((_, k) => { const x = -1000 + k * 18 + rand(-4, 4); const h = rand(16, 30); return `<path d="M${x.toFixed(1)},860 Q${(x + 3).toFixed(1)},${(840 - h / 2).toFixed(1)} ${(x + rand(-6, 8)).toFixed(1)},${(840 - h).toFixed(1)} Q${(x + 6).toFixed(1)},${(840 - h / 2).toFixed(1)} ${(x + 8).toFixed(1)},860 Z" fill="${k % 2 ? '#4f9a3c' : '#62ad48'}"/>`; }).join('')}
+      `;
+    cut('front', 1);
 
     // ---- Luzes (não escurecem à noite) ----
     if (lit) {
-      s += `<g class="sc-pl" data-d=".5"><g class="sc-in-house">${guard}
+      s += `${guard}
         ${[[145, 523], [255, 523], [200, 420], [176, 498]].map(([x, y], k) => `<circle cx="${x}" cy="${y}" r="${k === 3 ? 16 : 34}" fill="url(#scWarm)" class="sc-flicker" style="animation-delay:-${k * 0.7}s"/>`).join('')}
         ${night ? `<rect x="126" y="506" width="38" height="34" rx="2" fill="#ffd86b" opacity=".55"/><rect x="236" y="506" width="38" height="34" rx="2" fill="#ffd86b" opacity=".55"/>` : ''}
-        </g></g>`;
+        `;
+      cut('lights', 0.5);
     }
     if (night) {
-      s += `<g class="sc-pl" data-d=".7">${[...Array(22)].map(() => {
+      s += `<g>${[...Array(22)].map(() => {
         const x = +R(-60, 460), y = +R(470, 760);
         return `<circle class="sc-firefly" r="2" fill="#f6ffa8" style="animation-delay:-${R(0, 3)}s;animation-duration:${R(2, 4)}s">
           <animateMotion dur="${R(8, 16)}s" repeatCount="indefinite" path="M${x},${y} q${R(-30, 30)},${R(-30, 30)} ${R(-40, 40)},${R(-20, 20)} t${R(-40, 40)},${R(-20, 20)} T${x},${y}"/></circle>`;
       }).join('')}</g>`;
     } else if (!rain) {
       // borboletas
-      s += `<g class="sc-pl" data-d=".75">${[['#f7a03c', 'M60,700 C120,640 200,690 160,620 S260,600 300,680 S120,760 60,700'], ['#b49cf2', 'M330,640 C280,600 240,660 220,610 S300,560 360,600 S380,680 330,640'], ['#fff3a0', 'M120,560 C160,520 230,560 250,600 S150,640 120,560']].map(([c, d], k) => `<g>
+      s += `<g>${[['#f7a03c', 'M60,700 C120,640 200,690 160,620 S260,600 300,680 S120,760 60,700'], ['#b49cf2', 'M330,640 C280,600 240,660 220,610 S300,560 360,600 S380,680 330,640'], ['#fff3a0', 'M120,560 C160,520 230,560 250,600 S150,640 120,560']].map(([c, d], k) => `<g>
         <animateMotion dur="${14 + k * 4}s" repeatCount="indefinite" path="${d}" begin="-${k * 3}s"/>
         <g class="sc-wing"><ellipse cx="-3" cy="-2" rx="4" ry="5" fill="${c}"/><ellipse cx="3" cy="-2" rx="4" ry="5" fill="${c}"/><ellipse cx="-2.4" cy="3" rx="2.6" ry="3" fill="${c}"/><ellipse cx="2.4" cy="3" rx="2.6" ry="3" fill="${c}"/></g>
         <rect x="-.6" y="-5" width="1.2" height="10" rx=".6" fill="#3d2a1a"/></g>`).join('')}</g>`;
@@ -1757,7 +1757,7 @@
         s += `<g class="sc-rays no-pe">${[0, 1, 2].map((k) => `<path d="M${bx - 30 + k * 30},${by} L${bx + 120 + k * 90},900 L${bx + 200 + k * 90},900 Z" fill="url(#scRay)" opacity=".18" style="animation-delay:-${k * 2}s"/>`).join('')}</g>`;
       }
     }
-    s += `</g>`; // fim da câmera
+    if (s) cut('fx', 0.72);
 
     if (rain) {
       s += `<g class="no-pe">${[...Array(90)].map(() => {
@@ -1765,8 +1765,8 @@
         return `<line class="sc-rain" x1="${x}" y1="-60" x2="${x - 5}" y2="-42" stroke="#eef6ff" stroke-width="1.4" opacity=".6" style="animation-delay:-${R(0, 1)}s;animation-duration:${R(0.7, 1)}s"/>`;
       }).join('')}</g>`;
     }
-    s += `<rect class="no-pe" x="-1200" y="-1200" width="2800" height="3200" fill="url(#scVig)"/>`;
-    return s;
+    if (s) cut('chuva', 0);
+    return { defs, L, ph, night, rain };
   }
 
   function sceneGreeting() {
@@ -1802,40 +1802,46 @@
     if (!svg) return;
     const z = ZONES.sede;
     svg.style.transformOrigin = `${((z.x + z.w / 2) / 360 * 100).toFixed(1)}% ${((z.y + z.h / 2) / 600 * 100).toFixed(1)}%`;
-    svg.style.transition = animate ? 'transform .9s cubic-bezier(.65,0,.2,1)' : 'none';
+    svg.style.willChange = animate ? 'transform' : '';
+    svg.style.transition = animate ? 'transform .85s cubic-bezier(.65,0,.2,1)' : 'none';
     svg.style.transform = on ? `scale(${SEDE_ZOOM})` : '';
   }
+  // Cada camada é um <svg> próprio: o celular move as camadas na placa de vídeo sem redesenhar a cena.
+  const WORLD = ['clouds', 'far', 'mid', 'ground', 'house', 'life', 'tl', 'tr', 'front'];
   function openScene() {
     if (sceneEl) return;
     const from = sedeRect();
+    const { defs, L, ph, night, rain } = sceneSVG();
+    const layer = (l, i) => `<svg class="sc-layer sc-${l.k}${WORLD.includes(l.k) ? ' sc-world' : ''}" data-d="${l.d}" viewBox="0 170 400 760" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${i === 0 ? defs : ''}${l.svg}</svg>`;
+    const front = L.findIndex((l) => l.k === 'front');
     const el = document.createElement('div');
-    el.className = 'scene';
+    el.className = `scene scene--${ph}${rain ? ' scene--chuva' : ''}`;
     el.setAttribute('role', 'dialog');
     el.setAttribute('aria-label', `Sede da ${S.name}`);
-    el.innerHTML = `<svg class="scene__svg" viewBox="0 170 400 760" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${sceneSVG()}</svg>
+    el.innerHTML = `<div class="scene__world">${L.slice(0, front + 1).map(layer).join('')}<div class="sc-tint"></div>${L.slice(front + 1).map((l, i) => layer(l, i + front + 1)).join('')}</div>
+      <div class="sc-vig${night ? ' sc-vig--night' : ''}"></div>
       <div class="scene__top"><button type="button" class="scene__back" data-act="scene-close" aria-label="Voltar ao mapa">
         <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
         <div class="scene__title"><b>${esc(S.name)}</b><span id="scClock">${$('#dayLbl').textContent} · ${$('#clock').textContent} · ${WEATHER[S.weather].i} ${WEATHER[S.weather].n}</span></div></div>
       <div class="scene__card">${sceneCardHTML()}</div>`;
+    // monta a cena parada e invisível; a animação só começa depois do primeiro desenho,
+    // senão o tempo gasto montando "come" o começo da entrada
+    el.classList.add('scene--wait');
     document.body.appendChild(el);
     document.body.classList.add('scene-open');
     sceneEl = el;
-    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (from && el.animate && !reduce) {
-      const ins = `inset(${from.top}px ${innerWidth - from.right}px ${innerHeight - from.bottom}px ${from.left}px round 22px)`;
-      el.animate([{ clipPath: ins, opacity: 0.6 }, { clipPath: 'inset(0px 0px 0px 0px round 0px)', opacity: 1 }],
-        { duration: 900, easing: 'cubic-bezier(.65,0,.2,1)' });
-      zoomMap(true, true);
-      clearTimeout(sceneTimer);
-      sceneTimer = setTimeout(() => zoomMap(false, false), 950);
-    } else el.classList.add('scene--fade');
+    requestAnimationFrame(() => requestAnimationFrame(() => { if (sceneEl === el) startScene(el, from); }));
+
 
     // paralaxe: cada camada se mexe um pouco conforme o dedo/mouse ou a inclinação do celular
-    const layers = [...el.querySelectorAll('.sc-pl')];
-    const move = (dx, dy) => layers.forEach((g) => {
-      const d = +g.dataset.d;
-      g.style.transform = `translate(${(-dx * d * 26).toFixed(1)}px, ${(-dy * d * 12).toFixed(1)}px)`;
-    });
+    const layers = [...el.querySelectorAll('.sc-layer')];
+    let target = null, raf = 0;
+    const apply = () => {
+      raf = 0;
+      const [dx, dy] = target;
+      layers.forEach((g) => { const d = +g.dataset.d; g.style.translate = `${(-dx * d * 26).toFixed(1)}px ${(-dy * d * 12).toFixed(1)}px`; });
+    };
+    const move = (dx, dy) => { target = [dx, dy]; if (!raf) raf = requestAnimationFrame(apply); };
     el.addEventListener('pointermove', (e) => move(e.clientX / innerWidth - 0.5, e.clientY / innerHeight - 0.5));
     el._tilt = (e) => { if (e.gamma != null) move(clamp(e.gamma / 30, -1, 1) * 0.5, clamp((e.beta - 45) / 30, -1, 1) * 0.5); };
     window.addEventListener('deviceorientation', el._tilt);
@@ -1860,18 +1866,41 @@
     try { history.pushState({ scene: 1 }, ''); } catch (e) { /* sem histórico */ }
     setTimeout(() => { const b = el.querySelector('.scene__back'); if (b) b.focus({ preventScroll: true }); }, 50);
   }
+  function startScene(el, from) {
+    el.classList.remove('scene--wait');
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (from && el.animate && !reduce) {
+      // a cena nasce do quadrado da sede no mapa e cresce até a tela toda (só transform/opacidade)
+      const s0 = (from.right - from.left) / innerWidth;
+      const dx = (from.left + from.right) / 2 - innerWidth / 2, dy = (from.top + from.bottom) / 2 - innerHeight / 2;
+      el.animate([
+        { transform: `translate(${dx}px, ${dy}px) scale(${s0})`, opacity: 0 },
+        { opacity: 1, offset: 0.35 },
+        { transform: 'none', opacity: 1 },
+      ], { duration: 850, easing: 'cubic-bezier(.65,0,.2,1)' });
+      zoomMap(true, true);
+    } else el.classList.add('scene--fade');
+    clearTimeout(sceneTimer);
+    // depois de aberta, a tela de trás para de desenhar (o mapa animado custa caro)
+    sceneTimer = setTimeout(() => {
+      zoomMap(false, false);
+      document.body.classList.add('scene-shown');
+      sceneTimer = setTimeout(() => el.classList.add('scene--settled'), 1300);
+    }, 900);
+  }
   function closeScene(fromHistory) {
     if (!sceneEl) return;
     const el = sceneEl;
     sceneEl = null;
     window.removeEventListener('deviceorientation', el._tilt);
-    document.body.classList.remove('scene-open');
+    document.body.classList.remove('scene-open', 'scene-shown');
     el.classList.add('closing');
     clearTimeout(sceneTimer);
     if ($('#mapSvg')) {
       zoomMap(true, false);
       void $('#mapSvg').getBoundingClientRect();
       zoomMap(false, true);
+      sceneTimer = setTimeout(() => zoomMap(false, false), 900);
     }
     setTimeout(() => el.remove(), 600);
     if (!fromHistory && history.state && history.state.scene) { try { history.back(); } catch (e) { /* ok */ } }
