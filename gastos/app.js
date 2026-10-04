@@ -3394,7 +3394,7 @@
     else document.documentElement.dataset.theme = state.theme;
     $('#btnTheme use').setAttribute('href', THEME_ICON[state.theme]);
     // Mantém o navegador sem "escurecer à força" as cores do app.
-    $('#metaScheme').content = state.theme === 'auto' ? 'light dark' : state.theme;
+    $('#metaScheme').content = state.theme === 'auto' ? 'light dark' : state.theme === 'light' ? 'only light' : 'dark';
   }
   $('#btnTheme').addEventListener('click', () => {
     state.theme = { auto: 'light', light: 'dark', dark: 'auto' }[state.theme];

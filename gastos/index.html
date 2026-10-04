@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="style.css?v=19">
+  <link rel="stylesheet" href="style.css?v=20">
   <!-- Garante ícones do tamanho certo mesmo antes do CSS carregar. -->
   <style>.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}</style>
   <!-- Abertura e tela de início do Nexa Money: ficam aqui para aparecer na hora, antes do resto da página. -->
@@ -115,6 +115,55 @@
       .welcome__go{padding:16px 22px}
       .welcome__foot{margin-top:12px}
     }
+    /* ---- tema escuro: celular no modo escuro (tema automático) ou tema escuro do app ---- */
+    @media (prefers-color-scheme:dark){
+      :root:not([data-theme="light"]) .splash,:root:not([data-theme="light"]) .welcome{background:#07120d;color:#effcf5}
+      :root:not([data-theme="light"]) .nx-aura{background:radial-gradient(40% 32% at 50% 38%,rgba(16,185,129,.26),transparent 70%),
+                 radial-gradient(35% 25% at 15% 80%,rgba(52,211,153,.12),transparent 70%),
+                 radial-gradient(30% 22% at 90% 15%,rgba(110,231,183,.1),transparent 70%)}
+      :root:not([data-theme="light"]) .nx-word i{background:linear-gradient(90deg,#6ee7b7,#34d399);-webkit-background-clip:text;background-clip:text}
+      :root:not([data-theme="light"]) .nx-bars span{background:linear-gradient(#d1fae5,#34d399)}
+      :root:not([data-theme="light"]) .splash__tag{color:#a7c9b8}
+      :root:not([data-theme="light"]) .welcome__text{color:#bcd2c6}
+      :root:not([data-theme="light"]) .welcome__foot{color:#86a596}
+      :root:not([data-theme="light"]) .welcome__cards::before{background:radial-gradient(closest-side,rgba(16,185,129,.22),transparent)}
+      :root:not([data-theme="light"]) .wcard{background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.02));border-color:rgba(110,231,183,.5);
+        box-shadow:0 0 22px rgba(16,185,129,.18),inset 0 1px 0 rgba(255,255,255,.08)}
+      :root:not([data-theme="light"]) .wcard__ic{border-color:rgba(110,231,183,.55);background:rgba(16,185,129,.12);color:#6ee7b7}
+      :root:not([data-theme="light"]) .wcard strong{color:#f3fdf8}
+      :root:not([data-theme="light"]) .welcome__go{border-color:rgba(110,231,183,.6);background:linear-gradient(90deg,#0d5c3b,#16a06a 50%,#0d5c3b);background-size:200% 100%;
+        box-shadow:0 0 26px rgba(16,185,129,.35),0 12px 28px -12px rgba(0,0,0,.8)}
+      :root:not([data-theme="light"]) .nx-s0{stop-color:#f0fdf7}
+      :root:not([data-theme="light"]) .nx-s1{stop-color:#a7f3d0}
+      :root:not([data-theme="light"]) .nx-s2{stop-color:#34d399}
+      :root:not([data-theme="light"]) .nx-d{stroke:#ffffff}
+      :root:not([data-theme="light"]) .nx-k{stroke:#08140e}
+      
+      :root:not([data-theme="light"]) .nx-fl{flood-color:#10b981;flood-opacity:.45}
+    }
+    :root[data-theme="dark"] .splash,:root[data-theme="dark"] .welcome{background:#07120d;color:#effcf5}
+    :root[data-theme="dark"] .nx-aura{background:radial-gradient(40% 32% at 50% 38%,rgba(16,185,129,.26),transparent 70%),
+                 radial-gradient(35% 25% at 15% 80%,rgba(52,211,153,.12),transparent 70%),
+                 radial-gradient(30% 22% at 90% 15%,rgba(110,231,183,.1),transparent 70%)}
+    :root[data-theme="dark"] .nx-word i{background:linear-gradient(90deg,#6ee7b7,#34d399);-webkit-background-clip:text;background-clip:text}
+    :root[data-theme="dark"] .nx-bars span{background:linear-gradient(#d1fae5,#34d399)}
+    :root[data-theme="dark"] .splash__tag{color:#a7c9b8}
+    :root[data-theme="dark"] .welcome__text{color:#bcd2c6}
+    :root[data-theme="dark"] .welcome__foot{color:#86a596}
+    :root[data-theme="dark"] .welcome__cards::before{background:radial-gradient(closest-side,rgba(16,185,129,.22),transparent)}
+    :root[data-theme="dark"] .wcard{background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.02));border-color:rgba(110,231,183,.5);
+        box-shadow:0 0 22px rgba(16,185,129,.18),inset 0 1px 0 rgba(255,255,255,.08)}
+    :root[data-theme="dark"] .wcard__ic{border-color:rgba(110,231,183,.55);background:rgba(16,185,129,.12);color:#6ee7b7}
+    :root[data-theme="dark"] .wcard strong{color:#f3fdf8}
+    :root[data-theme="dark"] .welcome__go{border-color:rgba(110,231,183,.6);background:linear-gradient(90deg,#0d5c3b,#16a06a 50%,#0d5c3b);background-size:200% 100%;
+        box-shadow:0 0 26px rgba(16,185,129,.35),0 12px 28px -12px rgba(0,0,0,.8)}
+    :root[data-theme="dark"] .nx-s0{stop-color:#f0fdf7}
+    :root[data-theme="dark"] .nx-s1{stop-color:#a7f3d0}
+    :root[data-theme="dark"] .nx-s2{stop-color:#34d399}
+    :root[data-theme="dark"] .nx-d{stroke:#ffffff}
+    :root[data-theme="dark"] .nx-k{stroke:#08140e}
+    
+    :root[data-theme="dark"] .nx-fl{flood-color:#10b981;flood-opacity:.45}
     @keyframes nx-pop{0%{opacity:0;transform:translateY(8px) scale(.3)}100%{opacity:1;transform:none}}
     @keyframes nx-draw{0%{opacity:1;stroke-dashoffset:1}100%{opacity:1;stroke-dashoffset:0}}
     @keyframes nx-up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
@@ -137,7 +186,7 @@
     <span class="nx-aura"></span>
     <div class="splash__center">
       <svg class="nx-mark" viewBox="0 0 100 100">
-        <g transform="translate(-4 -4)" stroke-linecap="round" stroke-linejoin="round"><g filter="url(#nxf)"><path class="d d1" pathLength="1" d="M33 64V34c0-7.5 5-12.5 12-12.5 4.5 0 8 2.3 10 6L66.5 59c2 3.7 5.5 6 9.5 6c5.3 0 8-4 8-10V31" fill="none" stroke="url(#nxg)" stroke-width="12"/><path class="a" d="M71.5 34H96.5L84 17Z" fill="url(#nxg)" stroke="url(#nxg)" stroke-width="3"/></g><path class="d d3" pathLength="1" d="M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9" fill="none" stroke="#fff" stroke-width="12"/><path class="d d4" pathLength="1" d="M28 55v9M28 92v7" fill="none" stroke="#fff" stroke-width="11"/><path class="d d3" pathLength="1" d="M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9" fill="none" stroke="#0f4a30" stroke-width="6.2"/><path class="d d4" pathLength="1" d="M28 55v9M28 92v7" fill="none" stroke="#0f4a30" stroke-width="5.2"/></g></g></svg>
+        <g transform="translate(-4 -4)" stroke-linecap="round" stroke-linejoin="round"><g filter="url(#nxf)"><path class="d d1" pathLength="1" d="M33 64V34c0-7.5 5-12.5 12-12.5 4.5 0 8 2.3 10 6L66.5 59c2 3.7 5.5 6 9.5 6c5.3 0 8-4 8-10V31" fill="none" stroke="url(#nxg)" stroke-width="12"/><path class="a" d="M71.5 34H96.5L84 17Z" fill="url(#nxg)" stroke="url(#nxg)" stroke-width="3"/></g><path class="d d3 nx-k" pathLength="1" d="M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9" fill="none" stroke="#fff" stroke-width="12"/><path class="d d4 nx-k" pathLength="1" d="M28 55v9M28 92v7" fill="none" stroke="#fff" stroke-width="11"/><path class="d d3 nx-d" pathLength="1" d="M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9" fill="none" stroke="#0f4a30" stroke-width="6.2"/><path class="d d4 nx-d" pathLength="1" d="M28 55v9M28 92v7" fill="none" stroke="#0f4a30" stroke-width="5.2"/></g></g></svg>
       <div class="nx-word"><b>Nexa<span class="nx-bars"><span></span><span></span><span></span></span></b><i>Money</i></div>
       <p class="splash__tag">Domine suas finanças</p>
     </div>
@@ -166,11 +215,11 @@
   <!-- Ícones (traço fino, estilo moderno) -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
-      <linearGradient id="nxg" gradientUnits="userSpaceOnUse" x1="18" y1="40" x2="92" y2="60"><stop offset="0" stop-color="#0f4a30"/><stop offset=".45" stop-color="#16603d"/><stop offset="1" stop-color="#25875b"/></linearGradient>
-      <filter id="nxf" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur in="SourceAlpha" stdDeviation="2.2"/><feOffset dy="1.4" result="s"/><feFlood flood-color="#0f4a30" flood-opacity=".28"/><feComposite operator="in" in2="s" result="sh"/><feMerge><feMergeNode in="sh"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <linearGradient id="nxg" gradientUnits="userSpaceOnUse" x1="18" y1="40" x2="92" y2="60"><stop class="nx-s0" offset="0" stop-color="#0f4a30"/><stop class="nx-s1" offset=".45" stop-color="#16603d"/><stop class="nx-s2" offset="1" stop-color="#25875b"/></linearGradient>
+      <filter id="nxf" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur in="SourceAlpha" stdDeviation="2.2"/><feOffset dy="1.4" result="s"/><feFlood class="nx-fl" flood-color="#0f4a30" flood-opacity=".28"/><feComposite operator="in" in2="s" result="sh"/><feMerge><feMergeNode in="sh"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     </defs>
     <!-- Logo do Nexa Money (N em traço contínuo com seta e $) -->
-    <symbol id="nx-logo" viewBox="0 0 100 100"><g transform="translate(-4 -4)" stroke-linecap="round" stroke-linejoin="round"><g filter="url(#nxf)"><path d="M33 64V34c0-7.5 5-12.5 12-12.5 4.5 0 8 2.3 10 6L66.5 59c2 3.7 5.5 6 9.5 6c5.3 0 8-4 8-10V31" fill="none" stroke="url(#nxg)" stroke-width="12"/><path d="M71.5 34H96.5L84 17Z" fill="url(#nxg)" stroke="url(#nxg)" stroke-width="3"/></g><path d="M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9" fill="none" stroke="#fff" stroke-width="12"/><path d="M28 55v9M28 92v7" fill="none" stroke="#fff" stroke-width="11"/><path d="M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9" fill="none" stroke="#0f4a30" stroke-width="6.2"/><path d="M28 55v9M28 92v7" fill="none" stroke="#0f4a30" stroke-width="5.2"/></g></g></symbol>
+    <symbol id="nx-logo" viewBox="0 0 100 100"><g transform="translate(-4 -4)" stroke-linecap="round" stroke-linejoin="round"><g filter="url(#nxf)"><path d="M33 64V34c0-7.5 5-12.5 12-12.5 4.5 0 8 2.3 10 6L66.5 59c2 3.7 5.5 6 9.5 6c5.3 0 8-4 8-10V31" fill="none" stroke="url(#nxg)" stroke-width="12"/><path d="M71.5 34H96.5L84 17Z" fill="url(#nxg)" stroke="url(#nxg)" stroke-width="3"/></g><path class="nx-k" d="M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9" fill="none" stroke="#fff" stroke-width="12"/><path class="nx-k" d="M28 55v9M28 92v7" fill="none" stroke="#fff" stroke-width="11"/><path class="nx-d" d="M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9" fill="none" stroke="#0f4a30" stroke-width="6.2"/><path class="nx-d" d="M28 55v9M28 92v7" fill="none" stroke="#0f4a30" stroke-width="5.2"/></g></g></symbol>
     <symbol id="i-tour" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16.2 7.8-2.1 6.3-6.3 2.1 2.1-6.3z"/></symbol>
     <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
     <symbol id="i-bell-on" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M4 2C2.8 3.7 2 5.7 2 8"/><path d="M22 8c0-2.3-.8-4.3-2-6"/></symbol>
@@ -1000,6 +1049,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="app.js?v=19"></script>
+  <script src="app.js?v=20"></script>
 </body>
 </html>

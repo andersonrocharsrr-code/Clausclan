@@ -17,7 +17,8 @@
   --shadow: 0 1px 2px rgba(16, 19, 26, .04), 0 10px 30px -12px rgba(16, 19, 26, .12);
   --glass: rgba(255, 255, 255, .78);
   --grad: linear-gradient(135deg, #7c6cff 0%, #5b4cf0 48%, #9b3cf0 100%);
-  color-scheme: light;
+  /* "only" impede o navegador de escurecer o tema claro à força. */
+  color-scheme: only light;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1001,6 +1002,8 @@ button, .k, .tab, .fab, .chip, .seg__btn { touch-action: manipulation; -webkit-u
 }
 .brand em { font-style: normal; color: #1f7a4f; }
 :root[data-theme="dark"] .brand em { color: #3fbf86; }
+:root[data-theme="dark"] .brand__mark { background: radial-gradient(circle at 55% 45%, rgba(52, 211, 153, .22), transparent 70%), linear-gradient(135deg, #12291e, #08130e); box-shadow: 0 0 0 1px rgba(110, 231, 183, .25), 0 6px 16px -8px rgba(16, 185, 129, .6); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .brand__mark { background: radial-gradient(circle at 55% 45%, rgba(52, 211, 153, .22), transparent 70%), linear-gradient(135deg, #12291e, #08130e); box-shadow: 0 0 0 1px rgba(110, 231, 183, .25), 0 6px 16px -8px rgba(16, 185, 129, .6); } }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .brand em { color: #3fbf86; } }
 
 /* ---------- Toast ---------- */
