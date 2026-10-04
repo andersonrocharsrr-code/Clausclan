@@ -67,6 +67,7 @@
     payingDebt: null,
     debtDir: 'in',
     showPaid: false,
+    showAllRecur: false,
     dayMode: 'cal',
     calSel: null,
     scanToken: null,
@@ -508,6 +509,8 @@
     renderCompare();
     renderInvoices(now);
     renderGoals(now);
+    renderForecast(now);
+    renderRecurring(now);
     renderDebts(now);
     animateIn($('#view-resumo'));
 
@@ -2931,6 +2934,208 @@
     $('#launchGo').onclick = () => { $('#dlgLaunch').close(); l.run(); };
     $('#dlgLaunch').showModal();
   }
+
+  /* ---------------- Previsão do saldo no fim do mês ---------------- */
+  // Saldo de hoje + o que ainda vai entrar/sair (fixos, contas dos lembretes, cobranças com data no mês)
+  // − o gasto do dia a dia estimado para os dias que faltam. Compras no crédito já contam na data da compra.
+  function forecastMonth(now = new Date()) {
+    const [y, m] = ui.month.split('-').map(Number);
+    const dim = daysInMonth(y, m - 1);
+    const day = now.getDate();
+    const daysLeft = dim - day;
+    const monthEnd = `${ui.month}-${pad(dim)}`;
+    const outs = monthOut(ui.month);
+    const received = sum(monthIn(ui.month));
+    const spent = sum(outs);
+    const key = (t) => strip(t || '').replace(/\s+/g, ' ').trim();
+
+    const pendingFixed = state.fixed.filter((f) => f.from <= ui.month && (f.last || '') < ui.month);
+    const fixedIn = pendingFixed.filter((f) => f.kind === 'in');
+    const fixedOut = pendingFixed.filter((f) => f.kind !== 'in');
+
+    // Contas dos lembretes até o fim do mês (inclui repetições semanais), sem contar o que já é fixo.
+    const fixedNames = new Set(state.fixed.map((f) => key(f.title)));
+    const bills = [];
+    for (const r of state.reminders) {
+      if (r.amount == null || fixedNames.has(key(r.title))) continue;
+      let due = r.due;
+      for (let i = 0; i < 6 && due.slice(0, 10) <= monthEnd; i++) {
+        bills.push(r.amount);
+        if (r.repeat === 'none') break;
+        due = nextDue({ ...r, due });
+      }
+    }
+    const openDebts = state.debts.filter((d) => debtLeft(d) > 0 && d.due && d.due <= monthEnd);
+    const debtIn = openDebts.filter((d) => d.dir === 'in');
+    const debtOut = openDebts.filter((d) => d.dir === 'out');
+
+    // Ritmo do dia a dia: fixos (inclusive gastos com o mesmo nome de um fixo) e parcelas ficam de fora.
+    // No começo do mês usa o mês anterior.
+    const once = (e) => e.fixedId || e.group || fixedNames.has(key(e.title));
+    const dailySoFar = sum(outs.filter((e) => !once(e)));
+    let perDay = day ? dailySoFar / day : 0;
+    if (day < 5) {
+      const pk = shiftMonth(ui.month, -1);
+      const [py, pm] = pk.split('-').map(Number);
+      const prevAvg = sum(monthOut(pk).filter((e) => !once(e))) / daysInMonth(py, pm - 1);
+      if (prevAvg > 0) perDay = prevAvg;
+    }
+    const left = (list) => list.reduce((t, d) => t + debtLeft(d), 0);
+    const parts = {
+      received, spent,
+      fixedIn: sum(fixedIn), fixedInN: fixedIn.length,
+      fixedOut: sum(fixedOut), fixedOutN: fixedOut.length,
+      bills: bills.reduce((t, v) => t + v, 0), billsN: bills.length,
+      debtIn: left(debtIn), debtInN: debtIn.length,
+      debtOut: left(debtOut), debtOutN: debtOut.length,
+      perDay: Math.round(perDay), daysLeft, dailyEst: Math.round(perDay * daysLeft), monthEnd,
+    };
+    parts.now = received - spent;
+    parts.free = parts.now + parts.fixedIn + parts.debtIn - parts.fixedOut - parts.bills - parts.debtOut;
+    parts.end = parts.free - parts.dailyEst;
+    return parts;
+  }
+
+  function renderForecast(now = new Date()) {
+    const panel = $('#forecastPanel');
+    panel.hidden = ui.month !== monthKey(now);
+    if (panel.hidden) return;
+    const f = forecastMonth(now);
+    if (!f.received && !f.fixedIn && !f.spent) {
+      $('#forecast').innerHTML = '<p class="empty-sm">Lance suas <strong>entradas</strong> (salário, vendas…) para ver com quanto você deve terminar o mês.</p>';
+      return;
+    }
+    const row = (icon, label, note, value, kind) => (value ? `
+      <div class="fc-row">${ico(icon)}<span>${label}${note ? ` <small>${note}</small>` : ''}</span>
+        <b class="${kind}">${kind === 'in' ? '+' : '−'}${money(value)}</b></div>` : '');
+    const n = (k, one, many) => (k === 1 ? `1 ${one}` : `${k} ${many}`);
+    const endDate = fmtDM.format(parseDay(f.monthEnd));
+    let tip;
+    if (f.end >= 0) {
+      tip = `<p class="fc-tip good">Você deve terminar o mês com <strong>${signed(f.end)}</strong> de folga.${f.daysLeft ? ` Para fechar no zero, o limite seria ${money(Math.floor(f.free / f.daysLeft))}/dia.` : ''}</p>`;
+    } else if (f.free > 0 && f.daysLeft) {
+      tip = `<p class="fc-tip bad">No ritmo atual o mês fecha no vermelho. Para não ficar negativo, gaste até <strong>${money(Math.floor(f.free / f.daysLeft))}/dia</strong> nos próximos ${f.daysLeft} dias.</p>`;
+    } else {
+      tip = `<p class="fc-tip bad">Mesmo sem gastar mais nada, faltam <strong>${money(-f.free)}</strong> para fechar o mês no zero.</p>`;
+    }
+    $('#forecast').innerHTML = `
+      <div class="fc-top">
+        <div><span class="label">Saldo previsto em ${endDate}</span><div class="fc-value ${f.end >= 0 ? 'good' : 'bad'}">${signed(f.end)}</div></div>
+        <div class="fc-now">Saldo hoje<strong>${signed(f.now)}</strong></div>
+      </div>
+      <div class="fc-rows">
+        ${row('i-in', 'Entradas já recebidas', '', f.received, 'in')}
+        ${row('i-out', 'Saídas já feitas', '', f.spent, 'out')}
+        ${row('i-repeat', 'Fixos a receber', n(f.fixedInN, 'item', 'itens'), f.fixedIn, 'in')}
+        ${row('i-repeat', 'Fixos a pagar', n(f.fixedOutN, 'item', 'itens'), f.fixedOut, 'out')}
+        ${row('i-calendar', 'Contas dos lembretes', n(f.billsN, 'conta', 'contas'), f.bills, 'out')}
+        ${row('i-hand', 'Cobranças a receber', n(f.debtInN, 'pessoa', 'pessoas'), f.debtIn, 'in')}
+        ${row('i-hand', 'Cobranças a pagar', n(f.debtOutN, 'pessoa', 'pessoas'), f.debtOut, 'out')}
+        ${row('i-activity', 'Dia a dia estimado', `${money(f.perDay)}/dia × ${f.daysLeft} dias`, f.dailyEst, 'out')}
+      </div>
+      ${tip}`;
+  }
+
+  /* ---------------- Assinaturas e gastos que se repetem ---------------- */
+  const SUBS_RE = /netflix|spotify|prime|disney|hbo|\bmax\b|globoplay|youtube|deezer|apple|icloud|google one|paramount|crunchyroll|academia|smart ?fit|gympass|wellhub|internet|celular|plano|assinatura|claro|vivo|\btim\b|streaming/;
+  // Procura nos últimos 6 meses o que aparece uma vez por mês, com valor parecido (ou que já é fixo).
+  function findRecurring(now = new Date()) {
+    const months = Array.from({ length: 6 }, (_, i) => shiftMonth(monthKey(now), -i));
+    const norm = (t) => strip(t || '').replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
+    const groups = new Map();
+    // Gastos com o mesmo nome de um fixo contam junto com ele (ex.: depois de "Tornar fixo").
+    const fixedByTitle = new Map(state.fixed.filter((f) => f.kind !== 'in').map((f) => [norm(f.title), f]));
+    for (const e of state.expenses) {
+      if (!isOut(e) || e.group || !months.includes(e.date.slice(0, 7))) continue;
+      const linked = (e.fixedId && state.fixed.find((f) => f.id === e.fixedId)) || fixedByTitle.get(norm(e.title));
+      const k = linked ? `f:${linked.id}` : norm(e.title);
+      if (!k) continue;
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(e);
+    }
+    const out = [];
+    for (const [k, list] of groups) {
+      const fixed = k.startsWith('f:') ? state.fixed.find((f) => `f:${f.id}` === k) : null;
+      list.sort((a, b) => a.date.localeCompare(b.date));
+      const byMonth = new Map();
+      for (const e of list) byMonth.set(e.date.slice(0, 7), (byMonth.get(e.date.slice(0, 7)) || 0) + e.amount);
+      const vals = [...byMonth.values()];
+      if (!fixed) {
+        if (vals.length < 2 || list.length !== vals.length) continue; // precisa de 2+ meses e 1 vez por mês
+        const sorted = [...vals].sort((a, b) => a - b);
+        const med = sorted[Math.floor(sorted.length / 2)];
+        if (vals.some((v) => Math.abs(v - med) > med * 0.35)) continue; // valores muito diferentes: não é assinatura
+      }
+      const last = list[list.length - 1];
+      const monthly = fixed ? fixed.amount : vals[vals.length - 1];
+      const prev = vals.length >= 2 ? vals[vals.length - 2] : 0;
+      const up = prev && monthly > prev * 1.05 ? Math.round(((monthly - prev) / prev) * 100) : 0;
+      const title = fixed ? fixed.title : last.title;
+      out.push({
+        key: k, title, cat: fixed ? fixed.cat : last.cat, monthly, months: vals.length, fixed: !!fixed,
+        isSub: SUBS_RE.test(norm(title)), up, day: fixed ? fixed.day : Number(last.date.slice(8, 10)),
+        method: last.method, lastMonth: last.date.slice(0, 7),
+      });
+    }
+    // Fixos que ainda não foram lançados nenhuma vez também contam.
+    for (const f of state.fixed) {
+      if (f.kind === 'in' || groups.has(`f:${f.id}`)) continue;
+      out.push({ key: `f:${f.id}`, title: f.title, cat: f.cat, monthly: f.amount, months: 0, fixed: true,
+        isSub: SUBS_RE.test(norm(f.title)), up: 0, day: f.day, method: f.method, lastMonth: f.last || '' });
+    }
+    return out.sort((a, b) => b.monthly - a.monthly);
+  }
+
+  let recurCache = [];
+  function renderRecurring(now = new Date()) {
+    const list = findRecurring(now);
+    recurCache = list;
+    $('#recurPanel').hidden = !list.length;
+    if (!list.length) return;
+    const total = list.reduce((t, r) => t + r.monthly, 0);
+    $('#recurSub').textContent = `${list.length} ${list.length > 1 ? 'itens' : 'item'}`;
+    $('#recurSum').innerHTML = `
+      <div><span class="label">Por mês</span><strong>${money(total)}</strong></div>
+      <div><span class="label">Por ano</span><strong>${money(total * 12)}</strong></div>`;
+    const shown = ui.showAllRecur ? list : list.slice(0, 6);
+    $('#recur').innerHTML = shown.map((r, i) => {
+      const tags = [
+        r.isSub && '<span class="recur-tag sub">Assinatura</span>',
+        r.up && `<span class="recur-tag up">↑ ${r.up}% mais caro</span>`,
+        r.fixed ? '<span class="recur-tag fixed">Fixo</span>' : `<button type="button" class="recur-fix" data-fix="${i}">Tornar fixo</button>`,
+      ].filter(Boolean).join('');
+      const seen = r.fixed ? `todo dia ${r.day}` : `${r.months} dos últimos 6 meses · por volta do dia ${r.day}`;
+      return `
+        <div class="recur-item">
+          ${catIcon(catOf(r.cat))}
+          <div class="recur-item__main">
+            <strong>${esc(r.title)}</strong>
+            <small>${seen}</small>
+            <div class="recur-tags">${tags}</div>
+          </div>
+          <div class="recur-item__side">
+            <span class="recur-item__val">${money(r.monthly)}</span>
+            <small class="panel__sub">${money(r.monthly * 12)}/ano</small>
+          </div>
+        </div>`;
+    }).join('') + (list.length > 6
+      ? `<button type="button" class="debts__more" data-recur-all>${ui.showAllRecur ? 'Mostrar menos' : `Ver todos (${list.length})`}</button>` : '');
+  }
+  $('#recur').addEventListener('click', (e) => {
+    if (e.target.closest('[data-recur-all]')) { ui.showAllRecur = !ui.showAllRecur; renderRecurring(); return; }
+    const b = e.target.closest('[data-fix]');
+    if (!b) return;
+    const r = (ui.showAllRecur ? recurCache : recurCache.slice(0, 6))[Number(b.dataset.fix)];
+    if (!r) return;
+    // Vira fixo a partir do próximo mês (o deste mês já foi lançado).
+    state.fixed.push({
+      id: uid(), kind: 'out', title: r.title, amount: r.monthly, cat: r.cat, method: r.method || 'Pix',
+      day: r.day, from: r.lastMonth, last: r.lastMonth,
+    });
+    save();
+    render();
+    toast(`"${r.title}" agora é fixo: será lançado sozinho todo dia ${r.day}.`);
+  });
 
   /* ---------------- Orçamento e limites ---------------- */
   const dlgBudget = $('#dlgBudget');

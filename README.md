@@ -59,6 +59,10 @@ navegador → "Instalar app" / "Adicionar à tela inicial"): fica com ícone pr�
 - **Quem me deve / a quem devo**: empréstimos e contas divididas, pagamentos parciais e cobrança pronta pelo WhatsApp.
   Aviso com vibração no dia combinado, mensagem do WhatsApp personalizável (com sua **chave Pix**), **recibo**
   em imagem/PDF e **ficha por pessoa** (histórico, totais e se costuma pagar em dia).
+- **Previsão do fim do mês**: saldo de hoje + fixos, contas dos lembretes e cobranças que ainda vão cair,
+  menos o gasto do dia a dia estimado; diz quanto dá para gastar por dia para não fechar no vermelho.
+- **Gastos que se repetem**: detecta assinaturas e contas mensais (custo por mês e por ano), avisa quando algo
+  ficou mais caro e transforma em fixo com um toque.
 - **Modo privacidade** (👁 no topo): esconde todos os valores da tela.
 - **Lembrete diário** para lançar os gastos do dia (menu ⋯).
 - **Atalhos no ícone**: segure o ícone do app para Falar gasto, Ler comprovante, Nova cobrança ou Novo gasto.
