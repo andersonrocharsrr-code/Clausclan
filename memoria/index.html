@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Memória & Quebra-cabeça</title>
+  <meta name="description" content="Jogo da memória e quebra-cabeça deslizante para celular. Funciona offline.">
+  <meta name="theme-color" content="#2e1065">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- ===== Início ===== -->
+  <section class="screen" id="home">
+    <div class="home">
+      <button class="icon-btn sound-btn" type="button" data-action="sound" aria-label="Som ligado">🔊</button>
+      <img class="home__logo" src="icon.svg" alt="" width="112" height="112">
+      <h1 class="home__title">Memória<br><span>& Quebra-cabeça</span></h1>
+
+      <div class="panel">
+        <h2 class="panel__title">🧠 Jogo da memória</h2>
+        <p class="panel__hint">Encontre os pares de cartas iguais.</p>
+        <div class="chips" id="memLevels" role="radiogroup" aria-label="Dificuldade"></div>
+        <div class="chips chips--themes" id="memThemes" role="radiogroup" aria-label="Tema"></div>
+        <button class="btn btn--primary" type="button" data-action="start-memory">Jogar memória</button>
+      </div>
+
+      <div class="panel">
+        <h2 class="panel__title">🧩 Quebra-cabeça</h2>
+        <p class="panel__hint">Deslize as peças até montar a imagem.</p>
+        <div class="chips" id="puzLevels" role="radiogroup" aria-label="Tamanho"></div>
+        <button class="btn btn--secondary" type="button" data-action="start-puzzle">Jogar quebra-cabeça</button>
+      </div>
+
+      <button class="link-btn" type="button" data-action="records">🏆 Meus recordes</button>
+    </div>
+  </section>
+
+  <!-- ===== Partida ===== -->
+  <section class="screen" id="game" hidden>
+    <header class="hud">
+      <button class="icon-btn" type="button" data-action="home" aria-label="Voltar ao início">←</button>
+      <div class="hud__stats">
+        <div class="stat"><span class="stat__label">Tempo</span><strong id="hudTime">0:00</strong></div>
+        <div class="stat"><span class="stat__label">Jogadas</span><strong id="hudMoves">0</strong></div>
+        <div class="stat" id="hudPairsBox"><span class="stat__label">Pares</span><strong id="hudPairs">0/0</strong></div>
+      </div>
+      <button class="icon-btn" type="button" data-action="restart" aria-label="Recomeçar">↻</button>
+    </header>
+
+    <div class="stage" id="stage">
+      <div class="board" id="board"></div>
+      <div class="banner" id="banner" hidden></div>
+    </div>
+
+    <footer class="game-foot" id="puzFoot" hidden>
+      <button class="btn btn--small" type="button" data-action="peek">👁 Ver imagem</button>
+      <button class="btn btn--small" type="button" data-action="numbers">🔢 Números</button>
+    </footer>
+  </section>
+
+  <!-- ===== Vitória ===== -->
+  <div class="modal" id="winModal" hidden>
+    <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+      <div class="stars" id="winStars"></div>
+      <h2 id="winTitle">Parabéns!</h2>
+      <p class="modal__text" id="winText"></p>
+      <p class="record" id="winRecord" hidden>🏆 Novo recorde!</p>
+      <div class="modal__actions">
+        <button class="btn btn--primary" type="button" data-action="restart">Jogar de novo</button>
+        <button class="btn btn--ghost" type="button" data-action="home">Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Recordes ===== -->
+  <div class="modal" id="recordsModal" hidden>
+    <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="recTitle">
+      <h2 id="recTitle">🏆 Recordes</h2>
+      <div class="records" id="recordsList"></div>
+      <div class="modal__actions">
+        <button class="btn btn--primary" type="button" data-action="close-modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
+
+  <script src="app.js"></script>
+</body>
+</html>
