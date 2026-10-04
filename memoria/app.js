@@ -26,7 +26,7 @@
 
   // Imagens do quebra-cabeça (SVG desenhado aqui mesmo, funciona offline).
   const SCENE_NAMES = ['Praia', 'Noite', 'Arco-íris', 'Jardim'];
-  const SCENES = [
+  const SCENE_URLS = [
     // Pôr do sol na praia
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
       <defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4c1d95"/><stop offset=".55" stop-color="#f472b6"/><stop offset="1" stop-color="#fdba74"/></linearGradient>
@@ -76,7 +76,8 @@
       <g fill="#1e293b"><ellipse cx="105" cy="70" rx="10" ry="7"/></g><g fill="#fff" fill-opacity=".8"><ellipse cx="99" cy="61" rx="7" ry="5"/><ellipse cx="111" cy="61" rx="7" ry="5"/></g>
       <path d="M95 70 h20" stroke="#facc15" stroke-width="3"/>
     </svg>`,
-  ].map((svg) => `url("data:image/svg+xml,${encodeURIComponent(svg.replace(/\s+/g, ' '))}")`);
+  ].map((svg) => `data:image/svg+xml,${encodeURIComponent(svg.replace(/\s+/g, ' '))}`);
+  const SCENES = SCENE_URLS.map((u) => `url("${u}")`);
 
   const STAR_SVG = '<svg viewBox="0 0 24 24"><path d="M12 2.6l2.85 5.9 6.5.85-4.75 4.5 1.2 6.45L12 17.2l-5.8 3.1 1.2-6.45-4.75-4.5 6.5-.85z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>';
   const icon = (id) => `<svg><use href="#i-${id}"/></svg>`;
@@ -95,7 +96,7 @@
   };
 
   const settings = Object.assign(
-    { tab: 'memory', level: 'facil', theme: 'animais', puzzle: 3, scene: -1, sound: true, numbers: true },
+    { tab: 'memory', ptype: 'slide', level: 'facil', theme: 'animais', puzzle: 3, scene: -1, sound: true, numbers: true },
     store.get('settings', {})
   );
   const saveSettings = () => store.set('settings', settings);
@@ -214,6 +215,7 @@
       if (!game || game.done || game.paused) return;
       game.paused = true;
       timer.stop();
+      cancelDrag();
       togglePeek(false);
       board.classList.add('is-paused');
       $('#pauseInfo').textContent = `${fmtTime(timer.seconds())} · ${game.moves} ${game.mode === 'memory' ? 'jogadas' : 'movimentos'}`;
@@ -250,6 +252,7 @@
     };
 
     board.className = 'board board--memory';
+    board.style.width = board.style.height = '';
     board.style.setProperty('--cols', level.cols);
     board.innerHTML = '';
     deck.forEach((symbol, i) => {
@@ -400,6 +403,7 @@
     };
 
     board.className = 'board board--puzzle' + (settings.numbers ? '' : ' hide-numbers');
+    board.style.width = board.style.height = '';
     board.style.setProperty('--n', n);
     board.innerHTML = '<div class="tiles"></div>';
     const wrap = board.firstChild;
@@ -423,6 +427,8 @@
 
     $('#hudProgressLabel').textContent = 'No lugar';
     $('#puzFoot').hidden = false;
+    $('[data-action="numbers"]').hidden = false;
+    $('[data-action="tray"]').hidden = true;
     $('[data-action="numbers"]').setAttribute('aria-pressed', String(settings.numbers));
     timer.reset();
     render.moves(0);
@@ -509,13 +515,356 @@
     });
   }
 
+  // ===================================================================
+  // Quebra-cabeça de encaixe (peças recortadas, arrastar e soltar)
+  // ===================================================================
+  const JIG_STARS = { 3: [45, 110], 4: [110, 240], 5: [200, 420] };
+
+  const sceneImages = {};
+  function loadScene(i) {
+    if (!sceneImages[i]) {
+      sceneImages[i] = new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = SCENE_URLS[i];
+      });
+    }
+    return sceneImages[i];
+  }
+
+  // Formato do encaixe sobre uma borda: u vai de 0 a 1 ao longo dela, v aponta para fora.
+  const KNOB = [
+    [[0.42, 0], [0.42, 0.08], [0.38, 0.12]],
+    [[0.33, 0.18], [0.40, 0.26], [0.50, 0.26]],
+    [[0.60, 0.26], [0.67, 0.18], [0.62, 0.12]],
+    [[0.58, 0.08], [0.58, 0], [0.62, 0]],
+  ];
+  function edgeTo(ctx, x0, y0, x1, y1, type) {
+    if (!type) { ctx.lineTo(x1, y1); return; }
+    const dx = x1 - x0, dy = y1 - y0;
+    const k = 0.9 * type; // 1 = encaixe para fora, -1 = para dentro
+    const P = (u, v) => [x0 + dx * u + dy * v * k, y0 + dy * u - dx * v * k];
+    ctx.lineTo(...P(0.38, 0));
+    KNOB.forEach(([a, b, c]) => ctx.bezierCurveTo(...P(...a), ...P(...b), ...P(...c)));
+    ctx.lineTo(x1, y1);
+  }
+  // edges = [cima, direita, baixo, esquerda], cada uma 0 (reta), 1 ou -1.
+  function piecePath(ctx, x, y, size, edges) {
+    const pts = [[x, y], [x + size, y], [x + size, y + size], [x, y + size]];
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    edges.forEach((t, k) => {
+      const [x0, y0] = pts[k];
+      const [x1, y1] = pts[(k + 1) % 4];
+      edgeTo(ctx, x0, y0, x1, y1, t);
+    });
+    ctx.closePath();
+  }
+  function makeEdges(n) {
+    const rnd = () => (Math.random() < 0.5 ? 1 : -1);
+    const h = Array.from({ length: n - 1 }, () => Array.from({ length: n }, rnd));
+    const v = Array.from({ length: n }, () => Array.from({ length: n - 1 }, rnd));
+    return (r, c) => [
+      r ? -h[r - 1][c] : 0,
+      c < n - 1 ? v[r][c] : 0,
+      r < n - 1 ? h[r][c] : 0,
+      c ? -v[r][c - 1] : 0,
+    ];
+  }
+  function paintPiece(ctx, img, ox, oy, cell, full, r, c, edges) {
+    piecePath(ctx, ox, oy, cell, edges);
+    ctx.save();
+    ctx.clip();
+    if (img) ctx.drawImage(img, ox - c * cell, oy - r * cell, full, full);
+    else { ctx.fillStyle = '#3b3f6b'; ctx.fill(); }
+    ctx.lineWidth = Math.max(2, cell * 0.05);
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.28)';
+    ctx.stroke(); // sombra interna (só a metade de dentro aparece)
+    ctx.restore();
+    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.stroke();
+  }
+
+  function startJigsaw() {
+    stopGame();
+    const level = currentPuzLevel();
+    const n = level.n;
+    const sceneIndex = settings.scene >= 0 ? settings.scene : Math.floor(Math.random() * SCENES.length);
+    const edgesOf = makeEdges(n);
+    const pieces = [];
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) pieces.push({ r, c, edges: edgesOf(r, c), placed: false, x: 0, y: 0, s: 1 });
+    }
+
+    game = {
+      mode: 'jigsaw', level, n, image: SCENES[sceneIndex], sceneIndex, sceneName: SCENE_NAMES[sceneIndex],
+      pieces, queue: shuffle(pieces.slice()), placed: 0, img: null, geo: null, drag: null,
+      moves: 0, started: false, done: false, paused: false, timeouts: [],
+    };
+
+    board.className = 'board board--jigsaw';
+    board.style.removeProperty('--size');
+    board.innerHTML = '<div class="jig__ghost"></div><div class="jig__tray"><span class="jig__tray-empty" hidden>Todas as peças estão no tabuleiro</span></div>';
+    board.querySelector('.jig__ghost').style.setProperty('--ghost', game.image);
+    pieces.forEach((p) => {
+      const el = document.createElement('canvas');
+      el.className = 'piece';
+      el.addEventListener('pointerdown', (e) => onPieceDown(e, p));
+      el.addEventListener('pointermove', onPieceMove);
+      el.addEventListener('pointerup', onPieceUp);
+      el.addEventListener('pointercancel', onPieceUp);
+      board.appendChild(el);
+      p.el = el;
+    });
+
+    $('#hudProgressLabel').textContent = 'Peças';
+    $('#puzFoot').hidden = false;
+    $('[data-action="numbers"]').hidden = true;
+    $('[data-action="tray"]').hidden = false;
+    timer.reset();
+    render.moves(0);
+    render.progress(0, n * n);
+    show('game');
+    layout();
+
+    const g = game;
+    loadScene(sceneIndex).then((img) => {
+      if (game !== g) return;
+      g.img = img;
+      g.pieces.forEach(drawPiece);
+    });
+  }
+
+  function layoutJigsaw(W, H) {
+    const g = game;
+    const n = g.n;
+    board.style.width = `${W}px`;
+    board.style.height = `${H}px`;
+    const S = Math.floor(Math.min(W - 8, H * 0.6, 520));
+    const cell = S / n;
+    const m = cell * 0.25;
+    const P = cell * 1.5;
+    const bx = (W - S) / 2;
+    const by = 0;
+    const trayTop = S + 14;
+    const trayH = Math.max(0, H - trayTop);
+    // Escolhe o maior tamanho de peça na bandeja que ainda mostre várias peças.
+    const want = Math.min(n * n, 8);
+    let s = 0.4, slot = 0, cols = 1, rows = 1;
+    for (let t = 0.85; t >= 0.4; t -= 0.05) {
+      const sl = P * t;
+      const c = Math.max(1, Math.floor((W - 12) / sl));
+      const r = Math.max(1, Math.floor((trayH - 12) / sl));
+      s = t; slot = sl; cols = c; rows = r;
+      if (c * r >= want) break;
+    }
+    g.geo = { S, cell, m, P, bx, by, trayTop, trayH, s, slot, cols, rows, W };
+
+    Object.assign(board.querySelector('.jig__ghost').style, { left: `${bx}px`, top: `${by}px`, width: `${S}px`, height: `${S}px` });
+    Object.assign(board.querySelector('.jig__tray').style, { left: '0px', top: `${trayTop}px`, width: `${W}px`, height: `${trayH}px` });
+    const done = board.querySelector('.jig__done');
+    if (done) Object.assign(done.style, { left: `${bx}px`, top: `${by}px`, width: `${S}px`, height: `${S}px` });
+    g.pieces.forEach(drawPiece);
+    placePieces();
+  }
+
+  function drawPiece(p) {
+    const g = game;
+    if (!g.geo) return;
+    const { cell, m, P, S } = g.geo;
+    const dpr = window.devicePixelRatio || 1;
+    const el = p.el;
+    el.width = el.height = Math.ceil(P * dpr);
+    el.style.width = el.style.height = `${P}px`;
+    const ctx = el.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, P, P);
+    paintPiece(ctx, g.img, m, m, cell, S, p.r, p.c, p.edges);
+  }
+
+  function setPos(p, x, y, s) {
+    p.x = x; p.y = y; p.s = s;
+    p.el.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
+  }
+
+  // Coloca cada peça no tabuleiro (se já encaixada) ou num lugar da bandeja.
+  function placePieces() {
+    const g = game;
+    const { bx, by, cell, m, trayTop, trayH, s, slot, cols, rows, W } = g.geo;
+    const visible = g.queue.slice(0, cols * rows);
+    const used = Math.min(visible.length, cols * rows);
+    const usedCols = Math.min(cols, used);
+    const usedRows = Math.ceil(used / cols);
+    const ox = (W - usedCols * slot) / 2;
+    const oy = trayTop + (trayH - usedRows * slot) / 2;
+    g.pieces.forEach((p) => {
+      if (p.dragging) return;
+      if (p.placed) { setPos(p, bx + p.c * cell - m, by + p.r * cell - m, 1); return; }
+      const i = visible.indexOf(p);
+      if (i < 0) { p.el.hidden = true; return; }
+      if (p.el.hidden) {
+        p.el.hidden = false;
+        p.el.classList.remove('is-new');
+        void p.el.offsetWidth;
+        p.el.classList.add('is-new');
+      }
+      setPos(p, ox + (i % cols) * slot, oy + Math.floor(i / cols) * slot, s);
+    });
+    board.querySelector('.jig__tray-empty').hidden = g.queue.length > 0;
+  }
+
+  function onPieceDown(e, p) {
+    const g = game;
+    if (!g || g.mode !== 'jigsaw' || g.done || g.paused || p.placed || !g.geo || g.drag) return;
+    e.preventDefault();
+    try { p.el.setPointerCapture(e.pointerId); } catch { /* ignora */ }
+    if (!g.started) { g.started = true; timer.start(); }
+    p.dragging = true;
+    p.el.classList.remove('is-wrong', 'is-new');
+    p.el.classList.add('is-dragging');
+    g.drag = { p, id: e.pointerId, rect: board.getBoundingClientRect() };
+    onPieceMove(e);
+    sfx.tap();
+  }
+
+  function onPieceMove(e) {
+    const g = game;
+    const d = g && g.drag;
+    if (!d || e.pointerId !== d.id) return;
+    const { P } = g.geo;
+    // A peça fica um pouco acima do dedo para não ficar escondida.
+    setPos(d.p, e.clientX - d.rect.left - P / 2, e.clientY - d.rect.top - P / 2 - P * 0.35, 1);
+  }
+
+  function onPieceUp(e) {
+    const g = game;
+    const d = g && g.drag;
+    if (!d || e.pointerId !== d.id) return;
+    g.drag = null;
+    const p = d.p;
+    p.dragging = false;
+    p.el.classList.remove('is-dragging');
+    const { bx, by, cell, m, S } = g.geo;
+    const tx = bx + p.c * cell - m;
+    const ty = by + p.r * cell - m;
+    const cx = p.x + m + cell / 2;
+    const cy = p.y + m + cell / 2;
+    const onBoard = cx > bx && cx < bx + S && cy > by && cy < by + S;
+
+    if (e.type !== 'pointercancel' && Math.hypot(p.x - tx, p.y - ty) < cell * 0.4) {
+      p.placed = true;
+      p.el.classList.add('is-placed');
+      g.queue.splice(g.queue.indexOf(p), 1);
+      g.placed++;
+      g.moves++;
+      sfx.match();
+      vibrate(25);
+      render.progress(g.placed, g.pieces.length);
+      if (g.placed === g.pieces.length) finishJigsaw(g);
+    } else if (onBoard && e.type !== 'pointercancel') {
+      g.moves++;
+      sfx.miss();
+      vibrate([15, 30, 15]);
+      p.el.classList.add('is-wrong');
+      g.timeouts.push(setTimeout(() => p.el.classList.remove('is-wrong'), 600));
+    }
+    render.moves(g.moves);
+    placePieces();
+  }
+
+  function cancelDrag() {
+    const g = game;
+    if (!g || !g.drag) return;
+    const p = g.drag.p;
+    g.drag = null;
+    p.dragging = false;
+    p.el.classList.remove('is-dragging');
+    placePieces();
+  }
+
+  function cycleTray() {
+    const g = game;
+    if (!g || g.mode !== 'jigsaw' || g.done || g.paused || !g.geo) return;
+    const k = g.geo.cols * g.geo.rows;
+    if (g.queue.length <= k) { flash('Todas as peças já estão à mostra', 900); return; }
+    g.queue.push(...g.queue.splice(0, k));
+    g.queue.slice(k).forEach((p) => { p.el.hidden = true; });
+    sfx.slide();
+    placePieces();
+  }
+
+  function finishJigsaw(g) {
+    g.done = true;
+    timer.stop();
+    togglePeek(false);
+    g.timeouts.push(setTimeout(() => {
+      if (game !== g) return;
+      const { bx, by, S } = g.geo;
+      const done = document.createElement('div');
+      done.className = 'jig__done';
+      done.style.backgroundImage = g.image;
+      Object.assign(done.style, { left: `${bx}px`, top: `${by}px`, width: `${S}px`, height: `${S}px` });
+      board.appendChild(done);
+    }, 250));
+    g.timeouts.push(setTimeout(() => {
+      if (game !== g) return;
+      const secs = timer.seconds();
+      const [s3, s2] = JIG_STARS[g.n];
+      const stars = secs <= s3 ? 3 : secs <= s2 ? 2 : 1;
+      const key = `jig-${g.n}`;
+      const isRecord = saveRecord(key, secs, g.moves);
+      showWin({
+        stars, secs, moves: g.moves, key, isRecord,
+        title: stars === 3 ? 'Encaixe perfeito! 🧩' : stars === 2 ? 'Mandou bem!' : 'Conseguiu!',
+        text: `Você montou a imagem <b>${g.sceneName}</b> com ${g.pieces.length} peças.`,
+      });
+    }, 1300));
+  }
+
+  // Miniatura da tela inicial: peças montadas e uma solta.
+  function drawMiniJigsaw(canvas, img) {
+    const dpr = window.devicePixelRatio || 1;
+    const size = 96;
+    canvas.width = canvas.height = size * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const n = 3, pad = 8, cell = (size - pad * 2) / n, full = cell * n;
+    const ed = [
+      [[0, 1, -1, 0], [0, -1, 1, -1], [0, 0, -1, 1]],
+      [[1, -1, 1, 0], [-1, 1, -1, 1], [1, 0, 1, -1]],
+      [[-1, 1, 0, 0], [1, -1, 0, -1], [-1, 0, 0, 1]],
+    ];
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.fillRect(pad, pad, full, full);
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        if (r === 1 && c === 2) continue;
+        paintPiece(ctx, img, pad + c * cell, pad + r * cell, cell, full, r, c, ed[r][c]);
+      }
+    }
+    ctx.save();
+    ctx.translate(pad + 2 * cell + 2, pad + cell - 9);
+    ctx.rotate(0.22);
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.55)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetY = 4;
+    paintPiece(ctx, img, 0, 0, cell, full, 1, 2, ed[1][2]);
+    ctx.restore();
+  }
+
   let peekEl = null;
   function togglePeek(force) {
     const on = force ?? !peekEl;
-    if (on && game && game.mode === 'puzzle' && !peekEl) {
+    if (on && game && (game.mode === 'puzzle' || game.mode === 'jigsaw') && !game.done && !peekEl) {
       peekEl = document.createElement('div');
       peekEl.className = 'peek';
       peekEl.style.backgroundImage = game.image;
+      if (game.mode === 'jigsaw' && game.geo) {
+        const { bx, by, S } = game.geo;
+        Object.assign(peekEl.style, { inset: 'auto', left: `${bx}px`, top: `${by}px`, width: `${S}px`, height: `${S}px`, borderRadius: '14px', zIndex: 20 });
+      }
       peekEl.addEventListener('pointerdown', () => togglePeek(false));
       board.appendChild(peekEl);
     } else if (!on && peekEl) {
@@ -542,6 +891,8 @@
       board.style.setProperty('--gap', `${gap}px`);
       board.style.setProperty('--card-w', `${Math.floor(w)}px`);
       board.style.setProperty('--card-h', `${Math.floor(w / ratio)}px`);
+    } else if (game.mode === 'jigsaw') {
+      layoutJigsaw(W, H);
     } else {
       board.style.setProperty('--size', `${Math.floor(Math.min(W, H, 520))}px`);
     }
@@ -586,7 +937,8 @@
     }</span></div>`;
     $('#recordsList').innerHTML =
       `<h3>${icon('cards')}Memória</h3>` + MEM_LEVELS.map((l) => row(l.label, all[`mem-${l.id}`])).join('') +
-      `<h3>${icon('puzzle')}Quebra-cabeça</h3>` + PUZ_LEVELS.map((l) => row(l.label, all[`puz-${l.n}`])).join('');
+      `<h3>${icon('puzzle')}Quebra-cabeça deslizante</h3>` + PUZ_LEVELS.map((l) => row(l.label, all[`puz-${l.n}`])).join('') +
+      `<h3>${icon('puzzle')}Quebra-cabeça de encaixe</h3>` + PUZ_LEVELS.map((l) => row(`${l.n * l.n} peças`, all[`jig-${l.n}`])).join('');
     $('#recordsModal').hidden = false;
   }
 
@@ -661,9 +1013,22 @@
   options($('#memThemes'), 'pick',
     THEMES.map((t) => ({ ...t, html: `<span class="pick__art">${t.items[0]}</span>${t.label}` })),
     (t) => t.id === settings.theme, (t) => { settings.theme = t.id; });
-  options($('#puzLevels'), 'seg__opt',
-    PUZ_LEVELS.map((l) => ({ ...l, html: `${l.label}<small>${l.sub}</small>` })),
-    (l) => l.n === settings.puzzle, (l) => { settings.puzzle = l.n; });
+  options($('#puzTypes'), 'seg__opt',
+    [
+      { id: 'slide', html: 'Deslizante<small>mova pelo espaço vazio</small>' },
+      { id: 'jigsaw', html: 'Encaixe<small>arraste as peças</small>' },
+    ],
+    (t) => t.id === settings.ptype, (t) => { settings.ptype = t.id; });
+
+  let lastLevelType = null;
+  function renderPuzLevels() {
+    if (lastLevelType === settings.ptype) return;
+    lastLevelType = settings.ptype;
+    const jig = settings.ptype === 'jigsaw';
+    options($('#puzLevels'), 'seg__opt',
+      PUZ_LEVELS.map((l) => ({ ...l, html: `${l.label}<small>${jig ? `${l.n * l.n} peças` : l.sub}</small>` })),
+      (l) => l.n === settings.puzzle, (l) => { settings.puzzle = l.n; });
+  }
   options($('#puzScenes'), 'pick',
     [{ i: -1, html: '<span class="pick__art">🎲</span>Surpresa' }].concat(
       SCENES.map((img, i) => ({ i, html: `<span class="pick__art" style="background-image:${img.replace(/"/g, "'")}"></span>${SCENE_NAMES[i]}` }))
@@ -688,12 +1053,27 @@
       $('#memFan').innerHTML = `<span class="fan__card">${theme.items[0]}</span><span class="fan__card fan__card--back"></span><span class="fan__card">${theme.items[0]}</span>`;
     }
 
+    // Tipo de quebra-cabeça: textos e tamanhos.
+    const jig = settings.ptype === 'jigsaw';
+    renderPuzLevels();
+    $('#puzTitle').textContent = jig ? 'Quebra-cabeça de encaixe' : 'Quebra-cabeça deslizante';
+    $('#puzDesc').textContent = jig
+      ? 'Arraste cada peça recortada até o lugar certo. Ela encaixa sozinha quando chega perto.'
+      : 'Deslize as peças pelo espaço vazio até montar a imagem.';
+
     // Miniatura do quebra-cabeça.
-    const previewKey = settings.scene;
+    const previewKey = `${settings.ptype}:${settings.scene}`;
     if (lastPreview !== previewKey) {
       lastPreview = previewKey;
       const prev = $('#puzPreview');
-      if (settings.scene < 0) {
+      if (jig) {
+        prev.className = 'mini-puzzle is-jigsaw';
+        prev.innerHTML = '<canvas></canvas>';
+        const canvas = prev.firstChild;
+        const idx = settings.scene >= 0 ? settings.scene : 2;
+        drawMiniJigsaw(canvas, null);
+        loadScene(idx).then((img) => { if (canvas.isConnected) drawMiniJigsaw(canvas, img); });
+      } else if (settings.scene < 0) {
         prev.className = 'mini-puzzle is-surprise';
         prev.innerHTML = SCENES.map((img, i) => `<i style="background-image:${img.replace(/"/g, "'")};animation-delay:${i * 60}ms"></i>`).join('');
       } else {
@@ -712,7 +1092,7 @@
       ? `${icon('trophy')}Seu recorde: <strong>${fmtTime(r.time)}</strong> · <strong>${r.moves}</strong> jogadas`
       : `${icon('trophy')}Sem recorde neste nível ainda. Que tal agora?`);
     $('#memBest').innerHTML = best(all[`mem-${settings.level}`]);
-    $('#puzBest').innerHTML = best(all[`puz-${settings.puzzle}`]);
+    $('#puzBest').innerHTML = best(all[`${jig ? 'jig' : 'puz'}-${settings.puzzle}`]);
   }
 
   function renderSound() {
@@ -757,23 +1137,25 @@
   });
 
   let lastMode = 'memory';
+  const STARTERS = { memory: () => startMemory(), puzzle: () => startPuzzle(), jigsaw: () => startJigsaw() };
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-action]');
     if (!btn) return;
     switch (btn.dataset.action) {
       case 'play':
-        lastMode = settings.tab === 'puzzle' ? 'puzzle' : 'memory';
-        enterGame(lastMode === 'puzzle' ? startPuzzle : startMemory);
+        lastMode = settings.tab !== 'puzzle' ? 'memory' : settings.ptype === 'jigsaw' ? 'jigsaw' : 'puzzle';
+        enterGame(STARTERS[lastMode]);
         break;
       case 'restart':
         if (game) lastMode = game.mode;
-        enterGame(lastMode === 'puzzle' ? startPuzzle : startMemory);
+        enterGame(STARTERS[lastMode]);
         break;
       case 'home': goHome(); break;
       case 'pause': setPaused(true); break;
       case 'resume': setPaused(false); break;
       case 'sound': settings.sound = !settings.sound; saveSettings(); renderSound(); sfx.tap(); break;
       case 'peek': togglePeek(); break;
+      case 'tray': cycleTray(); break;
       case 'numbers':
         settings.numbers = !settings.numbers;
         saveSettings();

@@ -1,5 +1,5 @@
 /* Service worker: deixa o jogo funcionar offline. */
-const CACHE = 'memoria-v2';
+const CACHE = 'memoria-v3';
 const FILES = ['./', 'index.html', 'style.css', 'app.js', 'icon.svg', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {

@@ -658,3 +658,68 @@ body[data-tab="puzzle"] .tabs__pill { transform: translateX(100%); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0s !important; transition-duration: 0.01ms !important; }
 }
+
+/* ===== Quebra-cabeça de encaixe ===== */
+.board--jigsaw { position: relative; }
+.jig__ghost {
+  position: absolute;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid var(--line);
+  box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+.jig__ghost::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--ghost) center / cover;
+  opacity: 0.3;
+  filter: grayscale(0.3);
+}
+.jig__tray {
+  position: absolute;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+}
+.jig__tray-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.piece {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  transform-origin: 0 0;
+  touch-action: none;
+  cursor: grab;
+  filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.45));
+  transition: transform 0.35s var(--ease-spring), filter 0.2s;
+}
+.piece.is-dragging {
+  z-index: 10;
+  cursor: grabbing;
+  transition: none;
+  filter: drop-shadow(0 16px 18px rgba(0, 0, 0, 0.55));
+}
+.piece.is-placed { z-index: 1; pointer-events: none; filter: none; transition: transform 0.18s ease-out; }
+.piece.is-wrong { filter: drop-shadow(0 0 7px var(--bad)) drop-shadow(0 0 2px var(--bad)); }
+.piece.is-new { animation: piece-in 0.4s var(--ease-spring); }
+@keyframes piece-in { from { opacity: 0; } }
+.jig__done {
+  position: absolute;
+  z-index: 3;
+  border-radius: 14px;
+  background-size: cover;
+  box-shadow: 0 0 0 3px var(--good), 0 0 40px -6px rgba(63, 224, 184, 0.7);
+  animation: fade 0.7s ease-out;
+}
+
+.mini-puzzle.is-jigsaw { display: block; padding: 0; background: none; box-shadow: none; }
+.mini-puzzle.is-jigsaw canvas { width: 96px; height: 96px; display: block; }
