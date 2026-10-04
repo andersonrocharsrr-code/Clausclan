@@ -262,17 +262,21 @@ function drawPerson(x, y, z, a, o) {
     ctx.fillStyle = o.skin; ctx.beginPath(); ctx.arc(dir * 14 * s, -5 * s, 5.5 * s, 0, 7); ctx.fill();
     ctx.restore(); return;
   }
-  const sw = Math.sin(o.t || 0);
+  const amp = clamp(o.amp == null ? 1 : o.amp, 0, 1.15), sw = Math.sin(o.t || 0) * amp;
+  const bob = Math.abs(Math.cos(o.t || 0)) * amp * 1.8 * s, lunge = o.lunge || 0, atk = o.atk || 0;
   // pernas
   ctx.lineCap = 'round'; ctx.strokeStyle = o.legs || '#2e3035'; ctx.lineWidth = 5.5 * s;
   for (const sg of [-1, 1]) { const st = sw * sg; ctx.beginPath(); ctx.moveTo(sg * 3.5 * s, -27 * s); ctx.lineTo(sg * 3.5 * s + st * dx * 6 * s, -3 * s + st * dy * 3 * s); ctx.stroke(); }
   ctx.fillStyle = '#1e1e20'; for (const sg of [-1, 1]) { const st = sw * sg; ctx.beginPath(); ctx.ellipse(sg * 3.5 * s + st * dx * 6 * s + dx * 2 * s, -2 * s + st * dy * 3 * s, 3.5 * s, 2.2 * s, 0, 0, 7); ctx.fill(); }
+  // tronco, braços e cabeça sobem e descem um pouco a cada passo; o zumbi se inclina na investida
+  ctx.translate(dx * lunge * 5 * s, -bob + dy * lunge * 2.5 * s);
   const arms = () => {
     ctx.strokeStyle = o.body; ctx.lineWidth = 4.8 * s;
     for (const sg of [-1, 1]) {
       const shx = sg * 8.5 * s, shy = -47 * s;
       let hx, hy;
-      if (o.zombie) { hx = shx * 0.6 + dx * 17 * s; hy = shy + 4 * s + dy * 9 * s + sw * sg * 1.5 * s; }
+      if (o.zombie) { const r = 17 + lunge * 9; hx = shx * 0.6 + dx * r * s; hy = shy + 4 * s + dy * r * 0.53 * s + sw * sg * 1.5 * s; }
+      else if (sg === 1 && atk > 0) { const k = Math.sin((1 - atk / 0.22) * Math.PI); hx = shx + dx * (8 + k * 12) * s; hy = shy + 2 * s + dy * (4 + k * 6) * s - k * 6 * s; }
       else { const st = -sw * sg; hx = shx + st * dx * 5 * s; hy = -31 * s + st * dy * 3 * s; }
       ctx.beginPath(); ctx.moveTo(shx, shy); ctx.lineTo(hx, hy); ctx.stroke();
       ctx.fillStyle = o.skin; ctx.beginPath(); ctx.arc(hx, hy, 2.6 * s, 0, 7); ctx.fill();
@@ -406,14 +410,20 @@ function render(now) {
   if (want !== RES) { RES = want; chunks.clear(); G.resetRoofs(); }
   const tres = Math.round(K * DPR * 8) / 8;
   if (isoTreeRes !== tres && (!G.treeT || now - G.treeT > 250)) { G.treeT = now; buildIsoTrees(tres); }
-  // câmera
-  const lead = p.inCar ? Math.min(1, Math.abs(p.inCar.sp) / 4) * 1.5 : 0;
-  const tx = p.x + Math.cos(p.a) * lead, ty = p.y + Math.sin(p.a) * lead;
-  G.cam.x += (tx - G.cam.x) * 0.15; G.cam.y += (ty - G.cam.y) * 0.15;
+  // câmera: segue com suavização que não depende da taxa de quadros e olha um pouco à frente
+  const rdt = Math.min(0.1, (now - (G.lastR || now)) / 1000); G.lastR = now;
+  let lx = 0, ly = 0;
+  if (p.inCar) { const lead = Math.min(1, Math.abs(p.inCar.sp) / 4) * 1.5; lx = Math.cos(p.a) * lead; ly = Math.sin(p.a) * lead; }
+  else { lx = (p.vx || 0) * 0.22; ly = (p.vy || 0) * 0.22; }
+  const kl = 1 - Math.exp(-rdt * 3); G.lead = G.lead || { x: 0, y: 0 }; G.lead.x += (lx - G.lead.x) * kl; G.lead.y += (ly - G.lead.y) * kl;
+  const tx = p.x + G.lead.x, ty = p.y + G.lead.y;
+  const kc = 1 - Math.exp(-rdt * 10);
+  G.cam.x += (tx - G.cam.x) * kc; G.cam.y += (ty - G.cam.y) * kc;
   if (Math.abs(G.cam.x - tx) > 10 || Math.abs(G.cam.y - ty) > 10) { G.cam.x = tx; G.cam.y = ty; }
   let shx = 0, shy = 0;
   if (G.shake > 0) { shx = rnd(-1, 1) * G.shake * 8; shy = rnd(-1, 1) * G.shake * 8; }
   OX = VW / 2 - (G.cam.x - G.cam.y) * HW + shx; OY = VH / 2 - (G.cam.x + G.cam.y) * HH + 0.7 * HZ + shy;
+  OX = Math.round(OX * DPR) / DPR; OY = Math.round(OY * DPR) / DPR; // tudo no mesmo pixel: sem tremedeira
   resetXform();
   ctx.fillStyle = '#121310'; ctx.fillRect(0, 0, VW, VH);
   ctx.imageSmoothingEnabled = true;
@@ -429,7 +439,7 @@ function render(now) {
     const top = PY(x0, y0), left = PX(x0, y0 + CH), right = PX(x0 + CH, y0), bottom = PY(x0 + CH, y0 + CH);
     if (right < 0 || left > VW || bottom < 0 || top > VH) continue;
     const c = getChunk(cx, cy);
-    ctx.drawImage(c.canvas, Math.floor(left), Math.floor(top), Math.ceil(CH * HW * 2) + 1, Math.ceil(CH * HH * 2) + 1);
+    ctx.drawImage(c.canvas, left - 0.25, top - 0.25, CH * HW * 2 + 0.5, CH * HH * 2 + 0.5);
   }
   // sangue e sombras das árvores no chão
   for (const b of S.blood) {
@@ -480,19 +490,19 @@ function render(now) {
   for (const z of S.zs) {
     if (z.x < xmin || z.x > xmax || z.y < ymin || z.y > ymax || !seesAt(z.x, z.y) || hiddenByRoof(z.x, z.y)) continue;
     const zd = ZT[z.t];
-    ents.push({ d: z.x + z.y, f: () => drawPerson(z.x, z.y, 0, z.a, { zombie: 1, body: z.shirt, skin: zd.col, legs: '#3a3a36', hair: z.seed % 3 ? HAIR[z.seed % HAIR.length] : null, down: z.down > 0, scale: z.t === 'brutamontes' ? 1.3 : 1, t: t * (zd.spd * 4) + z.seed, eyes: z.t === 'corredor' ? '#ff3a2a' : null }) });
+    ents.push({ d: z.x + z.y, f: () => drawPerson(z.x, z.y, 0, z.a, { zombie: 1, body: z.shirt, skin: zd.col, legs: '#3a3a36', hair: z.seed % 3 ? HAIR[z.seed % HAIR.length] : null, down: z.down > 0, scale: z.t === 'brutamontes' ? 1.3 : 1, t: (z.ph || 0) + z.seed, amp: (z.spdNow || 0) / Math.max(0.6, zd.spd * 0.8), lunge: z.lunge || 0, eyes: z.t === 'corredor' ? '#ff3a2a' : null }) });
   }
   for (const n of S.npcs) {
     if (n.dead || n.away || n.inCar || !seesAt(n.x, n.y) || n.x < xmin || n.x > xmax || n.y < ymin || n.y > ymax || hiddenByRoof(n.x, n.y)) continue;
     const w = n.wp && ITEMS[n.wp];
     ents.push({ d: n.x + n.y, f: () => {
-      drawPerson(n.x, n.y, 0, n.a, { body: NPC_KINDS[n.kind].col, skin: ['#d9a77a', '#a8754a', '#7a5032', '#e8c4a0'][n.id % 4], hair: HAIR[n.id % HAIR.length], t: t * 6, weapon: !!w, gun: w && w.wp && w.wp.gun, pack: n.kind === 'comerciante' ? '#6a5a3a' : null });
+      drawPerson(n.x, n.y, 0, n.a, { body: NPC_KINDS[n.kind].col, skin: ['#d9a77a', '#a8754a', '#7a5032', '#e8c4a0'][n.id % 4], hair: HAIR[n.id % HAIR.length], t: n.ph || 0, amp: n.mvT > 0 ? 1 : 0, weapon: !!w, gun: w && w.wp && w.wp.gun, pack: n.kind === 'comerciante' ? '#6a5a3a' : null });
       if (dist(n.x, n.y, p.x, p.y) < 7) { ctx.font = `700 ${Math.max(10, 11 * K)}px 'Roboto Condensed', 'Arial Narrow', sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.75)'; const lb = n.name + (n.st === 'seguir' ? ' ★' : ''); ctx.strokeText(lb, PX(n.x, n.y), PY(n.x, n.y, 2)); ctx.fillStyle = n.hostile ? '#ff8a7a' : '#e8e8e0'; ctx.fillText(lb, PX(n.x, n.y), PY(n.x, n.y, 2)); }
     } });
   }
   if (!p.inCar) {
     const it = p.eq.mao;
-    ents.push({ d: pd + 0.01, f: () => drawPerson(p.x, p.y, p.onTower ? 2.05 : 0, p.a, { body: p.hitT > 0 ? '#a33' : PROF_SHIRT[p.prof] || '#556', skin: '#e0b08a', hair: '#2a1d14', pack: p.eq.costas ? '#4a5a3a' : null, t: G.input.moving ? t * (G.input.run ? 14 : 9) : 0, weapon: !!it, gun: it && ITEMS[it.k].wp && ITEMS[it.k].wp.gun, down: p.sleeping }) });
+    ents.push({ d: pd + 0.01, f: () => drawPerson(p.x, p.y, p.onTower ? 2.05 : 0, p.a, { body: p.hitT > 0 ? '#a33' : PROF_SHIRT[p.prof] || '#556', skin: '#e0b08a', hair: '#2a1d14', pack: p.eq.costas ? '#4a5a3a' : null, t: p.ph || 0, amp: (p.spdNow || 0) / 2.6, atk: p.atkT || 0, weapon: !!it, gun: it && ITEMS[it.k].wp && ITEMS[it.k].wp.gun, down: p.sleeping }) });
   }
   for (const k of Object.keys(S.fires)) {
     const i = +k, fx = i % MAP_W, fy = Math.floor(i / MAP_W);
