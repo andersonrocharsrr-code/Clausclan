@@ -354,35 +354,39 @@ button:disabled { cursor: not-allowed; }
 
 /* ---------- Cena da sede ---------- */
 body.scene-open { overflow: hidden; }
+body.scene-shown .app { visibility: hidden; }
 .scene {
   position: fixed; inset: 0; z-index: 70; overflow: hidden;
-  background: linear-gradient(#bfe3f3 0 50%, #7fbd5c 50%);
+  background: #9fcf72;
   touch-action: none;
 }
+.scene--wait { opacity: 0; }
+.scene--wait .sc-layer, .scene--wait .scene__top, .scene--wait .scene__card { animation-play-state: paused; }
 .scene--fade { animation: sceneFade .6s ease both; }
 @keyframes sceneFade { from { opacity: 0; transform: scale(1.04); } }
 .scene.closing { animation: sceneOut .55s ease forwards; pointer-events: none; }
 @keyframes sceneOut { to { opacity: 0; transform: scale(1.08); } }
-.scene__svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.scene__svg .no-pe { pointer-events: none; }
-.sc-pl { transition: transform .8s cubic-bezier(.2, .7, .3, 1); }
-.sc-cam { transform-box: view-box; transform-origin: 200px 520px; animation: scCam 16s ease-in-out 1.6s infinite alternate; }
-@keyframes scCam { to { transform: scale(1.035) translateY(-4px); } }
-
-.sc-in-sky, .sc-in-far, .sc-in-mid, .sc-in-ground, .sc-in-house, .sc-in-life, .sc-in-tl, .sc-in-tr, .sc-in-front {
-  transform-box: fill-box; transform-origin: 50% 100%;
+.scene__world { position: absolute; inset: 0; }
+.sc-layer {
+  position: absolute; inset: 0; width: 100%; height: 100%; display: block;
+  pointer-events: none; will-change: transform;
+  transition: translate .8s cubic-bezier(.2, .7, .3, 1);
   animation: 1.6s cubic-bezier(.16, .8, .24, 1) both;
 }
-.sc-in-sky { animation-name: scSky; animation-duration: 1s; }
-.sc-in-far { animation-name: scFar; }
-.sc-in-mid { animation-name: scMid; }
-.sc-in-ground { animation-name: scGround; }
-.sc-in-house { animation-name: scHouse; animation-duration: 1.7s; }
-.sc-in-life { animation-name: scLife; animation-delay: .35s; }
-.sc-in-tl { animation-name: scTreeL; animation-duration: 1.8s; }
-.sc-in-tr { animation-name: scTreeR; animation-duration: 1.8s; }
-.sc-in-front { animation-name: scFront; animation-duration: 1.7s; }
-@keyframes scSky { from { opacity: .3; } }
+.sc-dog, .sc-swing { pointer-events: auto; }
+/* terminada a entrada, as camadas deixam de ser separadas e cada animação redesenha só o próprio cantinho */
+.scene--settled .sc-layer { animation: none; will-change: auto; }
+.sc-sky { animation-name: scSky; animation-duration: 1s; }
+.sc-clouds, .sc-far { animation-name: scFar; transform-origin: 50% 55%; }
+.sc-mid { animation-name: scMid; transform-origin: 50% 58%; }
+.sc-ground { animation-name: scGround; }
+.sc-house, .sc-lights { animation-name: scHouse; animation-duration: 1.7s; transform-origin: 50% 52%; }
+.sc-life { animation-name: scLife; animation-delay: .3s; transform-origin: 50% 70%; }
+.sc-tl { animation-name: scTreeL; animation-duration: 1.8s; transform-origin: 0 70%; }
+.sc-tr { animation-name: scTreeR; animation-duration: 1.8s; transform-origin: 100% 70%; }
+.sc-front { animation-name: scFront; animation-duration: 1.7s; transform-origin: 50% 100%; }
+.sc-fx, .sc-chuva { animation-name: scSky; animation-duration: 1s; animation-delay: .8s; }
+@keyframes scSky { from { opacity: 0; } }
 @keyframes scFar { from { transform: translateY(26px) scale(.94); } }
 @keyframes scMid { from { transform: translateY(44px) scale(.88); } }
 @keyframes scGround { from { transform: translateY(70px); } }
@@ -391,6 +395,15 @@ body.scene-open { overflow: hidden; }
 @keyframes scTreeL { from { transform: translate(-190px, 70px) scale(1.4); } }
 @keyframes scTreeR { from { transform: translate(210px, 70px) scale(1.4); } }
 @keyframes scFront { from { transform: translateY(230px) scale(1.25); } }
+
+/* luz do momento: uma película colorida (mais forte no chão, leve no céu) */
+.sc-tint { position: absolute; inset: 0; pointer-events: none; }
+.scene--noite .sc-tint { background: linear-gradient(rgba(10, 18, 60, .12) 15%, rgba(10, 18, 60, .55) 42%, rgba(8, 14, 48, .62)); }
+.scene--tarde .sc-tint { background: linear-gradient(rgba(255, 120, 50, 0) 20%, rgba(255, 120, 50, .16) 45%, rgba(200, 90, 60, .2)); }
+.scene--aurora .sc-tint { background: linear-gradient(rgba(255, 150, 190, 0) 20%, rgba(255, 150, 190, .1) 45%); }
+.scene--chuva .sc-tint { background: linear-gradient(rgba(70, 90, 105, .05) 20%, rgba(70, 90, 105, .2) 45%); }
+.sc-vig { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0, 0, 0, .22)); }
+.sc-vig--night { background: radial-gradient(ellipse at 50% 45%, transparent 50%, rgba(0, 0, 0, .5)); }
 
 .sc-sway { transform-box: fill-box; transform-origin: 50% 100%; animation: scSway 4.6s ease-in-out infinite alternate; }
 @keyframes scSway { from { transform: rotate(-1.6deg); } to { transform: rotate(1.6deg); } }
@@ -441,7 +454,7 @@ body.scene-open { overflow: hidden; }
 }
 .scene__back {
   width: 44px; height: 44px; border-radius: 15px; border: 0; flex: none;
-  background: rgba(255, 253, 248, .82); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  background: rgba(255, 253, 248, .92);
   display: grid; place-items: center; box-shadow: 0 8px 20px -10px rgba(0, 0, 0, .4);
 }
 .scene__back svg { width: 22px; height: 22px; fill: none; stroke: #23301f; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
@@ -451,8 +464,7 @@ body.scene-open { overflow: hidden; }
 .scene__card {
   position: absolute; left: 12px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom));
   max-width: 500px; margin: 0 auto;
-  background: rgba(255, 253, 248, .86); color: #23301f;
-  backdrop-filter: blur(14px) saturate(1.2); -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  background: rgba(255, 253, 248, .95); color: #23301f;
   border-radius: 24px; padding: 12px 14px;
   box-shadow: 0 20px 40px -20px rgba(0, 0, 0, .5);
   animation: sceneCard .8s cubic-bezier(.2, .9, .3, 1.1) .95s both;
