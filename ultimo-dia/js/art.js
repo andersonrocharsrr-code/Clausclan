@@ -158,17 +158,45 @@ function drawDoor(g, x, y, px, py) {
 }
 
 /* ---------- terreno ---------- */
-function drawGrass(g, x, y, px, py, dark) {
-  const n = blob(x, y);
-  g.fillStyle = dark ? mixc('#454f2c', '#59603a', n) : mixc('#5b6538', '#737a47', n); g.fillRect(px, py, T, T);
-  if (hk(x, y, 1) < 0.35) { g.fillStyle = 'rgba(30,60,20,.16)'; g.beginPath(); g.ellipse(px + 8 + hk(x, y, 2) * 16, py + 8 + hk(x, y, 3) * 16, 10, 7, hk(x, y, 4) * 3, 0, 7); g.fill(); }
-  for (let k = 0; k < 7; k++) {
-    const a = px + hk(x, y, k + 5) * 30, b = py + hk(x, y, k + 15) * 29;
-    g.fillStyle = k % 3 ? 'rgba(40,50,20,.35)' : 'rgba(190,190,120,.3)';
-    g.fillRect(a, b, 1, 3); g.fillRect(a + 1.5, b - 1, 1, 3);
+// grama contínua: a cor vem de um ruído suave avaliado em 4x4 pontos por tile, então não há borda entre tiles
+function grassNoise(x, y) { return blob(x, y) * 0.6 + blob(x * 2.7 + 13.1, y * 2.7 + 7.3) * 0.4; }
+function dryNoise(x, y) { return blob(x * 0.6 + 41.7, y * 0.6 + 19.3); }
+function grassCol(x, y) {
+  const n = grassNoise(x, y), d = clamp((dryNoise(x, y) - 0.55) * 3, 0, 1);
+  const base = mixRgb(rgbOf('#58623a'), rgbOf('#747b48'), n);
+  return mixRgb(base, rgbOf('#857e4c'), d * 0.55);
+}
+function mixRgb(a, b, t) { t = clamp(t, 0, 1); return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+const rgbStr = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+const GROUND_EDGE = { [TL.DIRT]: '#7d6142', [TL.SAND]: '#d2bf8a', [TL.FIELD]: '#6e5236', [TL.BURNT]: '#2b2825' };
+function drawGrass(g, x, y, px, py) {
+  for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) {
+    g.fillStyle = rgbStr(grassCol(x + (i + 0.5) / 4, y + (j + 0.5) / 4));
+    g.fillRect(px + i * 8 - 0.3, py + j * 8 - 0.3, 8.6, 8.6);
   }
-  if (!dark && hk(x, y, 30) < 0.04) { g.fillStyle = ['#f0e070', '#f0f0f0', '#d878b0'][Math.floor(hk(x, y, 31) * 3)]; for (let k = 0; k < 3; k++) circ(g, px + 6 + hk(x, y, 32 + k) * 20, py + 6 + hk(x, y, 40 + k) * 20, 1.4); }
-  if (dark) { g.fillStyle = 'rgba(110,80,40,.35)'; for (let k = 0; k < 4; k++) g.fillRect(px + hk(x, y, k + 50) * 28, py + hk(x, y, k + 60) * 28, 3, 2); }
+  // terra, areia e plantação vizinhas invadem a grama com borda suave e irregular
+  for (const [dx, dy] of N4) {
+    const c = GROUND_EDGE[tileAt(x + dx, y + dy)]; if (!c) continue;
+    const gr = dx ? g.createLinearGradient(dx > 0 ? px + T : px, 0, dx > 0 ? px + T - 13 : px + 13, 0) : g.createLinearGradient(0, dy > 0 ? py + T : py, 0, dy > 0 ? py + T - 13 : py + 13);
+    gr.addColorStop(0, rgbStr(rgbOf(c), 0.85)); gr.addColorStop(0.5, rgbStr(rgbOf(c), 0.3)); gr.addColorStop(1, rgbStr(rgbOf(c), 0));
+    g.fillStyle = gr; g.fillRect(px, py, T, T);
+  }
+  // tufos e folhinhas (podem passar da borda do tile)
+  for (let k = 0; k < 9; k++) {
+    const a = px + hk(x, y, k + 5) * 32, b = py + hk(x, y, k + 15) * 32;
+    g.fillStyle = k % 3 ? 'rgba(38,48,22,.32)' : 'rgba(178,176,112,.28)';
+    g.fillRect(a, b, 1, 3); g.fillRect(a + 1.5, b - 1, 1, 3); g.fillRect(a - 1.2, b + 0.5, 1, 2.5);
+  }
+  if (hk(x, y, 30) < 0.03) { g.fillStyle = ['#e8d870', '#ecece4', '#c878a0'][Math.floor(hk(x, y, 31) * 3)]; for (let k = 0; k < 3; k++) circ(g, px + 6 + hk(x, y, 32 + k) * 20, py + 6 + hk(x, y, 40 + k) * 20, 1.3); }
+}
+// terra solta no meio da grama vira uma mancha redonda, não um quadrado
+function drawDirtPatch(g, x, y, px, py) {
+  drawGrass(g, x, y, px, py);
+  const cx = px + 16 + (hk(x, y, 3) - 0.5) * 8, cy = py + 16 + (hk(x, y, 4) - 0.5) * 8, r = 11 + hk(x, y, 5) * 6;
+  const gr = g.createRadialGradient(cx, cy, 2, cx, cy, r);
+  gr.addColorStop(0, 'rgba(122,94,62,.85)'); gr.addColorStop(0.6, 'rgba(122,94,62,.5)'); gr.addColorStop(1, 'rgba(122,94,62,0)');
+  g.fillStyle = gr; g.beginPath(); g.ellipse(cx, cy, r, r * (0.7 + hk(x, y, 6) * 0.3), hk(x, y, 7) * 3, 0, 7); g.fill();
+  for (let k = 0; k < 4; k++) { g.fillStyle = 'rgba(70,50,30,.45)'; circ(g, cx + (hk(x, y, k + 9) - 0.5) * r, cy + (hk(x, y, k + 19) - 0.5) * r, 1.2); }
 }
 function drawRoad(g, x, y, px, py) {
   g.fillStyle = mixc('#35383b', '#45484b', hk(x, y, 1) * 0.4 + blob(x * 2, y * 2) * 0.6); g.fillRect(px, py, T, T);
@@ -250,16 +278,11 @@ function drawField(g, x, y, px, py) {
     if (!cut) { g.fillStyle = '#e2c24a'; g.beginPath(); g.ellipse(cx + 2, cy + 1, 1.8, 3.2, 0.5, 0, 7); g.fill(); }
   }
 }
-function drawBush(g, x, y, px, py) {
-  drawGrass(g, x, y, px, py);
-  g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(px + 18, py + 20, 13, 10, 0, 0, 7); g.fill();
-  const lobes = [[16, 16, 11, '#2c5f2c'], [10, 14, 7, '#357035'], [22, 13, 7, '#357035'], [15, 20, 8, '#3a7a3a'], [13, 11, 5, '#4a8a44'], [19, 17, 4, '#5a9a50']];
-  for (const [a, b, r, c] of lobes) { g.fillStyle = c; circ(g, px + a, py + b, r); }
-  const s = S.ts[ix(x, y)];
-  if (!s || !s.f || S.time - s.f > 2880) for (let k = 0; k < 7; k++) { g.fillStyle = k % 2 ? '#3d2a7a' : '#6a4ab0'; circ(g, px + 8 + hk(x, y, k + 3) * 16, py + 8 + hk(x, y, k + 13) * 15, 1.8); }
-}
+function drawBush(g, x, y, px, py) { drawGrass(g, x, y, px, py); }
 function drawTreeBase(g, x, y, px, py) {
-  drawGrass(g, x, y, px, py, true);
+  drawGrass(g, x, y, px, py);
+  // folhas caídas embaixo da copa
+  for (let k = 0; k < 6; k++) { g.fillStyle = k % 2 ? 'rgba(90,72,40,.35)' : 'rgba(60,70,34,.35)'; g.fillRect(px + 4 + hk(x, y, k + 50) * 24, py + 4 + hk(x, y, k + 60) * 24, 3, 2); }
 }
 // sombra que os prédios projetam (sol a noroeste)
 function groundShadow(g, x, y, px, py) {
@@ -290,6 +313,7 @@ function drawTile(g, x, y, px, py) {
       g.strokeStyle = 'rgba(150,120,70,.25)'; g.lineWidth = 1; g.beginPath(); g.arc(px + 10, py + 30, 10, 4.2, 5.2); g.arc(px + 26, py + 14, 9, 4.2, 5.2); g.stroke();
       break;
     case TL.DIRT: {
+      if (!N4.some(([dx, dy]) => tileAt(x + dx, y + dy) === TL.DIRT)) { drawDirtPatch(g, x, y, px, py); break; }
       g.fillStyle = mixc('#7a5d3e', '#8d6e4a', hk(x, y, 1) * 0.5 + blob(x, y) * 0.5); g.fillRect(px, py, T, T);
       for (let k = 0; k < 5; k++) { g.fillStyle = k % 2 ? 'rgba(60,40,20,.4)' : 'rgba(200,170,120,.3)'; circ(g, px + hk(x, y, k + 2) * 30, py + hk(x, y, k + 9) * 30, 1.3); }
       const h = tileAt(x - 1, y) === TL.DIRT || tileAt(x + 1, y) === TL.DIRT, v = tileAt(x, y - 1) === TL.DIRT || tileAt(x, y + 1) === TL.DIRT;
@@ -564,6 +588,7 @@ const TREE_SC = [0.88, 1, 1.12]; // tamanhos de árvore
 let isoTrees = null, isoTreeRes = 0;
 function buildIsoTrees(res) {
   isoTreeRes = res; isoTrees = [];
+  buildIsoDeco(res);
   const W = ISO_TREE_W, H = ISO_TREE_H;
   for (const [kind, c1, c2, c3] of ISO_TREES) {
     const vars = [];
@@ -612,6 +637,61 @@ function buildIsoTrees(res) {
     }
     isoTrees.push(vars);
   }
+}
+// arbustos, capim alto e flores: só enfeite (não bloqueiam), sorteados por tile
+const DECO_W = 64, DECO_H = 56, DECO_FOOT = 6;
+let isoDeco = null;
+function buildIsoDeco(res) {
+  isoDeco = {};
+  const kinds = {
+    arbusto: [['#2f3d22', '#4a5a30', '#6e7a45'], ['#34401f', '#55602e', '#7d8648'], ['#2c3a27', '#44553a', '#677a55']],
+    frutas: [['#2f3d22', '#45602f', '#6a8a48']],
+    capim: [['#5a5a30', '#7a7642', '#a09a5a'], ['#4a5530', '#66703e', '#8a925a']],
+    flores: [['#3a4a28', '#56653a', '#e2d06a'], ['#3a4a28', '#56653a', '#d890b0'], ['#3a4a28', '#56653a', '#e8e8e0']],
+    samambaia: [['#2a3a22', '#3e5530', '#5f7a45']],
+  };
+  for (const [kind, pals] of Object.entries(kinds)) {
+    isoDeco[kind] = pals.map(([c1, c2, c3], v) => {
+      const cv2 = document.createElement('canvas'); cv2.width = Math.ceil(DECO_W * res); cv2.height = Math.ceil(DECO_H * res);
+      const g = cv2.getContext('2d'); g.scale(res, res); g.translate(DECO_W / 2, DECO_H - DECO_FOOT);
+      const r2 = mulberry(v * 53 + kind.length * 7);
+      g.fillStyle = 'rgba(0,0,0,.22)'; g.beginPath(); g.ellipse(2, 1, 17, 6, 0, 0, 7); g.fill();
+      if (kind === 'arbusto' || kind === 'frutas') {
+        for (let k = 0; k < 11; k++) {
+          const a = r2() * Math.PI, rx = Math.cos(a) * 14 * r2(), ry = -12 - Math.sin(a) * 12 * r2();
+          const gr = g.createRadialGradient(rx - 3, ry - 4, 1, rx, ry, 11); gr.addColorStop(0, k > 6 ? c3 : c2); gr.addColorStop(1, c1);
+          g.fillStyle = gr; g.beginPath(); g.arc(rx, ry, 8 + r2() * 5, 0, 7); g.fill();
+        }
+        if (kind === 'frutas') for (let k = 0; k < 9; k++) { g.fillStyle = k % 2 ? '#3d2a7a' : '#6a4ab0'; g.beginPath(); g.arc((r2() - 0.5) * 26, -8 - r2() * 20, 1.8, 0, 7); g.fill(); }
+      } else if (kind === 'capim') {
+        g.lineCap = 'round';
+        for (let k = 0; k < 22; k++) { const bx = (r2() - 0.5) * 22, h = 12 + r2() * 16, lean = (r2() - 0.5) * 12; g.strokeStyle = [c1, c2, c3][k % 3]; g.lineWidth = 1.4; g.beginPath(); g.moveTo(bx, 0); g.quadraticCurveTo(bx + lean * 0.3, -h * 0.6, bx + lean, -h); g.stroke(); }
+      } else if (kind === 'flores') {
+        g.lineCap = 'round';
+        for (let k = 0; k < 14; k++) { const bx = (r2() - 0.5) * 20, h = 7 + r2() * 9; g.strokeStyle = k % 2 ? c1 : c2; g.lineWidth = 1.6; g.beginPath(); g.moveTo(bx, 0); g.lineTo(bx + (r2() - 0.5) * 6, -h); g.stroke(); }
+        for (let k = 0; k < 9; k++) { g.fillStyle = c3; g.beginPath(); g.arc((r2() - 0.5) * 22, -9 - r2() * 9, 2, 0, 7); g.fill(); }
+      } else {
+        g.lineCap = 'round';
+        for (let k = 0; k < 9; k++) {
+          const a = -Math.PI / 2 + (k / 8 - 0.5) * 2.6, L = 14 + r2() * 8, ex = Math.cos(a) * L, ey = Math.sin(a) * L * 0.8 - 2;
+          g.strokeStyle = k % 2 ? c2 : c3; g.lineWidth = 2.2; g.beginPath(); g.moveTo(0, -1); g.quadraticCurveTo(ex * 0.5, ey * 0.9 - 4, ex, ey); g.stroke();
+        }
+      }
+      return cv2;
+    });
+  }
+}
+function decoAt(x, y) {
+  const t = S.tiles[ix(x, y)];
+  if (t === TL.BUSH) return { k: 'frutas', v: 0 };
+  if (t !== TL.GRASS || S.room[ix(x, y)] || S.objs[ix(x, y)]) return null;
+  const h = hk(x, y, 61);
+  let p = inTown(x, y) ? 0.045 : 0.09;
+  if (p < 0.09 && N4.some(([a, b]) => tileAt(x + a, y + b) === TL.DOOR)) return null;
+  if (!inTown(x, y) && (tileAt(x + 2, y) === TL.TREE || tileAt(x - 2, y) === TL.TREE || tileAt(x, y + 2) === TL.TREE || tileAt(x, y - 2) === TL.TREE)) p = 0.16;
+  if (h > p) return null;
+  const r = hk(x, y, 62), k = r < 0.34 ? 'arbusto' : r < 0.62 ? 'capim' : r < 0.84 ? 'flores' : 'samambaia';
+  return { k, v: Math.floor(hk(x, y, 63) * isoDeco[k].length), ox: (hk(x, y, 64) - 0.5) * 0.5, oy: (hk(x, y, 65) - 0.5) * 0.5 };
 }
 function treeAt(x, y) {
   const k = hk(x, y, 11) < 0.04 ? 5 : hk(x, y, 15) < 0.07 ? 6 : Math.floor(hk(x, y, 9) * 5);

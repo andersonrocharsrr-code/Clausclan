@@ -378,6 +378,27 @@ function clearLine(x0, y0, x1, y1) {
   for (let k = 1; k < n; k++) { const x = lerp(x0, x1, k / n), y = lerp(y0, y1, k / n); if (isSolid(Math.floor(x), Math.floor(y), 'climb')) return false; }
   return true;
 }
+// gira um ângulo em direção a outro com velocidade máxima (rad/s)
+function turnTo(a, target, rate, dt) { const d = angDiff(target, a), m = rate * dt; return Math.abs(d) <= m ? target : a + Math.sign(d) * m; }
+// anda deslizando nas paredes e contorna quinas de portas e janelas; devolve a distância andada
+function slideMove(e, dx, dy, who) {
+  const ox = e.x, oy = e.y;
+  moveEnt(e, dx, dy, who);
+  const step = Math.hypot(dx, dy);
+  // eixo x travado e quase sem componente y: procura uma faixa livre de lado
+  if (Math.abs(e.x - ox) < Math.abs(dx) * 0.5 && Math.abs(dy) < Math.abs(dx) * 0.6) assist(e, dx, 0, step, who, 'y');
+  else if (Math.abs(e.y - oy) < Math.abs(dy) * 0.5 && Math.abs(dx) < Math.abs(dy) * 0.6) assist(e, 0, dy, step, who, 'x');
+  return Math.hypot(e.x - ox, e.y - oy);
+}
+function assist(e, dx, dy, step, who, axis) {
+  for (const off of [0.12, 0.24, 0.36]) for (const sg of [1, -1]) {
+    const nx = axis === 'x' ? e.x + sg * off : e.x, ny = axis === 'y' ? e.y + sg * off : e.y;
+    if (blockedAt(nx + dx, ny + dy, e.r, who) || blockedAt(nx, ny, e.r, who)) continue;
+    const m = Math.min(off, step * 0.9) * sg;
+    moveEnt(e, axis === 'x' ? m : 0, axis === 'y' ? m : 0, who);
+    return;
+  }
+}
 const angDiff = (a, b) => { let d = a - b; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
 
 function updatePlayer(dt) {
@@ -399,10 +420,14 @@ function updatePlayer(dt) {
     if (p.wounds.some((w) => w.k === 'fratura' && !w.band)) spd *= 0.6;
     if (tile === TL.WINDOW) spd *= 0.4;
     if (tile === TL.FIELD || tile === TL.SAND) spd *= 0.85;
-    const vx = (mv.x / Math.max(mag, 1e-6)) * mag * spd * dt, vy = (mv.y / Math.max(mag, 1e-6)) * mag * spd * dt;
+    const tvx = (mv.x / Math.max(mag, 1e-6)) * mag * spd, tvy = (mv.y / Math.max(mag, 1e-6)) * mag * spd;
+    const k = Math.min(1, dt * 13);
+    p.vx = (p.vx || 0) + (tvx - (p.vx || 0)) * k; p.vy = (p.vy || 0) + (tvy - (p.vy || 0)) * k;
     const wasWin = tile === TL.WINDOW;
-    moveEnt(p, vx, vy, 'climb');
-    if (!G.input.aimAt) p.a = Math.atan2(mv.y, mv.x);
+    const moved = slideMove(p, p.vx * dt, p.vy * dt, 'climb');
+    p.ph = (p.ph || 0) + moved * (running ? 4.1 : 4.6);
+    if (moved < Math.hypot(p.vx, p.vy) * dt * 0.3) { p.vx *= 0.5; p.vy *= 0.5; } // bateu: perde o embalo
+    if (!G.input.aimAt) p.a = turnTo(p.a, Math.atan2(mv.y, mv.x), 15, dt);
     // cacos de vidro
     const nt = tileAt(Math.floor(p.x), Math.floor(p.y));
     if (nt === TL.WINDOW && !wasWin) {
@@ -415,8 +440,15 @@ function updatePlayer(dt) {
     G.acc.noise -= dt;
     if (G.acc.noise <= 0) { G.acc.noise = 0.6; const r = running ? 7 : G.input.sneak ? 0 : 2.5 - lvl('furtividade') * 0.3; if (r > 0) makeNoise(p.x, p.y, r, false); if (G.input.sneak) addXP('furtividade', 0.15); }
     if (!running) p.sta = Math.min(100, p.sta + dt * 7);
-  } else p.sta = Math.min(100, p.sta + dt * (p.ene < 15 ? 5 : 11));
-  if (G.input.aimAt) p.a = Math.atan2(G.input.aimAt.y - p.y, G.input.aimAt.x - p.x);
+  } else {
+    p.sta = Math.min(100, p.sta + dt * (p.ene < 15 ? 5 : 11));
+    // desacelera até parar
+    const k = Math.min(1, dt * 16); p.vx = (p.vx || 0) * (1 - k); p.vy = (p.vy || 0) * (1 - k);
+    if (Math.abs(p.vx) + Math.abs(p.vy) > 0.02) { const moved = slideMove(p, p.vx * dt, p.vy * dt, 'climb'); p.ph = (p.ph || 0) + moved * 4.6; }
+  }
+  p.spdNow = Math.hypot(p.vx || 0, p.vy || 0);
+  if (G.input.aimAt) p.a = turnTo(p.a, Math.atan2(G.input.aimAt.y - p.y, G.input.aimAt.x - p.x), 22, dt);
+  p.atkT = Math.max(0, (p.atkT || 0) - dt);
   if (G.input.attack) attack();
   // torre de vigia
   const o = objAt(Math.floor(p.x), Math.floor(p.y));
@@ -470,7 +502,7 @@ function attack() {
   const tired = p.sta < 15;
   p.atkCd = wp.cd * (tired ? 1.5 : 1) * (1 - sk * 0.04);
   p.sta = Math.max(0, p.sta - (6 + (it ? ITEMS[it.k].w * 3 : 0)) * (1 - sk * 0.06));
-  sfx('golpe');
+  sfx('golpe'); p.atkT = 0.22;
   G.fx.push({ k: 'swing', x: p.x, y: p.y, a: p.a, r: wp.rng + 0.3, t: 0, d: 0.18 });
   const cands = targetsNear(p.x, p.y, wp.rng + 0.6).filter((z) => {
     const dd = dist(z.x, z.y, p.x, p.y); if (dd > wp.rng + (z.r || 0.3)) return false;
@@ -506,7 +538,8 @@ function hitTarget(z, dmg, kb, down, crit) {
   const heavy = z.t === 'brutamontes'; // pesado: quase não recua nem cai
   if (heavy) { kb *= 0.25; down = down && chance(0.2); }
   z.hp -= dmg;
-  moveEnt(z, Math.cos(a) * kb * 0.7, Math.sin(a) * kb * 0.7, 'climb');
+  if (ZT[z.t]) { z.kx = (z.kx || 0) + Math.cos(a) * kb * 7; z.ky = (z.ky || 0) + Math.sin(a) * kb * 7; }
+  else moveEnt(z, Math.cos(a) * kb * 0.7, Math.sin(a) * kb * 0.7, 'climb');
   if (ZT[z.t]) { // zumbi
     z.stun = heavy ? 0.12 : 0.35 + kb * 0.3; if (down) z.down = 2.6;
     if (z.st !== 'chase') { z.st = 'chase'; z.seeT = 6; }
@@ -792,7 +825,12 @@ function updateZombies(dt) {
     z.r = zd.r;
     const d2p = dist2(z.x, z.y, p.x, p.y);
     if (d2p > 45 * 45) { if (coarse) coarseZombie(z); continue; }
-    if (z.down > 0) { z.down -= dt; continue; }
+    if (z.kx || z.ky) { // empurrão
+      moveEnt(z, z.kx * dt, z.ky * dt, 'climb'); const dk = Math.exp(-dt * 10); z.kx *= dk; z.ky *= dk;
+      if (Math.abs(z.kx) + Math.abs(z.ky) < 0.05) z.kx = z.ky = 0;
+    }
+    z.lunge = Math.max(0, (z.lunge || 0) - dt * 3);
+    if (z.down > 0) { z.down -= dt; z.vx = z.vy = 0; continue; }
     if (z.stun > 0) { z.stun -= dt; continue; }
     z.cd -= dt;
     if (z.seeT > 0) z.seeT -= dt;
@@ -816,7 +854,7 @@ function updateZombies(dt) {
       else {
         z.tx = p.x; z.ty = p.y;
         if (d > 1.4) z.adj = 0;
-        if (d < 0.62 + zd.r + (p.inCar ? VT[p.inCar.t].wid / 2 : 0)) { if (!z.adj) { z.adj = 1; z.cd = Math.max(z.cd, 0.55); } if (z.cd <= 0) zombieAttack(z); z.a = Math.atan2(p.y - z.y, p.x - z.x); continue; }
+        if (d < 0.62 + zd.r + (p.inCar ? VT[p.inCar.t].wid / 2 : 0)) { if (!z.adj) { z.adj = 1; z.cd = Math.max(z.cd, 0.55); } if (z.cd <= 0) { zombieAttack(z); z.lunge = 1; } z.a = turnTo(z.a, Math.atan2(p.y - z.y, p.x - z.x), 9, dt); z.vx = (z.vx || 0) * 0.8; z.vy = (z.vy || 0) * 0.8; continue; }
         const zx = Math.floor(z.x), zy = Math.floor(z.y);
         const here = flowAt(zx, zy);
         if (here < INF && !p.inCar && !(d < 5 && clearLine(z.x, z.y, p.x, p.y))) {
@@ -825,9 +863,13 @@ function updateZombies(dt) {
           if (bx || by) {
             const br = breakable(zx + bx, zy + by);
             if (br && !(tileAt(zx + bx, zy + by) === TL.WINDOW && S.ts[ix(zx + bx, zy + by)].broken && !S.ts[ix(zx + bx, zy + by)].bar)) {
-              if (z.cd <= 0) hitObstacle(z, br); z.a = Math.atan2(by, bx); continue;
+              if (z.cd <= 0) hitObstacle(z, br); z.a = turnTo(z.a, Math.atan2(by, bx), 8, dt); z.vx = z.vy = 0; continue;
             }
             gx = zx + bx + 0.5 - z.x; gy = zy + by + 0.5 - z.y;
+            // olha um passo adiante: se der para ir reto até lá, corta caminho (sem zigue-zague)
+            const nx = zx + bx, ny = zy + by; let b2 = flowAt(nx, ny), cx = 0, cy = 0;
+            for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { if (!dx && !dy) continue; const f = flowAt(nx + dx, ny + dy); if (f < b2) { b2 = f; cx = dx; cy = dy; } }
+            if ((cx || cy) && !breakable(nx + cx, ny + cy) && clearLine(z.x, z.y, nx + cx + 0.5, ny + cy + 0.5)) { gx = nx + cx + 0.5 - z.x; gy = ny + cy + 0.5 - z.y; }
           } else { gx = p.x - z.x; gy = p.y - z.y; }
         } else { gx = p.x - z.x; gy = p.y - z.y; }
       }
@@ -837,7 +879,7 @@ function updateZombies(dt) {
       if (!npc || npc.dead || z.seeT <= 0) z.st = 'idle';
       else {
         const d = dist(z.x, z.y, npc.x, npc.y);
-        if (d < 0.9) { if (z.cd <= 0) { z.cd = 1.3; hurtNpc(npc, 9 * zd.dmg, false); } continue; }
+        if (d < 0.9) { if (z.cd <= 0) { z.cd = 1.3; z.lunge = 1; hurtNpc(npc, 9 * zd.dmg, false); } continue; }
         gx = npc.x - z.x; gy = npc.y - z.y;
       }
     }
@@ -855,30 +897,43 @@ function updateZombies(dt) {
         if (z.wa != null) { gx = Math.cos(z.wa); gy = Math.sin(z.wa); spd *= 0.3; }
       }
     }
-    if (gx || gy) {
+    // andar cambaleante dos lentos
+    if (z.t === 'lento' || z.t === 'brutamontes') spd *= 0.78 + 0.32 * Math.abs(Math.sin((z.ph || 0) * 0.5 + z.seed));
+    // aceleração: perto da presa o zumbi reage rápido (combate igual ao de antes); vagando, arranca devagar
+    const acc = (z.st === 'chase' && d2p < 16 ? 2.2 : 1) * (z.t === 'corredor' ? 9 : z.t === 'brutamontes' ? 3.5 : 5.5);
+    let tvx = 0, tvy = 0;
+    if (gx || gy) { const l = Math.hypot(gx, gy) || 1; tvx = (gx / l) * spd; tvy = (gy / l) * spd; }
+    const ka = Math.min(1, dt * acc);
+    z.vx = (z.vx || 0) + (tvx - (z.vx || 0)) * ka; z.vy = (z.vy || 0) + (tvy - (z.vy || 0)) * ka;
+    if (gx || gy || Math.abs(z.vx) + Math.abs(z.vy) > 0.02) {
       const l = Math.hypot(gx, gy) || 1;
-      const mx = (gx / l) * spd * dt, my = (gy / l) * spd * dt;
+      const mx = z.vx * dt, my = z.vy * dt;
       const wasIn = z.inside && bldAt(Math.floor(z.x), Math.floor(z.y)) >= 0;
       const ox = z.x, oy = z.y;
-      const moved = moveEnt(z, mx, my, 'climb') || unstick(z, 'climb');
+      const dm = slideMove(z, mx, my, 'climb');
+      const moved = dm > Math.hypot(mx, my) * 0.3 || unstick(z, 'climb');
+      z.ph = (z.ph || 0) + dm * (z.t === 'corredor' ? 3.8 : 4.4);
+      if (!moved) { z.vx *= 0.5; z.vy *= 0.5; }
       // zumbis "de dentro" não saem sozinhos ao vaguear
       if (z.st === 'idle' && wasIn && bldAt(Math.floor(z.x), Math.floor(z.y)) < 0) { z.x = ox; z.y = oy; z.wa = rnd(0, 6.28); }
       if (!moved && z.st === 'idle') z.wa = rnd(0, 6.28);
-      if (!moved && (z.st === 'hunt' || z.st === 'chase')) {
+      if (!moved && (gx || gy) && (z.st === 'hunt' || z.st === 'chase')) {
         // empacou: tenta quebrar o que está no caminho
         const tx = Math.floor(z.x + (gx / l) * 0.7), ty = Math.floor(z.y + (gy / l) * 0.7);
         const br = breakable(tx, ty); if (br && z.cd <= 0) hitObstacle(z, br);
         else if (z.st === 'hunt' && chance(0.02)) z.st = 'idle';
       }
-      z.a = Math.atan2(gy, gx);
+      const sp = Math.hypot(z.vx, z.vy);
+      if (sp > 0.08) z.a = turnTo(z.a, Math.atan2(z.vy, z.vx), z.t === 'corredor' ? 10 : 5.5, dt);
     }
+    z.spdNow = Math.hypot(z.vx, z.vy);
     // separação
     const k = (Math.floor(z.x / 2) << 8) | Math.floor(z.y / 2);
     const cell = zgrid.get(k);
     if (cell) for (const o of cell) {
       if (o === z) continue;
       const dx = z.x - o.x, dy = z.y - o.y, dd = dx * dx + dy * dy, mn = z.r + o.r;
-      if (dd > 0.0001 && dd < mn * mn) { const f = (mn - Math.sqrt(dd)) * 0.5 / Math.sqrt(dd); moveEnt(z, dx * f, dy * f, 'climb'); }
+      if (dd > 0.0001 && dd < mn * mn) { const f = (mn - Math.sqrt(dd)) * Math.min(0.5, dt * 9) / Math.sqrt(dd); moveEnt(z, dx * f, dy * f, 'climb'); }
     }
   }
   G.seenZ = seen;
@@ -1063,8 +1118,11 @@ function npcAttack(n, target) {
 }
 function npcMove(n, gx, gy, spd, dt) {
   const l = Math.hypot(gx, gy); if (l < 0.05) return;
-  n.r = 0.3; n.a = Math.atan2(gy, gx);
-  if (!moveEnt(n, (gx / l) * spd * dt, (gy / l) * spd * dt, 'climb')) {
+  n.r = 0.3; n.a = turnTo(n.a || 0, Math.atan2(gy, gx), 10, dt);
+  const ox = n.x, oy = n.y;
+  const ok = slideMove(n, (gx / l) * spd * dt, (gy / l) * spd * dt, 'climb') > spd * dt * 0.3;
+  n.ph = (n.ph || 0) + Math.hypot(n.x - ox, n.y - oy) * 4.6; n.mvT = 0.15;
+  if (!ok) {
     // tenta desviar
     const side = n.id % 2 ? 1 : -1;
     moveEnt(n, (-gy / l) * side * spd * dt, (gx / l) * side * spd * dt, 'climb');
@@ -1123,7 +1181,7 @@ function updateNpcs(dt) {
   const p = S.player;
   for (const n of S.npcs) {
     if (n.dead || n.away) continue;
-    n.cd -= dt;
+    n.cd -= dt; n.mvT = Math.max(0, (n.mvT || 0) - dt);
     const dp = dist(n.x, n.y, p.x, p.y);
     if (dp > 50 && n.st !== 'seguir') continue;
     // zumbi mais próximo
