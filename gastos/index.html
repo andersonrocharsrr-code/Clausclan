@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
   <!-- Garante ícones do tamanho certo mesmo antes do CSS carregar. -->
   <style>.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}</style>
 </head>
@@ -108,8 +108,10 @@
     <div class="wrap top__inner">
       <h1 class="brand"><img src="icon.svg" alt="" width="34" height="34"> <span>Meus Gastos</span></h1>
       <div class="top__actions">
-        <button class="icon-btn" id="btnNotif" type="button" title="Ativar lembretes" aria-label="Ativar lembretes">
-          <svg class="ic"><use href="#i-bell"/></svg><i class="dot" hidden></i>
+        <button class="icon-btn bell" id="btnNotif" type="button" title="Ativar lembretes" aria-label="Ativar lembretes">
+          <span class="bell__waves" aria-hidden="true"></span>
+          <span class="bell__icon"><svg class="ic" width="20" height="20"><use href="#i-bell"/></svg></span>
+          <i class="dot" hidden></i>
         </button>
         <button class="icon-btn" id="btnTheme" type="button" title="Tema" aria-label="Alternar tema">
           <svg class="ic"><use href="#i-auto"/></svg>
@@ -626,6 +628,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>

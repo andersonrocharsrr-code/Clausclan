@@ -1540,6 +1540,30 @@
     b.classList.toggle('is-on', canNotify());
     $('use', b).setAttribute('href', canNotify() ? '#i-bell-on' : '#i-bell');
     b.title = canNotify() ? 'Lembretes ativados' : 'Ativar lembretes';
+    b.setAttribute('aria-pressed', String(canNotify()));
+  }
+
+  // Balança o sino; "activating" adiciona as ondas e o "pulo" de quando os lembretes são ligados.
+  let ringTimer = null;
+  function ringBell(activating = false) {
+    const b = $('#btnNotif');
+    b.classList.remove('is-ringing', 'is-activating');
+    void b.offsetWidth; // reinicia a animação
+    b.classList.add('is-ringing');
+    if (activating) b.classList.add('is-activating');
+    clearTimeout(ringTimer);
+    ringTimer = setTimeout(() => b.classList.remove('is-ringing', 'is-activating'), 1700);
+  }
+
+  const getReg = async () => swReg || (navigator.serviceWorker && (await navigator.serviceWorker.getRegistration().catch(() => null)));
+
+  // Ao abrir o app, os avisos já foram vistos: tira da barra de notificações e apaga o número no ícone.
+  async function clearNotifications() {
+    try {
+      const reg = await getReg();
+      if (reg && reg.getNotifications) (await reg.getNotifications()).forEach((n) => n.close());
+      if (navigator.clearAppBadge) await navigator.clearAppBadge();
+    } catch { /* sem suporte */ }
   }
 
   async function askNotify() {
@@ -1551,29 +1575,38 @@
       toast('As notificações estão bloqueadas. Libere nas configurações do navegador para este site.');
       return;
     }
-    if (Notification.permission === 'default') {
-      const p = await Notification.requestPermission();
-      updateBell();
-      if (p !== 'granted') return;
+    if (Notification.permission === 'granted') {
+      ringBell();
+      toast('Os lembretes já estão ativados 🔔');
+      return;
     }
+    const p = await Notification.requestPermission();
+    updateBell();
+    if (p !== 'granted') return;
+    ringBell(true);
+    beep();
     toast('Lembretes ativados 🔔 Você será avisado no horário escolhido.');
-    notify('Meus Gastos', 'Pronto! Os lembretes vão aparecer assim.', 'teste');
+    // Um único aviso de exemplo, que some sozinho em alguns segundos.
+    notify('Meus Gastos', 'Pronto! Os lembretes vão aparecer assim.', 'teste', { quiet: true, autoClose: 5000 });
   }
 
   $('#btnNotif').addEventListener('click', askNotify);
 
-  async function notify(title, body, tag) {
-    beep();
-    const bell = $('#btnNotif');
-    bell.classList.remove('ring');
-    void bell.offsetWidth; // reinicia a animação
-    bell.classList.add('ring');
-    if (!canNotify()) return;
-    const opts = { body, tag, badge: 'icon.svg', requireInteraction: true };
+  async function notify(title, body, tag, { quiet = false, autoClose = 0 } = {}) {
+    if (!quiet) { beep(); ringBell(); }
+    // Com o app aberto na tela, o aviso aparece dentro dele; a notificação do sistema é só para segundo plano.
+    if (!canNotify() || (!quiet && document.visibilityState === 'visible')) return;
+    // Sem "requireInteraction": o aviso some ao tocar nele ou ao abrir o app (não fica preso na barra).
+    const opts = { body, tag, icon: 'icon-192.png', badge: 'badge-96.png', renotify: false, vibrate: [80, 40, 80] };
     try {
-      const reg = swReg || (navigator.serviceWorker && (await navigator.serviceWorker.getRegistration()));
-      if (reg) return await reg.showNotification(title, opts);
-      new Notification(title, opts);
+      const reg = await getReg();
+      if (reg) {
+        await reg.showNotification(title, opts);
+        if (autoClose) setTimeout(async () => (await reg.getNotifications({ tag })).forEach((n) => n.close()), autoClose);
+        return;
+      }
+      const n = new Notification(title, opts);
+      if (autoClose) setTimeout(() => n.close(), autoClose);
     } catch {
       try { new Notification(title, opts); } catch { /* sem suporte */ }
     }
@@ -2203,10 +2236,11 @@
   renderCalc();
   calcSplit();
   checkReminders();
+  clearNotifications();
   setInterval(checkReminders, CHECK_EVERY_MS);
   // Atualiza "hoje/amanhã", fixos e médias quando o app volta para a tela.
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) { launchFixed(); checkReminders(); render(); }
+    if (!document.hidden) { launchFixed(); checkReminders(); clearNotifications(); render(); }
   });
 
   // Atalho vindo da tela inicial do celular: ?novo=1
