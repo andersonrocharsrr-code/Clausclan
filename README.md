@@ -59,6 +59,8 @@ Abra `gastos/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serv
   gráfico por categoria, gastos por dia e **últimos 6 meses** (saídas x entradas).
 - **Faturas do cartão**: com o dia de fechamento e vencimento, soma compras no crédito e parcelas na fatura certa.
 - **Categorias personalizadas** com nome, cor e ícone.
+- **Metas de economia**: valor, prazo, cor e ícone. Mostra o progresso e quanto guardar por mês para
+  chegar no prazo; registre quanto guardou ou retirou. Comemora quando a meta é concluída.
 - **Foto do comprovante** em cada lançamento (fica salva no aparelho e vai junto no backup).
 - **Calculadora** com histórico e **Dividir a conta**; parcelamento no crédito (2x–24x).
 - **Lembretes** com data, horário, antecedência e repetição; "Paguei" lança o gasto e agenda o próximo.

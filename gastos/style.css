@@ -669,6 +669,56 @@ button { cursor: pointer; }
 .icon-opt { height: 42px; border-radius: 12px; border: 1.5px solid transparent; background: var(--surface-2); color: var(--muted); display: grid; place-items: center; }
 .icon-opt.is-active { border-color: var(--c, var(--accent)); color: var(--c, var(--accent)); background: var(--surface); }
 
+/* ---------- Metas ---------- */
+.goals { display: grid; gap: 10px; }
+@media (min-width: 560px) { .goals { grid-template-columns: 1fr 1fr; } }
+.goal {
+  display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; padding: 12px 14px;
+  border: 1px solid transparent; border-radius: 18px; background: var(--surface-2); transition: border-color .15s, transform .1s;
+}
+.goal:hover { border-color: color-mix(in srgb, var(--c) 45%, var(--line)); }
+.goal:active { transform: scale(.99); }
+.ring { position: relative; width: 58px; height: 58px; flex: none; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dasharray .9s cubic-bezier(.2, .8, .2, 1); }
+.ring .ring__track { stroke: color-mix(in srgb, var(--c) 16%, transparent); }
+.ring .ring__bar { stroke: var(--c); }
+.ring__in { position: absolute; inset: 0; display: grid; place-items: center; color: var(--c); }
+.ring__in .ic { width: 20px; height: 20px; }
+.goal__main { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.goal__name { font-weight: 700; display: flex; align-items: center; gap: 6px; min-width: 0; }
+.goal__name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.goal__nums { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.goal__nums small { color: var(--muted); font-weight: 500; }
+.goal__sub { font-size: 12.5px; color: var(--muted); }
+.goal__sub strong { color: var(--c); }
+.goal__pct { font-weight: 800; font-size: 15px; color: var(--c); font-variant-numeric: tabular-nums; }
+.goal.is-done .goal__sub { color: var(--good); font-weight: 600; }
+.goal.is-late .goal__sub { color: var(--bad); }
+.goals__empty { display: flex; align-items: center; gap: 12px; }
+.goals__empty p { margin: 0; flex: 1; }
+
+.goal-hero { display: flex; align-items: center; gap: 16px; padding: 14px; border-radius: 20px; background: var(--surface-2); }
+.goal-hero .ring { width: 96px; height: 96px; }
+.goal-hero .ring__in { font-weight: 800; font-size: 20px; letter-spacing: -.02em; }
+.goal-hero .goal__main { gap: 4px; }
+.goal-hero .goal__nums { font-size: 18px; font-weight: 800; letter-spacing: -.02em; }
+.goal-hist { display: grid; gap: 2px; }
+.goal-hist__row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 6px 4px; border-bottom: 1px solid var(--line); }
+.goal-hist__row:last-child { border-bottom: 0; }
+.goal-hist__row span { color: var(--muted); }
+.goal-hist__row b { font-variant-numeric: tabular-nums; }
+.goal-hist__row b.is-in { color: var(--good); }
+.goal-hist__row b.is-out { color: var(--bad); }
+
+/* Comemoração ao concluir uma meta */
+.confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
+.confetti i {
+  position: absolute; top: -12px; width: 8px; height: 14px; border-radius: 2px; opacity: .95;
+  animation: fall 1.8s cubic-bezier(.25, .6, .4, 1) forwards;
+}
+@keyframes fall { to { transform: translate3d(var(--dx), 105vh, 0) rotate(var(--rot)); opacity: 0; } }
+
 /* ---------- Toast ---------- */
 .toast {
   position: fixed; left: 16px; right: 16px; bottom: calc(104px + env(safe-area-inset-bottom));

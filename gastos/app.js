@@ -60,6 +60,9 @@
     editingExp: null,
     editingFixed: null,
     editingRem: null,
+    editingGoal: null,
+    movingGoal: null,
+    moveKind: 'in',
     payingRem: null,
     pickedCat: 'alimentacao',
     photo: { data: null, changed: false },
@@ -68,7 +71,7 @@
   function load() {
     const empty = {
       expenses: [], reminders: [], budget: 0, theme: 'auto', calcHist: [],
-      catBudgets: {}, fixed: [], customCats: [], card: { close: 0, due: 0 },
+      catBudgets: {}, fixed: [], customCats: [], card: { close: 0, due: 0 }, goals: [],
     };
     try {
       const data = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
@@ -93,6 +96,7 @@
       fixed: Array.isArray(data.fixed) ? data.fixed : [],
       customCats: Array.isArray(data.customCats) ? data.customCats : [],
       card: { close: Number(card.close) || 0, due: Number(card.due) || 0 },
+      goals: Array.isArray(data.goals) ? data.goals : [],
     };
   }
 
@@ -483,6 +487,7 @@
     renderDaily(list, y, m, dim, now, current);
     renderCompare();
     renderInvoices(now);
+    renderGoals(now);
     animateIn($('#view-resumo'));
 
     // Próximos lembretes
@@ -1616,6 +1621,222 @@
     if (changed) { save(); renderReminders(); }
   }
 
+  /* ---------------- Metas de economia ---------------- */
+  const goalSaved = (g) => g.moves.reduce((t, mv) => t + mv.amount, 0);
+  const RING_C = 2 * Math.PI * 26;
+  const ring = (pct, inner) => `
+    <span class="ring"><svg viewBox="0 0 60 60" aria-hidden="true">
+      <circle class="ring__track" cx="30" cy="30" r="26"/>
+      <circle class="ring__bar" cx="30" cy="30" r="26" stroke-dasharray="0 ${RING_C}" data-d="${Math.max(0.01, (pct / 100) * RING_C)} ${RING_C}"/>
+    </svg><span class="ring__in">${inner}</span></span>`;
+
+  // Quanto falta e quanto guardar por mês para chegar no prazo.
+  function goalPlan(g, now = new Date()) {
+    const saved = goalSaved(g);
+    const left = Math.max(0, g.target - saved);
+    const pct = g.target ? Math.min(100, (saved / g.target) * 100) : 0;
+    const base = { saved, left, pct, done: left === 0, late: false };
+    if (!left) return { ...base, text: 'Meta concluída! 🎉' };
+    if (!g.deadline) return { ...base, text: `Faltam <strong>${money(left)}</strong>` };
+    const d = parseDay(g.deadline);
+    if (d < startOfDay(now)) return { ...base, late: true, text: `O prazo passou · faltam ${money(left)}` };
+    const diff = (d.getFullYear() - now.getFullYear()) * 12 + d.getMonth() - now.getMonth();
+    const months = Math.max(1, diff + (d.getDate() >= now.getDate() ? 1 : 0));
+    // O que já foi guardado neste mês conta para a parcela deste mês.
+    const thisMonth = Math.max(0, g.moves.filter((mv) => !mv.start && mv.date.startsWith(monthKey(now))).reduce((t, mv) => t + mv.amount, 0));
+    const per = Math.ceil((left + thisMonth) / months);
+    const until = months <= 1 ? `até ${fmtDM.format(d)}` : `até ${fmtMonthName.format(d)}${d.getFullYear() !== now.getFullYear() ? ` de ${d.getFullYear()}` : ''}`;
+    return { ...base, per, text: `Guarde <strong>${money(per)}${months > 1 ? '/mês' : ''}</strong> ${until}` };
+  }
+
+  function renderGoals(now) {
+    const list = [...state.goals].map((g) => ({ g, plan: goalPlan(g, now) }))
+      .sort((a, b) => (a.plan.done - b.plan.done) || (a.g.deadline || '9999').localeCompare(b.g.deadline || '9999'));
+    $('#goals').innerHTML = list.length
+      ? list.map(({ g, plan }) => `
+        <button type="button" class="goal${plan.done ? ' is-done' : ''}${plan.late ? ' is-late' : ''}" data-goal="${g.id}" style="--c:${g.color}">
+          ${ring(plan.pct, ico(g.icon))}
+          <span class="goal__main">
+            <span class="goal__name"><span>${esc(g.name)}</span></span>
+            <span class="goal__nums">${money(plan.saved)} <small>de ${money(g.target)}</small></span>
+            <span class="goal__sub">${plan.text}</span>
+          </span>
+          <span class="goal__pct">${Math.floor(plan.pct)}%</span>
+        </button>`).join('')
+      : `<div class="goals__empty"><p class="empty-sm">Junte dinheiro para algo especial: viagem, reserva de emergência, celular novo…</p>
+          <button type="button" class="btn btn--soft btn--sm" data-newgoal>${ico('i-plus')}Criar</button></div>`;
+  }
+
+  // Criar / editar
+  const dlgGoal = $('#dlgGoal');
+  const formGoal = $('#formGoal');
+  const goalStyle = { color: CUSTOM_COLORS[7], icon: 'x-plane' };
+  bindLiveAmount($('#goalTarget'), $('#goalTargetOut'));
+  bindLiveAmount($('#goalStart'), $('#goalStartOut'), { optional: true });
+  $('#goalColors').innerHTML = CUSTOM_COLORS.map((c) =>
+    `<button type="button" class="swatch" data-color="${c}" style="--c:${c}" aria-label="Cor ${c}"></button>`).join('');
+  $('#goalIcons').innerHTML = ['x-plane', 'i-piggy', 'x-star', 'c-moradia', 'c-transporte', 'x-phone', 'x-gift', 'c-educacao', 'x-baby', 'x-pet',
+    'c-saude', 'x-fit', 'x-music', 'c-compras', 'c-invest', 'c-ganhos'].map((i) =>
+    `<button type="button" class="icon-opt" data-icon="${i}" aria-label="Ícone">${ico(i)}</button>`).join('');
+
+  function renderGoalStyle() {
+    $$('#goalColors .swatch').forEach((b) => b.classList.toggle('is-active', b.dataset.color === goalStyle.color));
+    $$('#goalIcons .icon-opt').forEach((b) => b.classList.toggle('is-active', b.dataset.icon === goalStyle.icon));
+    $('#goalIcons').style.setProperty('--c', goalStyle.color);
+    const prev = $('#goalPreview');
+    prev.style.setProperty('--c', goalStyle.color);
+    prev.innerHTML = ico(goalStyle.icon);
+  }
+  $('#goalColors').addEventListener('click', (e) => { const b = e.target.closest('[data-color]'); if (b) { goalStyle.color = b.dataset.color; renderGoalStyle(); } });
+  $('#goalIcons').addEventListener('click', (e) => { const b = e.target.closest('[data-icon]'); if (b) { goalStyle.icon = b.dataset.icon; renderGoalStyle(); } });
+
+  function openGoal(goal = null) {
+    ui.editingGoal = goal ? goal.id : null;
+    formGoal.reset();
+    $('#dlgGoalTitle').textContent = goal ? 'Editar meta' : 'Nova meta';
+    $('#goalDelete').hidden = !goal;
+    $('#goalStartWrap').hidden = !!goal;
+    goalStyle.color = goal ? goal.color : CUSTOM_COLORS[7];
+    goalStyle.icon = goal ? goal.icon : 'x-plane';
+    if (goal) {
+      formGoal.name.value = goal.name;
+      $('#goalTarget').value = amountInput(goal.target);
+      formGoal.deadline.value = goal.deadline || '';
+    }
+    $('#goalTarget')._update();
+    $('#goalStart')._update();
+    renderGoalStyle();
+    dlgGoal.showModal();
+  }
+  $('#btnNewGoal').addEventListener('click', () => openGoal());
+  $('#goals').addEventListener('click', (e) => {
+    if (e.target.closest('[data-newgoal]')) { openGoal(); return; }
+    const b = e.target.closest('[data-goal]');
+    if (b) openMove(state.goals.find((g) => g.id === b.dataset.goal));
+  });
+
+  formGoal.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = formGoal.name.value.trim();
+    const target = readAmount($('#goalTarget'));
+    const start = readAmount($('#goalStart'));
+    if (!name) return;
+    if (!Number.isFinite(target) || target <= 0) { toast('Informe quanto quer juntar.'); return; }
+    if (Number.isNaN(start)) { toast('Valor inválido em "Já tenho guardado".'); return; }
+    const data = { name: cap(name), target, deadline: formGoal.deadline.value || '', color: goalStyle.color, icon: goalStyle.icon };
+    if (ui.editingGoal) {
+      Object.assign(state.goals.find((g) => g.id === ui.editingGoal), data);
+      toast('Meta atualizada.');
+    } else {
+      const g = { id: uid(), ...data, moves: [], createdAt: Date.now() };
+      if (start > 0) g.moves.push({ id: uid(), date: dateISO(new Date()), amount: start, start: true });
+      state.goals.push(g);
+      const plan = goalPlan(g);
+      toast(plan.per ? `Meta criada! Guarde ${money(plan.per)} por mês para chegar lá.` : 'Meta criada!');
+    }
+    save();
+    dlgGoal.close();
+    if (dlgMove.open) renderMove();
+    renderSummary();
+  });
+
+  $('#goalDelete').addEventListener('click', () => {
+    const g = state.goals.find((x) => x.id === ui.editingGoal);
+    if (!g || !confirm(`Excluir a meta "${g.name}"?`)) return;
+    state.goals = state.goals.filter((x) => x !== g);
+    save();
+    dlgGoal.close();
+    if (dlgMove.open) dlgMove.close();
+    renderSummary();
+    toast('Meta excluída.', 'Desfazer', () => { state.goals.push(g); save(); renderSummary(); });
+  });
+
+  // Guardar / retirar
+  const dlgMove = $('#dlgGoalMove');
+  const formMove = $('#formMove');
+  const moveAmount = $('#moveAmount');
+  bindLiveAmount(moveAmount, $('#moveAmountOut'));
+
+  function setMoveKind(kind) {
+    ui.moveKind = kind;
+    $$('#moveKind .seg__btn').forEach((b) => b.classList.toggle('is-active', b.dataset.kind === kind));
+    $('#moveHint').textContent = kind === 'in' ? 'Quanto você guardou agora' : 'Quanto você tirou da meta';
+    $('#moveSubmit').textContent = kind === 'in' ? 'Guardar' : 'Retirar';
+  }
+  $('#moveKind').addEventListener('click', (e) => { const b = e.target.closest('[data-kind]'); if (b) setMoveKind(b.dataset.kind); });
+
+  function renderMove() {
+    const g = state.goals.find((x) => x.id === ui.movingGoal);
+    if (!g) return;
+    const plan = goalPlan(g);
+    $('#moveTitle').textContent = g.name;
+    const hero = $('#moveHero');
+    hero.style.setProperty('--c', g.color);
+    hero.innerHTML = `
+      ${ring(plan.pct, `${Math.floor(plan.pct)}%`)}
+      <span class="goal__main${plan.done ? ' is-done' : ''}">
+        <span class="goal__nums">${money(plan.saved)}</span>
+        <span class="goal__sub">de ${money(g.target)}${g.deadline ? ` · até ${fmtDM.format(parseDay(g.deadline))}/${g.deadline.slice(0, 4)}` : ''}</span>
+        <span class="goal__sub">${plan.text}</span>
+      </span>`;
+    const moves = [...g.moves].reverse().slice(0, 6);
+    $('#moveHist').innerHTML = moves.length
+      ? `<span class="label">Últimas movimentações</span>` + moves.map((mv) => `
+        <div class="goal-hist__row"><span>${fmtDM.format(parseDay(mv.date))}/${mv.date.slice(0, 4)}</span>
+          <b class="${mv.amount >= 0 ? 'is-in' : 'is-out'}">${mv.amount >= 0 ? '+' : '−'}${money(Math.abs(mv.amount))}</b></div>`).join('')
+      : '';
+    animateIn(hero);
+  }
+
+  function openMove(g) {
+    if (!g) return;
+    ui.movingGoal = g.id;
+    formMove.reset();
+    setMoveKind('in');
+    const plan = goalPlan(g);
+    if (plan.per && !plan.done) moveAmount.value = amountInput(plan.per);
+    moveAmount._update();
+    renderMove();
+    dlgMove.showModal();
+  }
+  $('#moveEdit').addEventListener('click', () => openGoal(state.goals.find((x) => x.id === ui.movingGoal)));
+
+  formMove.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const g = state.goals.find((x) => x.id === ui.movingGoal);
+    const amount = readAmount(moveAmount);
+    if (!g) return;
+    if (!Number.isFinite(amount) || amount <= 0) { toast('Informe um valor válido.'); return; }
+    const before = goalSaved(g);
+    if (ui.moveKind === 'out' && amount > before) { toast(`Você tem só ${money(before)} guardado nesta meta.`); return; }
+    g.moves.push({ id: uid(), date: dateISO(new Date()), amount: ui.moveKind === 'in' ? amount : -amount });
+    save();
+    dlgMove.close();
+    renderSummary();
+    const plan = goalPlan(g);
+    if (before < g.target && plan.done) {
+      celebrate();
+      toast(`🎉 Parabéns! Você completou a meta "${g.name}"!`);
+    } else {
+      toast(ui.moveKind === 'in' ? `Guardado! Faltam ${money(plan.left)} para "${g.name}".` : `Retirado. Faltam ${money(plan.left)} para "${g.name}".`);
+    }
+  });
+
+  function celebrate() {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const box = document.createElement('div');
+    box.className = 'confetti';
+    const colors = ['#7c6cff', '#9b3cf0', '#22c55e', '#f59e0b', '#ec4899', '#06b6d4'];
+    box.innerHTML = Array.from({ length: 70 }, () => {
+      const left = Math.random() * 100;
+      const style = `left:${left}%;background:${colors[Math.floor(Math.random() * colors.length)]};` +
+        `--dx:${(Math.random() - 0.5) * 160}px;--rot:${Math.round(Math.random() * 720)}deg;animation-delay:${Math.random() * 0.4}s`;
+      return `<i style="${style}"></i>`;
+    }).join('');
+    document.body.appendChild(box);
+    setTimeout(() => box.remove(), 2600);
+  }
+
   /* ---------------- Orçamento e limites ---------------- */
   const dlgBudget = $('#dlgBudget');
   const budgetInput = $('#budgetInput');
@@ -1813,6 +2034,7 @@
     menu.hidden = true;
     const action = b.dataset.action;
     if (action === 'budget') openBudget();
+    else if (action === 'goal') openGoal();
     else if (action === 'fixed') openFixed();
     else if (action === 'cats') openCats();
     else if (action === 'card') openCard();
@@ -1830,7 +2052,7 @@
       const data = {
         app: 'meus-gastos', version: 2, exportedAt: new Date().toISOString(),
         expenses: state.expenses, reminders: state.reminders, budget: state.budget, catBudgets: state.catBudgets,
-        fixed: state.fixed, customCats: state.customCats, card: state.card, photos: pics,
+        fixed: state.fixed, customCats: state.customCats, card: state.card, goals: state.goals, photos: pics,
       };
       download(`meus-gastos-backup-${dateISO(new Date())}.json`, JSON.stringify(data), 'application/json');
     } else if (action === 'import-json') {
