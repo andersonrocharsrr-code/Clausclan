@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#2563eb"/>
+  <rect x="14" y="16" width="36" height="34" rx="5" fill="#fff"/>
+  <rect x="14" y="16" width="36" height="9" rx="4" fill="#0f1b2d"/>
+  <rect x="21" y="11" width="4" height="9" rx="2" fill="#0f1b2d"/>
+  <rect x="39" y="11" width="4" height="9" rx="2" fill="#0f1b2d"/>
+  <text x="32" y="45" text-anchor="middle" font-family="system-ui, sans-serif" font-size="17" font-weight="700" fill="#16a34a">R$</text>
+</svg>

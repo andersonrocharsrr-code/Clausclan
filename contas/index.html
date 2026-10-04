@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Minhas Contas</title>
+  <meta name="description" content="Organize contas a pagar e cobranças a receber, com lembretes por data e horário.">
+  <meta name="theme-color" content="#0f1b2d">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top__inner">
+      <h1 class="brand">
+        <img src="icon.svg" alt="" width="28" height="28">
+        Minhas Contas
+      </h1>
+      <div class="top__actions">
+        <button class="btn btn--ghost" id="btnNotif" type="button" title="Ativar notificações">🔔<span> Ativar lembretes</span></button>
+        <button class="btn btn--ghost" id="btnMenu" type="button" aria-haspopup="true" aria-expanded="false">⋯</button>
+        <div class="menu" id="menu" hidden>
+          <button type="button" data-action="export-ics">📅 Exportar pendentes p/ calendário (.ics)</button>
+          <button type="button" data-action="export-json">💾 Fazer backup (.json)</button>
+          <button type="button" data-action="import-json">📂 Restaurar backup</button>
+          <button type="button" data-action="clear-paid">🧹 Apagar itens pagos</button>
+        </div>
+        <input type="file" id="fileImport" accept="application/json,.json" hidden>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="cards" aria-label="Resumo">
+      <article class="card card--pay">
+        <span class="card__label">A pagar (pendente)</span>
+        <strong class="card__value" id="sumPay">R$ 0,00</strong>
+      </article>
+      <article class="card card--recv">
+        <span class="card__label">A receber (pendente)</span>
+        <strong class="card__value" id="sumRecv">R$ 0,00</strong>
+      </article>
+      <article class="card card--late">
+        <span class="card__label">Vencidos</span>
+        <strong class="card__value" id="sumLate">0</strong>
+      </article>
+      <article class="card card--bal">
+        <span class="card__label">Saldo previsto</span>
+        <strong class="card__value" id="sumBal">R$ 0,00</strong>
+      </article>
+    </section>
+
+    <section class="toolbar">
+      <div class="seg" role="tablist" aria-label="Tipo">
+        <button type="button" class="seg__btn is-active" data-type="all">Todos</button>
+        <button type="button" class="seg__btn" data-type="pagar">Contas a pagar</button>
+        <button type="button" class="seg__btn" data-type="receber">Cobranças</button>
+      </div>
+      <div class="toolbar__row">
+        <select id="fStatus" aria-label="Situação">
+          <option value="open">Pendentes</option>
+          <option value="late">Vencidos</option>
+          <option value="week">Próximos 7 dias</option>
+          <option value="paid">Pagos / recebidos</option>
+          <option value="all">Todos</option>
+        </select>
+        <input type="search" id="fSearch" placeholder="Buscar por nome, pessoa ou categoria…" aria-label="Buscar">
+      </div>
+    </section>
+
+    <section id="list" class="list" aria-live="polite"></section>
+    <p id="empty" class="empty" hidden>Nada por aqui. Toque em <strong>+ Nova</strong> para adicionar uma conta ou cobrança.</p>
+  </main>
+
+  <button class="fab" id="btnAdd" type="button">+ Nova</button>
+
+  <dialog id="dlg" class="dlg">
+    <form id="form" method="dialog" class="form">
+      <h2 id="dlgTitle">Nova conta</h2>
+
+      <div class="seg seg--full" role="radiogroup" aria-label="Tipo">
+        <label class="seg__btn"><input type="radio" name="type" value="pagar" checked> 💸 A pagar</label>
+        <label class="seg__btn"><input type="radio" name="type" value="receber"> 💰 A receber</label>
+      </div>
+
+      <label>Descrição
+        <input name="title" required maxlength="80" placeholder="Ex.: Conta de luz, Aluguel, Cliente João">
+      </label>
+
+      <div class="grid2">
+        <label>Valor (R$)
+          <input name="amount" inputmode="decimal" required placeholder="0,00">
+        </label>
+        <label>Categoria
+          <input name="category" list="cats" maxlength="40" placeholder="Ex.: Casa">
+          <datalist id="cats"></datalist>
+        </label>
+      </div>
+
+      <label id="personWrap">Pessoa / empresa
+        <input name="person" maxlength="60" placeholder="Quem paga ou quem recebe">
+      </label>
+
+      <div class="grid2">
+        <label>Vencimento
+          <input type="date" name="date" required>
+        </label>
+        <label>Horário
+          <input type="time" name="time" required value="09:00">
+        </label>
+      </div>
+
+      <div class="grid2">
+        <label>Lembrar
+          <select name="remind">
+            <option value="0">No horário do vencimento</option>
+            <option value="15">15 minutos antes</option>
+            <option value="60">1 hora antes</option>
+            <option value="180">3 horas antes</option>
+            <option value="1440" selected>1 dia antes</option>
+            <option value="2880">2 dias antes</option>
+            <option value="4320">3 dias antes</option>
+            <option value="10080">1 semana antes</option>
+            <option value="-1">Não lembrar</option>
+          </select>
+        </label>
+        <label>Repetir
+          <select name="repeat">
+            <option value="none">Não repete</option>
+            <option value="weekly">Toda semana</option>
+            <option value="monthly">Todo mês</option>
+            <option value="yearly">Todo ano</option>
+          </select>
+        </label>
+      </div>
+
+      <label>Observações
+        <textarea name="notes" rows="2" maxlength="300" placeholder="Código de barras, chave Pix, etc."></textarea>
+      </label>
+
+      <div class="form__actions">
+        <button type="button" class="btn btn--danger" id="btnDelete" hidden>Excluir</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn--ghost" id="btnCancel">Cancelar</button>
+        <button type="submit" class="btn btn--primary">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toasts" class="toasts" aria-live="assertive"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
