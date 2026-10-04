@@ -36,3 +36,29 @@ e acesse `http://localhost:8000/contas/`). No celular, use "Adicionar à tela in
 - Os dados ficam salvos **somente neste navegador/aparelho** (localStorage). Faça backup de vez em quando.
 - As notificações do app disparam enquanto ele estiver aberto (ou em segundo plano no navegador).
   Para avisos garantidos com o app fechado, exporte para o calendário.
+
+---
+
+# Meus Gastos — controle de gastos (`gastos/`)
+
+App web instalável (PWA, sem build) para organizar **gastos do mês**, com **orçamento**,
+**calculadora automática** e **lembretes por data**. Visual limpo, com tema claro/escuro.
+
+Abra `gastos/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server` na raiz e acesse
+`http://localhost:8000/gastos/`). No celular, use "Adicionar à tela inicial" para instalar.
+
+## O que faz
+- **Resumo do mês**: total gasto, comparação com o mês anterior, média por dia, projeção do mês,
+  maior gasto e gráfico por categoria. Navegue entre meses com ‹ ›.
+- **Orçamento**: defina um limite mensal e o app calcula sozinho quanto ainda pode gastar **por dia**.
+- **Calculadora automática**: os campos de valor aceitam contas (`32,90+15*2`, `100+10%`) e mostram o
+  resultado na hora. Há também uma calculadora completa (com histórico e teclado) e a ferramenta
+  **Dividir a conta** (total + taxa ÷ pessoas).
+- **Parcelamento**: no crédito, escolha 2x–24x; o valor é dividido e cada parcela cai no mês certo.
+- **Lembretes** com data, horário, antecedência (no horário até 1 semana antes) e repetição
+  semanal/mensal/anual. Toque em 🔔 para permitir notificações. "Paguei" lança o gasto e agenda o próximo.
+- Exportar gastos do mês para planilha (`.csv`), lembretes para o calendário (`.ics`) e backup `.json`.
+
+## Observações
+- Os dados ficam salvos **somente neste navegador/aparelho** (localStorage). Faça backup de vez em quando.
+- Para avisos garantidos com o app fechado, exporte os lembretes para o calendário (menu ⋯).
