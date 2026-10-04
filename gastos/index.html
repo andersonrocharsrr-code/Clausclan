@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="style.css?v=10">
+  <link rel="stylesheet" href="style.css?v=11">
   <!-- Garante ícones do tamanho certo mesmo antes do CSS carregar. -->
   <style>.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}</style>
 </head>
@@ -75,6 +75,13 @@
     <symbol id="i-send" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol>
     <symbol id="i-edit" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.38 3.62a1 1 0 0 1 3 3L7.37 18.64a2 2 0 0 1-.86.5l-2.87.84a.5.5 0 0 1-.62-.62l.84-2.87a2 2 0 0 1 .5-.86z"/></symbol>
     <symbol id="i-piggy" viewBox="0 0 24 24"><path d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z"/><path d="M16 10h.01M2 8v1a2 2 0 0 0 2 2h1"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/></symbol>
+    <symbol id="i-scan" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8h10M7 12h10M7 16h6"/></symbol>
+    <symbol id="i-hand" viewBox="0 0 24 24"><path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/><path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/><path d="m2 16 6 6"/><circle cx="16" cy="9" r="2.9"/><circle cx="6" cy="5" r="3"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8.5 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 1c-1 0-2-1-2-2l1-1-1-2Z"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M16 13H8M16 17H8M10 9H8"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></symbol>
     <!-- Categorias -->
     <symbol id="c-alimentacao" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></symbol>
     <symbol id="c-mercado" viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></symbol>
@@ -129,6 +136,7 @@
           <button type="button" data-action="fixed"><svg class="ic"><use href="#i-repeat"/></svg>Gastos e entradas fixos</button>
           <button type="button" data-action="cats"><svg class="ic"><use href="#i-grid"/></svg>Categorias</button>
           <button type="button" data-action="card"><svg class="ic"><use href="#i-card"/></svg>Cartão de crédito</button>
+          <button type="button" data-action="report"><svg class="ic"><use href="#i-share"/></svg>Relatório do mês (imagem / PDF)</button>
           <button type="button" data-action="export-csv"><svg class="ic"><use href="#i-sheet"/></svg>Exportar gastos do mês (.csv)</button>
           <button type="button" data-action="export-ics"><svg class="ic"><use href="#i-calendar"/></svg>Lembretes p/ calendário (.ics)</button>
           <button type="button" data-action="export-json"><svg class="ic"><use href="#i-download"/></svg>Fazer backup (.json)</button>
@@ -152,8 +160,11 @@
       <form class="quick" id="quickForm" autocomplete="off">
         <label class="quick__field">
           <svg class="ic"><use href="#i-sparkle"/></svg>
-          <input id="quickInput" placeholder="Lançamento rápido: uber 23,50 ontem" aria-label="Lançamento rápido" enterkeyhint="send">
+          <input id="quickInput" placeholder="Ex.: uber 23,50 ontem" aria-label="Lançamento rápido" enterkeyhint="send">
+          <button type="button" class="quick__tool" id="quickMic" aria-label="Falar o gasto" title="Falar o gasto"><svg class="ic"><use href="#i-mic"/></svg></button>
+          <button type="button" class="quick__tool" id="quickScan" aria-label="Ler comprovante pela foto" title="Ler comprovante pela foto"><svg class="ic"><use href="#i-scan"/></svg></button>
           <button type="submit" class="quick__go" aria-label="Lançar"><svg class="ic"><use href="#i-send"/></svg></button>
+          <input type="file" accept="image/*" id="scanInput" hidden>
         </label>
         <div class="quick__preview" id="quickPreview" hidden></div>
       </form>
@@ -192,6 +203,15 @@
         <div class="goals" id="goals"></div>
       </article>
 
+      <article class="panel" id="debtsPanel">
+        <header class="panel__head">
+          <h2><svg class="ic ic--title"><use href="#i-hand"/></svg>Quem me deve</h2>
+          <button class="link" type="button" id="btnNewDebt"><svg class="ic"><use href="#i-plus"/></svg>Novo</button>
+        </header>
+        <div class="debt-sum" id="debtSum"></div>
+        <div class="debts" id="debts"></div>
+      </article>
+
       <article class="panel" id="insightsPanel" hidden>
         <header class="panel__head"><h2><svg class="ic ic--title"><use href="#i-bulb"/></svg>Destaques do mês</h2></header>
         <div class="insights" id="insights"></div>
@@ -209,9 +229,24 @@
       </article>
 
       <article class="panel">
-        <header class="panel__head"><h2>Gastos por dia</h2><span class="panel__sub" id="dailySub"></span></header>
-        <div class="daily" id="daily"></div>
-        <div class="daily__axis" id="dailyAxis"></div>
+        <header class="panel__head">
+          <h2>Gastos por dia</h2>
+          <div class="seg seg--mini" id="dayMode">
+            <button type="button" class="seg__btn is-active" data-mode="cal">Calendário</button>
+            <button type="button" class="seg__btn" data-mode="bars">Colunas</button>
+          </div>
+        </header>
+        <div id="calWrap">
+          <div class="cal__week"><span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span></div>
+          <div class="cal" id="cal"></div>
+          <div class="cal__legend" id="calLegend"></div>
+          <div class="cal__day" id="calDay" hidden></div>
+        </div>
+        <div id="barsWrap" hidden>
+          <div class="panel__sub daily__sub" id="dailySub"></div>
+          <div class="daily" id="daily"></div>
+          <div class="daily__axis" id="dailyAxis"></div>
+        </div>
       </article>
 
       <article class="panel">
@@ -229,6 +264,12 @@
         </header>
         <div id="invoices" class="invoices"></div>
       </article>
+
+      <button type="button" class="report-cta" id="btnReport">
+        <span class="stat__ic"><svg class="ic"><use href="#i-share"/></svg></span>
+        <span class="fixed-link__main"><strong>Relatório do mês</strong><small>Imagem para compartilhar ou PDF</small></span>
+        <svg class="ic"><use href="#i-right"/></svg>
+      </button>
 
       <article class="panel">
         <header class="panel__head">
@@ -326,6 +367,7 @@
             <div class="split__each"><span class="label">Cada um paga</span><strong id="spOutEach">R$ 0,00</strong></div>
           </div>
           <button type="button" class="btn btn--soft btn--block" id="spUse">Lançar minha parte</button>
+          <button type="button" class="btn btn--ghost btn--block" id="spDebt"><svg class="ic"><use href="#i-hand"/></svg>Registrar quem me deve a parte</button>
         </article>
       </div>
     </section>
@@ -357,6 +399,7 @@
         <span class="amount__field"><span class="amount__cur">R$</span><input name="amount" id="expAmount" inputmode="decimal" autocomplete="off" placeholder="0,00" required></span>
         <output id="expAmountOut" class="amount__out"></output>
       </label>
+      <div class="scan-status" id="scanStatus" hidden><span class="spinner" aria-hidden="true"></span><span id="scanText">Lendo comprovante…</span></div>
 
       <label>Descrição
         <input name="title" maxlength="80" placeholder="Ex.: Almoço, Uber, Farmácia" required>
@@ -608,6 +651,79 @@
     </div>
   </dialog>
 
+  <!-- ============ DIÁLOGO: DÍVIDA (criar / editar) ============ -->
+  <dialog id="dlgDebt" class="dlg">
+    <form id="formDebt" method="dialog" class="form">
+      <header class="form__head">
+        <h2 id="dlgDebtTitle">Novo registro</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="seg seg--kind" id="debtDir">
+        <button type="button" class="seg__btn is-active" data-dir="in"><svg class="ic"><use href="#i-in"/></svg>Me deve</button>
+        <button type="button" class="seg__btn" data-dir="out"><svg class="ic"><use href="#i-out"/></svg>Eu devo</button>
+      </div>
+      <div class="form__row">
+        <label>Pessoa <input name="person" maxlength="40" placeholder="Nome" required></label>
+        <label>WhatsApp (opcional) <input name="phone" type="tel" inputmode="tel" maxlength="20" placeholder="(68) 99999-9999"></label>
+      </div>
+      <label class="amount">
+        <span class="amount__hint">Valor</span>
+        <span class="amount__field"><span class="amount__cur">R$</span><input name="amount" id="debtAmount" inputmode="decimal" autocomplete="off" placeholder="0,00" required></span>
+        <output id="debtAmountOut" class="amount__out"></output>
+      </label>
+      <label>Referente a <input name="desc" maxlength="60" placeholder="Ex.: almoço, empréstimo, conta dividida"></label>
+      <div class="form__row">
+        <label>Data <input type="date" name="date" required></label>
+        <label>Combinado para (opcional) <input type="date" name="due"></label>
+      </div>
+      <footer class="form__foot">
+        <button type="button" class="btn btn--danger-ghost" id="debtDelete" hidden>Excluir</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn--ghost" data-close>Cancelar</button>
+        <button type="submit" class="btn btn--primary">Salvar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ============ DIÁLOGO: DÍVIDA (pagamentos) ============ -->
+  <dialog id="dlgDebtPay" class="dlg">
+    <form id="formDebtPay" method="dialog" class="form">
+      <header class="form__head">
+        <h2 id="payTitle">—</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="goal-hero" id="payHero"></div>
+      <a class="btn btn--whats btn--block" id="payWhats" target="_blank" rel="noopener"><svg class="ic"><use href="#i-chat"/></svg>Cobrar no WhatsApp</a>
+      <label class="amount" id="payAmountWrap">
+        <span class="amount__hint" id="payHint">Quanto recebeu</span>
+        <span class="amount__field"><span class="amount__cur">R$</span><input name="amount" id="payAmount" inputmode="decimal" autocomplete="off" placeholder="0,00"></span>
+        <output id="payAmountOut" class="amount__out"></output>
+      </label>
+      <div class="goal-hist" id="payHist"></div>
+      <footer class="form__foot">
+        <button type="button" class="btn btn--ghost" id="payEdit"><svg class="ic"><use href="#i-edit"/></svg>Editar</button>
+        <span class="spacer"></span>
+        <button type="submit" class="btn btn--primary" id="paySubmit">Recebi</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ============ DIÁLOGO: RELATÓRIO ============ -->
+  <dialog id="dlgReport" class="dlg">
+    <div class="form">
+      <header class="form__head">
+        <h2>Relatório do mês</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="report-preview"><img id="reportImg" alt="Prévia do relatório"></div>
+      <button type="button" class="btn btn--primary btn--block" id="reportShare"><svg class="ic"><use href="#i-share"/></svg>Compartilhar</button>
+      <div class="form__row">
+        <button type="button" class="btn btn--soft" id="reportPng"><svg class="ic"><use href="#i-image"/></svg>Baixar imagem</button>
+        <button type="button" class="btn btn--soft" id="reportPdf"><svg class="ic"><use href="#i-file"/></svg>Baixar PDF</button>
+      </div>
+    </div>
+  </dialog>
+
   <!-- ============ DIÁLOGO: CARTÃO ============ -->
   <dialog id="dlgCard" class="dlg dlg--sm">
     <form id="formCard" method="dialog" class="form">
@@ -635,6 +751,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="app.js?v=10"></script>
+  <script src="app.js?v=11"></script>
 </body>
 </html>

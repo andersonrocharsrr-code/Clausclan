@@ -796,6 +796,105 @@ button, .k, .tab, .fab, .chip, .seg__btn { touch-action: manipulation; -webkit-u
 }
 .steps .ic { width: 16px; height: 16px; vertical-align: -3px; color: var(--accent); }
 
+/* ---------- Voz e leitura de comprovante ---------- */
+.quick__tool {
+  position: relative; width: 38px; height: 38px; border: 0; border-radius: 12px; background: transparent; color: var(--muted);
+  display: grid; place-items: center; flex: none; transition: background .15s, color .15s;
+}
+.quick__tool .ic { width: 19px; height: 19px; }
+.quick__tool:active { background: var(--surface-2); }
+.quick__tool.is-listening { color: #fff; background: var(--bad); }
+.quick__tool.is-listening::before, .quick__tool.is-listening::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; border: 2px solid var(--bad); animation: mic-pulse 1.4s ease-out infinite;
+}
+.quick__tool.is-listening::after { animation-delay: .7s; }
+@keyframes mic-pulse { from { opacity: .7; transform: scale(1); } to { opacity: 0; transform: scale(1.8); } }
+.quick__field.is-listening { border-color: var(--bad); box-shadow: 0 0 0 4px color-mix(in srgb, var(--bad) 14%, transparent); }
+@media (max-width: 380px) { .quick__field { gap: 4px; padding-left: 10px; } .quick__tool { width: 34px; } }
+
+.scan-status {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 14px; margin-top: -6px;
+  background: var(--accent-soft); color: var(--accent); font-size: 13.5px; font-weight: 600;
+}
+.spinner { width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid currentColor; border-right-color: transparent; animation: spin .8s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.scan-status.is-done { background: color-mix(in srgb, var(--good) 14%, transparent); color: var(--good); }
+.scan-status.is-done .spinner, .scan-status.is-fail .spinner { display: none; }
+.scan-status.is-fail { background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); }
+
+/* ---------- Quem me deve ---------- */
+.debt-sum { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.debt-sum > div { border-radius: 16px; padding: 12px 14px; background: var(--surface-2); }
+.debt-sum strong { display: block; font-size: 18px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.debt-sum .is-in strong { color: var(--good); }
+.debt-sum .is-out strong { color: var(--bad); }
+.debts { display: grid; gap: 8px; }
+.debt {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 16px; background: var(--surface-2);
+  border: 0; width: 100%; text-align: left;
+}
+.avatar {
+  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none;
+  font-weight: 800; font-size: 14px; color: #fff; background: var(--c); letter-spacing: -.02em;
+}
+.debt__main { flex: 1; min-width: 0; display: grid; }
+.debt__main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.debt__main small { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.debt__main small.is-late { color: var(--bad); font-weight: 600; }
+.debt__val { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.debt__val.is-in { color: var(--good); }
+.debt__val.is-out { color: var(--bad); }
+.debt__wa {
+  width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; flex: none; color: #fff; background: #22c55e;
+}
+.debt__wa .ic { width: 18px; height: 18px; }
+.debt.is-paid { opacity: .6; }
+.debt.is-paid .debt__val { text-decoration: line-through; color: var(--muted); }
+.debts__more { border: 0; background: none; color: var(--accent); font-weight: 600; font-size: 13.5px; padding: 6px 2px; justify-self: start; }
+.btn--whats { background: #22c55e; color: #fff; text-decoration: none; }
+.btn--whats:hover { filter: brightness(1.05); }
+.goal-hero .avatar { width: 64px; height: 64px; font-size: 22px; }
+
+/* ---------- Calendário ---------- */
+.seg--mini { padding: 3px; border-radius: 12px; }
+.seg--mini .seg__btn { padding: 5px 10px; font-size: 12.5px; border-radius: 9px; }
+.cal__week, .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.cal__week span { text-align: center; font-size: 11.5px; font-weight: 700; color: var(--muted); padding-bottom: 6px; }
+.cal__cell {
+  position: relative; aspect-ratio: 1 / 1.05; border: 0; border-radius: 12px; background: var(--surface-2); color: var(--text);
+  display: grid; align-content: space-between; padding: 5px 4px 4px; text-align: center; min-width: 0;
+  background-image: linear-gradient(var(--heat, transparent), var(--heat, transparent));
+  transition: transform .1s, box-shadow .15s;
+}
+.cal__cell:active { transform: scale(.94); }
+.cal__cell b { font-size: 12.5px; font-weight: 700; line-height: 1; }
+.cal__cell small { font-size: 10px; font-weight: 600; line-height: 1.1; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.cal__cell.has small { color: var(--text); }
+.cal__cell.is-today { box-shadow: inset 0 0 0 2px var(--accent); }
+.cal__cell.is-sel { box-shadow: inset 0 0 0 2px var(--text); }
+.cal__cell.is-future { opacity: .45; }
+.cal__cell .cal__in { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--good); }
+.cal__blank { aspect-ratio: 1 / 1.05; }
+.cal__legend { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 12px; font-size: 11.5px; color: var(--muted); font-weight: 500; }
+.cal__legend i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+.cal__day { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); animation: fade .18s ease; }
+.cal__day h3 { display: flex; justify-content: space-between; margin: 0 0 8px; font-size: 14px; }
+.cal__day .exp { padding: 9px 4px; }
+.cal__day .exp + .exp::before { left: 50px; right: 4px; }
+.cal__day .cat-ic { width: 36px; height: 36px; border-radius: 11px; }
+.daily__sub { text-align: right; margin: -6px 0 8px; }
+
+/* ---------- Relatório ---------- */
+.report-cta {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 12px 14px; margin-bottom: 12px;
+  border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); color: var(--muted); box-shadow: var(--shadow);
+}
+.report-cta strong { color: var(--text); font-size: 15px; }
+.report-cta small { font-size: 12.5px; }
+.report-cta .stat__ic { margin: 0; }
+.report-preview { border-radius: 18px; overflow: hidden; background: var(--surface-2); max-height: 52dvh; overflow-y: auto; }
+.report-preview img { display: block; width: 100%; }
+
 /* ---------- Toast ---------- */
 .toast {
   position: fixed; left: 16px; right: 16px; bottom: calc(104px + env(safe-area-inset-bottom));
