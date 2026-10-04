@@ -719,6 +719,19 @@ button { cursor: pointer; }
 }
 @keyframes fall { to { transform: translate3d(var(--dx), 105vh, 0) rotate(var(--rot)); opacity: 0; } }
 
+/* ---------- Instalar ---------- */
+.install-hero { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 20px; background: var(--surface-2); }
+.install-hero img { border-radius: 16px; box-shadow: 0 10px 24px -10px rgba(91, 76, 240, .8); }
+.install-hero div { display: grid; gap: 2px; }
+.install-hero small { color: var(--muted); font-size: 13px; }
+.steps { margin: 0; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 10px; }
+.steps li { counter-increment: step; display: flex; gap: 12px; align-items: flex-start; font-size: 14.5px; line-height: 1.45; }
+.steps li::before {
+  content: counter(step); flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--accent-soft); color: var(--accent); font-weight: 800; font-size: 13px;
+}
+.steps .ic { width: 16px; height: 16px; vertical-align: -3px; color: var(--accent); }
+
 /* ---------- Toast ---------- */
 .toast {
   position: fixed; left: 16px; right: 16px; bottom: calc(104px + env(safe-area-inset-bottom));

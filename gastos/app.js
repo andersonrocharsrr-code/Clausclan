@@ -2033,7 +2033,8 @@
     if (!b) return;
     menu.hidden = true;
     const action = b.dataset.action;
-    if (action === 'budget') openBudget();
+    if (action === 'install') installApp();
+    else if (action === 'budget') openBudget();
     else if (action === 'goal') openGoal();
     else if (action === 'fixed') openFixed();
     else if (action === 'cats') openCats();
@@ -2131,6 +2132,44 @@
     return lines.join('\r\n');
   }
 
+  /* ---------------- Instalar como app ---------------- */
+  let installEvent = null;
+  const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  function updateInstallItem() { $('#menuInstall').hidden = isStandalone(); }
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvent = e; updateInstallItem(); });
+  window.addEventListener('appinstalled', () => {
+    installEvent = null;
+    updateInstallItem();
+    toast('App instalado! Procure o ícone "Meus Gastos" na tela inicial.');
+  });
+
+  async function installApp() {
+    if (installEvent) {
+      installEvent.prompt();
+      const { outcome } = await installEvent.userChoice;
+      installEvent = null;
+      if (outcome === 'accepted') toast('Instalando… o ícone aparece na tela inicial.');
+      return;
+    }
+    // Sem o aviso automático do navegador: mostra o passo a passo.
+    const share = '<svg class="ic"><use href="#i-upload"/></svg>';
+    const steps = isIOS()
+      ? ['Abra este endereço no <strong>Safari</strong>.',
+        `Toque em <strong>Compartilhar</strong> ${share} na barra de baixo.`,
+        'Escolha <strong>“Adicionar à Tela de Início”</strong> e toque em <strong>Adicionar</strong>.']
+      : /samsungbrowser/i.test(navigator.userAgent)
+        ? ['Toque no menu <strong>☰</strong> (três linhas) do Samsung Internet.',
+          'Escolha <strong>“Adicionar página a”</strong> → <strong>“Tela inicial”</strong> (ou “Instalar app”, se aparecer).',
+          'Confirme em <strong>Adicionar</strong>.']
+        : ['Toque no menu <strong>⋮</strong> do navegador (Chrome).',
+          'Escolha <strong>“Instalar app”</strong> ou <strong>“Adicionar à tela inicial”</strong>.',
+          'Confirme em <strong>Instalar</strong>.'];
+    $('#installSteps').innerHTML = steps.concat('Pronto: abra pelo ícone <strong>Meus Gastos</strong> — ele abre em tela cheia, como um app.')
+      .map((t) => `<li><span>${t}</span></li>`).join('');
+    $('#dlgInstall').showModal();
+  }
+
   /* ---------------- Toast ---------------- */
   let toastTimer = null;
   function toast(msg, actionLabel, action) {
@@ -2157,6 +2196,7 @@
 
   applyTheme();
   updateBell();
+  updateInstallItem();
   refreshCatSelects();
   launchFixed();
   render();
