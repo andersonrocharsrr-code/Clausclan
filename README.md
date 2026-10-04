@@ -52,7 +52,13 @@ navegador → "Instalar app" / "Adicionar à tela inicial"): fica com ícone pr�
 - **Lançamento rápido**: digite uma frase como `uber 23,50 ontem`, `mercado 89,90`, `tênis 300 3x` ou
   `+3500 salário`. O app reconhece valor (aceita contas), categoria, data (hoje, ontem, dia da semana, 10/03),
   forma de pagamento e parcelas.
+- **Lançar por voz** (🎤): fale "gastei 30 reais no mercado" e confira a prévia antes de lançar.
+- **Ler comprovante pela foto** (📷): o app lê total, data e loja do cupom e abre o formulário preenchido
+  (leitor de texto Tesseract.js, baixado só no primeiro uso).
 - **Entradas**: salário, freelance, vendas… O Resumo mostra entradas, saídas e **saldo** do mês.
+- **Quem me deve / a quem devo**: empréstimos e contas divididas, pagamentos parciais e cobrança pronta pelo WhatsApp.
+- **Calendário do mês**: cada dia colorido conforme o gasto (verde → vermelho); toque para ver os gastos do dia.
+- **Relatório do mês**: imagem para compartilhar (WhatsApp etc.) ou PDF.
 - **Orçamento e limites por categoria**: limite geral do mês e limites como "Mercado até R$ 800".
   Avisa ao passar de 80% e de 100%.
 - **Fixos automáticos**: ligue "Repetir todo mês" (aluguel, internet, salário) e o app lança sozinho no dia.
