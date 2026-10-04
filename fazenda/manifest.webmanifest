@@ -1,0 +1,15 @@
+{
+  "name": "Fazenda Aurora",
+  "short_name": "Fazenda",
+  "description": "Jogo de fazenda: plante, crie animais, compre tratores e venda sua produção.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5efe3",
+  "theme_color": "#f5efe3",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
