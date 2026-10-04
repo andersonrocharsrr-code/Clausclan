@@ -1,7 +1,7 @@
 /* Service worker: funciona offline e abre o app ao tocar numa notificação. */
-const CACHE = 'meus-gastos-v8';
+const CACHE = 'meus-gastos-v9';
 // Os arquivos levam "?v=" no index.html: ao mudar a versão, o celular nunca mistura CSS/JS antigo com HTML novo.
-const FILES = ['./', 'index.html', 'style.css?v=8', 'app.js?v=8', 'icon.svg', 'icon-192.png', 'icon-512.png', 'manifest.webmanifest'];
+const FILES = ['./', 'index.html', 'style.css?v=9', 'app.js?v=9', 'icon.svg', 'icon-192.png', 'icon-512.png', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
@@ -33,8 +33,8 @@ self.addEventListener('fetch', (e) => {
   );
 });
 
+// Tocar na notificação abre o app, mas ela continua na barra até o usuário limpar.
 self.addEventListener('notificationclick', (e) => {
-  e.notification.close();
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
       const open = list.find((c) => c.url.startsWith(self.registration.scope));
