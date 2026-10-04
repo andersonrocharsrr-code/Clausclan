@@ -1564,15 +1564,6 @@
 
   const getReg = async () => swReg || (navigator.serviceWorker && (await navigator.serviceWorker.getRegistration().catch(() => null)));
 
-  // Ao abrir o app, os avisos já foram vistos: tira da barra de notificações e apaga o número no ícone.
-  async function clearNotifications() {
-    try {
-      const reg = await getReg();
-      if (reg && reg.getNotifications) (await reg.getNotifications()).forEach((n) => n.close());
-      if (navigator.clearAppBadge) await navigator.clearAppBadge();
-    } catch { /* sem suporte */ }
-  }
-
   // Liga os lembretes (pede permissão ao navegador na primeira vez).
   async function enableAlerts() {
     if (!('Notification' in window)) {
@@ -1596,7 +1587,7 @@
     beep();
     toast('Lembretes ligados 🔔 Você será avisado no horário escolhido.');
     // Só na primeira vez: um aviso de exemplo, que some sozinho.
-    if (first) notify('Meus Gastos', 'Pronto! Os lembretes vão aparecer assim.', 'teste', { quiet: true, autoClose: 5000 });
+    if (first) notify('Meus Gastos', 'Pronto! Os lembretes vão aparecer assim.', 'teste', { quiet: true });
   }
 
   function disableAlerts() {
@@ -1604,7 +1595,6 @@
     save();
     updateBell();
     ringBell('off');
-    clearNotifications();
     toast('Lembretes desligados. Toque no sino para ligar de novo.');
   }
 
@@ -1612,24 +1602,21 @@
 
   $('#btnNotif').addEventListener('click', toggleAlerts);
 
-  async function notify(title, body, tag, { quiet = false, autoClose = 0 } = {}) {
+  async function notify(title, body, tag, { quiet = false } = {}) {
     if (!quiet) {
       ringBell();
       if (state.notifyOn) beep();
     }
-    // Com o app aberto na tela, o aviso aparece dentro dele; a notificação do sistema é só para segundo plano.
-    if (!alertsOn() || (!quiet && document.visibilityState === 'visible')) return;
-    // Sem "requireInteraction": o aviso some ao tocar nele ou ao abrir o app (não fica preso na barra).
+    // A notificação fica na barra até o usuário limpar (o app nunca apaga sozinho).
+    if (!alertsOn()) return;
     const opts = { body, tag, icon: 'icon-192.png', badge: 'badge-96.png', renotify: false, vibrate: [80, 40, 80] };
     try {
       const reg = await getReg();
       if (reg) {
         await reg.showNotification(title, opts);
-        if (autoClose) setTimeout(async () => (await reg.getNotifications({ tag })).forEach((n) => n.close()), autoClose);
         return;
       }
-      const n = new Notification(title, opts);
-      if (autoClose) setTimeout(() => n.close(), autoClose);
+      new Notification(title, opts);
     } catch {
       try { new Notification(title, opts); } catch { /* sem suporte */ }
     }
@@ -2315,11 +2302,10 @@
   renderCalc();
   calcSplit();
   checkReminders();
-  clearNotifications();
   setInterval(checkReminders, CHECK_EVERY_MS);
   // Atualiza "hoje/amanhã", fixos e médias quando o app volta para a tela.
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) { launchFixed(); checkReminders(); clearNotifications(); render(); }
+    if (!document.hidden) { launchFixed(); checkReminders(); render(); }
   });
 
   // Atalho vindo da tela inicial do celular: ?novo=1
