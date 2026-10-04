@@ -1,5 +1,5 @@
 /* Service worker: funciona offline e abre o app ao tocar numa notificação. */
-const CACHE = 'meus-gastos-v1';
+const CACHE = 'meus-gastos-v2';
 const FILES = ['./', 'index.html', 'style.css', 'app.js', 'icon.svg', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {

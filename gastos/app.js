@@ -20,16 +20,16 @@
   const fmtDM = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' });
 
   const CATS = [
-    { id: 'alimentacao', name: 'Alimentação', icon: '🍽️', color: '#f97316' },
-    { id: 'mercado', name: 'Mercado', icon: '🛒', color: '#22c55e' },
-    { id: 'transporte', name: 'Transporte', icon: '🚗', color: '#3b82f6' },
-    { id: 'moradia', name: 'Moradia', icon: '🏠', color: '#8b5cf6' },
-    { id: 'contas', name: 'Contas', icon: '💡', color: '#eab308' },
-    { id: 'saude', name: 'Saúde', icon: '💊', color: '#ef4444' },
-    { id: 'lazer', name: 'Lazer', icon: '🎉', color: '#ec4899' },
-    { id: 'compras', name: 'Compras', icon: '🛍️', color: '#14b8a6' },
-    { id: 'educacao', name: 'Educação', icon: '📚', color: '#6366f1' },
-    { id: 'outros', name: 'Outros', icon: '📦', color: '#64748b' },
+    { id: 'alimentacao', name: 'Alimentação', color: '#f97316' },
+    { id: 'mercado', name: 'Mercado', color: '#22c55e' },
+    { id: 'transporte', name: 'Transporte', color: '#3b82f6' },
+    { id: 'moradia', name: 'Moradia', color: '#8b5cf6' },
+    { id: 'contas', name: 'Contas', color: '#eab308' },
+    { id: 'saude', name: 'Saúde', color: '#ef4444' },
+    { id: 'lazer', name: 'Lazer', color: '#ec4899' },
+    { id: 'compras', name: 'Compras', color: '#14b8a6' },
+    { id: 'educacao', name: 'Educação', color: '#6366f1' },
+    { id: 'outros', name: 'Outros', color: '#64748b' },
   ];
   const CAT = Object.fromEntries(CATS.map((c) => [c.id, c]));
   const catOf = (id) => CAT[id] || CAT.outros;
@@ -235,6 +235,17 @@
   }
 
   const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  const ico = (id) => `<svg class="ic"><use href="#${id}"/></svg>`;
+  const catIcon = (c) => `<span class="cat-ic" style="--c:${c.color}">${ico(`c-${c.id}`)}</span>`;
+
+  // Anima barras/gráficos: começam zerados e crescem no próximo quadro.
+  function animateIn(root) {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      $$('[data-w]', root).forEach((el) => { el.style.width = el.dataset.w; });
+      $$('[data-h]', root).forEach((el) => { el.style.height = el.dataset.h; });
+      $$('[data-d]', root).forEach((el) => { el.setAttribute('stroke-dasharray', el.dataset.d); });
+    }));
+  }
 
   const esc = (s) =>
     String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -281,18 +292,18 @@
     const left = current ? dim - now.getDate() + 1 : past ? 0 : dim;
 
     $('#sumMonth').textContent = money(total);
+    $('#heroLabel').textContent = `Gasto em ${fmtMonthName.format(new Date(y, m - 1, 1))}`;
 
     const cmp = $('#sumCmp');
-    cmp.className = 'hero__cmp';
     if (prevTotal > 0) {
       const diff = Math.round(((total - prevTotal) / prevTotal) * 100);
       const prevName = fmtMonthName.format(new Date(y, m - 2, 1));
-      cmp.textContent = diff === 0
+      cmp.innerHTML = diff === 0
         ? `Igual a ${prevName}`
-        : `${diff > 0 ? '▲' : '▼'} ${Math.abs(diff)}% em relação a ${prevName}`;
-      if (diff !== 0) cmp.classList.add(diff > 0 ? 'up' : 'down');
+        : `${ico(diff > 0 ? 'i-up' : 'i-down')}${Math.abs(diff)}% vs. ${prevName}`;
+      cmp.hidden = false;
     } else {
-      cmp.textContent = '';
+      cmp.hidden = true;
     }
 
     // Orçamento
@@ -301,23 +312,25 @@
     const budget = state.budget;
     if (budget > 0) {
       const pct = total / budget;
-      bar.hidden = false;
+      $('#budgetBox').hidden = false;
       bar.classList.toggle('warn', pct >= 0.8 && pct < 1);
       bar.classList.toggle('over', pct >= 1);
       bar.firstElementChild.style.width = `${Math.min(100, pct * 100)}%`;
+      $('#budgetUsed').textContent = `${Math.round(pct * 100)}% usado`;
+      $('#budgetOf').textContent = `de ${money(budget)}`;
       const rest = budget - total;
       if (rest < 0) {
-        note.innerHTML = `Você passou <strong>${money(-rest)}</strong> do orçamento de ${money(budget)}.`;
+        note.innerHTML = `Você passou <strong>${money(-rest)}</strong> do orçamento.`;
       } else if (current) {
-        note.innerHTML = `Restam <strong>${money(rest)}</strong> de ${money(budget)} — dá para gastar até ` +
-          `<strong>${money(Math.floor(rest / left))}</strong> por dia nos próximos ${left} dia${left > 1 ? 's' : ''}.`;
+        note.innerHTML = `Restam <strong>${money(rest)}</strong> — dá para gastar até ` +
+          `<strong>${money(Math.floor(rest / left))}/dia</strong> nos próximos ${left} dia${left > 1 ? 's' : ''}.`;
       } else if (past) {
-        note.innerHTML = `Mês fechado com <strong>${money(rest)}</strong> de sobra no orçamento de ${money(budget)}.`;
+        note.innerHTML = `Mês fechado com <strong>${money(rest)}</strong> de sobra.`;
       } else {
-        note.innerHTML = `Orçamento de ${money(budget)} — <strong>${money(Math.floor(rest / dim))}</strong> por dia.`;
+        note.innerHTML = `Você poderá gastar <strong>${money(Math.floor(rest / dim))}/dia</strong> neste mês.`;
       }
     } else {
-      bar.hidden = true;
+      $('#budgetBox').hidden = true;
       note.innerHTML = 'Defina um <strong>orçamento</strong> e o app calcula quanto você ainda pode gastar por dia.';
     }
 
@@ -331,40 +344,99 @@
     $('#statMax').title = max ? max.title : '';
     $('#statCount').textContent = String(list.length);
 
-    // Categorias
-    const byCat = new Map();
-    for (const e of list) byCat.set(e.cat, (byCat.get(e.cat) || 0) + e.amount);
-    const rows = [...byCat].sort((a, b) => b[1] - a[1]);
-    const top = rows.length ? rows[0][1] : 0;
-    $('#catBreakdown').innerHTML = rows.length
-      ? rows.map(([id, v]) => {
-        const c = catOf(id);
-        const pct = total ? Math.round((v / total) * 100) : 0;
-        return `
-          <div class="bar">
-            <div class="bar__top">
-              <span class="bar__icon" style="background:${c.color}22">${c.icon}</span>
-              <span class="bar__name">${c.name}<small>${pct}%</small></span>
-              <span class="bar__val">${money(v)}</span>
-            </div>
-            <div class="bar__track"><span style="width:${(v / top) * 100}%;background:${c.color}"></span></div>
-          </div>`;
-      }).join('')
-      : '<p class="empty-sm">Sem gastos neste mês. Toque em <strong>+</strong> para lançar.</p>';
+    renderCategories(list, total);
+    renderDaily(list, y, m, dim, now, current);
 
     // Próximos lembretes
     const next = [...state.reminders].sort((a, b) => new Date(a.due) - new Date(b.due)).slice(0, 3);
     $('#nextReminders').innerHTML = next.length
       ? next.map((r) => {
         const st = remStatus(r, now);
+        const d = new Date(r.due);
         return `
           <div class="mini">
-            <span class="bar__icon" style="background:${catOf(r.cat).color}22">${catOf(r.cat).icon}</span>
-            <span class="mini__title">${esc(r.title)}</span>
+            ${catIcon(catOf(r.cat))}
+            <div class="mini__main">
+              <div class="mini__title">${esc(r.title)}</div>
+              <div class="mini__sub">${fmtDM.format(d)} · ${pad(d.getHours())}:${pad(d.getMinutes())}${r.amount != null ? ` · ${money(r.amount)}` : ''}</div>
+            </div>
             <span class="tag ${st.cls}">${st.label}</span>
           </div>`;
       }).join('')
       : '<p class="empty-sm">Nenhum lembrete. Crie um para não esquecer aluguel, cartão, internet…</p>';
+  }
+
+  // Gráfico de rosca + legenda com barras.
+  function renderCategories(list, total) {
+    const byCat = new Map();
+    for (const e of list) byCat.set(e.cat, (byCat.get(e.cat) || 0) + e.amount);
+    const rows = [...byCat].sort((a, b) => b[1] - a[1]);
+    const donut = $('#donut');
+    $('#catSub').textContent = rows.length ? `${rows.length} categoria${rows.length > 1 ? 's' : ''}` : '';
+
+    if (!rows.length) {
+      donut.hidden = true;
+      $('#catBreakdown').innerHTML = '<p class="empty-sm">Sem gastos neste mês. Toque em <strong>+</strong> para lançar.</p>';
+      return;
+    }
+
+    const R = 70;
+    const C = 2 * Math.PI * R;
+    const GAP = rows.length > 1 ? 18 : 0; // espaço entre fatias (compensa a ponta arredondada)
+    let offset = 0;
+    const arcs = rows.map(([id, v]) => {
+      const frac = v / total;
+      const len = rows.length > 1 ? Math.max(frac * C - GAP, 0.1) : C;
+      const arc = `<circle cx="90" cy="90" r="${R}" stroke="${catOf(id).color}" stroke-dasharray="0 ${C}"
+        data-d="${len} ${C}" stroke-dashoffset="${-offset}"${rows.length > 1 ? '' : ' stroke-linecap="butt"'}><title>${catOf(id).name}</title></circle>`;
+      offset += frac * C;
+      return arc;
+    }).join('');
+    donut.hidden = false;
+    donut.innerHTML = `
+      <svg viewBox="0 0 180 180" aria-hidden="true">
+        <circle class="donut__track" cx="90" cy="90" r="${R}"/>
+        ${arcs}
+      </svg>
+      <div class="donut__center"><small>Total</small><strong>${money(total)}</strong></div>`;
+
+    $('#catBreakdown').innerHTML = rows.map(([id, v]) => {
+      const c = catOf(id);
+      const pct = total ? (v / total) * 100 : 0;
+      return `
+        <div class="leg__row" style="--c:${c.color}">
+          ${catIcon(c)}
+          <div class="leg__main">
+            <div class="leg__top"><span class="leg__name">${c.name}</span><span class="leg__val">${money(v)}</span></div>
+            <div class="leg__bar">
+              <div class="leg__track"><span data-w="${pct}%"></span></div>
+              <span class="leg__pct">${Math.round(pct)}%</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+    animateIn($('#view-resumo'));
+  }
+
+  // Colunas com o total de cada dia do mês.
+  function renderDaily(list, y, m, dim, now, current) {
+    const perDay = new Array(dim).fill(0);
+    for (const e of list) perDay[Number(e.date.slice(8, 10)) - 1] += e.amount;
+    const max = Math.max(...perDay);
+    const today = current ? now.getDate() : 0;
+    const isFuture = (day) => (current ? day > today : ui.month > monthKey(now));
+    $('#daily').innerHTML = perDay.map((v, i) => {
+      const day = i + 1;
+      const cls = ['daily__col', v && 'has', day === today && 'today', isFuture(day) && 'future'].filter(Boolean).join(' ');
+      const h = max ? (v / max) * 100 : 0;
+      return `<div class="${cls}" title="${pad(day)}/${pad(m)}: ${money(v)}"><span style="height:0" data-h="${h}%"></span></div>`;
+    }).join('');
+    const ticks = [1, 8, 15, 22, dim];
+    $('#dailyAxis').innerHTML = ticks.map((d) => `<span>${d}</span>`).join('');
+    const peak = perDay.indexOf(max) + 1;
+    $('#dailySub').textContent = current
+      ? `Hoje: ${money(perDay[today - 1])}`
+      : max ? `Maior: dia ${peak}` : '';
   }
 
   function renderExpenses() {
@@ -373,7 +445,7 @@
     const used = CATS.filter((c) => monthList.some((e) => e.cat === c.id));
     if (ui.cat !== 'all' && !used.some((c) => c.id === ui.cat)) ui.cat = 'all';
     $('#fCats').innerHTML = [`<button type="button" class="chip${ui.cat === 'all' ? ' is-active' : ''}" data-cat="all">Todas</button>`]
-      .concat(used.map((c) => `<button type="button" class="chip${ui.cat === c.id ? ' is-active' : ''}" data-cat="${c.id}">${c.icon} ${c.name}</button>`))
+      .concat(used.map((c) => `<button type="button" class="chip${ui.cat === c.id ? ' is-active' : ''}" data-cat="${c.id}" style="--c:${c.color}">${ico(`c-${c.id}`)}${c.name}</button>`))
       .join('');
 
     const q = ui.search;
@@ -399,7 +471,7 @@
         const meta = [c.name, e.method, e.inst && `parcela ${e.inst}`, e.notes && esc(e.notes)].filter(Boolean).join(' · ');
         html.push(`
           <button type="button" class="exp" data-id="${e.id}">
-            <span class="exp__icon" style="background:${c.color}22">${c.icon}</span>
+            ${catIcon(c)}
             <span class="exp__main">
               <span class="exp__title">${esc(e.title)}</span>
               <span class="exp__meta">${meta}</span>
@@ -445,21 +517,21 @@
       const d = new Date(r.due);
       const st = remStatus(r, now);
       const meta = [
-        `${pad(d.getHours())}:${pad(d.getMinutes())}`,
-        r.repeat !== 'none' && `🔁 ${REPEAT_LABEL[r.repeat]}`,
-        `🔔 ${remindLabel(r.remind)}`,
-      ].filter(Boolean).join(' · ');
+        `${ico('i-clock')}${pad(d.getHours())}:${pad(d.getMinutes())}`,
+        r.repeat !== 'none' && `${ico('i-repeat')}${REPEAT_LABEL[r.repeat]}`,
+        `${ico('i-bell')}${remindLabel(r.remind)}`,
+      ].filter(Boolean).map((x) => `<span>${x}</span>`).join('');
       return `
         <article class="rem is-${st.state}" data-id="${r.id}" tabindex="0">
           <div class="rem__date"><b>${d.getDate()}</b><small>${fmtShortMonth.format(d).replace('.', '')}</small></div>
           <div class="rem__main">
-            <div class="rem__title">${catOf(r.cat).icon} ${esc(r.title)}</div>
+            <div class="rem__title">${esc(r.title)}</div>
             <div class="rem__meta">${meta}</div>
             <span class="tag ${st.cls}">${st.label}</span>
           </div>
           <div class="rem__side">
             <span class="rem__val">${r.amount != null ? money(r.amount) : ''}</span>
-            <button type="button" class="btn btn--primary btn--sm" data-pay="${r.id}">Paguei</button>
+            <button type="button" class="btn btn--primary btn--sm" data-pay="${r.id}">${ico('i-check')}Paguei</button>
           </div>
         </article>`;
     }).join('');
@@ -468,6 +540,7 @@
     const due = list.filter((r) => remStatus(r, now).state !== 'ok' && daysBetween(now, new Date(r.due)) <= 1).length;
     $('#remBadge').hidden = !due;
     $('#remBadge').textContent = String(due);
+    $('#btnNotif .dot').hidden = !due;
   }
 
   /* ---------------- Filtros ---------------- */
@@ -493,7 +566,7 @@
   bindLiveAmount(expAmount, $('#expAmountOut'));
 
   $('#catPick').innerHTML = CATS.map((c) =>
-    `<button type="button" class="cat-opt" data-cat="${c.id}"><span>${c.icon}</span>${c.name}</button>`).join('');
+    `<button type="button" class="cat-opt" data-cat="${c.id}" style="--c:${c.color}">${catIcon(c)}${c.name}</button>`).join('');
   $('#catPick').addEventListener('click', (e) => {
     const b = e.target.closest('[data-cat]');
     if (b) pickCat(b.dataset.cat);
@@ -636,7 +709,7 @@
   const formRem = $('#formRem');
   const remAmount = $('#remAmount');
   bindLiveAmount(remAmount, $('#remAmountOut'), { optional: true });
-  $('#remCat').innerHTML = CATS.map((c) => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+  $('#remCat').innerHTML = CATS.map((c) => `<option value="${c.id}">${c.name}</option>`).join('');
 
   function openReminder(rem = null) {
     ui.editingRem = rem ? rem.id : null;
@@ -763,6 +836,7 @@
   function updateBell() {
     const b = $('#btnNotif');
     b.classList.toggle('is-on', canNotify());
+    $('use', b).setAttribute('href', canNotify() ? '#i-bell-on' : '#i-bell');
     b.title = canNotify() ? 'Lembretes ativados' : 'Ativar lembretes';
   }
 
@@ -788,8 +862,12 @@
 
   async function notify(title, body, tag) {
     beep();
+    const bell = $('#btnNotif');
+    bell.classList.remove('ring');
+    void bell.offsetWidth; // reinicia a animação
+    bell.classList.add('ring');
     if (!canNotify()) return;
-    const opts = { body, tag, icon: 'icon.svg', badge: 'icon.svg', requireInteraction: true };
+    const opts = { body, tag, badge: 'icon.svg', requireInteraction: true };
     try {
       const reg = swReg || (navigator.serviceWorker && (await navigator.serviceWorker.getRegistration()));
       if (reg) return await reg.showNotification(title, opts);
@@ -967,12 +1045,14 @@
   });
 
   /* ---------------- Tema ---------------- */
-  const THEME_ICON = { auto: '🌓', light: '☀️', dark: '🌙' };
+  const THEME_ICON = { auto: '#i-auto', light: '#i-sun', dark: '#i-moon' };
   const THEME_LABEL = { auto: 'automático', light: 'claro', dark: 'escuro' };
   function applyTheme() {
     if (state.theme === 'auto') delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = state.theme;
-    $('#btnTheme').textContent = THEME_ICON[state.theme];
+    $('#btnTheme use').setAttribute('href', THEME_ICON[state.theme]);
+    // Mantém o navegador sem "escurecer à força" as cores do app.
+    $('#metaScheme').content = state.theme === 'auto' ? 'light dark' : state.theme;
   }
   $('#btnTheme').addEventListener('click', () => {
     state.theme = { auto: 'light', light: 'dark', dark: 'auto' }[state.theme];

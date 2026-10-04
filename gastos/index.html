@@ -5,35 +5,92 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Meus Gastos</title>
   <meta name="description" content="Organize seus gastos do mês com orçamento, calculadora automática e lembretes por data.">
-  <meta name="theme-color" content="#f6f7fb" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0d1017" media="(prefers-color-scheme: dark)">
+  <!-- Diz ao navegador que o app já tem tema escuro próprio (evita o "modo escuro forçado" que apaga as cores). -->
+  <meta name="color-scheme" content="light dark" id="metaScheme">
+  <meta name="theme-color" content="#f5f6fa" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0c11" media="(prefers-color-scheme: dark)">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- Ícones (traço fino, estilo moderno) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+    <symbol id="i-bell-on" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M4 2C2.8 3.7 2 5.7 2 8"/><path d="M22 8c0-2.3-.8-4.3-2-6"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+    <symbol id="i-auto" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-pie" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></symbol>
+    <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6M16 12h-6M13 16h-3"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+    <symbol id="i-calc" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="3"/><path d="M8 6h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15v3M8 18h.01M12 18h.01"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="m22 17-8.5-8.5-5 5L2 7"/><path d="M16 17h6v-6"/></symbol>
+    <symbol id="i-repeat" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></symbol>
+    <symbol id="i-hash" viewBox="0 0 24 24"><path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/></symbol>
+    <symbol id="i-sheet" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M3 15h18M9 3v18"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-delete" viewBox="0 0 24 24"><path d="M20 5H9l-7 7 7 7h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z"/><path d="m18 9-6 6M12 9l6 6"/></symbol>
+    <!-- Categorias -->
+    <symbol id="c-alimentacao" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></symbol>
+    <symbol id="c-mercado" viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></symbol>
+    <symbol id="c-transporte" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></symbol>
+    <symbol id="c-moradia" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></symbol>
+    <symbol id="c-contas" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></symbol>
+    <symbol id="c-saude" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/></symbol>
+    <symbol id="c-lazer" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="4"/><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/></symbol>
+    <symbol id="c-compras" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></symbol>
+    <symbol id="c-educacao" viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></symbol>
+    <symbol id="c-outros" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></symbol>
+  </svg>
+
   <header class="top">
     <div class="wrap top__inner">
-      <h1 class="brand"><img src="icon.svg" alt="" width="30" height="30"> Meus Gastos</h1>
+      <h1 class="brand"><img src="icon.svg" alt="" width="34" height="34"> <span>Meus Gastos</span></h1>
       <div class="top__actions">
-        <button class="icon-btn" id="btnNotif" type="button" title="Ativar lembretes" aria-label="Ativar lembretes">🔔</button>
-        <button class="icon-btn" id="btnTheme" type="button" title="Tema claro/escuro" aria-label="Alternar tema">🌓</button>
-        <button class="icon-btn" id="btnMenu" type="button" aria-label="Mais opções" aria-haspopup="true" aria-expanded="false">⋯</button>
+        <button class="icon-btn" id="btnNotif" type="button" title="Ativar lembretes" aria-label="Ativar lembretes">
+          <svg class="ic"><use href="#i-bell"/></svg><i class="dot" hidden></i>
+        </button>
+        <button class="icon-btn" id="btnTheme" type="button" title="Tema" aria-label="Alternar tema">
+          <svg class="ic"><use href="#i-auto"/></svg>
+        </button>
+        <button class="icon-btn" id="btnMenu" type="button" aria-label="Mais opções" aria-haspopup="true" aria-expanded="false">
+          <svg class="ic"><use href="#i-more"/></svg>
+        </button>
         <div class="menu" id="menu" hidden>
-          <button type="button" data-action="budget">🎯 Definir orçamento do mês</button>
-          <button type="button" data-action="export-csv">📊 Exportar gastos do mês (.csv)</button>
-          <button type="button" data-action="export-ics">📅 Lembretes p/ calendário (.ics)</button>
-          <button type="button" data-action="export-json">💾 Fazer backup (.json)</button>
-          <button type="button" data-action="import-json">📂 Restaurar backup</button>
+          <button type="button" data-action="budget"><svg class="ic"><use href="#i-target"/></svg>Definir orçamento do mês</button>
+          <button type="button" data-action="export-csv"><svg class="ic"><use href="#i-sheet"/></svg>Exportar gastos do mês (.csv)</button>
+          <button type="button" data-action="export-ics"><svg class="ic"><use href="#i-calendar"/></svg>Lembretes p/ calendário (.ics)</button>
+          <button type="button" data-action="export-json"><svg class="ic"><use href="#i-download"/></svg>Fazer backup (.json)</button>
+          <button type="button" data-action="import-json"><svg class="ic"><use href="#i-upload"/></svg>Restaurar backup</button>
         </div>
         <input type="file" id="fileImport" accept="application/json,.json" hidden>
       </div>
     </div>
-    <div class="wrap month">
-      <button class="icon-btn" id="prevMonth" type="button" aria-label="Mês anterior">‹</button>
-      <button class="month__label" id="monthLabel" type="button" title="Voltar para o mês atual">—</button>
-      <button class="icon-btn" id="nextMonth" type="button" aria-label="Próximo mês">›</button>
+    <div class="wrap">
+      <div class="month">
+        <button class="month__nav" id="prevMonth" type="button" aria-label="Mês anterior"><svg class="ic"><use href="#i-left"/></svg></button>
+        <button class="month__label" id="monthLabel" type="button" title="Voltar para o mês atual">—</button>
+        <button class="month__nav" id="nextMonth" type="button" aria-label="Próximo mês"><svg class="ic"><use href="#i-right"/></svg></button>
+      </div>
     </div>
   </header>
 
@@ -41,34 +98,44 @@
     <!-- ============ RESUMO ============ -->
     <section class="view is-active" id="view-resumo" aria-label="Resumo">
       <article class="hero">
-        <div class="hero__row">
-          <div>
-            <span class="label">Gasto no mês</span>
-            <strong class="hero__value" id="sumMonth">R$ 0,00</strong>
-            <span class="hero__cmp" id="sumCmp"></span>
-          </div>
-          <button class="chip" id="btnBudget" type="button">🎯 Orçamento</button>
+        <div class="hero__top">
+          <span class="hero__label" id="heroLabel">Gasto no mês</span>
+          <button class="hero__chip" id="btnBudget" type="button"><svg class="ic"><use href="#i-target"/></svg>Orçamento</button>
         </div>
-        <div class="progress" id="budgetBar" hidden><span></span></div>
+        <strong class="hero__value" id="sumMonth">R$ 0,00</strong>
+        <span class="trend" id="sumCmp" hidden></span>
+        <div class="hero__budget" id="budgetBox" hidden>
+          <div class="progress" id="budgetBar"><span></span></div>
+          <div class="hero__budget-row"><span id="budgetUsed"></span><span id="budgetOf"></span></div>
+        </div>
         <p class="hero__note" id="budgetNote"></p>
       </article>
 
       <div class="stats">
-        <article class="stat"><span class="label">Média por dia</span><strong id="statAvg">—</strong></article>
-        <article class="stat"><span class="label">Projeção do mês</span><strong id="statProj">—</strong></article>
-        <article class="stat"><span class="label">Maior gasto</span><strong id="statMax">—</strong></article>
-        <article class="stat"><span class="label">Lançamentos</span><strong id="statCount">0</strong></article>
+        <article class="stat"><span class="stat__ic"><svg class="ic"><use href="#i-activity"/></svg></span><span class="label">Média por dia</span><strong id="statAvg">—</strong></article>
+        <article class="stat"><span class="stat__ic"><svg class="ic"><use href="#i-flag"/></svg></span><span class="label">Projeção do mês</span><strong id="statProj">—</strong></article>
+        <article class="stat"><span class="stat__ic"><svg class="ic"><use href="#i-up"/></svg></span><span class="label">Maior gasto</span><strong id="statMax">—</strong></article>
+        <article class="stat"><span class="stat__ic"><svg class="ic"><use href="#i-hash"/></svg></span><span class="label">Lançamentos</span><strong id="statCount">0</strong></article>
       </div>
 
       <article class="panel">
-        <header class="panel__head"><h2>Por categoria</h2></header>
-        <div id="catBreakdown" class="bars"></div>
+        <header class="panel__head"><h2>Por categoria</h2><span class="panel__sub" id="catSub"></span></header>
+        <div class="cats">
+          <div class="donut" id="donut" hidden></div>
+          <div id="catBreakdown" class="legend"></div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <header class="panel__head"><h2>Gastos por dia</h2><span class="panel__sub" id="dailySub"></span></header>
+        <div class="daily" id="daily"></div>
+        <div class="daily__axis" id="dailyAxis"></div>
       </article>
 
       <article class="panel">
         <header class="panel__head">
           <h2>Próximos lembretes</h2>
-          <button class="link" type="button" data-goto="lembretes">Ver todos</button>
+          <button class="link" type="button" data-goto="lembretes">Ver todos<svg class="ic"><use href="#i-right"/></svg></button>
         </header>
         <div id="nextReminders" class="mini-list"></div>
       </article>
@@ -77,21 +144,27 @@
     <!-- ============ GASTOS ============ -->
     <section class="view" id="view-gastos" aria-label="Gastos">
       <div class="toolbar">
-        <input type="search" id="fSearch" placeholder="Buscar gasto…" aria-label="Buscar gasto">
+        <label class="search">
+          <svg class="ic"><use href="#i-search"/></svg>
+          <input type="search" id="fSearch" placeholder="Buscar gasto…" aria-label="Buscar gasto">
+        </label>
         <div class="chips" id="fCats" role="group" aria-label="Filtrar por categoria"></div>
       </div>
       <div id="expList" class="days" aria-live="polite"></div>
-      <p id="expEmpty" class="empty" hidden>Nenhum gasto neste mês ainda.<br>Toque em <strong>+</strong> para lançar o primeiro.</p>
+      <p id="expEmpty" class="empty" hidden></p>
     </section>
 
     <!-- ============ LEMBRETES ============ -->
     <section class="view" id="view-lembretes" aria-label="Lembretes">
       <div class="section-head">
-        <p class="muted">Contas e pagamentos com data marcada. Você recebe um aviso no horário escolhido.</p>
-        <button class="btn btn--soft" type="button" id="btnAddRem">+ Lembrete</button>
+        <div>
+          <h2 class="section-title">Lembretes</h2>
+          <p class="muted">Contas com data marcada. Você recebe um aviso no horário escolhido.</p>
+        </div>
+        <button class="btn btn--soft" type="button" id="btnAddRem"><svg class="ic"><use href="#i-plus"/></svg>Novo</button>
       </div>
       <div id="remList" class="cards-list"></div>
-      <p id="remEmpty" class="empty" hidden>Nenhum lembrete.<br>Crie um para aluguel, cartão, internet…</p>
+      <p id="remEmpty" class="empty" hidden>Nenhum lembrete ainda.<br>Crie um para aluguel, cartão, internet…</p>
     </section>
 
     <!-- ============ CALCULADORA ============ -->
@@ -106,7 +179,7 @@
             <button type="button" data-k="C" class="k k--fn">C</button>
             <button type="button" data-k="(" class="k k--fn">(</button>
             <button type="button" data-k=")" class="k k--fn">)</button>
-            <button type="button" data-k="back" class="k k--fn" aria-label="Apagar">⌫</button>
+            <button type="button" data-k="back" class="k k--fn" aria-label="Apagar"><svg class="ic"><use href="#i-delete"/></svg></button>
             <button type="button" data-k="7" class="k">7</button>
             <button type="button" data-k="8" class="k">8</button>
             <button type="button" data-k="9" class="k">9</button>
@@ -125,12 +198,12 @@
             <button type="button" data-k="+" class="k k--op" aria-label="Mais">+</button>
             <button type="button" data-k="=" class="k k--eq">=</button>
           </div>
-          <button type="button" class="btn btn--soft btn--block" id="calcUse">Lançar como gasto</button>
+          <button type="button" class="btn btn--soft btn--block" id="calcUse"><svg class="ic"><use href="#i-plus"/></svg>Lançar como gasto</button>
           <div class="calc__hist" id="calcHist"></div>
         </article>
 
         <article class="panel split">
-          <header class="panel__head"><h2>Dividir a conta</h2></header>
+          <header class="panel__head"><h2><svg class="ic ic--title"><use href="#i-users"/></svg>Dividir a conta</h2></header>
           <div class="split__fields">
             <label>Total <input id="spTotal" inputmode="decimal" placeholder="0,00"></label>
             <label>Pessoas <input id="spPeople" type="number" min="1" value="2"></label>
@@ -138,7 +211,7 @@
           </div>
           <div class="split__out">
             <div><span class="label">Total com taxa</span><strong id="spOutTotal">R$ 0,00</strong></div>
-            <div><span class="label">Cada um paga</span><strong id="spOutEach" class="accent">R$ 0,00</strong></div>
+            <div class="split__each"><span class="label">Cada um paga</span><strong id="spOutEach">R$ 0,00</strong></div>
           </div>
           <button type="button" class="btn btn--soft btn--block" id="spUse">Lançar minha parte</button>
         </article>
@@ -146,13 +219,12 @@
     </section>
   </main>
 
-  <button class="fab" id="btnAdd" type="button" aria-label="Novo gasto">+</button>
-
   <nav class="tabbar" aria-label="Seções">
-    <button type="button" class="tab is-active" data-view="resumo"><span>📊</span>Resumo</button>
-    <button type="button" class="tab" data-view="gastos"><span>🧾</span>Gastos</button>
-    <button type="button" class="tab" data-view="lembretes"><span>🔔</span>Lembretes<em id="remBadge" hidden></em></button>
-    <button type="button" class="tab" data-view="calc"><span>🧮</span>Calculadora</button>
+    <button type="button" class="tab is-active" data-view="resumo"><svg class="ic"><use href="#i-pie"/></svg>Resumo</button>
+    <button type="button" class="tab" data-view="gastos"><svg class="ic"><use href="#i-receipt"/></svg>Gastos</button>
+    <button class="fab" id="btnAdd" type="button" aria-label="Novo gasto"><svg class="ic"><use href="#i-plus"/></svg></button>
+    <button type="button" class="tab" data-view="lembretes"><svg class="ic"><use href="#i-calendar"/></svg>Lembretes<em id="remBadge" hidden></em></button>
+    <button type="button" class="tab" data-view="calc"><svg class="ic"><use href="#i-calc"/></svg>Calcular</button>
   </nav>
 
   <!-- ============ DIÁLOGO: GASTO ============ -->
@@ -160,12 +232,12 @@
     <form id="formExp" method="dialog" class="form">
       <header class="form__head">
         <h2 id="dlgExpTitle">Novo gasto</h2>
-        <button type="button" class="icon-btn" data-close aria-label="Fechar">✕</button>
+        <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
       </header>
 
       <label class="amount">
-        <span class="label">Valor — pode digitar contas, ex.: 32,90+15*2</span>
-        <input name="amount" id="expAmount" inputmode="decimal" autocomplete="off" placeholder="0,00" required>
+        <span class="amount__hint">Valor — pode digitar contas, ex.: 32,90+15*2</span>
+        <span class="amount__field"><span class="amount__cur">R$</span><input name="amount" id="expAmount" inputmode="decimal" autocomplete="off" placeholder="0,00" required></span>
         <output id="expAmountOut" class="amount__out"></output>
       </label>
 
@@ -214,7 +286,7 @@
     <form id="formRem" method="dialog" class="form">
       <header class="form__head">
         <h2 id="dlgRemTitle">Novo lembrete</h2>
-        <button type="button" class="icon-btn" data-close aria-label="Fechar">✕</button>
+        <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
       </header>
       <label>O que pagar <input name="title" maxlength="80" placeholder="Ex.: Aluguel, Cartão, Internet" required></label>
       <div class="form__row">
@@ -262,7 +334,7 @@
     <form id="formBudget" method="dialog" class="form">
       <header class="form__head">
         <h2>Orçamento mensal</h2>
-        <button type="button" class="icon-btn" data-close aria-label="Fechar">✕</button>
+        <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
       </header>
       <p class="muted">Quanto você quer gastar no máximo por mês? O app calcula quanto ainda pode gastar por dia.</p>
       <label>Limite do mês
