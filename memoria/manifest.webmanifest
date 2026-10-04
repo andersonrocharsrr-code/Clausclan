@@ -1,0 +1,15 @@
+{
+  "name": "Memória & Quebra-cabeça",
+  "short_name": "Memória",
+  "description": "Jogo da memória e quebra-cabeça deslizante para celular.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#2e1065",
+  "theme_color": "#2e1065",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

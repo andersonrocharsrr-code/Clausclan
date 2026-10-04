@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Memória & Quebra-cabeça</title>
+  <meta name="description" content="Jogo da memória e quebra-cabeça deslizante para celular. Funciona offline.">
+  <meta name="theme-color" content="#0e1124">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-tab="memory">
+  <!-- Ícones reutilizados (SVG) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="3.8" height="14" rx="1.4" fill="currentColor"/><rect x="13.7" y="5" width="3.8" height="14" rx="1.4" fill="currentColor"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.4-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="currentColor"/></symbol>
+    <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v4a5 5 0 0 1-10 0z" fill="currentColor"/><path d="M7 6H4.5a2.5 2.5 0 0 0 2.5 4M17 6h2.5a2.5 2.5 0 0 1-2.5 4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10.5 13h3v3.5h-3zM8 19.5h8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="currentColor"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></symbol>
+    <symbol id="i-hash" viewBox="0 0 24 24"><path d="M9 4L7.5 20M16.5 4L15 20M4.5 9h16M3.5 15h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-redo" viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.05-4.95M19 4.5V9h-4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-6.5 8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z" fill="currentColor"/></symbol>
+    <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M4 7h3.5c4 0 5 10 9 10H20M4 17h3.5c1.6 0 2.7-1.6 3.6-3.5M20 7h-3.5c-1.6 0-2.7 1.6-3.6 3.5M17.5 4.5L20 7l-2.5 2.5M17.5 14.5L20 17l-2.5 2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-cards" viewBox="0 0 24 24"><rect x="3" y="5" width="10" height="14" rx="2.5" transform="rotate(-8 8 12)" fill="currentColor" opacity=".55"/><rect x="10" y="4" width="10" height="14" rx="2.5" transform="rotate(8 15 11)" fill="currentColor"/></symbol>
+    <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M10 3.5a2 2 0 0 1 2 2V7h3.5a1 1 0 0 1 1 1v3.5H18a2 2 0 1 1 0 4h-1.5V19a1 1 0 0 1-1 1H12v-1.5a2 2 0 1 0-4 0V20H4.5a1 1 0 0 1-1-1v-3.5H5a2 2 0 1 0 0-4H3.5V8a1 1 0 0 1 1-1H8V5.5a2 2 0 0 1 2-2z" fill="currentColor"/></symbol>
+  </svg>
+
+  <div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <!-- ===== Início ===== -->
+  <section class="screen" id="home">
+    <header class="topbar">
+      <div class="brand">
+        <img src="icon.svg" alt="" width="36" height="36">
+        <span>Memória<small>& Quebra-cabeça</small></span>
+      </div>
+      <div class="topbar__actions">
+        <button class="icon-btn" type="button" data-action="records" aria-label="Meus recordes"><svg><use href="#i-trophy"/></svg></button>
+        <button class="icon-btn" type="button" data-action="sound" aria-label="Som ligado"><svg><use href="#i-sound"/></svg></button>
+      </div>
+    </header>
+
+    <div class="hero">
+      <p class="eyebrow">Treine a mente</p>
+      <h1>Escolha o seu desafio</h1>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Modo de jogo">
+      <button class="tab" type="button" role="tab" id="tabMemory" data-tab="memory" aria-controls="panelMemory"><svg><use href="#i-cards"/></svg>Memória</button>
+      <button class="tab" type="button" role="tab" id="tabPuzzle" data-tab="puzzle" aria-controls="panelPuzzle"><svg><use href="#i-puzzle"/></svg>Quebra-cabeça</button>
+      <span class="tabs__pill" aria-hidden="true"></span>
+    </div>
+
+    <!-- Memória -->
+    <div class="panel" id="panelMemory" role="tabpanel" aria-labelledby="tabMemory">
+      <div class="showcase showcase--memory">
+        <div class="fan" id="memFan" aria-hidden="true"></div>
+        <div class="showcase__text">
+          <h2>Jogo da memória</h2>
+          <p>Vire as cartas e encontre os pares iguais no menor número de jogadas.</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="field__label">Dificuldade</span>
+        <div class="seg" id="memLevels" role="radiogroup" aria-label="Dificuldade"></div>
+      </div>
+      <div class="field">
+        <span class="field__label">Tema das cartas</span>
+        <div class="picks" id="memThemes" role="radiogroup" aria-label="Tema"></div>
+      </div>
+      <p class="best" id="memBest"></p>
+    </div>
+
+    <!-- Quebra-cabeça -->
+    <div class="panel" id="panelPuzzle" role="tabpanel" aria-labelledby="tabPuzzle" hidden>
+      <div class="showcase showcase--puzzle">
+        <div class="mini-puzzle" id="puzPreview" aria-hidden="true"></div>
+        <div class="showcase__text">
+          <h2 id="puzTitle">Quebra-cabeça</h2>
+          <p id="puzDesc">Deslize as peças pelo espaço vazio até montar a imagem.</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="field__label">Tipo</span>
+        <div class="seg" id="puzTypes" role="radiogroup" aria-label="Tipo de quebra-cabeça"></div>
+      </div>
+      <div class="field">
+        <span class="field__label">Tamanho</span>
+        <div class="seg" id="puzLevels" role="radiogroup" aria-label="Tamanho"></div>
+      </div>
+      <div class="field">
+        <span class="field__label">Imagem</span>
+        <div class="picks" id="puzScenes" role="radiogroup" aria-label="Imagem"></div>
+      </div>
+      <p class="best" id="puzBest"></p>
+    </div>
+
+    <div class="playbar">
+      <button class="play" type="button" data-action="play"><svg><use href="#i-play"/></svg><span id="playLabel">Jogar</span></button>
+    </div>
+  </section>
+
+  <!-- ===== Partida ===== -->
+  <section class="screen" id="game" hidden>
+    <header class="hud">
+      <button class="icon-btn" type="button" data-action="home" aria-label="Voltar ao início"><svg><use href="#i-back"/></svg></button>
+      <div class="hud__stats">
+        <div class="stat"><span class="stat__label">Tempo</span><strong id="hudTime">0:00</strong></div>
+        <div class="stat"><span class="stat__label">Jogadas</span><strong id="hudMoves">0</strong></div>
+        <div class="stat"><span class="stat__label" id="hudProgressLabel">Pares</span><strong id="hudPairs">0/0</strong></div>
+      </div>
+      <button class="icon-btn" type="button" data-action="pause" aria-label="Pausar"><svg><use href="#i-pause"/></svg></button>
+    </header>
+    <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+
+    <div class="stage" id="stage">
+      <div class="board" id="board"></div>
+      <div class="banner" id="banner" hidden></div>
+    </div>
+
+    <footer class="game-foot" id="puzFoot" hidden>
+      <button class="pill-btn" type="button" data-action="peek" aria-pressed="false"><svg><use href="#i-eye"/></svg>Ver imagem</button>
+      <button class="pill-btn" type="button" data-action="numbers" aria-pressed="true"><svg><use href="#i-hash"/></svg>Números</button>
+      <button class="pill-btn" type="button" data-action="tray"><svg><use href="#i-shuffle"/></svg>Outras peças</button>
+    </footer>
+
+    <div class="pause" id="pauseLayer" hidden>
+      <div class="pause__box">
+        <p class="eyebrow">Jogo pausado</p>
+        <h2>Respira fundo</h2>
+        <p class="pause__info" id="pauseInfo"></p>
+        <div class="sheet__actions">
+          <button class="btn btn--accent" type="button" data-action="resume"><svg><use href="#i-play"/></svg>Continuar</button>
+          <button class="btn btn--soft" type="button" data-action="restart"><svg><use href="#i-redo"/></svg>Recomeçar</button>
+          <button class="btn btn--soft" type="button" data-action="home"><svg><use href="#i-home"/></svg>Sair para o menu</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Vitória ===== -->
+  <div class="sheet-wrap" id="winModal" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+      <div class="stars" id="winStars"></div>
+      <h2 id="winTitle">Parabéns!</h2>
+      <p class="sheet__text" id="winText"></p>
+      <div class="tiles-stats">
+        <div><span>Tempo</span><strong id="winTime">0:00</strong></div>
+        <div><span>Jogadas</span><strong id="winMoves">0</strong></div>
+        <div><span>Recorde</span><strong id="winBest">—</strong></div>
+      </div>
+      <p class="record" id="winRecord" hidden><svg><use href="#i-trophy"/></svg>Novo recorde!</p>
+      <div class="sheet__actions">
+        <button class="btn btn--accent" type="button" data-action="restart"><svg><use href="#i-redo"/></svg>Jogar de novo</button>
+        <button class="btn btn--soft" type="button" data-action="home"><svg><use href="#i-home"/></svg>Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Recordes ===== -->
+  <div class="sheet-wrap" id="recordsModal" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="recTitle">
+      <span class="sheet__grip" aria-hidden="true"></span>
+      <h2 id="recTitle">Meus recordes</h2>
+      <div class="records" id="recordsList"></div>
+      <div class="sheet__actions">
+        <button class="btn btn--soft" type="button" data-action="close-modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
+
+  <script src="app.js"></script>
+</body>
+</html>

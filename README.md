@@ -86,3 +86,28 @@ navegador → "Instalar app" / "Adicionar à tela inicial"): fica com ícone pr�
 ## Observações
 - Os dados ficam salvos **somente neste navegador/aparelho**. Faça backup de vez em quando (menu ⋯).
 - Para avisos garantidos com o app fechado, exporte os lembretes para o calendário (menu ⋯).
+
+---
+
+# Memória & Quebra-cabeça — jogo para celular (`memoria/`)
+
+Jogo instalável (PWA, sem build) com três modos: memória, quebra-cabeça deslizante e quebra-cabeça de encaixe. Abra `memoria/index.html` por um servidor (GitHub Pages, ou
+`python3 -m http.server` na raiz e acesse `http://localhost:8000/memoria/`). No celular, use "Adicionar à tela
+inicial" para jogar em tela cheia e offline. Visual escuro com abas para cada modo, botão de pausa e barra de progresso.
+
+## Modos
+- **🧠 Jogo da memória**: encontre os pares de cartas. 4 níveis (Fácil 6 pares, Médio 8, Difícil 10, Expert 15)
+  e 5 temas (animais, frutas, espaço, esportes, comidas). As cartas aparecem por alguns segundos para você
+  memorizar; acertos seguidos viram **combo**.
+- **🧩 Quebra-cabeça deslizante**: deslize as peças até montar a imagem (3×3, 4×4 ou 5×5), escolhendo a imagem (praia, noite, arco-íris, jardim ou surpresa). Toque numa peça na
+  mesma linha ou coluna do espaço vazio para deslizá-la. **Ver imagem** mostra o desenho completo e
+  **Números** liga/desliga a numeração das peças. O embaralhamento sempre tem solução.
+- **🧩 Quebra-cabeça de encaixe**: peças recortadas com encaixes de verdade (9, 16 ou 25 peças). Arraste cada peça
+  da bandeja até o lugar dela no tabuleiro; ela encaixa sozinha quando chega perto. **Outras peças** troca as peças
+  mostradas na bandeja e **Ver imagem** mostra o desenho completo. Escolha o tipo (Deslizante ou Encaixe) na aba
+  Quebra-cabeça.
+
+## Detalhes
+- Tempo, jogadas, estrelas (1 a 3) e **recordes** por nível, salvos no aparelho.
+- Sons (liga/desliga no 🔊), vibração nos acertos e confete na vitória.
+- O cronômetro pausa quando você sai do app; o botão "voltar" do celular volta ao menu.
