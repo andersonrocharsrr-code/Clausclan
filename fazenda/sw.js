@@ -1,7 +1,7 @@
 /* Service worker: o jogo abre e funciona offline. */
-const CACHE = 'fazenda-aurora-v1';
+const CACHE = 'fazenda-aurora-v2';
 // Os arquivos levam "?v=" no index.html: ao mudar a versão, o celular nunca mistura CSS/JS antigo com HTML novo.
-const FILES = ['./', 'index.html', 'style.css?v=1', 'app.js?v=1', 'icon.svg', 'manifest.webmanifest'];
+const FILES = ['./', 'index.html', 'style.css?v=2', 'app.js?v=2', 'icon.svg', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));

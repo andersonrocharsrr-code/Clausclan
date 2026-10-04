@@ -12,13 +12,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
   <div class="app">
     <header class="top">
       <div class="top__row">
-        <button class="farm" id="farmBtn" type="button" data-act="open-zone" data-zone="sede">
+        <button class="farm" id="farmBtn" type="button" data-act="open-scene">
           <span class="farm__name" id="farmName">Fazenda Aurora</span>
           <span class="farm__meta">
             <span id="dayLbl">Dia 1</span> · <span id="clock">06:00</span> · <span id="weather">☀️ Sol</span>
@@ -76,7 +76,7 @@
     <div class="toasts" id="toasts" aria-live="polite"></div>
   </div>
 
-  <script src="app.js?v=1"></script>
+  <script src="app.js?v=2"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
