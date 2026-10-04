@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Meus Gastos</title>
-  <meta name="description" content="Organize seus gastos do mês com orçamento, calculadora automática e lembretes por data.">
+  <title>Nexa Money</title>
+  <meta name="description" content="Nexa Money: domine suas finanças com gastos, metas, cobranças e lembretes.">
   <!-- Diz ao navegador que o app já tem tema escuro próprio (evita o "modo escuro forçado" que apaga as cores). -->
   <meta name="color-scheme" content="light dark" id="metaScheme">
   <meta name="theme-color" content="#f5f6fa" media="(prefers-color-scheme: light)">
@@ -16,79 +16,167 @@
   <!-- iPhone: abre em tela cheia quando adicionado à tela de início -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Meus Gastos">
+  <meta name="apple-mobile-web-app-title" content="Nexa Money">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="style.css?v=15">
+  <link rel="stylesheet" href="style.css?v=16">
   <!-- Garante ícones do tamanho certo mesmo antes do CSS carregar. -->
   <style>.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}</style>
-  <!-- Animação de abertura: fica aqui para aparecer na hora, antes do resto da página carregar. -->
+  <!-- Abertura e tela de início do Nexa Money: ficam aqui para aparecer na hora, antes do resto da página. -->
   <style>
-    .splash{position:fixed;inset:0;z-index:100;display:grid;place-items:center;overflow:hidden;color:#fff;
-      background:linear-gradient(150deg,#7c6cff 0%,#5b4cf0 50%,#9b3cf0 100%);
-      font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;
-      animation:sp-out .5s cubic-bezier(.6,0,.2,1) 2.6s forwards}/* segurança: some sozinha se o app não carregar */
-    .splash.is-leaving{animation:sp-out .48s cubic-bezier(.6,0,.2,1) forwards}
-    .splash__glow{position:absolute;width:520px;height:520px;border-radius:50%;
-      background:radial-gradient(circle,rgba(255,255,255,.28),rgba(255,255,255,0) 62%);
-      animation:sp-glow 2.4s ease-in-out infinite}
-    .splash__orb{position:absolute;border-radius:50%;filter:blur(2px);opacity:.55}
-    .splash__orb--a{width:260px;height:260px;left:-80px;top:-60px;background:radial-gradient(circle,rgba(255,170,230,.55),transparent 70%);animation:sp-float 6s ease-in-out infinite}
-    .splash__orb--b{width:300px;height:300px;right:-110px;bottom:-90px;background:radial-gradient(circle,rgba(120,220,255,.45),transparent 70%);animation:sp-float 7s ease-in-out infinite reverse}
-    .splash__center{position:relative;display:grid;justify-items:center;gap:22px;text-align:center}
-    .splash__logo{width:124px;height:124px;opacity:0;transform:scale(.4);
-      filter:drop-shadow(0 24px 40px rgba(40,20,120,.45));animation:sp-pop .62s cubic-bezier(.2,1.5,.4,1) .08s forwards}
-    .splash__logo svg{width:100%;height:100%;display:block}
-    .sp-line{stroke-dasharray:24;stroke-dashoffset:24;animation:sp-draw .38s ease-out forwards}
-    .sp-line--1{animation-delay:.42s}.sp-line--2{animation-delay:.56s}
-    .sp-dot{transform-box:fill-box;transform-origin:center;transform:scale(0);animation:sp-dot .46s cubic-bezier(.2,1.7,.4,1) .7s forwards}
-    .sp-plus{transform-box:fill-box;transform-origin:center;transform:rotate(-90deg) scale(0);animation:sp-plus .42s cubic-bezier(.2,1.5,.4,1) .86s forwards}
-    .splash__title{margin:0;font-size:31px;font-weight:800;letter-spacing:-.03em;line-height:1}
-    .splash__title span{display:inline-block;opacity:0;transform:translateY(14px);animation:sp-up .42s cubic-bezier(.2,.8,.2,1) forwards;animation-delay:calc(.62s + var(--i)*28ms)}
-    .splash__tag{margin:-10px 0 0;font-size:15px;font-weight:500;opacity:0;animation:sp-fade .5s ease 1s forwards}
-    .splash__bar{width:120px;height:4px;border-radius:99px;background:rgba(255,255,255,.22);overflow:hidden;opacity:0;animation:sp-fade .3s ease .3s forwards}
-    .splash__bar i{display:block;height:100%;width:0;border-radius:inherit;background:#fff;animation:sp-load 1.25s cubic-bezier(.4,0,.2,1) .3s forwards}
-    @keyframes sp-pop{to{opacity:1;transform:scale(1)}}
-    @keyframes sp-draw{to{stroke-dashoffset:0}}
-    @keyframes sp-dot{to{transform:scale(1)}}
-    @keyframes sp-plus{to{transform:rotate(0) scale(1)}}
-    @keyframes sp-up{to{opacity:1;transform:none}}
-    @keyframes sp-fade{to{opacity:.85}}
-    @keyframes sp-load{to{width:100%}}
-    @keyframes sp-glow{0%,100%{transform:scale(.85);opacity:.7}50%{transform:scale(1.08);opacity:1}}
-    @keyframes sp-float{0%,100%{transform:translate(0,0)}50%{transform:translate(18px,-14px)}}
-    @keyframes sp-out{to{opacity:0;transform:scale(1.08);visibility:hidden}}
+    .splash,.welcome{position:fixed;inset:0;z-index:100;overflow:hidden;color:#fff;background:#07060d;
+      font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+    .nx-aura{position:fixed;inset:-20%;pointer-events:none;
+      background:radial-gradient(40% 32% at 50% 38%,rgba(124,58,237,.42),transparent 70%),
+                 radial-gradient(35% 25% at 15% 80%,rgba(139,92,246,.22),transparent 70%),
+                 radial-gradient(30% 22% at 90% 15%,rgba(167,139,250,.18),transparent 70%)}
+    /* ---- abertura ---- */
+    .splash{display:grid;place-items:center;animation:nx-out .5s cubic-bezier(.6,0,.2,1) 3.6s forwards}/* segurança */
+    .splash.is-leaving{animation:nx-out .55s cubic-bezier(.6,0,.2,1) forwards}
+    .splash .nx-aura{animation:nx-breathe 3s ease-in-out infinite}
+    .splash__center{position:relative;display:grid;justify-items:center;gap:18px}
+    .nx-mark{width:150px;height:150px;overflow:visible}
+    .nx-mark .d{stroke-dasharray:1;stroke-dashoffset:1;opacity:0}
+    .splash .nx-mark .d1{animation:nx-draw .7s cubic-bezier(.6,0,.2,1) .2s forwards}
+    .splash .nx-mark .d2{animation:nx-draw .3s ease-out .82s forwards}
+    .splash .nx-mark .d3{animation:nx-draw .55s ease-in-out 1s forwards}
+    .splash .nx-mark .d4{animation:nx-draw .2s ease-out 1.42s forwards}
+    .splash .nx-mark{opacity:0;animation:nx-fade .01s linear .2s forwards,nx-glow 1.2s ease-out 1.5s}
+    .nx-word{display:grid;gap:2px;line-height:.95;text-align:left}
+    .nx-word b{font-size:40px;font-weight:800;letter-spacing:-.03em;display:flex;align-items:flex-end;gap:8px}
+    .nx-word i{font-style:normal;font-size:40px;font-weight:800;letter-spacing:-.03em;
+      background:linear-gradient(90deg,#c4b5fd,#8b5cf6);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .nx-bars{display:inline-flex;align-items:flex-end;gap:4px;height:30px;padding-bottom:5px}
+    .nx-bars span{width:7px;border-radius:2px;background:linear-gradient(#c4b5fd,#7c3aed)}
+    .nx-bars span:nth-child(1){height:40%}.nx-bars span:nth-child(2){height:70%}.nx-bars span:nth-child(3){height:100%}
+    .splash .nx-word b,.splash .nx-word i{opacity:0;transform:translateY(12px)}
+    .splash .nx-word b{animation:nx-up .5s cubic-bezier(.2,.8,.2,1) 1.35s forwards}
+    .splash .nx-word i{animation:nx-up .5s cubic-bezier(.2,.8,.2,1) 1.55s forwards}
+    .splash .nx-bars span{transform:scaleY(0);transform-origin:bottom}
+    .splash .nx-bars span:nth-child(1){animation:nx-grow .35s cubic-bezier(.2,1.4,.4,1) 1.6s forwards}
+    .splash .nx-bars span:nth-child(2){animation:nx-grow .35s cubic-bezier(.2,1.4,.4,1) 1.72s forwards}
+    .splash .nx-bars span:nth-child(3){animation:nx-grow .35s cubic-bezier(.2,1.4,.4,1) 1.84s forwards}
+    .splash__tag{margin:6px 0 0;font-size:15px;font-weight:500;color:#cfc6ec;opacity:0;animation:nx-fade .6s ease 1.95s forwards}
+    /* ---- tela de início ---- */
+    .welcome{display:flex;flex-direction:column;align-items:center;overflow-y:auto;
+      padding:calc(28px + env(safe-area-inset-top)) 22px calc(18px + env(safe-area-inset-bottom))}
+    .welcome[hidden]{display:none}
+    .welcome.is-leaving{animation:nx-out .5s cubic-bezier(.6,0,.2,1) forwards}
+    .welcome__inner{position:relative;width:100%;max-width:440px;flex:1;display:flex;flex-direction:column;align-items:center;text-align:center}
+    .welcome__logo{display:flex;align-items:center;gap:6px;margin-top:6px}
+    .welcome__logo .nx-mark{width:80px;height:80px}
+    .welcome__logo .nx-word b,.welcome__logo .nx-word i{font-size:34px}
+    .welcome__logo .nx-bars{height:24px}
+    .welcome h1{margin:24px 0 10px;font-size:clamp(25px,7.4vw,34px);font-weight:800;letter-spacing:-.03em;line-height:1.1}
+    .welcome__text{margin:0;max-width:370px;color:#b7b1c9;font-size:15.5px;line-height:1.48}
+    .welcome__cards{position:relative;display:grid;gap:14px;width:100%;max-width:330px;margin:28px 0 24px}
+    .welcome__cards::before{content:"";position:absolute;inset:10% -20%;border-radius:50%;
+      background:radial-gradient(closest-side,rgba(124,58,237,.38),transparent);filter:blur(10px);z-index:-1}
+    .wcard{display:flex;align-items:center;gap:16px;padding:12px 18px 12px 12px;border-radius:20px;text-align:left;
+      background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.04));
+      border:1.5px solid rgba(196,181,253,.55);
+      box-shadow:0 0 24px rgba(139,92,246,.35),inset 0 1px 0 rgba(255,255,255,.12);
+      backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+    .wcard:nth-child(1){margin-right:44px}.wcard:nth-child(2){margin-left:44px}.wcard:nth-child(3){margin-right:44px}
+    .wcard__ic{min-width:58px;height:58px;padding:0 12px;flex:none;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:2px;
+      border:1.5px solid rgba(167,139,250,.6);background:rgba(124,58,237,.12);color:#b9a6ff}
+    .wcard__ic svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .wcard__ic svg + svg{width:24px;height:24px}
+    .wcard strong{font-size:19px;font-weight:700;line-height:1.2}
+    .welcome__go{margin-top:auto;width:100%;max-width:340px;padding:19px 24px;border:1.5px solid rgba(167,139,250,.6);border-radius:99px;
+      background:linear-gradient(90deg,#3b0fa8,#6d28d9 50%,#3b0fa8);background-size:200% 100%;color:#fff;
+      font:800 17px/1 Inter,system-ui,sans-serif;letter-spacing:.04em;cursor:pointer;
+      box-shadow:0 0 30px rgba(124,58,237,.6),0 12px 30px -10px rgba(91,33,182,.9);animation:nx-shine 3.5s ease-in-out infinite}
+    .welcome__go:active{transform:scale(.97)}
+    .welcome__foot{margin:18px 0 0;font-size:13px;color:#8e88a3}
+    .welcome.is-in .welcome__logo,.welcome.is-in h1,.welcome.is-in .welcome__text,.welcome.is-in .wcard,.welcome.is-in .welcome__go,.welcome.is-in .welcome__foot{
+      opacity:0;animation:nx-up .6s cubic-bezier(.2,.8,.2,1) forwards}
+    .welcome.is-in h1{animation-delay:.08s}.welcome.is-in .welcome__text{animation-delay:.16s}
+    .welcome.is-in .wcard:nth-child(1){animation-name:nx-left;animation-delay:.28s}
+    .welcome.is-in .wcard:nth-child(2){animation-name:nx-right;animation-delay:.4s}
+    .welcome.is-in .wcard:nth-child(3){animation-name:nx-left;animation-delay:.52s}
+    .welcome.is-in .welcome__go{animation:nx-up .6s cubic-bezier(.2,.8,.2,1) .66s forwards,nx-shine 3.5s ease-in-out 1.3s infinite}
+    .welcome.is-in .welcome__foot{animation-delay:.76s}
+    @media (max-height:780px){
+      .welcome{padding-top:calc(16px + env(safe-area-inset-top))}
+      .welcome__logo .nx-mark{width:64px;height:64px}
+      .welcome__logo .nx-word b,.welcome__logo .nx-word i{font-size:28px}
+      .welcome h1{margin:16px 0 8px}
+      .welcome__text{font-size:14.5px}
+      .welcome__cards{gap:10px;margin:20px 0 18px}
+      .wcard{padding:9px 16px 9px 10px}
+      .wcard__ic{min-width:48px;height:48px}
+      .wcard__ic svg{width:25px;height:25px}
+      .wcard strong{font-size:17px}
+      .welcome__go{padding:16px 22px}
+      .welcome__foot{margin-top:12px}
+    }
+    @keyframes nx-draw{0%{opacity:1;stroke-dashoffset:1}100%{opacity:1;stroke-dashoffset:0}}
+    @keyframes nx-up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+    @keyframes nx-left{from{opacity:0;transform:translateX(-36px)}to{opacity:1;transform:none}}
+    @keyframes nx-right{from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:none}}
+    @keyframes nx-grow{to{transform:scaleY(1)}}
+    @keyframes nx-fade{to{opacity:1}}
+    @keyframes nx-glow{0%{filter:drop-shadow(0 0 0 rgba(167,139,250,0))}35%{filter:drop-shadow(0 0 22px rgba(167,139,250,.95))}100%{filter:drop-shadow(0 0 6px rgba(167,139,250,.3))}}
+    @keyframes nx-breathe{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.06);opacity:1}}
+    @keyframes nx-shine{0%,100%{background-position:0 0}50%{background-position:100% 0}}
+    @keyframes nx-out{to{opacity:0;transform:scale(1.06);visibility:hidden}}
     @media (prefers-reduced-motion:reduce){
-      .splash,.splash *{animation-duration:.01s!important;animation-delay:0s!important}
-      .splash{animation:sp-out .25s ease .4s forwards!important}
+      .splash *,.welcome *{animation-duration:.01s!important;animation-delay:0s!important}
+      .splash{animation:nx-out .25s ease .5s forwards!important}
     }
   </style>
 </head>
 <body>
   <div class="splash" id="splash" aria-hidden="true">
-    <span class="splash__orb splash__orb--a"></span>
-    <span class="splash__orb splash__orb--b"></span>
-    <span class="splash__glow"></span>
+    <span class="nx-aura"></span>
     <div class="splash__center">
-      <div class="splash__logo">
-        <svg viewBox="0 0 64 64">
-          <rect width="64" height="64" rx="18" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.35)" stroke-width="1"/>
-          <rect x="15" y="13" width="34" height="38" rx="8" fill="#fff"/>
-          <path class="sp-line sp-line--1" d="M22 23.5h20" stroke="#c9c9f5" stroke-width="3.6" stroke-linecap="round" fill="none"/>
-          <path class="sp-line sp-line--2" d="M22 31h13" stroke="#c9c9f5" stroke-width="3.6" stroke-linecap="round" fill="none"/>
-          <circle class="sp-dot" cx="41" cy="43" r="9" fill="#12a150" stroke="#fff" stroke-width="2.5"/>
-          <path class="sp-plus" d="M37.4 43h7.2M41 39.4v7.2" stroke="#fff" stroke-width="2.6" stroke-linecap="round" fill="none"/>
-        </svg>
-      </div>
-      <div class="splash__title"><span style="--i:0">M</span><span style="--i:1">e</span><span style="--i:2">u</span><span style="--i:3">s</span><span style="--i:4">&nbsp;</span><span style="--i:5">G</span><span style="--i:6">a</span><span style="--i:7">s</span><span style="--i:8">t</span><span style="--i:9">o</span><span style="--i:10">s</span></div>
-      <p class="splash__tag">Seu dinheiro, organizado.</p>
-      <div class="splash__bar"><i></i></div>
+      <svg class="nx-mark" viewBox="0 0 100 100">
+          <g fill="none" stroke="url(#nxg)" stroke-linecap="round" stroke-linejoin="round" filter="url(#nxf)">
+            <path class="d d1" pathLength="1" d="M38 64V24L72 70V14" stroke-width="10"/>
+            <path class="d d2" pathLength="1" d="M61.5 24.5 72 13 82.5 24.5" stroke-width="10"/>
+            <path class="d d3" pathLength="1" d="M33 66.5c-1.8-3.6-5.3-5.5-9.6-5.5-5.4 0-9 2.8-9 6.8 0 4.1 3.6 5.8 9 6.7 5.4.9 9.6 2.9 9.6 7 0 4.2-4 7-9.6 7-4.6 0-8.2-1.9-10-5.6" stroke-width="6"/>
+            <path class="d d4" pathLength="1" d="M23.6 52v9M23.6 88v9" stroke-width="5"/>
+          </g></svg>
+      <div class="nx-word"><b>Nexa<span class="nx-bars"><span></span><span></span><span></span></span></b><i>Money</i></div>
+      <p class="splash__tag">Domine suas finanças</p>
     </div>
   </div>
+
+  <!-- Tela de início -->
+  <section class="welcome" id="welcome" hidden aria-label="Boas-vindas">
+    <span class="nx-aura"></span>
+    <div class="welcome__inner">
+      <div class="welcome__logo">
+        <svg class="nx-mark" viewBox="0 0 100 100"><use href="#nx-logo"/></svg>
+        <div class="nx-word"><b>Nexa<span class="nx-bars"><span></span><span></span><span></span></span></b><i>Money</i></div>
+      </div>
+      <h1>Domine suas Finanças</h1>
+      <p class="welcome__text">Bem-vindo ao Nexa Money, o seu painel financeiro inteligente. Assuma o controle total de seus gastos e alcance seus objetivos com clareza e estilo.</p>
+      <div class="welcome__cards">
+        <div class="wcard"><span class="wcard__ic"><svg viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 12h.01M12 12h.01M16 12h.01"/></svg><svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4"/></svg></span><strong>Rastreamento<br>Rápido</strong></div>
+        <div class="wcard"><span class="wcard__ic"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span><strong>Orçamentos<br>Claros</strong></div>
+        <div class="wcard"><span class="wcard__ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h5"/><path d="M14 2v4a2 2 0 0 0 2 2h4v3M8 9h2M8 13h5M8 17h2"/><circle cx="17" cy="17" r="4.5"/><path d="M17 15v2l1.3 1"/></svg></span><strong>Relatórios<br>Detalhados</strong></div>
+      </div>
+      <button type="button" class="welcome__go" id="welcomeGo">ACESSAR MEU PAINEL</button>
+      <p class="welcome__foot">Nexa Technologies © 2026</p>
+    </div>
+  </section>
+
   <!-- Ícones (traço fino, estilo moderno) -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="nxg" gradientUnits="userSpaceOnUse" x1="14" y1="10" x2="84" y2="96"><stop offset="0" stop-color="#f3eeff"/><stop offset=".45" stop-color="#c4b5fd"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient>
+      <filter id="nxf" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>
+    <!-- Logo do Nexa Money (N com seta e $) -->
+    <symbol id="nx-logo" viewBox="0 0 100 100"><g fill="none" stroke="url(#nxg)" stroke-linecap="round" stroke-linejoin="round" filter="url(#nxf)">
+      <path d="M38 64V24L72 70V14" stroke-width="10"/><path d="M61.5 24.5 72 13 82.5 24.5" stroke-width="10"/>
+      <path d="M33 66.5c-1.8-3.6-5.3-5.5-9.6-5.5-5.4 0-9 2.8-9 6.8 0 4.1 3.6 5.8 9 6.7 5.4.9 9.6 2.9 9.6 7 0 4.2-4 7-9.6 7-4.6 0-8.2-1.9-10-5.6" stroke-width="6"/>
+      <path d="M23.6 52v9M23.6 88v9" stroke-width="5"/>
+    </g></symbol>
     <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
     <symbol id="i-bell-on" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M4 2C2.8 3.7 2 5.7 2 8"/><path d="M22 8c0-2.3-.8-4.3-2-6"/></symbol>
     <symbol id="i-bell-off" viewBox="0 0 24 24"><path d="M8.7 3A6 6 0 0 1 18 8a21.3 21.3 0 0 0 .6 5"/><path d="M17 17H3s3-2 3-9a4.67 4.67 0 0 1 .3-1.7"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="m2 2 20 20"/></symbol>
@@ -183,7 +271,7 @@
 
   <header class="top">
     <div class="wrap top__inner">
-      <h1 class="brand"><img src="icon.svg" alt="" width="34" height="34"> <span>Meus Gastos</span></h1>
+      <h1 class="brand"><span class="brand__mark"><svg viewBox="0 0 100 100" width="26" height="26" aria-hidden="true"><use href="#nx-logo"/></svg></span> <span>Nexa <em>Money</em></span></h1>
       <div class="top__actions">
         <button class="icon-btn bell" id="btnNotif" type="button" title="Ativar lembretes" aria-label="Ativar lembretes">
           <span class="bell__waves" aria-hidden="true"></span>
@@ -729,7 +817,7 @@
         <h2>Instalar o app</h2>
         <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
       </header>
-      <div class="install-hero"><img src="icon-192.png" alt="" width="64" height="64"><div><strong>Meus Gastos</strong><small>Abre em tela cheia, com ícone na tela inicial, e funciona sem internet.</small></div></div>
+      <div class="install-hero"><img src="icon-192.png" alt="" width="64" height="64"><div><strong>Nexa Money</strong><small>Abre em tela cheia, com ícone na tela inicial, e funciona sem internet.</small></div></div>
       <ol class="steps" id="installSteps"></ol>
       <footer class="form__foot">
         <span class="spacer"></span>
@@ -916,6 +1004,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>

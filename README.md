@@ -39,10 +39,11 @@ e acesse `http://localhost:8000/contas/`). No celular, use "Adicionar à tela in
 
 ---
 
-# Meus Gastos — controle de gastos e entradas (`gastos/`)
+# Nexa Money — controle de gastos e entradas (`gastos/`)
 
 App web instalável (PWA, sem build) para organizar **gastos e entradas do mês**, com **orçamento**,
-**limites por categoria**, **calculadora automática** e **lembretes por data**. Visual limpo, tema claro/escuro.
+**limites por categoria**, **calculadora automática** e **lembretes por data**. Abre com uma animação da marca
+(o N se desenhando) e uma tela de início com o botão **Acessar meu painel**.
 
 Abra `gastos/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server` na raiz e acesse
 `http://localhost:8000/gastos/`). Para instalar no celular, use **⋯ → Instalar app no celular** (ou o menu do
