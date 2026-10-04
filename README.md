@@ -45,7 +45,8 @@ App web instalável (PWA, sem build) para organizar **gastos e entradas do mês*
 **limites por categoria**, **calculadora automática** e **lembretes por data**. Visual limpo, tema claro/escuro.
 
 Abra `gastos/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server` na raiz e acesse
-`http://localhost:8000/gastos/`). No celular, use "Adicionar à tela inicial" para instalar.
+`http://localhost:8000/gastos/`). Para instalar no celular, use **⋯ → Instalar app no celular** (ou o menu do
+navegador → "Instalar app" / "Adicionar à tela inicial"): fica com ícone próprio, abre em tela cheia e funciona offline.
 
 ## O que faz
 - **Lançamento rápido**: digite uma frase como `uber 23,50 ontem`, `mercado 89,90`, `tênis 300 3x` ou
