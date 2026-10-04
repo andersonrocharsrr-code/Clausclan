@@ -11,14 +11,84 @@
   "orientation": "portrait",
   "background_color": "#5b4cf0",
   "theme_color": "#5b4cf0",
-  "categories": ["finance", "productivity"],
+  "categories": [
+    "finance",
+    "productivity"
+  ],
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
   ],
   "shortcuts": [
-    { "name": "Novo gasto", "short_name": "Novo", "url": "./?novo=1", "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+    {
+      "name": "Falar gasto",
+      "short_name": "Falar",
+      "url": "./?acao=voz",
+      "icons": [
+        {
+          "src": "sc-voz.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Ler comprovante",
+      "short_name": "Comprovante",
+      "url": "./?acao=foto",
+      "icons": [
+        {
+          "src": "sc-foto.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Nova cobrança",
+      "short_name": "Cobrança",
+      "url": "./?acao=cobranca",
+      "icons": [
+        {
+          "src": "sc-cobranca.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Novo gasto",
+      "short_name": "Novo",
+      "url": "./?novo=1",
+      "icons": [
+        {
+          "src": "sc-novo.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
   ]
 }

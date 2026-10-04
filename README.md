@@ -57,6 +57,11 @@ navegador → "Instalar app" / "Adicionar à tela inicial"): fica com ícone pr�
   (leitor de texto Tesseract.js, baixado só no primeiro uso).
 - **Entradas**: salário, freelance, vendas… O Resumo mostra entradas, saídas e **saldo** do mês.
 - **Quem me deve / a quem devo**: empréstimos e contas divididas, pagamentos parciais e cobrança pronta pelo WhatsApp.
+  Aviso com vibração no dia combinado, mensagem do WhatsApp personalizável (com sua **chave Pix**), **recibo**
+  em imagem/PDF e **ficha por pessoa** (histórico, totais e se costuma pagar em dia).
+- **Modo privacidade** (👁 no topo): esconde todos os valores da tela.
+- **Lembrete diário** para lançar os gastos do dia (menu ⋯).
+- **Atalhos no ícone**: segure o ícone do app para Falar gasto, Ler comprovante, Nova cobrança ou Novo gasto.
 - **Calendário do mês**: cada dia colorido conforme o gasto (verde → vermelho); toque para ver os gastos do dia.
 - **Relatório do mês**: imagem para compartilhar (WhatsApp etc.) ou PDF.
 - **Orçamento e limites por categoria**: limite geral do mês e limites como "Mercado até R$ 800".

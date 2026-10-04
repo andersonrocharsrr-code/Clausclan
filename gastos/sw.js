@@ -1,7 +1,7 @@
 /* Service worker: funciona offline e abre o app ao tocar numa notificação. */
-const CACHE = 'meus-gastos-v12';
+const CACHE = 'meus-gastos-v13';
 // Os arquivos levam "?v=" no index.html: ao mudar a versão, o celular nunca mistura CSS/JS antigo com HTML novo.
-const FILES = ['./', 'index.html', 'style.css?v=12', 'app.js?v=12', 'icon.svg', 'icon-192.png', 'icon-512.png', 'manifest.webmanifest'];
+const FILES = ['./', 'index.html', 'style.css?v=13', 'app.js?v=13', 'icon.svg', 'icon-192.png', 'icon-512.png', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
@@ -33,12 +33,17 @@ self.addEventListener('fetch', (e) => {
   );
 });
 
-// Tocar na notificação abre o app, mas ela continua na barra até o usuário limpar.
+// Tocar na notificação abre o app (na tela certa, se a notificação indicar), mas ela continua na barra
+// até o usuário limpar.
 self.addEventListener('notificationclick', (e) => {
+  const url = (e.notification.data && e.notification.data.url) || './';
   e.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (list) => {
       const open = list.find((c) => c.url.startsWith(self.registration.scope));
-      return open ? open.focus() : self.clients.openWindow('./');
+      if (!open) return self.clients.openWindow(url);
+      const client = await open.focus();
+      if (url !== './' && client && client.navigate) return client.navigate(url).catch(() => client);
+      return client;
     })
   );
 });
