@@ -111,8 +111,29 @@ button { cursor: pointer; }
   position: absolute; top: 9px; right: 10px; width: 8px; height: 8px; border-radius: 50%;
   background: var(--bad); box-shadow: 0 0 0 2px var(--surface);
 }
-.icon-btn.ring .ic { animation: ring 1.2s ease 2; transform-origin: 50% 10%; }
-@keyframes ring { 0%, 50%, 100% { transform: rotate(0); } 10%, 30% { transform: rotate(14deg); } 20%, 40% { transform: rotate(-14deg); } }
+/* Sino de lembretes */
+.bell { overflow: visible; isolation: isolate; transition: background .35s ease, color .35s ease, box-shadow .35s ease, border-color .35s ease; }
+.bell__icon { display: grid; place-items: center; transform-origin: 50% 6%; }
+.bell.is-on { background: var(--grad); color: #fff; border-color: transparent; box-shadow: 0 8px 20px -8px rgba(91, 76, 240, .85); }
+.bell.is-on .dot { box-shadow: 0 0 0 2px #fff; }
+.bell.is-ringing .bell__icon { animation: bell-swing 1s cubic-bezier(.36, .07, .19, .97); }
+@keyframes bell-swing {
+  0%, 100% { transform: rotate(0); }
+  12% { transform: rotate(20deg); } 26% { transform: rotate(-17deg); } 40% { transform: rotate(13deg); }
+  54% { transform: rotate(-9deg); } 68% { transform: rotate(5deg); } 82% { transform: rotate(-2deg); }
+}
+.bell__waves, .bell__waves::before, .bell__waves::after {
+  content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; z-index: -1;
+  border: 2px solid var(--accent); opacity: 0;
+}
+.bell.is-activating { animation: bell-pop .55s cubic-bezier(.2, 1.6, .4, 1); }
+.bell.is-activating .bell__waves,
+.bell.is-activating .bell__waves::before,
+.bell.is-activating .bell__waves::after { animation: bell-wave 1.2s cubic-bezier(.2, .7, .3, 1); }
+.bell.is-activating .bell__waves::before { animation-delay: .18s; }
+.bell.is-activating .bell__waves::after { animation-delay: .36s; }
+@keyframes bell-pop { 0% { transform: scale(.82); } 60% { transform: scale(1.12); } 100% { transform: scale(1); } }
+@keyframes bell-wave { 0% { opacity: .75; transform: scale(1); } 100% { opacity: 0; transform: scale(2.1); } }
 
 .menu {
   position: absolute; right: 0; top: 50px; min-width: 280px;
