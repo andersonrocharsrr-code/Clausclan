@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Último Dia</title>
+  <meta name="description" content="Sobrevivência zumbi: explore a cidade, saqueie, construa, cuide dos ferimentos e aguente o máximo de dias.">
+  <meta name="theme-color" content="#121512">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&family=Special+Elite&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="hud" hidden>
+    <div class="hud-tl">
+      <div class="clock"><b id="hDay">Dia 1</b><span id="hClock">08:00</span><span id="hWeather"></span><span id="hTemp"></span></div>
+      <div class="vit"><span>❤️</span><div class="vbar hp"><i id="hpBar"></i></div></div>
+      <div class="vit"><span>🫁</span><div class="vbar sta"><i id="staBar"></i></div></div>
+      <div id="moodles"></div>
+    </div>
+    <div class="hud-tr">
+      <button id="btnMap" class="round" aria-label="Mapa">🗺️</button>
+      <button id="btnLight" class="round" aria-label="Lanterna">🔦</button>
+      <button id="btnMenu" class="round" aria-label="Menu">⋯</button>
+    </div>
+    <div id="toasts" aria-live="polite"></div>
+
+    <div id="actionBar" hidden><span id="actionLbl"></span><div class="abar"><i id="actionFill"></i></div></div>
+    <div id="buildBar" hidden><span id="buildLbl"></span><button id="buildOk">✔</button><button id="buildCancel">✖</button></div>
+
+    <button id="weapon" class="weapon"></button>
+
+    <div class="pad">
+      <button id="btnInv" class="sm" aria-label="Mochila">🎒<em>Mochila</em></button>
+      <button id="btnBuild" class="sm" aria-label="Construir">🔨<em>Construir</em></button>
+      <button id="btnSneak" class="sm" aria-label="Agachar">👣<em>Agachar</em></button>
+      <button id="btnRun" class="sm" aria-label="Correr">🏃<em>Correr</em></button>
+      <button id="btnReload" class="sm" hidden aria-label="Recarregar">🔄<em>Recarregar</em></button>
+      <button id="btnUse" class="use"><span>✋</span><em id="useLbl">Usar</em></button>
+      <button id="btnAttack" class="atk" aria-label="Atacar">✊</button>
+    </div>
+    <div id="joy"><div id="joyKnob"></div></div>
+  </div>
+
+  <div id="panel" class="panel" hidden>
+    <div class="panel__backdrop"></div>
+    <section class="panel__card" role="dialog" aria-modal="true" aria-labelledby="panelTitle">
+      <header><h2 id="panelTitle"></h2><button class="x" data-close aria-label="Fechar">✕</button></header>
+      <nav id="panelTabs" class="ptabs"></nav>
+      <div id="panelBody" class="panel__body"></div>
+    </section>
+  </div>
+
+  <div id="start">
+    <div class="start__bg"></div>
+    <div class="start__card">
+      <h1>Último Dia</h1>
+      <p class="subtitle">A cidade caiu. Quanto tempo você aguenta?</p>
+      <div id="startMain">
+        <button id="btnContinue" class="big" hidden>Continuar</button>
+        <button id="btnNew" class="big alt">Novo jogo</button>
+        <button id="btnHowto" class="link">Como jogar</button>
+        <div id="howto" hidden>
+          <p>Explore casas, mercados, hospital e delegacia. Revire armários e geladeiras, fuja ou lute — mas lembre: <b>todo barulho atrai zumbis</b>.</p>
+          <p>Cuide da fome, sede, sono, frio, ferimentos e do medo. A comida estraga, a energia e a água vão acabar, hordas migram pelo mapa.</p>
+          <p>Construa barricadas, muros, hortas e coletores de chuva. Conserte carros. Ajude — ou não — os outros sobreviventes.</p>
+          <p>Celular: arraste a esquerda para andar · Computador: WASD, mouse e E.</p>
+        </div>
+      </div>
+      <div id="startProf" hidden>
+        <h3>Quem era você antes?</h3>
+        <div id="profs"></div>
+        <button id="btnBackProf" class="link">‹ Voltar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="death" hidden>
+    <div class="death__card">
+      <h1>Fim</h1>
+      <p id="deathTxt"></p>
+      <div id="deathStats" class="dstats"></div>
+      <p class="subtitle">Assim termina a sua história.</p>
+      <button id="deathAgain" class="big">Tentar de novo</button>
+    </div>
+  </div>
+
+  <script src="js/data.js?v=1"></script>
+  <script src="js/world.js?v=1"></script>
+  <script src="js/sim.js?v=1"></script>
+  <script src="js/render.js?v=1"></script>
+  <script src="js/input.js?v=1"></script>
+  <script src="js/ui.js?v=1"></script>
+  <script src="js/main.js?v=1"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+    }
+  </script>
+</body>
+</html>

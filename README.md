@@ -109,3 +109,39 @@ Abra `fazenda/index.html` por um servidor (GitHub Pages, ou `python3 -m http.ser
   Tratores maiores liberam culturas pesadas e rendem mais; cada uso desgasta e pede revisão.
 - **Mercado**: preços mudam a cada dia de jogo, compra de insumos e **encomendas** que pagam acima do mercado.
 - O progresso fica salvo no aparelho, e a fazenda continua produzindo por até 4 h com o app fechado.
+
+---
+
+# Último Dia — sobrevivência zumbi (`ultimo-dia/`)
+
+Jogo web instalável (PWA, sem build) de sobrevivência num apocalipse zumbi, visto de cima. Não existe vitória:
+o objetivo é sobreviver o máximo de dias numa cidade que caiu.
+
+Abra `ultimo-dia/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server` na raiz e acesse
+`http://localhost:8000/ultimo-dia/`). Funciona no celular (joystick na tela) e no computador (teclado e mouse).
+
+## Como funciona
+- **Mundo**: cidade gerada a cada partida com casas, casas abandonadas, mercados, postos, hospital, delegacia,
+  oficina, escola, igreja e fábrica, além de fazendas, floresta, lagos e rodovias. Móveis (geladeira, armário,
+  guarda-roupa, armário de remédios, armário de armas…) têm saque de acordo com o lugar. Portas trancadas, janelas
+  que quebram (e cortam), visão bloqueada por paredes e telhados que só se abrem quando você olha para dentro.
+- **Sobrevivência**: fome, sede, sono, fôlego, temperatura (roupa, chuva, fogo), estresse, medo, dor, enjoo, peso
+  carregado e ferimentos (arranhão, corte, mordida, tiro, queimadura, fratura) com sangramento, curativos que sujam,
+  infecção e antibióticos. A mordida infecta e não tem cura. A comida estraga; enlatados duram para sempre.
+- **Combate**: faca, taco, pé de cabra, martelo, facão, machado, lança, pistola, revólver, espingarda,
+  submetralhadora, rifle e molotov. Armas desgastam, munição é rara e **todo barulho atrai zumbis**.
+- **Zumbis**: lentos, recém-infectados, corredores e brutamontes. Seguem o som, contornam paredes, derrubam portas,
+  barricadas e muros, ficam dentro dos prédios e migram em **hordas** pelo mapa — mesmo longe de você.
+- **Construção**: barricadas (até 3 camadas), cercas, muros de madeira e metal, portões, baús, cama improvisada,
+  fogão improvisado, gerador, torre de vigia, canteiro (horta), coletor de chuva e bancada. Desmonte móveis para
+  conseguir tábuas e pregos, corte árvores e serre troncos.
+- **Veículos**: carro, caminhonete, moto, caminhão, trator, ambulância e viatura, com combustível, bateria, pneus,
+  motor e lataria. Precisa da chave (achada em casas e corpos) ou de ligação direta. Atropelar zumbis estraga o carro.
+- **Habilidades** que sobem com o uso (e com livros): corpo a corpo, armas de fogo, construção, mecânica, medicina,
+  agricultura, sobrevivência (pesca, caça, coleta) e furtividade. Sete profissões iniciais.
+- **Mundo dinâmico**: dia e noite, chuva, tempestade com trovões, neblina, a energia e a água acabam alguns dias
+  depois, incêndios que se espalham, plantas que crescem, rádio com avisos.
+- **Sobreviventes**: comerciantes (troca com crédito), famílias que pedem remédios e depois aparecem na sua base
+  pedindo para entrar, sobreviventes que podem entrar no grupo, pedidos de socorro e saqueadores que assaltam você
+  e atacam a base.
+- O jogo salva sozinho no aparelho. A morte é permanente.
