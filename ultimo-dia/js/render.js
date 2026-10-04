@@ -18,7 +18,8 @@ function resize() {
   VW = window.innerWidth; VH = window.innerHeight;
   cv.width = Math.round(VW * DPR); cv.height = Math.round(VH * DPR);
   cv.style.width = VW + 'px'; cv.style.height = VH + 'px';
-  fogCv.width = lightCv.width = Math.ceil(VW / 2); fogCv.height = lightCv.height = Math.ceil(VH / 2);
+  lightCv.width = Math.ceil(VW / 2); lightCv.height = Math.ceil(VH / 2);
+  fogCv.width = Math.ceil(VW / 4); fogCv.height = Math.ceil(VH / 4); // baixa resolução = bordas macias
 }
 window.addEventListener('resize', resize);
 resize();
@@ -236,6 +237,15 @@ function drawLamp(x, y, lit) {
   ctx.fillStyle = '#2f3336'; ctx.beginPath(); ctx.ellipse(hx, hy, 6 * K, 3 * K, 0, 0, 7); ctx.fill();
   if (lit) { ctx.fillStyle = '#ffe9b0'; ctx.beginPath(); ctx.ellipse(hx, hy + 2 * K, 4 * K, 2 * K, 0, 0, 7); ctx.fill(); }
   ctx.lineCap = 'butt';
+}
+function drawDeco(x, y, d, fade) {
+  const img = isoDeco[d.k][d.v], f = isoTreeRes;
+  const gx = PX(x + 0.5 + (d.ox || 0), y + 0.5 + (d.oy || 0)), gy = PY(x + 0.5 + (d.ox || 0), y + 0.5 + (d.oy || 0));
+  if (fade) ctx.globalAlpha = 0.5;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(img, Math.round(gx * DPR - DECO_W / 2 * f), Math.round(gy * DPR - (DECO_H - DECO_FOOT) * f));
+  resetXform();
+  if (fade) ctx.globalAlpha = 1;
 }
 function drawTreeSprite(x, y, fade) {
   const tr = treeAt(x, y), img = isoTrees[tr.k][tr.v][tr.si], f = isoTreeRes * img.sc;
@@ -535,6 +545,7 @@ function render(now) {
       if (o && FURN[o.t] && !FLAT_OBJ.has(o.t) && o.t !== 'arbusto') drawFurniture(o, x, y, cut && (FURN_BOX[o.t] || [0, 0, 0, 0])[3] > 0.9);
       if (tt === TL.TREE) drawTreeSprite(x, y, cut || (Math.abs(x + 0.5 - p.x) < 1.3 && Math.abs(y + 0.5 - p.y) < 1.3));
       else if (LM[i]) drawLamp(x, y, lampsLit);
+      else if (tt === TL.GRASS || tt === TL.BUSH) { const dc = decoAt(x, y); if (dc) drawDeco(x, y, dc, cut); }
     }
   }
   while (ei < ents.length) ents[ei++].f();
@@ -550,7 +561,7 @@ function render(now) {
   const dl = daylight();
   fctx.setTransform(1, 0, 0, 1, 0, 0); fctx.globalCompositeOperation = 'source-over'; fctx.clearRect(0, 0, fogCv.width, fogCv.height);
   fctx.fillStyle = `rgba(10,11,12,${0.44 + (1 - dl) * 0.2})`; fctx.fillRect(0, 0, fogCv.width, fogCv.height);
-  fctx.globalCompositeOperation = 'destination-out'; fctx.setTransform(0.5, 0, 0, 0.5, 0, 0); fctx.fillStyle = '#000'; fctx.beginPath();
+  fctx.globalCompositeOperation = 'destination-out'; fctx.setTransform(0.25, 0, 0, 0.25, 0, 0); fctx.fillStyle = '#000'; fctx.beginPath();
   const colH = WALL_H * HZ + HZ * 0.4;
   for (const i of G.visList) {
     const x = i % MAP_W, y = Math.floor(i / MAP_W);

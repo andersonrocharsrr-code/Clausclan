@@ -185,6 +185,24 @@ function genWorld(seed, prof) {
     }
   }
 
+  // árvores e arbustos espalhados pelas áreas verdes (quintais, praças, beira de estrada e campo)
+  const greenOk = (x, y) => {
+    for (let b = -1; b <= 1; b++) for (let a = -1; a <= 1; a++) {
+      const t = tileAt(x + a, y + b); if (t !== TL.GRASS && t !== TL.TREE && t !== TL.BUSH && t !== TL.WALK) return false;
+      if (S.objs[ix(x + a, y + b)] || S.room[ix(x + a, y + b)]) return false;
+    }
+    for (let b = -2; b <= 2; b++) for (let a = -2; a <= 2; a++) if (tileAt(x + a, y + b) === TL.DOOR) return false;
+    return !S.vehs.some((v) => dist2(v.x, v.y, x + 0.5, y + 0.5) < 6);
+  };
+  for (let y = 4; y < MAP_H - 4; y++) for (let x = 4; x < MAP_W - 4; x++) {
+    if (tiles[ix(x, y)] !== TL.GRASS || !greenOk(x, y)) continue;
+    const town = x > 30 && x < 112 && y > 30 && y < 112;
+    const r = R();
+    const street = town && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => tileAt(x + a, y + b) === TL.WALK);
+    if (r < (street ? ((x + y) % 3 === 0 ? 0.35 : 0) : town ? 0.06 : 0.022)) tiles[ix(x, y)] = TL.TREE;
+    else if (!town && r < 0.032) tiles[ix(x, y)] = TL.BUSH;
+  }
+
   // sobreviventes
   const homes = shuffle(S.bld.map((b, i) => i).filter((i) => ['casa', 'igreja', 'fazenda', 'escola'].includes(S.bld[i].t)));
   const kinds = ['comerciante', 'comerciante', 'familia', 'familia', 'solitario', 'solitario', 'bandido', 'bandido'];
