@@ -996,10 +996,12 @@ button, .k, .tab, .fab, .chip, .seg__btn { touch-action: manipulation; -webkit-u
 /* ---------- Marca Nexa Money no topo ---------- */
 .brand__mark {
   width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; flex: none;
-  background: radial-gradient(circle at 55% 45%, rgba(124, 58, 237, .55), transparent 70%), linear-gradient(135deg, #1c1236, #0a0714);
-  box-shadow: 0 6px 16px -6px rgba(124, 58, 237, .8);
+  background: radial-gradient(circle at 55% 45%, rgba(31, 122, 79, .1), transparent 70%), linear-gradient(135deg, #ffffff, #eef6f1);
+  box-shadow: 0 0 0 1px rgba(15, 74, 48, .12), 0 6px 16px -8px rgba(15, 74, 48, .55);
 }
-.brand em { font-style: normal; color: var(--accent); }
+.brand em { font-style: normal; color: #1f7a4f; }
+:root[data-theme="dark"] .brand em { color: #3fbf86; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .brand em { color: #3fbf86; } }
 
 /* ---------- Toast ---------- */
 .toast {
