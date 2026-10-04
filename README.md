@@ -86,3 +86,26 @@ navegador → "Instalar app" / "Adicionar à tela inicial"): fica com ícone pr�
 ## Observações
 - Os dados ficam salvos **somente neste navegador/aparelho**. Faça backup de vez em quando (menu ⋯).
 - Para avisos garantidos com o app fechado, exporte os lembretes para o calendário (menu ⋯).
+
+---
+
+# Fazenda Aurora — jogo de fazenda (`fazenda/`)
+
+Jogo web instalável (PWA, sem build) para gerenciar uma fazenda, com **mapa animado** da propriedade:
+animais passeando, moinho girando, fumaça na chaminé, peixes nadando, riacho correndo, tratores rodando nas
+estradas, nuvens, pássaros, chuva e ciclo de dia e noite.
+
+Abra `fazenda/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server` na raiz e acesse
+`http://localhost:8000/fazenda/`). No celular, use "Adicionar à tela inicial" para instalar.
+
+## Como funciona
+- **Lavouras**: 8 campos (3 liberados, os outros à venda). 16 culturas: alface, cenoura, milho, milho para silagem,
+  trigo, amendoim, tomate, soja, abóbora, girassol, feijão, arroz, morango, cana, algodão e café, liberadas por nível.
+  Toque num campo para plantar; quando brilhar, toque de novo para colher. Adubo acelera e aumenta a colheita.
+- **Animais**: vacas (leite), bois e porcos (engordam e valem mais), cavalos (renda com passeios), ovelhas (lã),
+  galinhas (ovos) e tanque de tilápias. Eles comem sozinhos do armazém: silagem no pasto, grãos no chiqueiro e no
+  galinheiro, ração no tanque. Cercados podem ser ampliados.
+- **Máquinas**: compra e venda de tratores (50, 110 e 220 cv), colheitadeira, pulverizador, quadriciclo e caminhão.
+  Tratores maiores liberam culturas pesadas e rendem mais; cada uso desgasta e pede revisão.
+- **Mercado**: preços mudam a cada dia de jogo, compra de insumos e **encomendas** que pagam acima do mercado.
+- O progresso fica salvo no aparelho, e a fazenda continua produzindo por até 4 h com o app fechado.
