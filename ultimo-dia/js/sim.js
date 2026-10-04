@@ -946,7 +946,7 @@ function drive(dt) {
   updateAction(dt);
   const mv = G.input.mv, mag = Math.min(1, Math.hypot(mv.x, mv.y));
   let thr = 0, steer = 0;
-  if (G.input.kbd) { thr = -mv.y; steer = mv.x; }
+  if (G.input.kbd) { const sm = G.input.smv || { x: 0, y: 0 }; thr = -sm.y; steer = sm.x; }
   else if (mag > 0.15) {
     const ta = Math.atan2(mv.y, mv.x), diff = angDiff(ta, v.a);
     if (Math.abs(diff) > 2.3 && v.sp < 1) { thr = -mag; steer = -clamp(angDiff(ta, v.a + Math.PI) * 2, -1, 1); }

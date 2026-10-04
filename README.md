@@ -114,7 +114,9 @@ Abra `fazenda/index.html` por um servidor (GitHub Pages, ou `python3 -m http.ser
 
 # Último Dia — sobrevivência zumbi (`ultimo-dia/`)
 
-Jogo web instalável (PWA, sem build) de sobrevivência num apocalipse zumbi, visto de cima. Não existe vitória:
+Jogo web instalável (PWA, sem build) de sobrevivência num apocalipse zumbi, com câmera isométrica (2.5D)
+que aproxima e afasta (pinça, roda do mouse ou botões ＋/－), paredes que se recortam perto do personagem,
+névoa pela linha de visão e paleta dessaturada. Não existe vitória:
 o objetivo é sobreviver o máximo de dias numa cidade que caiu.
 
 Abra `ultimo-dia/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server` na raiz e acesse
