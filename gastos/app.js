@@ -71,7 +71,7 @@
   function load() {
     const empty = {
       expenses: [], reminders: [], budget: 0, theme: 'auto', calcHist: [],
-      catBudgets: {}, fixed: [], customCats: [], card: { close: 0, due: 0 }, goals: [],
+      catBudgets: {}, fixed: [], customCats: [], card: { close: 0, due: 0 }, goals: [], notifyOn: true, notifyTested: false,
     };
     try {
       const data = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
@@ -97,6 +97,8 @@
       customCats: Array.isArray(data.customCats) ? data.customCats : [],
       card: { close: Number(card.close) || 0, due: Number(card.due) || 0 },
       goals: Array.isArray(data.goals) ? data.goals : [],
+      notifyOn: data.notifyOn !== false,
+      notifyTested: !!data.notifyTested,
     };
   }
 
@@ -1476,7 +1478,7 @@
     dlgRem.close();
     render();
     toast(ui.editingRem ? 'Lembrete atualizado.' : 'Lembrete criado.');
-    if ('Notification' in window && Notification.permission === 'default') await askNotify();
+    if ('Notification' in window && Notification.permission === 'default' && state.notifyOn) await enableAlerts();
   });
 
   $('#remDelete').addEventListener('click', () => {
@@ -1534,25 +1536,30 @@
   }
 
   const canNotify = () => 'Notification' in window && Notification.permission === 'granted';
+  // Lembretes ligados = navegador permite E o usuário deixou o sino ligado no app.
+  const alertsOn = () => canNotify() && state.notifyOn;
 
   function updateBell() {
     const b = $('#btnNotif');
-    b.classList.toggle('is-on', canNotify());
-    $('use', b).setAttribute('href', canNotify() ? '#i-bell-on' : '#i-bell');
-    b.title = canNotify() ? 'Lembretes ativados' : 'Ativar lembretes';
-    b.setAttribute('aria-pressed', String(canNotify()));
+    const on = alertsOn();
+    b.classList.toggle('is-on', on);
+    $('use', b).setAttribute('href', on ? '#i-bell-on' : canNotify() ? '#i-bell-off' : '#i-bell');
+    b.title = on ? 'Lembretes ligados — toque para desligar' : 'Lembretes desligados — toque para ligar';
+    b.setAttribute('aria-label', on ? 'Desligar lembretes' : 'Ligar lembretes');
+    b.setAttribute('aria-pressed', String(on));
   }
 
-  // Balança o sino; "activating" adiciona as ondas e o "pulo" de quando os lembretes são ligados.
+  // Anima o sino: "ring" balança; "on" adiciona ondas e o "pulo" ao ligar; "off" encolhe ao desligar.
   let ringTimer = null;
-  function ringBell(activating = false) {
+  function ringBell(mode = 'ring') {
     const b = $('#btnNotif');
-    b.classList.remove('is-ringing', 'is-activating');
+    b.classList.remove('is-ringing', 'is-activating', 'is-deactivating');
     void b.offsetWidth; // reinicia a animação
-    b.classList.add('is-ringing');
-    if (activating) b.classList.add('is-activating');
+    if (mode === 'off') b.classList.add('is-deactivating');
+    else b.classList.add('is-ringing');
+    if (mode === 'on') b.classList.add('is-activating');
     clearTimeout(ringTimer);
-    ringTimer = setTimeout(() => b.classList.remove('is-ringing', 'is-activating'), 1700);
+    ringTimer = setTimeout(() => b.classList.remove('is-ringing', 'is-activating', 'is-deactivating'), 1700);
   }
 
   const getReg = async () => swReg || (navigator.serviceWorker && (await navigator.serviceWorker.getRegistration().catch(() => null)));
@@ -1566,36 +1573,52 @@
     } catch { /* sem suporte */ }
   }
 
-  async function askNotify() {
+  // Liga os lembretes (pede permissão ao navegador na primeira vez).
+  async function enableAlerts() {
     if (!('Notification' in window)) {
       toast('Este navegador não suporta notificações. Use “Lembretes p/ calendário” no menu ⋯.');
       return;
     }
     if (Notification.permission === 'denied') {
-      toast('As notificações estão bloqueadas. Libere nas configurações do navegador para este site.');
+      toast('As notificações estão bloqueadas. Libere nas configurações do celular para o app Meus Gastos.');
       return;
     }
-    if (Notification.permission === 'granted') {
-      ringBell();
-      toast('Os lembretes já estão ativados 🔔');
-      return;
+    if (Notification.permission === 'default') {
+      const p = await Notification.requestPermission();
+      if (p !== 'granted') { updateBell(); return; }
     }
-    const p = await Notification.requestPermission();
+    state.notifyOn = true;
+    const first = !state.notifyTested;
+    state.notifyTested = true;
+    save();
     updateBell();
-    if (p !== 'granted') return;
-    ringBell(true);
+    ringBell('on');
     beep();
-    toast('Lembretes ativados 🔔 Você será avisado no horário escolhido.');
-    // Um único aviso de exemplo, que some sozinho em alguns segundos.
-    notify('Meus Gastos', 'Pronto! Os lembretes vão aparecer assim.', 'teste', { quiet: true, autoClose: 5000 });
+    toast('Lembretes ligados 🔔 Você será avisado no horário escolhido.');
+    // Só na primeira vez: um aviso de exemplo, que some sozinho.
+    if (first) notify('Meus Gastos', 'Pronto! Os lembretes vão aparecer assim.', 'teste', { quiet: true, autoClose: 5000 });
   }
 
-  $('#btnNotif').addEventListener('click', askNotify);
+  function disableAlerts() {
+    state.notifyOn = false;
+    save();
+    updateBell();
+    ringBell('off');
+    clearNotifications();
+    toast('Lembretes desligados. Toque no sino para ligar de novo.');
+  }
+
+  const toggleAlerts = () => (alertsOn() ? disableAlerts() : enableAlerts());
+
+  $('#btnNotif').addEventListener('click', toggleAlerts);
 
   async function notify(title, body, tag, { quiet = false, autoClose = 0 } = {}) {
-    if (!quiet) { beep(); ringBell(); }
+    if (!quiet) {
+      ringBell();
+      if (state.notifyOn) beep();
+    }
     // Com o app aberto na tela, o aviso aparece dentro dele; a notificação do sistema é só para segundo plano.
-    if (!canNotify() || (!quiet && document.visibilityState === 'visible')) return;
+    if (!alertsOn() || (!quiet && document.visibilityState === 'visible')) return;
     // Sem "requireInteraction": o aviso some ao tocar nele ou ao abrir o app (não fica preso na barra).
     const opts = { body, tag, icon: 'icon-192.png', badge: 'badge-96.png', renotify: false, vibrate: [80, 40, 80] };
     try {
@@ -1952,7 +1975,11 @@
   function renderCalc() {
     $('#calcExpr').textContent = calc ? prettify(calc) : '\u00a0';
     const v = calcValue();
-    $('#calcResult').textContent = Number.isFinite(v) ? num.format(Math.round(v * 1e8) / 1e8) : '…';
+    const out = $('#calcResult');
+    out.textContent = Number.isFinite(v) ? num.format(Math.round(v * 1e8) / 1e8) : '…';
+    // Diminui a fonte quando o número fica comprido, para caber sem quebrar.
+    out.classList.toggle('is-long', out.textContent.length > 9 && out.textContent.length <= 13);
+    out.classList.toggle('is-xlong', out.textContent.length > 13);
     $('#calcHist').innerHTML = state.calcHist.map((h, i) =>
       `<button type="button" data-h="${i}"><span>${esc(prettify(h.expr))}</span><b>= ${num.format(h.result)}</b></button>`).join('');
   }
@@ -1978,10 +2005,61 @@
     renderCalc();
   }
 
-  $('#calcKeys').addEventListener('click', (e) => {
+  // Teclas respondem no toque (pointerdown), sem esperar o "clique" — fica mais rápido e fluido.
+  const calcKeys = $('#calcKeys');
+  let holdTimer = null;
+  let holdRepeat = null;
+  let lastPointer = 0;
+  const stopHold = () => { clearTimeout(holdTimer); clearInterval(holdRepeat); holdTimer = holdRepeat = null; };
+  function flash(b) {
+    b.classList.add('is-pressed');
+    setTimeout(() => b.classList.remove('is-pressed'), 110);
+    if (navigator.vibrate) navigator.vibrate(6);
+  }
+  calcKeys.addEventListener('pointerdown', (e) => {
     const b = e.target.closest('[data-k]');
-    if (b) press(b.dataset.k);
+    if (!b || e.button > 0) return;
+    e.preventDefault();
+    lastPointer = Date.now();
+    flash(b);
+    press(b.dataset.k);
+    // Segurar o ⌫ apaga em sequência.
+    if (b.dataset.k === 'back') {
+      stopHold();
+      holdTimer = setTimeout(() => { holdRepeat = setInterval(() => (calc ? press('back') : stopHold()), 70); }, 380);
+    }
   });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => calcKeys.addEventListener(ev, stopHold));
+  // Teclado / leitor de tela (Enter/Espaço). O "click" que o celular gera logo após o toque é ignorado,
+  // senão cada tecla contaria duas vezes.
+  calcKeys.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-k]');
+    if (b && Date.now() - lastPointer > 600) press(b.dataset.k);
+  });
+
+  // Tela cheia
+  const calcPanel = $('#calcPanel');
+  const isCalcFull = () => calcPanel.classList.contains('is-full');
+  function setCalcFull(on) {
+    calcPanel.classList.toggle('is-full', on);
+    document.body.classList.toggle('calc-full-open', on);
+    $('#calcFull use').setAttribute('href', on ? '#i-shrink' : '#i-expand');
+    $('#calcFull').setAttribute('aria-label', on ? 'Sair da tela cheia' : 'Abrir em tela cheia');
+    $('#calcFull').title = on ? 'Sair da tela cheia' : 'Tela cheia';
+  }
+  function openCalcFull() {
+    if (isCalcFull()) return;
+    setCalcFull(true);
+    // O botão "voltar" do celular fecha a tela cheia em vez de sair do app.
+    history.pushState({ calcFull: true }, '');
+  }
+  function closeCalcFull() {
+    if (!isCalcFull()) return;
+    if (history.state && history.state.calcFull) history.back();
+    else setCalcFull(false);
+  }
+  $('#calcFull').addEventListener('click', () => (isCalcFull() ? closeCalcFull() : openCalcFull()));
+  window.addEventListener('popstate', () => { if (isCalcFull()) setCalcFull(false); });
 
   $('#calcHist').addEventListener('click', (e) => {
     const b = e.target.closest('[data-h]');
@@ -1993,6 +2071,7 @@
   document.addEventListener('keydown', (e) => {
     if (ui.view !== 'calc' || document.querySelector('dialog[open]')) return;
     if (e.target.matches('input, select, textarea') || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'Escape' && isCalcFull()) { e.preventDefault(); closeCalcFull(); return; }
     const map = { Enter: '=', '=': '=', Backspace: 'back', Escape: 'C', Delete: 'C', '.': ',', x: '*', X: '*' };
     const k = map[e.key] || (/^[0-9+\-*/(),%]$/.test(e.key) ? e.key : null);
     if (!k) return;
