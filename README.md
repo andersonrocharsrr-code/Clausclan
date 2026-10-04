@@ -93,13 +93,13 @@ navegador → "Instalar app" / "Adicionar à tela inicial"): fica com ícone pr�
 
 Jogo instalável (PWA, sem build) com dois modos. Abra `memoria/index.html` por um servidor (GitHub Pages, ou
 `python3 -m http.server` na raiz e acesse `http://localhost:8000/memoria/`). No celular, use "Adicionar à tela
-inicial" para jogar em tela cheia e offline.
+inicial" para jogar em tela cheia e offline. Visual escuro com abas para cada modo, botão de pausa e barra de progresso.
 
 ## Modos
 - **🧠 Jogo da memória**: encontre os pares de cartas. 4 níveis (Fácil 6 pares, Médio 8, Difícil 10, Expert 15)
   e 5 temas (animais, frutas, espaço, esportes, comidas). As cartas aparecem por alguns segundos para você
   memorizar; acertos seguidos viram **combo**.
-- **🧩 Quebra-cabeça deslizante**: deslize as peças até montar a imagem (3×3, 4×4 ou 5×5). Toque numa peça na
+- **🧩 Quebra-cabeça deslizante**: deslize as peças até montar a imagem (3×3, 4×4 ou 5×5), escolhendo a imagem (praia, noite, arco-íris, jardim ou surpresa). Toque numa peça na
   mesma linha ou coluna do espaço vazio para deslizá-la. **Ver imagem** mostra o desenho completo e
   **Números** liga/desliga a numeração das peças. O embaralhamento sempre tem solução.
 

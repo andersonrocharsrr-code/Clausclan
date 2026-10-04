@@ -12,10 +12,10 @@
 
   const THEMES = [
     { id: 'animais', label: 'Animais', items: ['🐶', '🐱', '🦊', '🐼', '🐨', '🐯', '🦁', '🐸', '🐵', '🐧', '🐙', '🦄', '🐢', '🦋', '🐝', '🐬', '🦉', '🐰'] },
-    { id: 'frutas', label: 'Frutas', items: ['🍎', '🍌', '🍇', '🍓', '🍉', '🍍', '🥝', '🍒', '🍑', '🥥', '🍋', '🥭', '🍐', '🫐', '🍈', '🥑', '🌽', '🥕'] },
+    { id: 'frutas', label: 'Frutas', items: ['🍓', '🍌', '🍇', '🍎', '🍉', '🍍', '🥝', '🍒', '🍑', '🥥', '🍋', '🥭', '🍐', '🫐', '🍈', '🥑', '🌽', '🥕'] },
     { id: 'espaco', label: 'Espaço', items: ['🚀', '🪐', '🌙', '⭐', '☄️', '👽', '🛸', '🌍', '🌞', '🔭', '🛰️', '🌌', '🌠', '🌑', '🌈', '⚡', '🌋', '💫'] },
-    { id: 'esportes', label: 'Esportes', items: ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏉', '🎱', '🏓', '🏸', '🥊', '⛳', '🛹', '🏆', '🥇', '🎯', '🏹', '🤿'] },
-    { id: 'comidas', label: 'Comidas', items: ['🍕', '🍔', '🍟', '🌭', '🍿', '🧁', '🍩', '🍪', '🍫', '🍦', '🥨', '🌮', '🍣', '🥞', '🧇', '🍭', '🎂', '🥐'] },
+    { id: 'esportes', label: 'Esportes', items: ['⚽', '🏀', '🎾', '⚾', '🏈', '🏐', '🏉', '🎱', '🏓', '🏸', '🥊', '⛳', '🛹', '🏆', '🥇', '🎯', '🏹', '🤿'] },
+    { id: 'comidas', label: 'Comidas', items: ['🍕', '🍔', '🍩', '🌭', '🍿', '🧁', '🍟', '🍪', '🍫', '🍦', '🥨', '🌮', '🍣', '🥞', '🧇', '🍭', '🎂', '🥐'] },
   ];
 
   const PUZ_LEVELS = [
@@ -25,6 +25,7 @@
   ];
 
   // Imagens do quebra-cabeça (SVG desenhado aqui mesmo, funciona offline).
+  const SCENE_NAMES = ['Praia', 'Noite', 'Arco-íris', 'Jardim'];
   const SCENES = [
     // Pôr do sol na praia
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
@@ -77,6 +78,9 @@
     </svg>`,
   ].map((svg) => `url("data:image/svg+xml,${encodeURIComponent(svg.replace(/\s+/g, ' '))}")`);
 
+  const STAR_SVG = '<svg viewBox="0 0 24 24"><path d="M12 2.6l2.85 5.9 6.5.85-4.75 4.5 1.2 6.45L12 17.2l-5.8 3.1 1.2-6.45-4.75-4.5 6.5-.85z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>';
+  const icon = (id) => `<svg><use href="#i-${id}"/></svg>`;
+
   // ===== Armazenamento (pode falhar em modo privado) =====
   const store = {
     get(key, fallback) {
@@ -91,7 +95,7 @@
   };
 
   const settings = Object.assign(
-    { level: 'facil', theme: 'animais', puzzle: 3, sound: true, numbers: true },
+    { tab: 'memory', level: 'facil', theme: 'animais', puzzle: 3, scene: -1, sound: true, numbers: true },
     store.get('settings', {})
   );
   const saveSettings = () => store.set('settings', settings);
@@ -107,6 +111,9 @@
   };
   const fmtTime = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   const vibrate = (p) => { try { navigator.vibrate && navigator.vibrate(p); } catch { /* ignora */ } };
+  const currentMemLevel = () => MEM_LEVELS.find((l) => l.id === settings.level) || MEM_LEVELS[0];
+  const currentTheme = () => THEMES.find((t) => t.id === settings.theme) || THEMES[0];
+  const currentPuzLevel = () => PUZ_LEVELS.find((l) => l.n === settings.puzzle) || PUZ_LEVELS[0];
 
   // ===== Som (Web Audio, sem arquivos) =====
   let audio = null;
@@ -128,6 +135,7 @@
     } catch { /* sem áudio */ }
   }
   const sfx = {
+    tap: () => tone(720, 0.04, 'sine', 0.08),
     flip: () => tone(560, 0.06),
     slide: () => tone(330, 0.05, 'sine', 0.12),
     match: () => { tone(660, 0.1); tone(990, 0.14, 'triangle', 0.15, 0.08); },
@@ -150,15 +158,14 @@
     clearTimeout(bannerTimer);
     banner.textContent = text;
     banner.hidden = false;
-    // reinicia a animação
     banner.style.animation = 'none';
-    void banner.offsetWidth;
+    void banner.offsetWidth; // reinicia a animação
     banner.style.animation = '';
     if (ms) bannerTimer = setTimeout(() => { banner.hidden = true; }, ms);
   }
   function hideBanner() { clearTimeout(bannerTimer); banner.hidden = true; }
 
-  // ===== Cronômetro (pausa quando o app sai da tela) =====
+  // ===== Cronômetro =====
   const timer = {
     elapsed: 0, startedAt: 0, running: false, id: 0,
     reset() { this.stop(); this.elapsed = 0; render.time(0); },
@@ -179,16 +186,14 @@
       return Math.floor(ms / 1000);
     },
   };
-  let pausedByHide = false;
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden && timer.running) { timer.stop(); pausedByHide = true; }
-    else if (!document.hidden && pausedByHide) { pausedByHide = false; timer.start(); }
-  });
 
   const render = {
     time: (s) => { $('#hudTime').textContent = fmtTime(s); },
     moves: (m) => { $('#hudMoves').textContent = m; },
-    pairs: (a, b) => { $('#hudPairs').textContent = `${a}/${b}`; },
+    progress: (a, b) => {
+      $('#hudPairs').textContent = `${a}/${b}`;
+      $('#progressBar').style.width = `${b ? (a / b) * 100 : 0}%`;
+    },
   };
 
   // ===== Estado da partida =====
@@ -196,19 +201,43 @@
 
   function stopGame() {
     timer.stop();
-    pausedByHide = false;
     hideBanner();
+    setPaused(false);
     if (game && game.timeouts) game.timeouts.forEach(clearTimeout);
     game = null;
   }
+
+  // ===== Pausa =====
+  function setPaused(on) {
+    const layer = $('#pauseLayer');
+    if (on) {
+      if (!game || game.done || game.paused) return;
+      game.paused = true;
+      timer.stop();
+      togglePeek(false);
+      board.classList.add('is-paused');
+      $('#pauseInfo').textContent = `${fmtTime(timer.seconds())} · ${game.moves} ${game.mode === 'memory' ? 'jogadas' : 'movimentos'}`;
+      layer.hidden = false;
+    } else {
+      board.classList.remove('is-paused');
+      layer.hidden = true;
+      if (game && game.paused) {
+        game.paused = false;
+        if (game.started && !game.done) timer.start();
+      }
+    }
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && game && game.started) setPaused(true);
+  });
 
   // ===================================================================
   // Jogo da memória
   // ===================================================================
   function startMemory() {
     stopGame();
-    const level = MEM_LEVELS.find((l) => l.id === settings.level) || MEM_LEVELS[0];
-    const theme = THEMES.find((t) => t.id === settings.theme) || THEMES[0];
+    const level = currentMemLevel();
+    const theme = currentTheme();
     const pairs = (level.cols * level.rows) / 2;
     const symbols = shuffle(theme.items.slice()).slice(0, pairs);
     const deck = shuffle(symbols.flatMap((s) => [s, s]));
@@ -216,7 +245,7 @@
     game = {
       mode: 'memory', level, theme, pairs,
       moves: 0, found: 0, combo: 0,
-      open: [], pending: null, locked: true, started: false, timeouts: [],
+      open: [], pending: null, locked: true, started: false, done: false, paused: false, timeouts: [],
       cards: [],
     };
 
@@ -227,18 +256,19 @@
       const el = document.createElement('button');
       el.type = 'button';
       el.className = 'card is-open';
-      el.setAttribute('aria-label', 'Carta virada');
+      el.style.animationDelay = `${i * 22}ms`;
+      el.setAttribute('aria-label', `Carta ${symbol}`);
       el.innerHTML = `<span class="card__inner"><span class="card__face card__back"></span><span class="card__face card__front">${symbol}</span></span>`;
       el.addEventListener('click', () => onCardTap(i));
       board.appendChild(el);
       game.cards.push({ symbol, el, matched: false });
     });
 
-    $('#hudPairsBox').hidden = false;
+    $('#hudProgressLabel').textContent = 'Pares';
     $('#puzFoot').hidden = true;
     timer.reset();
     render.moves(0);
-    render.pairs(0, pairs);
+    render.progress(0, pairs);
     show('game');
     layout();
 
@@ -247,11 +277,14 @@
     flash('Memorize! 👀', 0);
     g.timeouts.push(setTimeout(() => {
       if (game !== g) return;
-      g.cards.forEach((c) => c.el.classList.remove('is-open'));
+      g.cards.forEach((c) => {
+        c.el.classList.remove('is-open');
+        c.el.setAttribute('aria-label', 'Carta virada');
+      });
       sfx.flip();
       flash('Valendo! 🚀', 700);
       g.locked = false;
-    }, 1400 + pairs * 140));
+    }, 1600 + pairs * 140));
   }
 
   // Fecha o par errado que ainda está à mostra (menos `keep`, que continua aberta).
@@ -259,14 +292,19 @@
     const g = game;
     if (!g.pending) return;
     clearTimeout(g.pending.timeout);
-    g.pending.cards.forEach((c) => c.el.classList.remove('is-wrong'));
-    g.pending.cards.forEach((c) => { if (c !== keep) c.el.classList.remove('is-open'); });
+    g.pending.cards.forEach((c) => {
+      c.el.classList.remove('is-wrong');
+      if (c !== keep) {
+        c.el.classList.remove('is-open');
+        c.el.setAttribute('aria-label', 'Carta virada');
+      }
+    });
     g.pending = null;
   }
 
   function onCardTap(i) {
     const g = game;
-    if (!g || g.mode !== 'memory' || g.locked) return;
+    if (!g || g.mode !== 'memory' || g.locked || g.paused) return;
     const card = g.cards[i];
     if (card.matched || g.open.includes(card)) return;
 
@@ -290,7 +328,7 @@
       a.matched = b.matched = true;
       g.found++;
       g.combo++;
-      render.pairs(g.found, g.pairs);
+      render.progress(g.found, g.pairs);
       g.timeouts.push(setTimeout(() => {
         a.el.classList.add('is-matched');
         b.el.classList.add('is-matched');
@@ -301,7 +339,8 @@
       if (g.found === g.pairs) {
         timer.stop();
         g.locked = true;
-        g.timeouts.push(setTimeout(() => winMemory(g), 800));
+        g.done = true;
+        g.timeouts.push(setTimeout(() => winMemory(g), 900));
       }
     } else {
       g.combo = 0;
@@ -321,12 +360,12 @@
     if (game !== g) return;
     const secs = timer.seconds();
     const stars = g.moves <= Math.ceil(g.pairs * 1.5) ? 3 : g.moves <= g.pairs * 2.2 ? 2 : 1;
-    const isRecord = saveRecord(`mem-${g.level.id}`, secs, g.moves);
+    const key = `mem-${g.level.id}`;
+    const isRecord = saveRecord(key, secs, g.moves);
     showWin({
-      stars,
-      title: stars === 3 ? 'Memória de elefante! 🐘' : stars === 2 ? 'Muito bem!' : 'Conseguiu!',
-      text: `Você encontrou os ${g.pairs} pares em <b>${fmtTime(secs)}</b> com <b>${g.moves}</b> jogadas.`,
-      isRecord,
+      stars, secs, moves: g.moves, key, isRecord,
+      title: stars === 3 ? 'Memória de elefante! 🐘' : stars === 2 ? 'Mandou bem!' : 'Conseguiu!',
+      text: `Você encontrou os <b>${g.pairs} pares</b> do tema ${g.theme.label.toLowerCase()} no nível ${g.level.label.toLowerCase()}.`,
     });
   }
 
@@ -335,9 +374,10 @@
   // ===================================================================
   function startPuzzle() {
     stopGame();
-    const level = PUZ_LEVELS.find((l) => l.n === settings.puzzle) || PUZ_LEVELS[0];
+    const level = currentPuzLevel();
     const n = level.n;
-    const image = SCENES[Math.floor(Math.random() * SCENES.length)];
+    const sceneIndex = settings.scene >= 0 ? settings.scene : Math.floor(Math.random() * SCENES.length);
+    const image = SCENES[sceneIndex];
 
     // Embaralha com movimentos válidos a partir da imagem montada (sempre tem solução).
     const grid = Array.from({ length: n * n }, (_, i) => (i + 1) % (n * n)); // 0 = espaço vazio
@@ -354,7 +394,10 @@
       }
     } while (isSolved(grid));
 
-    game = { mode: 'puzzle', level, n, grid, image, moves: 0, started: false, locked: false, timeouts: [], tiles: {} };
+    game = {
+      mode: 'puzzle', level, n, grid, image, sceneName: SCENE_NAMES[sceneIndex],
+      moves: 0, started: false, locked: false, done: false, paused: false, timeouts: [], tiles: {},
+    };
 
     board.className = 'board board--puzzle' + (settings.numbers ? '' : ' hide-numbers');
     board.style.setProperty('--n', n);
@@ -378,7 +421,7 @@
     }
     placeTiles();
 
-    $('#hudPairsBox').hidden = true;
+    $('#hudProgressLabel').textContent = 'No lugar';
     $('#puzFoot').hidden = false;
     $('[data-action="numbers"]').setAttribute('aria-pressed', String(settings.numbers));
     timer.reset();
@@ -403,17 +446,21 @@
 
   function placeTiles() {
     const { grid, n, tiles } = game;
+    let home = 0;
     grid.forEach((id, pos) => {
       if (!id) return;
       const el = tiles[id];
       el.style.transform = `translate(${(pos % n) * 100}%, ${Math.floor(pos / n) * 100}%)`;
-      el.classList.toggle('is-home', pos === id - 1);
+      const ok = pos === id - 1;
+      el.classList.toggle('is-home', ok);
+      if (ok) home++;
     });
+    render.progress(home, n * n - 1);
   }
 
   function onTileTap(id) {
     const g = game;
-    if (!g || g.mode !== 'puzzle' || g.locked) return;
+    if (!g || g.mode !== 'puzzle' || g.locked || g.paused) return;
     const { grid, n } = g;
     const pos = grid.indexOf(id);
     const empty = grid.indexOf(0);
@@ -438,12 +485,13 @@
 
     if (isSolved(grid)) {
       g.locked = true;
+      g.done = true;
       timer.stop();
       g.timeouts.push(setTimeout(() => {
         board.classList.add('is-solved');
         sfx.match();
       }, 200));
-      g.timeouts.push(setTimeout(() => winPuzzle(g), 1100));
+      g.timeouts.push(setTimeout(() => winPuzzle(g), 1200));
     }
   }
 
@@ -452,20 +500,19 @@
     const secs = timer.seconds();
     const [s3, s2] = g.level.stars;
     const stars = secs <= s3 ? 3 : secs <= s2 ? 2 : 1;
-    const isRecord = saveRecord(`puz-${g.n}`, secs, g.moves);
+    const key = `puz-${g.n}`;
+    const isRecord = saveRecord(key, secs, g.moves);
     showWin({
-      stars,
-      title: stars === 3 ? 'Mestre do quebra-cabeça! 🧩' : stars === 2 ? 'Muito bem!' : 'Conseguiu!',
-      text: `Imagem montada em <b>${fmtTime(secs)}</b> com <b>${g.moves}</b> movimentos.`,
-      isRecord,
+      stars, secs, moves: g.moves, key, isRecord,
+      title: stars === 3 ? 'Mestre do quebra-cabeça! 🧩' : stars === 2 ? 'Mandou bem!' : 'Conseguiu!',
+      text: `Você montou a imagem <b>${g.sceneName}</b> no tabuleiro ${g.level.label}.`,
     });
   }
 
   let peekEl = null;
   function togglePeek(force) {
-    if (!game || game.mode !== 'puzzle') return;
     const on = force ?? !peekEl;
-    if (on && !peekEl) {
+    if (on && game && game.mode === 'puzzle' && !peekEl) {
       peekEl = document.createElement('div');
       peekEl.className = 'peek';
       peekEl.style.backgroundImage = game.image;
@@ -488,8 +535,8 @@
     const H = stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
     if (game.mode === 'memory') {
       const { cols, rows } = game.level;
-      const gap = W < 400 ? 7 : 10;
-      const ratio = 0.78; // largura / altura da carta
+      const gap = W < 400 ? 8 : 12;
+      const ratio = 0.76; // largura / altura da carta
       let w = (W - gap * (cols - 1)) / cols;
       w = Math.min(w, ((H - gap * (rows - 1)) / rows) * ratio, 120);
       board.style.setProperty('--gap', `${gap}px`);
@@ -504,10 +551,14 @@
   // ===================================================================
   // Vitória, recordes e confete
   // ===================================================================
-  function showWin({ stars, title, text, isRecord }) {
-    $('#winStars').innerHTML = [1, 2, 3].map((i) => `<span class="${i <= stars ? '' : 'off'}">⭐</span>`).join('');
+  function showWin({ stars, title, text, secs, moves, key, isRecord }) {
+    const best = store.get('records', {})[key];
+    $('#winStars').innerHTML = [1, 2, 3].map((i) => STAR_SVG.replace('<svg', `<svg class="${i <= stars ? 'on' : 'off'}"`)).join('');
     $('#winTitle').textContent = title;
     $('#winText').innerHTML = text;
+    $('#winTime').textContent = fmtTime(secs);
+    $('#winMoves').textContent = moves;
+    $('#winBest').textContent = best ? fmtTime(best.time) : '—';
     $('#winRecord').hidden = !isRecord;
     $('#winModal').hidden = false;
     sfx.win();
@@ -531,11 +582,11 @@
   function showRecords() {
     const all = store.get('records', {});
     const row = (label, r) => `<div class="records__row"><span>${label}</span><span>${
-      r ? `⏱ ${fmtTime(r.time)} · ${r.moves} jog. · ${r.wins}🏅` : '—'
+      r ? `<b>${fmtTime(r.time)}</b> · ${r.moves} jogadas · ${r.wins} ${r.wins === 1 ? 'vitória' : 'vitórias'}` : 'Ainda não jogado'
     }</span></div>`;
     $('#recordsList').innerHTML =
-      '<h3>🧠 Memória</h3>' + MEM_LEVELS.map((l) => row(l.label, all[`mem-${l.id}`])).join('') +
-      '<h3>🧩 Quebra-cabeça</h3>' + PUZ_LEVELS.map((l) => row(l.label, all[`puz-${l.n}`])).join('');
+      `<h3>${icon('cards')}Memória</h3>` + MEM_LEVELS.map((l) => row(l.label, all[`mem-${l.id}`])).join('') +
+      `<h3>${icon('puzzle')}Quebra-cabeça</h3>` + PUZ_LEVELS.map((l) => row(l.label, all[`puz-${l.n}`])).join('');
     $('#recordsModal').hidden = false;
   }
 
@@ -546,17 +597,18 @@
     const dpr = window.devicePixelRatio || 1;
     canvas.width = innerWidth * dpr;
     canvas.height = innerHeight * dpr;
-    ctx.scale(dpr, dpr);
-    const colors = ['#facc15', '#22d3ee', '#f472b6', '#4ade80', '#a78bfa', '#fb923c'];
-    const parts = Array.from({ length: 150 }, () => ({
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const colors = ['#ffbf47', '#3fe0b8', '#ff6f7d', '#7d6bff', '#ffffff'];
+    const parts = Array.from({ length: 160 }, () => ({
       x: innerWidth / 2 + (Math.random() - 0.5) * 80,
-      y: innerHeight * 0.35,
-      vx: (Math.random() - 0.5) * 12,
-      vy: -Math.random() * 12 - 4,
+      y: innerHeight * 0.4,
+      vx: (Math.random() - 0.5) * 13,
+      vy: -Math.random() * 13 - 4,
       s: Math.random() * 6 + 5,
       r: Math.random() * Math.PI,
       vr: (Math.random() - 0.5) * 0.3,
       c: colors[Math.floor(Math.random() * colors.length)],
+      round: Math.random() < 0.3,
     }));
     const end = performance.now() + 3200;
     (function frame(now) {
@@ -571,7 +623,8 @@
         ctx.translate(p.x, p.y);
         ctx.rotate(p.r);
         ctx.fillStyle = p.c;
-        ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2);
+        if (p.round) { ctx.beginPath(); ctx.arc(0, 0, p.s / 3, 0, Math.PI * 2); ctx.fill(); }
+        else ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2);
         ctx.restore();
       });
       if (now < end) requestAnimationFrame(frame);
@@ -580,44 +633,104 @@
   }
 
   // ===================================================================
-  // Tela inicial: escolhas
+  // Tela inicial
   // ===================================================================
-  function chips(container, items, isOn, onPick) {
+  function options(container, cls, items, isOn, onPick) {
     container.innerHTML = '';
     items.forEach((item) => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'chip';
+      b.className = cls;
       b.setAttribute('role', 'radio');
       b.innerHTML = item.html;
-      if (item.aria) b.setAttribute('aria-label', item.aria);
       b.setAttribute('aria-checked', String(isOn(item)));
       b.addEventListener('click', () => {
         onPick(item);
         saveSettings();
-        container.querySelectorAll('.chip').forEach((c, i) => c.setAttribute('aria-checked', String(isOn(items[i]))));
-        sfx.flip();
+        container.querySelectorAll('[role="radio"]').forEach((c, i) => c.setAttribute('aria-checked', String(isOn(items[i]))));
+        sfx.tap();
+        renderHome();
       });
       container.appendChild(b);
     });
   }
 
-  chips($('#memLevels'),
+  options($('#memLevels'), 'seg__opt',
     MEM_LEVELS.map((l) => ({ ...l, html: `${l.label}<small>${(l.cols * l.rows) / 2} pares</small>` })),
     (l) => l.id === settings.level, (l) => { settings.level = l.id; });
-  chips($('#memThemes'),
-    THEMES.map((t) => ({ ...t, html: t.items[0], aria: t.label })),
+  options($('#memThemes'), 'pick',
+    THEMES.map((t) => ({ ...t, html: `<span class="pick__art">${t.items[0]}</span>${t.label}` })),
     (t) => t.id === settings.theme, (t) => { settings.theme = t.id; });
-  chips($('#puzLevels'),
+  options($('#puzLevels'), 'seg__opt',
     PUZ_LEVELS.map((l) => ({ ...l, html: `${l.label}<small>${l.sub}</small>` })),
     (l) => l.n === settings.puzzle, (l) => { settings.puzzle = l.n; });
+  options($('#puzScenes'), 'pick',
+    [{ i: -1, html: '<span class="pick__art">🎲</span>Surpresa' }].concat(
+      SCENES.map((img, i) => ({ i, html: `<span class="pick__art" style="background-image:${img.replace(/"/g, "'")}"></span>${SCENE_NAMES[i]}` }))
+    ),
+    (s) => s.i === settings.scene, (s) => { settings.scene = s.i; });
+
+  let lastFanTheme = null;
+  let lastPreview = null;
+  function renderHome() {
+    const tab = settings.tab === 'puzzle' ? 'puzzle' : 'memory';
+    document.body.dataset.tab = tab;
+    $('#tabMemory').setAttribute('aria-selected', String(tab === 'memory'));
+    $('#tabPuzzle').setAttribute('aria-selected', String(tab === 'puzzle'));
+    $('#panelMemory').hidden = tab !== 'memory';
+    $('#panelPuzzle').hidden = tab !== 'puzzle';
+    $('#playLabel').textContent = tab === 'memory' ? 'Jogar memória' : 'Jogar quebra-cabeça';
+
+    // Leque de cartas com o tema escolhido.
+    const theme = currentTheme();
+    if (lastFanTheme !== theme.id) {
+      lastFanTheme = theme.id;
+      $('#memFan').innerHTML = `<span class="fan__card">${theme.items[0]}</span><span class="fan__card fan__card--back"></span><span class="fan__card">${theme.items[0]}</span>`;
+    }
+
+    // Miniatura do quebra-cabeça.
+    const previewKey = settings.scene;
+    if (lastPreview !== previewKey) {
+      lastPreview = previewKey;
+      const prev = $('#puzPreview');
+      if (settings.scene < 0) {
+        prev.className = 'mini-puzzle is-surprise';
+        prev.innerHTML = SCENES.map((img, i) => `<i style="background-image:${img.replace(/"/g, "'")};animation-delay:${i * 60}ms"></i>`).join('');
+      } else {
+        const img = SCENES[settings.scene].replace(/"/g, "'");
+        const order = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        prev.className = 'mini-puzzle';
+        prev.innerHTML = order.map((p, k) => (p === 8
+          ? '<i class="empty"></i>'
+          : `<i style="background-image:${img};background-position:${(p % 3) * 50}% ${Math.floor(p / 3) * 50}%;animation-delay:${k * 40}ms"></i>`)).join('');
+      }
+    }
+
+    // Recorde do nível escolhido.
+    const all = store.get('records', {});
+    const best = (r) => (r
+      ? `${icon('trophy')}Seu recorde: <strong>${fmtTime(r.time)}</strong> · <strong>${r.moves}</strong> jogadas`
+      : `${icon('trophy')}Sem recorde neste nível ainda. Que tal agora?`);
+    $('#memBest').innerHTML = best(all[`mem-${settings.level}`]);
+    $('#puzBest').innerHTML = best(all[`puz-${settings.puzzle}`]);
+  }
 
   function renderSound() {
     const b = $('[data-action="sound"]');
-    b.textContent = settings.sound ? '🔊' : '🔇';
+    b.innerHTML = icon(settings.sound ? 'sound' : 'mute');
     b.setAttribute('aria-label', settings.sound ? 'Som ligado' : 'Som desligado');
   }
+
+  document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => {
+    if (settings.tab === t.dataset.tab) return;
+    settings.tab = t.dataset.tab;
+    saveSettings();
+    sfx.tap();
+    renderHome();
+  }));
+
   renderSound();
+  renderHome();
 
   // ===================================================================
   // Navegação (o botão "voltar" do celular volta ao menu)
@@ -636,25 +749,30 @@
     stopGame();
     togglePeek(false);
     $('#winModal').hidden = true;
+    renderHome();
     show('home');
   }
   window.addEventListener('popstate', () => {
     if (!screens.game.hidden) leaveGame();
   });
 
+  let lastMode = 'memory';
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-action]');
     if (!btn) return;
     switch (btn.dataset.action) {
-      case 'start-memory': enterGame(startMemory); break;
-      case 'start-puzzle': enterGame(startPuzzle); break;
-      case 'restart': {
-        const mode = game ? game.mode : $('#puzFoot').hidden ? 'memory' : 'puzzle';
-        enterGame(mode === 'puzzle' ? startPuzzle : startMemory);
+      case 'play':
+        lastMode = settings.tab === 'puzzle' ? 'puzzle' : 'memory';
+        enterGame(lastMode === 'puzzle' ? startPuzzle : startMemory);
         break;
-      }
+      case 'restart':
+        if (game) lastMode = game.mode;
+        enterGame(lastMode === 'puzzle' ? startPuzzle : startMemory);
+        break;
       case 'home': goHome(); break;
-      case 'sound': settings.sound = !settings.sound; saveSettings(); renderSound(); sfx.flip(); break;
+      case 'pause': setPaused(true); break;
+      case 'resume': setPaused(false); break;
+      case 'sound': settings.sound = !settings.sound; saveSettings(); renderSound(); sfx.tap(); break;
       case 'peek': togglePeek(); break;
       case 'numbers':
         settings.numbers = !settings.numbers;
