@@ -1,0 +1,14 @@
+{
+  "name": "Minhas Contas",
+  "short_name": "Contas",
+  "description": "Contas a pagar e cobranças a receber, com lembretes por data e horário.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6fa",
+  "theme_color": "#0f1b2d",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
