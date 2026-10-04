@@ -70,6 +70,7 @@
     dayMode: 'cal',
     calSel: null,
     scanToken: null,
+    image: null,
     payingRem: null,
     pickedCat: 'alimentacao',
     photo: { data: null, changed: false },
@@ -79,6 +80,7 @@
     const empty = {
       expenses: [], reminders: [], budget: 0, theme: 'auto', calcHist: [],
       catBudgets: {}, fixed: [], customCats: [], card: { close: 0, due: 0 }, goals: [], debts: [], notifyOn: true, notifyTested: false,
+      privacy: false, pixKey: '', daily: { on: false, time: '21:00', last: '' },
     };
     try {
       const data = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
@@ -107,6 +109,9 @@
       debts: Array.isArray(data.debts) ? data.debts : [],
       notifyOn: data.notifyOn !== false,
       notifyTested: !!data.notifyTested,
+      privacy: !!data.privacy,
+      pixKey: typeof data.pixKey === 'string' ? data.pixKey : (base.pixKey || ''),
+      daily: { on: false, time: '21:00', last: '', ...(data.daily && typeof data.daily === 'object' ? data.daily : base.daily || {}) },
     };
   }
 
@@ -264,8 +269,12 @@
   }
 
   const toCents = (v) => Math.round(v * 100);
-  const money = (cents) => brl.format(cents / 100);
-  const signed = (cents) => `${cents < 0 ? '−' : ''}${money(Math.abs(cents))}`;
+  // Modo privacidade: a tela mostra "R$ •••". Mensagens, recibos e relatórios usam o valor real (withReal).
+  let revealMoney = 0;
+  const realMoney = (cents) => brl.format(cents / 100);
+  const money = (cents) => (state.privacy && !revealMoney ? 'R$ •••' : realMoney(cents));
+  const withReal = (fn) => { revealMoney++; try { return fn(); } finally { revealMoney--; } };
+  const signed = (cents) => (state.privacy && !revealMoney ? money(0) : `${cents < 0 ? '−' : ''}${money(Math.abs(cents))}`);
   const amountInput = (cents) => (cents / 100).toFixed(2).replace('.', ',');
   const isExpression = (s) => /[+\-*/x×÷%()]/i.test(String(s).replace(/^\s*-/, ''));
 
@@ -697,7 +706,7 @@
     const months = Array.from({ length: 6 }, (_, i) => shiftMonth(ui.month, i - 5));
     const data = months.map((k) => ({ k, out: sum(monthOut(k)), in: sum(monthIn(k)) }));
     const max = Math.max(1, ...data.map((d) => Math.max(d.out, d.in)));
-    const compact = (c) => (c >= 100000 ? `${num.format(Math.round(c / 100000) / 10)} mil` : money(c).replace(/,\d\d$/, ''));
+    const compact = (c) => (state.privacy ? '•••' : c >= 100000 ? `${num.format(Math.round(c / 100000) / 10)} mil` : money(c).replace(/,\d\d$/, ''));
     $('#compare').innerHTML = data.map((d) => `
       <div class="cmp${d.k === ui.month ? ' is-sel' : ''}" title="${cap(fmtMonth.format(monthDate(d.k)))}: saídas ${money(d.out)} · entradas ${money(d.in)}">
         <div class="cmp__bars">
@@ -1615,7 +1624,7 @@
 
   $('#btnNotif').addEventListener('click', toggleAlerts);
 
-  async function notify(title, body, tag, { quiet = false, vibrate = null } = {}) {
+  async function notify(title, body, tag, { quiet = false, vibrate = null, url = '' } = {}) {
     if (!quiet) {
       ringBell();
       if (state.notifyOn) beep();
@@ -1624,7 +1633,7 @@
     }
     // A notificação fica na barra até o usuário limpar (o app nunca apaga sozinho).
     if (!alertsOn()) return;
-    const opts = { body, tag, icon: 'icon-192.png', badge: 'badge-96.png', renotify: false, vibrate: vibrate || [80, 40, 80] };
+    const opts = { body, tag, icon: 'icon-192.png', badge: 'badge-96.png', renotify: false, vibrate: vibrate || [80, 40, 80], data: { url } };
     try {
       const reg = await getReg();
       if (reg) {
@@ -2126,7 +2135,10 @@
   };
   const isTemplate = (txt) => Object.values(MSG_TEMPLATES).some((list) => list.some(([, t]) => t === txt));
   function fillMsg(tpl, d) {
-    const first = (d.person || '').trim().split(/\s+/)[0] || 'tudo bem';
+    return withReal(() => fillMsgRaw(tpl, d));
+  }
+  function fillMsgRaw(tpl, d) {
+    const first = cap((d.person || '').trim().split(/\s+/)[0] || 'tudo bem');
     const left = d.payments ? debtLeft(d) : d.amount || 0;
     const date = d.due ? fmtDM.format(parseDay(d.due)) : 'o combinado';
     return tpl
@@ -2134,13 +2146,37 @@
       .replace(/\{nome\}/g, first)
       .replace(/\{valor\}/g, money(left))
       .replace(/\{motivo\}/g, d.desc || 'o combinado')
-      .replace(/\{data\}/g, date);
+      .replace(/\{data\}/g, date)
+      .replace(/\{pix\}/g, state.pixKey || '(chave Pix)');
+  }
+  // Mensagem final: se você tem chave Pix e a mensagem não usa {pix}, ela vai no fim (só para quem te deve).
+  function buildMessage(tpl, d) {
+    let msg = fillMsg(tpl, d);
+    if (state.pixKey && d.dir === 'in' && !tpl.includes('{pix}')) msg += `\n\nChave Pix: ${state.pixKey}`;
+    return msg;
   }
   function waLink(d) {
     const digits = (d.phone || '').replace(/\D/g, '');
     const num = digits.length === 10 || digits.length === 11 ? `55${digits}` : digits;
-    const msg = fillMsg(d.message || MSG_TEMPLATES[d.dir][0][1], d);
+    const msg = buildMessage(d.message || MSG_TEMPLATES[d.dir][0][1], d);
     return `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
+  }
+
+  // Linha de um registro do "Quem me deve" (usada no painel e na ficha da pessoa).
+  function debtRow(d, now = new Date()) {
+    const today = dateISO(now);
+    const left = debtLeft(d);
+    const late = left > 0 && d.due && d.due < today;
+    const sub = [d.desc && esc(d.desc),
+      left === 0 ? 'quitado' : d.due ? `${d.notify ? `<span class="debt__bell">${ico('i-bell')}</span>` : ''}${late ? 'atrasado desde' : 'combinado p/'} ${fmtDM.format(parseDay(d.due))}` : fmtDM.format(parseDay(d.date)),
+      left > 0 && left < d.amount && `falta ${money(left)} de ${money(d.amount)}`].filter(Boolean).join(' · ');
+    return `
+      <div class="debt${left === 0 ? ' is-paid' : ''}" data-debt="${d.id}" role="button" tabindex="0">
+        ${avatar(d.person)}
+        <span class="debt__main"><strong>${esc(d.person)}</strong><small class="${late ? 'is-late' : ''}">${sub}</small></span>
+        <span class="debt__val is-${d.dir}">${d.dir === 'in' ? '+' : '−'}${money(left || d.amount)}</span>
+        ${d.dir === 'in' && left > 0 ? `<a class="debt__wa" href="${waLink(d)}" target="_blank" rel="noopener" aria-label="Cobrar ${esc(d.person)} no WhatsApp">${ico('i-chat')}</a>` : ''}
+      </div>`;
   }
 
   function renderDebts(now = new Date()) {
@@ -2152,21 +2188,7 @@
       ? `<div class="is-in"><span class="label">Me devem</span><strong>${money(owedToMe)}</strong></div>
          <div class="is-out"><span class="label">Eu devo</span><strong>${money(iOwe)}</strong></div>`
       : '';
-    const today = dateISO(now);
-    const row = (d) => {
-      const left = debtLeft(d);
-      const late = left > 0 && d.due && d.due < today;
-      const sub = [d.desc && esc(d.desc),
-        left === 0 ? 'quitado' : d.due ? `${d.notify ? `<span class="debt__bell">${ico('i-bell')}</span>` : ''}${late ? 'atrasado desde' : 'combinado p/'} ${fmtDM.format(parseDay(d.due))}` : fmtDM.format(parseDay(d.date)),
-        left > 0 && left < d.amount && `falta ${money(left)} de ${money(d.amount)}`].filter(Boolean).join(' · ');
-      return `
-        <div class="debt${left === 0 ? ' is-paid' : ''}" data-debt="${d.id}" role="button" tabindex="0">
-          ${avatar(d.person)}
-          <span class="debt__main"><strong>${esc(d.person)}</strong><small class="${late ? 'is-late' : ''}">${sub}</small></span>
-          <span class="debt__val is-${d.dir}">${d.dir === 'in' ? '+' : '−'}${money(left || d.amount)}</span>
-          ${d.dir === 'in' && left > 0 ? `<a class="debt__wa" href="${waLink(d)}" target="_blank" rel="noopener" aria-label="Cobrar ${esc(d.person)} no WhatsApp">${ico('i-chat')}</a>` : ''}
-        </div>`;
-    };
+    const row = (d) => debtRow(d, now);
     const sorted = [...open].sort((a, b) => (a.due || a.date).localeCompare(b.due || b.date));
     $('#debts').innerHTML = (sorted.length
       ? sorted.map(row).join('')
@@ -2201,7 +2223,7 @@
     const txt = debtMsg.value;
     $('#msgTemplates').innerHTML = MSG_TEMPLATES[ui.debtDir].map(([name, t], i) =>
       `<button type="button" class="chip${t === txt ? ' is-active' : ''}" data-tpl="${i}">${name}</button>`).join('');
-    $('#debtMsgPreview').textContent = fillMsg(txt || MSG_TEMPLATES[ui.debtDir][0][1], draftDebt());
+    $('#debtMsgPreview').textContent = buildMessage(txt || MSG_TEMPLATES[ui.debtDir][0][1], draftDebt());
   }
   $('#msgTemplates').addEventListener('click', (e) => {
     const b = e.target.closest('[data-tpl]');
@@ -2220,6 +2242,8 @@
     renderMsgTools();
   });
   formDebt.addEventListener('input', renderMsgTools);
+  $('#pixKey').addEventListener('change', () => { state.pixKey = $('#pixKey').value.trim(); save(); renderMsgTools(); });
+  $('#pixKey').addEventListener('input', () => { state.pixKey = $('#pixKey').value.trim(); renderMsgTools(); });
   const syncNotify = () => { $('#debtTimeWrap').hidden = !$('#debtNotify').checked; };
   $('#debtNotify').addEventListener('change', () => {
     syncNotify();
@@ -2243,6 +2267,7 @@
     $('#debtNotify').checked = !!src.notify;
     formDebt.notifyTime.value = src.notifyTime || '09:00';
     debtMsg.value = src.message || MSG_TEMPLATES[src.dir || 'in'][0][1];
+    $('#pixKey').value = state.pixKey;
     syncNotify();
     debtAmount._update();
     renderMsgTools();
@@ -2360,6 +2385,7 @@
     $('#paySubmit').hidden = !left;
     $('#payHint').textContent = d.dir === 'in' ? 'Quanto recebeu' : 'Quanto pagou';
     $('#paySubmit').textContent = d.dir === 'in' ? 'Recebi' : 'Paguei';
+    $('#payReceipt').hidden = !d.payments.length;
     const hist = [...d.payments].reverse().slice(0, 6);
     $('#payHist').innerHTML = hist.length
       ? '<span class="label">Pagamentos</span>' + hist.map((p) => `
@@ -2387,12 +2413,13 @@
     save();
     dlgDebtPay.close();
     renderDebts();
+    if ($('#dlgPerson').open) openPerson(d.person);
     const left = debtLeft(d);
     if (!left) {
       if (d.dir === 'in') celebrate();
-      toast(d.dir === 'in' ? `${d.person} quitou tudo! 🎉` : `Dívida com ${d.person} quitada! 🎉`);
+      toast(d.dir === 'in' ? `${d.person} quitou tudo! 🎉` : `Dívida com ${d.person} quitada! 🎉`, 'Recibo', () => openReceipt(d));
     } else {
-      toast(`Registrado. Falta ${money(left)}.`);
+      toast(`Registrado. Falta ${money(left)}.`, 'Recibo', () => openReceipt(d));
     }
   });
 
@@ -2436,7 +2463,7 @@
       const iso = `${ui.month}-${pad(d)}`;
       const cls = ['cal__cell', v && 'has', d === today && 'is-today', future(d) && 'is-future', ui.calSel === iso && 'is-sel'].filter(Boolean).join(' ');
       cells.push(`<button type="button" class="${cls}" data-day="${iso}" style="${v ? `--heat:${heat(v / ref)}` : ''}" aria-label="Dia ${d}: ${money(v)}">
-        <b>${d}</b><small>${v ? shortCents(v) : ''}</small>${incomeDays.has(d) ? '<i class="cal__in"></i>' : ''}</button>`);
+        <b>${d}</b><small>${v && !state.privacy ? shortCents(v) : ''}</small>${incomeDays.has(d) ? '<i class="cal__in"></i>' : ''}</button>`);
     }
     $('#cal').innerHTML = cells.join('');
     $('#calLegend').innerHTML = byBudget
@@ -2484,6 +2511,9 @@
   /* ---------------- Relatório do mês (imagem / PDF) ---------------- */
   const REPORT_W = 1080;
   function buildReport() {
+    return withReal(drawReport);
+  }
+  function drawReport() {
     const P = 64;
     const c = document.createElement('canvas');
     c.width = REPORT_W;
@@ -2657,22 +2687,29 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   }
 
-  let reportCanvas = null;
-  const reportName = (ext) => `meus-gastos-${ui.month}.${ext}`;
+  // Diálogo genérico para compartilhar uma imagem (relatório, recibo) ou baixar como PDF.
   const canvasBlob = (cv, type, q) => new Promise((resolve) => cv.toBlob(resolve, type, q));
+  function openImage({ canvas, title, name, text }) {
+    ui.image = { canvas, name, text };
+    $('#reportTitle').textContent = title;
+    $('#reportImg').src = canvas.toDataURL('image/png');
+    $('#dlgReport').showModal();
+  }
   async function openReport() {
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
-    reportCanvas = buildReport();
-    $('#reportImg').src = reportCanvas.toDataURL('image/png');
-    $('#dlgReport').showModal();
+    openImage({
+      canvas: buildReport(), title: 'Relatório do mês', name: `meus-gastos-${ui.month}`,
+      text: `Meus gastos de ${fmtMonth.format(monthDate(ui.month))}`,
+    });
   }
   $('#btnReport').addEventListener('click', openReport);
   $('#reportShare').addEventListener('click', async () => {
-    const blob = await canvasBlob(reportCanvas, 'image/png');
-    const file = new File([blob], reportName('png'), { type: 'image/png' });
+    const { canvas, name, text } = ui.image;
+    const blob = await canvasBlob(canvas, 'image/png');
+    const file = new File([blob], `${name}.png`, { type: 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
-        await navigator.share({ files: [file], title: 'Relatório — Meus Gastos', text: `Meus gastos de ${fmtMonth.format(monthDate(ui.month))}` });
+        await navigator.share({ files: [file], title: 'Meus Gastos', text });
       } catch (err) {
         if (err.name !== 'AbortError') { downloadBlob(blob, file.name); toast('Imagem salva. Agora é só enviar.'); }
       }
@@ -2682,13 +2719,218 @@
     }
   });
   $('#reportPng').addEventListener('click', async () => {
-    downloadBlob(await canvasBlob(reportCanvas, 'image/png'), reportName('png'));
+    downloadBlob(await canvasBlob(ui.image.canvas, 'image/png'), `${ui.image.name}.png`);
     toast('Imagem salva nos downloads.');
   });
   $('#reportPdf').addEventListener('click', () => {
-    downloadBlob(imagePdf(reportCanvas.toDataURL('image/jpeg', 0.92), reportCanvas.width, reportCanvas.height), reportName('pdf'));
+    const { canvas, name } = ui.image;
+    downloadBlob(imagePdf(canvas.toDataURL('image/jpeg', 0.92), canvas.width, canvas.height), `${name}.pdf`);
     toast('PDF salvo nos downloads.');
   });
+
+  /* ---------------- Modo privacidade ---------------- */
+  function applyPrivacy() {
+    const b = $('#btnPrivacy');
+    b.classList.toggle('is-on', state.privacy);
+    $('use', b).setAttribute('href', state.privacy ? '#i-eye-off' : '#i-eye');
+    b.title = state.privacy ? 'Mostrar valores' : 'Esconder valores';
+    b.setAttribute('aria-label', b.title);
+    b.setAttribute('aria-pressed', String(state.privacy));
+  }
+  $('#btnPrivacy').addEventListener('click', () => {
+    state.privacy = !state.privacy;
+    save();
+    applyPrivacy();
+    render();
+    toast(state.privacy ? 'Valores escondidos 👁 Toque de novo para mostrar.' : 'Valores visíveis.');
+  });
+
+  /* ---------------- Recibo de pagamento ---------------- */
+  function wrapLines(ctx, txt, maxW) {
+    const words = txt.split(' ');
+    const lines = [];
+    let line = '';
+    for (const w of words) {
+      const test = line ? `${line} ${w}` : w;
+      if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; } else line = test;
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+  function buildReceipt(d) {
+    return withReal(() => {
+      const W = 1080;
+      const P = 72;
+      const c = document.createElement('canvas');
+      c.width = W;
+      c.height = 2600;
+      const ctx = c.getContext('2d');
+      const F = (w, sz) => `${w} ${sz}px Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+      const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); };
+      const text = (t, x, y, font, color, align = 'left') => { ctx.font = font; ctx.fillStyle = color; ctx.textAlign = align; ctx.fillText(t, x, y); };
+      const paid = debtPaid(d);
+      const left = debtLeft(d);
+      const done = left === 0;
+      ctx.fillStyle = '#f5f6fa';
+      ctx.fillRect(0, 0, W, c.height);
+      const g = ctx.createLinearGradient(0, 0, W, 420);
+      g.addColorStop(0, '#7c6cff'); g.addColorStop(0.5, '#5b4cf0'); g.addColorStop(1, '#9b3cf0');
+      ctx.fillStyle = g;
+      rr(0, 0, W, 420, [0, 0, 48, 48]); ctx.fill();
+      text('RECIBO', P, 104, F(800, 34), 'rgba(255,255,255,.85)');
+      text(realMoney(paid), P, 230, F(800, 104), '#fff');
+      const tag = done ? '✔ Quitado' : 'Pagamento parcial';
+      ctx.font = F(700, 30);
+      ctx.fillStyle = 'rgba(255,255,255,.2)';
+      rr(P, 280, ctx.measureText(tag).width + 56, 64, 32); ctx.fill();
+      text(tag, P + 28, 324, F(700, 30), '#fff');
+      let y = 480;
+      ctx.fillStyle = '#ffffff';
+      const verb = d.dir === 'in' ? `Recebi de ${d.person}` : `Paguei a ${d.person}`;
+      const sentence = `${verb} a quantia de ${realMoney(paid)}${d.desc ? `, referente a ${d.desc}` : ''}${done ? ', quitando o valor combinado.' : `. Ainda falta ${realMoney(left)} de ${realMoney(d.amount)}.`}`;
+      ctx.font = F(500, 36);
+      const lines = wrapLines(ctx, sentence, W - 2 * P - 64);
+      const boxH = 80 + lines.length * 54;
+      rr(P, y, W - 2 * P, boxH, 28); ctx.fill();
+      lines.forEach((ln, i) => text(ln, P + 32, y + 72 + i * 54, F(500, 36), '#10131a'));
+      y += boxH + 40;
+      if (d.payments.length) {
+        const h = 96 + d.payments.length * 70;
+        ctx.fillStyle = '#ffffff';
+        rr(P, y, W - 2 * P, h, 28); ctx.fill();
+        text('Pagamentos', P + 32, y + 64, F(800, 34), '#10131a');
+        d.payments.forEach((pay, i) => {
+          const yy = y + 134 + i * 70;
+          text(`${fmtDM.format(parseDay(pay.date))}/${pay.date.slice(0, 4)}`, P + 32, yy, F(500, 30), '#6b7280');
+          text(realMoney(pay.amount), W - P - 32, yy, F(700, 32), '#10b981', 'right');
+        });
+        y += h + 40;
+      }
+      const now = new Date();
+      text(`Emitido em ${fmtDM.format(now)}/${now.getFullYear()} pelo app Meus Gastos`, W / 2, y + 30, F(500, 26), '#6b7280', 'center');
+      y += 80;
+      const out = document.createElement('canvas');
+      out.width = W;
+      out.height = Math.ceil(y);
+      out.getContext('2d').drawImage(c, 0, 0);
+      return out;
+    });
+  }
+  async function openReceipt(d) {
+    if (!d || !d.payments.length) { toast('Ainda não há pagamento registrado.'); return; }
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    const slug = strip(d.person).replace(/[^a-z0-9]+/g, '-');
+    openImage({
+      canvas: buildReceipt(d), title: 'Recibo', name: `recibo-${slug}`,
+      text: d.dir === 'in' ? `Recibo de ${d.person}` : `Comprovante de pagamento para ${d.person}`,
+    });
+  }
+  $('#payReceipt').addEventListener('click', () => openReceipt(state.debts.find((x) => x.id === ui.payingDebt)));
+
+  /* ---------------- Ficha da pessoa ---------------- */
+  const personKey = (name) => strip(name || '').trim().replace(/\s+/g, ' ');
+  function openPerson(name) {
+    const key = personKey(name);
+    const list = state.debts.filter((d) => personKey(d.person) === key).sort((a, b) => b.date.localeCompare(a.date));
+    if (!list.length) return;
+    const p = list[0];
+    const today = dateISO(new Date());
+    const ins = list.filter((d) => d.dir === 'in');
+    const outs = list.filter((d) => d.dir === 'out');
+    const owes = ins.reduce((t, d) => t + debtLeft(d), 0);
+    const paidBack = ins.reduce((t, d) => t + debtPaid(d), 0);
+    const iOwe = outs.reduce((t, d) => t + debtLeft(d), 0);
+    // Pontualidade: cobranças com data combinada já quitadas, pagas até a data?
+    const judged = ins.filter((d) => d.due && debtLeft(d) === 0 && d.payments.length);
+    const onTime = judged.filter((d) => d.payments[d.payments.length - 1].date <= d.due).length;
+    const lateNow = ins.filter((d) => d.due && debtLeft(d) > 0 && d.due < today).length;
+    let badge;
+    if (judged.length) {
+      const ratio = onTime / judged.length;
+      badge = `<span class="person-badge ${ratio >= 0.75 ? 'good' : ratio < 0.5 ? 'bad' : 'neutral'}">Pagou em dia ${onTime} de ${judged.length} vez${judged.length > 1 ? 'es' : ''}</span>`;
+    } else {
+      badge = '<span class="person-badge neutral">Sem histórico de prazos ainda</span>';
+    }
+    if (lateNow) badge += ` <span class="person-badge bad">${lateNow} em atraso agora</span>`;
+    const since = list[list.length - 1].date;
+    $('#personTitle').textContent = p.person;
+    $('#personHero').innerHTML = `
+      ${avatar(p.person)}
+      <span class="goal__main">
+        <span class="goal__nums">${esc(p.person)}</span>
+        <span class="goal__sub">${list.length} registro${list.length > 1 ? 's' : ''} · desde ${fmtDM.format(parseDay(since))}/${since.slice(0, 4)}${p.phone ? ` · ${esc(p.phone)}` : ''}</span>
+        <span>${badge}</span>
+      </span>`;
+    $('#personStats').innerHTML = `
+      <div class="is-in"><span class="label">Te deve</span><strong>${money(owes)}</strong></div>
+      <div><span class="label">Já te pagou</span><strong>${money(paidBack)}</strong></div>
+      <div class="is-out"><span class="label">Você deve</span><strong>${money(iOwe)}</strong></div>`;
+    $('#personList').innerHTML = list.map((d) => debtRow(d)).join('');
+    ui.personName = p.person;
+    ui.personPhone = p.phone || '';
+    if (!$('#dlgPerson').open) $('#dlgPerson').showModal();
+  }
+  $('#payPerson').addEventListener('click', () => {
+    const d = state.debts.find((x) => x.id === ui.payingDebt);
+    if (d) openPerson(d.person);
+  });
+  $('#personList').addEventListener('click', (e) => {
+    if (e.target.closest('.debt__wa')) return;
+    const item = e.target.closest('[data-debt]');
+    if (item) openDebtPay(state.debts.find((d) => d.id === item.dataset.debt));
+  });
+  $('#personNew').addEventListener('click', () => openDebt(null, { dir: 'in', person: ui.personName, phone: ui.personPhone }));
+
+  /* ---------------- Lembrete diário de lançar ---------------- */
+  const dlgDaily = $('#dlgDaily');
+  const formDaily = $('#formDaily');
+  function openDaily() {
+    formDaily.on.checked = !!state.daily.on;
+    formDaily.time.value = state.daily.time || '21:00';
+    dlgDaily.showModal();
+  }
+  formDaily.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const now = new Date();
+    const time = formDaily.time.value || '21:00';
+    const on = formDaily.on.checked;
+    // Se o horário de hoje já passou, começa a avisar a partir de amanhã.
+    const last = on && `${pad(now.getHours())}:${pad(now.getMinutes())}` >= time ? dateISO(now) : '';
+    state.daily = { on, time, last };
+    save();
+    dlgDaily.close();
+    toast(on ? `Pronto! Todo dia às ${time} o app vai perguntar dos seus gastos.` : 'Lembrete diário desligado.');
+    if (on && !alertsOn()) enableAlerts();
+  });
+  function checkDaily(now = new Date()) {
+    if (!state.daily.on) return;
+    const today = dateISO(now);
+    if (state.daily.last === today || `${pad(now.getHours())}:${pad(now.getMinutes())}` < (state.daily.time || '21:00')) return;
+    state.daily.last = today;
+    save();
+    const todays = state.expenses.filter((e) => isOut(e) && e.date === today);
+    const body = todays.length
+      ? `Hoje você lançou ${todays.length} gasto${todays.length > 1 ? 's' : ''} (${money(sum(todays))}). Faltou algum? Toque para lançar.`
+      : 'Nenhum gasto lançado hoje. Toque para lançar rapidinho.';
+    notify('Você lançou seus gastos de hoje?', body, 'daily', { url: './?acao=rapido' });
+    toast('📝 Você lançou seus gastos de hoje?', 'Lançar', () => { setView('resumo'); quickInput.focus(); });
+  }
+
+  /* ---------------- Atalhos do ícone (segurar o ícone do app) ---------------- */
+  const LAUNCH = {
+    voz: { icon: 'i-mic', title: 'Falar gasto', text: 'Toque no botão e fale, por exemplo: “gastei 30 reais no mercado”.', go: 'Começar a falar', run: () => $('#quickMic').click() },
+    foto: { icon: 'i-scan', title: 'Ler comprovante', text: 'Tire uma foto do cupom e o app preenche o valor, a data e a loja.', go: 'Abrir câmera / galeria', run: () => $('#scanInput').click() },
+  };
+  // Microfone e câmera só abrem depois de um toque, por isso o atalho mostra um botão grande.
+  function openLaunch(kind) {
+    const l = LAUNCH[kind];
+    $('#launchIcon').innerHTML = ico(l.icon);
+    $('#launchTitle').textContent = l.title;
+    $('#launchText').textContent = l.text;
+    $('#launchGo').textContent = l.go;
+    $('#launchGo').onclick = () => { $('#dlgLaunch').close(); l.run(); };
+    $('#dlgLaunch').showModal();
+  }
 
   /* ---------------- Orçamento e limites ---------------- */
   const dlgBudget = $('#dlgBudget');
@@ -2973,6 +3215,7 @@
     else if (action === 'budget') openBudget();
     else if (action === 'goal') openGoal();
     else if (action === 'report') openReport();
+    else if (action === 'daily') openDaily();
     else if (action === 'fixed') openFixed();
     else if (action === 'cats') openCats();
     else if (action === 'card') openCard();
@@ -2990,7 +3233,7 @@
       const data = {
         app: 'meus-gastos', version: 2, exportedAt: new Date().toISOString(),
         expenses: state.expenses, reminders: state.reminders, budget: state.budget, catBudgets: state.catBudgets,
-        fixed: state.fixed, customCats: state.customCats, card: state.card, goals: state.goals, debts: state.debts, photos: pics,
+        fixed: state.fixed, customCats: state.customCats, card: state.card, goals: state.goals, debts: state.debts, pixKey: state.pixKey, daily: state.daily, photos: pics,
       };
       download(`meus-gastos-backup-${dateISO(new Date())}.json`, JSON.stringify(data), 'application/json');
     } else if (action === 'import-json') {
@@ -3132,6 +3375,7 @@
   }
 
   applyTheme();
+  applyPrivacy();
   updateBell();
   updateInstallItem();
   refreshCatSelects();
@@ -3141,12 +3385,20 @@
   calcSplit();
   checkReminders();
   checkDebts();
-  setInterval(() => { checkReminders(); checkDebts(); }, CHECK_EVERY_MS);
+  checkDaily();
+  setInterval(() => { checkReminders(); checkDebts(); checkDaily(); }, CHECK_EVERY_MS);
   // Atualiza "hoje/amanhã", fixos e médias quando o app volta para a tela.
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) { launchFixed(); checkReminders(); checkDebts(); render(); }
+    if (!document.hidden) { launchFixed(); checkReminders(); checkDebts(); checkDaily(); render(); }
   });
 
   // Atalho vindo da tela inicial do celular: ?novo=1
-  if (new URLSearchParams(location.search).has('novo')) openExpense();
+  // Atalhos do ícone e notificações abrem o app com ?novo=1 ou ?acao=...
+  const params = new URLSearchParams(location.search);
+  const acao = params.get('acao');
+  if (params.has('novo') || acao) history.replaceState(null, '', location.pathname);
+  if (params.has('novo')) openExpense();
+  else if (acao === 'cobranca') openDebt();
+  else if (acao === 'rapido') setTimeout(() => quickInput.focus(), 300);
+  else if (LAUNCH[acao]) openLaunch(acao);
 })();

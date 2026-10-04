@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="style.css?v=12">
+  <link rel="stylesheet" href="style.css?v=13">
   <!-- Garante ícones do tamanho certo mesmo antes do CSS carregar. -->
   <style>.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}</style>
 </head>
@@ -82,6 +82,10 @@
     <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98"/></symbol>
     <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M16 13H8M16 17H8M10 9H8"/></symbol>
     <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c4.73 0 8.68 3 9.94 6.65a1 1 0 0 1 0 .7 10.75 10.75 0 0 1-1.44 2.49M14.08 14.16a3 3 0 0 1-4.24-4.24M17.48 17.5a10.75 10.75 0 0 1-15.42-5.15 1 1 0 0 1 0-.7 10.75 10.75 0 0 1 4.45-5.14M2 2l20 20"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="i-pix" viewBox="0 0 24 24"><path d="m12 2.5 3.4 3.4a2.5 2.5 0 0 0 1.8.7h1.3l-4.6 4.6a2.7 2.7 0 0 1-3.8 0L5.5 6.6h1.3a2.5 2.5 0 0 0 1.8-.7Zm0 19-3.4-3.4a2.5 2.5 0 0 0-1.8-.7H5.5l4.6-4.6a2.7 2.7 0 0 1 3.8 0l4.6 4.6h-1.3a2.5 2.5 0 0 0-1.8.7Z"/><path d="m5.5 6.6-3 3a3.4 3.4 0 0 0 0 4.8l3 3M18.5 6.6l3 3a3.4 3.4 0 0 1 0 4.8l-3 3"/></symbol>
     <!-- Categorias -->
     <symbol id="c-alimentacao" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></symbol>
     <symbol id="c-mercado" viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></symbol>
@@ -123,6 +127,9 @@
           <span class="bell__icon"><svg class="ic" width="20" height="20"><use href="#i-bell"/></svg></span>
           <i class="dot" hidden></i>
         </button>
+        <button class="icon-btn" id="btnPrivacy" type="button" title="Esconder valores" aria-label="Esconder valores" aria-pressed="false">
+          <svg class="ic"><use href="#i-eye"/></svg>
+        </button>
         <button class="icon-btn" id="btnTheme" type="button" title="Tema" aria-label="Alternar tema">
           <svg class="ic"><use href="#i-auto"/></svg>
         </button>
@@ -136,6 +143,7 @@
           <button type="button" data-action="fixed"><svg class="ic"><use href="#i-repeat"/></svg>Gastos e entradas fixos</button>
           <button type="button" data-action="cats"><svg class="ic"><use href="#i-grid"/></svg>Categorias</button>
           <button type="button" data-action="card"><svg class="ic"><use href="#i-card"/></svg>Cartão de crédito</button>
+          <button type="button" data-action="daily"><svg class="ic"><use href="#i-clock"/></svg>Lembrete diário de lançar</button>
           <button type="button" data-action="report"><svg class="ic"><use href="#i-share"/></svg>Relatório do mês (imagem / PDF)</button>
           <button type="button" data-action="export-csv"><svg class="ic"><use href="#i-sheet"/></svg>Exportar gastos do mês (.csv)</button>
           <button type="button" data-action="export-ics"><svg class="ic"><use href="#i-calendar"/></svg>Lembretes p/ calendário (.ics)</button>
@@ -694,7 +702,11 @@
           <button type="button" data-var="{valor}">valor</button>
           <button type="button" data-var="{motivo}">motivo</button>
           <button type="button" data-var="{data}">data</button>
+          <button type="button" data-var="{pix}">pix</button>
         </div>
+        <label class="pix-field"><span><svg class="ic"><use href="#i-pix"/></svg>Sua chave Pix <small>(vale para todas as cobranças)</small></span>
+          <input id="pixKey" maxlength="80" autocomplete="off" placeholder="CPF, celular, e-mail ou chave aleatória">
+        </label>
         <div class="msg-preview"><span class="label">Prévia</span><p id="debtMsgPreview"></p></div>
       </div>
       <footer class="form__foot">
@@ -721,6 +733,10 @@
         <output id="payAmountOut" class="amount__out"></output>
       </label>
       <div class="goal-hist" id="payHist"></div>
+      <div class="form__row">
+        <button type="button" class="btn btn--soft" id="payPerson"><svg class="ic"><use href="#i-user"/></svg>Ficha da pessoa</button>
+        <button type="button" class="btn btn--soft" id="payReceipt"><svg class="ic"><use href="#i-file"/></svg>Recibo</button>
+      </div>
       <footer class="form__foot">
         <button type="button" class="btn btn--ghost" id="payEdit"><svg class="ic"><use href="#i-edit"/></svg>Editar</button>
         <span class="spacer"></span>
@@ -733,15 +749,64 @@
   <dialog id="dlgReport" class="dlg">
     <div class="form">
       <header class="form__head">
-        <h2>Relatório do mês</h2>
+        <h2 id="reportTitle">Relatório do mês</h2>
         <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
       </header>
-      <div class="report-preview"><img id="reportImg" alt="Prévia do relatório"></div>
+      <div class="report-preview"><img id="reportImg" alt="Prévia"></div>
       <button type="button" class="btn btn--primary btn--block" id="reportShare"><svg class="ic"><use href="#i-share"/></svg>Compartilhar</button>
       <div class="form__row">
         <button type="button" class="btn btn--soft" id="reportPng"><svg class="ic"><use href="#i-image"/></svg>Baixar imagem</button>
         <button type="button" class="btn btn--soft" id="reportPdf"><svg class="ic"><use href="#i-file"/></svg>Baixar PDF</button>
       </div>
+    </div>
+  </dialog>
+
+  <!-- ============ DIÁLOGO: FICHA DA PESSOA ============ -->
+  <dialog id="dlgPerson" class="dlg">
+    <div class="form">
+      <header class="form__head">
+        <h2 id="personTitle">Ficha</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="goal-hero" id="personHero"></div>
+      <div class="person-stats" id="personStats"></div>
+      <div class="person-list" id="personList"></div>
+      <footer class="form__foot">
+        <span class="spacer"></span>
+        <button type="button" class="btn btn--primary" id="personNew"><svg class="ic"><use href="#i-plus"/></svg>Novo registro</button>
+      </footer>
+    </div>
+  </dialog>
+
+  <!-- ============ DIÁLOGO: LEMBRETE DIÁRIO ============ -->
+  <dialog id="dlgDaily" class="dlg dlg--sm">
+    <form id="formDaily" method="dialog" class="form">
+      <header class="form__head">
+        <h2>Lembrete diário</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
+      </header>
+      <p class="muted">Todo dia, no horário escolhido, o app pergunta se você lançou seus gastos. Tocando no aviso, abre direto o lançamento rápido.</p>
+      <label class="switch">
+        <input type="checkbox" name="on" id="dailyOn">
+        <span class="switch__ui" aria-hidden="true"></span>
+        <span class="switch__text"><strong>Lembrar todo dia</strong><small>“Você lançou seus gastos de hoje?”</small></span>
+      </label>
+      <label>Horário <input type="time" name="time" value="21:00"></label>
+      <footer class="form__foot">
+        <span class="spacer"></span>
+        <button type="submit" class="btn btn--primary">Salvar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ============ DIÁLOGO: ATALHO DO ÍCONE ============ -->
+  <dialog id="dlgLaunch" class="dlg dlg--sm">
+    <div class="form launch">
+      <span class="launch__ic" id="launchIcon"></span>
+      <h2 id="launchTitle"></h2>
+      <p class="muted" id="launchText"></p>
+      <button type="button" class="btn btn--primary btn--block" id="launchGo"></button>
+      <button type="button" class="btn btn--ghost btn--block" data-close>Agora não</button>
     </div>
   </dialog>
 
@@ -772,6 +837,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="app.js?v=12"></script>
+  <script src="app.js?v=13"></script>
 </body>
 </html>
