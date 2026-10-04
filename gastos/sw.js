@@ -1,7 +1,7 @@
 /* Service worker: funciona offline e abre o app ao tocar numa notificação. */
-const CACHE = 'meus-gastos-v11';
+const CACHE = 'meus-gastos-v12';
 // Os arquivos levam "?v=" no index.html: ao mudar a versão, o celular nunca mistura CSS/JS antigo com HTML novo.
-const FILES = ['./', 'index.html', 'style.css?v=11', 'app.js?v=11', 'icon.svg', 'icon-192.png', 'icon-512.png', 'manifest.webmanifest'];
+const FILES = ['./', 'index.html', 'style.css?v=12', 'app.js?v=12', 'icon.svg', 'icon-192.png', 'icon-512.png', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));

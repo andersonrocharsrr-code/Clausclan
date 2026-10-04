@@ -1615,14 +1615,16 @@
 
   $('#btnNotif').addEventListener('click', toggleAlerts);
 
-  async function notify(title, body, tag, { quiet = false } = {}) {
+  async function notify(title, body, tag, { quiet = false, vibrate = null } = {}) {
     if (!quiet) {
       ringBell();
       if (state.notifyOn) beep();
+      // Com o app aberto, vibra o celular na hora também.
+      if (vibrate && state.notifyOn && navigator.vibrate && document.visibilityState === 'visible') navigator.vibrate(vibrate);
     }
     // A notificação fica na barra até o usuário limpar (o app nunca apaga sozinho).
     if (!alertsOn()) return;
-    const opts = { body, tag, icon: 'icon-192.png', badge: 'badge-96.png', renotify: false, vibrate: [80, 40, 80] };
+    const opts = { body, tag, icon: 'icon-192.png', badge: 'badge-96.png', renotify: false, vibrate: vibrate || [80, 40, 80] };
     try {
       const reg = await getReg();
       if (reg) {
@@ -2108,14 +2110,36 @@
   const initials = (name) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
   const avatar = (name) => `<span class="avatar" style="--c:${avatarColor(name)}">${esc(initials(name))}</span>`;
 
+  // Modelos de mensagem. {nome}, {valor}, {motivo} e {data} são trocados pelos dados do registro.
+  const MSG_TEMPLATES = {
+    in: [
+      ['Amigável', 'Oi, {nome}! Tudo bem? 😊 Passando para lembrar daquele valor de {valor} ({motivo}). Quando puder, me manda por Pix. Obrigado!'],
+      ['Direta', 'Oi, {nome}! O pagamento de {valor} ({motivo}) estava combinado para {data}. Consegue me enviar hoje?'],
+      ['Formal', 'Olá, {nome}. Lembramos que o valor de {valor} ({motivo}) tem vencimento em {data}. Por favor, realize o pagamento. Obrigado.'],
+      ['Curta', '{nome}, lembrete: {valor} ({motivo}) 🙂'],
+    ],
+    out: [
+      ['Amigável', 'Oi, {nome}! Não esqueci dos {valor} ({motivo}) que te devo. Logo te pago! 😊'],
+      ['Combinar data', 'Oi, {nome}! Sobre os {valor} ({motivo}): consigo te pagar em {data}, tudo bem?'],
+      ['Já paguei', 'Oi, {nome}! Acabei de te enviar {valor} ({motivo}). Confere aí, por favor 🙂'],
+    ],
+  };
+  const isTemplate = (txt) => Object.values(MSG_TEMPLATES).some((list) => list.some(([, t]) => t === txt));
+  function fillMsg(tpl, d) {
+    const first = (d.person || '').trim().split(/\s+/)[0] || 'tudo bem';
+    const left = d.payments ? debtLeft(d) : d.amount || 0;
+    const date = d.due ? fmtDM.format(parseDay(d.due)) : 'o combinado';
+    return tpl
+      .replace(/\s*\(\{motivo\}\)/g, d.desc ? ` (${d.desc})` : '')
+      .replace(/\{nome\}/g, first)
+      .replace(/\{valor\}/g, money(left))
+      .replace(/\{motivo\}/g, d.desc || 'o combinado')
+      .replace(/\{data\}/g, date);
+  }
   function waLink(d) {
     const digits = (d.phone || '').replace(/\D/g, '');
     const num = digits.length === 10 || digits.length === 11 ? `55${digits}` : digits;
-    const first = d.person.split(/\s+/)[0];
-    const about = d.desc ? ` (${d.desc})` : '';
-    const msg = d.dir === 'in'
-      ? `Oi, ${first}! Tudo bem? 😊 Passando para lembrar daquele valor de ${money(debtLeft(d))}${about}. Quando puder, me manda por Pix. Obrigado!`
-      : `Oi, ${first}! Não esqueci dos ${money(debtLeft(d))}${about} que te devo. Logo te pago! 😊`;
+    const msg = fillMsg(d.message || MSG_TEMPLATES[d.dir][0][1], d);
     return `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
   }
 
@@ -2133,7 +2157,7 @@
       const left = debtLeft(d);
       const late = left > 0 && d.due && d.due < today;
       const sub = [d.desc && esc(d.desc),
-        left === 0 ? 'quitado' : d.due ? `${late ? 'atrasado desde' : 'combinado p/'} ${fmtDM.format(parseDay(d.due))}` : fmtDM.format(parseDay(d.date)),
+        left === 0 ? 'quitado' : d.due ? `${d.notify ? `<span class="debt__bell">${ico('i-bell')}</span>` : ''}${late ? 'atrasado desde' : 'combinado p/'} ${fmtDM.format(parseDay(d.due))}` : fmtDM.format(parseDay(d.date)),
         left > 0 && left < d.amount && `falta ${money(left)} de ${money(d.amount)}`].filter(Boolean).join(' · ');
       return `
         <div class="debt${left === 0 ? ' is-paid' : ''}" data-debt="${d.id}" role="button" tabindex="0">
@@ -2156,10 +2180,51 @@
   const formDebt = $('#formDebt');
   const debtAmount = $('#debtAmount');
   bindLiveAmount(debtAmount, $('#debtAmountOut'));
+  const debtMsg = $('#debtMsg');
   function setDebtDir(dir) {
     ui.debtDir = dir;
     $$('#debtDir .seg__btn').forEach((b) => b.classList.toggle('is-active', b.dataset.dir === dir));
+    // Troca a mensagem para o modelo do outro lado, se ainda não foi personalizada.
+    if (!debtMsg.value.trim() || isTemplate(debtMsg.value)) debtMsg.value = MSG_TEMPLATES[dir][0][1];
+    $('#debtNotifyHint').textContent = dir === 'in'
+      ? 'Notificação com vibração no dia em que a pessoa combinou de pagar'
+      : 'Notificação com vibração no dia em que você combinou de pagar';
+    renderMsgTools();
   }
+  function draftDebt() {
+    return {
+      dir: ui.debtDir, person: formDebt.person.value, desc: formDebt.desc.value.trim(),
+      amount: Number.isFinite(readAmount(debtAmount)) ? readAmount(debtAmount) : 0, due: formDebt.due.value,
+    };
+  }
+  function renderMsgTools() {
+    const txt = debtMsg.value;
+    $('#msgTemplates').innerHTML = MSG_TEMPLATES[ui.debtDir].map(([name, t], i) =>
+      `<button type="button" class="chip${t === txt ? ' is-active' : ''}" data-tpl="${i}">${name}</button>`).join('');
+    $('#debtMsgPreview').textContent = fillMsg(txt || MSG_TEMPLATES[ui.debtDir][0][1], draftDebt());
+  }
+  $('#msgTemplates').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-tpl]');
+    if (!b) return;
+    debtMsg.value = MSG_TEMPLATES[ui.debtDir][Number(b.dataset.tpl)][1];
+    renderMsgTools();
+  });
+  $('#msgVars').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-var]');
+    if (!b) return;
+    const start = debtMsg.selectionStart ?? debtMsg.value.length;
+    const end = debtMsg.selectionEnd ?? start;
+    debtMsg.value = debtMsg.value.slice(0, start) + b.dataset.var + debtMsg.value.slice(end);
+    debtMsg.focus();
+    debtMsg.setSelectionRange(start + b.dataset.var.length, start + b.dataset.var.length);
+    renderMsgTools();
+  });
+  formDebt.addEventListener('input', renderMsgTools);
+  const syncNotify = () => { $('#debtTimeWrap').hidden = !$('#debtNotify').checked; };
+  $('#debtNotify').addEventListener('change', () => {
+    syncNotify();
+    if ($('#debtNotify').checked && !formDebt.due.value) toast('Escolha a data combinada para receber o aviso.');
+  });
   $('#debtDir').addEventListener('click', (e) => { const b = e.target.closest('[data-dir]'); if (b) setDebtDir(b.dataset.dir); });
 
   function openDebt(debt = null, preset = {}) {
@@ -2175,7 +2240,12 @@
     formDebt.desc.value = src.desc || '';
     formDebt.date.value = src.date || dateISO(new Date());
     formDebt.due.value = src.due || '';
+    $('#debtNotify').checked = !!src.notify;
+    formDebt.notifyTime.value = src.notifyTime || '09:00';
+    debtMsg.value = src.message || MSG_TEMPLATES[src.dir || 'in'][0][1];
+    syncNotify();
     debtAmount._update();
+    renderMsgTools();
     dlgDebt.showModal();
     if (!src.person) formDebt.person.focus();
   }
@@ -2187,22 +2257,72 @@
     const person = formDebt.person.value.trim();
     if (!person) return;
     if (!Number.isFinite(amount) || amount <= 0) { toast('Informe o valor.'); return; }
+    const notifyOn = $('#debtNotify').checked;
+    if (notifyOn && !formDebt.due.value) { toast('Escolha a data combinada para receber o aviso.'); formDebt.due.focus(); return; }
+    const message = debtMsg.value.trim();
     const data = {
       dir: ui.debtDir, person: person.replace(/(^|\s)\p{L}/gu, (c) => c.toUpperCase()), phone: formDebt.phone.value.trim(), amount,
       desc: formDebt.desc.value.trim(), date: formDebt.date.value || dateISO(new Date()), due: formDebt.due.value || '',
+      notify: notifyOn, notifyTime: formDebt.notifyTime.value || '09:00',
+      message: message && message !== MSG_TEMPLATES[ui.debtDir][0][1] ? message : '',
     };
+    let d;
     if (ui.editingDebt) {
-      Object.assign(state.debts.find((d) => d.id === ui.editingDebt), data);
+      d = state.debts.find((x) => x.id === ui.editingDebt);
+      if (d.due !== data.due || d.notifyTime !== data.notifyTime || !d.notify) d.notifiedFor = '';
+      Object.assign(d, data);
       toast('Registro atualizado.');
     } else {
-      state.debts.push({ id: uid(), ...data, payments: [], createdAt: Date.now() });
+      d = { id: uid(), ...data, payments: [], createdAt: Date.now(), notifiedFor: '' };
+      state.debts.push(d);
       toast(data.dir === 'in' ? `${data.person} te deve ${money(amount)}.` : `Você deve ${money(amount)} a ${data.person}.`);
     }
+    // Data combinada já passada no momento do cadastro: não dispara aviso antigo.
+    if (d.due && d.due < dateISO(new Date())) d.notifiedFor = d.due;
     save();
     dlgDebt.close();
     if (dlgDebtPay.open) renderDebtPay();
     renderDebts();
+    if (notifyOn && !alertsOn()) enableAlerts();
+    checkDebts();
   });
+
+  // Avisos do "Quem me deve": no dia combinado (no horário escolhido) ou, se o app estava fechado, como "em atraso".
+  // 3 ou mais cobranças no mesmo dia viram uma notificação só.
+  const DEBT_VIBRATE = [300, 120, 300, 120, 500];
+  function checkDebts(now = new Date()) {
+    const today = dateISO(now);
+    const hm = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const pending = state.debts.filter((d) => d.notify && d.due && debtLeft(d) > 0 && d.notifiedFor !== d.due
+      && (d.due < today || (d.due === today && hm >= (d.notifyTime || '09:00'))));
+    if (!pending.length) return;
+    pending.forEach((d) => { d.notifiedFor = d.due; });
+    save();
+    const line = (d) => `${d.person} — ${money(debtLeft(d))}${d.desc ? ` (${d.desc})` : ''}`;
+    const groups = [
+      { list: pending.filter((d) => d.due === today), when: 'hoje' },
+      { list: pending.filter((d) => d.due < today), when: 'atraso' },
+    ];
+    for (const { list, when } of groups) {
+      if (!list.length) continue;
+      if (list.length >= 3) {
+        const title = when === 'hoje' ? `${list.length} cobranças marcadas para hoje` : `${list.length} cobranças em atraso`;
+        notify(title, list.map(line).join('\n'), `debts-${when}-${today}`, { vibrate: DEBT_VIBRATE });
+        toast(`🔔 ${title}`);
+        continue;
+      }
+      for (const d of list) {
+        const date = fmtDM.format(parseDay(d.due));
+        const title = when === 'hoje'
+          ? (d.dir === 'in' ? `Hoje: ${d.person} combinou de te pagar` : `Hoje: pagar ${d.person}`)
+          : (d.dir === 'in' ? `Em atraso: ${d.person}` : `Em atraso: você deve a ${d.person}`);
+        const body = `${money(debtLeft(d))}${d.desc ? ` · ${d.desc}` : ''} · combinado para ${when === 'hoje' ? 'hoje' : date}`;
+        notify(title, body, `debt-${d.id}`, { vibrate: DEBT_VIBRATE });
+        toast(`🔔 ${title} — ${money(debtLeft(d))}`);
+      }
+    }
+    renderDebts(now);
+  }
 
   $('#debtDelete').addEventListener('click', () => {
     const d = state.debts.find((x) => x.id === ui.editingDebt);
@@ -3020,10 +3140,11 @@
   renderCalc();
   calcSplit();
   checkReminders();
-  setInterval(checkReminders, CHECK_EVERY_MS);
+  checkDebts();
+  setInterval(() => { checkReminders(); checkDebts(); }, CHECK_EVERY_MS);
   // Atualiza "hoje/amanhã", fixos e médias quando o app volta para a tela.
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) { launchFixed(); checkReminders(); render(); }
+    if (!document.hidden) { launchFixed(); checkReminders(); checkDebts(); render(); }
   });
 
   // Atalho vindo da tela inicial do celular: ?novo=1
