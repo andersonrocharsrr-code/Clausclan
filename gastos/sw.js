@@ -1,6 +1,7 @@
 /* Service worker: funciona offline e abre o app ao tocar numa notificação. */
-const CACHE = 'meus-gastos-v2';
-const FILES = ['./', 'index.html', 'style.css', 'app.js', 'icon.svg', 'manifest.webmanifest'];
+const CACHE = 'meus-gastos-v3';
+// Os arquivos levam "?v=" no index.html: ao mudar a versão, o celular nunca mistura CSS/JS antigo com HTML novo.
+const FILES = ['./', 'index.html', 'style.css?v=3', 'app.js?v=3', 'icon.svg', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
@@ -14,11 +15,15 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Rede primeiro (para pegar atualizações), cache se estiver offline.
+// Rede primeiro (sempre conferindo com o servidor, sem usar cópia velha do navegador),
+// cache só se estiver offline.
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET' || new URL(e.request.url).origin !== location.origin) return;
+  const fresh = e.request.mode === 'navigate'
+    ? new Request(e.request.url, { cache: 'no-cache' })
+    : new Request(e.request, { cache: 'no-cache' });
   e.respondWith(
-    fetch(e.request)
+    fetch(fresh)
       .then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(e.request, copy));
