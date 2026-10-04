@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="style.css?v=20">
+  <link rel="stylesheet" href="style.css?v=21">
   <!-- Garante ícones do tamanho certo mesmo antes do CSS carregar. -->
   <style>.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}</style>
   <!-- Abertura e tela de início do Nexa Money: ficam aqui para aparecer na hora, antes do resto da página. -->
@@ -48,17 +48,16 @@
     .nx-word{display:grid;gap:2px;line-height:.95;text-align:left}
     .nx-word b{font-size:40px;font-weight:800;letter-spacing:-.03em;display:flex;align-items:flex-end;gap:8px}
     .nx-word i{font-style:normal;font-size:40px;font-weight:800;letter-spacing:-.03em;
-      background:linear-gradient(90deg,#1f7a4f,#15573a);-webkit-background-clip:text;background-clip:text;color:transparent}
-    .nx-bars{display:inline-flex;align-items:flex-end;gap:4px;height:30px;padding-bottom:5px}
-    .nx-bars span{width:7px;border-radius:2px;background:linear-gradient(#b5d4c2,#5f9c7c)}
-    .nx-bars span:nth-child(1){height:40%}.nx-bars span:nth-child(2){height:70%}.nx-bars span:nth-child(3){height:100%}
-    .splash .nx-word b,.splash .nx-word i{opacity:0;transform:translateY(12px)}
+      color:#1d7049}
+    .nx-bars{height:30px;width:auto;margin-bottom:5px;overflow:visible}
+    .nx-bars rect:nth-child(1){fill:#a9cdb9}.nx-bars rect:nth-child(2){fill:#7fb196}.nx-bars rect:nth-child(3){fill:#4f9070}
+        .splash .nx-word b,.splash .nx-word i{opacity:0;transform:translateY(12px)}
     .splash .nx-word b{animation:nx-up .5s cubic-bezier(.2,.8,.2,1) 1.35s forwards}
     .splash .nx-word i{animation:nx-up .5s cubic-bezier(.2,.8,.2,1) 1.55s forwards}
-    .splash .nx-bars span{transform:scaleY(0);transform-origin:bottom}
-    .splash .nx-bars span:nth-child(1){animation:nx-grow .35s cubic-bezier(.2,1.4,.4,1) 1.6s forwards}
-    .splash .nx-bars span:nth-child(2){animation:nx-grow .35s cubic-bezier(.2,1.4,.4,1) 1.72s forwards}
-    .splash .nx-bars span:nth-child(3){animation:nx-grow .35s cubic-bezier(.2,1.4,.4,1) 1.84s forwards}
+    .splash .nx-bars rect{transform:scaleY(0);transform-box:fill-box;transform-origin:bottom}
+    .splash .nx-bars rect:nth-child(1){animation:nx-grow .35s cubic-bezier(.2,1.4,.4,1) 1.6s forwards}
+    .splash .nx-bars rect:nth-child(2){animation:nx-grow .35s cubic-bezier(.2,1.4,.4,1) 1.72s forwards}
+    .splash .nx-bars rect:nth-child(3){animation:nx-grow .35s cubic-bezier(.2,1.4,.4,1) 1.84s forwards}
     .splash__tag{margin:6px 0 0;font-size:15px;font-weight:500;color:#4b6358;opacity:0;animation:nx-fade .6s ease 1.95s forwards}
     /* ---- tela de início ---- */
     .welcome{display:flex;flex-direction:column;align-items:center;overflow-y:auto;
@@ -121,8 +120,8 @@
       :root:not([data-theme="light"]) .nx-aura{background:radial-gradient(40% 32% at 50% 38%,rgba(16,185,129,.26),transparent 70%),
                  radial-gradient(35% 25% at 15% 80%,rgba(52,211,153,.12),transparent 70%),
                  radial-gradient(30% 22% at 90% 15%,rgba(110,231,183,.1),transparent 70%)}
-      :root:not([data-theme="light"]) .nx-word i{background:linear-gradient(90deg,#6ee7b7,#34d399);-webkit-background-clip:text;background-clip:text}
-      :root:not([data-theme="light"]) .nx-bars span{background:linear-gradient(#d1fae5,#34d399)}
+      :root:not([data-theme="light"]) .nx-word i{color:#5ee0a8}
+      :root:not([data-theme="light"]) .nx-bars rect:nth-child(1){fill:#c6f6de}:root:not([data-theme="light"]) .nx-bars rect:nth-child(2){fill:#86efc0}:root:not([data-theme="light"]) .nx-bars rect:nth-child(3){fill:#34d399}
       :root:not([data-theme="light"]) .splash__tag{color:#a7c9b8}
       :root:not([data-theme="light"]) .welcome__text{color:#bcd2c6}
       :root:not([data-theme="light"]) .welcome__foot{color:#86a596}
@@ -145,8 +144,8 @@
     :root[data-theme="dark"] .nx-aura{background:radial-gradient(40% 32% at 50% 38%,rgba(16,185,129,.26),transparent 70%),
                  radial-gradient(35% 25% at 15% 80%,rgba(52,211,153,.12),transparent 70%),
                  radial-gradient(30% 22% at 90% 15%,rgba(110,231,183,.1),transparent 70%)}
-    :root[data-theme="dark"] .nx-word i{background:linear-gradient(90deg,#6ee7b7,#34d399);-webkit-background-clip:text;background-clip:text}
-    :root[data-theme="dark"] .nx-bars span{background:linear-gradient(#d1fae5,#34d399)}
+    :root[data-theme="dark"] .nx-word i{color:#5ee0a8}
+    :root[data-theme="dark"] .nx-bars rect:nth-child(1){fill:#c6f6de}:root[data-theme="dark"] .nx-bars rect:nth-child(2){fill:#86efc0}:root[data-theme="dark"] .nx-bars rect:nth-child(3){fill:#34d399}
     :root[data-theme="dark"] .splash__tag{color:#a7c9b8}
     :root[data-theme="dark"] .welcome__text{color:#bcd2c6}
     :root[data-theme="dark"] .welcome__foot{color:#86a596}
@@ -187,7 +186,7 @@
     <div class="splash__center">
       <svg class="nx-mark" viewBox="0 0 100 100">
         <g transform="translate(-4 -4)" stroke-linecap="round" stroke-linejoin="round"><g filter="url(#nxf)"><path class="d d1" pathLength="1" d="M33 64V34c0-7.5 5-12.5 12-12.5 4.5 0 8 2.3 10 6L66.5 59c2 3.7 5.5 6 9.5 6c5.3 0 8-4 8-10V31" fill="none" stroke="url(#nxg)" stroke-width="12"/><path class="a" d="M71.5 34H96.5L84 17Z" fill="url(#nxg)" stroke="url(#nxg)" stroke-width="3"/></g><path class="d d3 nx-k" pathLength="1" d="M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9" fill="none" stroke="#fff" stroke-width="12"/><path class="d d4 nx-k" pathLength="1" d="M28 55v9M28 92v7" fill="none" stroke="#fff" stroke-width="11"/><path class="d d3 nx-d" pathLength="1" d="M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9" fill="none" stroke="#0f4a30" stroke-width="6.2"/><path class="d d4 nx-d" pathLength="1" d="M28 55v9M28 92v7" fill="none" stroke="#0f4a30" stroke-width="5.2"/></g></g></svg>
-      <div class="nx-word"><b>Nexa<span class="nx-bars"><span></span><span></span><span></span></span></b><i>Money</i></div>
+      <div class="nx-word"><b>Nexa<svg class="nx-bars" viewBox="0 0 29 30" aria-hidden="true"><rect x="0" y="17" width="7" height="13" rx="2"/><rect x="11" y="8" width="7" height="22" rx="2"/><rect x="22" y="0" width="7" height="30" rx="2"/></svg></b><i>Money</i></div>
       <p class="splash__tag">Domine suas finanças</p>
     </div>
   </div>
@@ -198,7 +197,7 @@
     <div class="welcome__inner">
       <div class="welcome__logo">
         <svg class="nx-mark" viewBox="0 0 100 100"><use href="#nx-logo"/></svg>
-        <div class="nx-word"><b>Nexa<span class="nx-bars"><span></span><span></span><span></span></span></b><i>Money</i></div>
+        <div class="nx-word"><b>Nexa<svg class="nx-bars" viewBox="0 0 29 30" aria-hidden="true"><rect x="0" y="17" width="7" height="13" rx="2"/><rect x="11" y="8" width="7" height="22" rx="2"/><rect x="22" y="0" width="7" height="30" rx="2"/></svg></b><i>Money</i></div>
       </div>
       <h1>Domine suas Finanças</h1>
       <p class="welcome__text">Bem-vindo ao Nexa Money, o seu painel financeiro inteligente. Assuma o controle total de seus gastos e alcance seus objetivos com clareza e estilo.</p>
@@ -1049,6 +1048,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="app.js?v=20"></script>
+  <script src="app.js?v=21"></script>
 </body>
 </html>
