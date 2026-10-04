@@ -259,62 +259,6 @@ function drawTreeSprite(x, y, fade) {
 }
 
 /* ---------- pessoas, animais e veículos ---------- */
-function drawPerson(x, y, z, a, o) {
-  const s = K * (o.scale || 1);
-  const fx = Math.cos(a) - Math.sin(a), fy = (Math.cos(a) + Math.sin(a)) / 2, fl = Math.hypot(fx, fy) || 1, dx = fx / fl, dy = fy / fl;
-  const front = dy > -0.25;
-  ctx.save(); ctx.translate(PX(x, y), PY(x, y, z));
-  ctx.fillStyle = 'rgba(0,0,0,.32)'; ctx.beginPath(); ctx.ellipse(0, 0, 11 * s, 5.5 * s, 0, 0, 7); ctx.fill();
-  if (o.down) {
-    const dir = dx >= 0 ? 1 : -1;
-    ctx.fillStyle = '#2f3136'; ctx.fillRect(-dir * 18 * s - 6 * s, -5 * s, 12 * s, 4 * s);
-    ctx.fillStyle = o.body; rr(ctx, -10 * s, -9 * s, 20 * s, 9 * s, 3 * s); ctx.fill();
-    ctx.fillStyle = o.skin; ctx.beginPath(); ctx.arc(dir * 14 * s, -5 * s, 5.5 * s, 0, 7); ctx.fill();
-    ctx.restore(); return;
-  }
-  const amp = clamp(o.amp == null ? 1 : o.amp, 0, 1.15), sw = Math.sin(o.t || 0) * amp;
-  const bob = Math.abs(Math.cos(o.t || 0)) * amp * 1.8 * s, lunge = o.lunge || 0, atk = o.atk || 0;
-  // pernas
-  ctx.lineCap = 'round'; ctx.strokeStyle = o.legs || '#2e3035'; ctx.lineWidth = 5.5 * s;
-  for (const sg of [-1, 1]) { const st = sw * sg; ctx.beginPath(); ctx.moveTo(sg * 3.5 * s, -27 * s); ctx.lineTo(sg * 3.5 * s + st * dx * 6 * s, -3 * s + st * dy * 3 * s); ctx.stroke(); }
-  ctx.fillStyle = '#1e1e20'; for (const sg of [-1, 1]) { const st = sw * sg; ctx.beginPath(); ctx.ellipse(sg * 3.5 * s + st * dx * 6 * s + dx * 2 * s, -2 * s + st * dy * 3 * s, 3.5 * s, 2.2 * s, 0, 0, 7); ctx.fill(); }
-  // tronco, braços e cabeça sobem e descem um pouco a cada passo; o zumbi se inclina na investida
-  ctx.translate(dx * lunge * 5 * s, -bob + dy * lunge * 2.5 * s);
-  const arms = () => {
-    ctx.strokeStyle = o.body; ctx.lineWidth = 4.8 * s;
-    for (const sg of [-1, 1]) {
-      const shx = sg * 8.5 * s, shy = -47 * s;
-      let hx, hy;
-      if (o.zombie) { const r = 17 + lunge * 9; hx = shx * 0.6 + dx * r * s; hy = shy + 4 * s + dy * r * 0.53 * s + sw * sg * 1.5 * s; }
-      else if (sg === 1 && atk > 0) { const k = Math.sin((1 - atk / 0.22) * Math.PI); hx = shx + dx * (8 + k * 12) * s; hy = shy + 2 * s + dy * (4 + k * 6) * s - k * 6 * s; }
-      else { const st = -sw * sg; hx = shx + st * dx * 5 * s; hy = -31 * s + st * dy * 3 * s; }
-      ctx.beginPath(); ctx.moveTo(shx, shy); ctx.lineTo(hx, hy); ctx.stroke();
-      ctx.fillStyle = o.skin; ctx.beginPath(); ctx.arc(hx, hy, 2.6 * s, 0, 7); ctx.fill();
-      if (sg === 1 && o.weapon) { ctx.strokeStyle = o.gun ? '#1c1d1f' : '#8d8f90'; ctx.lineWidth = (o.gun ? 3.2 : 2.4) * s; ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(hx + dx * 15 * s, hy + dy * 7.5 * s - (o.gun ? 0 : 6 * s)); ctx.stroke(); ctx.strokeStyle = o.body; ctx.lineWidth = 4.8 * s; }
-    }
-  };
-  if (!front) arms();
-  if (o.pack && front) { ctx.fillStyle = shade(o.pack, -0.2); rr(ctx, -8 * s, -51 * s, 16 * s, 18 * s, 3 * s); ctx.fill(); }
-  // tronco
-  const gr = ctx.createLinearGradient(-9 * s, 0, 9 * s, 0); gr.addColorStop(0, shade(o.body, 0.12)); gr.addColorStop(1, shade(o.body, -0.25));
-  ctx.fillStyle = gr; rr(ctx, -9 * s, -54 * s, 18 * s, 28 * s, 5 * s); ctx.fill();
-  if (o.zombie) { ctx.fillStyle = 'rgba(95,12,10,.6)'; ctx.beginPath(); ctx.ellipse(-2 * s, -42 * s, 4 * s, 6 * s, 0.4, 0, 7); ctx.fill(); ctx.fillStyle = 'rgba(20,15,10,.4)'; ctx.fillRect(2 * s, -33 * s, 5 * s, 4 * s); }
-  if (o.pack && !front) { ctx.fillStyle = o.pack; rr(ctx, -8 * s, -52 * s, 16 * s, 19 * s, 3 * s); ctx.fill(); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(-8 * s, -44 * s, 16 * s, 2 * s); }
-  if (front) arms();
-  // cabeça
-  const hx = dx * 1.5 * s, hy = -62 * s;
-  ctx.fillStyle = o.skin; ctx.beginPath(); ctx.arc(hx, hy, 8 * s, 0, 7); ctx.fill();
-  if (o.hair) { ctx.fillStyle = o.hair; ctx.beginPath(); if (front) ctx.arc(hx, hy - 1.5 * s, 8.2 * s, Math.PI * 1.05, Math.PI * 1.95); else ctx.arc(hx, hy, 8.3 * s, Math.PI * 0.85, Math.PI * 2.15); ctx.fill(); }
-  if (front) {
-    const ex = hx + dx * 3 * s;
-    ctx.fillStyle = o.zombie ? 'rgba(40,15,15,.75)' : '#2a2018';
-    ctx.fillRect(ex - 3.5 * s, hy - 0.5 * s, 2 * s, 2 * s); ctx.fillRect(ex + 1.5 * s, hy - 0.5 * s, 2 * s, 2 * s);
-    if (o.eyes) { ctx.fillStyle = o.eyes; ctx.fillRect(ex - 3 * s, hy, 1.2 * s, 1.2 * s); ctx.fillRect(ex + 2 * s, hy, 1.2 * s, 1.2 * s); }
-    if (o.zombie) { ctx.fillStyle = 'rgba(90,10,10,.7)'; ctx.fillRect(ex - 2 * s, hy + 4 * s, 4 * s, 1.5 * s); }
-  }
-  ctx.lineCap = 'butt';
-  ctx.restore();
-}
 function drawAnimal(a) {
   const s = K;
   ctx.save(); ctx.translate(PX(a.x, a.y), PY(a.x, a.y));
@@ -364,7 +308,7 @@ function drawCar(v) {
     wheel(L * 0.75, 0, 0.2, 0.06); wheel(-L * 0.75, 0, 0.2, 0.06);
     prism(x, y, ca, sa, -L * 0.45, L * 0.5, -W * 0.5, W * 0.5, 0.25, 0.5, col, shade(col, 0.15));
     prism(x, y, ca, sa, -L * 0.4, L * 0.05, -W * 0.35, W * 0.35, 0.5, 0.58, '#222', '#2a2a2a');
-    if (v === S.player.inCar) drawPerson(x - ca * 0.1, y - sa * 0.1, 0.35, v.a, { body: PROF_SHIRT[S.player.prof] || '#556', skin: '#e0b08a', hair: '#2a1d14' });
+    if (v === S.player.inCar) drawPerson(x - ca * 0.1, y - sa * 0.1, 0.35, v.a, { look: playerLook(S.player), amp: 0, helmet: !!S.player.eq.cabeca });
     return;
   }
   if (v.t === 'trator') {
@@ -500,19 +444,19 @@ function render(now) {
   for (const z of S.zs) {
     if (z.x < xmin || z.x > xmax || z.y < ymin || z.y > ymax || !seesAt(z.x, z.y) || hiddenByRoof(z.x, z.y)) continue;
     const zd = ZT[z.t];
-    ents.push({ d: z.x + z.y, f: () => drawPerson(z.x, z.y, 0, z.a, { zombie: 1, body: z.shirt, skin: zd.col, legs: '#3a3a36', hair: z.seed % 3 ? HAIR[z.seed % HAIR.length] : null, down: z.down > 0, scale: z.t === 'brutamontes' ? 1.3 : 1, t: (z.ph || 0) + z.seed, amp: (z.spdNow || 0) / Math.max(0.6, zd.spd * 0.8), lunge: z.lunge || 0, eyes: z.t === 'corredor' ? '#ff3a2a' : null }) });
+    ents.push({ d: z.x + z.y, f: () => drawPerson(z.x, z.y, 0, z.a, { zombie: 1, look: lookOf(z, 'zombie'), down: z.down > 0, scale: z.t === 'brutamontes' ? 1.15 : 1, t: (z.ph || 0) + z.seed, amp: (z.spdNow || 0) / Math.max(0.6, zd.spd * 0.8), lunge: z.lunge || 0, eyes: z.t === 'corredor' ? '#ff3a2a' : null }) });
   }
   for (const n of S.npcs) {
     if (n.dead || n.away || n.inCar || !seesAt(n.x, n.y) || n.x < xmin || n.x > xmax || n.y < ymin || n.y > ymax || hiddenByRoof(n.x, n.y)) continue;
     const w = n.wp && ITEMS[n.wp];
     ents.push({ d: n.x + n.y, f: () => {
-      drawPerson(n.x, n.y, 0, n.a, { body: NPC_KINDS[n.kind].col, skin: ['#d9a77a', '#a8754a', '#7a5032', '#e8c4a0'][n.id % 4], hair: HAIR[n.id % HAIR.length], t: n.ph || 0, amp: n.mvT > 0 ? 1 : 0, weapon: !!w, gun: w && w.wp && w.wp.gun, pack: n.kind === 'comerciante' ? '#6a5a3a' : null });
+      drawPerson(n.x, n.y, 0, n.a, { look: lookOf(n, 'npc'), t: n.ph || 0, amp: n.mvT > 0 ? 1 : 0, wk: w ? n.wp : null });
       if (dist(n.x, n.y, p.x, p.y) < 7) { ctx.font = `700 ${Math.max(10, 11 * K)}px 'Roboto Condensed', 'Arial Narrow', sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.75)'; const lb = n.name + (n.st === 'seguir' ? ' ★' : ''); ctx.strokeText(lb, PX(n.x, n.y), PY(n.x, n.y, 2)); ctx.fillStyle = n.hostile ? '#ff8a7a' : '#e8e8e0'; ctx.fillText(lb, PX(n.x, n.y), PY(n.x, n.y, 2)); }
     } });
   }
   if (!p.inCar) {
     const it = p.eq.mao;
-    ents.push({ d: pd + 0.01, f: () => drawPerson(p.x, p.y, p.onTower ? 2.05 : 0, p.a, { body: p.hitT > 0 ? '#a33' : PROF_SHIRT[p.prof] || '#556', skin: '#e0b08a', hair: '#2a1d14', pack: p.eq.costas ? '#4a5a3a' : null, t: p.ph || 0, amp: (p.spdNow || 0) / 2.6, atk: p.atkT || 0, weapon: !!it, gun: it && ITEMS[it.k].wp && ITEMS[it.k].wp.gun, down: p.sleeping }) });
+    ents.push({ d: pd + 0.01, f: () => drawPerson(p.x, p.y, p.onTower ? 2.05 : 0, p.a, { look: playerLook(p), t: p.ph || 0, amp: (p.spdNow || 0) / 2.6, atk: p.atkT || 0, wk: it && ITEMS[it.k].wp ? it.k : null, helmet: !!p.eq.cabeca, down: p.sleeping }) });
   }
   for (const k of Object.keys(S.fires)) {
     const i = +k, fx = i % MAP_W, fy = Math.floor(i / MAP_W);
