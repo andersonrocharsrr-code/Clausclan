@@ -4372,8 +4372,7 @@
       x.stroke(rib); if (fill) { x.fillStyle = color; x.fill(arrow); } x.stroke(arrow);
       x.restore();
     };
-    drawRib(430, -170, 720, false, '#cfe5d9', 1.4);
-    drawRib(470, -140, 720, false, '#dcece3', .8);
+    drawRib(430, -170, 720, false, '#cfe5d9', 1.6);
     drawRib(380, H - 560, 700, true, '#f0f7f3', 12);
     const F = 'Inter, system-ui, sans-serif';
     x.fillStyle = MUT; x.font = `600 40px ${F}`; x.fillText('Retrospectiva Nexa Money', 90, 330);

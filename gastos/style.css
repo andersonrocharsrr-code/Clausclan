@@ -1249,7 +1249,7 @@ html.is-touring { scroll-behavior: smooth; }
 .retro__bg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .rib { overflow: visible; }
 .rib--fill { stroke: #f0f7f3; stroke-width: 12; fill: #f0f7f3; }
-.rib--line { stroke: #cfe5d9; stroke-width: 1.2; fill: none; }
+.rib--line { stroke: #c9e2d4; stroke-width: 1.5; fill: none; }
 .rib--thin { stroke-width: .6; stroke: #dcece3; }
 .retro__bg g { transition: transform 1.2s cubic-bezier(.65, 0, .25, 1); }
 .retro__bg-a { animation: rib-a 18s ease-in-out infinite alternate; }
