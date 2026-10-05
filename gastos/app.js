@@ -82,6 +82,7 @@
       expenses: [], reminders: [], budget: 0, theme: 'auto', themeV: 2, calcHist: [],
       catBudgets: {}, fixed: [], customCats: [], card: { close: 0, due: 0 }, goals: [], debts: [], notifyOn: true, notifyTested: false,
       privacy: false, pixKey: '', daily: { on: false, time: '21:00', last: '' },
+      subs: [], nightly: { on: false, time: '21:30', last: '' }, challenges: [], work: { income: 0, hours: 44 },
     };
     try {
       const data = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
@@ -118,6 +119,10 @@
       privacy: !!data.privacy,
       pixKey: typeof data.pixKey === 'string' ? data.pixKey : (base.pixKey || ''),
       daily: { on: false, time: '21:00', last: '', ...(data.daily && typeof data.daily === 'object' ? data.daily : base.daily || {}) },
+      subs: Array.isArray(data.subs) ? data.subs : [],
+      nightly: { on: false, time: '21:30', last: '', ...obj(data.nightly) },
+      challenges: Array.isArray(data.challenges) ? data.challenges : [],
+      work: { income: Number(obj(data.work).income) || 0, hours: Number(obj(data.work).hours) || 44 },
     };
   }
 
@@ -411,12 +416,13 @@
   function setView(view) {
     ui.view = view;
     $$('.view').forEach((v) => v.classList.toggle('is-active', v.id === `view-${view}`));
-    $$('.tab').forEach((t) => t.classList.toggle('is-active', t.dataset.view === view));
+    $$('.tab[data-view]').forEach((t) => t.classList.toggle('is-active', t.dataset.view === view));
+    $('#tabTools').classList.toggle('is-active', view === 'calc');
     $('#btnAdd').setAttribute('aria-label', view === 'lembretes' ? 'Novo lembrete' : 'Novo lançamento');
     window.scrollTo({ top: 0 });
   }
 
-  $$('.tab').forEach((t) => t.addEventListener('click', () => setView(t.dataset.view)));
+  $$('.tab[data-view]').forEach((t) => t.addEventListener('click', () => setView(t.dataset.view)));
   $$('[data-goto]').forEach((b) => b.addEventListener('click', () => setView(b.dataset.goto)));
 
   $('#prevMonth').addEventListener('click', () => { ui.month = shiftMonth(ui.month, -1); render(); });
@@ -3451,7 +3457,8 @@
       const data = {
         app: 'meus-gastos', version: 2, exportedAt: new Date().toISOString(),
         expenses: state.expenses, reminders: state.reminders, budget: state.budget, catBudgets: state.catBudgets,
-        fixed: state.fixed, customCats: state.customCats, card: state.card, goals: state.goals, debts: state.debts, pixKey: state.pixKey, daily: state.daily, photos: pics,
+        fixed: state.fixed, customCats: state.customCats, card: state.card, goals: state.goals, debts: state.debts, pixKey: state.pixKey, daily: state.daily,
+        subs: state.subs, nightly: state.nightly, challenges: state.challenges, work: state.work, photos: pics,
       };
       download(`nexa-money-backup-${dateISO(new Date())}.json`, JSON.stringify(data), 'application/json');
     } else if (action === 'import-json') {
@@ -3585,6 +3592,630 @@
     toastTimer = setTimeout(() => { el.hidden = true; }, actionLabel ? 6000 : 3800);
   }
 
+  /* ---------------- Ferramentas (cartão de baixo) ---------------- */
+  const dlgTools = $('#dlgTools');
+  const dlgTool = $('#dlgTool');
+  const toolBody = $('#toolBody');
+  const todayISO = () => dateISO(new Date());
+  const outs = () => state.expenses.filter(isOut);
+
+  const TOOLS = [
+    { id: 'calc', icon: 'i-calc', name: 'Calculadora', color: '#6d5dfc', sub: () => 'Contas rápidas', run: () => setView('calc') },
+    { id: 'parcelas', icon: 'i-layers', name: 'Parcelamentos', color: '#f97316', sub: () => { const n = installGroups().filter((g) => g.left > 0).length; return n ? `${n} em andamento` : 'Compras em vezes'; } },
+    { id: 'subs', icon: 'i-tv', name: 'Assinaturas', color: '#ec4899', sub: () => (state.subs.length ? `${money(subsMonthly())}/mês` : 'Netflix, Spotify…') },
+    { id: 'noite', icon: 'i-moonstar', name: 'Resumo da noite', color: '#6366f1', sub: () => (state.nightly.on ? `Todo dia às ${state.nightly.time}` : 'Desligado') },
+    { id: 'desafios', icon: 'i-trophy', name: 'Desafios', color: '#eab308', sub: () => { const a = state.challenges.filter((c) => challengeStatus(c).status === 'active').length; const m = medals().filter((x) => x.ok).length; return a ? `${a} em andamento` : `${m} conquista${m === 1 ? '' : 's'}`; } },
+    { id: 'retro', icon: 'i-star', name: 'Retrospectiva', color: '#8b5cf6', sub: () => `Seu ${new Date().getFullYear()}`, run: () => openRetro() },
+    { id: 'sim', icon: 'i-percent', name: 'Simuladores', color: '#10b981', sub: () => 'Juros e financiamento' },
+    { id: 'horas', icon: 'i-hourglass', name: 'Horas de trabalho', color: '#06b6d4', sub: () => (hourValue() ? `${money(hourValue())}/hora` : 'Quanto custa em horas') },
+    { id: 'meta', icon: 'i-piggy', name: 'Nova meta', color: '#22c55e', sub: () => 'Guardar dinheiro', run: () => openGoal() },
+    { id: 'deve', icon: 'i-hand', name: 'Quem me deve', color: '#14b8a6', sub: () => 'Cobranças', run: () => openDebt() },
+    { id: 'relatorio', icon: 'i-share', name: 'Relatório', color: '#3b82f6', sub: () => 'Imagem ou PDF', run: () => openReport() },
+    { id: 'tour', icon: 'i-tour', name: 'Tour guiado', color: '#64748b', sub: () => 'Como usar o app', run: () => startTour() },
+  ];
+  const TOOL_RENDER = {};
+
+  function openTools() {
+    $('#toolsGrid').innerHTML = TOOLS.map((t, i) => `
+      <button type="button" class="tool-tile" data-tool="${t.id}" style="--c:${t.color};--i:${i}">
+        <span class="tool-tile__ic">${ico(t.icon)}</span>
+        <strong>${t.name}</strong>
+        <small>${t.sub()}</small>
+      </button>`).join('');
+    if (!dlgTools.open) dlgTools.showModal();
+  }
+  $('#tabTools').addEventListener('click', openTools);
+  $('#toolsGrid').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-tool]');
+    if (!b) return;
+    const t = TOOLS.find((x) => x.id === b.dataset.tool);
+    dlgTools.close();
+    if (t.run) t.run();
+    else openTool(t.id);
+  });
+
+  function openTool(id) {
+    const t = TOOLS.find((x) => x.id === id);
+    ui.tool = id;
+    $('#toolTitle').textContent = t.name;
+    dlgTool.style.setProperty('--c', t.color);
+    TOOL_RENDER[id]();
+    if (!dlgTool.open) dlgTool.showModal();
+    toolBody.scrollTop = 0;
+  }
+  const rerenderTool = () => { if (dlgTool.open && ui.tool) TOOL_RENDER[ui.tool](); };
+  $('#toolBack').addEventListener('click', () => { dlgTool.close(); openTools(); });
+
+  const pct = (v) => `${num.format(Math.round(v * 10) / 10)}%`;
+  const monthYear = (d) => `${fmtShortMonth.format(d).replace('.', '')}/${String(d.getFullYear()).slice(2)}`;
+  const toolHead = (text) => `<p class="muted tool__lead">${text}</p>`;
+  const statBox = (label, value, cls = '') => `<div class="tstat ${cls}"><span>${label}</span><strong>${value}</strong></div>`;
+
+  /* ----- Parcelamentos ----- */
+  function installGroups() {
+    const today = todayISO();
+    const map = new Map();
+    for (const e of state.expenses) if (e.group && e.inst) (map.get(e.group) || map.set(e.group, []).get(e.group)).push(e);
+    return [...map.values()].map((items) => {
+      items.sort((a, b) => a.date.localeCompare(b.date));
+      const n = Number(String(items[0].inst).split('/')[1]) || items.length;
+      const paidItems = items.filter((x) => x.date <= today);
+      const total = sum(items);
+      const paid = sum(paidItems);
+      const next = items.find((x) => x.date > today);
+      return {
+        title: items[0].title, cat: items[0].cat, n, count: paidItems.length, total, paid, left: total - paid,
+        parcel: items[items.length - 1].amount, next, end: items[items.length - 1].date, items,
+      };
+    }).sort((a, b) => (b.left > 0) - (a.left > 0) || a.end.localeCompare(b.end));
+  }
+  TOOL_RENDER.parcelas = () => {
+    const groups = installGroups();
+    const open = groups.filter((g) => g.left > 0);
+    const done = groups.filter((g) => g.left <= 0).slice(-3).reverse();
+    const thisMonth = monthKey(new Date());
+    const monthly = Array.from({ length: 6 }, (_, k) => {
+      const key = shiftMonth(thisMonth, k);
+      return { key, v: sum(open.flatMap((g) => g.items).filter((x) => x.date.startsWith(key))) };
+    });
+    const max = Math.max(1, ...monthly.map((m) => m.v));
+    const card = (g) => {
+      const c = catOf(g.cat);
+      const p = g.total ? (g.paid / g.total) * 100 : 0;
+      return `<article class="tcard">
+        <div class="tcard__top">${catIcon(c)}<div class="tcard__txt"><strong>${esc(g.title)}</strong>
+          <small>${g.left > 0 ? `${g.count}/${g.n} pagas · ${money(g.parcel)}/mês` : `${g.n}x quitado · ${money(g.total)}`}</small></div>
+          <span class="tcard__val">${g.left > 0 ? money(g.left) : '✓'}</span></div>
+        <div class="tbar"><span style="width:${p}%;--c:${c.color}"></span></div>
+        ${g.left > 0 ? `<small class="muted">Falta ${money(g.left)} · ${g.next ? `próxima em ${fmtDM.format(parseDay(g.next.date))}` : ''} · termina em ${monthYear(parseDay(g.end))}</small>` : ''}
+      </article>`;
+    };
+    toolBody.innerHTML = `
+      ${toolHead('Acompanhe as compras no cartão em vezes: quanto já pagou, quanto falta e quando termina.')}
+      <div class="tstats">
+        ${statBox('Em andamento', String(open.length))}
+        ${statBox('Por mês agora', money(monthly[0].v))}
+        ${statBox('Ainda a pagar', money(sum(open.map((g) => ({ amount: g.left })))), 'is-accent')}
+      </div>
+      ${open.length ? `<div class="tchart">${monthly.map((m) => `
+        <div class="tchart__col"><span class="tchart__v">${m.v ? money(m.v).replace(/,\d\d$/, '') : '—'}</span>
+          <i style="height:${Math.max(4, (m.v / max) * 70)}px"></i><small>${shortMonth(m.key)}</small></div>`).join('')}</div>
+        <p class="muted tool__note">Quanto das parcelas cai em cada um dos próximos meses.</p>` : ''}
+      <div class="tlist">${open.map(card).join('') || '<p class="empty-sm">Nenhuma compra parcelada em andamento.</p>'}</div>
+      ${done.length ? `<h3 class="tool__h3">Quitadas recentemente</h3><div class="tlist">${done.map(card).join('')}</div>` : ''}
+      <button type="button" class="btn btn--primary btn--block" id="parcNew">${ico('i-plus')}Nova compra parcelada</button>`;
+    $('#parcNew').onclick = () => { dlgTool.close(); openExpense(null, { kind: 'out', method: 'Crédito', inst: 2 }); };
+  };
+
+  /* ----- Assinaturas ----- */
+  function nextCharge(s, from = new Date()) {
+    const today = startOfDay(from);
+    const at = (y, m) => new Date(y, m, Math.min(s.day, daysInMonth(y, m)));
+    if (s.cycle === 'y') {
+      let d = at(today.getFullYear(), (s.month || 1) - 1);
+      if (d < today) d = at(today.getFullYear() + 1, (s.month || 1) - 1);
+      return d;
+    }
+    let d = at(today.getFullYear(), today.getMonth());
+    if (d < today) d = at(today.getFullYear(), today.getMonth() + 1);
+    return d;
+  }
+  const subMonthly = (s) => (s.cycle === 'y' ? Math.round(s.amount / 12) : s.amount);
+  const subsMonthly = () => state.subs.reduce((t, s) => t + subMonthly(s), 0);
+  TOOL_RENDER.subs = () => {
+    const edit = state.subs.find((s) => s.id === ui.editSub) || null;
+    const list = [...state.subs].sort((a, b) => nextCharge(a) - nextCharge(b));
+    const months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+    toolBody.innerHTML = `
+      ${toolHead('Cadastre suas assinaturas. O app avisa <b>2 dias antes</b> de cada cobrança e mostra quanto elas custam no ano.')}
+      <div class="tstats">
+        ${statBox('Por mês', money(subsMonthly()))}
+        ${statBox('Por ano', money(state.subs.reduce((t, s) => t + (s.cycle === 'y' ? s.amount : s.amount * 12), 0)), 'is-accent')}
+      </div>
+      <div class="tlist">${list.map((s) => {
+        const d = nextCharge(s);
+        const days = daysBetween(new Date(), d);
+        const when = days === 0 ? 'hoje' : days === 1 ? 'amanhã' : `em ${days} dias`;
+        return `<button type="button" class="tcard tcard--btn" data-sub="${s.id}">
+          <div class="tcard__top"><span class="cat-ic" style="--c:#ec4899">${ico('i-tv')}</span><div class="tcard__txt"><strong>${esc(s.name)}</strong>
+            <small>${s.cycle === 'y' ? 'Anual' : 'Mensal'} · renova ${when} (${fmtDM.format(d)})</small></div>
+            <span class="tcard__val">${money(s.amount)}</span></div>
+          ${days <= 2 ? '<span class="tbadge">Cobrança chegando</span>' : ''}
+        </button>`;
+      }).join('') || '<p class="empty-sm">Nenhuma assinatura cadastrada ainda.</p>'}</div>
+      <form class="tform" id="subForm" autocomplete="off">
+        <h3 class="tool__h3">${edit ? 'Editar assinatura' : 'Nova assinatura'}</h3>
+        <label>Nome <input name="name" required maxlength="40" placeholder="Ex.: Netflix" value="${edit ? esc(edit.name) : ''}"></label>
+        <div class="form__row">
+          <label>Valor <input name="amount" id="subAmount" inputmode="decimal" placeholder="39,90" value="${edit ? amountInput(edit.amount) : ''}" required>
+            <output id="subAmountOut" class="amount__out amount__out--sm"></output></label>
+          <label>Dia da cobrança <input name="day" type="number" min="1" max="31" inputmode="numeric" placeholder="Ex.: 15" value="${edit ? edit.day : ''}" required></label>
+        </div>
+        <div class="seg seg--mini" id="subCycle">
+          <button type="button" class="seg__btn ${!edit || edit.cycle !== 'y' ? 'is-active' : ''}" data-cycle="m">Mensal</button>
+          <button type="button" class="seg__btn ${edit && edit.cycle === 'y' ? 'is-active' : ''}" data-cycle="y">Anual</button>
+        </div>
+        <label id="subMonthWrap" ${edit && edit.cycle === 'y' ? '' : 'hidden'}>Mês da renovação
+          <select name="month">${months.map((m, i) => `<option value="${i + 1}" ${edit && edit.month === i + 1 ? 'selected' : ''}>${m}</option>`).join('')}</select></label>
+        <div class="form__foot">
+          ${edit ? '<button type="button" class="btn btn--danger-ghost" id="subDel">Excluir</button><button type="button" class="btn btn--ghost" id="subCancel">Cancelar</button>' : ''}
+          <span class="spacer"></span>
+          <button type="submit" class="btn btn--primary">${edit ? 'Salvar' : 'Adicionar'}</button>
+        </div>
+      </form>`;
+    const f = $('#subForm');
+    bindLiveAmount($('#subAmount'), $('#subAmountOut'))();
+    let cycle = edit && edit.cycle === 'y' ? 'y' : 'm';
+    $('#subCycle').onclick = (e) => {
+      const b = e.target.closest('[data-cycle]');
+      if (!b) return;
+      cycle = b.dataset.cycle;
+      $$('#subCycle .seg__btn').forEach((x) => x.classList.toggle('is-active', x === b));
+      $('#subMonthWrap').hidden = cycle !== 'y';
+    };
+    f.onsubmit = (e) => {
+      e.preventDefault();
+      const amount = readAmount($('#subAmount'));
+      const day = Math.min(31, Math.max(1, Number(f.day.value) || 0));
+      if (!amount || Number.isNaN(amount) || !f.day.value) { toast('Preencha o valor e o dia da cobrança.'); return; }
+      const data = { name: f.name.value.trim(), amount, day, cycle, month: cycle === 'y' ? Number(f.month.value) : 0, cat: 'lazer' };
+      if (edit) Object.assign(edit, data, { alerted: '' });
+      else state.subs.push({ id: uid(), ...data, alerted: '' });
+      ui.editSub = null;
+      save();
+      toast(edit ? 'Assinatura atualizada.' : `${data.name} adicionada. O app avisa 2 dias antes de renovar.`);
+      if (!alertsOn()) enableAlerts();
+      rerenderTool();
+    };
+    toolBody.querySelectorAll('[data-sub]').forEach((b) => { b.onclick = () => { ui.editSub = b.dataset.sub; rerenderTool(); $('#subForm').scrollIntoView({ behavior: 'smooth' }); }; });
+    if (edit) {
+      $('#subCancel').onclick = () => { ui.editSub = null; rerenderTool(); };
+      $('#subDel').onclick = () => {
+        if (!confirm(`Excluir a assinatura ${edit.name}?`)) return;
+        state.subs = state.subs.filter((s) => s !== edit);
+        ui.editSub = null;
+        save();
+        rerenderTool();
+      };
+    }
+  };
+  function checkSubs(now = new Date()) {
+    if (now.getHours() < 9) return;
+    for (const s of state.subs) {
+      const d = nextCharge(s, now);
+      const days = daysBetween(now, d);
+      const key = dateISO(d);
+      if (days > 2 || s.alerted === key) continue;
+      s.alerted = key;
+      save();
+      const when = days === 0 ? 'hoje' : days === 1 ? 'amanhã' : 'em 2 dias';
+      notify(`${s.name} renova ${when}`, `${money(s.amount)} · cobrança em ${fmtDM.format(d)}. Ainda usa? Se não, cancele antes.`, `sub-${s.id}`);
+      toast(`🔔 ${s.name} renova ${when} — ${money(s.amount)}`);
+    }
+  }
+
+  /* ----- Resumo da noite ----- */
+  function nightSummary(now = new Date()) {
+    const today = dateISO(now);
+    const spentToday = sum(outs().filter((e) => e.date === today));
+    const from = dateISO(addDays(now, -30));
+    const avg = Math.round(sum(outs().filter((e) => e.date >= from && e.date < today)) / 30);
+    let body;
+    if (!spentToday) body = `Dia sem gastos! 🎉 ${avg ? `Sua média é ${money(avg)} por dia.` : ''}`;
+    else if (!avg) body = `Hoje você gastou ${money(spentToday)}.`;
+    else {
+      const diff = (spentToday - avg) / avg;
+      body = `Hoje você gastou ${money(spentToday)}, ${pct(Math.abs(diff) * 100)} ${diff <= 0 ? 'abaixo' : 'acima'} da sua média (${money(avg)}/dia).`;
+    }
+    const key = monthKey(now);
+    if (state.budget) {
+      const spentMonth = sum(outs().filter(inMonth(key)));
+      body += ` No mês: ${money(spentMonth)} de ${money(state.budget)}.`;
+    }
+    return { title: 'Resumo do seu dia 🌙', body: body.trim() };
+  }
+  TOOL_RENDER.noite = () => {
+    const n = nightSummary();
+    toolBody.innerHTML = `
+      ${toolHead('Toda noite, no horário escolhido, você recebe uma notificação com quanto gastou no dia comparado com a sua média.')}
+      <div class="tpreview"><span class="tpreview__ic">${ico('i-moonstar')}</span><div><strong>${n.title}</strong><p>${esc(n.body)}</p></div></div>
+      <small class="muted tool__note">Prévia com os seus números de hoje.</small>
+      <label class="switch">
+        <input type="checkbox" id="nightOn" ${state.nightly.on ? 'checked' : ''}>
+        <span class="switch__ui" aria-hidden="true"></span>
+        <span class="switch__text"><strong>Receber o resumo da noite</strong><small>Uma notificação por dia</small></span>
+      </label>
+      <label>Horário <input type="time" id="nightTime" value="${state.nightly.time}"></label>
+      <button type="button" class="btn btn--primary btn--block" id="nightSave">Salvar</button>`;
+    $('#nightSave').onclick = () => {
+      const now = new Date();
+      const time = $('#nightTime').value || '21:30';
+      const on = $('#nightOn').checked;
+      const last = on && `${pad(now.getHours())}:${pad(now.getMinutes())}` >= time ? dateISO(now) : '';
+      state.nightly = { on, time, last };
+      save();
+      toast(on ? `Pronto! Todo dia às ${time} chega o resumo do seu dia.` : 'Resumo da noite desligado.');
+      if (on && !alertsOn()) enableAlerts();
+      dlgTool.close();
+    };
+  };
+  function checkNightly(now = new Date()) {
+    if (!state.nightly.on) return;
+    const today = dateISO(now);
+    if (state.nightly.last === today || `${pad(now.getHours())}:${pad(now.getMinutes())}` < (state.nightly.time || '21:30')) return;
+    state.nightly.last = today;
+    save();
+    const n = nightSummary(now);
+    notify(n.title, n.body, 'nightly');
+    toast(`🌙 ${n.body}`);
+  }
+
+  /* ----- Desafios e conquistas ----- */
+  const CH_TYPES = {
+    nocat: { icon: 'i-flag', label: (c) => `${c.days} dias sem gastar com ${catOf(c.cat).name}` },
+    cap: { icon: 'i-target', label: (c) => `Gastar no máximo ${money(c.limit)} em ${c.days} dias` },
+    log: { icon: 'i-check', label: (c) => `Lançar os gastos todos os dias por ${c.days} dias` },
+  };
+  function challengeStatus(c, now = new Date()) {
+    const today = dateISO(now);
+    const end = dateISO(addDays(parseDay(c.start), c.days - 1));
+    const upto = today < end ? today : end;
+    const elapsed = Math.min(c.days, Math.max(0, daysBetween(parseDay(c.start), now) + 1));
+    const inWin = (e) => e.date >= c.start && e.date <= upto;
+    let failed = false; let info = '';
+    if (c.type === 'nocat') {
+      const spent = sum(outs().filter((e) => e.cat === c.cat && inWin(e)));
+      failed = spent > 0;
+      info = failed ? `Gastou ${money(spent)} com ${catOf(c.cat).name}` : `${elapsed} de ${c.days} dias`;
+    } else if (c.type === 'cap') {
+      const spent = sum(outs().filter(inWin));
+      failed = spent > c.limit;
+      info = `${money(spent)} de ${money(c.limit)}`;
+    } else {
+      const days = new Set(state.expenses.filter(inWin).map((e) => e.date));
+      let missed = 0;
+      for (let d = parseDay(c.start); dateISO(d) < upto; d = addDays(d, 1)) if (!days.has(dateISO(d))) missed++;
+      failed = missed > 0;
+      info = `${days.size} de ${c.days} dias lançados`;
+    }
+    const finished = today > end || (c.type === 'log' && !failed && elapsed >= c.days && state.expenses.some((e) => e.date === end));
+    return { status: failed ? 'failed' : finished ? 'done' : 'active', elapsed, info, end };
+  }
+  function medals() {
+    const ex = state.expenses;
+    const dates = new Set(ex.map((e) => e.date));
+    let best = 0; let run = 0;
+    [...dates].sort().forEach((d, i, arr) => { run = i && daysBetween(parseDay(arr[i - 1]), parseDay(d)) === 1 ? run + 1 : 1; best = Math.max(best, run); });
+    const months = [...new Set(ex.map((e) => e.date.slice(0, 7)))].filter((k) => k < monthKey(new Date()));
+    const mOut = (k) => sum(outs().filter(inMonth(k)));
+    const mIn = (k) => sum(ex.filter(isIn).filter(inMonth(k)));
+    const zeroDays = (() => {
+      const k = monthKey(new Date()); const t = new Date(); let n = 0;
+      const od = new Set(outs().map((e) => e.date));
+      for (let d = 1; d < t.getDate(); d++) if (!od.has(`${k}-${pad(d)}`)) n++;
+      return n;
+    })();
+    return [
+      { icon: 'i-sparkle', name: 'Primeiro passo', hint: 'Lance seu primeiro gasto', ok: ex.length > 0 },
+      { icon: 'i-hash', name: 'Organizado', hint: '50 lançamentos', ok: ex.length >= 50, prog: `${Math.min(ex.length, 50)}/50` },
+      { icon: 'i-activity', name: 'Constância', hint: '7 dias seguidos lançando', ok: best >= 7, prog: `${Math.min(best, 7)}/7` },
+      { icon: 'i-target', name: 'No limite', hint: 'Fechar um mês dentro do orçamento', ok: !!state.budget && months.some((k) => mOut(k) > 0 && mOut(k) <= state.budget) },
+      { icon: 'i-wallet', name: 'Poupador', hint: 'Guardar 20% do que entrou num mês', ok: months.some((k) => mIn(k) > 0 && (mIn(k) - mOut(k)) / mIn(k) >= 0.2) },
+      { icon: 'i-piggy', name: 'Meta batida', hint: 'Completar uma meta de economia', ok: state.goals.some((g) => g.target && goalSaved(g) >= g.target) },
+      { icon: 'i-moonstar', name: 'Dia zero', hint: '3 dias sem gastar neste mês', ok: zeroDays >= 3, prog: `${Math.min(zeroDays, 3)}/3` },
+      { icon: 'i-trophy', name: 'Desafiante', hint: 'Vencer um desafio', ok: state.challenges.some((c) => challengeStatus(c).status === 'done') },
+    ];
+  }
+  TOOL_RENDER.desafios = () => {
+    const list = state.challenges.map((c) => ({ c, s: challengeStatus(c) }))
+      .sort((a, b) => (a.s.status === 'active' ? -1 : 0) - (b.s.status === 'active' ? -1 : 0) || b.c.start.localeCompare(a.c.start));
+    const ms = medals();
+    const cats = catList('out');
+    toolBody.innerHTML = `
+      ${toolHead('Crie desafios para gastar menos e ganhe medalhas conforme cria bons hábitos.')}
+      <h3 class="tool__h3">Seus desafios</h3>
+      <div class="tlist">${list.map(({ c, s }) => `
+        <article class="tcard tchal is-${s.status}">
+          <div class="tcard__top"><span class="tchal__ic">${ico(CH_TYPES[c.type].icon)}</span>
+            <div class="tcard__txt"><strong>${esc(CH_TYPES[c.type].label(c))}</strong><small>${s.info}</small></div></div>
+          <span class="tbadge tbadge--${s.status}">${s.status === 'done' ? '🏆 Venceu' : s.status === 'failed' ? 'Não foi dessa vez' : `${c.days - s.elapsed} dia${c.days - s.elapsed === 1 ? '' : 's'} restante${c.days - s.elapsed === 1 ? '' : 's'}`}</span>
+          ${s.status === 'active' ? `<div class="tbar"><span style="width:${(s.elapsed / c.days) * 100}%"></span></div>` : ''}
+          <button type="button" class="link tchal__del" data-delch="${c.id}">Remover</button>
+        </article>`).join('') || '<p class="empty-sm">Nenhum desafio ainda. Crie o primeiro abaixo!</p>'}</div>
+      <form class="tform" id="chForm">
+        <h3 class="tool__h3">Novo desafio</h3>
+        <label>Tipo
+          <select name="type" id="chType">
+            <option value="nocat">Ficar sem gastar com uma categoria</option>
+            <option value="cap">Gastar no máximo um valor</option>
+            <option value="log">Lançar os gastos todo dia</option>
+          </select></label>
+        <label id="chCatWrap">Categoria <select name="cat">${cats.map((c) => `<option value="${c.id}" ${c.id === 'alimentacao' ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>
+        <label id="chLimitWrap" hidden>Valor máximo <input name="limit" id="chLimit" inputmode="decimal" placeholder="Ex.: 300">
+          <output id="chLimitOut" class="amount__out amount__out--sm"></output></label>
+        <label>Duração
+          <select name="days"><option value="7">7 dias</option><option value="15">15 dias</option><option value="30">30 dias</option></select></label>
+        <button type="submit" class="btn btn--primary btn--block">${ico('i-flag')}Começar hoje</button>
+      </form>
+      <h3 class="tool__h3">Conquistas <small>${ms.filter((m) => m.ok).length} de ${ms.length}</small></h3>
+      <div class="medals">${ms.map((m) => `
+        <div class="medal ${m.ok ? 'is-ok' : ''}"><span class="medal__ic">${ico(m.icon)}</span><strong>${m.name}</strong>
+          <small>${m.ok ? 'Conquistada!' : m.hint}${!m.ok && m.prog ? ` · ${m.prog}` : ''}</small></div>`).join('')}</div>`;
+    bindLiveAmount($('#chLimit'), $('#chLimitOut'), { optional: true });
+    $('#chType').onchange = () => {
+      const t = $('#chType').value;
+      $('#chCatWrap').hidden = t !== 'nocat';
+      $('#chLimitWrap').hidden = t !== 'cap';
+    };
+    $('#chForm').onsubmit = (e) => {
+      e.preventDefault();
+      const f = e.target;
+      const c = { id: uid(), type: f.type.value, days: Number(f.days.value), start: todayISO() };
+      if (c.type === 'nocat') c.cat = f.cat.value;
+      if (c.type === 'cap') {
+        c.limit = readAmount($('#chLimit'));
+        if (!c.limit || Number.isNaN(c.limit)) { toast('Informe o valor máximo do desafio.'); return; }
+      }
+      state.challenges.push(c);
+      save();
+      toast(`Desafio começou! ${CH_TYPES[c.type].label(c)}. Boa sorte! 💪`);
+      rerenderTool();
+    };
+    toolBody.querySelectorAll('[data-delch]').forEach((b) => {
+      b.onclick = () => { state.challenges = state.challenges.filter((c) => c.id !== b.dataset.delch); save(); rerenderTool(); };
+    });
+  };
+
+  /* ----- Simuladores ----- */
+  ui.simTab = 'inv';
+  TOOL_RENDER.sim = () => {
+    const inv = ui.simTab === 'inv';
+    toolBody.innerHTML = `
+      <div class="seg" id="simTabs">
+        <button type="button" class="seg__btn ${inv ? 'is-active' : ''}" data-sim="inv">Investimento</button>
+        <button type="button" class="seg__btn ${inv ? '' : 'is-active'}" data-sim="fin">Financiamento</button>
+      </div>
+      ${inv ? `
+        ${toolHead('Quanto seu dinheiro rende com <b>juros compostos</b>, guardando um pouco todo mês.')}
+        <div class="form__row">
+          <label>Valor inicial <input data-s="ini" inputmode="decimal" value="1000"></label>
+          <label>Guardar por mês <input data-s="mes" inputmode="decimal" value="200"></label>
+        </div>
+        <div class="form__row">
+          <label>Rendimento ao ano (%) <input data-s="taxa" inputmode="decimal" value="10"></label>
+          <label>Por quantos anos <input data-s="anos" type="number" min="1" max="50" inputmode="numeric" value="5"></label>
+        </div>` : `
+        ${toolHead('Simule um <b>financiamento ou empréstimo</b> (tabela Price): valor da parcela e quanto paga de juros.')}
+        <div class="form__row">
+          <label>Valor do bem <input data-s="valor" inputmode="decimal" value="30000"></label>
+          <label>Entrada <input data-s="entrada" inputmode="decimal" value="5000"></label>
+        </div>
+        <div class="form__row">
+          <label>Juros ao mês (%) <input data-s="taxa" inputmode="decimal" value="1,5"></label>
+          <label>Número de parcelas <input data-s="n" type="number" min="1" max="480" inputmode="numeric" value="48"></label>
+        </div>`}
+      <div id="simOut"></div>`;
+    $('#simTabs').onclick = (e) => { const b = e.target.closest('[data-sim]'); if (b) { ui.simTab = b.dataset.sim; rerenderTool(); } };
+    const val = (k) => { const v = safeEval($(`[data-s="${k}"]`, toolBody).value || '0'); return Number.isFinite(v) && v >= 0 ? v : NaN; };
+    const calc = () => {
+      const out = $('#simOut');
+      if (inv) {
+        const ini = val('ini'); const mes = val('mes'); const taxa = val('taxa') / 100; const anos = Math.min(50, Math.round(val('anos')));
+        if ([ini, mes, taxa, anos].some(Number.isNaN) || anos < 1) { out.innerHTML = '<p class="empty-sm">Preencha os campos.</p>'; return; }
+        const i = (1 + taxa) ** (1 / 12) - 1;
+        let bal = ini; const years = [];
+        for (let m = 1; m <= anos * 12; m++) { bal = bal * (1 + i) + mes; if (m % 12 === 0) years.push({ y: m / 12, bal, put: ini + mes * m }); }
+        const put = ini + mes * anos * 12;
+        const step = Math.ceil(years.length / 10);
+        const shown = years.filter((y, k) => (k + 1) % step === 0 || k === years.length - 1);
+        const max = Math.max(...shown.map((y) => y.bal));
+        out.innerHTML = `
+          <div class="tresult"><span>Em ${anos} ano${anos > 1 ? 's' : ''} você terá</span><strong>${realMoney(toCents(bal))}</strong></div>
+          <div class="tstats">${statBox('Você guardou', realMoney(toCents(put)))}${statBox('Rendeu de juros', realMoney(toCents(bal - put)), 'is-good')}</div>
+          <div class="tchart tchart--stack">${shown.map((y) => `
+            <div class="tchart__col"><i class="is-juros" style="height:${((y.bal - y.put) / max) * 90}px"></i><i style="height:${(y.put / max) * 90}px"></i><small>${y.y}a</small></div>`).join('')}</div>
+          <p class="muted tool__note"><span class="dotk"></span> guardado <span class="dotk is-juros"></span> juros. Simulação com rendimento constante, sem impostos.</p>`;
+      } else {
+        const valor = val('valor'); const entrada = val('entrada'); const i = val('taxa') / 100; const n = Math.round(val('n'));
+        const p = valor - entrada;
+        if ([valor, entrada, i, n].some(Number.isNaN) || n < 1 || p <= 0) { out.innerHTML = '<p class="empty-sm">Confira os valores (a entrada deve ser menor que o valor do bem).</p>'; return; }
+        const pmt = i ? (p * i) / (1 - (1 + i) ** -n) : p / n;
+        const total = pmt * n;
+        out.innerHTML = `
+          <div class="tresult"><span>Parcela de</span><strong>${realMoney(toCents(pmt))}</strong><small>${n}x · financiando ${realMoney(toCents(p))}</small></div>
+          <div class="tstats">${statBox('Total pago', realMoney(toCents(total + entrada)))}${statBox('Só de juros', realMoney(toCents(total - p)), 'is-bad')}</div>
+          <div class="tsplit"><span style="width:${(p / total) * 100}%"></span></div>
+          <p class="muted tool__note">Você paga <b>${pct(((total - p) / p) * 100)}</b> a mais do que o valor financiado. ${hourValue() ? `A parcela custa ${hoursText(toCents(pmt))} do seu trabalho por mês.` : ''}</p>`;
+      }
+    };
+    toolBody.querySelectorAll('[data-s]').forEach((x) => x.addEventListener('input', calc));
+    calc();
+  };
+
+  /* ----- Horas de trabalho ----- */
+  function hourValue() {
+    const { income, hours } = state.work;
+    return income && hours ? Math.round(income / ((hours * 52) / 12)) : 0;
+  }
+  function hoursText(cents) {
+    const h = hourValue();
+    if (!h) return '';
+    const mins = Math.round((cents / h) * 60);
+    if (mins < 60) return `${mins} min`;
+    const hh = Math.floor(mins / 60); const mm = mins % 60;
+    return `${hh}h${mm ? ` ${pad(mm)}min` : ''}`;
+  }
+  TOOL_RENDER.horas = () => {
+    const h = hourValue();
+    const key = monthKey(new Date());
+    const month = outs().filter(inMonth(key));
+    const top = [...month].sort((a, b) => b.amount - a.amount).slice(0, 3);
+    const dayH = state.work.hours / 5 || 8;
+    toolBody.innerHTML = `
+      ${toolHead('Veja o preço das coisas em <b>horas da sua vida</b>. Ajuda a pensar duas vezes antes de comprar por impulso.')}
+      <div class="form__row">
+        <label>Quanto você ganha por mês <input id="wIncome" inputmode="decimal" placeholder="Ex.: 3000" value="${state.work.income ? amountInput(state.work.income) : ''}">
+          <output id="wIncomeOut" class="amount__out amount__out--sm"></output></label>
+        <label>Horas por semana <input id="wHours" type="number" min="1" max="100" inputmode="numeric" value="${state.work.hours}"></label>
+      </div>
+      ${h ? `
+        <div class="tresult"><span>Sua hora de trabalho vale</span><strong>${money(h)}</strong></div>
+        <label>Quanto custa? <input id="wPrice" inputmode="decimal" placeholder="Ex.: 400"></label>
+        <div id="wOut" class="tprice"></div>
+        <h3 class="tool__h3">Este mês em horas</h3>
+        <div class="tstats">${statBox('Gastos do mês', hoursText(sum(month)) || '—')}${statBox('Em dias de trabalho', num.format(Math.round((sum(month) / h / dayH) * 10) / 10))}</div>
+        <div class="tlist">${top.map((e) => `<div class="tcard"><div class="tcard__top">${catIcon(catOf(e.cat))}<div class="tcard__txt"><strong>${esc(e.title)}</strong><small>${money(e.amount)}</small></div><span class="tcard__val">${hoursText(e.amount)}</span></div></div>`).join('')}</div>`
+        : '<p class="empty-sm">Preencha quanto você ganha por mês para ver os valores em horas.</p>'}`;
+    bindLiveAmount($('#wIncome'), $('#wIncomeOut'), { optional: true })();
+    const saveWork = () => {
+      const income = readAmount($('#wIncome'));
+      const hours = Math.min(100, Math.max(1, Number($('#wHours').value) || 44));
+      if (Number.isNaN(income)) return;
+      const had = !!hourValue();
+      state.work = { income: income || 0, hours };
+      save();
+      if (!!hourValue() !== had || had) { const pos = toolBody.scrollTop; rerenderTool(); toolBody.scrollTop = pos; }
+    };
+    $('#wIncome').addEventListener('change', saveWork);
+    $('#wHours').addEventListener('change', saveWork);
+    if (h) {
+      const price = $('#wPrice');
+      const upd = () => {
+        const v = safeEval(price.value || '0');
+        const c = Number.isFinite(v) && v > 0 ? toCents(v) : 0;
+        $('#wOut').innerHTML = c ? `<strong>${hoursText(c)}</strong><span>de trabalho · ${num.format(Math.round((c / h / dayH) * 10) / 10)} dia(s) de ${num.format(dayH)}h</span>` : '';
+      };
+      price.addEventListener('input', upd);
+    }
+  };
+
+  /* ----- Retrospectiva do ano ----- */
+  const dlgRetro = $('#dlgRetro');
+  function retroData(year) {
+    const ys = String(year);
+    const ex = state.expenses.filter((e) => e.date.startsWith(ys));
+    const o = ex.filter(isOut); const inc = ex.filter(isIn);
+    const out = sum(o); const income = sum(inc);
+    const byCat = {};
+    o.forEach((e) => { byCat[e.cat] = (byCat[e.cat] || 0) + e.amount; });
+    const topCat = Object.entries(byCat).sort((a, b) => b[1] - a[1])[0];
+    const byMonth = {};
+    o.forEach((e) => { const k = e.date.slice(0, 7); byMonth[k] = (byMonth[k] || 0) + e.amount; });
+    const months = Object.entries(byMonth).sort((a, b) => b[1] - a[1]);
+    const biggest = [...o].sort((a, b) => b.amount - a.amount)[0];
+    const first = ex.map((e) => e.date).sort()[0];
+    const lastDay = String(new Date().getFullYear()) === ys ? todayISO() : `${ys}-12-31`;
+    const outDays = new Set(o.map((e) => e.date));
+    let zero = 0;
+    if (first) for (let d = parseDay(first); dateISO(d) < lastDay; d = addDays(d, 1)) if (!outDays.has(dateISO(d))) zero++;
+    return { year, out, income, count: ex.length, topCat, months, biggest, zero, saved: income - out };
+  }
+  function retroSlides(r) {
+    const c = r.topCat && catOf(r.topCat[0]);
+    const mName = (k) => cap(fmtMonthName.format(monthDate(k)));
+    const s = [
+      { k: 'intro', html: `<span class="retro__kicker">Nexa Money</span><h2>Seu ${r.year}<br>em números</h2><p>Toque para continuar ›</p>` },
+      { k: 'out', html: `<span class="retro__kicker">Você gastou</span><h2 class="retro__big">${money(r.out)}</h2><p>em ${r.count} lançamentos</p>` },
+    ];
+    if (r.income) s.push({ k: 'save', html: `<span class="retro__kicker">Entrou</span><h2 class="retro__big">${money(r.income)}</h2><p>${r.saved >= 0 ? `e você guardou <b>${money(r.saved)}</b> (${pct((r.saved / r.income) * 100)}) 💚` : `e gastou ${money(-r.saved)} a mais do que entrou`}</p>` });
+    if (c) s.push({ k: 'cat', html: `<span class="retro__kicker">Categoria campeã</span><span class="retro__cat" style="--c:${c.color}">${ico(c.icon)}</span><h2>${esc(c.name)}</h2><p>${money(r.topCat[1])} · ${pct((r.topCat[1] / r.out) * 100)} dos gastos</p>` });
+    if (r.months.length) s.push({ k: 'month', html: `<span class="retro__kicker">Mês mais caro</span><h2>${mName(r.months[0][0])}</h2><p>${money(r.months[0][1])}</p>${r.months.length > 1 ? `<span class="retro__kicker">Mês mais econômico</span><h3>${mName(r.months[r.months.length - 1][0])} · ${money(r.months[r.months.length - 1][1])}</h3>` : ''}` });
+    if (r.biggest) s.push({ k: 'big', html: `<span class="retro__kicker">Maior gasto do ano</span><h2>${esc(r.biggest.title)}</h2><p>${money(r.biggest.amount)} · ${fmtDM.format(parseDay(r.biggest.date))}</p>` });
+    s.push({ k: 'zero', html: `<span class="retro__kicker">Dias sem gastar</span><h2 class="retro__big">${r.zero}</h2><p>${r.zero ? 'dias em que você não gastou nada 🎉' : 'Que tal um desafio de dia sem gastos?'}</p>` });
+    s.push({ k: 'end', html: `<span class="retro__kicker">Isso foi seu ${r.year}!</span><h2>Bora deixar o próximo ainda melhor 🚀</h2><button type="button" class="btn btn--primary" id="retroShare">${ico('i-share')}Compartilhar</button>` });
+    return s;
+  }
+  let retro = null;
+  function openRetro() {
+    const year = new Date().getFullYear();
+    const r = retroData(year);
+    if (!r.count) { toast(`Ainda não há lançamentos em ${year} para a retrospectiva.`); return; }
+    retro = { r, slides: retroSlides(r), i: 0, timer: null };
+    $('#retroBars').innerHTML = retro.slides.map(() => '<span><i></i></span>').join('');
+    dlgRetro.showModal();
+    retroGo(0);
+  }
+  function retroGo(i) {
+    if (!retro) return;
+    clearTimeout(retro.timer);
+    if (i < 0) i = 0;
+    if (i >= retro.slides.length) { dlgRetro.close(); return; }
+    retro.i = i;
+    const sl = retro.slides[i];
+    const box = $('#retroSlide');
+    box.className = `retro__slide is-${sl.k}`;
+    box.innerHTML = `<div class="retro__in">${sl.html}</div>`;
+    dlgRetro.dataset.k = sl.k;
+    $$('#retroBars span').forEach((b, k) => { b.className = k < i ? 'is-done' : k === i ? 'is-on' : ''; });
+    const share = $('#retroShare');
+    if (share) share.onclick = (e) => { e.stopPropagation(); shareRetro(); };
+    if (i < retro.slides.length - 1) retro.timer = setTimeout(() => retroGo(i + 1), 5000);
+  }
+  $('#retroNext').addEventListener('click', () => retro && retroGo(retro.i + 1));
+  $('#retroPrev').addEventListener('click', () => retro && retroGo(retro.i - 1));
+  dlgRetro.addEventListener('close', () => { if (retro) clearTimeout(retro.timer); });
+  async function shareRetro() {
+    const r = retro.r;
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    const W = 1080; const H = 1920;
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    const x = cv.getContext('2d');
+    const g = x.createLinearGradient(0, 0, W, H);
+    g.addColorStop(0, '#2a1a6e'); g.addColorStop(0.55, '#5b4cf0'); g.addColorStop(1, '#9b3cf0');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    x.fillStyle = 'rgba(255,255,255,.08)';
+    x.beginPath(); x.arc(W * 0.85, 260, 320, 0, Math.PI * 2); x.fill();
+    x.beginPath(); x.arc(120, H - 220, 260, 0, Math.PI * 2); x.fill();
+    const F = 'Inter, system-ui, sans-serif';
+    x.fillStyle = '#fff';
+    x.font = `800 44px ${F}`; x.fillText('NEXA MONEY', 90, 170);
+    x.font = `800 120px ${F}`; x.fillText(`Meu ${r.year}`, 90, 330);
+    const c = r.topCat && catOf(r.topCat[0]);
+    const rows = withReal(() => [
+      ['Gastei', money(r.out)],
+      r.income ? ['Entrou', money(r.income)] : null,
+      r.income ? [r.saved >= 0 ? 'Guardei' : 'Fiquei no negativo', money(Math.abs(r.saved))] : null,
+      c ? ['Categoria campeã', c.name] : null,
+      r.biggest ? ['Maior gasto', `${r.biggest.title} · ${money(r.biggest.amount)}`] : null,
+      ['Dias sem gastar', String(r.zero)],
+      ['Lançamentos', String(r.count)],
+    ].filter(Boolean));
+    let y = 520;
+    for (const [k, v] of rows) {
+      x.fillStyle = 'rgba(255,255,255,.14)';
+      x.beginPath(); x.roundRect(70, y - 80, W - 140, 170, 40); x.fill();
+      x.fillStyle = 'rgba(255,255,255,.75)'; x.font = `600 38px ${F}`; x.fillText(k, 120, y - 10);
+      x.fillStyle = '#fff'; x.font = `800 62px ${F}`;
+      let t = v; while (x.measureText(t).width > W - 260 && t.length > 4) t = `${t.slice(0, -2)}…`;
+      x.fillText(t, 120, y + 62);
+      y += 200;
+    }
+    x.fillStyle = 'rgba(255,255,255,.7)'; x.font = `500 36px ${F}`; x.fillText('Feito com Nexa Money', 90, H - 90);
+    dlgRetro.close();
+    openImage({ canvas: cv, title: `Retrospectiva ${r.year}`, name: `nexa-money-retrospectiva-${r.year}`, text: `Meu ${r.year} no Nexa Money` });
+  }
+
   /* ---------------- Início ---------------- */
   function launchFixed() {
     const n = runFixed();
@@ -3604,10 +4235,12 @@
   checkReminders();
   checkDebts();
   checkDaily();
-  setInterval(() => { checkReminders(); checkDebts(); checkDaily(); }, CHECK_EVERY_MS);
+  checkSubs();
+  checkNightly();
+  setInterval(() => { checkReminders(); checkDebts(); checkDaily(); checkSubs(); checkNightly(); }, CHECK_EVERY_MS);
   // Atualiza "hoje/amanhã", fixos e médias quando o app volta para a tela.
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) { launchFixed(); checkReminders(); checkDebts(); checkDaily(); render(); }
+    if (!document.hidden) { launchFixed(); checkReminders(); checkDebts(); checkDaily(); checkSubs(); checkNightly(); render(); }
   });
 
   /* ---------------- Abertura do app ---------------- */
@@ -3686,7 +4319,7 @@
     { sel: '#btnReport', title: 'Relatório do mês', text: 'Gera um resumo bonito do mês em imagem ou PDF, pronto para salvar ou compartilhar.' },
     { sel: '.tab[data-view="gastos"]', view: 'gastos', title: 'Lista de gastos', text: 'Todos os lançamentos do mês, separados por dia. Busque pelo nome, filtre por categoria e toque em um item para editar ou apagar.' },
     { sel: '.tab[data-view="lembretes"]', view: 'lembretes', title: 'Lembretes de contas', text: 'Cadastre contas como aluguel, cartão e internet com a data de vencimento. O app te avisa antes para nada passar do prazo.' },
-    { sel: '.tab[data-view="calc"]', view: 'calc', title: 'Calculadora', text: 'Faça contas rápidas sem sair do app. Use o botão de tela cheia para teclas maiores e lance o resultado direto como gasto.' },
+    { sel: '#tabTools', title: 'Ferramentas', text: 'Aqui ficam as ferramentas extras: <b>calculadora</b>, compras <b>parceladas</b>, <b>assinaturas</b>, resumo da noite, <b>desafios</b>, retrospectiva do ano, <b>simuladores</b> e quanto custa em horas de trabalho.' },
     { sel: '#btnNotif', view: 'resumo', title: 'Notificações', text: 'Toque no sino para ativar ou desativar os avisos de lembretes, cobranças e limites. Azul significa ligado.' },
     { sel: '#btnPrivacy', title: 'Modo privacidade', text: 'O olho esconde todos os valores da tela. Ótimo para abrir o app perto de outras pessoas.' },
     { sel: '#btnMenu', title: 'Mais opções', text: 'Aqui ficam orçamento, fixos, categorias, cartão de crédito, backup e este tour, caso queira rever quando quiser.' },
