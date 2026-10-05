@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="style.css?v=23">
+  <link rel="stylesheet" href="style.css?v=24">
   <!-- Garante ícones do tamanho certo mesmo antes do CSS carregar. -->
   <style>.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}</style>
   <!-- Abertura e tela de início do Nexa Money: ficam aqui para aparecer na hora, antes do resto da página. -->
@@ -219,6 +219,14 @@
     </defs>
     <!-- Logo do Nexa Money (N em traço contínuo com seta e $) -->
     <symbol id="nx-logo" viewBox="0 0 100 100"><g transform="translate(-4 -4)" stroke-linecap="round" stroke-linejoin="round"><g filter="url(#nxf)"><path d="M33 64V34c0-7.5 5-12.5 12-12.5 4.5 0 8 2.3 10 6L66.5 59c2 3.7 5.5 6 9.5 6c5.3 0 8-4 8-10V31" fill="none" stroke="url(#nxg)" stroke-width="12"/><path d="M71.5 34H96.5L84 17Z" fill="url(#nxg)" stroke="url(#nxg)" stroke-width="3"/></g><path class="nx-k" d="M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9" fill="none" stroke="#fff" stroke-width="12"/><path class="nx-k" d="M28 55v9M28 92v7" fill="none" stroke="#fff" stroke-width="11"/><path class="nx-d" d="M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9" fill="none" stroke="#0f4a30" stroke-width="6.2"/><path class="nx-d" d="M28 55v9M28 92v7" fill="none" stroke="#0f4a30" stroke-width="5.2"/></g></g></symbol>
+    <symbol id="i-apps" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="3.5"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5Z"/><path d="m3 12 9 5 9-5M3 17l9 5 9-5"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0Z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1Z"/></symbol>
+    <symbol id="i-percent" viewBox="0 0 24 24"><path d="M19 5 5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></symbol>
+    <symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M6 2h12M6 22h12M7 2v4a5 5 0 0 0 10 0V2M7 22v-4a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-moonstar" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><path d="M19 3v4M17 5h4"/></symbol>
+    <symbol id="i-tv" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="3"/><path d="m17 2-5 5-5-5"/></symbol>
     <symbol id="i-tour" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16.2 7.8-2.1 6.3-6.3 2.1 2.1-6.3z"/></symbol>
     <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
     <symbol id="i-bell-on" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M4 2C2.8 3.7 2 5.7 2 8"/><path d="M22 8c0-2.3-.8-4.3-2-6"/></symbol>
@@ -597,7 +605,7 @@
     <button type="button" class="tab" data-view="gastos"><svg class="ic"><use href="#i-receipt"/></svg>Gastos</button>
     <button class="fab" id="btnAdd" type="button" aria-label="Novo gasto"><svg class="ic"><use href="#i-plus"/></svg></button>
     <button type="button" class="tab" data-view="lembretes"><svg class="ic"><use href="#i-calendar"/></svg>Lembretes<em id="remBadge" hidden></em></button>
-    <button type="button" class="tab" data-view="calc"><svg class="ic"><use href="#i-calc"/></svg>Calcular</button>
+    <button type="button" class="tab" id="tabTools" aria-haspopup="dialog"><svg class="ic"><use href="#i-apps"/></svg>Ferramentas</button>
   </nav>
 
   <!-- ============ DIÁLOGO: GASTO ============ -->
@@ -1040,6 +1048,39 @@
     </form>
   </dialog>
 
+
+  <!-- ============ FERRAMENTAS (cartão que sobe da parte de baixo) ============ -->
+  <dialog id="dlgTools" class="dlg dlg--sheet" aria-label="Ferramentas">
+    <div class="sheet">
+      <span class="sheet__grip" aria-hidden="true"></span>
+      <header class="form__head">
+        <h2>Ferramentas</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="tools" id="toolsGrid"></div>
+    </div>
+  </dialog>
+
+  <dialog id="dlgTool" class="dlg">
+    <div class="form tool">
+      <header class="form__head">
+        <button type="button" class="icon-btn" id="toolBack" aria-label="Voltar para ferramentas"><svg class="ic"><use href="#i-left"/></svg></button>
+        <h2 id="toolTitle"></h2>
+        <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="tool__body" id="toolBody"></div>
+    </div>
+  </dialog>
+
+  <!-- Retrospectiva do ano (em tela cheia, estilo story) -->
+  <dialog id="dlgRetro" class="retro" aria-label="Retrospectiva do ano">
+    <div class="retro__bars" id="retroBars"></div>
+    <button type="button" class="retro__close" data-close aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
+    <div class="retro__slide" id="retroSlide"></div>
+    <button type="button" class="retro__nav retro__nav--prev" id="retroPrev" aria-label="Anterior"></button>
+    <button type="button" class="retro__nav retro__nav--next" id="retroNext" aria-label="Próximo"></button>
+  </dialog>
+
   <!-- ============ DIÁLOGO: FOTO ============ -->
   <dialog id="dlgPhoto" class="dlg dlg--photo">
     <button type="button" class="icon-btn photo-close" data-close aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
@@ -1048,6 +1089,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="app.js?v=23"></script>
+  <script src="app.js?v=24"></script>
 </body>
 </html>
