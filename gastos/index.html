@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="style.css?v=28">
+  <link rel="stylesheet" href="style.css?v=29">
   <!-- Garante ícones do tamanho certo mesmo antes do CSS carregar. -->
   <style>.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}</style>
   <!-- Abertura e tela de início do Nexa Money: ficam aqui para aparecer na hora, antes do resto da página. -->
@@ -211,6 +211,34 @@
     </div>
   </section>
 
+  <!-- Cadastro / login (conta guardada neste aparelho) -->
+  <section class="auth" id="auth" hidden aria-label="Entrar no Nexa Money">
+    <svg class="auth__bg" aria-hidden="true" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice"><use href="#nx-rib" x="150" y="-40" width="300" height="300" class="auth__rib"/><use href="#nx-rib" x="-120" y="560" width="300" height="300" class="auth__rib auth__rib--fill"/></svg>
+    <div class="auth__inner">
+      <div class="auth__brand"><span class="auth__logo"><svg viewBox="0 0 100 100" width="40" height="40"><use href="#nx-logo"/></svg></span><b>Nexa <em>Money</em></b></div>
+      <h1 id="authTitle">Crie sua conta</h1>
+      <p class="auth__sub" id="authSub">Leva menos de 1 minuto. Seus dados ficam protegidos com senha.</p>
+      <form class="auth__form" id="authForm" novalidate autocomplete="on">
+        <label class="auth__field" id="authNameWrap"><span>Nome</span>
+          <div class="auth__input"><svg class="ic"><use href="#i-user"/></svg><input name="name" autocomplete="name" placeholder="Como quer ser chamado?" maxlength="40"></div></label>
+        <label class="auth__field"><span>E-mail</span>
+          <div class="auth__input"><svg class="ic"><use href="#i-mail"/></svg><input name="email" type="email" inputmode="email" autocomplete="email" placeholder="voce@email.com" autocapitalize="off" spellcheck="false"></div></label>
+        <label class="auth__field"><span>Senha</span>
+          <div class="auth__input"><svg class="ic"><use href="#i-lock"/></svg><input name="password" type="password" autocomplete="new-password" placeholder="Mínimo de 6 caracteres">
+            <button type="button" class="auth__eye" id="authEye" aria-label="Mostrar senha"><svg class="ic"><use href="#i-eye"/></svg></button></div>
+          <div class="auth__meter" id="authMeter" aria-hidden="true"><i></i><i></i><i></i><small></small></div></label>
+        <label class="auth__field" id="authConfirmWrap"><span>Confirmar senha</span>
+          <div class="auth__input"><svg class="ic"><use href="#i-lock"/></svg><input name="confirm" type="password" autocomplete="new-password" placeholder="Repita a senha"></div></label>
+        <label class="auth__keep"><input type="checkbox" name="keep" checked><span class="auth__check" aria-hidden="true"></span>Manter conectado neste aparelho</label>
+        <p class="auth__error" id="authError" role="alert" hidden></p>
+        <button type="submit" class="auth__go" id="authGo">Criar conta</button>
+        <button type="button" class="auth__link" id="authForgot" hidden>Esqueci minha senha</button>
+      </form>
+      <p class="auth__switch" id="authSwitch"></p>
+      <p class="auth__note"><svg class="ic"><use href="#i-lock"/></svg>Sua conta e seus dados ficam guardados só neste aparelho.</p>
+    </div>
+  </section>
+
   <!-- Ícones (traço fino, estilo moderno) -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
@@ -227,6 +255,9 @@
     <symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M6 2h12M6 22h12M7 2v4a5 5 0 0 0 10 0V2M7 22v-4a5 5 0 0 1 10 0v4"/></symbol>
     <symbol id="i-moonstar" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><path d="M19 3v4M17 5h4"/></symbol>
     <symbol id="i-tv" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="3"/><path d="m17 2-5 5-5-5"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m22 7-10 6L2 7"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="3"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
     <symbol id="i-tour" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16.2 7.8-2.1 6.3-6.3 2.1 2.1-6.3z"/></symbol>
     <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
     <symbol id="i-bell-on" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M4 2C2.8 3.7 2 5.7 2 8"/><path d="M22 8c0-2.3-.8-4.3-2-6"/></symbol>
@@ -349,6 +380,7 @@
           <button type="button" data-action="export-ics"><svg class="ic"><use href="#i-calendar"/></svg>Lembretes p/ calendário (.ics)</button>
           <button type="button" data-action="export-json"><svg class="ic"><use href="#i-download"/></svg>Fazer backup (.json)</button>
           <button type="button" data-action="import-json"><svg class="ic"><use href="#i-upload"/></svg>Restaurar backup</button>
+          <button type="button" data-action="logout" id="menuLogout" hidden><svg class="ic"><use href="#i-logout"/></svg>Sair da conta</button>
         </div>
         <input type="file" id="fileImport" accept="application/json,.json" hidden>
       </div>
@@ -1091,6 +1123,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="app.js?v=28"></script>
+  <script src="app.js?v=29"></script>
 </body>
 </html>

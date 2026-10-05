@@ -3435,6 +3435,10 @@
     menu.hidden = true;
     const action = b.dataset.action;
     if (action === 'install') installApp();
+    else if (action === 'logout') {
+      if (!authGet()) showAuth(null, 'signup');
+      else if (confirm('Sair da conta? Para voltar, entre com seu e-mail e senha.')) logout();
+    }
     else if (action === 'tour') startTour();
     else if (action === 'budget') openBudget();
     else if (action === 'goal') openGoal();
@@ -4456,11 +4460,171 @@
     setTimeout(() => document.body.classList.remove('app-enter'), 1600);
   }
   // Abertura (N se desenhando) → tela de início → "Acessar meu painel" → painel com a entrada animada.
+  /* ---------------- Conta: cadastro e login (guardados neste aparelho) ---------------- */
+  // A senha nunca é salva: guardamos só um "resumo" dela (PBKDF2 + sal), como fazem os sites.
+  const AUTH_KEY = 'nexa-auth';
+  const SESSION_KEY = 'nexa-session';
+  const SKIP_KEY = 'nexa-auth-skip';
+  const store = (fn) => { try { return fn(); } catch { return null; } };
+  const authGet = () => store(() => JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'));
+  const sessionOk = () => {
+    const a = authGet();
+    if (!a) return false;
+    return store(() => localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY)) === a.email;
+  };
+  // Precisa mostrar a tela de conta? Sim se há conta sem sessão, ou se nunca criou nem pulou.
+  const authNeeded = () => (authGet() ? !sessionOk() : !store(() => localStorage.getItem(SKIP_KEY)));
+  const toB64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  async function hashPass(pass, saltB64, iter) {
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveBits']);
+    const salt = Uint8Array.from(atob(saltB64), (c) => c.charCodeAt(0));
+    const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: iter }, key, 256);
+    return toB64(bits);
+  }
+  function startSession(email, keep) {
+    store(() => {
+      (keep ? localStorage : sessionStorage).setItem(SESSION_KEY, email);
+      (keep ? sessionStorage : localStorage).removeItem(SESSION_KEY);
+    });
+  }
+  function logout() {
+    store(() => { localStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(SESSION_KEY); });
+    location.reload();
+  }
+  function passScore(p) {
+    let s = 0;
+    if (p.length >= 6) s++;
+    if (p.length >= 10) s++;
+    if (/[a-z]/.test(p) && /[A-Z]/.test(p)) s++;
+    if (/\d/.test(p)) s++;
+    if (/[^A-Za-z0-9]/.test(p)) s++;
+    return p.length < 6 ? 0 : Math.min(3, Math.ceil(s / 1.7));
+  }
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+  function showAuth(onDone, mode = authGet() ? 'login' : 'signup') {
+    const box = $('#auth');
+    const f = $('#authForm');
+    const signup = mode === 'signup';
+    const acc = authGet();
+    f.reset();
+    $('#authTitle').textContent = signup ? 'Crie sua conta' : `Olá de novo${acc && acc.name ? `, ${acc.name.split(' ')[0]}` : ''}!`;
+    $('#authSub').textContent = signup ? 'Leva menos de 1 minuto. Seus dados ficam protegidos com senha.' : 'Entre com seu e-mail e senha para ver seu painel.';
+    $('#authNameWrap').hidden = !signup;
+    $('#authConfirmWrap').hidden = !signup;
+    $('#authMeter').hidden = !signup;
+    $('#authForgot').hidden = signup;
+    f.password.autocomplete = signup ? 'new-password' : 'current-password';
+    f.password.placeholder = signup ? 'Mínimo de 6 caracteres' : 'Sua senha';
+    $('#authGo').textContent = signup ? 'Criar conta' : 'Entrar';
+    if (!signup && acc) f.email.value = acc.email;
+    $('#authSwitch').innerHTML = signup
+      ? (acc ? '' : '<button type="button" class="auth__link" data-auth="skip">Continuar sem conta</button>')
+      : '';
+    const err = $('#authError');
+    err.hidden = true;
+    box.hidden = false;
+    box.classList.remove('is-leaving');
+    box.classList.add('is-in');
+    setTimeout(() => (signup ? f.name : f.password).focus({ preventScroll: true }), 450);
+
+    const fail = (msg) => {
+      err.textContent = msg;
+      err.hidden = false;
+      $('.auth__inner', box).animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-8px)' }, { transform: 'translateX(8px)' }, { transform: 'translateX(-4px)' }, { transform: 'translateX(0)' }], { duration: 320 });
+    };
+    const finish = (name) => {
+      box.classList.add('is-leaving');
+      setTimeout(() => { box.hidden = true; box.classList.remove('is-in', 'is-leaving'); }, 520);
+      updateAccountItem();
+      onDone && onDone();
+      if (name) setTimeout(() => toast(`Olá, ${name.split(' ')[0]}! 👋`), 900);
+    };
+    f.oninput = () => { if (!err.classList.contains('is-info')) err.hidden = true; };
+    f.password.oninput = () => {
+      if (!signup) return;
+      const sc = passScore(f.password.value);
+      $('#authMeter').dataset.s = f.password.value ? sc : '';
+      $('#authMeter small').textContent = f.password.value ? ['Muito curta', 'Fraca', 'Boa', 'Forte'][sc] : '';
+    };
+    $('#authEye').onclick = () => {
+      const show = f.password.type === 'password';
+      f.password.type = show ? 'text' : 'password';
+      if (signup) f.confirm.type = f.password.type;
+      $('#authEye use').setAttribute('href', show ? '#i-eye-off' : '#i-eye');
+      $('#authEye').setAttribute('aria-label', show ? 'Esconder senha' : 'Mostrar senha');
+    };
+    $('#authSwitch').onclick = (e) => {
+      if (!e.target.closest('[data-auth="skip"]')) return;
+      store(() => localStorage.setItem(SKIP_KEY, '1'));
+      finish();
+    };
+    $('#authForgot').onclick = () => {
+      fail('Como a conta fica só neste aparelho, ainda não dá para recuperar a senha por e-mail. Se não lembrar, toque em "Criar nova conta": seus lançamentos continuam salvos.');
+      err.classList.add('is-info');
+      if (!$('#authReset')) err.insertAdjacentHTML('afterend', '<button type="button" class="auth__link" id="authReset">Criar nova conta</button>');
+      $('#authReset').onclick = () => {
+        if (!confirm('Criar uma nova conta neste aparelho? A conta antiga deixa de valer, mas seus lançamentos continuam aqui.')) return;
+        store(() => localStorage.removeItem(AUTH_KEY));
+        $('#authReset').remove();
+        showAuth(onDone, 'signup');
+      };
+    };
+    f.onsubmit = async (e) => {
+      e.preventDefault();
+      err.hidden = true;
+      err.classList.remove('is-info');
+      const email = f.email.value.trim().toLowerCase();
+      const pass = f.password.value;
+      if (signup && f.name.value.trim().length < 2) { fail('Digite seu nome.'); f.name.focus(); return; }
+      if (!EMAIL_RE.test(email)) { fail('Digite um e-mail válido.'); f.email.focus(); return; }
+      if (pass.length < 6) { fail('A senha precisa ter pelo menos 6 caracteres.'); f.password.focus(); return; }
+      if (!crypto.subtle) { fail('Este navegador não permite criar a conta com segurança. Abra o app pelo endereço com https.'); return; }
+      const go = $('#authGo');
+      go.disabled = true;
+      go.classList.add('is-busy');
+      try {
+        if (signup) {
+          if (pass !== f.confirm.value) { fail('As senhas não são iguais.'); f.confirm.focus(); return; }
+          const salt = toB64(crypto.getRandomValues(new Uint8Array(16)));
+          const iter = 150000;
+          const hash = await hashPass(pass, salt, iter);
+          const name = f.name.value.trim();
+          store(() => localStorage.setItem(AUTH_KEY, JSON.stringify({ name, email, salt, iter, hash, created: new Date().toISOString() })));
+          store(() => localStorage.removeItem(SKIP_KEY));
+          startSession(email, f.keep.checked);
+          finish(name);
+        } else {
+          const a = authGet();
+          const ok = a && a.email === email && (await hashPass(pass, a.salt, a.iter)) === a.hash;
+          if (!ok) { fail('E-mail ou senha incorretos.'); f.password.select(); return; }
+          startSession(email, f.keep.checked);
+          finish(a.name);
+        }
+      } finally {
+        go.disabled = false;
+        go.classList.remove('is-busy');
+      }
+    };
+  }
+  function updateAccountItem() {
+    const b = $('#menuLogout');
+    b.hidden = false;
+    b.lastChild.textContent = authGet() ? 'Sair da conta' : 'Criar conta / entrar';
+  }
+  updateAccountItem();
+
   function runSplash(skip) {
     const splash = $('#splash');
     const welcome = $('#welcome');
     if (!splash) return;
-    if (skip) { splash.remove(); welcome.remove(); return; }
+    if (skip) {
+      splash.remove(); welcome.remove();
+      // Atalhos pulam a abertura, mas não o login de quem tem conta.
+      if (authGet() && !sessionOk()) showAuth();
+      return;
+    }
     const showWelcome = () => {
       welcome.hidden = false;
       welcome.classList.add('is-in');
@@ -4478,8 +4642,9 @@
     setTimeout(finish, reduceMotion() ? 350 : 2600);
     $('#welcomeGo').addEventListener('click', () => {
       welcome.classList.add('is-leaving');
-      playEntrance();
       setTimeout(() => welcome.remove(), 520);
+      if (authNeeded()) showAuth(playEntrance);
+      else playEntrance();
     });
   }
 
