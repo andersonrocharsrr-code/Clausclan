@@ -4356,7 +4356,7 @@
   dlgRetro.addEventListener('close', () => { if (retro) clearTimeout(retro.timer); });
   async function shareRetro() {
     const r = retro.r;
-    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    if (document.fonts) await Promise.all([500, 600, 800].map((w) => document.fonts.load(`${w} 40px Jakarta`).catch(() => null)));
     const W = 1080; const H = 1920;
     const cv = document.createElement('canvas');
     cv.width = W; cv.height = H;
@@ -4374,7 +4374,7 @@
     };
     drawRib(430, -170, 720, false, '#cfe5d9', 1.6);
     drawRib(380, H - 560, 700, true, '#f0f7f3', 12);
-    const F = 'Inter, system-ui, sans-serif';
+    const F = "'Jakarta', Inter, system-ui, sans-serif";
     x.fillStyle = MUT; x.font = `600 40px ${F}`; x.fillText('Retrospectiva Nexa Money', 90, 330);
     x.fillStyle = G; x.font = `800 210px ${F}`; x.fillText(String(r.year), 80, 520);
     const c = r.cats[0] && catOf(r.cats[0][0]);

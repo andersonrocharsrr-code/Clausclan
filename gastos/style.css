@@ -1235,6 +1235,11 @@ html.is-touring { scroll-behavior: smooth; }
 .medal strong { font-size: 13px; }
 .medal small { font-size: 11px; color: var(--muted); line-height: 1.3; }
 
+/* Fonte da retrospectiva: Plus Jakarta Sans (OFL), guardada no próprio app. */
+@font-face { font-family: 'Jakarta'; font-style: normal; font-weight: 500; font-display: swap; src: url('fonts/jakarta-500.woff2') format('woff2'); }
+@font-face { font-family: 'Jakarta'; font-style: normal; font-weight: 600; font-display: swap; src: url('fonts/jakarta-600.woff2') format('woff2'); }
+@font-face { font-family: 'Jakarta'; font-style: normal; font-weight: 700; font-display: swap; src: url('fonts/jakarta-700.woff2') format('woff2'); }
+@font-face { font-family: 'Jakarta'; font-style: normal; font-weight: 800; font-display: swap; src: url('fonts/jakarta-800.woff2') format('woff2'); }
 /* Retrospectiva (story) — fundo branco, uma cor só (verde da marca) e o traço do N ao fundo */
 .retro {
   --g: #1f7a4f; --g2: #15573a; --soft: #eaf4ee; --ink: #10231a; --mut: #5b6b63;
@@ -1445,3 +1450,15 @@ html.is-touring { scroll-behavior: smooth; }
 .retro__share { background: linear-gradient(135deg, #1f7a4f, #15573a); padding: 16px 26px; }
 @media (prefers-reduced-motion: reduce) { .retro__bg.is-draw .rib--line, .retro__bg.is-draw .rib--fill { animation: none; } .px { transition: none; } }
 .rbars { margin-top: 30px; }
+
+/* Retrospectiva — tipografia */
+.retro, .retro button { font-family: 'Jakarta', Inter, system-ui, sans-serif; font-feature-settings: "tnum" 0, "ss01" 1; }
+.retro h2 { font-weight: 800; letter-spacing: -.035em; word-spacing: .05em; }
+.retro__year { font-weight: 800; letter-spacing: -.07em !important; }
+.retro__num { font-weight: 800; letter-spacing: -.045em; font-feature-settings: "tnum" 1; }
+.retro p { font-weight: 500; letter-spacing: .005em; word-spacing: .04em; }
+.retro__kicker { font-weight: 700; letter-spacing: .01em; word-spacing: .05em; }
+.rsum b, .rring b, .rticket > b { letter-spacing: -.02em; }
+.rrank__row small, .rrank__row b, .rsum small, .rdays__legend, .rticket small, .rbars__col em { letter-spacing: .005em; word-spacing: .04em; }
+.retro__brand { font-weight: 800; letter-spacing: 0; word-spacing: .06em; }
+.retro__hint { letter-spacing: .01em; word-spacing: .05em; }
