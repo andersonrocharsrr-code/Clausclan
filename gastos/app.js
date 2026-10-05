@@ -4356,17 +4356,24 @@
     const cv = document.createElement('canvas');
     cv.width = W; cv.height = H;
     const x = cv.getContext('2d');
-    const g = x.createLinearGradient(0, 0, W, H);
-    g.addColorStop(0, '#2a1a6e'); g.addColorStop(0.55, '#5b4cf0'); g.addColorStop(1, '#9b3cf0');
-    x.fillStyle = g; x.fillRect(0, 0, W, H);
-    x.fillStyle = 'rgba(255,255,255,.08)';
-    x.beginPath(); x.arc(W * 0.85, 260, 320, 0, Math.PI * 2); x.fill();
-    x.beginPath(); x.arc(120, H - 220, 260, 0, Math.PI * 2); x.fill();
+    const G = '#15573a'; const INK = '#10231a'; const MUT = '#5b6b63'; const LINE = '#e3ebe6';
+    x.fillStyle = '#fff'; x.fillRect(0, 0, W, H);
+    // Traço do N da marca ao fundo, bem suave.
+    const rib = new Path2D('M33 64V34c0-7.5 5-12.5 12-12.5 4.5 0 8 2.3 10 6L66.5 59c2 3.7 5.5 6 9.5 6c5.3 0 8-4 8-10V31');
+    const arrow = new Path2D('M71.5 34H96.5L84 17Z');
+    const drawRib = (dx, dy, size, fill, color, width) => {
+      x.save(); x.translate(dx, dy); x.scale(size / 100, size / 100);
+      x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = color; x.lineWidth = width;
+      x.stroke(rib); if (fill) { x.fillStyle = color; x.fill(arrow); } x.stroke(arrow);
+      x.restore();
+    };
+    drawRib(430, -170, 720, false, '#cfe5d9', 1.4);
+    drawRib(470, -140, 720, false, '#dcece3', .8);
+    drawRib(380, H - 560, 700, true, '#f0f7f3', 12);
     const F = 'Inter, system-ui, sans-serif';
-    x.fillStyle = '#fff';
-    x.font = `800 44px ${F}`; x.fillText('NEXA MONEY', 90, 170);
-    x.font = `800 120px ${F}`; x.fillText(`Meu ${r.year}`, 90, 330);
-    const c = r.topCat && catOf(r.topCat[0]);
+    x.fillStyle = MUT; x.font = `600 40px ${F}`; x.fillText('Retrospectiva Nexa Money', 90, 330);
+    x.fillStyle = G; x.font = `800 210px ${F}`; x.fillText(String(r.year), 80, 520);
+    const c = r.cats[0] && catOf(r.cats[0][0]);
     const rows = withReal(() => [
       ['Gastei', money(r.out)],
       r.income ? ['Entrou', money(r.income)] : null,
@@ -4374,19 +4381,18 @@
       c ? ['Categoria campeã', c.name] : null,
       r.biggest ? ['Maior gasto', `${r.biggest.title} · ${money(r.biggest.amount)}`] : null,
       ['Dias sem gastar', String(r.zero)],
-      ['Lançamentos', String(r.count)],
     ].filter(Boolean));
-    let y = 520;
+    let y = 700;
     for (const [k, v] of rows) {
-      x.fillStyle = 'rgba(255,255,255,.14)';
-      x.beginPath(); x.roundRect(70, y - 80, W - 140, 170, 40); x.fill();
-      x.fillStyle = 'rgba(255,255,255,.75)'; x.font = `600 38px ${F}`; x.fillText(k, 120, y - 10);
-      x.fillStyle = '#fff'; x.font = `800 62px ${F}`;
+      x.fillStyle = '#fff'; x.strokeStyle = LINE; x.lineWidth = 3;
+      x.beginPath(); x.roundRect(70, y - 80, W - 140, 160, 36); x.fill(); x.stroke();
+      x.fillStyle = MUT; x.font = `500 36px ${F}`; x.fillText(k, 120, y - 14);
+      x.fillStyle = G; x.font = `800 58px ${F}`;
       let t = v; while (x.measureText(t).width > W - 260 && t.length > 4) t = `${t.slice(0, -2)}…`;
-      x.fillText(t, 120, y + 62);
-      y += 200;
+      x.fillText(t, 120, y + 56);
+      y += 186;
     }
-    x.fillStyle = 'rgba(255,255,255,.7)'; x.font = `500 36px ${F}`; x.fillText('Feito com Nexa Money', 90, H - 90);
+    x.fillStyle = INK; x.font = `600 34px ${F}`; x.fillText('Feito com Nexa Money', 90, H - 90);
     dlgRetro.close();
     openImage({ canvas: cv, title: `Retrospectiva ${r.year}`, name: `nexa-money-retrospectiva-${r.year}`, text: `Meu ${r.year} no Nexa Money` });
   }
