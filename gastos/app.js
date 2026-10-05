@@ -4065,48 +4065,81 @@
     const hh = Math.floor(mins / 60); const mm = mins % 60;
     return `${hh}h${mm ? ` ${pad(mm)}min` : ''}`;
   }
-  TOOL_RENDER.horas = () => {
+  // Texto amigável: "25 horas e 26 minutos".
+  function hoursLong(cents) {
     const h = hourValue();
-    const key = monthKey(new Date());
-    const month = outs().filter(inMonth(key));
-    const top = [...month].sort((a, b) => b.amount - a.amount).slice(0, 3);
-    const dayH = state.work.hours / 5 || 8;
+    if (!h || !cents) return '';
+    const mins = Math.max(1, Math.round((cents / h) * 60));
+    const hh = Math.floor(mins / 60); const mm = mins % 60;
+    const H = hh ? `${hh} hora${hh > 1 ? 's' : ''}` : '';
+    const M = mm ? `${mm} minuto${mm > 1 ? 's' : ''}` : '';
+    return [H, M].filter(Boolean).join(' e ');
+  }
+  TOOL_RENDER.horas = () => {
+    const HOURS = [20, 30, 40, 44];
     toolBody.innerHTML = `
-      ${toolHead('Veja o preço das coisas em <b>horas da sua vida</b>. Ajuda a pensar duas vezes antes de comprar por impulso.')}
-      <div class="form__row">
-        <label>Quanto você ganha por mês <input id="wIncome" inputmode="decimal" placeholder="Ex.: 3000" value="${state.work.income ? amountInput(state.work.income) : ''}">
-          <output id="wIncomeOut" class="amount__out amount__out--sm"></output></label>
-        <label>Horas por semana <input id="wHours" type="number" min="1" max="100" inputmode="numeric" value="${state.work.hours}"></label>
+      ${toolHead('Descubra quantas <b>horas de trabalho</b> custa cada compra. É só preencher seu salário.')}
+      <div class="whours">
+        <label class="whours__field"><span>1. Quanto você ganha por mês?</span>
+          <div class="whours__money"><b>R$</b><input id="wIncome" inputmode="decimal" placeholder="0,00" autocomplete="off"
+            value="${state.work.income ? brl.format(state.work.income / 100).replace(/^R\$\s?/, '') : ''}"></div></label>
+        <div class="whours__field"><span>2. Quantas horas trabalha por semana?</span>
+          <div class="seg seg--mini" id="wHours">${HOURS.map((x) => `<button type="button" class="seg__btn ${state.work.hours === x ? 'is-active' : ''}" data-h="${x}">${x}h</button>`).join('')}</div></div>
+        <div class="whours__rate" id="wRate"></div>
       </div>
-      ${h ? `
-        <div class="tresult"><span>Sua hora de trabalho vale</span><strong>${money(h)}</strong></div>
-        <label>Quanto custa? <input id="wPrice" inputmode="decimal" placeholder="Ex.: 400"></label>
-        <div id="wOut" class="tprice"></div>
-        <h3 class="tool__h3">Este mês em horas</h3>
-        <div class="tstats">${statBox('Gastos do mês', hoursText(sum(month)) || '—')}${statBox('Em dias de trabalho', num.format(Math.round((sum(month) / h / dayH) * 10) / 10))}</div>
-        <div class="tlist">${top.map((e) => `<div class="tcard"><div class="tcard__top">${catIcon(catOf(e.cat))}<div class="tcard__txt"><strong>${esc(e.title)}</strong><small>${money(e.amount)}</small></div><span class="tcard__val">${hoursText(e.amount)}</span></div></div>`).join('')}</div>`
-        : '<p class="empty-sm">Preencha quanto você ganha por mês para ver os valores em horas.</p>'}`;
-    bindLiveAmount($('#wIncome'), $('#wIncomeOut'), { optional: true })();
-    const saveWork = () => {
-      const income = readAmount($('#wIncome'));
-      const hours = Math.min(100, Math.max(1, Number($('#wHours').value) || 44));
-      if (Number.isNaN(income)) return;
-      const had = !!hourValue();
-      state.work = { income: income || 0, hours };
-      save();
-      if (!!hourValue() !== had || had) { const pos = toolBody.scrollTop; rerenderTool(); toolBody.scrollTop = pos; }
+      <div class="whours__ask" id="wAsk">
+        <label class="whours__field"><span>3. Quanto custa o que você quer comprar?</span>
+          <div class="whours__money"><b>R$</b><input id="wPrice" inputmode="decimal" placeholder="0,00" autocomplete="off"></div></label>
+        <div class="tprice" id="wOut"></div>
+      </div>
+      <div id="wMonth"></div>`;
+    if (!HOURS.includes(state.work.hours)) state.work.hours = 44;
+    const hoursBtn = $(`#wHours [data-h="${state.work.hours}"]`);
+    if (hoursBtn) hoursBtn.classList.add('is-active');
+    const income = $('#wIncome');
+    const price = $('#wPrice');
+    const cents = (input) => { const v = safeEval(input.value || ''); return Number.isFinite(v) && v > 0 ? toCents(v) : 0; };
+    // Atualiza só os resultados: os campos continuam com o foco e o teclado não fecha.
+    const refresh = () => {
+      const h = hourValue();
+      const dayH = state.work.hours / 5;
+      $('#wRate').innerHTML = h
+        ? `<span>Sua hora de trabalho vale</span><strong>${realMoney(h)}</strong>`
+        : '<span>Preencha seu salário para ver quanto vale sua hora.</span>';
+      $('#wAsk').hidden = !h;
+      const c = cents(price);
+      $('#wOut').innerHTML = h && c
+        ? `<span>Isso custa</span><strong>${hoursLong(c)}</strong><span>do seu trabalho${c / h >= dayH ? ` · cerca de ${num.format(Math.round((c / h / dayH) * 10) / 10)} dia(s) de trabalho` : ''}</span>`
+        : '';
+      const key = monthKey(new Date());
+      const month = outs().filter(inMonth(key));
+      const top = [...month].sort((a, b) => b.amount - a.amount).slice(0, 3);
+      $('#wMonth').innerHTML = h && month.length ? `
+        <h3 class="tool__h3">Seus gastos deste mês em horas</h3>
+        <div class="tpreview"><span class="tpreview__ic">${ico('i-hourglass')}</span><div><strong>${hoursLong(sum(month))}</strong>
+          <p>de trabalho para pagar ${money(sum(month))} de gastos em ${cap(fmtMonthName.format(new Date()))}.</p></div></div>
+        <div class="tlist">${top.map((e) => `<div class="tcard"><div class="tcard__top">${catIcon(catOf(e.cat))}<div class="tcard__txt"><strong>${esc(e.title)}</strong><small>${money(e.amount)}</small></div><span class="tcard__val">${hoursText(e.amount)}</span></div></div>`).join('')}</div>` : '';
     };
-    $('#wIncome').addEventListener('change', saveWork);
-    $('#wHours').addEventListener('change', saveWork);
-    if (h) {
-      const price = $('#wPrice');
-      const upd = () => {
-        const v = safeEval(price.value || '0');
-        const c = Number.isFinite(v) && v > 0 ? toCents(v) : 0;
-        $('#wOut').innerHTML = c ? `<strong>${hoursText(c)}</strong><span>de trabalho · ${num.format(Math.round((c / h / dayH) * 10) / 10)} dia(s) de ${num.format(dayH)}h</span>` : '';
-      };
-      price.addEventListener('input', upd);
-    }
+    let saveTimer = null;
+    income.addEventListener('input', () => {
+      state.work.income = cents(income);
+      refresh();
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(save, 400);
+    });
+    const fmtField = (c) => brl.format(c / 100).replace(/^R\$\s?/, '');
+    income.addEventListener('blur', () => { if (state.work.income) income.value = fmtField(state.work.income); save(); });
+    price.addEventListener('input', refresh);
+    price.addEventListener('blur', () => { const c = cents(price); if (c) price.value = fmtField(c); });
+    $('#wHours').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-h]');
+      if (!b) return;
+      state.work.hours = Number(b.dataset.h);
+      $$('#wHours .seg__btn').forEach((x) => x.classList.toggle('is-active', x === b));
+      save();
+      refresh();
+    });
+    refresh();
   };
 
   /* ----- Retrospectiva do ano ----- */
@@ -4304,26 +4337,42 @@
   runSplash(params.has('novo') || !!acao);
   if (params.has('novo') || acao) history.replaceState(null, '', location.pathname);
   /* ---------------- Tour guiado ---------------- */
+  // Cada passo: o que destacar (sel/box), ícone e cor do balão, título e texto. Passos sem "sel" ficam no centro.
   const TOUR = [
-    { title: 'Bem-vindo ao tour', text: 'Vou te mostrar, passo a passo, as principais ferramentas do Nexa Money: <b>para que servem</b> e <b>como usar</b>. Toque em Prosseguir para começar.' },
-    { sel: '#quickInput', pad: 10, box: '#quickForm .quick__field', title: 'Lançamento rápido', text: 'Para registrar um gasto em segundos. Escreva do jeito que você fala, por exemplo <b>“uber 23,50 ontem”</b> ou <b>“salário 3000”</b>, e toque na seta. O app entende o valor, a data e a categoria.' },
-    { sel: '#quickMic', title: 'Lançar por voz', text: 'Toque no microfone e diga o gasto, como <b>“mercado cento e vinte reais”</b>. O app transforma a sua fala em lançamento.' },
-    { sel: '#quickScan', title: 'Ler comprovante', text: 'Tire uma foto de um cupom ou comprovante. O app lê o valor e a data da imagem e já preenche o lançamento para você conferir.' },
-    { sel: '#btnAdd', title: 'Novo lançamento completo', text: 'O botão <b>+</b> abre o formulário completo: valor, categoria, data, observação e foto do recibo. Use quando quiser registrar com todos os detalhes.' },
-    { sel: '.hero', title: 'Resumo do mês', text: 'Aqui você vê quanto já gastou no mês, as <b>entradas</b>, as <b>saídas</b> e o <b>saldo</b>. Toque em <b>Orçamento</b> para definir um teto e acompanhar a barra de progresso.' },
-    { sel: '#forecastPanel', title: 'Previsão do fim do mês', text: 'Com base no seu ritmo de gastos e nos fixos que ainda vão cair, o app estima como o mês vai terminar.' },
-    { sel: '#goalsPanel', title: 'Metas de economia', text: 'Crie objetivos, como uma viagem ou reserva de emergência, e vá guardando aos poucos. O anel mostra quanto falta para chegar lá.' },
-    { sel: '#debtsPanel', title: 'Quem me deve', text: 'Anote quem te deve, quanto e até quando. Você recebe aviso no dia combinado e pode cobrar pelo WhatsApp com uma mensagem pronta, inclusive com a sua chave Pix.' },
-    { sel: '#btnLimits', box: (el) => el.closest('.panel'), title: 'Gastos por categoria', text: 'O gráfico mostra para onde o dinheiro está indo. Em <b>Limites</b> você define um valor máximo para cada categoria e o app avisa quando estiver chegando perto.' },
-    { sel: '#dayMode', box: (el) => el.closest('.panel'), title: 'Gastos por dia', text: 'O calendário pinta os dias conforme o quanto você gastou. Toque em um dia para ver os lançamentos dele, ou troque para <b>Colunas</b>.' },
-    { sel: '#btnReport', title: 'Relatório do mês', text: 'Gera um resumo bonito do mês em imagem ou PDF, pronto para salvar ou compartilhar.' },
-    { sel: '.tab[data-view="gastos"]', view: 'gastos', title: 'Lista de gastos', text: 'Todos os lançamentos do mês, separados por dia. Busque pelo nome, filtre por categoria e toque em um item para editar ou apagar.' },
-    { sel: '.tab[data-view="lembretes"]', view: 'lembretes', title: 'Lembretes de contas', text: 'Cadastre contas como aluguel, cartão e internet com a data de vencimento. O app te avisa antes para nada passar do prazo.' },
-    { sel: '#tabTools', title: 'Ferramentas', text: 'Aqui ficam as ferramentas extras: <b>calculadora</b>, compras <b>parceladas</b>, <b>assinaturas</b>, resumo da noite, <b>desafios</b>, retrospectiva do ano, <b>simuladores</b> e quanto custa em horas de trabalho.' },
-    { sel: '#btnNotif', view: 'resumo', title: 'Notificações', text: 'Toque no sino para ativar ou desativar os avisos de lembretes, cobranças e limites. Azul significa ligado.' },
-    { sel: '#btnPrivacy', title: 'Modo privacidade', text: 'O olho esconde todos os valores da tela. Ótimo para abrir o app perto de outras pessoas.' },
-    { sel: '#btnMenu', title: 'Mais opções', text: 'Aqui ficam orçamento, fixos, categorias, cartão de crédito, backup e este tour, caso queira rever quando quiser.' },
-    { title: 'Tudo pronto!', text: 'Agora é com você. Comece lançando seu primeiro gasto e acompanhe suas finanças com clareza. 💜', last: true },
+    { icon: 'logo', color: '#6d5dfc', title: 'Bem-vindo ao Nexa Money', text: 'Em cerca de 2 minutos você conhece as principais ferramentas: <b>para que servem</b> e <b>como usar</b>.', chips: ['Lançar gastos', 'Acompanhar o mês', 'Ferramentas'] },
+    { sel: '#quickInput', pad: 10, box: '#quickForm .quick__field', icon: 'i-sparkle', color: '#6d5dfc', title: 'Lançamento rápido', text: 'Escreva do jeito que você fala, como <b>“uber 23,50 ontem”</b> ou <b>“salário 3000”</b>, e toque na seta. O app entende o valor, a data e a categoria.' },
+    { sel: '#quickMic', icon: 'i-mic', color: '#ec4899', title: 'Lançar por voz', text: 'Toque no microfone e diga o gasto, como <b>“mercado cento e vinte reais”</b>.' },
+    { sel: '#quickScan', icon: 'i-scan', color: '#14b8a6', title: 'Ler comprovante', text: 'Tire uma foto do cupom: o app lê o valor e a data e preenche o lançamento para você conferir.' },
+    { sel: '#btnAdd', icon: 'i-plus', color: '#6d5dfc', title: 'Lançamento completo', text: 'O <b>+</b> abre o formulário com valor, categoria, data, forma de pagamento, <b>parcelas</b> e foto do recibo.' },
+    { sel: '.hero', icon: 'i-wallet', color: '#8b5cf6', title: 'Resumo do mês', text: 'Quanto já gastou, as <b>entradas</b>, as <b>saídas</b> e o <b>saldo</b>. Em <b>Orçamento</b> você define um teto e vê quanto ainda pode gastar por dia.' },
+    { sel: '#forecastPanel', icon: 'i-forecast', color: '#3b82f6', title: 'Previsão do fim do mês', text: 'Pelo seu ritmo de gastos e pelos fixos que ainda vão cair, o app estima como o mês vai terminar.' },
+    { sel: '#goalsPanel', icon: 'i-piggy', color: '#22c55e', title: 'Metas de economia', text: 'Crie objetivos, como uma viagem, e vá guardando aos poucos. O anel mostra quanto falta.' },
+    { sel: '#debtsPanel', icon: 'i-hand', color: '#14b8a6', title: 'Quem me deve', text: 'Anote quem te deve e até quando. O app avisa no dia e você cobra pelo WhatsApp com mensagem pronta e chave Pix.' },
+    { sel: '#btnLimits', box: (el) => el.closest('.panel'), icon: 'i-pie', color: '#f97316', title: 'Gastos por categoria', text: 'Veja para onde o dinheiro vai. Em <b>Limites</b> você define um máximo por categoria e recebe aviso perto do limite.' },
+    { sel: '#dayMode', box: (el) => el.closest('.panel'), icon: 'i-calendar', color: '#eab308', title: 'Gastos por dia', text: 'O calendário pinta os dias pelo quanto você gastou. Toque em um dia para ver os lançamentos.' },
+    { sel: '.tab[data-view="gastos"]', view: 'gastos', icon: 'i-receipt', color: '#6d5dfc', title: 'Lista de gastos', text: 'Todos os lançamentos do mês por dia. Busque, filtre por categoria e toque em um item para editar.' },
+    { sel: '.tab[data-view="lembretes"]', view: 'lembretes', icon: 'i-calendar', color: '#f43f5e', title: 'Lembretes de contas', text: 'Cadastre aluguel, cartão e internet com o vencimento. O app avisa antes para nada atrasar.' },
+    { sel: '#tabTools', view: 'resumo', icon: 'i-apps', color: '#6d5dfc', title: 'Ferramentas', text: 'Toque aqui e sobe um cartão com <b>todas as ferramentas</b> em um só lugar. Veja o que tem nele 👇' },
+    { icon: 'i-layers', color: '#f97316', title: 'Organize seu dinheiro', text: 'Dentro de <b>Ferramentas</b>:', list: [
+      ['i-layers', '#f97316', 'Parcelamentos', 'Quanto falta e quando termina cada compra em vezes'],
+      ['i-tv', '#ec4899', 'Assinaturas', 'Aviso 2 dias antes de renovar e o custo no ano'],
+      ['i-moonstar', '#6366f1', 'Resumo da noite', 'Quanto gastou no dia comparado com a sua média'],
+    ] },
+    { icon: 'i-trophy', color: '#eab308', title: 'Fique motivado', text: 'Também em <b>Ferramentas</b>:', list: [
+      ['i-trophy', '#eab308', 'Desafios e conquistas', 'Ex.: 7 dias sem delivery, com medalhas'],
+      ['i-star', '#8b5cf6', 'Retrospectiva do ano', 'Seu ano em números, pronto para compartilhar'],
+      ['i-share', '#3b82f6', 'Relatório do mês', 'Imagem ou PDF com o resumo do mês'],
+    ] },
+    { icon: 'i-percent', color: '#10b981', title: 'Faça as contas', text: 'E ainda:', list: [
+      ['i-calc', '#6d5dfc', 'Calculadora', 'Contas rápidas, inclusive em tela cheia'],
+      ['i-percent', '#10b981', 'Simuladores', 'Juros compostos e financiamento'],
+      ['i-hourglass', '#06b6d4', 'Horas de trabalho', 'Quantas horas do seu trabalho custa uma compra'],
+    ] },
+    { sel: '#btnNotif', view: 'resumo', icon: 'i-bell', color: '#6d5dfc', title: 'Notificações', text: 'Ative ou desative os avisos de lembretes, cobranças, assinaturas e limites. Colorido = ligado.' },
+    { sel: '#btnPrivacy', icon: 'i-eye', color: '#64748b', title: 'Modo privacidade', text: 'Esconde todos os valores da tela. Ótimo para abrir o app perto de outras pessoas.' },
+    { sel: '#btnTheme', icon: 'i-auto', color: '#64748b', title: 'Tema', text: 'Alterna entre <b>automático</b> (segue o celular), claro e escuro.' },
+    { sel: '#btnMenu', icon: 'i-more', color: '#64748b', title: 'Mais opções', text: 'Orçamento, gastos fixos, categorias, cartão de crédito, lembrete diário, exportar e backup.' },
+    { icon: 'i-check', color: '#22c55e', title: 'Tudo pronto!', text: 'Comece lançando seu primeiro gasto. Para rever este tour, abra <b>Ferramentas → Tour guiado</b>. 💜', last: true },
   ];
   let tour = null;
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -4344,23 +4393,36 @@
       <div class="tour__spot"></div>
       <div class="tour__bubble" role="dialog" aria-modal="true" aria-live="polite">
         <i class="tour__arrow"></i>
-        <div class="tour__head"><span class="tour__count"></span><button type="button" class="tour__skip">Pular tour</button></div>
-        <h3 class="tour__title"></h3>
+        <div class="tour__progress"><span></span></div>
+        <div class="tour__head">
+          <span class="tour__badge"></span>
+          <div class="tour__heading"><span class="tour__count"></span><h3 class="tour__title"></h3></div>
+          <button type="button" class="tour__skip">Pular</button>
+        </div>
         <p class="tour__text"></p>
+        <div class="tour__extra"></div>
         <div class="tour__foot">
-          <div class="tour__dots"></div>
-          <div class="tour__btns"><button type="button" class="tour__back" aria-label="Voltar"><svg class="ic"><use href="#i-left"/></svg></button><button type="button" class="tour__next">Prosseguir<svg class="ic"><use href="#i-right"/></svg></button></div>
+          <button type="button" class="tour__back" aria-label="Voltar"><svg class="ic"><use href="#i-left"/></svg></button>
+          <button type="button" class="tour__next"><span>Prosseguir</span><svg class="ic"><use href="#i-right"/></svg></button>
         </div>
       </div>`;
     document.body.appendChild(root);
     const steps = tourSteps();
-    const startView = ui.view;
-    tour = { root, steps, i: -1, startView, el: null, box: null };
-    root.querySelector('.tour__dots').innerHTML = steps.map(() => '<i></i>').join('');
+    tour = { root, steps, i: -1, startView: ui.view, el: null, box: null };
     root.querySelector('.tour__next').addEventListener('click', () => tourGo(tour.i + 1));
     root.querySelector('.tour__back').addEventListener('click', () => tourGo(tour.i - 1));
     root.querySelector('.tour__skip').addEventListener('click', endTour);
     root.addEventListener('click', (e) => { if (e.target === root) root.querySelector('.tour__bubble').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.03)' }, { transform: 'scale(1)' }], { duration: 260, easing: 'ease-out' }); });
+    // Deslizar o balão para os lados também avança ou volta.
+    const bubble = root.querySelector('.tour__bubble');
+    let sx = null; let sy = 0;
+    bubble.addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+    bubble.addEventListener('touchend', (e) => {
+      if (sx == null) return;
+      const dx = e.changedTouches[0].clientX - sx; const dy = e.changedTouches[0].clientY - sy;
+      sx = null;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) tourGo(tour.i + (dx < 0 ? 1 : -1));
+    });
     window.addEventListener('resize', tourPlace);
     window.addEventListener('scroll', tourPlace, { passive: true });
     document.addEventListener('keydown', tourKey);
@@ -4389,6 +4451,16 @@
     setTimeout(() => root.remove(), 450);
   }
 
+  function tourConfetti(root) {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const colors = ['#6d5dfc', '#22c55e', '#f97316', '#ec4899', '#eab308', '#06b6d4'];
+    const box = document.createElement('div');
+    box.className = 'tour__confetti';
+    box.innerHTML = Array.from({ length: 46 }, (_, k) => `<i style="--x:${Math.random() * 100}vw;--d:${(Math.random() * 0.6).toFixed(2)}s;--r:${Math.round(Math.random() * 720 - 360)}deg;--s:${(0.6 + Math.random() * 0.8).toFixed(2)};background:${colors[k % colors.length]}"></i>`).join('');
+    root.appendChild(box);
+    setTimeout(() => box.remove(), 3200);
+  }
+
   async function tourGo(n) {
     if (!tour || tour.busy) return;
     const { steps, root } = tour;
@@ -4396,7 +4468,8 @@
     if (n < 0) return;
     tour.busy = true;
     const bubble = root.querySelector('.tour__bubble');
-    if (tour.i >= 0) { bubble.classList.add('is-out'); await wait(200); }
+    const back = n < tour.i;
+    if (tour.i >= 0) { bubble.classList.add(back ? 'is-out-back' : 'is-out'); await wait(180); }
     tour.i = n;
     const st = steps[n];
     if (st.view && ui.view !== st.view) setView(st.view);
@@ -4412,20 +4485,29 @@
         await wait(480);
       }
     }
-    root.querySelector('.tour__count').textContent = `${n + 1} de ${steps.length}`;
-    root.querySelector('.tour__title').textContent = st.title;
-    root.querySelector('.tour__text').innerHTML = st.text;
-    root.querySelector('.tour__back').hidden = n === 0;
-    root.querySelector('.tour__skip').hidden = n === steps.length - 1;
-    const next = root.querySelector('.tour__next');
-    next.firstChild.textContent = n === steps.length - 1 ? 'Começar a usar' : n === 0 ? 'Começar tour' : 'Prosseguir';
-    root.querySelectorAll('.tour__dots i').forEach((d, k) => { d.className = k === n ? 'is-on' : k < n ? 'is-done' : ''; });
+    root.style.setProperty('--tc', st.color || '#6d5dfc');
+    $('.tour__badge', root).innerHTML = st.icon === 'logo'
+      ? '<svg viewBox="0 0 100 100" width="30" height="30" aria-hidden="true"><use href="#nx-logo"/></svg>'
+      : ico(st.icon);
+    $('.tour__badge', root).classList.toggle('is-logo', st.icon === 'logo');
+    $('.tour__count', root).textContent = n === 0 ? `${steps.length} passos rápidos` : `Passo ${n + 1} de ${steps.length}`;
+    $('.tour__title', root).textContent = st.title;
+    $('.tour__text', root).innerHTML = st.text;
+    $('.tour__extra', root).innerHTML = st.list
+      ? `<ul class="tour__list">${st.list.map(([ic, c, name, desc], k) => `<li style="--lc:${c};--k:${k}"><span>${ico(ic)}</span><div><strong>${name}</strong><small>${desc}</small></div></li>`).join('')}</ul>`
+      : st.chips ? `<div class="tour__chips">${st.chips.map((c) => `<span>${c}</span>`).join('')}</div>` : '';
+    $('.tour__progress span', root).style.width = `${((n + 1) / steps.length) * 100}%`;
+    $('.tour__back', root).hidden = n === 0;
+    $('.tour__skip', root).hidden = n === steps.length - 1;
+    const next = $('.tour__next', root);
+    $('span', next).textContent = n === steps.length - 1 ? 'Começar a usar' : n === 0 ? 'Começar tour' : 'Prosseguir';
+    next.classList.toggle('is-final', n === steps.length - 1);
     root.classList.toggle('is-center', !tour.box);
     tourPlace();
-    bubble.classList.remove('is-out');
-    bubble.classList.remove('is-in');
+    bubble.classList.remove('is-out', 'is-out-back', 'is-in', 'is-in-back');
     void bubble.offsetWidth;
-    bubble.classList.add('is-in');
+    bubble.classList.add(back ? 'is-in-back' : 'is-in');
+    if (st.last) tourConfetti(root);
     setTimeout(() => next.focus({ preventScroll: true }), 60);
     tour.busy = false;
   }
