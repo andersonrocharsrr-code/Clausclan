@@ -4184,37 +4184,39 @@
     return { year, out, income, count: ex.length, cats, monthly, maxM, minM, biggest, zero, days, saved: income - out };
   }
   const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  // Valor com o "R$" menor, mais elegante nos números grandes.
+  const retroMoney = (cents) => money(cents).replace(/^R\$\s?/, '<span class="retro__cur">R$</span>');
   function retroSlides(r) {
     const mName = (m) => cap(fmtMonthName.format(new Date(r.year, m, 1)));
-    const count = (cents, cls = '') => `<strong class="retro__num ${cls}" data-count="${cents}">${money(cents)}</strong>`;
+    const count = (cents, cls = '') => `<strong class="retro__num ${cls}" data-count="${cents}">${retroMoney(cents)}</strong>`;
     const maxV = Math.max(1, ...r.monthly);
     const bars = (hl) => `<div class="rbars">${r.monthly.map((v, m) => `
-      <div class="rbars__col ${hl.includes(m) ? 'is-hl' : ''}" style="--h:${(v / maxV) * 100}%;--k:${m}"><i></i><small>${MONTHS[m][0].toUpperCase()}</small></div>`).join('')}</div>`;
+      <div class="rbars__col ${hl.includes(m) ? 'is-hl' : ''}" style="--h:${(v / maxV) * 100}%;--k:${m}">${hl.includes(m) ? `<em>${money(v).replace(/,\d\d$/, '')}</em>` : ''}<i></i><small>${MONTHS[m][0].toUpperCase()}</small></div>`).join('')}</div>`;
     const s = [{ k: 'intro', html: `
       <span class="retro__logo"><svg viewBox="0 0 100 100" width="54" height="54" aria-hidden="true"><use href="#nx-logo"/></svg></span>
-      <span class="retro__kicker">Retrospectiva Nexa Money</span>
+      <span class="retro__kicker">Retrospectiva</span>
       <h2 class="retro__year">${r.year}</h2>
       <p>Seu ano em números, do primeiro gasto ao último.</p>
       <span class="retro__hint">Toque para avançar · segure para pausar</span>` }];
     s.push({ k: 'out', html: `
-      <span class="retro__kicker">Neste ano você gastou</span>
+      <span class="retro__kicker">${ico('i-receipt')}Neste ano você gastou</span>
       ${count(r.out, 'is-xl')}
       <p>em <b>${r.count}</b> lançamentos · média de <b>${money(Math.round(r.out / Math.max(1, r.monthly.filter(Boolean).length)))}</b> por mês</p>
       ${bars([])}` });
     if (r.income) {
       const p = Math.max(0, Math.min(100, (r.saved / r.income) * 100));
       s.push({ k: 'save', html: `
-        <span class="retro__kicker">Entrou na sua conta</span>
+        <span class="retro__kicker">${ico('i-wallet')}Entrou na sua conta</span>
         ${count(r.income)}
         <div class="rring" style="--p:${p}"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52"/><circle class="rring__v" cx="60" cy="60" r="52" pathLength="100"/></svg>
-          <div><b>${pct(p)}</b><small>guardado</small></div></div>
+          <div><b data-pct="${p}">${pct(p)}</b><small>guardado</small></div></div>
         <p>${r.saved >= 0 ? `Você guardou <b>${money(r.saved)}</b> 💚` : `Você gastou <b>${money(-r.saved)}</b> a mais do que entrou`}</p>` });
     }
     if (r.cats.length) {
       const top = r.cats.slice(0, 3);
       const c0 = catOf(top[0][0]);
       s.push({ k: 'cat', html: `
-        <span class="retro__kicker">Categoria campeã</span>
+        <span class="retro__kicker">${ico('i-trophy')}Categoria campeã</span>
         <span class="retro__cat" style="--c:${c0.color}">${ico(c0.icon)}</span>
         <h2>${esc(c0.name)}</h2>
         <p><b>${money(top[0][1])}</b> · ${pct((top[0][1] / r.out) * 100)} de tudo que você gastou</p>
@@ -4222,14 +4224,14 @@
           <div class="rrank__row" style="--c:${c.color};--w:${(v / top[0][1]) * 100}%;--k:${k}"><span>${k + 1}º</span><div><b>${esc(c.name)}</b><i></i></div><small>${money(v)}</small></div>`; }).join('')}</div>` });
     }
     if (r.maxM[0] >= 0) s.push({ k: 'month', html: `
-      <span class="retro__kicker">Mês mais caro</span>
+      <span class="retro__kicker">${ico('i-calendar')}Mês mais caro</span>
       <h2>${mName(r.maxM[0])}</h2>
       <p><b>${money(r.maxM[1])}</b>${r.minM[0] >= 0 && r.minM[0] !== r.maxM[0] ? ` · o mais econômico foi <b>${mName(r.minM[0])}</b> (${money(r.minM[1])})` : ''}</p>
       ${bars([r.maxM[0]])}` });
     if (r.biggest) {
       const c = catOf(r.biggest.cat);
       s.push({ k: 'big', html: `
-        <span class="retro__kicker">Maior gasto do ano</span>
+        <span class="retro__kicker">${ico('i-up')}Maior gasto do ano</span>
         <div class="rticket">
           <span class="rticket__ic" style="--c:${c.color}">${ico(c.icon)}</span>
           <b>${esc(r.biggest.title)}</b>
@@ -4238,13 +4240,13 @@
         </div>` });
     }
     s.push({ k: 'zero', html: `
-      <span class="retro__kicker">Dias sem gastar</span>
+      <span class="retro__kicker">${ico('i-moonstar')}Dias sem gastar</span>
       <strong class="retro__num is-xl" data-int="${r.zero}">${r.zero}</strong>
       <p>${r.zero ? 'dias em que você não gastou nada 🎉' : 'Que tal um desafio de dia sem gastos?'}</p>
       <div class="rdays">${r.days.map((d) => `<i class="is-${d}"></i>`).join('')}</div>
       <small class="rdays__legend"><i class="is-zero"></i> sem gastos <i class="is-spent"></i> com gastos</small>` });
     s.push({ k: 'end', html: `
-      <span class="retro__kicker">Esse foi seu ${r.year}</span>
+      <span class="retro__kicker">${ico('i-star')}Esse foi seu ${r.year}</span>
       <h2>Bora deixar o próximo ainda melhor 🚀</h2>
       <div class="rsum">
         <div><small>Gastou</small><b>${money(r.out)}</b></div>
@@ -4268,14 +4270,15 @@
   }
   // Números contam do zero até o valor.
   function retroCount(root) {
-    $$('[data-count], [data-int]', root).forEach((el) => {
+    $$('[data-count], [data-int], [data-pct]', root).forEach((el) => {
       if (state.privacy) return;
-      const end = Number(el.dataset.count ?? el.dataset.int);
-      const fmt = el.dataset.count != null ? (v) => money(v) : (v) => String(v);
+      const end = Number(el.dataset.count ?? el.dataset.int ?? el.dataset.pct);
+      const fmt = el.dataset.count != null ? (v) => retroMoney(v) : el.dataset.pct != null ? (v) => pct(v) : (v) => String(v);
       const t0 = performance.now();
       const step = (t) => {
         const k = Math.min(1, (t - t0) / 1100);
-        el.textContent = fmt(Math.round(end * (1 - (1 - k) ** 3)));
+        const v = end * (1 - (1 - k) ** 3);
+        el.innerHTML = fmt(el.dataset.pct != null ? v : Math.round(v));
         if (k < 1 && dlgRetro.open) requestAnimationFrame(step);
       };
       requestAnimationFrame(step);
@@ -4299,6 +4302,8 @@
     box.className = `retro__slide is-${sl.k}`;
     box.innerHTML = `<div class="retro__in ${back ? 'is-back' : ''}">${sl.html}</div>`;
     dlgRetro.dataset.k = sl.k;
+    // Os traços do N se redesenham a cada tela.
+    const bg = $('#retroBg'); bg.classList.remove('is-draw'); void bg.getBoundingClientRect(); bg.classList.add('is-draw');
     $$('#retroBars span').forEach((b, k) => { b.className = k < i ? 'is-done' : k === i ? 'is-on' : ''; });
     // Reinicia a animação da barra do story atual.
     const bar = $$('#retroBars span')[i];
