@@ -3090,14 +3090,14 @@
       out.push({
         key: k, title, cat: fixed ? fixed.cat : last.cat, monthly, months: vals.length, fixed: !!fixed,
         isSub: SUBS_RE.test(norm(title)), up, day: fixed ? fixed.day : Number(last.date.slice(8, 10)),
-        method: last.method, lastMonth: last.date.slice(0, 7),
+        method: last.method, lastMonth: last.date.slice(0, 7), items: list, fixedId: fixed ? fixed.id : null,
       });
     }
     // Fixos que ainda não foram lançados nenhuma vez também contam.
     for (const f of state.fixed) {
       if (f.kind === 'in' || groups.has(`f:${f.id}`)) continue;
       out.push({ key: `f:${f.id}`, title: f.title, cat: f.cat, monthly: f.amount, months: 0, fixed: true,
-        isSub: SUBS_RE.test(norm(f.title)), up: 0, day: f.day, method: f.method, lastMonth: f.last || '' });
+        isSub: SUBS_RE.test(norm(f.title)), up: 0, day: f.day, method: f.method, lastMonth: f.last || '', items: [], fixedId: f.id });
     }
     return out.sort((a, b) => b.monthly - a.monthly);
   }
@@ -3113,35 +3113,34 @@
     $('#recurSum').innerHTML = `
       <div><span class="label">Por mês</span><strong>${money(total)}</strong></div>
       <div><span class="label">Por ano</span><strong>${money(total * 12)}</strong></div>`;
-    const shown = ui.showAllRecur ? list : list.slice(0, 6);
-    $('#recur').innerHTML = shown.map((r, i) => {
-      const tags = [
-        r.isSub && '<span class="recur-tag sub">Assinatura</span>',
-        r.up && `<span class="recur-tag up">↑ ${r.up}% mais caro</span>`,
-        r.fixed ? '<span class="recur-tag fixed">Fixo</span>' : `<button type="button" class="recur-fix" data-fix="${i}">Tornar fixo</button>`,
-      ].filter(Boolean).join('');
-      const seen = r.fixed ? `todo dia ${r.day}` : `${r.months} dos últimos 6 meses · por volta do dia ${r.day}`;
-      return `
-        <div class="recur-item">
-          ${catIcon(catOf(r.cat))}
-          <div class="recur-item__main">
-            <strong>${esc(r.title)}</strong>
-            <small>${seen}</small>
-            <div class="recur-tags">${tags}</div>
-          </div>
-          <div class="recur-item__side">
-            <span class="recur-item__val">${money(r.monthly)}</span>
-            <small class="panel__sub">${money(r.monthly * 12)}/ano</small>
-          </div>
-        </div>`;
-    }).join('') + (list.length > 6
-      ? `<button type="button" class="debts__more" data-recur-all>${ui.showAllRecur ? 'Mostrar menos' : `Ver todos (${list.length})`}</button>` : '');
+    const shown = list.slice(0, 3);
+    $('#recur').innerHTML = shown.map((r, i) => recurItem(r, i)).join('')
+      + (list.length > 3 ? `<button type="button" class="debts__more" data-recur-all>Ver todos (${list.length})</button>` : '');
   }
-  $('#recur').addEventListener('click', (e) => {
-    if (e.target.closest('[data-recur-all]')) { ui.showAllRecur = !ui.showAllRecur; renderRecurring(); return; }
-    const b = e.target.closest('[data-fix]');
-    if (!b) return;
-    const r = (ui.showAllRecur ? recurCache : recurCache.slice(0, 6))[Number(b.dataset.fix)];
+  function recurItem(r, i, { manage = false } = {}) {
+    const tags = [
+      r.isSub && '<span class="recur-tag sub">Assinatura</span>',
+      r.up && `<span class="recur-tag up">↑ ${r.up}% mais caro</span>`,
+      r.fixed ? '<span class="recur-tag fixed">Fixo</span>' : `<button type="button" class="recur-fix" data-fix="${i}">Tornar fixo</button>`,
+    ].filter(Boolean).join('');
+    const seen = r.fixed ? `todo dia ${r.day}` : `${r.months} dos últimos 6 meses · por volta do dia ${r.day}`;
+    return `
+      <div class="recur-item ${manage ? 'recur-item--manage' : ''}" data-ri="${i}">
+        ${catIcon(catOf(r.cat))}
+        <div class="recur-item__main">
+          <strong>${esc(r.title)}</strong>
+          <small>${seen}</small>
+          <div class="recur-tags">${tags}</div>
+        </div>
+        <div class="recur-item__side">
+          <span class="recur-item__val">${money(r.monthly)}</span>
+          <small class="panel__sub">${money(r.monthly * 12)}/ano</small>
+          ${manage ? `<div class="recur-acts"><button type="button" class="recur-act" data-edit="${i}" aria-label="Editar ${esc(r.title)}">${ico('i-edit')}</button>
+            <button type="button" class="recur-act recur-act--del" data-del="${i}" aria-label="Apagar ${esc(r.title)}">${ico('i-trash')}</button></div>` : ''}
+        </div>
+      </div>`;
+  }
+  function makeFixed(r) {
     if (!r) return;
     // Vira fixo a partir do próximo mês (o deste mês já foi lançado).
     state.fixed.push({
@@ -3151,6 +3150,97 @@
     save();
     render();
     toast(`"${r.title}" agora é fixo: será lançado sozinho todo dia ${r.day}.`);
+  }
+  $('#recur').addEventListener('click', (e) => {
+    if (e.target.closest('[data-recur-all]')) { openRecur(); return; }
+    const b = e.target.closest('[data-fix]');
+    if (b) makeFixed(recurCache[Number(b.dataset.fix)]);
+  });
+  $('#recurOpen').addEventListener('click', openRecur);
+
+  /* ---------------- Tela "Gastos que se repetem" (todos, editar e apagar) ---------------- */
+  const dlgRecur = $('#dlgRecur');
+  function openRecur() {
+    renderRecurDlg();
+    if (!dlgRecur.open) dlgRecur.showModal();
+  }
+  function renderRecurDlg() {
+    const list = findRecurring();
+    recurCache = list;
+    const q = strip(($('#recurSearch').value || '').trim());
+    const shown = list.map((r, i) => [r, i]).filter(([r]) => !q || strip(r.title).includes(q));
+    const total = list.reduce((t, r) => t + r.monthly, 0);
+    $('#recurDlgSum').innerHTML = `
+      <div><span class="label">Por mês</span><strong>${money(total)}</strong></div>
+      <div><span class="label">Por ano</span><strong>${money(total * 12)}</strong></div>`;
+    $('#recurDlgCount').textContent = `${list.length} ${list.length === 1 ? 'item' : 'itens'}`;
+    $('#recurDlgList').innerHTML = shown.map(([r, i]) => recurItem(r, i, { manage: true })).join('')
+      || `<p class="empty-sm">${list.length ? 'Nada encontrado com esse nome.' : 'Nenhum gasto que se repete por enquanto.'}</p>`;
+  }
+  $('#recurSearch').addEventListener('input', renderRecurDlg);
+  // Depois de editar ou apagar a partir daqui, volta para esta tela (não para o painel).
+  dlgExp.addEventListener('close', () => {
+    if (!ui.backToRecur) return;
+    ui.backToRecur = false;
+    setTimeout(openRecur, 60);
+  });
+  const latestOf = (r) => (r.items.length ? r.items[r.items.length - 1] : null);
+  $('#recurDlgList').addEventListener('click', (e) => {
+    const fix = e.target.closest('[data-fix]');
+    if (fix) { makeFixed(recurCache[Number(fix.dataset.fix)]); renderRecurDlg(); return; }
+    const ed = e.target.closest('[data-edit]');
+    if (ed) {
+      const r = recurCache[Number(ed.dataset.edit)];
+      const f = r.fixedId && state.fixed.find((x) => x.id === r.fixedId);
+      ui.backToRecur = true;
+      dlgRecur.close();
+      if (f) openExpense(null, {}, f);
+      else openExpense(latestOf(r));
+      return;
+    }
+    const del = e.target.closest('[data-del]');
+    if (del) {
+      const row = del.closest('.recur-item');
+      const open = row.nextElementSibling && row.nextElementSibling.classList.contains('recur-confirm');
+      $$('#recurDlgList .recur-confirm').forEach((x) => x.remove());
+      if (open) return;
+      const r = recurCache[Number(del.dataset.del)];
+      const last = latestOf(r);
+      row.insertAdjacentHTML('afterend', `
+        <div class="recur-confirm" data-ri="${del.dataset.del}">
+          <p>O que você quer apagar de <b>${esc(r.title)}</b>?</p>
+          ${r.fixed ? '<button type="button" class="btn btn--danger-ghost btn--block" data-stop>Parar de repetir (não lança mais nos próximos meses)</button>' : ''}
+          ${last ? `<button type="button" class="btn btn--danger-ghost btn--block" data-dellast>Apagar o lançamento de ${fmtDM.format(parseDay(last.date))} (${money(last.amount)})</button>` : ''}
+          ${r.items.length > 1 ? `<button type="button" class="btn btn--danger-ghost btn--block" data-delall>Apagar todos os ${r.items.length} lançamentos (${money(sum(r.items))})</button>` : ''}
+          <button type="button" class="btn btn--ghost btn--block" data-cancel>Cancelar</button>
+        </div>`);
+      row.nextElementSibling.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      return;
+    }
+    const box = e.target.closest('.recur-confirm');
+    if (!box) return;
+    if (e.target.closest('[data-cancel]')) { box.remove(); return; }
+    const r = recurCache[Number(box.dataset.ri)];
+    if (e.target.closest('[data-stop]')) {
+      removeFixed(state.fixed.find((x) => x.id === r.fixedId));
+      renderRecurDlg();
+      return;
+    }
+    const removed = e.target.closest('[data-delall]') ? [...r.items] : e.target.closest('[data-dellast]') ? [latestOf(r)] : null;
+    if (!removed) return;
+    const ids = new Set(removed.map((x) => x.id));
+    state.expenses = state.expenses.filter((x) => !ids.has(x.id));
+    save();
+    render();
+    renderRecurDlg();
+    const timer = setTimeout(() => removed.forEach((x) => x.photo && photos.del(x.id)), 6500);
+    toast(removed.length > 1 ? `${removed.length} lançamentos apagados.` : 'Lançamento apagado.', 'Desfazer', () => {
+      clearTimeout(timer);
+      state.expenses.push(...removed);
+      save();
+      render();
+      if (dlgRecur.open) renderRecurDlg();
+    });
   });
 
   /* ---------------- Orçamento e limites ---------------- */
