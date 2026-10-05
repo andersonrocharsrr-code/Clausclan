@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="style.css?v=26">
+  <link rel="stylesheet" href="style.css?v=27">
   <!-- Garante ícones do tamanho certo mesmo antes do CSS carregar. -->
   <style>.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}</style>
   <!-- Abertura e tela de início do Nexa Money: ficam aqui para aparecer na hora, antes do resto da página. -->
@@ -1073,9 +1073,9 @@
   <dialog id="dlgRetro" class="retro" aria-label="Retrospectiva do ano">
     <div class="retro__bars" id="retroBars"></div>
     <button type="button" class="retro__close" data-close aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
+    <div class="retro__bg" aria-hidden="true"><i></i><i></i><i></i></div>
     <div class="retro__slide" id="retroSlide"></div>
-    <button type="button" class="retro__nav retro__nav--prev" id="retroPrev" aria-label="Anterior"></button>
-    <button type="button" class="retro__nav retro__nav--next" id="retroNext" aria-label="Próximo"></button>
+    <div class="retro__paused" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg>Pausado</div>
   </dialog>
 
   <!-- ============ DIÁLOGO: FOTO ============ -->
@@ -1086,6 +1086,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="app.js?v=26"></script>
+  <script src="app.js?v=27"></script>
 </body>
 </html>

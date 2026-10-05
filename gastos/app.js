@@ -4155,6 +4155,7 @@
 
   /* ----- Retrospectiva do ano ----- */
   const dlgRetro = $('#dlgRetro');
+  const RETRO_MS = 6000;
   function retroData(year) {
     const ys = String(year);
     const ex = state.expenses.filter((e) => e.date.startsWith(ys));
@@ -4162,31 +4163,96 @@
     const out = sum(o); const income = sum(inc);
     const byCat = {};
     o.forEach((e) => { byCat[e.cat] = (byCat[e.cat] || 0) + e.amount; });
-    const topCat = Object.entries(byCat).sort((a, b) => b[1] - a[1])[0];
-    const byMonth = {};
-    o.forEach((e) => { const k = e.date.slice(0, 7); byMonth[k] = (byMonth[k] || 0) + e.amount; });
-    const months = Object.entries(byMonth).sort((a, b) => b[1] - a[1]);
+    const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+    const monthly = Array.from({ length: 12 }, (_, m) => sum(o.filter((e) => e.date.startsWith(`${ys}-${pad(m + 1)}`))));
+    // O mês atual ainda não terminou: não entra na disputa de mês mais econômico.
+    const curM = String(new Date().getFullYear()) === ys ? new Date().getMonth() : 12;
+    const used = monthly.map((v, m) => [m, v]).filter(([m, v]) => v > 0);
+    const closed = used.filter(([m]) => m < curM);
+    const maxM = used.reduce((a, b) => (b[1] > a[1] ? b : a), [-1, 0]);
+    const minM = closed.reduce((a, b) => (b[1] < a[1] ? b : a), [-1, Infinity]);
     const biggest = [...o].sort((a, b) => b.amount - a.amount)[0];
     const first = ex.map((e) => e.date).sort()[0];
     const lastDay = String(new Date().getFullYear()) === ys ? todayISO() : `${ys}-12-31`;
     const outDays = new Set(o.map((e) => e.date));
-    let zero = 0;
-    if (first) for (let d = parseDay(first); dateISO(d) < lastDay; d = addDays(d, 1)) if (!outDays.has(dateISO(d))) zero++;
-    return { year, out, income, count: ex.length, topCat, months, biggest, zero, saved: income - out };
+    const days = [];
+    for (let d = new Date(year, 0, 1); dateISO(d) <= `${ys}-12-31`; d = addDays(d, 1)) {
+      const iso = dateISO(d);
+      days.push(iso > lastDay || !first || iso < first ? 'off' : outDays.has(iso) ? 'spent' : 'zero');
+    }
+    const zero = days.filter((x) => x === 'zero').length;
+    return { year, out, income, count: ex.length, cats, monthly, maxM, minM, biggest, zero, days, saved: income - out };
   }
+  const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
   function retroSlides(r) {
-    const c = r.topCat && catOf(r.topCat[0]);
-    const mName = (k) => cap(fmtMonthName.format(monthDate(k)));
-    const s = [
-      { k: 'intro', html: `<span class="retro__kicker">Nexa Money</span><h2>Seu ${r.year}<br>em números</h2><p>Toque para continuar ›</p>` },
-      { k: 'out', html: `<span class="retro__kicker">Você gastou</span><h2 class="retro__big">${money(r.out)}</h2><p>em ${r.count} lançamentos</p>` },
-    ];
-    if (r.income) s.push({ k: 'save', html: `<span class="retro__kicker">Entrou</span><h2 class="retro__big">${money(r.income)}</h2><p>${r.saved >= 0 ? `e você guardou <b>${money(r.saved)}</b> (${pct((r.saved / r.income) * 100)}) 💚` : `e gastou ${money(-r.saved)} a mais do que entrou`}</p>` });
-    if (c) s.push({ k: 'cat', html: `<span class="retro__kicker">Categoria campeã</span><span class="retro__cat" style="--c:${c.color}">${ico(c.icon)}</span><h2>${esc(c.name)}</h2><p>${money(r.topCat[1])} · ${pct((r.topCat[1] / r.out) * 100)} dos gastos</p>` });
-    if (r.months.length) s.push({ k: 'month', html: `<span class="retro__kicker">Mês mais caro</span><h2>${mName(r.months[0][0])}</h2><p>${money(r.months[0][1])}</p>${r.months.length > 1 ? `<span class="retro__kicker">Mês mais econômico</span><h3>${mName(r.months[r.months.length - 1][0])} · ${money(r.months[r.months.length - 1][1])}</h3>` : ''}` });
-    if (r.biggest) s.push({ k: 'big', html: `<span class="retro__kicker">Maior gasto do ano</span><h2>${esc(r.biggest.title)}</h2><p>${money(r.biggest.amount)} · ${fmtDM.format(parseDay(r.biggest.date))}</p>` });
-    s.push({ k: 'zero', html: `<span class="retro__kicker">Dias sem gastar</span><h2 class="retro__big">${r.zero}</h2><p>${r.zero ? 'dias em que você não gastou nada 🎉' : 'Que tal um desafio de dia sem gastos?'}</p>` });
-    s.push({ k: 'end', html: `<span class="retro__kicker">Isso foi seu ${r.year}!</span><h2>Bora deixar o próximo ainda melhor 🚀</h2><button type="button" class="btn btn--primary" id="retroShare">${ico('i-share')}Compartilhar</button>` });
+    const mName = (m) => cap(fmtMonthName.format(new Date(r.year, m, 1)));
+    const count = (cents, cls = '') => `<strong class="retro__num ${cls}" data-count="${cents}">${money(cents)}</strong>`;
+    const maxV = Math.max(1, ...r.monthly);
+    const bars = (hl) => `<div class="rbars">${r.monthly.map((v, m) => `
+      <div class="rbars__col ${hl.includes(m) ? 'is-hl' : ''}" style="--h:${(v / maxV) * 100}%;--k:${m}"><i></i><small>${MONTHS[m][0].toUpperCase()}</small></div>`).join('')}</div>`;
+    const s = [{ k: 'intro', html: `
+      <span class="retro__logo"><svg viewBox="0 0 100 100" width="54" height="54" aria-hidden="true"><use href="#nx-logo"/></svg></span>
+      <span class="retro__kicker">Retrospectiva Nexa Money</span>
+      <h2 class="retro__year">${r.year}</h2>
+      <p>Seu ano em números, do primeiro gasto ao último.</p>
+      <span class="retro__hint">Toque para avançar · segure para pausar</span>` }];
+    s.push({ k: 'out', html: `
+      <span class="retro__kicker">Neste ano você gastou</span>
+      ${count(r.out, 'is-xl')}
+      <p>em <b>${r.count}</b> lançamentos · média de <b>${money(Math.round(r.out / Math.max(1, r.monthly.filter(Boolean).length)))}</b> por mês</p>
+      ${bars([])}` });
+    if (r.income) {
+      const p = Math.max(0, Math.min(100, (r.saved / r.income) * 100));
+      s.push({ k: 'save', html: `
+        <span class="retro__kicker">Entrou na sua conta</span>
+        ${count(r.income)}
+        <div class="rring" style="--p:${p}"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52"/><circle class="rring__v" cx="60" cy="60" r="52" pathLength="100"/></svg>
+          <div><b>${pct(p)}</b><small>guardado</small></div></div>
+        <p>${r.saved >= 0 ? `Você guardou <b>${money(r.saved)}</b> 💚` : `Você gastou <b>${money(-r.saved)}</b> a mais do que entrou`}</p>` });
+    }
+    if (r.cats.length) {
+      const top = r.cats.slice(0, 3);
+      const c0 = catOf(top[0][0]);
+      s.push({ k: 'cat', html: `
+        <span class="retro__kicker">Categoria campeã</span>
+        <span class="retro__cat" style="--c:${c0.color}">${ico(c0.icon)}</span>
+        <h2>${esc(c0.name)}</h2>
+        <p><b>${money(top[0][1])}</b> · ${pct((top[0][1] / r.out) * 100)} de tudo que você gastou</p>
+        <div class="rrank">${top.map(([id, v], k) => { const c = catOf(id); return `
+          <div class="rrank__row" style="--c:${c.color};--w:${(v / top[0][1]) * 100}%;--k:${k}"><span>${k + 1}º</span><div><b>${esc(c.name)}</b><i></i></div><small>${money(v)}</small></div>`; }).join('')}</div>` });
+    }
+    if (r.maxM[0] >= 0) s.push({ k: 'month', html: `
+      <span class="retro__kicker">Mês mais caro</span>
+      <h2>${mName(r.maxM[0])}</h2>
+      <p><b>${money(r.maxM[1])}</b>${r.minM[0] >= 0 && r.minM[0] !== r.maxM[0] ? ` · o mais econômico foi <b>${mName(r.minM[0])}</b> (${money(r.minM[1])})` : ''}</p>
+      ${bars([r.maxM[0]])}` });
+    if (r.biggest) {
+      const c = catOf(r.biggest.cat);
+      s.push({ k: 'big', html: `
+        <span class="retro__kicker">Maior gasto do ano</span>
+        <div class="rticket">
+          <span class="rticket__ic" style="--c:${c.color}">${ico(c.icon)}</span>
+          <b>${esc(r.biggest.title)}</b>
+          ${count(r.biggest.amount)}
+          <small>${esc(c.name)} · ${fmtDM.format(parseDay(r.biggest.date))}/${r.year}</small>
+        </div>` });
+    }
+    s.push({ k: 'zero', html: `
+      <span class="retro__kicker">Dias sem gastar</span>
+      <strong class="retro__num is-xl" data-int="${r.zero}">${r.zero}</strong>
+      <p>${r.zero ? 'dias em que você não gastou nada 🎉' : 'Que tal um desafio de dia sem gastos?'}</p>
+      <div class="rdays">${r.days.map((d) => `<i class="is-${d}"></i>`).join('')}</div>
+      <small class="rdays__legend"><i class="is-zero"></i> sem gastos <i class="is-spent"></i> com gastos</small>` });
+    s.push({ k: 'end', html: `
+      <span class="retro__kicker">Esse foi seu ${r.year}</span>
+      <h2>Bora deixar o próximo ainda melhor 🚀</h2>
+      <div class="rsum">
+        <div><small>Gastou</small><b>${money(r.out)}</b></div>
+        ${r.income ? `<div><small>${r.saved >= 0 ? 'Guardou' : 'No negativo'}</small><b>${money(Math.abs(r.saved))}</b></div>` : ''}
+        <div><small>Lançamentos</small><b>${r.count}</b></div>
+        <div><small>Dias sem gastar</small><b>${r.zero}</b></div>
+      </div>
+      <button type="button" class="retro__share" id="retroShare">${ico('i-share')}Compartilhar meu ano</button>` });
     return s;
   }
   let retro = null;
@@ -4194,29 +4260,94 @@
     const year = new Date().getFullYear();
     const r = retroData(year);
     if (!r.count) { toast(`Ainda não há lançamentos em ${year} para a retrospectiva.`); return; }
-    retro = { r, slides: retroSlides(r), i: 0, timer: null };
+    retro = { r, slides: retroSlides(r), i: 0, timer: null, left: RETRO_MS, t0: 0, paused: false };
     $('#retroBars').innerHTML = retro.slides.map(() => '<span><i></i></span>').join('');
+    dlgRetro.classList.remove('is-paused');
     dlgRetro.showModal();
     retroGo(0);
+  }
+  // Números contam do zero até o valor.
+  function retroCount(root) {
+    $$('[data-count], [data-int]', root).forEach((el) => {
+      if (state.privacy) return;
+      const end = Number(el.dataset.count ?? el.dataset.int);
+      const fmt = el.dataset.count != null ? (v) => money(v) : (v) => String(v);
+      const t0 = performance.now();
+      const step = (t) => {
+        const k = Math.min(1, (t - t0) / 1100);
+        el.textContent = fmt(Math.round(end * (1 - (1 - k) ** 3)));
+        if (k < 1 && dlgRetro.open) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    });
+  }
+  function retroArm(ms) {
+    clearTimeout(retro.timer);
+    retro.left = ms;
+    retro.t0 = performance.now();
+    if (retro.i < retro.slides.length - 1) retro.timer = setTimeout(() => retroGo(retro.i + 1), ms);
   }
   function retroGo(i) {
     if (!retro) return;
     clearTimeout(retro.timer);
     if (i < 0) i = 0;
     if (i >= retro.slides.length) { dlgRetro.close(); return; }
+    const back = i < retro.i;
     retro.i = i;
     const sl = retro.slides[i];
     const box = $('#retroSlide');
     box.className = `retro__slide is-${sl.k}`;
-    box.innerHTML = `<div class="retro__in">${sl.html}</div>`;
+    box.innerHTML = `<div class="retro__in ${back ? 'is-back' : ''}">${sl.html}</div>`;
     dlgRetro.dataset.k = sl.k;
     $$('#retroBars span').forEach((b, k) => { b.className = k < i ? 'is-done' : k === i ? 'is-on' : ''; });
+    // Reinicia a animação da barra do story atual.
+    const bar = $$('#retroBars span')[i];
+    if (bar) { const fill = $('i', bar); fill.style.animation = 'none'; void fill.offsetWidth; fill.style.animation = ''; }
     const share = $('#retroShare');
     if (share) share.onclick = (e) => { e.stopPropagation(); shareRetro(); };
-    if (i < retro.slides.length - 1) retro.timer = setTimeout(() => retroGo(i + 1), 5000);
+    retroCount(box);
+    retro.paused = false;
+    dlgRetro.classList.remove('is-paused');
+    retroArm(RETRO_MS);
   }
-  $('#retroNext').addEventListener('click', () => retro && retroGo(retro.i + 1));
-  $('#retroPrev').addEventListener('click', () => retro && retroGo(retro.i - 1));
+  function retroPause() {
+    if (!retro || retro.paused) return;
+    retro.paused = true;
+    clearTimeout(retro.timer);
+    retro.left = Math.max(300, retro.left - (performance.now() - retro.t0));
+    dlgRetro.classList.add('is-paused');
+  }
+  function retroResume() {
+    if (!retro || !retro.paused) return;
+    retro.paused = false;
+    dlgRetro.classList.remove('is-paused');
+    retroArm(retro.left);
+  }
+  // Toque rápido: avança (ou volta, no terço esquerdo). Tocar e segurar: pausa até soltar.
+  (() => {
+    let down = null; let holdT = null; let held = false;
+    dlgRetro.addEventListener('pointerdown', (e) => {
+      if (!retro || e.target.closest('button')) return;
+      down = { x: e.clientX, t: performance.now() };
+      held = false;
+      holdT = setTimeout(() => { held = true; retroPause(); }, 220);
+    });
+    const up = (e, cancel) => {
+      if (!down) return;
+      clearTimeout(holdT);
+      const wasHeld = held;
+      const x = down.x;
+      down = null; held = false;
+      if (wasHeld) { retroResume(); return; }
+      if (cancel || !retro) return;
+      if (x < innerWidth / 3) retroGo(retro.i - 1);
+      else retroGo(retro.i + 1);
+    };
+    dlgRetro.addEventListener('pointerup', (e) => up(e, false));
+    dlgRetro.addEventListener('pointercancel', (e) => up(e, true));
+    dlgRetro.addEventListener('contextmenu', (e) => e.preventDefault());
+    document.addEventListener('visibilitychange', () => { if (document.hidden) retroPause(); });
+  })();
   dlgRetro.addEventListener('close', () => { if (retro) clearTimeout(retro.timer); });
   async function shareRetro() {
     const r = retro.r;
