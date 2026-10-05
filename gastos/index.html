@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="style.css?v=30">
+  <link rel="stylesheet" href="style.css?v=31">
   <!-- Garante ícones do tamanho certo mesmo antes do CSS carregar. -->
   <style>.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}</style>
   <!-- Abertura e tela de início do Nexa Money: ficam aqui para aparecer na hora, antes do resto da página. -->
@@ -482,7 +482,7 @@
       <article class="panel" data-block="recur" id="recurPanel" hidden>
         <header class="panel__head">
           <h2><svg class="ic ic--title"><use href="#i-loop"/></svg>Gastos que se repetem</h2>
-          <span class="panel__sub" id="recurSub"></span>
+          <button type="button" class="link" id="recurOpen"><span id="recurSub"></span><svg class="ic"><use href="#i-right"/></svg></button>
         </header>
         <div class="recur-sum" id="recurSum"></div>
         <div class="recur" id="recur"></div>
@@ -1138,6 +1138,24 @@
     </div>
   </dialog>
 
+
+  <!-- ============ DIÁLOGO: GASTOS QUE SE REPETEM ============ -->
+  <dialog id="dlgRecur" class="dlg">
+    <div class="form recur-dlg">
+      <header class="form__head">
+        <h2>Gastos que se repetem</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="recur-sum" id="recurDlgSum"></div>
+      <div class="recur-dlg__bar">
+        <label class="recur-dlg__search"><svg class="ic"><use href="#i-search"/></svg><input type="search" id="recurSearch" placeholder="Buscar…" aria-label="Buscar gasto que se repete"></label>
+        <span class="panel__sub" id="recurDlgCount"></span>
+      </div>
+      <div class="recur recur-dlg__list" id="recurDlgList"></div>
+      <p class="muted recur-dlg__hint">Toque no lápis para editar ou na lixeira para apagar.</p>
+    </div>
+  </dialog>
+
   <!-- ============ DIÁLOGO: FOTO ============ -->
   <dialog id="dlgPhoto" class="dlg dlg--photo">
     <button type="button" class="icon-btn photo-close" data-close aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
@@ -1146,6 +1164,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="app.js?v=30"></script>
+  <script src="app.js?v=31"></script>
 </body>
 </html>
