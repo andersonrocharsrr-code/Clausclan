@@ -424,6 +424,7 @@
     $$('.tab[data-view]').forEach((t) => t.classList.toggle('is-active', t.dataset.view === view));
     $('#tabTools').classList.toggle('is-active', view === 'calc');
     $('#btnAdd').setAttribute('aria-label', view === 'lembretes' ? 'Novo lembrete' : 'Novo lançamento');
+    if (document.documentElement.classList.contains('is-locked')) lockY = 0;
     window.scrollTo({ top: 0 });
   }
 
@@ -899,6 +900,24 @@
     ui.kindFilter = b.dataset.kind;
     renderExpenses();
   });
+
+  /* ---------------- Trava a tela de fundo com janelas abertas ---------------- */
+  // Com um diálogo aberto, só ele rola: a tela de baixo fica parada (e volta ao mesmo ponto ao fechar).
+  let lockY = 0;
+  function syncScrollLock() {
+    const open = !!document.querySelector('dialog[open]');
+    const root = document.documentElement;
+    if (open && !root.classList.contains('is-locked')) {
+      lockY = window.scrollY;
+      document.body.style.top = `-${lockY}px`;
+      root.classList.add('is-locked');
+    } else if (!open && root.classList.contains('is-locked')) {
+      root.classList.remove('is-locked');
+      document.body.style.top = '';
+      window.scrollTo({ top: lockY, behavior: 'instant' });
+    }
+  }
+  new MutationObserver(syncScrollLock).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['open'] });
 
   /* ---------------- Diálogos (genérico) ---------------- */
   $$('dialog').forEach((dlg) => {
