@@ -134,6 +134,7 @@
   function save() {
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify(state));
+      schedulePushSync();
     } catch {
       toast('Não foi possível salvar no navegador. Verifique se o modo anônimo está desligado.');
     }
@@ -1646,6 +1647,8 @@
     ringBell('on');
     beep();
     toast('Lembretes ligados 🔔 Você será avisado no horário escolhido.');
+    // Cadastra o celular no servidor para os avisos chegarem com o app fechado.
+    if (pushReady()) pushSync({ test: first }).then((ok) => { if (ok) toast('🔔 Pronto! Os avisos vão chegar mesmo com o app fechado.'); });
     // Só na primeira vez: um aviso de exemplo, que some sozinho.
     if (first) notify('Nexa Money', 'Pronto! Os lembretes vão aparecer assim.', 'teste', { quiet: true });
   }
@@ -1656,6 +1659,7 @@
     updateBell();
     ringBell('off');
     toast('Lembretes desligados. Toque no sino para ligar de novo.');
+    pushOff();
   }
 
   const toggleAlerts = () => (alertsOn() ? disableAlerts() : enableAlerts());
@@ -4653,6 +4657,150 @@
     notify('Hora do backup 💾', body, 'backup', { quiet: true, url: './?acao=backup' });
     toast('💾 Que tal fazer o backup do mês?', 'Fazer agora', exportBackup);
   }
+
+  /* ---------------- Notificações com o app fechado (servidor de push) ---------------- */
+  // Endereço do servidor (Cloudflare Worker). Vazio = recurso desligado; os avisos funcionam só com o app aberto.
+  var PUSH_URL = '';
+  var PUSH_ID_KEY = 'nexa-push-id';
+  function pushReady() { return !!PUSH_URL && 'serviceWorker' in navigator && 'PushManager' in window && window.isSecureContext; }
+  function pushId() {
+    let id = store(() => localStorage.getItem(PUSH_ID_KEY));
+    if (!id) {
+      id = Array.from(crypto.getRandomValues(new Uint8Array(18)), (b) => b.toString(16).padStart(2, '0')).join('');
+      store(() => localStorage.setItem(PUSH_ID_KEY, id));
+    }
+    return id;
+  }
+  const b64uToBytes = (s) => {
+    const b = s.replace(/-/g, '+').replace(/_/g, '/');
+    return Uint8Array.from(atob(b + '='.repeat((4 - (b.length % 4)) % 4)), (c) => c.charCodeAt(0));
+  };
+  const atLocal = (iso, time) => { const d = parseDay(iso); const [h, m] = (time || '09:00').split(':').map(Number); d.setHours(h, m, 0, 0); return d.getTime(); };
+
+  // Lista dos próximos avisos (até ~60 dias), com o mesmo título/texto dos avisos feitos com o app aberto.
+  function pushSchedule(now = new Date()) {
+    const items = [];
+    const t0 = now.getTime();
+    const horizon = t0 + 62 * DAY;
+    const add = (at, tag, title, body, url = './') => { if (at > t0 && at < horizon) items.push({ at, tag, title, body, url }); };
+    const whenTxt = (due, at) => {
+      const d = daysBetween(new Date(at), due);
+      const hm = `${pad(due.getHours())}:${pad(due.getMinutes())}`;
+      return d <= 0 ? `hoje às ${hm}` : d === 1 ? `amanhã às ${hm}` : `em ${d} dias`;
+    };
+    // Lembretes de contas (inclui as próximas repetições).
+    for (const r of state.reminders) {
+      let rem = { ...r };
+      for (let k = 0; k < 4; k++) {
+        const due = new Date(rem.due);
+        const value = rem.amount != null ? ` (${realMoney(rem.amount)})` : '';
+        const fresh = k > 0;
+        if (rem.remind > 0 && (fresh || rem.firedPre !== rem.due)) {
+          const at = due.getTime() - rem.remind * MIN;
+          add(at, r.id, `Lembrete: ${rem.title}`, `Vence ${whenTxt(due, at)}${value}.`);
+        }
+        if (fresh || rem.firedAt !== rem.due) add(due.getTime(), r.id, `Vence agora: ${rem.title}`, `Hoje às ${rem.due.slice(11)}${value}. Toque para abrir.`);
+        if (!rem.repeat || rem.repeat === 'none' || rem.repeat === 'once') break;
+        rem = { ...rem, due: nextDue(rem) };
+      }
+    }
+    // Quem me deve: no dia combinado (3 ou mais no mesmo horário viram um aviso só).
+    const byAt = new Map();
+    for (const d of state.debts) {
+      if (!d.notify || !d.due || debtLeft(d) <= 0 || d.notifiedFor === d.due) continue;
+      const at = atLocal(d.due, d.notifyTime || '09:00');
+      if (!byAt.has(at)) byAt.set(at, []);
+      byAt.get(at).push(d);
+    }
+    for (const [at, list] of byAt) {
+      if (list.length >= 3) {
+        add(at, `debts-hoje-${list[0].due}`, `${list.length} cobranças marcadas para hoje`, list.map((d) => `${d.person} — ${realMoney(debtLeft(d))}`).join('\n'));
+      } else {
+        for (const d of list) {
+          add(at, `debt-${d.id}`, d.dir === 'in' ? `Hoje: ${d.person} combinou de te pagar` : `Hoje: pagar ${d.person}`,
+            `${realMoney(debtLeft(d))}${d.desc ? ` · ${d.desc}` : ''} · combinado para hoje`);
+        }
+      }
+    }
+    // Assinaturas: 2 dias antes de cada renovação, às 9h.
+    for (const s of state.subs) {
+      let from = now;
+      for (let k = 0; k < 3; k++) {
+        const charge = nextCharge(s, from);
+        const at = atLocal(dateISO(addDays(charge, -2)), '09:00');
+        if (s.alerted !== dateISO(charge)) add(at, `sub-${s.id}`, `${s.name} renova em 2 dias`, `${realMoney(s.amount)} · cobrança em ${fmtDM.format(charge)}. Ainda usa? Se não, cancele antes.`);
+        from = addDays(charge, 1);
+      }
+    }
+    // Lembrete diário e resumo da noite: próximos 30 dias.
+    for (let k = 0; k < 30; k++) {
+      const day = dateISO(addDays(now, k));
+      if (state.daily.on && state.daily.last !== day) {
+        add(atLocal(day, state.daily.time), 'daily', 'Você lançou seus gastos de hoje?', 'Toque para lançar rapidinho o que gastou hoje.', './?acao=rapido');
+      }
+      if (state.nightly.on && state.nightly.last !== day) {
+        add(atLocal(day, state.nightly.time), 'nightly', 'Resumo do seu dia 🌙', 'Toque para ver quanto você gastou hoje e como está o mês.');
+      }
+    }
+    // Backup: 30 dias depois do último (ou 7 dias depois do primeiro uso).
+    if (state.expenses.length >= 5) {
+      const first = state.expenses.map((e) => e.date).sort()[0];
+      const base = state.lastBackup ? addDays(parseDay(state.lastBackup), 30) : addDays(parseDay(first), 7);
+      const asked = state.backupAsked ? addDays(parseDay(state.backupAsked), 7) : base;
+      const when = base > asked ? base : asked;
+      add(atLocal(dateISO(when), '10:00'), 'backup', 'Hora do backup 💾', state.lastBackup
+        ? 'Faz um mês desde o último backup. Salve um novo para não perder nada se trocar de celular.'
+        : 'Você ainda não fez nenhum backup. Salve uma cópia para não perder seus dados se trocar de celular.', './?acao=backup');
+    }
+    return items.sort((a, b) => a.at - b.at).slice(0, 300);
+  }
+
+  async function pushSubscription(create) {
+    const reg = await getReg();
+    if (!reg || !reg.pushManager) return null;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub && create) {
+      const { key } = await (await fetch(`${PUSH_URL}/key`)).json();
+      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uToBytes(key) });
+    }
+    return sub;
+  }
+  var pushTimer = null;
+  var pushBusy = false;
+  function schedulePushSync(delay = 2500) {
+    if (!pushReady()) return;
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(pushSync, delay);
+  }
+  async function pushSync({ test = false } = {}) {
+    if (!pushReady() || pushBusy) return false;
+    if (!alertsOn()) return false;
+    pushBusy = true;
+    try {
+      const sub = await pushSubscription(true);
+      if (!sub) return false;
+      const res = await fetch(`${PUSH_URL}/sync`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
+        body: JSON.stringify({ id: pushId(), subscription: sub.toJSON(), items: pushSchedule() }),
+      });
+      if (!res.ok) return false;
+      if (test) await fetch(`${PUSH_URL}/test`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: pushId() }) });
+      return true;
+    } catch {
+      return false;
+    } finally {
+      pushBusy = false;
+    }
+  }
+  async function pushOff() {
+    if (!pushReady()) return;
+    try {
+      await fetch(`${PUSH_URL}/remove`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: pushId() }) });
+      const sub = await pushSubscription(false);
+      if (sub) await sub.unsubscribe();
+    } catch { /* sem internet: o servidor apaga sozinho quando o aviso falhar */ }
+  }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { clearTimeout(pushTimer); pushSync(); } });
 
   /* ---------------- Início ---------------- */
   function launchFixed() {
