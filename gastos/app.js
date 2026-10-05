@@ -83,6 +83,7 @@
       catBudgets: {}, fixed: [], customCats: [], card: { close: 0, due: 0 }, goals: [], debts: [], notifyOn: true, notifyTested: false,
       privacy: false, pixKey: '', daily: { on: false, time: '21:00', last: '' },
       subs: [], nightly: { on: false, time: '21:30', last: '' }, challenges: [], work: { income: 0, hours: 44 },
+      layout: { order: [], hidden: [] }, lastBackup: '', backupAsked: '', catAlerted: {},
     };
     try {
       const data = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
@@ -123,6 +124,10 @@
       nightly: { on: false, time: '21:30', last: '', ...obj(data.nightly) },
       challenges: Array.isArray(data.challenges) ? data.challenges : [],
       work: { income: Number(obj(data.work).income) || 0, hours: Number(obj(data.work).hours) || 44 },
+      layout: { order: Array.isArray(obj(data.layout).order) ? data.layout.order : [], hidden: Array.isArray(obj(data.layout).hidden) ? data.layout.hidden : [] },
+      lastBackup: typeof data.lastBackup === 'string' ? data.lastBackup : (base.lastBackup || ''),
+      backupAsked: typeof data.backupAsked === 'string' ? data.backupAsked : (base.backupAsked || ''),
+      catAlerted: obj(data.catAlerted),
     };
   }
 
@@ -565,19 +570,15 @@
     const cur = byCat(list);
     const prev = byCat(monthOut(prevKey));
 
-    // Maior variação de categoria vs. mês anterior
-    let best = null;
-    for (const [id, v] of cur) {
-      const p = prev.get(id) || 0;
-      if (!p || Math.abs(v - p) < 2000) continue;
-      const pct = Math.round(((v - p) / p) * 100);
-      if (!best || Math.abs(pct) > Math.abs(best.pct)) best = { id, pct };
-    }
-    if (best) {
-      const name = catOf(best.id).name;
-      out.push(best.pct > 0
-        ? { tone: 'bad', icon: 'i-up', html: `Você gastou <strong>${best.pct}% a mais</strong> com ${name} que em ${prevName}.` }
-        : { tone: 'good', icon: 'i-down', html: `Você gastou <strong>${-best.pct}% a menos</strong> com ${name} que em ${prevName}.` });
+    // Comparação justa por categoria: no mês atual, compara com o mês passado até o mesmo dia.
+    for (const c of catCompare(current ? monthKey(new Date()) : ui.month).slice(0, 3)) {
+      const name = catOf(c.id).name;
+      if (c.pct > 0) {
+        const tip = c.save > 0 ? ` Voltando ao ritmo de ${prevName}, você economiza cerca de <strong>${money(c.save)}</strong> até o fim do mês.` : '';
+        out.push({ tone: 'bad', icon: 'i-up', html: `Você gastou <strong>${c.pct}% a mais</strong> com ${name} que em ${prevName}${current ? ' no mesmo período' : ''} (+${money(c.diff)}).${tip}` });
+      } else {
+        out.push({ tone: 'good', icon: 'i-down', html: `Você gastou <strong>${-c.pct}% a menos</strong> com ${name} que em ${prevName}${current ? ' no mesmo período' : ''} (−${money(-c.diff)}). 👏` });
+      }
     }
 
     // Limites por categoria estourados
@@ -3435,6 +3436,11 @@
     menu.hidden = true;
     const action = b.dataset.action;
     if (action === 'install') installApp();
+    else if (action === 'layout') openLayout();
+    else if (action === 'logout') {
+      if (!authGet()) showAuth(null, 'signup');
+      else if (confirm('Sair da conta? Para voltar, entre com seu e-mail e senha.')) logout();
+    }
     else if (action === 'tour') startTour();
     else if (action === 'budget') openBudget();
     else if (action === 'goal') openGoal();
@@ -3449,18 +3455,7 @@
       download('lembretes-gastos.ics', buildICS(), 'text/calendar');
       toast('Abra o arquivo .ics para adicionar os lembretes ao calendário do celular.');
     } else if (action === 'export-json') {
-      const pics = {};
-      for (const x of state.expenses.filter((y) => y.photo)) {
-        const d = await photos.get(x.id);
-        if (d) pics[x.id] = d;
-      }
-      const data = {
-        app: 'meus-gastos', version: 2, exportedAt: new Date().toISOString(),
-        expenses: state.expenses, reminders: state.reminders, budget: state.budget, catBudgets: state.catBudgets,
-        fixed: state.fixed, customCats: state.customCats, card: state.card, goals: state.goals, debts: state.debts, pixKey: state.pixKey, daily: state.daily,
-        subs: state.subs, nightly: state.nightly, challenges: state.challenges, work: state.work, photos: pics,
-      };
-      download(`nexa-money-backup-${dateISO(new Date())}.json`, JSON.stringify(data), 'application/json');
+      exportBackup();
     } else if (action === 'import-json') {
       $('#fileImport').click();
     }
@@ -4401,6 +4396,155 @@
     openImage({ canvas: cv, title: `Retrospectiva ${r.year}`, name: `nexa-money-retrospectiva-${r.year}`, text: `Meu ${r.year} no Nexa Money` });
   }
 
+  // Compara cada categoria com o mês anterior. No mês atual usa só os dias já passados dos dois meses,
+  // para não comparar meio mês com um mês inteiro. Devolve as maiores variações (altas primeiro).
+  function catCompare(key, now = new Date()) {
+    const prevKey = shiftMonth(key, -1);
+    const isCurrent = key === monthKey(now);
+    const day = now.getDate();
+    const upTo = (k) => (e) => e.date.startsWith(k) && (!isCurrent || Number(e.date.slice(8, 10)) <= day);
+    const sumBy = (list) => list.reduce((m, e) => m.set(e.cat, (m.get(e.cat) || 0) + e.amount), new Map());
+    const cur = sumBy(state.expenses.filter(isOut).filter(upTo(key)));
+    const prev = sumBy(state.expenses.filter(isOut).filter(upTo(prevKey)));
+    const prevFull = sumBy(monthOut(prevKey));
+    const dim = daysInMonth(...key.split('-').map((x, i) => Number(x) - i));
+    const res = [];
+    for (const id of new Set([...cur.keys(), ...prev.keys()])) {
+      const v = cur.get(id) || 0; const p = prev.get(id) || 0;
+      if (!p || Math.abs(v - p) < 2000) continue;
+      const pct = Math.round(((v - p) / p) * 100);
+      if (Math.abs(pct) < 25) continue;
+      const projected = isCurrent ? Math.round((v / Math.max(1, day)) * dim) : v;
+      res.push({ id, pct, diff: v - p, save: isCurrent ? Math.max(0, projected - (prevFull.get(id) || 0)) : 0 });
+    }
+    return res.sort((a, b) => (b.pct > 0) - (a.pct > 0) || Math.abs(b.pct) - Math.abs(a.pct));
+  }
+  // Aviso (uma vez por mês por categoria) quando um gasto dispara em relação ao mês passado.
+  function checkCatAlerts(now = new Date()) {
+    if (now.getDate() < 5 || now.getHours() < 12) return;
+    const key = monthKey(now);
+    const done = state.catAlerted[key] || [];
+    const prevName = fmtMonthName.format(monthDate(shiftMonth(key, -1)));
+    for (const c of catCompare(key, now)) {
+      if (c.pct < 40 || c.diff < 5000 || done.includes(c.id)) continue;
+      done.push(c.id);
+      state.catAlerted = { [key]: done };
+      save();
+      const name = catOf(c.id).name;
+      notify(`${name}: ${c.pct}% a mais que em ${prevName}`, `Você já gastou ${money(c.diff)} a mais no mesmo período.${c.save ? ` Voltando ao ritmo, economiza cerca de ${money(c.save)} até o fim do mês.` : ''}`, `cat-${c.id}`, { quiet: true });
+      toast(`📈 ${name}: ${c.pct}% a mais que em ${prevName}`);
+      return;
+    }
+  }
+
+  /* ---------------- Personalizar tela inicial ---------------- */
+  const BLOCKS = [
+    ['quick', 'Lançamento rápido', 'i-sparkle'], ['hero', 'Resumo do mês', 'i-wallet'], ['stats', 'Números do mês', 'i-activity'],
+    ['forecast', 'Previsão do fim do mês', 'i-forecast'], ['goals', 'Metas', 'i-piggy'], ['debts', 'Quem me deve', 'i-hand'],
+    ['insights', 'Destaques do mês', 'i-bulb'], ['cats', 'Por categoria', 'i-pie'], ['recur', 'Gastos que se repetem', 'i-loop'],
+    ['days', 'Gastos por dia', 'i-calendar'], ['compare', 'Últimos 6 meses', 'i-bars'], ['card', 'Cartão de crédito', 'i-card'],
+    ['report', 'Relatório do mês', 'i-share'], ['next', 'Próximos lembretes', 'i-clock'],
+  ];
+  function layoutOrder() {
+    const ids = BLOCKS.map((b) => b[0]);
+    const o = state.layout.order.filter((id) => ids.includes(id));
+    return [...o, ...ids.filter((id) => !o.includes(id))];
+  }
+  function applyLayout() {
+    const view = $('#view-resumo');
+    const cta = $('#btnLayout');
+    for (const id of layoutOrder()) {
+      const el = $(`[data-block="${id}"]`, view);
+      if (!el) continue;
+      view.insertBefore(el, cta);
+      el.classList.toggle('is-off', state.layout.hidden.includes(id));
+    }
+  }
+  function renderLayoutList() {
+    const order = layoutOrder();
+    $('#layoutList').innerHTML = order.map((id, i) => {
+      const [, name, icon] = BLOCKS.find((b) => b[0] === id);
+      const on = !state.layout.hidden.includes(id);
+      return `<div class="layout-row ${on ? '' : 'is-hidden'}" data-id="${id}">
+        <span class="layout-row__ic">${ico(icon)}</span><strong>${name}</strong>
+        <button type="button" class="layout-row__mv" data-mv="-1" ${i === 0 ? 'disabled' : ''} aria-label="Subir">${ico('i-up2')}</button>
+        <button type="button" class="layout-row__mv" data-mv="1" ${i === order.length - 1 ? 'disabled' : ''} aria-label="Descer">${ico('i-down2')}</button>
+        <label class="switch switch--sm"><input type="checkbox" ${on ? 'checked' : ''} aria-label="Mostrar ${name}"><span class="switch__ui"></span></label>
+      </div>`;
+    }).join('');
+  }
+  function openLayout() { renderLayoutList(); $('#dlgLayout').showModal(); }
+  $('#btnLayout').addEventListener('click', openLayout);
+  $('#layoutList').addEventListener('click', (e) => {
+    const mv = e.target.closest('[data-mv]');
+    if (!mv) return;
+    const id = mv.closest('[data-id]').dataset.id;
+    const order = layoutOrder();
+    const i = order.indexOf(id); const j = i + Number(mv.dataset.mv);
+    if (j < 0 || j >= order.length) return;
+    [order[i], order[j]] = [order[j], order[i]];
+    state.layout.order = order;
+    save(); applyLayout(); renderLayoutList();
+    const row = $(`#layoutList [data-id="${id}"]`);
+    row.animate([{ background: 'var(--accent-soft)' }, { background: 'transparent' }], { duration: 600 });
+    $(`[data-mv="${mv.dataset.mv}"]`, row).focus({ preventScroll: true });
+  });
+  $('#layoutList').addEventListener('change', (e) => {
+    const row = e.target.closest('[data-id]');
+    const id = row.dataset.id;
+    state.layout.hidden = e.target.checked ? state.layout.hidden.filter((x) => x !== id) : [...state.layout.hidden, id];
+    row.classList.toggle('is-hidden', !e.target.checked);
+    save(); applyLayout();
+  });
+  $('#layoutReset').addEventListener('click', () => {
+    state.layout = { order: [], hidden: [] };
+    save(); applyLayout(); renderLayoutList();
+    toast('Tela inicial voltou ao padrão.');
+  });
+
+  /* ---------------- Backup ---------------- */
+  async function exportBackup() {
+    const pics = {};
+    for (const x of state.expenses.filter((y) => y.photo)) {
+      const d = await photos.get(x.id);
+      if (d) pics[x.id] = d;
+    }
+    const data = {
+      app: 'meus-gastos', version: 2, exportedAt: new Date().toISOString(),
+      expenses: state.expenses, reminders: state.reminders, budget: state.budget, catBudgets: state.catBudgets,
+      fixed: state.fixed, customCats: state.customCats, card: state.card, goals: state.goals, debts: state.debts, pixKey: state.pixKey, daily: state.daily,
+      subs: state.subs, nightly: state.nightly, challenges: state.challenges, work: state.work, layout: state.layout, photos: pics,
+    };
+    download(`nexa-money-backup-${dateISO(new Date())}.json`, JSON.stringify(data), 'application/json');
+    state.lastBackup = dateISO(new Date());
+    save();
+    updateBackupItem();
+    toast('Backup salvo nos downloads. Guarde o arquivo em um lugar seguro (Drive, e-mail…).');
+  }
+  function updateBackupItem() {
+    const b = $('#menu [data-action="export-json"]');
+    if (!b) return;
+    let small = $('small', b);
+    if (!small) { small = document.createElement('small'); b.appendChild(small); }
+    small.textContent = state.lastBackup ? `último: ${fmtDM.format(parseDay(state.lastBackup))}` : 'nunca feito';
+  }
+  // Lembrete de backup: uma vez por mês (e no máximo a cada 7 dias depois de lembrar).
+  function checkBackup(now = new Date()) {
+    if (state.expenses.length < 5 || now.getHours() < 10) return;
+    const today = dateISO(now);
+    const since = (iso) => (iso ? daysBetween(parseDay(iso), now) : Infinity);
+    const firstUse = state.expenses.map((e) => e.date).sort()[0];
+    if (since(state.lastBackup) < 30 || since(state.backupAsked) < 7) return;
+    if (!state.lastBackup && since(firstUse) < 7) return;
+    state.backupAsked = today;
+    save();
+    const body = state.lastBackup
+      ? `Seu último backup foi há ${since(state.lastBackup)} dias. Salve um novo para não perder nada se trocar de celular.`
+      : 'Você ainda não fez nenhum backup. Salve uma cópia para não perder seus dados se trocar de celular.';
+    notify('Hora do backup 💾', body, 'backup', { quiet: true, url: './?acao=backup' });
+    toast('💾 Que tal fazer o backup do mês?', 'Fazer agora', exportBackup);
+  }
+
   /* ---------------- Início ---------------- */
   function launchFixed() {
     const n = runFixed();
@@ -4420,12 +4564,16 @@
   checkReminders();
   checkDebts();
   checkDaily();
+  applyLayout();
+  updateBackupItem();
   checkSubs();
   checkNightly();
-  setInterval(() => { checkReminders(); checkDebts(); checkDaily(); checkSubs(); checkNightly(); }, CHECK_EVERY_MS);
+  setTimeout(() => checkBackup(), 8000); // depois dos outros avisos, para não sobrepor
+  checkCatAlerts();
+  setInterval(() => { checkReminders(); checkDebts(); checkDaily(); checkSubs(); checkNightly(); checkBackup(); checkCatAlerts(); }, CHECK_EVERY_MS);
   // Atualiza "hoje/amanhã", fixos e médias quando o app volta para a tela.
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) { launchFixed(); checkReminders(); checkDebts(); checkDaily(); checkSubs(); checkNightly(); render(); }
+    if (!document.hidden) { launchFixed(); checkReminders(); checkDebts(); checkDaily(); checkSubs(); checkNightly(); checkBackup(); checkCatAlerts(); render(); }
   });
 
   /* ---------------- Abertura do app ---------------- */
@@ -4456,11 +4604,171 @@
     setTimeout(() => document.body.classList.remove('app-enter'), 1600);
   }
   // Abertura (N se desenhando) → tela de início → "Acessar meu painel" → painel com a entrada animada.
+  /* ---------------- Conta: cadastro e login (guardados neste aparelho) ---------------- */
+  // A senha nunca é salva: guardamos só um "resumo" dela (PBKDF2 + sal), como fazem os sites.
+  const AUTH_KEY = 'nexa-auth';
+  const SESSION_KEY = 'nexa-session';
+  const SKIP_KEY = 'nexa-auth-skip';
+  const store = (fn) => { try { return fn(); } catch { return null; } };
+  const authGet = () => store(() => JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'));
+  const sessionOk = () => {
+    const a = authGet();
+    if (!a) return false;
+    return store(() => localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY)) === a.email;
+  };
+  // Precisa mostrar a tela de conta? Sim se há conta sem sessão, ou se nunca criou nem pulou.
+  const authNeeded = () => (authGet() ? !sessionOk() : !store(() => localStorage.getItem(SKIP_KEY)));
+  const toB64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  async function hashPass(pass, saltB64, iter) {
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveBits']);
+    const salt = Uint8Array.from(atob(saltB64), (c) => c.charCodeAt(0));
+    const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: iter }, key, 256);
+    return toB64(bits);
+  }
+  function startSession(email, keep) {
+    store(() => {
+      (keep ? localStorage : sessionStorage).setItem(SESSION_KEY, email);
+      (keep ? sessionStorage : localStorage).removeItem(SESSION_KEY);
+    });
+  }
+  function logout() {
+    store(() => { localStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(SESSION_KEY); });
+    location.reload();
+  }
+  function passScore(p) {
+    let s = 0;
+    if (p.length >= 6) s++;
+    if (p.length >= 10) s++;
+    if (/[a-z]/.test(p) && /[A-Z]/.test(p)) s++;
+    if (/\d/.test(p)) s++;
+    if (/[^A-Za-z0-9]/.test(p)) s++;
+    return p.length < 6 ? 0 : Math.min(3, Math.ceil(s / 1.7));
+  }
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+  function showAuth(onDone, mode = authGet() ? 'login' : 'signup') {
+    const box = $('#auth');
+    const f = $('#authForm');
+    const signup = mode === 'signup';
+    const acc = authGet();
+    f.reset();
+    $('#authTitle').textContent = signup ? 'Crie sua conta' : `Olá de novo${acc && acc.name ? `, ${acc.name.split(' ')[0]}` : ''}!`;
+    $('#authSub').textContent = signup ? 'Leva menos de 1 minuto. Seus dados ficam protegidos com senha.' : 'Entre com seu e-mail e senha para ver seu painel.';
+    $('#authNameWrap').hidden = !signup;
+    $('#authConfirmWrap').hidden = !signup;
+    $('#authMeter').hidden = !signup;
+    $('#authForgot').hidden = signup;
+    f.password.autocomplete = signup ? 'new-password' : 'current-password';
+    f.password.placeholder = signup ? 'Mínimo de 6 caracteres' : 'Sua senha';
+    $('#authGo').textContent = signup ? 'Criar conta' : 'Entrar';
+    if (!signup && acc) f.email.value = acc.email;
+    $('#authSwitch').innerHTML = signup
+      ? (acc ? '' : '<button type="button" class="auth__link" data-auth="skip">Continuar sem conta</button>')
+      : '';
+    const err = $('#authError');
+    err.hidden = true;
+    box.hidden = false;
+    box.classList.remove('is-leaving');
+    box.classList.add('is-in');
+    setTimeout(() => (signup ? f.name : f.password).focus({ preventScroll: true }), 450);
+
+    const fail = (msg) => {
+      err.textContent = msg;
+      err.hidden = false;
+      $('.auth__inner', box).animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-8px)' }, { transform: 'translateX(8px)' }, { transform: 'translateX(-4px)' }, { transform: 'translateX(0)' }], { duration: 320 });
+    };
+    const finish = (name) => {
+      box.classList.add('is-leaving');
+      setTimeout(() => { box.hidden = true; box.classList.remove('is-in', 'is-leaving'); }, 520);
+      updateAccountItem();
+      onDone && onDone();
+      if (name) setTimeout(() => toast(`Olá, ${name.split(' ')[0]}! 👋`), 900);
+    };
+    f.oninput = () => { if (!err.classList.contains('is-info')) err.hidden = true; };
+    f.password.oninput = () => {
+      if (!signup) return;
+      const sc = passScore(f.password.value);
+      $('#authMeter').dataset.s = f.password.value ? sc : '';
+      $('#authMeter small').textContent = f.password.value ? ['Muito curta', 'Fraca', 'Boa', 'Forte'][sc] : '';
+    };
+    $('#authEye').onclick = () => {
+      const show = f.password.type === 'password';
+      f.password.type = show ? 'text' : 'password';
+      if (signup) f.confirm.type = f.password.type;
+      $('#authEye use').setAttribute('href', show ? '#i-eye-off' : '#i-eye');
+      $('#authEye').setAttribute('aria-label', show ? 'Esconder senha' : 'Mostrar senha');
+    };
+    $('#authSwitch').onclick = (e) => {
+      if (!e.target.closest('[data-auth="skip"]')) return;
+      store(() => localStorage.setItem(SKIP_KEY, '1'));
+      finish();
+    };
+    $('#authForgot').onclick = () => {
+      fail('Como a conta fica só neste aparelho, ainda não dá para recuperar a senha por e-mail. Se não lembrar, toque em "Criar nova conta": seus lançamentos continuam salvos.');
+      err.classList.add('is-info');
+      if (!$('#authReset')) err.insertAdjacentHTML('afterend', '<button type="button" class="auth__link" id="authReset">Criar nova conta</button>');
+      $('#authReset').onclick = () => {
+        if (!confirm('Criar uma nova conta neste aparelho? A conta antiga deixa de valer, mas seus lançamentos continuam aqui.')) return;
+        store(() => localStorage.removeItem(AUTH_KEY));
+        $('#authReset').remove();
+        showAuth(onDone, 'signup');
+      };
+    };
+    f.onsubmit = async (e) => {
+      e.preventDefault();
+      err.hidden = true;
+      err.classList.remove('is-info');
+      const email = f.email.value.trim().toLowerCase();
+      const pass = f.password.value;
+      if (signup && f.name.value.trim().length < 2) { fail('Digite seu nome.'); f.name.focus(); return; }
+      if (!EMAIL_RE.test(email)) { fail('Digite um e-mail válido.'); f.email.focus(); return; }
+      if (pass.length < 6) { fail('A senha precisa ter pelo menos 6 caracteres.'); f.password.focus(); return; }
+      if (!crypto.subtle) { fail('Este navegador não permite criar a conta com segurança. Abra o app pelo endereço com https.'); return; }
+      const go = $('#authGo');
+      go.disabled = true;
+      go.classList.add('is-busy');
+      try {
+        if (signup) {
+          if (pass !== f.confirm.value) { fail('As senhas não são iguais.'); f.confirm.focus(); return; }
+          const salt = toB64(crypto.getRandomValues(new Uint8Array(16)));
+          const iter = 150000;
+          const hash = await hashPass(pass, salt, iter);
+          const name = f.name.value.trim();
+          store(() => localStorage.setItem(AUTH_KEY, JSON.stringify({ name, email, salt, iter, hash, created: new Date().toISOString() })));
+          store(() => localStorage.removeItem(SKIP_KEY));
+          startSession(email, f.keep.checked);
+          finish(name);
+        } else {
+          const a = authGet();
+          const ok = a && a.email === email && (await hashPass(pass, a.salt, a.iter)) === a.hash;
+          if (!ok) { fail('E-mail ou senha incorretos.'); f.password.select(); return; }
+          startSession(email, f.keep.checked);
+          finish(a.name);
+        }
+      } finally {
+        go.disabled = false;
+        go.classList.remove('is-busy');
+      }
+    };
+  }
+  function updateAccountItem() {
+    const b = $('#menuLogout');
+    b.hidden = false;
+    b.lastChild.textContent = authGet() ? 'Sair da conta' : 'Criar conta / entrar';
+  }
+  updateAccountItem();
+
   function runSplash(skip) {
     const splash = $('#splash');
     const welcome = $('#welcome');
     if (!splash) return;
-    if (skip) { splash.remove(); welcome.remove(); return; }
+    if (skip) {
+      splash.remove(); welcome.remove();
+      // Atalhos pulam a abertura, mas não o login de quem tem conta.
+      if (authGet() && !sessionOk()) showAuth();
+      return;
+    }
     const showWelcome = () => {
       welcome.hidden = false;
       welcome.classList.add('is-in');
@@ -4478,8 +4786,9 @@
     setTimeout(finish, reduceMotion() ? 350 : 2600);
     $('#welcomeGo').addEventListener('click', () => {
       welcome.classList.add('is-leaving');
-      playEntrance();
       setTimeout(() => welcome.remove(), 520);
+      if (authNeeded()) showAuth(playEntrance);
+      else playEntrance();
     });
   }
 
@@ -4533,7 +4842,7 @@
     return TOUR.filter((st) => {
       if (!st.sel) return true;
       const el = $(st.sel);
-      return el && !el.hidden && !el.closest('[hidden]');
+      return el && !el.hidden && !el.closest('[hidden], .is-off');
     });
   }
 
@@ -4700,5 +5009,6 @@
   if (params.has('novo')) openExpense();
   else if (acao === 'cobranca') openDebt();
   else if (acao === 'rapido') setTimeout(() => quickInput.focus(), 300);
+  else if (acao === 'backup') setTimeout(() => toast('💾 Toque para salvar o backup agora.', 'Fazer backup', exportBackup), 600);
   else if (LAUNCH[acao]) openLaunch(acao);
 })();
