@@ -1292,3 +1292,9 @@ html.is-touring { scroll-behavior: smooth; }
   background: linear-gradient(135deg, color-mix(in srgb, var(--c) 80%, #000), var(--c)); }
 .whours__rate span { font-size: 13px; opacity: .9; font-weight: 600; }
 .whours__rate strong { font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+.whours__rate small, .tprice__calc { font-size: 12px; font-weight: 600; opacity: .85; }
+.tprice__calc { color: var(--muted); margin-top: 4px; }
+.whours__chips { grid-auto-columns: minmax(0, 1fr); }
+.whours__chips .seg__btn { padding-inline: 2px; font-size: 12px; }
+.whours__other[hidden] { display: none; }
+.whours__other { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }

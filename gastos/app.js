@@ -4053,38 +4053,45 @@
   };
 
   /* ----- Horas de trabalho ----- */
-  function hourValue() {
-    const { income, hours } = state.work;
-    return income && hours ? Math.round(income / ((hours * 52) / 12)) : 0;
-  }
+  // Valor da hora no padrão da CLT: horas do mês = horas por semana × 5 (44h → 220h, 40h → 200h).
+  const monthHours = () => (state.work.hours || 0) * 5;
+  // Valor exato da hora em centavos (sem arredondar) — usado em todas as contas.
+  const hourRate = () => (state.work.income && monthHours() ? state.work.income / monthHours() : 0);
+  // Valor da hora arredondado, só para mostrar na tela.
+  const hourValue = () => Math.round(hourRate());
+  // Minutos de trabalho para pagar um valor: (valor ÷ salário) × horas do mês × 60.
+  const workMinutes = (cents) => (hourRate() ? Math.round((cents / state.work.income) * monthHours() * 60) : 0);
   function hoursText(cents) {
-    const h = hourValue();
-    if (!h) return '';
-    const mins = Math.round((cents / h) * 60);
-    if (mins < 60) return `${mins} min`;
+    const mins = workMinutes(cents);
+    if (!hourRate() || !cents) return '';
+    if (mins < 60) return `${Math.max(1, mins)} min`;
     const hh = Math.floor(mins / 60); const mm = mins % 60;
     return `${hh}h${mm ? ` ${pad(mm)}min` : ''}`;
   }
-  // Texto amigável: "25 horas e 26 minutos".
+  // Texto por extenso: "29 horas e 20 minutos".
   function hoursLong(cents) {
-    const h = hourValue();
-    if (!h || !cents) return '';
-    const mins = Math.max(1, Math.round((cents / h) * 60));
+    if (!hourRate() || !cents) return '';
+    const mins = Math.max(1, workMinutes(cents));
     const hh = Math.floor(mins / 60); const mm = mins % 60;
     const H = hh ? `${hh} hora${hh > 1 ? 's' : ''}` : '';
     const M = mm ? `${mm} minuto${mm > 1 ? 's' : ''}` : '';
     return [H, M].filter(Boolean).join(' e ');
   }
   TOOL_RENDER.horas = () => {
-    const HOURS = [20, 30, 40, 44];
+    const HOURS = [20, 30, 36, 40, 44];
+    const custom = !HOURS.includes(state.work.hours);
+    const field = (c) => brl.format(c / 100).replace(/^R\$\s?/, '');
     toolBody.innerHTML = `
       ${toolHead('Descubra quantas <b>horas de trabalho</b> custa cada compra. É só preencher seu salário.')}
       <div class="whours">
         <label class="whours__field"><span>1. Quanto você ganha por mês?</span>
           <div class="whours__money"><b>R$</b><input id="wIncome" inputmode="decimal" placeholder="0,00" autocomplete="off"
-            value="${state.work.income ? brl.format(state.work.income / 100).replace(/^R\$\s?/, '') : ''}"></div></label>
+            value="${state.work.income ? field(state.work.income) : ''}"></div></label>
         <div class="whours__field"><span>2. Quantas horas trabalha por semana?</span>
-          <div class="seg seg--mini" id="wHours">${HOURS.map((x) => `<button type="button" class="seg__btn ${state.work.hours === x ? 'is-active' : ''}" data-h="${x}">${x}h</button>`).join('')}</div></div>
+          <div class="seg seg--mini whours__chips" id="wHours">${HOURS.map((x) => `<button type="button" class="seg__btn ${!custom && state.work.hours === x ? 'is-active' : ''}" data-h="${x}">${x}h</button>`).join('')}
+            <button type="button" class="seg__btn ${custom ? 'is-active' : ''}" data-h="outro">Outro</button></div>
+          <label class="whours__other" id="wOtherWrap" ${custom ? '' : 'hidden'}>Horas por semana
+            <input id="wOther" type="number" min="1" max="80" step="0.5" inputmode="decimal" value="${custom ? state.work.hours : ''}" placeholder="Ex.: 42"></label></div>
         <div class="whours__rate" id="wRate"></div>
       </div>
       <div class="whours__ask" id="wAsk">
@@ -4093,51 +4100,55 @@
         <div class="tprice" id="wOut"></div>
       </div>
       <div id="wMonth"></div>`;
-    if (!HOURS.includes(state.work.hours)) state.work.hours = 44;
-    const hoursBtn = $(`#wHours [data-h="${state.work.hours}"]`);
-    if (hoursBtn) hoursBtn.classList.add('is-active');
     const income = $('#wIncome');
     const price = $('#wPrice');
     const cents = (input) => { const v = safeEval(input.value || ''); return Number.isFinite(v) && v > 0 ? toCents(v) : 0; };
+    const hNum = (x) => num.format(x);
     // Atualiza só os resultados: os campos continuam com o foco e o teclado não fecha.
     const refresh = () => {
-      const h = hourValue();
-      const dayH = state.work.hours / 5;
-      $('#wRate').innerHTML = h
-        ? `<span>Sua hora de trabalho vale</span><strong>${realMoney(h)}</strong>`
+      const rate = hourRate();
+      $('#wRate').innerHTML = rate
+        ? `<span>Sua hora de trabalho vale</span><strong>${realMoney(hourValue())}</strong>
+           <small>${realMoney(state.work.income)} ÷ ${hNum(monthHours())} horas no mês (${hNum(state.work.hours)}h por semana × 5)</small>`
         : '<span>Preencha seu salário para ver quanto vale sua hora.</span>';
-      $('#wAsk').hidden = !h;
+      $('#wAsk').hidden = !rate;
       const c = cents(price);
-      $('#wOut').innerHTML = h && c
-        ? `<span>Isso custa</span><strong>${hoursLong(c)}</strong><span>do seu trabalho${c / h >= dayH ? ` · cerca de ${num.format(Math.round((c / h / dayH) * 10) / 10)} dia(s) de trabalho` : ''}</span>`
+      $('#wOut').innerHTML = rate && c
+        ? `<span>Isso custa</span><strong>${hoursLong(c)}</strong><span>do seu trabalho</span>
+           <small class="tprice__calc">${realMoney(c)} ÷ ${realMoney(hourValue())} por hora</small>`
         : '';
       const key = monthKey(new Date());
       const month = outs().filter(inMonth(key));
-      const top = [...month].sort((a, b) => b.amount - a.amount).slice(0, 3);
-      $('#wMonth').innerHTML = h && month.length ? `
+      const top = [...month].sort((x, y) => y.amount - x.amount).slice(0, 3);
+      $('#wMonth').innerHTML = rate && month.length ? `
         <h3 class="tool__h3">Seus gastos deste mês em horas</h3>
         <div class="tpreview"><span class="tpreview__ic">${ico('i-hourglass')}</span><div><strong>${hoursLong(sum(month))}</strong>
           <p>de trabalho para pagar ${money(sum(month))} de gastos em ${cap(fmtMonthName.format(new Date()))}.</p></div></div>
         <div class="tlist">${top.map((e) => `<div class="tcard"><div class="tcard__top">${catIcon(catOf(e.cat))}<div class="tcard__txt"><strong>${esc(e.title)}</strong><small>${money(e.amount)}</small></div><span class="tcard__val">${hoursText(e.amount)}</span></div></div>`).join('')}</div>` : '';
     };
     let saveTimer = null;
-    income.addEventListener('input', () => {
-      state.work.income = cents(income);
-      refresh();
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(save, 400);
-    });
-    const fmtField = (c) => brl.format(c / 100).replace(/^R\$\s?/, '');
-    income.addEventListener('blur', () => { if (state.work.income) income.value = fmtField(state.work.income); save(); });
+    const saveSoon = () => { clearTimeout(saveTimer); saveTimer = setTimeout(save, 400); };
+    income.addEventListener('input', () => { state.work.income = cents(income); refresh(); saveSoon(); });
+    income.addEventListener('blur', () => { if (state.work.income) income.value = field(state.work.income); save(); });
     price.addEventListener('input', refresh);
-    price.addEventListener('blur', () => { const c = cents(price); if (c) price.value = fmtField(c); });
+    price.addEventListener('blur', () => { const c = cents(price); if (c) price.value = field(c); });
     $('#wHours').addEventListener('click', (e) => {
       const b = e.target.closest('[data-h]');
       if (!b) return;
-      state.work.hours = Number(b.dataset.h);
       $$('#wHours .seg__btn').forEach((x) => x.classList.toggle('is-active', x === b));
+      const other = b.dataset.h === 'outro';
+      $('#wOtherWrap').hidden = !other;
+      if (other) { $('#wOther').focus(); return; }
+      state.work.hours = Number(b.dataset.h);
       save();
       refresh();
+    });
+    $('#wOther').addEventListener('input', () => {
+      const v = Number(String($('#wOther').value).replace(',', '.'));
+      if (!(v >= 1 && v <= 80)) return;
+      state.work.hours = v;
+      refresh();
+      saveSoon();
     });
     refresh();
   };
