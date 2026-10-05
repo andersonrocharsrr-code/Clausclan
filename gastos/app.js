@@ -4877,15 +4877,32 @@
     $('#welcomeGo').addEventListener('click', () => {
       welcome.classList.add('is-leaving');
       setTimeout(() => welcome.remove(), 520);
-      if (authNeeded()) showAuth(playEntrance);
-      else playEntrance();
+      if (authNeeded()) showAuth(() => { markEntered(); playEntrance(); });
+      else { markEntered(); playEntrance(); }
     });
   }
 
   // Atalhos do ícone e notificações abrem o app com ?novo=1 ou ?acao=... (sem abertura, para ser rápido).
   const params = new URLSearchParams(location.search);
   const acao = params.get('acao');
-  runSplash(params.has('novo') || !!acao);
+  // Ao atualizar a página (mesma aba), volta direto para onde estava: sem abertura nem tela de início.
+  const ENTERED_KEY = 'nexa-entered';
+  const reloaded = !!store(() => sessionStorage.getItem(ENTERED_KEY));
+  runSplash(params.has('novo') || !!acao || reloaded);
+  if (reloaded) {
+    const v = store(() => sessionStorage.getItem('nexa-view'));
+    if (v && v !== 'resumo' && $(`#view-${v}`)) setView(v);
+    const y = Number(store(() => sessionStorage.getItem('nexa-scroll')) || 0);
+    if (y) requestAnimationFrame(() => setTimeout(() => window.scrollTo({ top: y }), 60));
+  }
+  // Marca que já entrou e guarda a tela e a posição para a próxima atualização.
+  const markEntered = () => store(() => sessionStorage.setItem(ENTERED_KEY, '1'));
+  if (params.has('novo') || acao || reloaded) markEntered();
+  window.addEventListener('pagehide', () => store(() => {
+    if (!sessionStorage.getItem(ENTERED_KEY)) return;
+    sessionStorage.setItem('nexa-view', ui.view);
+    sessionStorage.setItem('nexa-scroll', String(Math.round(scrollY)));
+  }));
   if (params.has('novo') || acao) history.replaceState(null, '', location.pathname);
   /* ---------------- Tour guiado ---------------- */
   // Cada passo: o que destacar (sel/box), ícone e cor do balão, título e texto. Passos sem "sel" ficam no centro.
