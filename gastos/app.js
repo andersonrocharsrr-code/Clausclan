@@ -5157,7 +5157,7 @@
         <path class="n" stroke-width="11" d="${LOGO_N}"/>
         <path class="a" d="M-12.5 3H12.5L0-14Z"/>
       </g>
-      <text class="m" x="170" y="200" font-size="34" text-anchor="middle" opacity="0">${esc(text)}</text>
+      <text class="m" x="170" y="204" font-size="50" text-anchor="middle" opacity="0">${esc(text)}</text>
       <g class="name"></g>
     </svg>`;
   }
@@ -5166,7 +5166,7 @@
     const q = (sel) => svg.querySelector(sel);
     const text = q('.m');
     let w = text.getComputedTextLength();
-    if (w > 300) { text.setAttribute('font-size', String(Math.floor(34 * 300 / w))); w = text.getComputedTextLength(); }
+    if (w > 300) { text.setAttribute('font-size', String(Math.floor(50 * 300 / w))); w = text.getComputedTextLength(); }
     const size = Number(text.getAttribute('font-size'));
     // Uma letra por elemento, cada uma com o contorno desenhado pela linha e depois preenchida.
     const chars = [...text.textContent];
@@ -5176,7 +5176,7 @@
       const p = text.getStartPositionOfChar(i);
       const el = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       el.setAttribute('x', String(p.x));
-      el.setAttribute('y', '200');
+      el.setAttribute('y', '204');
       el.setAttribute('font-size', String(size));
       el.textContent = ch;
       q('.name').appendChild(el);
@@ -5186,7 +5186,7 @@
     const snake = q('.n');
     const nLen = snake.getTotalLength();
     // Caminho: o próprio "N", sobe pela seta, dá a volta e chega no começo da primeira letra.
-    snake.setAttribute('d', `${LOGO_N}C84 6 150 2 172 52S${x0 - 60} 214 ${x0 - 2} ${178 - size * .35}`);
+    snake.setAttribute('d', `${LOGO_N}C84 6 150 2 172 52S${x0 - 60} 214 ${x0 - 4} ${194 - size * .25}`);
     const total = snake.getTotalLength();
     const sDraw = q('.s');
     const tDraw = q('.t');
@@ -5267,7 +5267,7 @@
           const a = 2850 + i * gap;
           const k = span(t, a, a + 420);
           el.style.opacity = t >= a ? 1 : 0;
-          el.style.strokeDasharray = `${420 * ease(k)} 2000`;
+          el.style.strokeDasharray = `${900 * ease(k)} 4000`;
           el.style.fillOpacity = String(out(span(t, a + 300, a + 560)));
         });
         if (t < end) requestAnimationFrame(frame);
@@ -5277,7 +5277,12 @@
     });
   }
 
+  // Carrega a letra cursiva antes da animação (fica pronta enquanto a pessoa digita).
+  let scriptFont = Promise.resolve();
+  const loadScriptFont = () => { scriptFont = document.fonts ? document.fonts.load('50px "Nexa Script"', 'Olá').catch(() => {}) : Promise.resolve(); };
+
   function showAuth(onDone, mode = authGet() ? 'login' : 'signup') {
+    loadScriptFont();
     const box = $('#auth');
     const f = $('#authForm');
     const signup = mode === 'signup';
@@ -5379,6 +5384,7 @@
         fill.className = 'auth-fill';
         fill.style.setProperty('--x', `${from.x}px`);
         fill.style.setProperty('--y', `${from.y}px`);
+        await scriptFont;
         fill.innerHTML = loginArt(name ? `Olá, ${name.split(' ')[0]}!` : 'Bem-vindo!');
         document.body.appendChild(fill);
         await playLoginArt(fill, from);

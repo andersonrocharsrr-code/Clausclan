@@ -1240,6 +1240,8 @@ html.is-touring { scroll-behavior: smooth; }
 @font-face { font-family: 'Jakarta'; font-style: normal; font-weight: 600; font-display: swap; src: url('fonts/jakarta-600.woff2') format('woff2'); }
 @font-face { font-family: 'Jakarta'; font-style: normal; font-weight: 700; font-display: swap; src: url('fonts/jakarta-700.woff2') format('woff2'); }
 @font-face { font-family: 'Jakarta'; font-style: normal; font-weight: 800; font-display: swap; src: url('fonts/jakarta-800.woff2') format('woff2'); }
+/* Letra cursiva fina para o "Olá, Nome!" da animação de entrada (Great Vibes, licença OFL). */
+@font-face { font-family: 'Nexa Script'; font-style: normal; font-weight: 400; font-display: swap; src: url('fonts/great-vibes-400.woff2') format('woff2'); }
 /* Retrospectiva (story) — fundo branco, uma cor só (verde da marca) e o traço do N ao fundo */
 .retro {
   --g: #1f7a4f; --g2: #15573a; --soft: #eaf4ee; --ink: #10231a; --mut: #5b6b63;
@@ -1549,8 +1551,8 @@ html.is-touring { scroll-behavior: smooth; }
 .auth-fill__art { width: min(88vw, 380px); height: auto; overflow: visible; }
 .auth-fill__art path { fill: none; stroke: #fff; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
 .auth-fill__art .a { fill: #fff; stroke-width: 3; }
-.auth-fill__art text { fill: #fff; font-family: 'Jakarta', Inter, system-ui, sans-serif; font-weight: 800; letter-spacing: -.02em; }
-.auth-fill__art .name text { stroke: #fff; stroke-width: 1.4; stroke-linejoin: round; stroke-dasharray: 0 2000; fill-opacity: 0; opacity: 0; }
+.auth-fill__art text { fill: #fff; font-family: 'Nexa Script', 'Jakarta', cursive; font-weight: 400; }
+.auth-fill__art .name text { stroke: #fff; stroke-width: .9; stroke-linejoin: round; stroke-dasharray: 0 4000; fill-opacity: 0; opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .auth__go, .auth__goTxt, .auth__goFx, .auth-fill { transition: none; } .auth__go.is-loading .auth__goFx, .auth__go.is-done .auth__goFx { animation: none; } }
 .auth__link { justify-self: center; border: 0; background: none; color: var(--a-g); font: inherit; font-size: 14px; font-weight: 700; padding: 6px; cursor: pointer; }
 .auth__link[hidden] { display: none; }
