@@ -4660,7 +4660,7 @@
 
   /* ---------------- Notificações com o app fechado (servidor de push) ---------------- */
   // Endereço do servidor (Cloudflare Worker). Vazio = recurso desligado; os avisos funcionam só com o app aberto.
-  var PUSH_URL = '';
+  var PUSH_URL = 'https://nexa-money-push.andersonrocharsrr.workers.dev';
   var PUSH_ID_KEY = 'nexa-push-id';
   function pushReady() { return !!PUSH_URL && 'serviceWorker' in navigator && 'PushManager' in window && window.isSecureContext; }
   function pushId() {
