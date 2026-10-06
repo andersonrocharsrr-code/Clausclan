@@ -1,7 +1,7 @@
 /* Service worker: funciona offline e abre o app ao tocar numa notificação. */
-const CACHE = 'nexa-money-v32';
+const CACHE = 'nexa-money-v35';
 // Os arquivos levam "?v=" no index.html: ao mudar a versão, o celular nunca mistura CSS/JS antigo com HTML novo.
-const FILES = ['./', 'index.html', 'style.css?v=32', 'app.js?v=32', 'icon.svg', 'icon-192.png', 'badge-96.png', 'icon-512.png', 'manifest.webmanifest'];
+const FILES = ['./', 'index.html', 'style.css?v=35', 'app.js?v=35', 'icon.svg', 'icon-192.png', 'badge-96.png', 'icon-512.png', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
@@ -31,6 +31,16 @@ self.addEventListener('fetch', (e) => {
       })
       .catch(() => caches.match(e.request).then((r) => r || caches.match('index.html')))
   );
+});
+
+// Notificação enviada pelo servidor (chega mesmo com o app fechado).
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { d = { body: e.data && e.data.text() }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Nexa Money', {
+    body: d.body || '', tag: d.tag || undefined, icon: 'icon-192.png', badge: 'badge-96.png',
+    vibrate: [80, 40, 80], data: { url: d.url || './' },
+  }));
 });
 
 // Tocar na notificação abre o app (na tela certa, se a notificação indicar), mas ela continua na barra

@@ -1579,3 +1579,9 @@ html.is-touring { scroll-behavior: smooth; }
 .recur-confirm .btn { font-size: 13.5px; white-space: normal; text-align: center; }
 .form label.recur-dlg__search { display: flex; align-items: center; gap: 8px; }
 .recur-dlg__bar .panel__sub, #recurOpen { white-space: nowrap; }
+
+/* Diálogo aberto: o fundo não rola */
+html.is-locked { overflow: hidden; }
+html.is-locked body { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }
+.dlg { overscroll-behavior: contain; }
+.dlg .form, .dlg .sheet, .layout-list, .recur-dlg__list, .report-preview { overscroll-behavior: contain; }
