@@ -5132,6 +5132,19 @@
   }
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+  // Guarda a altura da tela sem o teclado (só muda ao girar o celular ou se a tela crescer).
+  let authW = 0;
+  let authH = 0;
+  function fixAuthHeight() {
+    if (innerWidth !== authW || innerHeight > authH) {
+      authW = innerWidth;
+      authH = innerHeight;
+      document.documentElement.style.setProperty('--auth-h', `${authH}px`);
+    }
+  }
+  fixAuthHeight();
+  addEventListener('resize', fixAuthHeight);
+
   function showAuth(onDone, mode = authGet() ? 'login' : 'signup') {
     const box = $('#auth');
     const f = $('#authForm');
