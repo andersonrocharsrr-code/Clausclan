@@ -1552,7 +1552,7 @@
     if (new Date(rem.due).getTime() <= Date.now()) {
       const repeats = rem.repeat && rem.repeat !== 'none';
       const other = rem.due.slice(11, 13) < '12' ? 'da noite (PM)' : 'da manhã (AM)';
-      toast(`⚠️ Marcado para ${when}, que já passou: ${repeats ? `o próximo aviso é ${dueText(nextDue(rem))}` : 'não vai ter aviso'}. Era ${other}?`, 'Corrigir', () => openReminder(rem));
+      toast(`⚠️ Marcado para ${when}, que já passou: ${repeats ? `o próximo aviso é ${dueText(nextDue(rem))}` : 'não vai ter aviso'}. Era ${other}?`, 'Corrigir', () => openReminder(rem), 12000);
     } else {
       toast(`${ui.editingRem ? 'Lembrete atualizado' : 'Lembrete criado'} para ${when} ⏰`);
     }
@@ -3892,7 +3892,7 @@
 
   /* ---------------- Toast ---------------- */
   let toastTimer = null;
-  function toast(msg, actionLabel, action) {
+  function toast(msg, actionLabel, action, ms) {
     const el = $('#toast');
     el.innerHTML = `<span>${esc(msg)}</span>`;
     if (actionLabel) {
@@ -3904,7 +3904,7 @@
     }
     el.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { el.hidden = true; }, actionLabel ? 6000 : 3800);
+    toastTimer = setTimeout(() => { el.hidden = true; }, ms || (actionLabel ? 6000 : 3800));
   }
 
   /* ---------------- Ferramentas (cartão de baixo) ---------------- */
