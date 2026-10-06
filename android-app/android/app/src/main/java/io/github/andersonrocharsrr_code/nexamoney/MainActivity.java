@@ -12,7 +12,7 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
     }
 
-    // Widget e notificações do banco abrem o app com uma ação (ex.: "novo" = abrir a janela de novo gasto).
+    // O widget abre o app com uma ação (ex.: "novo" = abrir a janela de novo gasto).
     // O BridgeActivity também chama este método na abertura, com o intent inicial.
     @Override
     protected void onNewIntent(Intent intent) {

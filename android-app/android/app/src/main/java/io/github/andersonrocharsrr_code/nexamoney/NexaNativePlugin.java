@@ -3,8 +3,6 @@ package io.github.andersonrocharsrr_code.nexamoney;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.provider.Settings;
-import androidx.core.app.NotificationManagerCompat;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -13,7 +11,7 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 /**
  * Ponte entre o app (JavaScript) e as partes nativas do Nexa Money:
- * widget da tela inicial, ações vindas do widget/notificações e o leitor de notificações do banco.
+ * o widget da tela inicial e as ações vindas dele (botão "+").
  */
 @CapacitorPlugin(name = "NexaNative")
 public class NexaNativePlugin extends Plugin {
@@ -25,6 +23,13 @@ public class NexaNativePlugin extends Plugin {
     @Override
     public void load() {
         instance = this;
+        // Limpa o que sobrou da antiga leitura de notificações do banco (recurso removido).
+        Context ctx = getContext();
+        ctx.getSharedPreferences("nexa_bank", Context.MODE_PRIVATE).edit().clear().apply();
+        if (android.os.Build.VERSION.SDK_INT >= 26) {
+            android.app.NotificationManager nm = (android.app.NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) nm.deleteNotificationChannel("banco");
+        }
     }
 
     /** Chamado pela MainActivity. Se o app ainda está abrindo, guarda a ação para o JavaScript buscar. */
@@ -58,50 +63,6 @@ public class NexaNativePlugin extends Plugin {
         e.putInt("pct", pct == null ? -1 : pct);
         e.apply();
         NexaWidget.refreshAll(getContext());
-        call.resolve();
-    }
-
-    @PluginMethod
-    public void bankStatus(PluginCall call) {
-        boolean on = NotificationManagerCompat.getEnabledListenerPackages(getContext()).contains(getContext().getPackageName());
-        JSObject ret = new JSObject();
-        ret.put("enabled", on);
-        ret.put("on", BankListener.isOn(getContext()));
-        call.resolve(ret);
-    }
-
-    /** Liga ou desliga as sugestões do banco sem precisar mexer na permissão do Android. */
-    @PluginMethod
-    public void setBankOn(PluginCall call) {
-        Boolean on = call.getBoolean("on", true);
-        BankListener.setOn(getContext(), on == null || on);
-        call.resolve();
-    }
-
-    @PluginMethod
-    public void openBankSettings(PluginCall call) {
-        Intent i = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
-        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        getContext().startActivity(i);
-        call.resolve();
-    }
-
-    @PluginMethod
-    public void getSuggestions(PluginCall call) {
-        JSObject ret = new JSObject();
-        ret.put("items", BankListener.load(getContext()));
-        call.resolve(ret);
-    }
-
-    @PluginMethod
-    public void removeSuggestion(PluginCall call) {
-        BankListener.remove(getContext(), call.getString("id", ""));
-        call.resolve();
-    }
-
-    @PluginMethod
-    public void clearSuggestions(PluginCall call) {
-        BankListener.clear(getContext());
         call.resolve();
     }
 }
