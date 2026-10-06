@@ -1662,14 +1662,19 @@
     const key = monthKey(now);
     const total = sum(monthOut(key));
     const hide = state.privacy;
+    const budget = state.budget;
+    const over = budget > 0 && total > budget;
+    // Valor curto para os tamanhos pequenos: "R$ 884", "R$ 1.284", "R$ 12,3 mil".
+    const short = total >= 1000000 ? `R$ ${num.format(Math.round(total / 10000) / 10)} mil` : realMoney(total).replace(/,\d\d$/, '');
     const data = {
       month: key,
-      label: `Gasto em ${fmtMonthName.format(now)}`,
+      monthName: fmtMonthName.format(now),
       amount: hide ? 'R$ •••' : realMoney(total),
-      pct: state.budget > 0 && !hide ? Math.round((total / state.budget) * 100) : -1,
-      sub: state.budget > 0
-        ? (hide ? 'Orçamento do mês' : total > state.budget ? `Passou ${realMoney(total - state.budget)} do orçamento` : `Restam ${realMoney(state.budget - total)} do orçamento`)
-        : 'Toque no + para lançar',
+      short: hide ? '•••' : short,
+      pct: budget > 0 && !hide ? Math.round((total / budget) * 100) : -1,
+      lead: budget > 0 ? (hide ? 'Orçamento do mês' : over ? 'Passou' : 'Restam') : 'Toque no + para lançar',
+      val: budget > 0 && !hide ? realMoney(Math.abs(budget - total)) : '',
+      tone: over ? 'bad' : 'good',
     };
     const sig = JSON.stringify(data);
     if (sig === widgetLast) return;

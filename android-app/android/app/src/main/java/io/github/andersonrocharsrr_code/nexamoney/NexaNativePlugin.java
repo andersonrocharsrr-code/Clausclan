@@ -55,12 +55,13 @@ public class NexaNativePlugin extends Plugin {
     @PluginMethod
     public void updateWidget(PluginCall call) {
         SharedPreferences.Editor e = getContext().getSharedPreferences(NexaWidget.PREFS, Context.MODE_PRIVATE).edit();
-        e.putString("month", call.getString("month", ""));
-        e.putString("label", call.getString("label", ""));
-        e.putString("amount", call.getString("amount", ""));
-        e.putString("sub", call.getString("sub", ""));
-        Integer pct = call.getInt("pct", -1);
-        e.putInt("pct", pct == null ? -1 : pct);
+        JSObject data = call.getData();
+        java.util.Iterator<String> keys = data.keys();
+        while (keys.hasNext()) {
+            String k = keys.next();
+            if (k.equals("pct")) e.putInt("pct", data.optInt("pct", -1));
+            else e.putString(k, data.optString(k, ""));
+        }
         e.apply();
         NexaWidget.refreshAll(getContext());
         call.resolve();
