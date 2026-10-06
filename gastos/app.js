@@ -5228,7 +5228,7 @@
       const go = $('#authGo');
       go.disabled = true;
       go.classList.add('is-busy');
-      // Fecha o teclado (se entrou pelo "Ir") e começa a animação do botão: círculo → anel → ✓ (~3 s).
+      // Fecha o teclado (se entrou pelo "Ir") e começa a animação: círculo com o logo pulsando → seta sobe → verde enche a tela (~3 s).
       if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
       const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
       const wait = (ms) => new Promise((r) => setTimeout(r, calm ? 0 : ms));
@@ -5236,10 +5236,24 @@
       const since = () => performance.now() - t0;
       requestAnimationFrame(() => go.classList.add('is-loading'));
       const success = async (name) => {
-        await wait(Math.max(0, 1950 - since()));
+        await wait(Math.max(0, 1800 - since()));
         go.classList.add('is-done');
-        await wait(1050);
-        finish(name);
+        await wait(420);
+        if (calm) { finish(name); return; }
+        // O verde sai do botão e cobre a tela, com o logo e o "Olá".
+        const r = go.getBoundingClientRect();
+        const fill = document.createElement('div');
+        fill.className = 'auth-fill';
+        fill.style.setProperty('--x', `${r.left + r.width / 2}px`);
+        fill.style.setProperty('--y', `${r.top + r.height / 2}px`);
+        fill.innerHTML = `${go.querySelector('.auth__goFx').outerHTML.replace('auth__goFx', '')}<b>${name ? `Olá, ${esc(name.split(' ')[0])}! 👋` : 'Bem-vindo! 👋'}</b>`;
+        document.body.appendChild(fill);
+        requestAnimationFrame(() => requestAnimationFrame(() => fill.classList.add('is-open')));
+        await wait(1100);
+        finish();
+        await wait(250);
+        fill.classList.add('is-gone');
+        setTimeout(() => fill.remove(), 500);
       };
       const undo = async () => {
         await wait(Math.max(0, 650 - since()));
