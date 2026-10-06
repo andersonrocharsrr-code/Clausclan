@@ -20,6 +20,25 @@
             </intent-filter>
         </activity>
 
+        <!-- Widget da tela inicial -->
+        <receiver android:name=".NexaWidget" android:exported="false" android:label="Nexa Money">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/nexa_widget_info" />
+        </receiver>
+
+        <!-- Lê as notificações dos bancos (só se o usuário permitir) para sugerir lançamentos -->
+        <service
+            android:name=".BankListener"
+            android:label="@string/bank_listener_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
