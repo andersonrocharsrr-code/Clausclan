@@ -5159,7 +5159,8 @@
     $('#authForgot').hidden = signup;
     f.password.autocomplete = signup ? 'new-password' : 'current-password';
     f.password.placeholder = signup ? 'Mínimo de 6 caracteres' : 'Sua senha';
-    $('#authGo').textContent = signup ? 'Criar conta' : 'Entrar';
+    $('#authGo .auth__goTxt').textContent = signup ? 'Criar conta' : 'Entrar';
+    $('#authGo').classList.remove('is-loading', 'is-done', 'is-busy');
     if (!signup && acc) f.email.value = acc.email;
     $('#authSwitch').innerHTML = signup
       ? (acc ? '' : '<button type="button" class="auth__link" data-auth="skip">Continuar sem conta</button>')
@@ -5223,12 +5224,30 @@
       if (!EMAIL_RE.test(email)) { fail('Digite um e-mail válido.'); f.email.focus(); return; }
       if (pass.length < 6) { fail('A senha precisa ter pelo menos 6 caracteres.'); f.password.focus(); return; }
       if (!crypto.subtle) { fail('Este navegador não permite criar a conta com segurança. Abra o app pelo endereço com https.'); return; }
+      if (signup && pass !== f.confirm.value) { fail('As senhas não são iguais.'); f.confirm.focus(); return; }
       const go = $('#authGo');
       go.disabled = true;
       go.classList.add('is-busy');
+      // Fecha o teclado (se entrou pelo "Ir") e começa a animação do botão: círculo → anel → ✓ (~3 s).
+      if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+      const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const wait = (ms) => new Promise((r) => setTimeout(r, calm ? 0 : ms));
+      const t0 = performance.now();
+      const since = () => performance.now() - t0;
+      requestAnimationFrame(() => go.classList.add('is-loading'));
+      const success = async (name) => {
+        await wait(Math.max(0, 1950 - since()));
+        go.classList.add('is-done');
+        await wait(1050);
+        finish(name);
+      };
+      const undo = async () => {
+        await wait(Math.max(0, 650 - since()));
+        go.classList.remove('is-loading');
+        await wait(350);
+      };
       try {
         if (signup) {
-          if (pass !== f.confirm.value) { fail('As senhas não são iguais.'); f.confirm.focus(); return; }
           const salt = toB64(crypto.getRandomValues(new Uint8Array(16)));
           const iter = 150000;
           const hash = await hashPass(pass, salt, iter);
@@ -5236,13 +5255,13 @@
           store(() => localStorage.setItem(AUTH_KEY, JSON.stringify({ name, email, salt, iter, hash, created: new Date().toISOString() })));
           store(() => localStorage.removeItem(SKIP_KEY));
           startSession(email, f.keep.checked);
-          finish(name);
+          await success(name);
         } else {
           const a = authGet();
           const ok = a && a.email === email && (await hashPass(pass, a.salt, a.iter)) === a.hash;
-          if (!ok) { fail('E-mail ou senha incorretos.'); f.password.select(); return; }
+          if (!ok) { await undo(); fail('E-mail ou senha incorretos.'); return; }
           startSession(email, f.keep.checked);
-          finish(a.name);
+          await success(a.name);
         }
       } finally {
         go.disabled = false;

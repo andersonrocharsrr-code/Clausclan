@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="style.css?v=41">
+  <link rel="stylesheet" href="style.css?v=42">
   <!-- Garante ícones do tamanho certo mesmo antes do CSS carregar. -->
   <style>.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}</style>
   <!-- Abertura e tela de início do Nexa Money: ficam aqui para aparecer na hora, antes do resto da página. -->
@@ -231,7 +231,7 @@
           <div class="auth__input"><svg class="ic"><use href="#i-lock"/></svg><input name="confirm" type="password" autocomplete="new-password" placeholder="Repita a senha"></div></label>
         <label class="auth__keep"><input type="checkbox" name="keep" checked><span class="auth__check" aria-hidden="true"></span>Manter conectado neste aparelho</label>
         <p class="auth__error" id="authError" role="alert" hidden></p>
-        <button type="submit" class="auth__go" id="authGo">Criar conta</button>
+        <button type="submit" class="auth__go" id="authGo"><span class="auth__goTxt">Criar conta</span><svg class="auth__goFx" viewBox="0 0 56 56" aria-hidden="true"><circle class="auth__ring" cx="28" cy="28" r="21"/><path class="auth__check" d="M18.5 28.5l6.5 6.5 12.5-13.5"/></svg></button>
         <button type="button" class="auth__link" id="authForgot" hidden>Esqueci minha senha</button>
       </form>
       <p class="auth__switch" id="authSwitch"></p>
@@ -1164,6 +1164,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="app.js?v=41"></script>
+  <script src="app.js?v=42"></script>
 </body>
 </html>

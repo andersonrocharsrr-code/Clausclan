@@ -1526,7 +1526,26 @@ html.is-touring { scroll-behavior: smooth; }
 .auth__go { margin-top: 4px; padding: 17px; border: 0; border-radius: 99px; background: linear-gradient(135deg, var(--a-g), var(--a-g2)); color: #fff;
   font: inherit; font-size: 16px; font-weight: 800; letter-spacing: .01em; cursor: pointer; box-shadow: 0 14px 28px -14px color-mix(in srgb, var(--a-g2) 90%, transparent); transition: transform .1s, opacity .2s; }
 .auth__go:active { transform: scale(.98); }
-.auth__go.is-busy { opacity: .7; pointer-events: none; }
+.auth__go.is-busy { pointer-events: none; }
+/* Animação ao entrar (~3 s): o botão vira um círculo, o anel se completa, aparece o ✓ e uma onda suave. */
+.auth__go { position: relative; justify-self: center; width: 100%; height: 56px; padding: 0 17px; display: grid; place-items: center; overflow: hidden;
+  transition: width .45s cubic-bezier(.65, 0, .35, 1), transform .1s, box-shadow .45s, filter .45s; }
+.auth__goTxt { transition: opacity .2s, transform .3s; }
+.auth__goFx { position: absolute; inset: 0; margin: auto; width: 56px; height: 56px; opacity: 0; transition: opacity .25s .25s; fill: none; stroke: #fff; stroke-linecap: round; stroke-linejoin: round; }
+.auth__ring { stroke-width: 3; stroke-dasharray: 132; stroke-dashoffset: 132; opacity: .9; transform-origin: 28px 28px; transform: rotate(-90deg); }
+.auth__check { stroke-width: 4; stroke-dasharray: 34; stroke-dashoffset: 34; }
+.auth__go.is-loading { width: 56px; padding: 0; overflow: visible; }
+.auth__go.is-loading .auth__goTxt { opacity: 0; transform: scale(.85); }
+.auth__go.is-loading .auth__goFx { opacity: 1; }
+.auth__go.is-loading .auth__ring { animation: nx-ring 1.5s .4s cubic-bezier(.45, .05, .25, 1) forwards; }
+.auth__go.is-done { filter: brightness(1.12); box-shadow: 0 0 0 0 color-mix(in srgb, var(--a-g) 45%, transparent); animation: nx-pop .6s cubic-bezier(.2, .9, .3, 1.3), nx-wave 1s .1s ease-out; }
+.auth__go.is-done .auth__ring { animation: none; stroke-dashoffset: 0; opacity: 0; transition: opacity .3s; }
+.auth__go.is-done .auth__check { animation: nx-check .4s .05s cubic-bezier(.65, 0, .35, 1) forwards; }
+@keyframes nx-ring { to { stroke-dashoffset: 0; transform: rotate(270deg); } }
+@keyframes nx-check { to { stroke-dashoffset: 0; } }
+@keyframes nx-pop { 0% { transform: scale(1); } 45% { transform: scale(1.14); } 100% { transform: scale(1); } }
+@keyframes nx-wave { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--a-g) 45%, transparent); } to { box-shadow: 0 0 0 26px transparent; } }
+@media (prefers-reduced-motion: reduce) { .auth__go, .auth__goTxt, .auth__goFx { transition: none; } .auth__go.is-loading .auth__ring, .auth__go.is-done { animation: none; } .auth__go.is-done .auth__check { animation: none; stroke-dashoffset: 0; } }
 .auth__link { justify-self: center; border: 0; background: none; color: var(--a-g); font: inherit; font-size: 14px; font-weight: 700; padding: 6px; cursor: pointer; }
 .auth__link[hidden] { display: none; }
 .auth__switch { margin: 6px 0 0; text-align: center; font-size: 14px; color: var(--a-mut); }
