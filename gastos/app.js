@@ -1648,7 +1648,12 @@
     beep();
     toast('Lembretes ligados 🔔 Você será avisado no horário escolhido.');
     // Cadastra o celular no servidor para os avisos chegarem com o app fechado.
-    if (pushReady()) pushSync({ test: first }).then((ok) => { if (ok) toast('🔔 Pronto! Os avisos vão chegar mesmo com o app fechado.'); });
+    // Sempre manda uma notificação de teste pelo servidor ao ligar o sino.
+    if (pushReady()) {
+      setTimeout(() => pushSync({ test: true }).then((r) => {
+        toast(r.ok ? '🔔 Pronto! Os avisos vão chegar mesmo com o app fechado.' : `⚠️ Avisos com o app fechado não ligaram (${r.why}).`);
+      }), 1200);
+    }
     // Só na primeira vez: um aviso de exemplo, que some sozinho.
     if (first) notify('Nexa Money', 'Pronto! Os lembretes vão aparecer assim.', 'teste', { quiet: true });
   }
@@ -4772,28 +4777,43 @@
     clearTimeout(pushTimer);
     pushTimer = setTimeout(pushSync, delay);
   }
+  // Devolve { ok, why }: "why" diz em que etapa falhou, para mostrar ao usuário.
   async function pushSync({ test = false } = {}) {
-    if (!pushReady() || pushBusy) return false;
-    if (!alertsOn()) return false;
+    if (!pushReady()) return { ok: false, why: 'este navegador não aceita avisos com o app fechado' };
+    if (!alertsOn()) return { ok: false, why: 'notificações desligadas' };
+    if (pushBusy) return { ok: false, why: 'ocupado, tente de novo' };
     pushBusy = true;
+    let step = 'inscrição no serviço de push';
     try {
+      if (pushOffing) await pushOffing;
       const sub = await pushSubscription(true);
-      if (!sub) return false;
+      if (!sub) return { ok: false, why: step };
+      step = 'envio ao servidor';
       const res = await fetch(`${PUSH_URL}/sync`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
         body: JSON.stringify({ id: pushId(), subscription: sub.toJSON(), items: pushSchedule() }),
       });
-      if (!res.ok) return false;
-      if (test) await fetch(`${PUSH_URL}/test`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: pushId() }) });
-      return true;
-    } catch {
-      return false;
+      if (!res.ok) return { ok: false, why: `${step} (${res.status})` };
+      if (test) {
+        step = 'notificação de teste';
+        const t = await (await fetch(`${PUSH_URL}/test`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: pushId() }) })).json();
+        if (!t.ok) return { ok: false, why: `${step} (${t.status || t.error || '?'})` };
+      }
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, why: `${step}: ${(err && (err.name || err.message)) || err}` };
     } finally {
       pushBusy = false;
     }
   }
-  async function pushOff() {
-    if (!pushReady()) return;
+  // Desligar e ligar o sino rápido: o novo cadastro espera o anterior terminar de ser apagado.
+  var pushOffing = null;
+  function pushOff() {
+    if (!pushReady()) return null;
+    pushOffing = pushOffNow().finally(() => { pushOffing = null; });
+    return pushOffing;
+  }
+  async function pushOffNow() {
     try {
       await fetch(`${PUSH_URL}/remove`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: pushId() }) });
       const sub = await pushSubscription(false);
