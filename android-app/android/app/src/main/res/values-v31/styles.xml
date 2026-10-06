@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12 ou mais: a abertura do sistema usa estes valores diretamente (branca e sem ícone),
+         inclusive com o celular no modo escuro. -->
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/nexa_splash</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_blank</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+        <item name="android:windowSplashScreenBackground">@color/nexa_splash</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_blank</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/nexa_splash</item>
+        <item name="android:windowBackground">@color/nexa_splash</item>
+        <item name="android:background">@color/nexa_splash</item>
+    </style>
+</resources>

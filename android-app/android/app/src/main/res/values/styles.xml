@@ -13,6 +13,8 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- Fundo branco enquanto o app desenha a primeira tela (senão, no modo escuro, aparece preto). -->
+        <item name="android:windowBackground">@color/nexa_splash</item>
     </style>
 
 
