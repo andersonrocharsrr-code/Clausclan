@@ -2146,7 +2146,9 @@
   }
 
   /* ---------------- Lançar por voz ---------------- */
-  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition || (NATIVE && plugin('SpeechRecognition') ? NativeSpeechRec : null);
+  // No app nativo, usa sempre o ditado do Android: o WebView tem um "webkitSpeechRecognition" que não funciona
+  // (responde sempre "microfone bloqueado").
+  const SpeechRec = NATIVE && plugin('SpeechRecognition') ? NativeSpeechRec : (window.SpeechRecognition || window.webkitSpeechRecognition || null);
   let rec = null;
   // "30 reais e 50 centavos" → "30,50"; tira palavras como "reais" que atrapalham a leitura.
   function speechToText(t) {
@@ -2185,7 +2187,14 @@
       renderQuickPreview();
     };
     rec.onerror = (e) => {
-      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') toast('Permita o uso do microfone para falar o gasto.');
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        // O celular bloqueou o microfone para o app: mostra onde liberar.
+        toast(NATIVE
+          ? '🎤 O microfone está bloqueado para o Nexa Money. Libere em Configurações › Aplicativos › Nexa Money › Permissões › Microfone › Permitir.'
+          : 'Permita o uso do microfone para falar o gasto.', null, null, NATIVE ? 9000 : 0);
+      }
+      // Depois de um erro, desliga o 🎤 mesmo que o ditado não avise que terminou.
+      if (recDone) setTimeout(() => recDone(false), 0);
       else if (e.error === 'no-speech') toast('Não ouvi nada. Toque no 🎤 e fale de novo.');
       else if (e.error === 'network') toast('O ditado precisa de internet.');
     };
