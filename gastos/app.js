@@ -113,8 +113,9 @@
       fixed: Array.isArray(data.fixed) ? data.fixed : [],
       customCats: Array.isArray(data.customCats) ? data.customCats : [],
       card: { close: Number(card.close) || 0, due: Number(card.due) || 0 },
-      goals: Array.isArray(data.goals) ? data.goals : [],
-      debts: Array.isArray(data.debts) ? data.debts : [],
+      // Metas e cobranças sempre com a lista de movimentos (um backup incompleto não quebra o app).
+      goals: (Array.isArray(data.goals) ? data.goals : []).filter((g) => g && typeof g === 'object').map((g) => ({ ...g, moves: Array.isArray(g.moves) ? g.moves : [] })),
+      debts: (Array.isArray(data.debts) ? data.debts : []).filter((d) => d && typeof d === 'object').map((d) => ({ ...d, payments: Array.isArray(d.payments) ? d.payments : [] })),
       notifyOn: data.notifyOn !== false,
       notifyTested: !!data.notifyTested,
       privacy: !!data.privacy,
@@ -994,7 +995,7 @@
 
   function renderCatPick() {
     $('#catPick').innerHTML = catList(ui.kind).map((c) =>
-      `<button type="button" class="cat-opt" data-cat="${c.id}" style="--c:${c.color}">${catIcon(c)}${esc(c.name)}</button>`).join('')
+      `<button type="button" class="cat-opt" data-cat="${c.id}" style="--c:${c.color}">${catIcon(c)}<span class="cat-opt__name">${esc(c.name)}</span></button>`).join('')
       + `<button type="button" class="cat-opt cat-opt--new" data-newcat>${catIcon({ color: 'var(--muted)', icon: 'i-plus' })}Nova</button>`;
     pickCat(ui.pickedCat);
   }
