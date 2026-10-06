@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_root" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/widget_bg" android:orientation="vertical" android:gravity="center" android:padding="6dp">
+
+    <TextView android:id="@+id/w_month" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="Nexa" android:textColor="#B3FFFFFF" android:textSize="10sp" android:maxLines="1" />
+    <TextView android:id="@+id/w_amount" android:layout_width="match_parent" android:layout_height="20dp"
+        android:text="R$ 0" android:textColor="#FFFFFF" android:textStyle="bold" android:maxLines="1" android:gravity="center"
+        android:textSize="15sp" android:autoSizeTextType="uniform" android:autoSizeMinTextSize="9sp" android:autoSizeMaxTextSize="15sp" />
+    <ImageView android:id="@+id/w_add" android:layout_width="26dp" android:layout_height="26dp" android:layout_marginTop="3dp"
+        android:background="@drawable/widget_plus_bg" android:padding="6dp" android:src="@drawable/widget_plus" android:contentDescription="Novo gasto" />
+</LinearLayout>
