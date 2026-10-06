@@ -5145,157 +5145,6 @@
   fixAuthHeight();
   addEventListener('resize', fixAuthHeight);
 
-  // Animação da entrada. O verde nasce no botão e cresce aos poucos; o "$" e o "N" são desenhados como na
-  // abertura; a seta sobe, vira a ponta de uma linha que anda pela tela e escreve "Olá, Nome!" letra por letra.
-  const LOGO_S = 'M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9';
-  const LOGO_N = 'M33 64V34c0-7.5 5-12.5 12-12.5 4.5 0 8 2.3 10 6L66.5 59c2 3.7 5.5 6 9.5 6c5.3 0 8-4 8-10V31';
-  function loginArt(text) {
-    return `<svg class="auth-fill__art" viewBox="0 0 340 240" aria-hidden="true">
-      <g transform="translate(112 10)">
-        <path class="s" stroke-width="7" d="${LOGO_S}"/>
-        <path class="t" stroke-width="6" d="M28 55v9M28 92v7"/>
-        <path class="n" stroke-width="11" d="${LOGO_N}"/>
-        <path class="a" d="M-12.5 3H12.5L0-14Z"/>
-      </g>
-      <text class="m" x="170" y="204" font-size="46" text-anchor="middle" opacity="0">${esc(text)}</text>
-      <g class="name"></g>
-    </svg>`;
-  }
-  function playLoginArt(fill, from) {
-    const svg = fill.firstElementChild;
-    const q = (sel) => svg.querySelector(sel);
-    const text = q('.m');
-    // Cabe em 300 de largura: diminui a letra (até 24) e, se ainda não couber, corta o nome com "…".
-    let w = text.getComputedTextLength();
-    if (w > 300) text.setAttribute('font-size', String(Math.max(24, Math.floor(46 * 300 / w))));
-    w = text.getComputedTextLength();
-    while (w > 300 && text.textContent.length > 6) {
-      text.textContent = `${[...text.textContent.replace(/…?!$/, '')].slice(0, -1).join('')}…!`;
-      w = text.getComputedTextLength();
-    }
-    const size = Number(text.getAttribute('font-size'));
-    // Uma letra por elemento (contorno desenhado pela linha, depois preenchida). Letras com acento
-    // separado ficam juntas; alfabetos em que as letras se ligam (árabe, hindi…) são escritos de uma vez.
-    const shown = text.textContent;
-    const joined = /[\u0590-\u08FF\u0900-\u0DFF\u0E00-\u0FFF\u1000-\u109F\u1780-\u17FF]/.test(shown);
-    const parts = joined ? [{ segment: shown, index: 0 }]
-      : window.Intl && Intl.Segmenter ? [...new Intl.Segmenter('pt-BR', { granularity: 'grapheme' }).segment(shown)]
-        : [...shown].reduce((acc, ch) => { const at = acc.length ? acc[acc.length - 1].index + acc[acc.length - 1].segment.length : 0; acc.push({ segment: ch, index: at }); return acc; }, []);
-    const letters = [];
-    parts.forEach(({ segment, index }) => {
-      if (!segment.trim()) return;
-      const el = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      if (joined) {
-        el.setAttribute('x', '170');
-        el.setAttribute('text-anchor', 'middle');
-      } else {
-        el.setAttribute('x', String(text.getStartPositionOfChar(index).x));
-      }
-      el.setAttribute('y', '204');
-      el.setAttribute('font-size', String(size));
-      el.textContent = segment;
-      q('.name').appendChild(el);
-      letters.push(el);
-    });
-    const x0 = 170 - w / 2 - 112; // começo do texto, nas medidas do desenho do logo
-    const snake = q('.n');
-    const nLen = snake.getTotalLength();
-    // Caminho: o próprio "N", sobe pela seta, dá a volta e chega no começo da primeira letra.
-    snake.setAttribute('d', `${LOGO_N}C84 6 150 2 172 52S${x0 - 60} 214 ${x0 - 4} ${194 - size * .25}`);
-    const total = snake.getTotalLength();
-    const sDraw = q('.s');
-    const tDraw = q('.t');
-    const arrow = q('.a');
-    const sLen = sDraw.getTotalLength();
-    const tLen = tDraw.getTotalLength();
-    sDraw.style.strokeDasharray = `${sLen} ${sLen}`;
-    tDraw.style.strokeDasharray = `${tLen} ${tLen}`;
-    // Centro do círculo verde: no meio do logo.
-    const m = svg.getScreenCTM();
-    const pt = svg.createSVGPoint();
-    pt.x = 167; pt.y = 68;
-    const c = pt.matrixTransform(m);
-    const full = Math.hypot(Math.max(c.x, innerWidth - c.x), Math.max(c.y, innerHeight - c.y)) + 20;
-    const clamp = (v) => Math.min(1, Math.max(0, v));
-    const ease = (v) => (v < .5 ? 4 * v * v * v : 1 - (-2 * v + 2) ** 3 / 2);
-    const out = (v) => 1 - (1 - v) ** 3;
-    const span = (t, a, b) => clamp((t - a) / (b - a));
-    const lerp = (a, b, v) => a + (b - a) * v;
-    const gap = Math.min(160, 1800 / Math.max(1, letters.length));
-    // Ritmo da animação: 1 = rápido; 1,25 deixa cada parte mais calma (~8 s no total, com o botão).
-    const SLOW = 1.25;
-    const end = 2850 + gap * (letters.length - 1) + 900;
-    return new Promise((resolve) => {
-      let t0 = 0;
-      const frame = (now) => {
-        if (!t0) t0 = now;
-        const t = (now - t0) / SLOW;
-        // Verde: sai do botão, vira um disco atrás do logo, cresce devagar e só no fim cobre a tela toda.
-        const k1 = out(span(t, 0, 650));
-        const r = t < 650 ? lerp(28, 150, k1) : t < 1650 ? lerp(150, 185, span(t, 650, 1650)) : lerp(185, full, ease(span(t, 1650, 3200)));
-        fill.style.clipPath = `circle(${r}px at ${lerp(from.x, c.x, k1)}px ${lerp(from.y, c.y, k1)}px)`;
-        // "$" e os risquinhos: desenhados; quando a seta sai andando, se desfazem pelo próprio contorno,
-        // do começo para o fim (como o rabo de uma cobrinha seguindo as curvas da letra).
-        const unS = sLen * ease(span(t, 1650, 2150));
-        const unT = tLen * ease(span(t, 1650, 1900));
-        sDraw.style.opacity = t > 250 && unS < sLen - .5 ? 1 : 0;
-        sDraw.style.strokeDasharray = `${sLen - unS} ${sLen * 2}`;
-        sDraw.style.strokeDashoffset = t < 1650 ? String(sLen * (1 - ease(span(t, 250, 720)))) : String(-unS);
-        tDraw.style.opacity = t > 720 && unT < tLen - .5 ? 1 : 0;
-        tDraw.style.strokeDasharray = `${tLen - unT} ${tLen * 2}`;
-        tDraw.style.strokeDashoffset = t < 1650 ? String(tLen * (1 - out(span(t, 720, 880)))) : String(-unT);
-        // Cobrinha: primeiro desenha o "N"; depois anda (cabeça na frente, rabo atrás) e no fim o rabo alcança a cabeça.
-        let head = 0;
-        let tail = 0;
-        if (t < 1650) {
-          head = nLen * ease(span(t, 880, 1380));
-        } else if (t < 2900) {
-          // A cabeça (seta) avança; o rabo do "N" só começa a andar depois que o "$" se desfez,
-          // seguindo as curvas do "N" até virar só a linha.
-          head = lerp(nLen, total, ease(span(t, 1650, 2900)));
-          if (t > 2100) {
-            const head0 = lerp(nLen, total, ease(span(2100, 1650, 2900)));
-            const seg = lerp(head0, nLen * .4, ease(span(t, 2100, 2900)));
-            tail = Math.max(0, head - seg);
-          }
-        } else {
-          head = total;
-          tail = lerp(total - nLen * .4, total, ease(span(t, 2900, 3150)));
-        }
-        snake.style.opacity = head > 0 && head - tail > .5 ? 1 : 0;
-        snake.style.strokeDasharray = `${Math.max(0, head - tail)} ${total + 20}`;
-        snake.style.strokeDashoffset = String(-tail);
-        snake.style.strokeWidth = String(lerp(11, 3, span(t, 1650, 2800)));
-        // Seta = cabeça da cobrinha: aparece subindo, depois segue o caminho apontando para frente.
-        if (t >= 1380) {
-          const at = snake.getPointAtLength(Math.max(0, head));
-          const back = snake.getPointAtLength(Math.max(0, head - 2));
-          const ang = head > nLen + 1 ? Math.atan2(at.y - back.y, at.x - back.x) * 180 / Math.PI + 90 : 0;
-          const pop = span(t, 1380, 1650);
-          const sc = t < 1650 ? (pop < .6 ? lerp(.3, 1.15, pop / .6) : lerp(1.15, 1, (pop - .6) / .4)) : lerp(1, 0, ease(span(t, 1650, 2050)));
-          const lift = t < 1650 ? Math.sin(pop * Math.PI) * -8 : 0;
-          arrow.setAttribute('transform', `translate(${at.x} ${at.y + lift}) rotate(${ang}) scale(${sc})`);
-          arrow.style.opacity = 1 - span(t, 1850, 2050);
-        }
-        // A linha escreve o nome: cada letra tem o contorno desenhado e depois é preenchida.
-        letters.forEach((el, i) => {
-          const a = 2850 + i * gap;
-          const k = span(t, a, a + 420);
-          el.style.opacity = t >= a ? 1 : 0;
-          el.style.strokeDasharray = `${900 * ease(k)} 4000`;
-          el.style.fillOpacity = String(out(span(t, a + 300, a + 560)));
-          // Depois de preenchida, o contorno some e fica só a letra fina da fonte.
-          el.style.strokeOpacity = String(1 - out(span(t, a + 560, a + 900)));
-        });
-        if (t < end) requestAnimationFrame(frame);
-        else resolve();
-      };
-      requestAnimationFrame(frame);
-    });
-  }
-
-  // Carrega a letra cursiva antes da animação (fica pronta enquanto a pessoa digita).
-  const loadScriptFont = () => { if (document.fonts) document.fonts.load('46px "Nexa Script"', 'Olá, Bem-vindo!').catch(() => {}); };
   // "Olá, Nome!" com o primeiro nome, a primeira letra maiúscula e no máximo 14 letras.
   function greeting(name) {
     let first = String(name || '').normalize('NFC').trim().split(/\s+/)[0] || '';
@@ -5308,7 +5157,6 @@
   }
 
   function showAuth(onDone, mode = authGet() ? 'login' : 'signup') {
-    loadScriptFont();
     const box = $('#auth');
     const f = $('#authForm');
     const signup = mode === 'signup';
@@ -5391,8 +5239,8 @@
       const go = $('#authGo');
       go.disabled = true;
       go.classList.add('is-busy');
-      // Fecha o teclado (se entrou pelo "Ir") e começa a animação: círculo com o logo → o verde enche a tela →
-      // o "$" e o "N" são desenhados → a seta sobe → o mesmo traço desce e escreve "Olá, Nome!".
+      // Fecha o teclado (se entrou pelo "Ir") e começa a animação: círculo com o logo pulsando → a seta sobe →
+      // o verde se espalha pela tela com "Olá, Nome! 👋" (~3 s).
       if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
       const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
       const wait = (ms) => new Promise((r) => setTimeout(r, calm ? 0 : ms));
@@ -5400,23 +5248,20 @@
       const since = () => performance.now() - t0;
       requestAnimationFrame(() => go.classList.add('is-loading'));
       const success = async (name) => {
-        await wait(Math.max(0, 900 - since()));
+        await wait(Math.max(0, 1800 - since()));
         go.classList.add('is-done');
-        await wait(300);
+        await wait(420);
         if (calm) { finish(name); return; }
+        // O verde sai do botão e cobre a tela, com o logo e o "Olá".
         const r = go.getBoundingClientRect();
-        const from = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
         const fill = document.createElement('div');
         fill.className = 'auth-fill';
-        fill.style.setProperty('--x', `${from.x}px`);
-        fill.style.setProperty('--y', `${from.y}px`);
-        const hello = greeting(name);
-        // Garante a letra cursiva com todos os acentos do nome (no máximo 1,5 s de espera).
-        if (document.fonts) await Promise.race([document.fonts.load('46px "Nexa Script"', hello).catch(() => {}), wait(1500)]);
-        fill.innerHTML = loginArt(hello);
+        fill.style.setProperty('--x', `${r.left + r.width / 2}px`);
+        fill.style.setProperty('--y', `${r.top + r.height / 2}px`);
+        fill.innerHTML = `${go.querySelector('.auth__goFx').outerHTML.replace('auth__goFx', '')}<b>${esc(greeting(name))} 👋</b>`;
         document.body.appendChild(fill);
-        await playLoginArt(fill, from);
-        await wait(500);
+        requestAnimationFrame(() => requestAnimationFrame(() => fill.classList.add('is-open')));
+        await wait(1100);
         finish();
         await wait(250);
         fill.classList.add('is-gone');
