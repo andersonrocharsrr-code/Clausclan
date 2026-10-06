@@ -3,7 +3,7 @@
   "appName": "Nexa Money",
   "webDir": "www",
   "android": {
-    "backgroundColor": "#0a0c11"
+    "backgroundColor": "#ffffff"
   },
   "plugins": {
     "LocalNotifications": {
