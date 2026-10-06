@@ -5206,13 +5206,15 @@
     const out = (v) => 1 - (1 - v) ** 3;
     const span = (t, a, b) => clamp((t - a) / (b - a));
     const lerp = (a, b, v) => a + (b - a) * v;
-    const gap = Math.min(140, 1600 / Math.max(1, letters.length));
+    const gap = Math.min(160, 1800 / Math.max(1, letters.length));
+    // Ritmo da animação: 1 = rápido; 1,25 deixa cada parte mais calma (~8 s no total, com o botão).
+    const SLOW = 1.25;
     const end = 2850 + gap * (letters.length - 1) + 600;
     return new Promise((resolve) => {
       let t0 = 0;
       const frame = (now) => {
         if (!t0) t0 = now;
-        const t = now - t0;
+        const t = (now - t0) / SLOW;
         // Verde: sai do botão, vira um disco atrás do logo, cresce devagar e só no fim cobre a tela toda.
         const k1 = out(span(t, 0, 650));
         const r = t < 650 ? lerp(28, 150, k1) : t < 1650 ? lerp(150, 185, span(t, 650, 1650)) : lerp(185, full, ease(span(t, 1650, 3200)));
