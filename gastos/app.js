@@ -1741,17 +1741,32 @@
     }
   }
   // Ditado por voz no app nativo, com a mesma "cara" da API de voz do navegador.
+  // O Android avisa "parou de ouvir" ANTES de mandar a frase final; por isso o app espera um pouco
+  // por ela (senão ficava só o começo, às vezes só o número).
   class NativeSpeechRec {
-    constructor() { this.lang = 'pt-BR'; this.onresult = null; this.onerror = null; this.onend = null; this.subs = []; this.done = false; }
+    constructor() { this.lang = 'pt-BR'; this.onresult = null; this.onerror = null; this.onend = null; this.subs = []; this.done = false; this.endT = null; }
+    endSoon(ms) { clearTimeout(this.endT); this.endT = setTimeout(() => this.finish(), ms); }
     async start() {
       const SR = plugin('SpeechRecognition');
-      const fire = (text) => { if (this.onresult) this.onresult({ results: [[{ transcript: text }]] }); };
+      let best = '';
+      // Guarda o texto mais completo que chegou (alguns celulares mandam pedaços menores no meio).
+      const fire = (text) => {
+        const t = String(text || '').trim();
+        if (!t) return;
+        if (t.length >= best.length || !best.toLowerCase().startsWith(t.toLowerCase())) best = t;
+        if (this.onresult) this.onresult({ results: [[{ transcript: best }]] });
+      };
       try {
         let p = await SR.checkPermissions();
         if (p.speechRecognition !== 'granted') p = await SR.requestPermissions();
         if (p.speechRecognition !== 'granted') throw Object.assign(new Error('not-allowed'), { error: 'not-allowed' });
-        this.subs.push(await SR.addListener('partialResults', (d) => { if (d && d.matches && d.matches[0]) fire(d.matches[0]); }));
-        this.subs.push(await SR.addListener('listeningState', (d) => { if (d && d.status === 'stopped') this.finish(); }));
+        this.subs.push(await SR.addListener('partialResults', (d) => {
+          if (d && d.matches && d.matches[0]) fire(d.matches[0]);
+          if (this.ending) this.endSoon(350); // chegou a frase final: termina logo
+        }));
+        this.subs.push(await SR.addListener('listeningState', (d) => {
+          if (d && d.status === 'stopped') { this.ending = true; this.endSoon(1800); }
+        }));
         const r = await SR.start({ language: this.lang, maxResults: 1, partialResults: true, popup: false });
         if (r && r.matches && r.matches[0]) { fire(r.matches[0]); this.finish(); }
       } catch (err) {
@@ -1759,10 +1774,17 @@
         this.finish();
       }
     }
-    stop() { const SR = plugin('SpeechRecognition'); if (SR) SR.stop().catch(() => {}); this.finish(); }
+    // Tocar no 🎤 para parar: pede ao Android para encerrar e ainda espera a frase final chegar.
+    stop() {
+      const SR = plugin('SpeechRecognition');
+      if (SR) SR.stop().catch(() => {});
+      this.ending = true;
+      this.endSoon(1200);
+    }
     finish() {
       if (this.done) return;
       this.done = true;
+      clearTimeout(this.endT);
       this.subs.forEach((sub) => sub.remove());
       this.subs = [];
       if (this.onend) this.onend();
