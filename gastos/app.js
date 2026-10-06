@@ -2157,8 +2157,10 @@
       .replace(/(^|\s)(reais|real|contos?|pilas?)(?=\s|$)/g, ' ')
       .replace(/\s+/g, ' ').trim();
   }
+  // Tocar de novo no 🎤 sempre desliga na hora, mesmo que o ditado do celular demore a responder.
+  let recDone = null;
   $('#quickMic').addEventListener('click', () => {
-    if (rec) { rec.stop(); return; }
+    if (rec) { recDone(true); return; }
     if (!SpeechRec) {
       quickInput.focus();
       toast('Este navegador não tem ditado no app. Use o 🎤 do teclado do celular e fale o gasto.');
@@ -2187,11 +2189,19 @@
       else if (e.error === 'no-speech') toast('Não ouvi nada. Toque no 🎤 e fale de novo.');
       else if (e.error === 'network') toast('O ditado precisa de internet.');
     };
-    rec.onend = () => {
-      stopUI();
+    const current = rec;
+    let limit = null;
+    recDone = (stopNow) => {
+      if (rec !== current) return;
+      clearTimeout(limit);
       rec = null;
+      if (stopNow) { try { current.stop(); } catch { /* já parou */ } }
+      stopUI();
       if (heard && parseQuick(heard).amount != null) toast('Confira a prévia e toque em ➜ para lançar.');
     };
+    rec.onend = () => recDone(false);
+    // Segurança: no máximo 20 s ouvindo.
+    limit = setTimeout(() => recDone(true), 20000);
     try {
       rec.start();
       mic.classList.add('is-listening');
@@ -2200,6 +2210,7 @@
       renderQuickPreview();
       quickInput.placeholder = 'Ouvindo… ex.: "gastei 30 reais no mercado"';
     } catch {
+      clearTimeout(limit);
       rec = null;
       stopUI();
       toast('Não foi possível usar o microfone agora.');
