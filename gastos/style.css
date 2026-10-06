@@ -681,7 +681,10 @@ button, .k, .tab, .fab, .chip, .seg__btn { touch-action: manipulation; -webkit-u
 
 /* ---------- Interruptor ---------- */
 .form .switch { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: var(--surface-2); cursor: pointer; color: var(--text); }
-.switch input { position: absolute; opacity: 0; pointer-events: none; }
+/* A caixinha de marcar fica escondida e do tamanho de um ponto, dentro do próprio botão (antes ela tinha a largura
+   da janela e, ao tocar, a janela rolava para o lado). */
+.switch { position: relative; }
+.switch input { position: absolute; left: 0; top: 0; width: 1px; height: 1px; margin: 0; opacity: 0; pointer-events: none; }
 .switch__ui { position: relative; width: 44px; height: 26px; border-radius: 99px; background: var(--line); flex: none; transition: background .2s; }
 .switch__ui::after {
   content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff;
@@ -1618,7 +1621,7 @@ html.is-touring { scroll-behavior: smooth; }
 /* Diálogo aberto: o fundo não rola */
 html.is-locked { overflow: hidden; }
 html.is-locked body { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }
-.dlg { overscroll-behavior: contain; }
+.dlg { overscroll-behavior: contain; overflow-x: hidden; } /* nada passa para os lados dentro das janelas */
 .dlg .form, .dlg .sheet, .layout-list, .recur-dlg__list, .report-preview { overscroll-behavior: contain; }
 
 /* Comportamento de app: sem "puxar para recarregar" e sem selecionar texto ao segurar o dedo (campos de digitar continuam normais). */
