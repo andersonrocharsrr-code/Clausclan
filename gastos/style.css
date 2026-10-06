@@ -556,11 +556,6 @@ button, .k, .tab, .fab, .chip, .seg__btn { touch-action: manipulation; -webkit-u
 /* Em celulares estreitos o nome da categoria encolhe (e corta com "…") em vez de empurrar a janela para o lado. */
 .cat-opt { min-width: 0; }
 .cat-opt__name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-@media (max-width: 370px) {
-  .cat-pick__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .cat-opt { padding-inline: 0; }
-}
-@media (max-width: 330px) { .cat-pick__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .cat-opt {
   display: grid; justify-items: center; gap: 5px; padding: 10px 2px 8px; border-radius: 16px;
   border: 1.5px solid transparent; background: var(--surface-2); font-size: 11px; font-weight: 600; color: var(--muted);
@@ -570,6 +565,11 @@ button, .k, .tab, .fab, .chip, .seg__btn { touch-action: manipulation; -webkit-u
 .cat-opt .cat-ic .ic { width: 18px; height: 18px; }
 .cat-opt.is-active { border-color: var(--c); background: color-mix(in srgb, var(--c) 10%, var(--surface)); color: var(--text); }
 .cat-opt.is-active .cat-ic { background: var(--c); color: #fff; }
+@media (max-width: 370px) {
+  .cat-pick__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .cat-opt { padding-inline: 0; }
+}
+@media (max-width: 330px) { .cat-pick__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
 /* ---------- Lançamento rápido ---------- */
 .quick { margin-bottom: 12px; }
