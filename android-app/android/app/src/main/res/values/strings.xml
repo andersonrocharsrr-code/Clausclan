@@ -5,5 +5,4 @@
     <string name="package_name">io.github.andersonrocharsrr_code.nexamoney</string>
     <string name="custom_url_scheme">io.github.andersonrocharsrr_code.nexamoney</string>
     <string name="widget_desc">Quanto você já gastou no mês e um botão para lançar um gasto</string>
-    <string name="bank_listener_name">Nexa Money: sugestões do banco</string>
 </resources>

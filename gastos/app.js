@@ -1652,7 +1652,7 @@
       });
     }
   }
-  /* ---------------- Widget e notificações do banco (só no app Android) ---------------- */
+  /* ---------------- Widget da tela inicial (só no app Android) ---------------- */
   const NX = plugin('NexaNative');
   let widgetLast = '';
   // Manda para o widget da tela inicial quanto já foi gasto no mês atual (respeita "esconder valores").
@@ -1677,141 +1677,21 @@
     NX.updateWidget(data).catch(() => {});
   }
 
-  // Ações vindas de fora do app: botão "+" do widget e notificação "Lançar R$ X?".
+  // Ação vinda de fora do app: botão "+" do widget.
   function runNativeAction(action) {
     const go = () => {
-      if (action === 'novo') { if (!dlgExp.open) openExpense(); }
-      else if (action === 'sugestao') openBank();
+      if (action === 'novo' && !dlgExp.open) openExpense();
     };
     // Espera a abertura/login sair da frente antes de abrir a janela.
     const wait = () => (document.querySelector('#welcome, #auth:not([hidden])') ? setTimeout(wait, 300) : go());
     setTimeout(wait, 150);
   }
   if (NX) {
-    $('#menuBank').hidden = false;
     NX.addListener('action', (d) => d && d.action && runNativeAction(d.action));
     NX.takeLaunchAction().then((r) => r && r.action && runNativeAction(r.action)).catch(() => {});
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) { widgetLast = ''; updateWidget(); checkBank(); } });
-    setTimeout(() => { updateWidget(); checkBank(); }, 2500);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) { widgetLast = ''; updateWidget(); } });
+    setTimeout(updateWidget, 2500);
   }
-
-  const dlgBank = $('#dlgBank');
-  let bankItems = [];
-  const BANK_IN = /\b(recebe(u|ido|mos)|caiu|chegou|transfer[eê]ncia recebida|pix recebido|dep[oó]sito)/i;
-  // Descobre loja, forma de pagamento e se é entrada ou saída pelo texto da notificação.
-  function bankPreset(item) {
-    const full = `${item.title} ${item.text}`.replace(/\s+/g, ' ');
-    const kind = BANK_IN.test(full) ? 'in' : 'out';
-    const method = /cr[eé]dito/i.test(full) ? 'Crédito' : /d[eé]bito/i.test(full) ? 'Débito' : /\bpix\b|transfer|enviou/i.test(full) ? 'Pix' : /boleto/i.test(full) ? 'Boleto' : 'Débito';
-    const pick = (txt) => {
-      const re = /\b(?:em|no|na|para|pra|de)\s+(?!R\$)([A-Za-zÀ-ú0-9*&'.\- ]{2,40}?)(?=\s*(?:[,;!]|\.(?:\s|$)|\bfoi\b|\bcom\b|\bvalor\b|\baprovad|\bpara o\b|\bno cart|\bfinal\b|às\s|\bas \d|\bdia\b|\bR\$|$))/g;
-      for (const m of txt.matchAll(re)) {
-        const t = m[1].replace(/\*/g, ' ').replace(/\s+/g, ' ').trim();
-        if (t.length > 1 && !/^(o |a )?(cart[aã]o|conta|sua|seu|voc[eê]|d[eé]bito|cr[eé]dito|pix|compra)\b/i.test(t)) return t;
-      }
-      return '';
-    };
-    // O nome da loja/pessoa costuma vir logo depois do valor ("R$ 45,90 em PADARIA").
-    let title = pick(full.split(/R\$\s*[\d.]+,\d{2}/).slice(1).join(' ')) || pick(full);
-    if (!title) title = kind === 'in' ? `Pix recebido · ${item.app}` : `Compra · ${item.app}`;
-    else title = title.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase());
-    const q = parseQuick(`${title} 1`);
-    const cat = kind === 'in' ? 'ganhos' : (q && q.cat) || 'outros';
-    return { kind, amount: item.amount, title, method: kind === 'in' ? 'Pix' : method, cat, date: dateISO(new Date(item.time || Date.now())) };
-  }
-  function renderBank() {
-    $('#bankList').innerHTML = bankItems.length
-      ? bankItems.map((it) => {
-        const p = bankPreset(it);
-        const when = new Date(it.time || Date.now());
-        return `
-          <div class="fixed-item bank-item">
-            <span class="fixed-item__main"><strong>${esc(p.title)}</strong><small>${esc(it.app)} · ${when.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ${pad(when.getHours())}:${pad(when.getMinutes())}</small><small class="bank-item__raw">${esc(it.text || it.title)}</small></span>
-            <span class="fixed-item__val${p.kind === 'in' ? ' is-in' : ''}">${p.kind === 'in' ? '+' : ''}${money(it.amount)}</span>
-            <span class="bank-item__acts">
-              <button type="button" class="btn btn--primary btn--sm" data-bank-add="${esc(it.id)}">Lançar</button>
-              <button type="button" class="btn btn--ghost btn--sm" data-bank-skip="${esc(it.id)}">Ignorar</button>
-            </span>
-          </div>`;
-      }).join('')
-      : '<p class="empty-sm">Nenhuma compra nova por enquanto. Quando o banco avisar de uma compra ou Pix, ela aparece aqui.</p>';
-    $('#bankClear').hidden = bankItems.length < 2;
-  }
-  async function loadBank() {
-    if (!NX) return [];
-    try { const r = await NX.getSuggestions(); bankItems = Array.isArray(r && r.items) ? r.items : []; } catch { bankItems = []; }
-    return bankItems;
-  }
-  // Situação: on = ligado pela pessoa no app; allowed = acesso às notificações liberado no Android.
-  const bank = { on: true, allowed: false };
-  async function bankRefresh() {
-    try { const r = await NX.bankStatus(); bank.allowed = !!r.enabled; bank.on = r.on !== false; } catch { /* mantém o último */ }
-  }
-  function renderBankState() {
-    $('#bankOn').checked = bank.on;
-    $('#bankPerm').hidden = !bank.on || bank.allowed;
-    $('#bankIntro').hidden = !bank.on;
-    $('#bankOffNote').hidden = bank.on;
-    $('#bankList').hidden = !bank.on;
-    $('#bankClear').hidden = !bank.on || bankItems.length < 2;
-  }
-  async function openBank() {
-    if (!NX) return;
-    await Promise.all([bankRefresh(), loadBank()]);
-    renderBank();
-    renderBankState();
-    if (!dlgBank.open) dlgBank.showModal();
-  }
-  function openBankSettings() {
-    NX.openBankSettings().catch(() => toast('Abra Configurações › Notificações › Acesso a notificações e ative o Nexa Money.'));
-  }
-  $('#bankAllow').addEventListener('click', openBankSettings);
-  $('#bankOn').addEventListener('change', async (e) => {
-    bank.on = e.target.checked;
-    await NX.setBankOn({ on: bank.on }).catch(() => {});
-    if (!bank.on) {
-      bankItems = [];
-      NX.clearSuggestions().catch(() => {});
-      renderBank();
-      toast(bank.allowed ? 'Sugestões do banco desligadas. Se quiser, também dá para tirar o acesso nas configurações do Android.' : 'Sugestões do banco desligadas.',
-        bank.allowed ? 'Abrir' : null, bank.allowed ? openBankSettings : null, bank.allowed ? 9000 : 0);
-    } else {
-      await bankRefresh();
-      if (!bank.allowed) openBankSettings();
-      else toast('Pronto! Novas compras do banco vão aparecer aqui.');
-    }
-    renderBankState();
-  });
-  let bankToastAt = 0;
-  // Ao voltar para o app, avisa se há compras do banco esperando para serem lançadas.
-  async function checkBank() {
-    if (!NX) return;
-    if (dlgBank.open) { await Promise.all([bankRefresh(), loadBank()]); renderBank(); renderBankState(); return; }
-    await bankRefresh();
-    if (!bank.on) return;
-    const items = await loadBank();
-    if (!items.length || Date.now() - bankToastAt < 60000) return;
-    bankToastAt = Date.now();
-    toast(items.length === 1 ? `🏦 Compra de ${money(items[0].amount)} no ${items[0].app}. Lançar?` : `🏦 ${items.length} compras do banco para lançar.`, 'Ver', openBank, 9000);
-  }
-  $('#bankList').addEventListener('click', async (e) => {
-    const add = e.target.closest('[data-bank-add]');
-    const skip = e.target.closest('[data-bank-skip]');
-    const id = (add || skip) && (add || skip).dataset[add ? 'bankAdd' : 'bankSkip'];
-    if (!id) return;
-    const item = bankItems.find((it) => it.id === id);
-    bankItems = bankItems.filter((it) => it.id !== id);
-    NX.removeSuggestion({ id }).catch(() => {});
-    if (add && item) { dlgBank.close(); openExpense(null, bankPreset(item)); }
-    else renderBank();
-  });
-  $('#bankClear').addEventListener('click', () => {
-    if (!confirm('Ignorar todas as compras da lista?')) return;
-    bankItems = [];
-    NX.clearSuggestions().catch(() => {});
-    renderBank();
-    renderBankState();
-  });
 
   // O app nativo não se atualiza sozinho como o site: avisa quando sai um APK novo no GitHub.
   if (NATIVE && window.NEXA_BUILD) {
@@ -3970,7 +3850,6 @@
     else if (action === 'goal') openGoal();
     else if (action === 'report') openReport();
     else if (action === 'daily') openDaily();
-    else if (action === 'bank') openBank();
     else if (action === 'fixed') openFixed();
     else if (action === 'cats') openCats();
     else if (action === 'card') openCard();
