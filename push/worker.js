@@ -1,16 +1,16 @@
 /*
- * Nexa Money — servidor de notificações (Cloudflare Worker).
+ * Nexa Money - servidor de notificacoes (Cloudflare Worker).
  *
- * O app envia para cá só os lembretes futuros de cada celular (data, título e texto).
- * A cada minuto, o agendamento (Cron) procura lembretes vencidos e manda a notificação
- * pelo serviço de push do navegador (Web Push), mesmo com o app fechado.
+ * O app envia para ca so os lembretes futuros de cada celular (data, titulo e texto).
+ * A cada minuto, o agendamento (Cron) procura lembretes vencidos e manda a notificacao
+ * pelo servico de push do navegador (Web Push), mesmo com o app fechado.
  *
  * Precisa de: um banco D1 ligado com o nome "DB" e um gatilho Cron "* * * * *".
- * As chaves de segurança (VAPID) são criadas sozinhas na primeira vez e ficam no banco.
+ * As chaves de seguranca (VAPID) sao criadas sozinhas na primeira vez e ficam no banco.
  */
 
 const MAX_ITEMS = 300;          // lembretes por celular
-const MAX_TEXT = 300;           // caracteres por título/texto
+const MAX_TEXT = 300;           // caracteres por titulo/texto
 const SUBJECT = 'mailto:nexa-money@users.noreply.github.com';
 
 const CORS = {
@@ -51,7 +51,7 @@ export default {
 let ready = false;
 async function setup(env) {
   if (ready) return;
-  if (!env.DB) throw new Error('Banco D1 não ligado: crie a ligação com o nome DB.');
+  if (!env.DB) throw new Error('Banco D1 n\u00e3o ligado: crie a liga\u00e7\u00e3o com o nome DB.');
   await env.DB.batch([
     env.DB.prepare('CREATE TABLE IF NOT EXISTS devices (id TEXT PRIMARY KEY, sub TEXT NOT NULL, updated INTEGER)'),
     env.DB.prepare('CREATE TABLE IF NOT EXISTS items (device TEXT NOT NULL, at INTEGER NOT NULL, tag TEXT, title TEXT, body TEXT, url TEXT)'),
@@ -66,10 +66,10 @@ const clip = (s) => String(s == null ? '' : s).slice(0, MAX_TEXT);
 
 async function sync(env, data) {
   const { id, subscription, items } = data || {};
-  if (!validId(id)) throw new Error('id inválido');
+  if (!validId(id)) throw new Error('id inv\u00e1lido');
   const sub = subscription;
   if (!sub || typeof sub.endpoint !== 'string' || !/^https:\/\//.test(sub.endpoint) || !sub.keys || !sub.keys.p256dh || !sub.keys.auth) {
-    throw new Error('inscrição de push inválida');
+    throw new Error('inscri\u00e7\u00e3o de push inv\u00e1lida');
   }
   const now = Date.now();
   const list = (Array.isArray(items) ? items : [])
@@ -95,11 +95,11 @@ async function removeDevice(env, id) {
 
 async function test(env, data) {
   const { id } = data || {};
-  if (!validId(id)) throw new Error('id inválido');
+  if (!validId(id)) throw new Error('id inv\u00e1lido');
   const row = await env.DB.prepare('SELECT sub FROM devices WHERE id = ?1').bind(id).first();
-  if (!row) throw new Error('celular não cadastrado');
+  if (!row) throw new Error('celular n\u00e3o cadastrado');
   const status = await push(env, JSON.parse(row.sub), {
-    title: 'Notificações ativadas ✅', body: 'Pronto! Os lembretes vão chegar mesmo com o app fechado.', tag: 'push-test', url: './',
+    title: 'Notifica\u00e7\u00f5es ativadas \u2705', body: 'Pronto! Os lembretes v\u00e3o chegar mesmo com o app fechado.', tag: 'push-test', url: './',
   });
   return { ok: status < 300, status };
 }
@@ -117,7 +117,7 @@ async function sendDue(env) {
     try {
       const status = await push(env, JSON.parse(r.sub), { title: r.title, body: r.body, tag: r.tag, url: r.url });
       if (status === 404 || status === 410) gone.add(r.device);
-    } catch { /* tenta de novo só se o app sincronizar outra vez */ }
+    } catch { /* tenta de novo so se o app sincronizar outra vez */ }
   }));
   await env.DB.batch([
     ...rows.map((r) => env.DB.prepare('DELETE FROM items WHERE rowid = ?1').bind(r.rid)),
@@ -157,7 +157,7 @@ async function push(env, sub, message) {
   const res = await fetch(sub.endpoint, {
     method: 'POST',
     headers: {
-      Authorization: `vapid t=${jwt}, k=${publicKey}`,
+      Authorization: 'vapid t=' + jwt + ', k=' + publicKey,
       'Content-Encoding': 'aes128gcm',
       'Content-Type': 'application/octet-stream',
       TTL: '86400',
@@ -170,9 +170,9 @@ async function push(env, sub, message) {
 
 async function signJwt(key, claims) {
   const enc = (o) => b64e(new TextEncoder().encode(JSON.stringify(o)));
-  const unsigned = `${enc({ typ: 'JWT', alg: 'ES256' })}.${enc(claims)}`;
+  const unsigned = enc({ typ: 'JWT', alg: 'ES256' }) + '.' + enc(claims);
   const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, new TextEncoder().encode(unsigned));
-  return `${unsigned}.${b64e(new Uint8Array(sig))}`;
+  return unsigned + '.' + b64e(new Uint8Array(sig));
 }
 
 async function hkdf(salt, ikm, info, len) {
@@ -201,7 +201,7 @@ async function encrypt(plaintext, uaPublic, authSecret) {
   return concat(header, cipher);
 }
 
-/* ---------------- Utilitários ---------------- */
+/* ---------------- Utilitarios ---------------- */
 function concat(...parts) {
   const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
   let o = 0;
