@@ -1499,6 +1499,16 @@
     dlgRem.showModal();
   }
 
+  // "hoje às 22:00 da noite": deixa claro o período, porque o relógio do celular pode estar em AM/PM.
+  function dueText(iso) {
+    const d = new Date(iso);
+    const h = d.getHours();
+    const period = h < 5 ? 'da madrugada' : h < 12 ? 'da manhã' : h < 18 ? 'da tarde' : 'da noite';
+    const days = daysBetween(new Date(), d);
+    const day = days === 0 ? 'hoje' : days === 1 ? 'amanhã' : days === -1 ? 'ontem' : `dia ${fmtDM.format(d)}`;
+    return `${day} às ${pad(h)}:${pad(d.getMinutes())} ${period}`;
+  }
+
   // Marca como já avisado tudo o que ficou no passado, para não disparar alertas antigos.
   function markPastAlerts(rem, now = Date.now()) {
     const due = new Date(rem.due).getTime();
@@ -1538,7 +1548,14 @@
     save();
     dlgRem.close();
     render();
-    toast(ui.editingRem ? 'Lembrete atualizado.' : 'Lembrete criado.');
+    const when = dueText(rem.due);
+    if (new Date(rem.due).getTime() <= Date.now()) {
+      const repeats = rem.repeat && rem.repeat !== 'none';
+      const other = rem.due.slice(11, 13) < '12' ? 'da noite (PM)' : 'da manhã (AM)';
+      toast(`⚠️ Marcado para ${when}, que já passou: ${repeats ? `o próximo aviso é ${dueText(nextDue(rem))}` : 'não vai ter aviso'}. Era ${other}?`, 'Corrigir', () => openReminder(rem));
+    } else {
+      toast(`${ui.editingRem ? 'Lembrete atualizado' : 'Lembrete criado'} para ${when} ⏰`);
+    }
     if (notifPermission() === 'default' && state.notifyOn) await enableAlerts();
   });
 
