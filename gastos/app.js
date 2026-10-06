@@ -5146,39 +5146,51 @@
   addEventListener('resize', fixAuthHeight);
 
   // Animação da entrada. O verde nasce no botão e cresce aos poucos; o "$" e o "N" são desenhados como na
-  // abertura; a seta sobe e o "N" vira uma cobrinha: anda pela tela, deixa a linha, escreve o nome e some.
+  // abertura; a seta sobe, vira a ponta de uma linha que anda pela tela e escreve "Olá, Nome!" letra por letra.
   const LOGO_S = 'M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9';
   const LOGO_N = 'M33 64V34c0-7.5 5-12.5 12-12.5 4.5 0 8 2.3 10 6L66.5 59c2 3.7 5.5 6 9.5 6c5.3 0 8-4 8-10V31';
   function loginArt(text) {
     return `<svg class="auth-fill__art" viewBox="0 0 340 240" aria-hidden="true">
-      <defs><clipPath id="nxWrite"><rect class="w" x="0" y="150" width="0" height="64"/></clipPath></defs>
       <g transform="translate(112 10)">
         <path class="s" stroke-width="7" d="${LOGO_S}"/>
         <path class="t" stroke-width="6" d="M28 55v9M28 92v7"/>
         <path class="n" stroke-width="11" d="${LOGO_N}"/>
         <path class="a" d="M-12.5 3H12.5L0-14Z"/>
       </g>
-      <text x="170" y="200" font-size="32" text-anchor="middle" clip-path="url(#nxWrite)">${esc(text)}</text>
+      <text class="m" x="170" y="200" font-size="34" text-anchor="middle" opacity="0">${esc(text)}</text>
+      <g class="name"></g>
     </svg>`;
   }
   function playLoginArt(fill, from) {
     const svg = fill.firstElementChild;
     const q = (sel) => svg.querySelector(sel);
-    const text = q('text');
+    const text = q('.m');
     let w = text.getComputedTextLength();
-    if (w > 300) { text.setAttribute('font-size', String(Math.floor(32 * 300 / w))); w = text.getComputedTextLength(); }
-    const x0 = 170 - w / 2 - 112; // posição do texto no desenho do logo
-    const x1 = 170 + w / 2 - 112;
+    if (w > 300) { text.setAttribute('font-size', String(Math.floor(34 * 300 / w))); w = text.getComputedTextLength(); }
+    const size = Number(text.getAttribute('font-size'));
+    // Uma letra por elemento, cada uma com o contorno desenhado pela linha e depois preenchida.
+    const chars = [...text.textContent];
+    const letters = [];
+    chars.forEach((ch, i) => {
+      if (!ch.trim()) return;
+      const p = text.getStartPositionOfChar(i);
+      const el = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      el.setAttribute('x', String(p.x));
+      el.setAttribute('y', '200');
+      el.setAttribute('font-size', String(size));
+      el.textContent = ch;
+      q('.name').appendChild(el);
+      letters.push(el);
+    });
+    const x0 = 170 - w / 2 - 112; // começo do texto, nas medidas do desenho do logo
     const snake = q('.n');
     const nLen = snake.getTotalLength();
-    // Caminho da cobrinha: o próprio "N", sobe pela seta, dá a volta e corre por baixo do nome.
-    snake.setAttribute('d', `${LOGO_N}C84 6 150 2 172 52S${x0 - 70} 214 ${x0} 204H${x1}`);
+    // Caminho: o próprio "N", sobe pela seta, dá a volta e chega no começo da primeira letra.
+    snake.setAttribute('d', `${LOGO_N}C84 6 150 2 172 52S${x0 - 60} 214 ${x0 - 2} ${178 - size * .35}`);
     const total = snake.getTotalLength();
-    const lineStart = total - (x1 - x0);
     const sDraw = q('.s');
     const tDraw = q('.t');
     const arrow = q('.a');
-    const clip = q('.w');
     const sLen = sDraw.getTotalLength();
     const tLen = tDraw.getTotalLength();
     sDraw.style.strokeDasharray = `${sLen} ${sLen}`;
@@ -5194,6 +5206,8 @@
     const out = (v) => 1 - (1 - v) ** 3;
     const span = (t, a, b) => clamp((t - a) / (b - a));
     const lerp = (a, b, v) => a + (b - a) * v;
+    const gap = Math.min(140, 1600 / Math.max(1, letters.length));
+    const end = 2850 + gap * (letters.length - 1) + 600;
     return new Promise((resolve) => {
       let t0 = 0;
       const frame = (now) => {
@@ -5201,7 +5215,7 @@
         const t = now - t0;
         // Verde: sai do botão, vira um disco atrás do logo, cresce devagar e só no fim cobre a tela toda.
         const k1 = out(span(t, 0, 650));
-        const r = t < 650 ? lerp(28, 150, k1) : t < 1650 ? lerp(150, 185, span(t, 650, 1650)) : lerp(185, full, ease(span(t, 1650, 3450)));
+        const r = t < 650 ? lerp(28, 150, k1) : t < 1650 ? lerp(150, 185, span(t, 650, 1650)) : lerp(185, full, ease(span(t, 1650, 3200)));
         fill.style.clipPath = `circle(${r}px at ${lerp(from.x, c.x, k1)}px ${lerp(from.y, c.y, k1)}px)`;
         // "$" e os risquinhos: desenhados, depois somem quando a cobrinha sai andando.
         const fadeS = 1 - span(t, 1700, 2250);
@@ -5214,34 +5228,38 @@
         let tail = 0;
         if (t < 1650) {
           head = nLen * ease(span(t, 880, 1380));
-        } else if (t < 3350) {
-          const p = ease(span(t, 1650, 3350));
+        } else if (t < 2900) {
+          const p = ease(span(t, 1650, 2900));
           head = lerp(nLen, total, p);
           tail = Math.max(0, head - nLen * (1 - .6 * p));
         } else {
           head = total;
-          tail = lerp(total - nLen * .4, total, ease(span(t, 3350, 3700)));
+          tail = lerp(total - nLen * .4, total, ease(span(t, 2900, 3150)));
         }
         snake.style.opacity = head > 0 && head - tail > .5 ? 1 : 0;
         snake.style.strokeDasharray = `${Math.max(0, head - tail)} ${total + 20}`;
         snake.style.strokeDashoffset = String(-tail);
-        snake.style.strokeWidth = String(lerp(11, 6, span(t, 1650, 3000)));
+        snake.style.strokeWidth = String(lerp(11, 3, span(t, 1650, 2800)));
         // Seta = cabeça da cobrinha: aparece subindo, depois segue o caminho apontando para frente.
         if (t >= 1380) {
           const at = snake.getPointAtLength(Math.max(0, head));
           const back = snake.getPointAtLength(Math.max(0, head - 2));
           const ang = head > nLen + 1 ? Math.atan2(at.y - back.y, at.x - back.x) * 180 / Math.PI + 90 : 0;
           const pop = span(t, 1380, 1650);
-          const sc = t < 1650 ? (pop < .6 ? lerp(.3, 1.15, pop / .6) : lerp(1.15, 1, (pop - .6) / .4)) : lerp(1, .8, span(t, 1650, 3350));
+          const sc = t < 1650 ? (pop < .6 ? lerp(.3, 1.15, pop / .6) : lerp(1.15, 1, (pop - .6) / .4)) : lerp(1, 0, ease(span(t, 1650, 2050)));
           const lift = t < 1650 ? Math.sin(pop * Math.PI) * -8 : 0;
           arrow.setAttribute('transform', `translate(${at.x} ${at.y + lift}) rotate(${ang}) scale(${sc})`);
-          arrow.style.opacity = 1 - span(t, 3350, 3650);
+          arrow.style.opacity = 1 - span(t, 1850, 2050);
         }
-        // O nome vai aparecendo junto com a cabeça, da esquerda para a direita.
-        const written = head > lineStart ? head - lineStart + 6 : 0;
-        clip.setAttribute('x', String(170 - w / 2 - 2));
-        clip.setAttribute('width', String(Math.min(w + 6, written)));
-        if (t < 3750) requestAnimationFrame(frame);
+        // A linha escreve o nome: cada letra tem o contorno desenhado e depois é preenchida.
+        letters.forEach((el, i) => {
+          const a = 2850 + i * gap;
+          const k = span(t, a, a + 420);
+          el.style.opacity = t >= a ? 1 : 0;
+          el.style.strokeDashoffset = String(160 * (1 - ease(k)));
+          el.style.fillOpacity = String(out(span(t, a + 300, a + 560)));
+        });
+        if (t < end) requestAnimationFrame(frame);
         else resolve();
       };
       requestAnimationFrame(frame);
