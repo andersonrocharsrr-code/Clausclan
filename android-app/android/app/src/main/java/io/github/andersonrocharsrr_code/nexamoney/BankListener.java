@@ -59,6 +59,7 @@ public class BankListener extends NotificationListenerService {
     @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
         try {
+            if (!isOn(this)) return;
             String pkg = sbn.getPackageName();
             String bank = BANKS.get(pkg);
             if (bank == null) return;
@@ -84,6 +85,15 @@ public class BankListener extends NotificationListenerService {
 
     private static SharedPreferences prefs(Context ctx) {
         return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+    }
+
+    /** Ligado/desligado pela pessoa dentro do app (começa ligado; a permissão do Android é separada). */
+    static boolean isOn(Context ctx) {
+        return prefs(ctx).getBoolean("on", true);
+    }
+
+    static void setOn(Context ctx, boolean on) {
+        prefs(ctx).edit().putBoolean("on", on).apply();
     }
 
     static synchronized JSONArray load(Context ctx) {

@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="style.css?v=60">
+  <link rel="stylesheet" href="style.css?v=61">
   <!-- Garante ícones do tamanho certo mesmo antes do CSS carregar. -->
   <style>.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}</style>
   <!-- Abertura e tela de início do Nexa Money: ficam aqui para aparecer na hora, antes do resto da página. -->
@@ -1071,12 +1071,20 @@
         <h2>Compras do banco</h2>
         <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
       </header>
-      <p class="muted" id="bankIntro">Compras e Pix que apareceram nas notificações do seu banco. Toque em <strong>Lançar</strong> para conferir e salvar.</p>
+      <label class="switch">
+        <input type="checkbox" id="bankOn">
+        <span class="switch__ui" aria-hidden="true"></span>
+        <span class="switch__text"><strong>Sugerir lançamentos do banco</strong><small>Quando o banco avisar de uma compra ou Pix, o app pergunta se quer lançar</small></span>
+      </label>
+      <div class="bank-perm" id="bankPerm" hidden>
+        <p>Falta liberar o acesso às notificações no Android. Na próxima tela, ative o <strong>Nexa Money</strong> e volte para o app.</p>
+        <button type="button" class="btn btn--primary btn--sm" id="bankAllow">Liberar acesso</button>
+      </div>
+      <p class="muted" id="bankIntro">O app lê só as notificações dos apps de banco, e nada sai do celular. Toque em <strong>Lançar</strong> para conferir e salvar.</p>
+      <p class="muted" id="bankOffNote" hidden>Desligado: o app não lê as notificações do banco. Ligue quando quiser.</p>
       <div id="bankList" class="fixed-list"></div>
       <div class="form__foot">
         <button type="button" class="btn btn--ghost" id="bankClear">Ignorar todas</button>
-        <span class="spacer"></span>
-        <button type="button" class="btn btn--soft" id="bankSetup">Configurar</button>
       </div>
     </div>
   </dialog>
@@ -1182,6 +1190,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="app.js?v=60"></script>
+  <script src="app.js?v=61"></script>
 </body>
 </html>

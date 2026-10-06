@@ -66,7 +66,16 @@ public class NexaNativePlugin extends Plugin {
         boolean on = NotificationManagerCompat.getEnabledListenerPackages(getContext()).contains(getContext().getPackageName());
         JSObject ret = new JSObject();
         ret.put("enabled", on);
+        ret.put("on", BankListener.isOn(getContext()));
         call.resolve(ret);
+    }
+
+    /** Liga ou desliga as sugestões do banco sem precisar mexer na permissão do Android. */
+    @PluginMethod
+    public void setBankOn(PluginCall call) {
+        Boolean on = call.getBoolean("on", true);
+        BankListener.setOn(getContext(), on == null || on);
+        call.resolve();
     }
 
     @PluginMethod

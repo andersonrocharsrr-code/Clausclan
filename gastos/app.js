@@ -1742,24 +1742,53 @@
     try { const r = await NX.getSuggestions(); bankItems = Array.isArray(r && r.items) ? r.items : []; } catch { bankItems = []; }
     return bankItems;
   }
+  // Situação: on = ligado pela pessoa no app; allowed = acesso às notificações liberado no Android.
+  const bank = { on: true, allowed: false };
+  async function bankRefresh() {
+    try { const r = await NX.bankStatus(); bank.allowed = !!r.enabled; bank.on = r.on !== false; } catch { /* mantém o último */ }
+  }
+  function renderBankState() {
+    $('#bankOn').checked = bank.on;
+    $('#bankPerm').hidden = !bank.on || bank.allowed;
+    $('#bankIntro').hidden = !bank.on;
+    $('#bankOffNote').hidden = bank.on;
+    $('#bankList').hidden = !bank.on;
+    $('#bankClear').hidden = !bank.on || bankItems.length < 2;
+  }
   async function openBank() {
     if (!NX) return;
-    let enabled = false;
-    try { enabled = !!(await NX.bankStatus()).enabled; } catch { /* sem resposta: trata como desligado */ }
-    await loadBank();
-    if (!enabled && !bankItems.length) { openBankSetup(); return; }
+    await Promise.all([bankRefresh(), loadBank()]);
     renderBank();
+    renderBankState();
     if (!dlgBank.open) dlgBank.showModal();
   }
-  function openBankSetup() {
-    if (confirm('Lançar pelas notificações do banco\n\nQuando o seu banco avisar "Compra aprovada R$ 45,90 em Padaria", o Nexa Money sugere o lançamento — é só tocar em Lançar.\n\nO app lê só as notificações dos apps de banco, e nada sai do celular.\n\nNa próxima tela, ative o "Nexa Money" e volte para o app.')) {
-      NX.openBankSettings().catch(() => toast('Abra Configurações › Notificações › Acesso a notificações e ative o Nexa Money.'));
-    }
+  function openBankSettings() {
+    NX.openBankSettings().catch(() => toast('Abra Configurações › Notificações › Acesso a notificações e ative o Nexa Money.'));
   }
+  $('#bankAllow').addEventListener('click', openBankSettings);
+  $('#bankOn').addEventListener('change', async (e) => {
+    bank.on = e.target.checked;
+    await NX.setBankOn({ on: bank.on }).catch(() => {});
+    if (!bank.on) {
+      bankItems = [];
+      NX.clearSuggestions().catch(() => {});
+      renderBank();
+      toast(bank.allowed ? 'Sugestões do banco desligadas. Se quiser, também dá para tirar o acesso nas configurações do Android.' : 'Sugestões do banco desligadas.',
+        bank.allowed ? 'Abrir' : null, bank.allowed ? openBankSettings : null, bank.allowed ? 9000 : 0);
+    } else {
+      await bankRefresh();
+      if (!bank.allowed) openBankSettings();
+      else toast('Pronto! Novas compras do banco vão aparecer aqui.');
+    }
+    renderBankState();
+  });
   let bankToastAt = 0;
   // Ao voltar para o app, avisa se há compras do banco esperando para serem lançadas.
   async function checkBank() {
-    if (!NX || dlgBank.open) return;
+    if (!NX) return;
+    if (dlgBank.open) { await Promise.all([bankRefresh(), loadBank()]); renderBank(); renderBankState(); return; }
+    await bankRefresh();
+    if (!bank.on) return;
     const items = await loadBank();
     if (!items.length || Date.now() - bankToastAt < 60000) return;
     bankToastAt = Date.now();
@@ -1781,8 +1810,8 @@
     bankItems = [];
     NX.clearSuggestions().catch(() => {});
     renderBank();
+    renderBankState();
   });
-  $('#bankSetup').addEventListener('click', openBankSetup);
 
   // O app nativo não se atualiza sozinho como o site: avisa quando sai um APK novo no GitHub.
   if (NATIVE && window.NEXA_BUILD) {
