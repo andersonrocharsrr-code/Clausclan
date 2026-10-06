@@ -746,6 +746,9 @@ button, .k, .tab, .fab, .chip, .seg__btn { touch-action: manipulation; -webkit-u
 .fixed-item__main small { font-size: 12.5px; color: var(--muted); }
 .fixed-item__val { font-weight: 700; font-variant-numeric: tabular-nums; }
 .fixed-item__val.is-in { color: var(--good); }
+.bank-item { flex-wrap: wrap; }
+.bank-item__raw { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 2px; }
+.bank-item__acts { width: 100%; display: flex; justify-content: flex-end; gap: 8px; }
 .fixed-item .del { border: 0; background: none; color: var(--muted); width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; }
 .fixed-item .del:hover { color: var(--bad); background: var(--surface); }
 .fixed-item .del .ic { width: 17px; height: 17px; }

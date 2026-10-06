@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="style.css?v=59">
+  <link rel="stylesheet" href="style.css?v=60">
   <!-- Garante ícones do tamanho certo mesmo antes do CSS carregar. -->
   <style>.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}</style>
   <!-- Abertura e tela de início do Nexa Money: ficam aqui para aparecer na hora, antes do resto da página. -->
@@ -380,6 +380,7 @@
           <button type="button" data-action="cats"><svg class="ic"><use href="#i-grid"/></svg>Categorias</button>
           <button type="button" data-action="card"><svg class="ic"><use href="#i-card"/></svg>Cartão de crédito</button>
           <button type="button" data-action="daily"><svg class="ic"><use href="#i-clock"/></svg>Lembrete diário de lançar</button>
+          <button type="button" data-action="bank" id="menuBank" hidden><svg class="ic"><use href="#i-bell"/></svg>Lançar pelas notificações do banco</button>
           <button type="button" data-action="export-csv"><svg class="ic"><use href="#i-sheet"/></svg>Exportar gastos do mês (.csv)</button>
           <button type="button" data-action="export-ics"><svg class="ic"><use href="#i-calendar"/></svg>Lembretes p/ calendário (.ics)</button>
           <button type="button" data-action="export-json"><svg class="ic"><use href="#i-download"/></svg>Fazer backup (.json)</button>
@@ -1063,6 +1064,23 @@
     </div>
   </dialog>
 
+  <!-- ============ DIÁLOGO: SUGESTÕES DO BANCO (app Android) ============ -->
+  <dialog id="dlgBank" class="dlg">
+    <div class="form">
+      <header class="form__head">
+        <h2>Compras do banco</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
+      </header>
+      <p class="muted" id="bankIntro">Compras e Pix que apareceram nas notificações do seu banco. Toque em <strong>Lançar</strong> para conferir e salvar.</p>
+      <div id="bankList" class="fixed-list"></div>
+      <div class="form__foot">
+        <button type="button" class="btn btn--ghost" id="bankClear">Ignorar todas</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn--soft" id="bankSetup">Configurar</button>
+      </div>
+    </div>
+  </dialog>
+
   <!-- ============ DIÁLOGO: CARTÃO ============ -->
   <dialog id="dlgCard" class="dlg dlg--sm">
     <form id="formCard" method="dialog" class="form">
@@ -1164,6 +1182,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="app.js?v=59"></script>
+  <script src="app.js?v=60"></script>
 </body>
 </html>
