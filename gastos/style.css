@@ -1546,11 +1546,14 @@ html.is-touring { scroll-behavior: smooth; }
   transition: clip-path .7s cubic-bezier(.65, 0, .35, 1), opacity .45s; font-family: 'Jakarta', Inter, system-ui, sans-serif; }
 .auth-fill.is-open { clip-path: circle(150vmax at var(--x) var(--y)); }
 .auth-fill.is-gone { opacity: 0; }
-.auth-fill svg { width: 64px; height: 64px; opacity: 0; transform: translateY(8px); transition: opacity .35s .35s, transform .5s .35s cubic-bezier(.2, .9, .3, 1.2); }
-.auth-fill svg g { fill: none; stroke: #fff; stroke-linecap: round; stroke-linejoin: round; }
-.auth-fill b { font-size: 24px; font-weight: 800; letter-spacing: -.02em; opacity: 0; transform: translateY(8px); transition: opacity .35s .5s, transform .5s .5s cubic-bezier(.2, .9, .3, 1.2); }
-.auth-fill.is-open svg, .auth-fill.is-open b { opacity: 1; transform: none; }
-@media (prefers-reduced-motion: reduce) { .auth__go, .auth__goTxt, .auth__goFx, .auth-fill, .auth-fill svg, .auth-fill b { transition: none; } .auth__go.is-loading .auth__goFx, .auth__go.is-done .auth__goFx { animation: none; } }
+/* Desenho no verde: "$" → "N" → a seta sobe → o traço desce e escreve "Olá, Nome!". */
+.auth-fill__art { width: min(86vw, 380px); height: auto; overflow: visible; }
+.auth-fill__art .dr { fill: none; stroke: #fff; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0; }
+.auth-fill__art .a { fill: #fff; stroke: #fff; stroke-width: 3; stroke-linejoin: round; opacity: 0; transform-box: fill-box; transform-origin: 50% 100%; }
+.auth-fill__art .pen { stroke-width: 3; }
+.auth-fill__art text { fill: #fff; font-family: 'Jakarta', Inter, system-ui, sans-serif; font-weight: 800; letter-spacing: -.02em; }
+.auth-fill__art .w { transform-box: fill-box; transform-origin: 0 50%; transform: scaleX(0); }
+@media (prefers-reduced-motion: reduce) { .auth__go, .auth__goTxt, .auth__goFx, .auth-fill { transition: none; } .auth__go.is-loading .auth__goFx, .auth__go.is-done .auth__goFx { animation: none; } }
 .auth__link { justify-self: center; border: 0; background: none; color: var(--a-g); font: inherit; font-size: 14px; font-weight: 700; padding: 6px; cursor: pointer; }
 .auth__link[hidden] { display: none; }
 .auth__switch { margin: 6px 0 0; text-align: center; font-size: 14px; color: var(--a-mut); }

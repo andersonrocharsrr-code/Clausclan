@@ -5145,6 +5145,54 @@
   fixAuthHeight();
   addEventListener('resize', fixAuthHeight);
 
+  // Desenho da entrada: mesmo traço do logo da abertura, que no fim escreve a saudação.
+  function loginArt(text) {
+    return `<svg class="auth-fill__art" viewBox="0 0 340 230" aria-hidden="true">
+      <defs><clipPath id="nxWrite"><rect class="w" x="0" y="140" width="340" height="62"/></clipPath></defs>
+      <g transform="translate(116 -4)">
+        <path class="dr s" pathLength="1" stroke-width="7" d="M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9"/>
+        <path class="dr t" pathLength="1" stroke-width="6" d="M28 55v9M28 92v7"/>
+        <path class="dr n" pathLength="1" stroke-width="11" d="M33 64V34c0-7.5 5-12.5 12-12.5 4.5 0 8 2.3 10 6L66.5 59c2 3.7 5.5 6 9.5 6c5.3 0 8-4 8-10V31"/>
+        <path class="a" d="M71.5 34H96.5L84 17Z"/>
+      </g>
+      <path class="dr pen sw" pathLength="1" d=""/>
+      <path class="dr pen ul" pathLength="1" d=""/>
+      <text x="170" y="182" font-size="32" text-anchor="middle" clip-path="url(#nxWrite)">${esc(text)}</text>
+    </svg>`;
+  }
+  async function drawLoginArt(svg) {
+    const q = (s) => svg.querySelector(s);
+    const text = q('text');
+    let w = text.getComputedTextLength();
+    if (w > 300) { text.setAttribute('font-size', String(Math.floor(32 * 300 / w))); w = text.getComputedTextLength(); }
+    const x0 = 170 - w / 2;
+    const x1 = 170 + w / 2;
+    // A partir da ponta da seta, o traço dá a volta por baixo e chega no começo do texto; depois sublinha escrevendo.
+    q('.sw').setAttribute('d', `M196 13C262 22 330 120 300 196S${x0 - 40} 222 ${x0} 198`);
+    q('.ul').setAttribute('d', `M${x0} 198H${x1}`);
+    q('.w').setAttribute('x', String(x0));
+    q('.w').setAttribute('width', String(w + 4));
+    const ease = 'cubic-bezier(.55, 0, .3, 1)';
+    // Cada traço só aparece quando começa a ser desenhado (senão a ponta redonda vira um pontinho).
+    const draw = (el, delay, duration, easing = ease) => {
+      const o = el.classList.contains('pen') ? .75 : 1;
+      return el.animate([{ strokeDashoffset: 1, opacity: o }, { strokeDashoffset: 0, opacity: o }], { delay, duration, easing, fill: 'forwards' });
+    };
+    draw(q('.s'), 250, 480);
+    draw(q('.t'), 700, 180, 'ease-out');
+    draw(q('.n'), 850, 520);
+    q('.a').animate([
+      { opacity: 0, transform: 'translateY(10px) scale(.3)' },
+      { opacity: 1, transform: 'translateY(-9px) scale(1.12)', offset: .6 },
+      { opacity: 1, transform: 'none' },
+    ], { delay: 1330, duration: 380, easing: 'cubic-bezier(.2, 1.3, .4, 1)', fill: 'forwards' });
+    draw(q('.sw'), 1600, 420, 'cubic-bezier(.45, 0, .55, 1)');
+    q('.sw').animate([{ opacity: .75 }, { opacity: 0 }], { delay: 2500, duration: 400, fill: 'forwards' });
+    draw(q('.ul'), 2000, 760, 'cubic-bezier(.4, 0, .4, 1)');
+    const write = q('.w').animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { delay: 2000, duration: 760, easing: 'cubic-bezier(.4, 0, .4, 1)', fill: 'forwards' });
+    await write.finished.catch(() => {});
+  }
+
   function showAuth(onDone, mode = authGet() ? 'login' : 'signup') {
     const box = $('#auth');
     const f = $('#authForm');
@@ -5228,7 +5276,8 @@
       const go = $('#authGo');
       go.disabled = true;
       go.classList.add('is-busy');
-      // Fecha o teclado (se entrou pelo "Ir") e começa a animação: círculo com o logo pulsando → seta sobe → verde enche a tela (~3 s).
+      // Fecha o teclado (se entrou pelo "Ir") e começa a animação: círculo com o logo → o verde enche a tela →
+      // o "$" e o "N" são desenhados → a seta sobe → o mesmo traço desce e escreve "Olá, Nome!".
       if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
       const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
       const wait = (ms) => new Promise((r) => setTimeout(r, calm ? 0 : ms));
@@ -5236,20 +5285,20 @@
       const since = () => performance.now() - t0;
       requestAnimationFrame(() => go.classList.add('is-loading'));
       const success = async (name) => {
-        await wait(Math.max(0, 1800 - since()));
+        await wait(Math.max(0, 1100 - since()));
         go.classList.add('is-done');
-        await wait(420);
+        await wait(300);
         if (calm) { finish(name); return; }
-        // O verde sai do botão e cobre a tela, com o logo e o "Olá".
         const r = go.getBoundingClientRect();
         const fill = document.createElement('div');
         fill.className = 'auth-fill';
         fill.style.setProperty('--x', `${r.left + r.width / 2}px`);
         fill.style.setProperty('--y', `${r.top + r.height / 2}px`);
-        fill.innerHTML = `${go.querySelector('.auth__goFx').outerHTML.replace('auth__goFx', '')}<b>${name ? `Olá, ${esc(name.split(' ')[0])}! 👋` : 'Bem-vindo! 👋'}</b>`;
+        fill.innerHTML = loginArt(name ? `Olá, ${name.split(' ')[0]}!` : 'Bem-vindo!');
         document.body.appendChild(fill);
         requestAnimationFrame(() => requestAnimationFrame(() => fill.classList.add('is-open')));
-        await wait(1100);
+        await drawLoginArt(fill.firstElementChild);
+        await wait(450);
         finish();
         await wait(250);
         fill.classList.add('is-gone');
