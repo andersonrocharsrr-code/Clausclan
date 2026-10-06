@@ -1599,6 +1599,9 @@
   const plugin = (name) => (NATIVE ? (Cap.Plugins && Cap.Plugins[name]) || (Cap.registerPlugin && Cap.registerPlugin(name)) || null : null);
   const LN = plugin('LocalNotifications');
   let nativePerm = 'prompt';
+  let channelReady = Promise.resolve(true);
+  let nativeError = '';
+  const errText = (err) => String((err && (err.message || err.code)) || err || 'erro desconhecido').slice(0, 140);
   // Número inteiro estável para cada aviso (o Android identifica notificações por número).
   const nid = (str) => {
     let h = 2166136261;
@@ -1609,7 +1612,8 @@
   if (NATIVE) {
     document.documentElement.classList.add('is-native');
     if (LN) {
-      LN.createChannel({ id: 'avisos', name: 'Avisos do Nexa Money', description: 'Contas, cobranças, assinaturas e lembretes', importance: 4, visibility: 1, vibration: true }).catch(() => {});
+      channelReady = LN.createChannel({ id: 'avisos', name: 'Avisos do Nexa Money', description: 'Contas, cobranças, assinaturas e lembretes', importance: 4, visibility: 1, vibration: true })
+        .then(() => true, (err) => { nativeError = errText(err); return false; });
       LN.checkPermissions().then((p) => { nativePerm = p.display; updateBell(); scheduleNativeSync(); }).catch(() => {});
       // Tocar na notificação abre a tela certa do app.
       LN.addListener('localNotificationActionPerformed', ({ notification }) => {
@@ -1666,12 +1670,14 @@
     clearTimeout(nativeTimer);
     nativeTimer = setTimeout(nativeSync, delay);
   }
+  // Devolve { ok, count, err }: quantos avisos ficaram agendados, ou o motivo do erro.
   function nativeSync() {
-    if (!NATIVE || !LN) return Promise.resolve(0);
+    if (!NATIVE || !LN) return Promise.resolve({ ok: false, count: 0, err: 'sem suporte' });
     nativeBusy = (nativeBusy || Promise.resolve()).then(async () => {
+      await channelReady;
       const pending = ((await LN.getPending()).notifications || []).map((n) => ({ id: n.id }));
       if (pending.length) await LN.cancel({ notifications: pending });
-      if (!alertsOn()) return 0;
+      if (!alertsOn()) return { ok: true, count: 0 };
       // O primeiro aviso de cada tipo usa o mesmo número do aviso feito com o app aberto: assim não aparece repetido.
       const seen = new Set();
       const ids = new Set();
@@ -1684,13 +1690,21 @@
         list.push({ ...NOTE_BASE, id, title: x.title, body: x.body, largeBody: x.body, extra: { url: x.url }, schedule: { at: new Date(x.at), allowWhileIdle: true } });
       }
       if (list.length) await LN.schedule({ notifications: list });
-      return list.length;
-    }).catch(() => 0);
+      return { ok: true, count: list.length };
+    }).catch((err) => { nativeError = errText(err); return { ok: false, count: 0, err: nativeError }; });
     return nativeBusy;
   }
-  function nativeNotify(title, body, tag, url) {
-    if (!LN) return;
-    LN.schedule({ notifications: [{ ...NOTE_BASE, id: nid(tag || title), title, body, largeBody: body, extra: { url } }] }).catch(() => {});
+  // Mostra a notificação agora. Devolve { ok, err }.
+  async function nativeNotify(title, body, tag, url) {
+    if (!LN) return { ok: false, err: 'sem suporte' };
+    try {
+      await channelReady;
+      await LN.schedule({ notifications: [{ ...NOTE_BASE, id: nid(tag || title), title, body, largeBody: body, extra: { url } }] });
+      return { ok: true };
+    } catch (err) {
+      nativeError = errText(err);
+      return { ok: false, err: nativeError };
+    }
   }
   // Salvar arquivo no app nativo: abre o "compartilhar" do Android (Drive, WhatsApp, e-mail, Arquivos…).
   const blobToBase64 = (blob) => new Promise((resolve, reject) => {
@@ -1804,9 +1818,11 @@
     // Cadastra o celular no servidor para os avisos chegarem com o app fechado.
     // Sempre manda uma notificação de teste pelo servidor ao ligar o sino.
     if (NATIVE) {
-      nativeSync().then(() => {
-        nativeNotify('Notificações ativadas ✅', 'Pronto! Os lembretes vão chegar mesmo com o app fechado.', 'push-test', './');
-        toast('🔔 Pronto! Os avisos vão chegar mesmo com o app fechado.');
+      nativeSync().then(async (r) => {
+        const t = await nativeNotify('Notificações ativadas ✅', 'Pronto! Os lembretes vão chegar mesmo com o app fechado.', 'push-test', './');
+        toast(r.ok && t.ok
+          ? `🔔 Pronto! ${r.count} ${r.count === 1 ? 'aviso agendado' : 'avisos agendados'}. Chegam mesmo com o app fechado.`
+          : `⚠️ Os avisos não ligaram (${r.err || t.err}).`);
       });
     } else if (pushReady()) {
       setTimeout(() => pushSync({ test: true }).then((r) => {
