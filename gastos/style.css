@@ -513,10 +513,18 @@ button, .k, .tab, .fab, .chip, .seg__btn { touch-action: manipulation; -webkit-u
 
 .form { display: grid; gap: 15px; padding: 20px 20px 20px; }
 .form__head { display: flex; justify-content: space-between; align-items: center; }
-.form__head h2 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.025em; }
+.form__head h2 { margin: 0; min-width: 0; font-size: 20px; font-weight: 800; letter-spacing: -.025em; }
 .form__head .icon-btn { width: 38px; height: 38px; border-radius: 12px; }
-.form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form__row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.form__row > *, .form__row input, .form__row select { min-width: 0; } /* dois campos lado a lado cabem em telas estreitas */
 .form__foot { display: flex; gap: 8px; align-items: center; padding-top: 4px; }
+/* Celulares estreitos: botões do rodapé um pouco mais compactos e, se ainda não couberem, vão para a linha de baixo. */
+@media (max-width: 380px) {
+  .form__foot { flex-wrap: wrap; }
+  .form__foot .btn { flex: 1 1 auto; padding-inline: 12px; }
+  .form__foot .spacer { display: none; }
+  .form__row input, .form__row select { padding-inline: 10px; font-size: 14px; }
+}
 .form label, .split label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
 .form input, .form select, .form textarea, .split input {
   width: 100%; padding: 12px 13px; border-radius: 14px; border: 1px solid var(--line);
@@ -544,7 +552,15 @@ button, .k, .tab, .fab, .chip, .seg__btn { touch-action: manipulation; -webkit-u
 
 .cat-pick { border: 0; padding: 0; margin: 0; }
 .cat-pick legend { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; padding: 0; }
-.cat-pick__grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.cat-pick__grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+/* Em celulares estreitos o nome da categoria encolhe (e corta com "…") em vez de empurrar a janela para o lado. */
+.cat-opt { min-width: 0; }
+.cat-opt__name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 370px) {
+  .cat-pick__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .cat-opt { padding-inline: 0; }
+}
+@media (max-width: 330px) { .cat-pick__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .cat-opt {
   display: grid; justify-items: center; gap: 5px; padding: 10px 2px 8px; border-radius: 16px;
   border: 1.5px solid transparent; background: var(--surface-2); font-size: 11px; font-weight: 600; color: var(--muted);
@@ -1621,7 +1637,7 @@ html.is-touring { scroll-behavior: smooth; }
 /* Diálogo aberto: o fundo não rola */
 html.is-locked { overflow: hidden; }
 html.is-locked body { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }
-.dlg { overscroll-behavior: contain; overflow-x: hidden; } /* nada passa para os lados dentro das janelas */
+.dlg { overscroll-behavior: contain; overflow-x: clip; } /* nada passa para os lados dentro das janelas */
 .dlg .form, .dlg .sheet, .layout-list, .recur-dlg__list, .report-preview { overscroll-behavior: contain; }
 
 /* Comportamento de app: sem "puxar para recarregar" e sem selecionar texto ao segurar o dedo (campos de digitar continuam normais). */
