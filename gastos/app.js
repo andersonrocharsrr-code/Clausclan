@@ -5157,7 +5157,7 @@
         <path class="n" stroke-width="11" d="${LOGO_N}"/>
         <path class="a" d="M-12.5 3H12.5L0-14Z"/>
       </g>
-      <text class="m" x="170" y="204" font-size="50" text-anchor="middle" opacity="0">${esc(text)}</text>
+      <text class="m" x="170" y="204" font-size="46" text-anchor="middle" opacity="0">${esc(text)}</text>
       <g class="name"></g>
     </svg>`;
   }
@@ -5165,20 +5165,35 @@
     const svg = fill.firstElementChild;
     const q = (sel) => svg.querySelector(sel);
     const text = q('.m');
+    // Cabe em 300 de largura: diminui a letra (até 24) e, se ainda não couber, corta o nome com "…".
     let w = text.getComputedTextLength();
-    if (w > 300) { text.setAttribute('font-size', String(Math.floor(50 * 300 / w))); w = text.getComputedTextLength(); }
+    if (w > 300) text.setAttribute('font-size', String(Math.max(24, Math.floor(46 * 300 / w))));
+    w = text.getComputedTextLength();
+    while (w > 300 && text.textContent.length > 6) {
+      text.textContent = `${[...text.textContent.replace(/…?!$/, '')].slice(0, -1).join('')}…!`;
+      w = text.getComputedTextLength();
+    }
     const size = Number(text.getAttribute('font-size'));
-    // Uma letra por elemento, cada uma com o contorno desenhado pela linha e depois preenchida.
-    const chars = [...text.textContent];
+    // Uma letra por elemento (contorno desenhado pela linha, depois preenchida). Letras com acento
+    // separado ficam juntas; alfabetos em que as letras se ligam (árabe, hindi…) são escritos de uma vez.
+    const shown = text.textContent;
+    const joined = /[\u0590-\u08FF\u0900-\u0DFF\u0E00-\u0FFF\u1000-\u109F\u1780-\u17FF]/.test(shown);
+    const parts = joined ? [{ segment: shown, index: 0 }]
+      : window.Intl && Intl.Segmenter ? [...new Intl.Segmenter('pt-BR', { granularity: 'grapheme' }).segment(shown)]
+        : [...shown].reduce((acc, ch) => { const at = acc.length ? acc[acc.length - 1].index + acc[acc.length - 1].segment.length : 0; acc.push({ segment: ch, index: at }); return acc; }, []);
     const letters = [];
-    chars.forEach((ch, i) => {
-      if (!ch.trim()) return;
-      const p = text.getStartPositionOfChar(i);
+    parts.forEach(({ segment, index }) => {
+      if (!segment.trim()) return;
       const el = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      el.setAttribute('x', String(p.x));
+      if (joined) {
+        el.setAttribute('x', '170');
+        el.setAttribute('text-anchor', 'middle');
+      } else {
+        el.setAttribute('x', String(text.getStartPositionOfChar(index).x));
+      }
       el.setAttribute('y', '204');
       el.setAttribute('font-size', String(size));
-      el.textContent = ch;
+      el.textContent = segment;
       q('.name').appendChild(el);
       letters.push(el);
     });
@@ -5209,7 +5224,7 @@
     const gap = Math.min(160, 1800 / Math.max(1, letters.length));
     // Ritmo da animação: 1 = rápido; 1,25 deixa cada parte mais calma (~8 s no total, com o botão).
     const SLOW = 1.25;
-    const end = 2850 + gap * (letters.length - 1) + 600;
+    const end = 2850 + gap * (letters.length - 1) + 900;
     return new Promise((resolve) => {
       let t0 = 0;
       const frame = (now) => {
@@ -5269,6 +5284,8 @@
           el.style.opacity = t >= a ? 1 : 0;
           el.style.strokeDasharray = `${900 * ease(k)} 4000`;
           el.style.fillOpacity = String(out(span(t, a + 300, a + 560)));
+          // Depois de preenchida, o contorno some e fica só a letra fina da fonte.
+          el.style.strokeOpacity = String(1 - out(span(t, a + 560, a + 900)));
         });
         if (t < end) requestAnimationFrame(frame);
         else resolve();
@@ -5278,8 +5295,17 @@
   }
 
   // Carrega a letra cursiva antes da animação (fica pronta enquanto a pessoa digita).
-  let scriptFont = Promise.resolve();
-  const loadScriptFont = () => { scriptFont = document.fonts ? document.fonts.load('50px "Nexa Script"', 'Olá').catch(() => {}) : Promise.resolve(); };
+  const loadScriptFont = () => { if (document.fonts) document.fonts.load('46px "Nexa Script"', 'Olá, Bem-vindo!').catch(() => {}); };
+  // "Olá, Nome!" com o primeiro nome, a primeira letra maiúscula e no máximo 14 letras.
+  function greeting(name) {
+    let first = String(name || '').normalize('NFC').trim().split(/\s+/)[0] || '';
+    if (!first) return 'Bem-vindo!';
+    // Nome composto com hífen muito comprido: usa só a primeira parte (ex.: "Maximiliano-Bartolomeu" → "Maximiliano").
+    if ([...first].length > 14 && /[^-]{2,}-/.test(first)) first = first.split('-')[0];
+    const chars = [...first];
+    const short = chars.length > 14 ? `${chars.slice(0, 13).join('')}…` : first;
+    return `Olá, ${short.charAt(0).toLocaleUpperCase('pt-BR')}${short.slice(1)}!`;
+  }
 
   function showAuth(onDone, mode = authGet() ? 'login' : 'signup') {
     loadScriptFont();
@@ -5384,8 +5410,10 @@
         fill.className = 'auth-fill';
         fill.style.setProperty('--x', `${from.x}px`);
         fill.style.setProperty('--y', `${from.y}px`);
-        await scriptFont;
-        fill.innerHTML = loginArt(name ? `Olá, ${name.split(' ')[0]}!` : 'Bem-vindo!');
+        const hello = greeting(name);
+        // Garante a letra cursiva com todos os acentos do nome (no máximo 1,5 s de espera).
+        if (document.fonts) await Promise.race([document.fonts.load('46px "Nexa Script"', hello).catch(() => {}), wait(1500)]);
+        fill.innerHTML = loginArt(hello);
         document.body.appendChild(fill);
         await playLoginArt(fill, from);
         await wait(500);
