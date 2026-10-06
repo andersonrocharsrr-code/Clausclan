@@ -500,11 +500,13 @@ button, .k, .tab, .fab, .chip, .seg__btn { touch-action: manipulation; -webkit-u
   box-shadow: 0 30px 80px rgba(0, 0, 0, .35);
 }
 .dlg--sm { width: min(420px, calc(100% - 20px)); }
-/* Janelas centralizadas: ficam sempre longe da barra de status (relógio, bateria) e dos botões do celular. */
+/* Janelas centralizadas: a janela pode encostar na barra de status (relógio, bateria), mas não passa por baixo dela;
+   embaixo fica longe dos botões do celular. A seta de voltar e o X ganham um pouco mais de espaço em cima. */
 .dlg:not(.dlg--sheet) {
-  top: calc(env(safe-area-inset-top) + 12px); bottom: calc(env(safe-area-inset-bottom) + 12px);
-  max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  top: env(safe-area-inset-top); bottom: calc(env(safe-area-inset-bottom) + 12px);
+  max-height: calc(100dvh - 12px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 }
+.dlg:not(.dlg--sheet) .form__head { padding-top: 6px; }
 .dlg::backdrop { background: rgba(8, 10, 16, .5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
 .dlg[open] { animation: pop .2s cubic-bezier(.2, .8, .2, 1); }
 @keyframes pop { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
