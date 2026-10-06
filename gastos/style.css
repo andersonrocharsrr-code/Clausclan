@@ -462,7 +462,7 @@ button, .k, .tab, .fab, .chip, .seg__btn { touch-action: manipulation; -webkit-u
 /* ---------- Barra de abas flutuante ---------- */
 .tabbar {
   position: fixed; z-index: 16; left: 50%; transform: translateX(-50%);
-  bottom: calc(12px + env(safe-area-inset-bottom));
+  bottom: calc(4px + env(safe-area-inset-bottom)); /* bem perto dos botões do celular */
   width: min(520px, calc(100% - 24px));
   display: grid; grid-template-columns: 1fr 1fr auto 1fr 1fr; align-items: center; gap: 2px;
   padding: 8px; border-radius: 26px;
@@ -1017,7 +1017,7 @@ button, .k, .tab, .fab, .chip, .seg__btn { touch-action: manipulation; -webkit-u
 
 /* ---------- Toast ---------- */
 .toast {
-  position: fixed; left: 16px; right: 16px; bottom: calc(104px + env(safe-area-inset-bottom));
+  position: fixed; left: 16px; right: 16px; bottom: calc(96px + env(safe-area-inset-bottom));
   margin: 0 auto; width: fit-content; z-index: 50; max-width: 520px; padding: 12px 16px; border-radius: 16px;
   background: var(--text); color: var(--bg); font-size: 14px; font-weight: 500;
   box-shadow: 0 16px 36px rgba(0, 0, 0, .3); display: flex; gap: 14px; align-items: center;
