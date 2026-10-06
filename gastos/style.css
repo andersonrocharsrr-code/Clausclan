@@ -1550,7 +1550,7 @@ html.is-touring { scroll-behavior: smooth; }
 .auth-fill__art path { fill: none; stroke: #fff; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
 .auth-fill__art .a { fill: #fff; stroke-width: 3; }
 .auth-fill__art text { fill: #fff; font-family: 'Jakarta', Inter, system-ui, sans-serif; font-weight: 800; letter-spacing: -.02em; }
-.auth-fill__art .name text { stroke: #fff; stroke-width: 1.4; stroke-linejoin: round; stroke-dasharray: 160; stroke-dashoffset: 160; fill-opacity: 0; opacity: 0; }
+.auth-fill__art .name text { stroke: #fff; stroke-width: 1.4; stroke-linejoin: round; stroke-dasharray: 0 2000; fill-opacity: 0; opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .auth__go, .auth__goTxt, .auth__goFx, .auth-fill { transition: none; } .auth__go.is-loading .auth__goFx, .auth__go.is-done .auth__goFx { animation: none; } }
 .auth__link { justify-self: center; border: 0; background: none; color: var(--a-g); font: inherit; font-size: 14px; font-weight: 700; padding: 6px; cursor: pointer; }
 .auth__link[hidden] { display: none; }

@@ -5217,21 +5217,30 @@
         const k1 = out(span(t, 0, 650));
         const r = t < 650 ? lerp(28, 150, k1) : t < 1650 ? lerp(150, 185, span(t, 650, 1650)) : lerp(185, full, ease(span(t, 1650, 3200)));
         fill.style.clipPath = `circle(${r}px at ${lerp(from.x, c.x, k1)}px ${lerp(from.y, c.y, k1)}px)`;
-        // "$" e os risquinhos: desenhados, depois somem quando a cobrinha sai andando.
-        const fadeS = 1 - span(t, 1700, 2250);
-        sDraw.style.opacity = t > 250 ? fadeS : 0;
-        sDraw.style.strokeDashoffset = sLen * (1 - ease(span(t, 250, 720)));
-        tDraw.style.opacity = t > 720 ? fadeS : 0;
-        tDraw.style.strokeDashoffset = tLen * (1 - out(span(t, 720, 880)));
+        // "$" e os risquinhos: desenhados; quando a seta sai andando, se desfazem pelo próprio contorno,
+        // do começo para o fim (como o rabo de uma cobrinha seguindo as curvas da letra).
+        const unS = sLen * ease(span(t, 1650, 2150));
+        const unT = tLen * ease(span(t, 1650, 1900));
+        sDraw.style.opacity = t > 250 && unS < sLen - .5 ? 1 : 0;
+        sDraw.style.strokeDasharray = `${sLen - unS} ${sLen * 2}`;
+        sDraw.style.strokeDashoffset = t < 1650 ? String(sLen * (1 - ease(span(t, 250, 720)))) : String(-unS);
+        tDraw.style.opacity = t > 720 && unT < tLen - .5 ? 1 : 0;
+        tDraw.style.strokeDasharray = `${tLen - unT} ${tLen * 2}`;
+        tDraw.style.strokeDashoffset = t < 1650 ? String(tLen * (1 - out(span(t, 720, 880)))) : String(-unT);
         // Cobrinha: primeiro desenha o "N"; depois anda (cabeça na frente, rabo atrás) e no fim o rabo alcança a cabeça.
         let head = 0;
         let tail = 0;
         if (t < 1650) {
           head = nLen * ease(span(t, 880, 1380));
         } else if (t < 2900) {
-          const p = ease(span(t, 1650, 2900));
-          head = lerp(nLen, total, p);
-          tail = Math.max(0, head - nLen * (1 - .6 * p));
+          // A cabeça (seta) avança; o rabo do "N" só começa a andar depois que o "$" se desfez,
+          // seguindo as curvas do "N" até virar só a linha.
+          head = lerp(nLen, total, ease(span(t, 1650, 2900)));
+          if (t > 2100) {
+            const head0 = lerp(nLen, total, ease(span(2100, 1650, 2900)));
+            const seg = lerp(head0, nLen * .4, ease(span(t, 2100, 2900)));
+            tail = Math.max(0, head - seg);
+          }
         } else {
           head = total;
           tail = lerp(total - nLen * .4, total, ease(span(t, 2900, 3150)));
@@ -5256,7 +5265,7 @@
           const a = 2850 + i * gap;
           const k = span(t, a, a + 420);
           el.style.opacity = t >= a ? 1 : 0;
-          el.style.strokeDashoffset = String(160 * (1 - ease(k)));
+          el.style.strokeDasharray = `${420 * ease(k)} 2000`;
           el.style.fillOpacity = String(out(span(t, a + 300, a + 560)));
         });
         if (t < end) requestAnimationFrame(frame);
