@@ -1585,3 +1585,8 @@ html.is-locked { overflow: hidden; }
 html.is-locked body { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }
 .dlg { overscroll-behavior: contain; }
 .dlg .form, .dlg .sheet, .layout-list, .recur-dlg__list, .report-preview { overscroll-behavior: contain; }
+
+/* Comportamento de app: sem "puxar para recarregar" e sem selecionar texto ao segurar o dedo (campos de digitar continuam normais). */
+html, body { overscroll-behavior-y: none; }
+body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+input, textarea, select, [contenteditable] { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
