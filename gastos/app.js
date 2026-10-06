@@ -5145,52 +5145,107 @@
   fixAuthHeight();
   addEventListener('resize', fixAuthHeight);
 
-  // Desenho da entrada: mesmo traço do logo da abertura, que no fim escreve a saudação.
+  // Animação da entrada. O verde nasce no botão e cresce aos poucos; o "$" e o "N" são desenhados como na
+  // abertura; a seta sobe e o "N" vira uma cobrinha: anda pela tela, deixa a linha, escreve o nome e some.
+  const LOGO_S = 'M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9';
+  const LOGO_N = 'M33 64V34c0-7.5 5-12.5 12-12.5 4.5 0 8 2.3 10 6L66.5 59c2 3.7 5.5 6 9.5 6c5.3 0 8-4 8-10V31';
   function loginArt(text) {
-    return `<svg class="auth-fill__art" viewBox="0 0 340 230" aria-hidden="true">
-      <defs><clipPath id="nxWrite"><rect class="w" x="0" y="140" width="340" height="62"/></clipPath></defs>
-      <g transform="translate(116 -4)">
-        <path class="dr s" pathLength="1" stroke-width="7" d="M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9"/>
-        <path class="dr t" pathLength="1" stroke-width="6" d="M28 55v9M28 92v7"/>
-        <path class="dr n" pathLength="1" stroke-width="11" d="M33 64V34c0-7.5 5-12.5 12-12.5 4.5 0 8 2.3 10 6L66.5 59c2 3.7 5.5 6 9.5 6c5.3 0 8-4 8-10V31"/>
-        <path class="a" d="M71.5 34H96.5L84 17Z"/>
+    return `<svg class="auth-fill__art" viewBox="0 0 340 240" aria-hidden="true">
+      <defs><clipPath id="nxWrite"><rect class="w" x="0" y="150" width="0" height="64"/></clipPath></defs>
+      <g transform="translate(112 10)">
+        <path class="s" stroke-width="7" d="${LOGO_S}"/>
+        <path class="t" stroke-width="6" d="M28 55v9M28 92v7"/>
+        <path class="n" stroke-width="11" d="${LOGO_N}"/>
+        <path class="a" d="M-12.5 3H12.5L0-14Z"/>
       </g>
-      <path class="dr pen sw" pathLength="1" d=""/>
-      <path class="dr pen ul" pathLength="1" d=""/>
-      <text x="170" y="182" font-size="32" text-anchor="middle" clip-path="url(#nxWrite)">${esc(text)}</text>
+      <text x="170" y="200" font-size="32" text-anchor="middle" clip-path="url(#nxWrite)">${esc(text)}</text>
     </svg>`;
   }
-  async function drawLoginArt(svg) {
-    const q = (s) => svg.querySelector(s);
+  function playLoginArt(fill, from) {
+    const svg = fill.firstElementChild;
+    const q = (sel) => svg.querySelector(sel);
     const text = q('text');
     let w = text.getComputedTextLength();
     if (w > 300) { text.setAttribute('font-size', String(Math.floor(32 * 300 / w))); w = text.getComputedTextLength(); }
-    const x0 = 170 - w / 2;
-    const x1 = 170 + w / 2;
-    // A partir da ponta da seta, o traço dá a volta por baixo e chega no começo do texto; depois sublinha escrevendo.
-    q('.sw').setAttribute('d', `M196 13C262 22 330 120 300 196S${x0 - 40} 222 ${x0} 198`);
-    q('.ul').setAttribute('d', `M${x0} 198H${x1}`);
-    q('.w').setAttribute('x', String(x0));
-    q('.w').setAttribute('width', String(w + 4));
-    const ease = 'cubic-bezier(.55, 0, .3, 1)';
-    // Cada traço só aparece quando começa a ser desenhado (senão a ponta redonda vira um pontinho).
-    const draw = (el, delay, duration, easing = ease) => {
-      const o = el.classList.contains('pen') ? .75 : 1;
-      return el.animate([{ strokeDashoffset: 1, opacity: o }, { strokeDashoffset: 0, opacity: o }], { delay, duration, easing, fill: 'forwards' });
-    };
-    draw(q('.s'), 250, 480);
-    draw(q('.t'), 700, 180, 'ease-out');
-    draw(q('.n'), 850, 520);
-    q('.a').animate([
-      { opacity: 0, transform: 'translateY(10px) scale(.3)' },
-      { opacity: 1, transform: 'translateY(-9px) scale(1.12)', offset: .6 },
-      { opacity: 1, transform: 'none' },
-    ], { delay: 1330, duration: 380, easing: 'cubic-bezier(.2, 1.3, .4, 1)', fill: 'forwards' });
-    draw(q('.sw'), 1600, 420, 'cubic-bezier(.45, 0, .55, 1)');
-    q('.sw').animate([{ opacity: .75 }, { opacity: 0 }], { delay: 2500, duration: 400, fill: 'forwards' });
-    draw(q('.ul'), 2000, 760, 'cubic-bezier(.4, 0, .4, 1)');
-    const write = q('.w').animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { delay: 2000, duration: 760, easing: 'cubic-bezier(.4, 0, .4, 1)', fill: 'forwards' });
-    await write.finished.catch(() => {});
+    const x0 = 170 - w / 2 - 112; // posição do texto no desenho do logo
+    const x1 = 170 + w / 2 - 112;
+    const snake = q('.n');
+    const nLen = snake.getTotalLength();
+    // Caminho da cobrinha: o próprio "N", sobe pela seta, dá a volta e corre por baixo do nome.
+    snake.setAttribute('d', `${LOGO_N}C84 6 150 2 172 52S${x0 - 70} 214 ${x0} 204H${x1}`);
+    const total = snake.getTotalLength();
+    const lineStart = total - (x1 - x0);
+    const sDraw = q('.s');
+    const tDraw = q('.t');
+    const arrow = q('.a');
+    const clip = q('.w');
+    const sLen = sDraw.getTotalLength();
+    const tLen = tDraw.getTotalLength();
+    sDraw.style.strokeDasharray = `${sLen} ${sLen}`;
+    tDraw.style.strokeDasharray = `${tLen} ${tLen}`;
+    // Centro do círculo verde: no meio do logo.
+    const m = svg.getScreenCTM();
+    const pt = svg.createSVGPoint();
+    pt.x = 167; pt.y = 68;
+    const c = pt.matrixTransform(m);
+    const full = Math.hypot(Math.max(c.x, innerWidth - c.x), Math.max(c.y, innerHeight - c.y)) + 20;
+    const clamp = (v) => Math.min(1, Math.max(0, v));
+    const ease = (v) => (v < .5 ? 4 * v * v * v : 1 - (-2 * v + 2) ** 3 / 2);
+    const out = (v) => 1 - (1 - v) ** 3;
+    const span = (t, a, b) => clamp((t - a) / (b - a));
+    const lerp = (a, b, v) => a + (b - a) * v;
+    return new Promise((resolve) => {
+      let t0 = 0;
+      const frame = (now) => {
+        if (!t0) t0 = now;
+        const t = now - t0;
+        // Verde: sai do botão, vira um disco atrás do logo, cresce devagar e só no fim cobre a tela toda.
+        const k1 = out(span(t, 0, 650));
+        const r = t < 650 ? lerp(28, 150, k1) : t < 1650 ? lerp(150, 185, span(t, 650, 1650)) : lerp(185, full, ease(span(t, 1650, 3450)));
+        fill.style.clipPath = `circle(${r}px at ${lerp(from.x, c.x, k1)}px ${lerp(from.y, c.y, k1)}px)`;
+        // "$" e os risquinhos: desenhados, depois somem quando a cobrinha sai andando.
+        const fadeS = 1 - span(t, 1700, 2250);
+        sDraw.style.opacity = t > 250 ? fadeS : 0;
+        sDraw.style.strokeDashoffset = sLen * (1 - ease(span(t, 250, 720)));
+        tDraw.style.opacity = t > 720 ? fadeS : 0;
+        tDraw.style.strokeDashoffset = tLen * (1 - out(span(t, 720, 880)));
+        // Cobrinha: primeiro desenha o "N"; depois anda (cabeça na frente, rabo atrás) e no fim o rabo alcança a cabeça.
+        let head = 0;
+        let tail = 0;
+        if (t < 1650) {
+          head = nLen * ease(span(t, 880, 1380));
+        } else if (t < 3350) {
+          const p = ease(span(t, 1650, 3350));
+          head = lerp(nLen, total, p);
+          tail = Math.max(0, head - nLen * (1 - .6 * p));
+        } else {
+          head = total;
+          tail = lerp(total - nLen * .4, total, ease(span(t, 3350, 3700)));
+        }
+        snake.style.opacity = head > 0 && head - tail > .5 ? 1 : 0;
+        snake.style.strokeDasharray = `${Math.max(0, head - tail)} ${total + 20}`;
+        snake.style.strokeDashoffset = String(-tail);
+        snake.style.strokeWidth = String(lerp(11, 6, span(t, 1650, 3000)));
+        // Seta = cabeça da cobrinha: aparece subindo, depois segue o caminho apontando para frente.
+        if (t >= 1380) {
+          const at = snake.getPointAtLength(Math.max(0, head));
+          const back = snake.getPointAtLength(Math.max(0, head - 2));
+          const ang = head > nLen + 1 ? Math.atan2(at.y - back.y, at.x - back.x) * 180 / Math.PI + 90 : 0;
+          const pop = span(t, 1380, 1650);
+          const sc = t < 1650 ? (pop < .6 ? lerp(.3, 1.15, pop / .6) : lerp(1.15, 1, (pop - .6) / .4)) : lerp(1, .8, span(t, 1650, 3350));
+          const lift = t < 1650 ? Math.sin(pop * Math.PI) * -8 : 0;
+          arrow.setAttribute('transform', `translate(${at.x} ${at.y + lift}) rotate(${ang}) scale(${sc})`);
+          arrow.style.opacity = 1 - span(t, 3350, 3650);
+        }
+        // O nome vai aparecendo junto com a cabeça, da esquerda para a direita.
+        const written = head > lineStart ? head - lineStart + 6 : 0;
+        clip.setAttribute('x', String(170 - w / 2 - 2));
+        clip.setAttribute('width', String(Math.min(w + 6, written)));
+        if (t < 3750) requestAnimationFrame(frame);
+        else resolve();
+      };
+      requestAnimationFrame(frame);
+    });
   }
 
   function showAuth(onDone, mode = authGet() ? 'login' : 'signup') {
@@ -5285,20 +5340,20 @@
       const since = () => performance.now() - t0;
       requestAnimationFrame(() => go.classList.add('is-loading'));
       const success = async (name) => {
-        await wait(Math.max(0, 1100 - since()));
+        await wait(Math.max(0, 900 - since()));
         go.classList.add('is-done');
         await wait(300);
         if (calm) { finish(name); return; }
         const r = go.getBoundingClientRect();
+        const from = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
         const fill = document.createElement('div');
         fill.className = 'auth-fill';
-        fill.style.setProperty('--x', `${r.left + r.width / 2}px`);
-        fill.style.setProperty('--y', `${r.top + r.height / 2}px`);
+        fill.style.setProperty('--x', `${from.x}px`);
+        fill.style.setProperty('--y', `${from.y}px`);
         fill.innerHTML = loginArt(name ? `Olá, ${name.split(' ')[0]}!` : 'Bem-vindo!');
         document.body.appendChild(fill);
-        requestAnimationFrame(() => requestAnimationFrame(() => fill.classList.add('is-open')));
-        await drawLoginArt(fill.firstElementChild);
-        await wait(450);
+        await playLoginArt(fill, from);
+        await wait(500);
         finish();
         await wait(250);
         fill.classList.add('is-gone');
