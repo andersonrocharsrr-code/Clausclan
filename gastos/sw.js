@@ -1,7 +1,7 @@
 /* Service worker: funciona offline e abre o app ao tocar numa notificação. */
-const CACHE = 'nexa-money-v54';
+const CACHE = 'nexa-money-v55';
 // Os arquivos levam "?v=" no index.html: ao mudar a versão, o celular nunca mistura CSS/JS antigo com HTML novo.
-const FILES = ['./', 'index.html', 'style.css?v=54', 'app.js?v=54', 'icon.svg', 'icon-192.png', 'badge-96.png', 'icon-512.png', 'manifest.webmanifest'];
+const FILES = ['./', 'index.html', 'style.css?v=55', 'app.js?v=55', 'icon.svg', 'icon-192.png', 'badge-96.png', 'icon-512.png', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
