@@ -1539,7 +1539,7 @@
     dlgRem.close();
     render();
     toast(ui.editingRem ? 'Lembrete atualizado.' : 'Lembrete criado.');
-    if ('Notification' in window && Notification.permission === 'default' && state.notifyOn) await enableAlerts();
+    if (notifPermission() === 'default' && state.notifyOn) await enableAlerts();
   });
 
   $('#remDelete').addEventListener('click', () => {
@@ -1591,12 +1591,162 @@
   $('#btnAddRem').addEventListener('click', () => openReminder());
 
   /* ---------------- Notificações ---------------- */
+  /* ---------------- App nativo (APK feito com Capacitor) ---------------- */
+  // No APK nativo o app roda num WebView próprio, sem o Chrome. Notificações, salvar arquivos,
+  // compartilhar, voz e o botão "voltar" usam os recursos do Android pelos plugins do Capacitor.
+  const Cap = window.Capacitor;
+  const NATIVE = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
+  const plugin = (name) => (NATIVE ? (Cap.Plugins && Cap.Plugins[name]) || (Cap.registerPlugin && Cap.registerPlugin(name)) || null : null);
+  const LN = plugin('LocalNotifications');
+  let nativePerm = 'prompt';
+  // Número inteiro estável para cada aviso (o Android identifica notificações por número).
+  const nid = (str) => {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
+    return (h >>> 1) || 1;
+  };
+  const NOTE_BASE = { smallIcon: 'ic_stat_nexa', iconColor: '#6d5dfc', channelId: 'avisos' };
+  if (NATIVE) {
+    document.documentElement.classList.add('is-native');
+    if (LN) {
+      LN.createChannel({ id: 'avisos', name: 'Avisos do Nexa Money', description: 'Contas, cobranças, assinaturas e lembretes', importance: 4, visibility: 1, vibration: true }).catch(() => {});
+      LN.checkPermissions().then((p) => { nativePerm = p.display; updateBell(); scheduleNativeSync(); }).catch(() => {});
+      // Tocar na notificação abre a tela certa do app.
+      LN.addListener('localNotificationActionPerformed', ({ notification }) => {
+        const url = notification && notification.extra && notification.extra.url;
+        if (url && url !== './') location.href = url;
+      });
+    }
+    // Botão "voltar" do Android: fecha a janela aberta, depois volta ao Resumo, depois minimiza o app.
+    const AppPlugin = plugin('App');
+    if (AppPlugin) {
+      AppPlugin.addListener('backButton', () => {
+        const open = [...document.querySelectorAll('dialog[open]')];
+        if (open.length) { open[open.length - 1].close(); return; }
+        if (typeof isCalcFull === 'function' && isCalcFull()) { setCalcFull(false); return; }
+        if (ui.view !== 'resumo') { setView('resumo'); window.scrollTo({ top: 0 }); return; }
+        AppPlugin.minimizeApp();
+      });
+    }
+  }
+  // O app nativo não se atualiza sozinho como o site: avisa quando sai um APK novo no GitHub.
+  if (NATIVE && window.NEXA_BUILD) {
+    setTimeout(async () => {
+      try {
+        if (store(() => sessionStorage.getItem('nexa-update-asked'))) return;
+        const r = await fetch('https://api.github.com/repos/andersonrocharsrr-code/Clausclan/releases/latest');
+        if (!r.ok) return;
+        const rel = await r.json();
+        const latest = Number(String(rel.tag_name || '').replace(/\D/g, ''));
+        const apk = (rel.assets || []).find((a) => /\.apk$/i.test(a.name));
+        if (!apk || !(latest > window.NEXA_BUILD)) return;
+        store(() => sessionStorage.setItem('nexa-update-asked', '1'));
+        if (confirm(`Saiu uma versão nova do Nexa Money. Baixar e instalar agora?\n\nSeus dados continuam guardados no celular.`)) location.href = apk.browser_download_url;
+      } catch { /* sem internet: tenta na próxima vez */ }
+    }, 4000);
+  }
+  // Permissão de notificação: 'granted' | 'denied' | 'default' | 'unsupported'.
+  function notifPermission() {
+    if (NATIVE) return !LN ? 'unsupported' : nativePerm === 'granted' ? 'granted' : nativePerm === 'denied' ? 'denied' : 'default';
+    if (!('Notification' in window)) return 'unsupported';
+    return Notification.permission;
+  }
+  async function requestNotifPermission() {
+    if (NATIVE) {
+      try { nativePerm = (await LN.requestPermissions()).display; } catch { /* sem permissão */ }
+      return notifPermission();
+    }
+    return Notification.requestPermission();
+  }
+  // Agenda no próprio Android os próximos avisos (chegam no horário mesmo sem internet e com o app fechado).
+  let nativeTimer = null;
+  let nativeBusy = null;
+  function scheduleNativeSync(delay = 1500) {
+    if (!NATIVE || !LN) return;
+    clearTimeout(nativeTimer);
+    nativeTimer = setTimeout(nativeSync, delay);
+  }
+  function nativeSync() {
+    if (!NATIVE || !LN) return Promise.resolve(0);
+    nativeBusy = (nativeBusy || Promise.resolve()).then(async () => {
+      const pending = ((await LN.getPending()).notifications || []).map((n) => ({ id: n.id }));
+      if (pending.length) await LN.cancel({ notifications: pending });
+      if (!alertsOn()) return 0;
+      // O primeiro aviso de cada tipo usa o mesmo número do aviso feito com o app aberto: assim não aparece repetido.
+      const seen = new Set();
+      const ids = new Set();
+      const list = [];
+      for (const x of pushSchedule().slice(0, 200)) {
+        let id = nid(seen.has(x.tag) ? `${x.tag}|${x.at}` : x.tag);
+        seen.add(x.tag);
+        while (ids.has(id)) id = (id % 2147483646) + 1;
+        ids.add(id);
+        list.push({ ...NOTE_BASE, id, title: x.title, body: x.body, largeBody: x.body, extra: { url: x.url }, schedule: { at: new Date(x.at), allowWhileIdle: true } });
+      }
+      if (list.length) await LN.schedule({ notifications: list });
+      return list.length;
+    }).catch(() => 0);
+    return nativeBusy;
+  }
+  function nativeNotify(title, body, tag, url) {
+    if (!LN) return;
+    LN.schedule({ notifications: [{ ...NOTE_BASE, id: nid(tag || title), title, body, largeBody: body, extra: { url } }] }).catch(() => {});
+  }
+  // Salvar arquivo no app nativo: abre o "compartilhar" do Android (Drive, WhatsApp, e-mail, Arquivos…).
+  const blobToBase64 = (blob) => new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(',')[1]);
+    r.onerror = reject;
+    r.readAsDataURL(blob);
+  });
+  async function nativeShareFile(blob, name) {
+    try {
+      const FS = plugin('Filesystem');
+      const SH = plugin('Share');
+      const { uri } = await FS.writeFile({ path: name, data: await blobToBase64(blob), directory: 'CACHE' });
+      await SH.share({ title: name, files: [uri], dialogTitle: 'Salvar ou enviar' });
+    } catch (err) {
+      if (!/cancel/i.test(String(err && err.message))) toast('Não foi possível salvar o arquivo.');
+    }
+  }
+  // Ditado por voz no app nativo, com a mesma "cara" da API de voz do navegador.
+  class NativeSpeechRec {
+    constructor() { this.lang = 'pt-BR'; this.onresult = null; this.onerror = null; this.onend = null; this.subs = []; this.done = false; }
+    async start() {
+      const SR = plugin('SpeechRecognition');
+      const fire = (text) => { if (this.onresult) this.onresult({ results: [[{ transcript: text }]] }); };
+      try {
+        let p = await SR.checkPermissions();
+        if (p.speechRecognition !== 'granted') p = await SR.requestPermissions();
+        if (p.speechRecognition !== 'granted') throw Object.assign(new Error('not-allowed'), { error: 'not-allowed' });
+        this.subs.push(await SR.addListener('partialResults', (d) => { if (d && d.matches && d.matches[0]) fire(d.matches[0]); }));
+        this.subs.push(await SR.addListener('listeningState', (d) => { if (d && d.status === 'stopped') this.finish(); }));
+        const r = await SR.start({ language: this.lang, maxResults: 1, partialResults: true, popup: false });
+        if (r && r.matches && r.matches[0]) { fire(r.matches[0]); this.finish(); }
+      } catch (err) {
+        if (this.onerror) this.onerror({ error: err.error || 'no-speech' });
+        this.finish();
+      }
+    }
+    stop() { const SR = plugin('SpeechRecognition'); if (SR) SR.stop().catch(() => {}); this.finish(); }
+    finish() {
+      if (this.done) return;
+      this.done = true;
+      this.subs.forEach((sub) => sub.remove());
+      this.subs = [];
+      if (this.onend) this.onend();
+    }
+  }
+
+  // Segurar o dedo não abre o menu do navegador (exceto nos campos de digitar).
+  document.addEventListener('contextmenu', (e) => { if (!e.target.closest('input, textarea, [contenteditable]')) e.preventDefault(); });
+
   let swReg = null;
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  if (!NATIVE && 'serviceWorker' in navigator && location.protocol !== 'file:') {
     navigator.serviceWorker.register('sw.js').then((r) => { swReg = r; }).catch(() => {});
   }
 
-  const canNotify = () => 'Notification' in window && Notification.permission === 'granted';
+  const canNotify = () => notifPermission() === 'granted';
   // Lembretes ligados = navegador permite E o usuário deixou o sino ligado no app.
   const alertsOn = () => canNotify() && state.notifyOn;
 
@@ -1627,17 +1777,21 @@
 
   // Liga os lembretes (pede permissão ao navegador na primeira vez).
   async function enableAlerts() {
-    if (!('Notification' in window)) {
+    if (notifPermission() === 'unsupported') {
       toast('Este navegador não suporta notificações. Use “Lembretes p/ calendário” no menu ⋯.');
       return;
     }
-    if (Notification.permission === 'denied') {
-      toast('As notificações estão bloqueadas. Libere nas configurações do celular para o app Nexa Money.');
-      return;
+    // No app nativo o Android deixa pedir de novo; se continuar negado, mostra onde liberar.
+    if (notifPermission() === 'default' || (NATIVE && notifPermission() === 'denied')) {
+      const p = await requestNotifPermission();
+      if (p !== 'granted' && !(NATIVE && p === 'denied')) { updateBell(); return; }
     }
-    if (Notification.permission === 'default') {
-      const p = await Notification.requestPermission();
-      if (p !== 'granted') { updateBell(); return; }
+    if (notifPermission() === 'denied') {
+      toast(NATIVE
+        ? 'As notificações estão bloqueadas. Libere em Configurações › Aplicativos › Nexa Money › Notificações.'
+        : 'As notificações estão bloqueadas. Libere nas configurações do celular para o app Nexa Money.');
+      updateBell();
+      return;
     }
     state.notifyOn = true;
     const first = !state.notifyTested;
@@ -1649,13 +1803,18 @@
     toast('Lembretes ligados 🔔 Você será avisado no horário escolhido.');
     // Cadastra o celular no servidor para os avisos chegarem com o app fechado.
     // Sempre manda uma notificação de teste pelo servidor ao ligar o sino.
-    if (pushReady()) {
+    if (NATIVE) {
+      nativeSync().then(() => {
+        nativeNotify('Notificações ativadas ✅', 'Pronto! Os lembretes vão chegar mesmo com o app fechado.', 'push-test', './');
+        toast('🔔 Pronto! Os avisos vão chegar mesmo com o app fechado.');
+      });
+    } else if (pushReady()) {
       setTimeout(() => pushSync({ test: true }).then((r) => {
         toast(r.ok ? '🔔 Pronto! Os avisos vão chegar mesmo com o app fechado.' : `⚠️ Avisos com o app fechado não ligaram (${r.why}).`);
       }), 1200);
     }
     // Só na primeira vez: um aviso de exemplo, que some sozinho.
-    if (first) notify('Nexa Money', 'Pronto! Os lembretes vão aparecer assim.', 'teste', { quiet: true });
+    if (first && !NATIVE) notify('Nexa Money', 'Pronto! Os lembretes vão aparecer assim.', 'teste', { quiet: true });
   }
 
   function disableAlerts() {
@@ -1664,7 +1823,8 @@
     updateBell();
     ringBell('off');
     toast('Lembretes desligados. Toque no sino para ligar de novo.');
-    pushOff();
+    if (NATIVE) nativeSync();
+    else pushOff();
   }
 
   const toggleAlerts = () => (alertsOn() ? disableAlerts() : enableAlerts());
@@ -1680,6 +1840,7 @@
     }
     // A notificação fica na barra até o usuário limpar (o app nunca apaga sozinho).
     if (!alertsOn()) return;
+    if (NATIVE) { nativeNotify(title, body, tag, url); return; }
     const opts = { body, tag, icon: 'icon-192.png', badge: 'badge-96.png', renotify: false, vibrate: vibrate || [80, 40, 80], data: { url } };
     try {
       const reg = await getReg();
@@ -1952,7 +2113,7 @@
   }
 
   /* ---------------- Lançar por voz ---------------- */
-  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition || (NATIVE && plugin('SpeechRecognition') ? NativeSpeechRec : null);
   let rec = null;
   // "30 reais e 50 centavos" → "30,50"; tira palavras como "reais" que atrapalham a leitura.
   function speechToText(t) {
@@ -2725,6 +2886,7 @@
   }
 
   function downloadBlob(blob, name) {
+    if (NATIVE) { nativeShareFile(blob, name); return; }
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = name;
@@ -2758,21 +2920,21 @@
       try {
         await navigator.share({ files: [file], title: 'Nexa Money', text });
       } catch (err) {
-        if (err.name !== 'AbortError') { downloadBlob(blob, file.name); toast('Imagem salva. Agora é só enviar.'); }
+        if (err.name !== 'AbortError') { downloadBlob(blob, file.name); if (!NATIVE) toast('Imagem salva. Agora é só enviar.'); }
       }
     } else {
       downloadBlob(blob, file.name);
-      toast('Imagem salva nos downloads. Agora é só enviar.');
+      if (!NATIVE) toast('Imagem salva nos downloads. Agora é só enviar.');
     }
   });
   $('#reportPng').addEventListener('click', async () => {
     downloadBlob(await canvasBlob(ui.image.canvas, 'image/png'), `${ui.image.name}.png`);
-    toast('Imagem salva nos downloads.');
+    if (!NATIVE) toast('Imagem salva nos downloads.');
   });
   $('#reportPdf').addEventListener('click', () => {
     const { canvas, name } = ui.image;
     downloadBlob(imagePdf(canvas.toDataURL('image/jpeg', 0.92), canvas.width, canvas.height), `${name}.pdf`);
-    toast('PDF salvo nos downloads.');
+    if (!NATIVE) toast('PDF salvo nos downloads.');
   });
 
   /* ---------------- Modo privacidade ---------------- */
@@ -3525,13 +3687,19 @@
     $('#btnTheme use').setAttribute('href', THEME_ICON[state.theme]);
     // Mantém o navegador sem "escurecer à força" as cores do app.
     $('#metaScheme').content = state.theme === 'auto' ? 'light dark' : state.theme === 'light' ? 'only light' : 'dark';
+    // No app nativo, os ícones da barra de status (relógio, bateria) acompanham o tema do app.
+    const bars = plugin('SystemBars');
+    if (bars) {
+      const dark = state.theme === 'dark' || (state.theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+      bars.setStyle({ style: dark ? 'DARK' : 'LIGHT' }).catch(() => {});
+    }
   }
   $('#btnTheme').addEventListener('click', () => {
     state.theme = { auto: 'light', light: 'dark', dark: 'auto' }[state.theme];
     applyTheme();
     save();
     const sysDark = matchMedia('(prefers-color-scheme: dark)').matches;
-    toast(state.theme === 'light' && sysDark
+    toast(state.theme === 'light' && sysDark && !NATIVE
       ? 'Tema claro. Com o celular no modo escuro, o navegador pode escurecer as cores; use o automático para ver o tema escuro do app.'
       : `Tema ${THEME_LABEL[state.theme]}.`);
   });
@@ -3604,6 +3772,7 @@
 
   function download(name, text, type) {
     const blob = new Blob([text], { type: `${type};charset=utf-8` });
+    if (NATIVE) { nativeShareFile(blob, name); return; }
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = name;
@@ -3652,7 +3821,7 @@
 
   /* ---------------- Instalar como app ---------------- */
   let installEvent = null;
-  const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const isStandalone = () => NATIVE || matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   function updateInstallItem() { $('#menuInstall').hidden = isStandalone(); }
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvent = e; updateInstallItem(); });
@@ -4637,7 +4806,7 @@
     state.lastBackup = dateISO(new Date());
     save();
     updateBackupItem();
-    toast('Backup salvo nos downloads. Guarde o arquivo em um lugar seguro (Drive, e-mail…).');
+    if (!NATIVE) toast('Backup salvo nos downloads. Guarde o arquivo em um lugar seguro (Drive, e-mail…).');
   }
   function updateBackupItem() {
     const b = $('#menu [data-action="export-json"]');
@@ -4773,6 +4942,7 @@
   var pushTimer = null;
   var pushBusy = false;
   function schedulePushSync(delay = 2500) {
+    if (NATIVE) { scheduleNativeSync(); return; }
     if (!pushReady()) return;
     clearTimeout(pushTimer);
     pushTimer = setTimeout(pushSync, delay);
@@ -4820,7 +4990,12 @@
       if (sub) await sub.unsubscribe();
     } catch { /* sem internet: o servidor apaga sozinho quando o aviso falhar */ }
   }
-  document.addEventListener('visibilitychange', () => { if (document.hidden) { clearTimeout(pushTimer); pushSync(); } });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) return;
+    if (NATIVE) { clearTimeout(nativeTimer); nativeSync(); return; }
+    clearTimeout(pushTimer);
+    pushSync();
+  });
 
   /* ---------------- Início ---------------- */
   function launchFixed() {

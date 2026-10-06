@@ -1,0 +1,14 @@
+{
+  "appId": "io.github.andersonrocharsrr_code.nexamoney",
+  "appName": "Nexa Money",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#0a0c11"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_nexa",
+      "iconColor": "#6d5dfc"
+    }
+  }
+}

@@ -1,0 +1,88 @@
+# Gera o APK do app Android nativo (pasta android-app/, feito com Capacitor) a partir do site em gastos/.
+# No main, com o segredo NEXA_SIGNING_SEED configurado, publica o APK numa "Release":
+#   https://github.com/andersonrocharsrr-code/Clausclan/releases/latest/download/nexa-money.apk
+# Sem o segredo, gera só um APK de teste (debug), disponível em "Artifacts" na execução.
+name: Gerar APK do app Android
+
+on:
+  push:
+    branches: [main, 'claude/**']
+    paths: ['gastos/**', 'android-app/**', '.github/workflows/android-apk.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      NEXA_BUILD: ${{ github.run_number }}
+    defaults:
+      run:
+        working-directory: android-app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: android-app/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Copiar o app para dentro do projeto Android
+        run: npm run www && npx cap sync android
+
+      - name: Criar a chave de assinatura
+        env:
+          NEXA_SIGNING_SEED: ${{ secrets.NEXA_SIGNING_SEED }}
+        run: |
+          if [ -z "$NEXA_SIGNING_SEED" ]; then
+            echo "::warning::Segredo NEXA_SIGNING_SEED não configurado: gerando APK de teste (debug), que não pode ser atualizado depois."
+            exit 0
+          fi
+          pip install --quiet cryptography==49.0.0
+          pass=$(python3 scripts/make-keystore.py "$RUNNER_TEMP/nexa.p12")
+          echo "::add-mask::$pass"
+          echo "NEXA_KEYSTORE=$RUNNER_TEMP/nexa.p12" >> "$GITHUB_ENV"
+          echo "NEXA_KEYSTORE_PASSWORD=$pass" >> "$GITHUB_ENV"
+
+      - name: Gerar o APK
+        working-directory: android-app/android
+        run: |
+          chmod +x gradlew
+          if [ -n "$NEXA_KEYSTORE" ]; then
+            ./gradlew assembleRelease --no-daemon --stacktrace
+            cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/nexa-money.apk"
+          else
+            ./gradlew assembleDebug --no-daemon --stacktrace
+            cp app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/nexa-money.apk"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nexa-money-apk
+          path: ${{ runner.temp }}/nexa-money.apk
+
+      - name: Publicar a versão nova
+        if: github.ref == 'refs/heads/main' && env.NEXA_KEYSTORE != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "apk-$NEXA_BUILD" "$RUNNER_TEMP/nexa-money.apk" \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest \
+            --title "Nexa Money (versão $NEXA_BUILD)" \
+            --notes "Baixe o arquivo nexa-money.apk no celular e toque nele para instalar. Os dados continuam no celular ao atualizar."

@@ -1,0 +1,22 @@
+{
+  "name": "nexa-money-android",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Nexa Money como app Android nativo (Capacitor). O APK é gerado pelo GitHub Actions.",
+  "scripts": {
+    "www": "node scripts/prepare-www.mjs"
+  },
+  "dependencies": {
+    "@capacitor-community/speech-recognition": "^7.0.1",
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/filesystem": "^8.1.4",
+    "@capacitor/local-notifications": "^8.3.1",
+    "@capacitor/share": "^8.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.5.2"
+  }
+}
