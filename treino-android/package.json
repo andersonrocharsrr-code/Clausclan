@@ -1,8 +1,8 @@
 {
-  "name": "kinora-android",
+  "name": "fibra-android",
   "private": true,
   "version": "1.0.0",
-  "description": "Kinora (musculação) como app Android nativo (Capacitor). O APK é gerado pelo GitHub Actions.",
+  "description": "Fibra (musculação) como app Android nativo (Capacitor). O APK é gerado pelo GitHub Actions.",
   "scripts": {
     "www": "node scripts/prepare-www.mjs"
   },

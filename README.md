@@ -154,7 +154,7 @@ Abra `ultimo-dia/index.html` por um servidor (GitHub Pages, ou `python3 -m http.
 
 ---
 
-# Kinora — treinador visual de musculação (`treino/` e `treino-android/`)
+# Fibra — treinador visual de musculação (`treino/` e `treino-android/`)
 
 App web instalável (PWA, sem build) e app Android (APK): um treinador de musculação no bolso que mostra
 **o que fazer, como fazer, quanto fazer e quando descansar**.
@@ -190,10 +190,10 @@ Cada exercício em `treino/data.js` aceita um campo `media` com o caminho de um 
 Quando existe, o app mostra essa mídia no lugar da figura animada (o vídeo também tem câmera lenta).
 
 ## App Android
-O projeto Capacitor fica em `treino-android/`. O GitHub Actions (`.github/workflows/kinora-apk.yml`) gera o APK
+O projeto Capacitor fica em `treino-android/`. O GitHub Actions (`.github/workflows/fibra-apk.yml`) gera o APK
 a cada mudança em `treino/` ou `treino-android/`. No `main`, com o segredo `NEXA_SIGNING_SEED` configurado (o
 mesmo do Nexa Money), publica em:
-`https://github.com/andersonrocharsrr-code/Clausclan/releases/download/kinora/kinora.apk`.
+`https://github.com/andersonrocharsrr-code/Clausclan/releases/download/fibra/fibra.apk`.
 Sem o segredo, o APK de teste fica em "Artifacts" na execução.
 
 ## Observações

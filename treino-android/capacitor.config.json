@@ -1,13 +1,13 @@
 {
-  "appId": "io.github.andersonrocharsrr_code.kinora",
-  "appName": "Kinora",
+  "appId": "io.github.andersonrocharsrr_code.fibra",
+  "appName": "Fibra",
   "webDir": "www",
   "android": {
     "backgroundColor": "#0b0c0f"
   },
   "plugins": {
     "LocalNotifications": {
-      "smallIcon": "ic_stat_kinora",
+      "smallIcon": "ic_stat_fibra",
       "iconColor": "#7cc400"
     }
   }

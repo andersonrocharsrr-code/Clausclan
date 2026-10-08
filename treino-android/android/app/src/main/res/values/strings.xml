@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Kinora</string>
-    <string name="title_activity_main">Kinora</string>
-    <string name="package_name">io.github.andersonrocharsrr_code.kinora</string>
-    <string name="custom_url_scheme">io.github.andersonrocharsrr_code.kinora</string>
+    <string name="app_name">Fibra</string>
+    <string name="title_activity_main">Fibra</string>
+    <string name="package_name">io.github.andersonrocharsrr_code.fibra</string>
+    <string name="custom_url_scheme">io.github.andersonrocharsrr_code.fibra</string>
 </resources>

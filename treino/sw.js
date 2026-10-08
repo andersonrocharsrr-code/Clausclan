@@ -1,5 +1,5 @@
-/* Service worker: o Kinora abre e funciona offline. */
-const CACHE = 'kinora-v2';
+/* Service worker: o Fibra abre e funciona offline. */
+const CACHE = 'fibra-v2';
 // Os arquivos levam "?v=" no index.html: ao mudar a versão, o celular nunca mistura CSS/JS antigo com HTML novo.
 const FILES = ['./', 'index.html', 'style.css?v=2', 'data.js?v=2', 'anim.js?v=2', 'app.js?v=2', 'icon.svg', 'icon-192.png', 'manifest.webmanifest'];
 
