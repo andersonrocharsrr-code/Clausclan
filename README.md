@@ -151,3 +151,51 @@ Abra `ultimo-dia/index.html` por um servidor (GitHub Pages, ou `python3 -m http.
   batidas, buzina, sirene, alarme, trovão, chuva, vento, fogo, gerador, grilos à noite e coração quando a saúde
   está baixa. Liga/desliga no menu ⋯.
 - O jogo salva sozinho no aparelho. A morte é permanente.
+
+---
+
+# Fibra — treinador visual de musculação (`treino/` e `treino-android/`)
+
+App web instalável (PWA, sem build) e app Android (APK): um treinador de musculação no bolso que mostra
+**o que fazer, como fazer, quanto fazer e quando descansar**.
+
+Abra `treino/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server` na raiz e acesse
+`http://localhost:8000/treino/`). No celular, use o menu do navegador → "Instalar app" / "Adicionar à tela inicial".
+
+## O que faz
+- **Plano sob medida**: no primeiro acesso o app pergunta nome, objetivo (ganho de massa, força,
+  condicionamento ou manutenção), dias por semana (2 a 6) e nível, e monta uma sugestão de rotina
+  (corpo inteiro, empurrar/puxar/pernas ou superior/inferior) com séries, repetições e descanso de acordo
+  com o objetivo. Iniciantes recebem versões mais fáceis de aprender. Mostra um aviso de saúde antes.
+- **Início**: "Olá, nome", treino do dia com grupos musculares, número de exercícios, tempo estimado e
+  intensidade, botão grande **Começar treino**, a semana e um resumo da evolução (treinos, semanas seguidas,
+  % de aumento da carga média).
+- **Figura animada em cada exercício** (desenhada pelo app, sem vídeo): posição inicial → movimento →
+  posição final, com **câmera lenta**, músculos trabalhados destacados e marcas de técnica:
+  🟢 trajetória correta, 🔴 limite que não deve ser ultrapassado, 🟡 abdômen estabilizado.
+- **Guia de cada exercício**: passo a passo, **erros a evitar** e músculos trabalhados (60 exercícios).
+- **Treino guiado**: um exercício por vez, "Série 1/4", carga e repetições com botões − / +, o que você fez
+  da última vez e **✓ Série concluída**. Depois vem a tela de **descanso** (contagem regressiva, −15 s / +15 s,
+  respiração guiada, prévia da próxima série) e **Próxima série →**. Cronômetro para prancha e cardio,
+  aquecimento e drop set, troca/reordenação de exercícios e anotações. A tela fica acesa durante o treino e,
+  no app Android, o fim do descanso avisa mesmo com a tela bloqueada.
+- **Evolução**: tabela semana a semana (carga e repetições) e gráfico de cada exercício, recordes pessoais
+  (1RM estimado), frequência semanal, volume, séries por grupo muscular e **medidas corporais**
+  (peso, cintura, quadril, peito, braço, coxa e % de gordura).
+- **Perfil**: refazer o plano, tema claro/escuro, descanso padrão, som e avisos, backup/restauração (`.json`)
+  e exportação para planilha (`.csv`).
+
+## Imagens licenciadas (opcional)
+Cada exercício em `treino/data.js` aceita um campo `media` com o caminho de um GIF, WebP ou vídeo (MP4/WebM).
+Quando existe, o app mostra essa mídia no lugar da figura animada (o vídeo também tem câmera lenta).
+
+## App Android
+O projeto Capacitor fica em `treino-android/`. O GitHub Actions (`.github/workflows/fibra-apk.yml`) gera o APK
+a cada mudança em `treino/` ou `treino-android/`. No `main`, com o segredo `NEXA_SIGNING_SEED` configurado (o
+mesmo do Nexa Money), publica em:
+`https://github.com/andersonrocharsrr-code/Clausclan/releases/download/fibra/fibra.apk`.
+Sem o segredo, o APK de teste fica em "Artifacts" na execução.
+
+## Observações
+- Os dados ficam salvos **somente neste aparelho**. Faça backup de vez em quando (Perfil).
+- O app oferece orientações gerais; não é prescrição médica nem substitui um profissional.
