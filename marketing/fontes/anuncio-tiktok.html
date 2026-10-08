@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Nexa Money — edit</title>
+<style>
+@font-face{font-family:J;src:url(jakarta-700.woff2);font-weight:700}
+@font-face{font-family:J;src:url(jakarta-800.woff2);font-weight:800}
+*{box-sizing:border-box;margin:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#07061a}
+body{font-family:J,sans-serif;color:#fff}
+#stage{position:absolute;inset:0;overflow:hidden}
+.bg{position:absolute;inset:-200px;background:
+  radial-gradient(700px 700px at 20% 15%,rgba(124,108,255,.6),transparent 60%),
+  radial-gradient(800px 800px at 90% 90%,rgba(155,60,240,.5),transparent 60%),
+  radial-gradient(600px 600px at 85% 15%,rgba(37,135,91,.45),transparent 60%),#07061a}
+.shot{position:absolute;inset:0;display:none}
+.shot img.sc{position:absolute;left:0;top:0;width:1200px;transform-origin:0 0;border-radius:60px;box-shadow:0 40px 120px rgba(0,0,0,.7)}
+.shade{position:absolute;left:0;right:0;top:0;height:720px;background:linear-gradient(#07061aee,#07061a00)}
+.cap{position:absolute;left:50px;right:50px;text-align:center;font-weight:800;text-transform:uppercase;line-height:1.02;letter-spacing:-1px;
+  -webkit-text-stroke:0;text-shadow:0 8px 0 #000,0 0 40px rgba(0,0,0,.6)}
+.cap .w{display:inline-block;margin:0 .12em}
+.hi{color:#4ade80}.red{color:#ff5a6e}.yel{color:#ffd23f}
+.pill{display:inline-block;background:#ffd23f;color:#111;padding:6px 28px;border-radius:18px;text-shadow:none}
+.small{font-size:64px;color:#cfcaff;text-shadow:none;letter-spacing:2px}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.logo{position:absolute;left:50%;top:50%;width:420px;height:420px;margin:-330px 0 0 -210px;filter:drop-shadow(0 30px 80px rgba(74,222,128,.5))}
+.ring{position:absolute;left:50%;top:50%;border:10px solid #4ade80;border-radius:50%;opacity:0}
+.cta{display:inline-block;margin-top:40px;padding:36px 70px;border-radius:999px;font-size:70px;background:linear-gradient(135deg,#7c6cff,#5b4cf0 48%,#9b3cf0);
+  box-shadow:0 30px 80px rgba(124,108,255,.7);text-shadow:none;text-transform:none;letter-spacing:0}
+.tap{position:absolute;width:150px;height:150px;border-radius:50%;border:8px solid #fff;background:rgba(255,255,255,.25);box-shadow:0 0 40px #fff;display:none}
+</style></head>
+<body>
+<div id="stage"><div class="bg" id="bg"></div><div id="shots"></div><div class="flash" id="flash"></div></div>
+<script>
+const BPM = 128, B = 60 / BPM;
+const LOGO = `<svg class="logo" viewBox="0 0 100 100"><defs><linearGradient id="g" gradientUnits="userSpaceOnUse" x1="18" y1="40" x2="92" y2="60"><stop offset="0" stop-color="#0f4a30"/><stop offset=".45" stop-color="#16603d"/><stop offset="1" stop-color="#25875b"/></linearGradient><linearGradient id="bw" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#e9f4ee"/></linearGradient></defs><rect width="100" height="100" rx="24" fill="url(#bw)"/><g transform="translate(10 10) scale(0.8)"><g transform="translate(-4 -4)" stroke-linecap="round" stroke-linejoin="round"><path class="d" pathLength="1" d="M33 64V34c0-7.5 5-12.5 12-12.5 4.5 0 8 2.3 10 6L66.5 59c2 3.7 5.5 6 9.5 6c5.3 0 8-4 8-10V31" fill="none" stroke="url(#g)" stroke-width="12" stroke-dasharray="1"/><path d="M71.5 34H96.5L84 17Z" fill="url(#g)" stroke="url(#g)" stroke-width="3"/><path d="M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9" fill="none" stroke="#f4f9f6" stroke-width="12"/><path d="M28 55v9M28 92v7" fill="none" stroke="#f4f9f6" stroke-width="11"/><path d="M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9" fill="none" stroke="#0f4a30" stroke-width="6.2"/><path d="M28 55v9M28 92v7" fill="none" stroke="#0f4a30" stroke-width="5.2"/></g></g></svg>`;
+
+// Cada corte cai na batida: [início, fim] em batidas.
+// img: print + ponto de foco (fx, fy em px do print) e zoom; cap: legenda (palavras pulam uma a uma).
+const SHOTS = [
+  { b: [0, 2], cap: '<div class="small w">DIA 5</div><br><span class="w">SALÁRIO</span><span class="w">CAIU</span><span class="w">🤑</span>', y: 760, size: 130, words: 0.5 },
+  { b: [2, 4], cap: '<div class="small w">DIA 15</div><br><span class="w">CADÊ</span><span class="w">O</span><span class="w">DINHEIRO?</span><span class="w">🤨</span>', y: 760, size: 120, words: 0.4, shake: 8 },
+  { b: [4, 6], cap: '<div class="small w">DIA 25</div><br><span class="w red">R$&nbsp;3,50</span><br><span class="w">NA</span><span class="w">CONTA</span><span class="w">💀</span>', y: 700, size: 140, words: 0.4, shake: 14 },
+  { b: [6, 8], cap: '<span class="w">NÃO</span><span class="w">DÁ</span><span class="w red">MAIS!</span>', y: 820, size: 190, words: 0.5, glitch: true, shakeGrow: 30 },
+  { b: [8, 10], logo: true, flash: 1, shake: 40, cap: '<span class="w">NEXA</span> <span class="w hi">MONEY</span>', y: 1180, size: 150, words: 0.25 },
+  { b: [10, 12], img: 's-quick.png', fx: 600, fy: 560, z: 1.25, flash: .6, cap: '<span class="w">ANOTA</span><span class="w">UM</span><span class="w">GASTO</span><br><span class="w pill">EM 2 SEGUNDOS</span>', y: 150, size: 100, words: 0.3, type: true },
+  { b: [12, 13], img: 's-quick.png', fx: 780, fy: 458, z: 2.6, shake: 18, cap: '<span class="w">FALA</span><span class="w">🎤</span>', y: 260, size: 170, tap: [780, 458] },
+  { b: [13, 14], img: 's-quick.png', fx: 924, fy: 459, z: 2.6, shake: 18, cap: '<span class="w">OU</span><span class="w">FOTOGRAFA</span><span class="w">📸</span>', y: 230, size: 130, tap: [924, 459] },
+  { b: [14, 16], img: 's-resumo.png', fx: 600, fy: 1040, z: 1.12, flash: .5, cap: '<span class="w">QUANTO</span><span class="w">AINDA</span><br><span class="w hi">DÁ PRA GASTAR</span>', y: 120, size: 100, words: 0.3 },
+  { b: [16, 18], img: 's-resumo3.png', fx: 600, fy: 870, z: 1.45, flash: .5, spin: true, cap: '<span class="w">PRA</span><span class="w">ONDE</span><span class="w">FOI</span><br><span class="w yel">CADA REAL</span>', y: 120, size: 100, words: 0.3 },
+  { b: [18, 20], img: 's-resumo2.png', fx: 600, fy: 600, z: 1.3, flash: .5, cap: '<span class="w">COMO</span><span class="w">O</span><span class="w">MÊS</span><br><span class="w hi">VAI FECHAR</span>', y: 1480, size: 100, words: 0.3, shadeBottom: true },
+  { b: [20, 22], img: 's-resumo2.png', fx: 600, fy: 1620, z: 1.6, flash: .5, shake: 10, cap: '<span class="w">META</span><span class="w hi">BATIDA</span><span class="w">✈️</span>', y: 330, size: 130, words: 0.3 },
+  { b: [22, 24], img: 's-gastos.png', fx: 600, fy: 1100, z: 1.0, scroll: 700, flash: .4, cap: '<span class="w">TUDO</span><br><span class="w pill">ORGANIZADO</span>', y: 150, size: 130, words: 0.4 },
+  { b: [24, 24.5], cap: '<span class="w hi">OFFLINE</span>', y: 820, size: 170, flash: .4 },
+  { b: [24.5, 25], cap: '<span class="w yel">WIDGET</span>', y: 820, size: 170, flash: .4 },
+  { b: [25, 25.5], cap: '<span class="w">LEMBRETES</span>', y: 820, size: 150, flash: .4 },
+  { b: [25.5, 26], cap: '<span class="w hi">METAS</span>', y: 820, size: 170, flash: .4 },
+  { b: [26, 34], logo: true, cta: true, flash: 1, shake: 30, cap: '<span class="w">NEXA</span> <span class="w hi">MONEY</span><br><span class="w cta">Baixe grátis no Android</span>', y: 1180, size: 130, words: 0.5 },
+];
+const DUR = 34 * B;
+
+const host = document.getElementById('shots');
+SHOTS.forEach((s) => {
+  const el = document.createElement('div'); el.className = 'shot'; s.el = el;
+  if (s.img) {
+    el.innerHTML = `<img class="sc" src="${s.img}"><div class="shade" ${s.shadeBottom ? 'style="top:auto;bottom:0;transform:scaleY(-1)"' : ''}></div>`;
+    if (s.type) el.querySelector('img').insertAdjacentHTML('afterend', '<div class="typemask" style="position:absolute;background:#fff"></div>');
+    if (s.tap) el.insertAdjacentHTML('beforeend', '<div class="tap"></div>');
+  }
+  if (s.logo) el.insertAdjacentHTML('beforeend', LOGO.replace(/id="(g|bw)"/g, (m, k) => 'id="' + k + s.b[0] + '"').replace(/url\(#(g|bw)\)/g, (m, k) => 'url(#' + k + s.b[0] + ')') + '<div class="ring"></div>');
+  el.insertAdjacentHTML('beforeend', `<div class="cap" style="top:${s.y}px;font-size:${s.size}px">${s.cap}</div>`);
+  host.appendChild(el);
+});
+
+const ease = (x) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
+const back = (x) => { x = Math.min(1, Math.max(0, x)); const c = 2.2; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const rnd = (n) => { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); };
+
+window.seek = (t) => {
+  const frame = Math.round(t * 30);
+  let flash = 0;
+  for (const s of SHOTS) {
+    const t0 = s.b[0] * B, t1 = s.b[1] * B, on = t >= t0 && t < t1;
+    s.el.style.display = on ? 'block' : 'none';
+    if (!on) continue;
+    const l = t - t0, len = t1 - t0;
+    flash = Math.max(flash, (s.flash || 0) * Math.max(0, 1 - l / 0.18));
+    // tremida que some depressa (ou cresce, no "NÃO DÁ MAIS")
+    let amp = (s.shake || 0) * Math.exp(-l * 7) + (s.shakeGrow ? s.shakeGrow * (l / len) : 0);
+    const dx = (rnd(frame) - .5) * 2 * amp, dy = (rnd(frame + 99) - .5) * 2 * amp;
+    s.el.style.transform = `translate(${dx}px,${dy}px)`;
+    const img = s.el.querySelector('img.sc');
+    if (img) {
+      const punch = 1 + 0.18 * Math.exp(-l * 14);
+      const z = s.z * 0.9 * punch * (1 + 0.05 * l / len);
+      const fy = s.fy + (s.scroll ? s.scroll * ease(l / len) : 0);
+      const rot = s.spin ? -3 + 3 * ease(l / 0.4) : 0;
+      img.style.transform = `translate(${540 - s.fx * z}px,${1020 - fy * z}px) scale(${z}) rotate(${rot}deg)`;
+      const mask = s.el.querySelector('.typemask');
+      if (mask) { // texto sendo digitado no campo de lançamento rápido
+        const k = Math.min(1, l / (len * 0.6)), chars = Math.round(19 * k);
+        const x0 = 184, w = 480 * (1 - chars / 19);
+        const m = new DOMMatrix(img.style.transform);
+        const p = m.transformPoint(new DOMPoint(x0 + 480 - w, 420)), q = m.transformPoint(new DOMPoint(x0 + 480, 500));
+        Object.assign(mask.style, { left: p.x + 'px', top: p.y + 'px', width: Math.max(0, q.x - p.x) + 'px', height: (q.y - p.y) + 'px' });
+        s.el.querySelector('.shade').style.opacity = 1;
+        // a prévia aparece quando termina de digitar
+        if (!s.prev) { s.prev = document.createElement('div'); s.prev.style.cssText = 'position:absolute;background:#f5f6fa'; img.after(s.prev); }
+        const a = m.transformPoint(new DOMPoint(40, 560)), c = m.transformPoint(new DOMPoint(1160, 760));
+        Object.assign(s.prev.style, { left: a.x + 'px', top: a.y + 'px', width: (c.x - a.x) + 'px', height: (c.y - a.y) + 'px', opacity: k < 1 ? 1 : 0 });
+      }
+      const tap = s.el.querySelector('.tap');
+      if (tap) {
+        const m = new DOMMatrix(img.style.transform), p = m.transformPoint(new DOMPoint(s.tap[0], s.tap[1]));
+        const k = (l - 0.12) / 0.3;
+        Object.assign(tap.style, { display: k > 0 ? 'block' : 'none', left: p.x - 75 + 'px', top: p.y - 75 + 'px',
+          transform: `scale(${0.6 + 0.8 * ease(k)})`, opacity: Math.max(0, 1 - k) });
+      }
+    }
+    const logo = s.el.querySelector('.logo');
+    if (logo) {
+      const k = back(l / 0.35);
+      logo.style.transform = `scale(${0.2 + 0.8 * k}) rotate(${(1 - ease(l / 0.4)) * -20}deg)`;
+      logo.querySelector('.d').style.strokeDashoffset = 1 - ease(l / 0.5);
+      const ring = s.el.querySelector('.ring'), r = 200 + 900 * ease(l / 0.6);
+      Object.assign(ring.style, { width: r * 2 + 'px', height: r * 2 + 'px', margin: `${-r - 120}px 0 0 ${-r}px`, opacity: Math.max(0, 0.8 - l / 0.6) });
+      if (s.cta) { const cta = s.el.querySelector('.cta'); cta.style.transform = l > 2.2 ? `scale(${1 + 0.07 * Math.abs(Math.sin((l - 2.2) * Math.PI / B))})` : ''; }
+    }
+    // palavras pulam na batida
+    const ws = s.el.querySelectorAll('.w'), step = Math.min((s.words || 0) * B, len * 0.55 / ws.length);
+    ws.forEach((w, i) => {
+      const k = (l - i * step) / 0.16;
+      w.style.opacity = k > 0 ? 1 : 0;
+      w.style.transform = `scale(${k > 0 ? 1.5 - 0.5 * back(k) : 1.5})`;
+      if (s.glitch) { const g = 6 + 30 * (l / len) * rnd(frame + i); w.style.textShadow = `${g}px 0 #00e5ff,${-g}px 0 #ff2a6d,0 8px 0 #000`; }
+    });
+  }
+  const bg = document.getElementById('bg');
+  bg.style.transform = `scale(${1 + 0.06 * Math.abs(Math.sin(t * Math.PI / B))}) rotate(${t * 3}deg)`;
+  document.getElementById('flash').style.opacity = flash;
+};
+window.DUR = DUR;
+Promise.all([document.fonts.ready, ...[...document.images].map((i) => i.decode().catch(() => {}))]).then(() => { window.seek(0); window.ready = true; });
+</script>
+</body></html>

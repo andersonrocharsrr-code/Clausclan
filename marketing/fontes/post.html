@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Nexa Money — post</title>
+<style>
+@font-face{font-family:J;src:url(jakarta-500.woff2);font-weight:500}
+@font-face{font-family:J;src:url(jakarta-600.woff2);font-weight:600}
+@font-face{font-family:J;src:url(jakarta-700.woff2);font-weight:700}
+@font-face{font-family:J;src:url(jakarta-800.woff2);font-weight:800}
+:root{--ink:#0e1a14;--muted:#5d6b64;--g1:#0f4a30;--g2:#16603d;--g3:#25875b;--mint:#e6f4ec;--line:#e3e9e5}
+*{box-sizing:border-box;margin:0}
+html,body{width:1080px;height:var(--H);overflow:hidden;background:#f7f9f8}
+body{font-family:J,sans-serif;color:var(--ink);position:relative}
+.bg{position:absolute;inset:0;background:radial-gradient(760px 620px at 8% 4%,#dff1e6,transparent 70%),radial-gradient(820px 700px at 100% 100%,#dcefe3,transparent 70%),#f7f9f8}
+.grid{position:absolute;inset:0;background-image:linear-gradient(#0f4a300f 1px,transparent 1px),linear-gradient(90deg,#0f4a300f 1px,transparent 1px);background-size:72px 72px;
+  -webkit-mask-image:radial-gradient(900px 800px at 50% 60%,#000,transparent 75%);mask-image:radial-gradient(900px 800px at 50% 60%,#000,transparent 75%)}
+.top{position:absolute;left:0;right:0;text-align:center}
+.brandrow{display:inline-flex;align-items:center;gap:22px}
+.brandrow svg{width:96px;height:96px;filter:drop-shadow(0 14px 24px rgba(15,74,48,.22))}
+.brandrow b{font-size:74px;font-weight:800;letter-spacing:-2.5px}.brandrow b span{color:var(--g3)}
+h1{margin-top:26px;font-size:84px;font-weight:800;line-height:1.04;letter-spacing:-3px}
+h1 em{font-style:normal;color:var(--g3)}
+.sub{margin-top:20px;font-size:36px;font-weight:500;color:var(--muted)}
+.phone{position:absolute;width:440px;height:940px;border-radius:64px;padding:13px;background:#101412;
+  box-shadow:0 0 0 2px #2a312d,0 60px 110px -30px rgba(15,74,48,.4),0 30px 60px -20px rgba(0,0,0,.25)}
+.phone:after{content:"";position:absolute;top:27px;left:50%;width:92px;height:27px;margin-left:-46px;border-radius:16px;background:#101412}
+.screen{position:relative;width:414px;height:914px;border-radius:52px;overflow:hidden;background:#f5f6fa}
+.screen img{position:absolute;left:0;top:22px;width:414px}
+.card{position:absolute;background:#fff;border-radius:30px;box-shadow:0 30px 60px -20px rgba(15,74,48,.3),0 0 0 1px var(--line);padding:24px 28px;white-space:nowrap}
+.row{display:flex;gap:18px;align-items:center}
+.ico{width:64px;height:64px;border-radius:20px;background:var(--mint);display:grid;place-items:center;flex:none}
+.ico svg{width:34px;height:34px;stroke:var(--g2);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.lbl{font-size:24px;font-weight:600;color:var(--muted)}
+.val{font-size:34px;font-weight:800}
+.notif .top2{display:flex;align-items:center;gap:12px;font-size:22px;color:var(--muted);font-weight:600}
+.notif .top2 svg{width:34px;height:34px}
+.notif h4{margin-top:10px;font-size:32px;font-weight:800}
+.notif p{margin-top:4px;font-size:25px;color:var(--muted)}
+.bottom{position:absolute;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:24px}
+.cta{display:flex;align-items:center;gap:18px;padding:30px 56px;border-radius:999px;color:#fff;font-size:44px;font-weight:800;
+  background:linear-gradient(135deg,var(--g3),var(--g1));box-shadow:0 26px 50px -16px rgba(15,74,48,.55)}
+.cta svg{width:46px;height:46px}
+.badges{display:flex;gap:18px}
+.badges span{font-size:26px;font-weight:700;color:var(--g2);background:var(--mint);padding:12px 24px;border-radius:999px}
+</style></head>
+<body>
+<div class="bg"></div><div class="grid"></div>
+
+<div class="top" id="top">
+  <div class="brandrow"><svg class="logo" viewBox="0 0 100 100"></svg><b>Nexa <span>Money</span></b></div>
+  <h1>Seu dinheiro,<br><em>finalmente organizado.</em></h1>
+  <div class="sub" id="sub">Anote gastos em segundos, por texto, voz ou foto.</div>
+</div>
+
+<div class="phone" id="p1" style="transform:rotate(-6deg)"><div class="screen"><img src="s-voz2.png"></div></div>
+<div class="phone" id="p2" style="transform:rotate(5deg)"><div class="screen"><img src="s-resumo3.png"></div></div>
+
+<div class="card notif" id="c1"><div class="top2"><svg class="logo" viewBox="0 0 100 100"></svg>Nexa Money · agora</div><h4>Conta de luz vence amanhã</h4><p>R$ 187,40 · Toque para marcar como paga</p></div>
+<div class="card" id="c2"><div class="row"><div class="ico"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div><div><div class="lbl">Reconhecido</div><div class="val">Padaria · R$ 30,00</div></div></div></div>
+<div class="card" id="c3"><div class="lbl">Pode gastar por dia</div><div class="val" style="font-size:52px;color:var(--g2)">R$ 43,72</div></div>
+
+<div class="bottom" id="bot">
+  <div class="cta"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>Baixe grátis para Android</div>
+  <div class="badges"><span>Grátis</span><span>Funciona offline</span><span>Fácil de usar</span></div>
+</div>
+
+<script>
+const NX = (k) => `<defs><linearGradient id="g${k}" gradientUnits="userSpaceOnUse" x1="18" y1="40" x2="92" y2="60"><stop offset="0" stop-color="#0f4a30"/><stop offset=".45" stop-color="#16603d"/><stop offset="1" stop-color="#25875b"/></linearGradient><linearGradient id="w${k}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#e9f4ee"/></linearGradient></defs><rect width="100" height="100" rx="24" fill="url(#w${k})"/><rect x=".5" y=".5" width="99" height="99" rx="23.5" fill="none" stroke="#0f4a30" stroke-opacity=".1"/><g transform="translate(10 10) scale(0.8)"><g transform="translate(-4 -4)" stroke-linecap="round" stroke-linejoin="round"><path d="M33 64V34c0-7.5 5-12.5 12-12.5 4.5 0 8 2.3 10 6L66.5 59c2 3.7 5.5 6 9.5 6c5.3 0 8-4 8-10V31" fill="none" stroke="url(#g${k})" stroke-width="12"/><path d="M71.5 34H96.5L84 17Z" fill="url(#g${k})" stroke="url(#g${k})" stroke-width="3"/><path d="M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9" fill="none" stroke="#f4f9f6" stroke-width="12"/><path d="M28 55v9M28 92v7" fill="none" stroke="#f4f9f6" stroke-width="11"/><path d="M38 69.5c-1.9-3.7-5.6-5.7-10.1-5.7-5.7 0-9.5 3-9.5 7.1 0 4.3 3.8 6.1 9.5 7 5.7.9 10.1 3 10.1 7.4 0 4.4-4.2 7.4-10.1 7.4-4.8 0-8.6-2-10.5-5.9" fill="none" stroke="#0f4a30" stroke-width="6.2"/><path d="M28 55v9M28 92v7" fill="none" stroke="#0f4a30" stroke-width="5.2"/></g></g>`;
+document.querySelectorAll('.logo').forEach((l, i) => { l.innerHTML = NX(i); });
+// Layout por formato: feed 4:5 (1350) ou stories 9:16 (1920)
+const Q = new URLSearchParams(location.search), H = Number(Q.get('h') || 1350), STATUS = Q.get('mode') === 'status';
+document.documentElement.style.setProperty('--H', H + 'px');
+const L = STATUS
+  ? { top: 165, p1: [205, 640], p2: [515, 665], c1: [45, 595], c2: [530, 990], c3: [60, 1060], bot: 1255, scale: .64 }
+  : H === 1920
+  ? { top: 150, p1: [90, 760], p2: [550, 820], c1: [60, 610], c2: [470, 1330], c3: [70, 1460], bot: 1670, scale: 1 }
+  : { top: 70, p1: [215, 395], p2: [505, 425], c1: [40, 975], c2: [560, 740], c3: [-999, 0], bot: 1200, scale: .66 };
+const pos = (id, [x, y]) => Object.assign(document.getElementById(id).style, { left: x + 'px', top: y + 'px' });
+document.getElementById('top').style.top = L.top + 'px';
+['p1', 'p2', 'c1', 'c2', 'c3'].forEach((id) => pos(id, L[id]));
+document.getElementById('bot').style.top = L.bot + 'px';
+if (STATUS) {
+  document.querySelector('h1').style.fontSize = '76px';
+  for (const id of ['p1', 'p2']) { const s = document.getElementById(id).style; s.transform += ' scale(' + L.scale + ')'; s.transformOrigin = 'top left'; }
+  document.getElementById('c3').querySelector('.val').style.fontSize = '44px';
+} else if (H !== 1920) {
+  document.getElementById('sub').style.display = 'none';
+  document.querySelector('h1').style.fontSize = '68px';
+  for (const id of ['p1', 'p2']) { const s = document.getElementById(id).style; s.transform += ' scale(' + L.scale + ')'; s.transformOrigin = 'top left'; }
+  document.querySelector('.bottom .badges').style.display = 'none';
+}
+</script>
+</body></html>
