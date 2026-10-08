@@ -199,3 +199,47 @@ Sem o segredo, o APK de teste fica em "Artifacts" na execução.
 ## Observações
 - Os dados ficam salvos **somente neste aparelho**. Faça backup de vez em quando (Perfil).
 - O app oferece orientações gerais; não é prescrição médica nem substitui um profissional.
+
+---
+
+# Tempero — assistente de cozinha (`receitas/`)
+
+App web instalável (PWA, sem build) de receitas que funciona como um assistente de cozinha:
+**do primeiro ingrediente ao prato pronto**.
+
+Abra `receitas/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server` na raiz e acesse
+`http://localhost:8000/receitas/`). No celular, use o menu do navegador → "Instalar app" / "Adicionar à tela inicial".
+Depois de aberto uma vez, funciona offline.
+
+## O que faz
+- **Início**: saudação, busca, categorias (Massas, Frango, Carnes, Peixes, Saudáveis, Sobremesas, Pães, Lanches,
+  Brasileiras, Sopas), receitas populares, "Para você" (segundo o perfil), rápidas, recentes e **Explorar**
+  (café da manhã, almoço, jantar, sobremesas e receitas brasileiras, com subcategorias).
+- **Busca inteligente**: nome, ingrediente, categoria ou intenção ("receitas rápidas", "sobremesa", "fácil",
+  "sem forno"), com filtros de tempo, dificuldade, refeição e categoria, e opção de respeitar as preferências.
+- **Receita**: ilustração do prato, tempo (preparo/cozimento), porções, dificuldade e nota; ingredientes com
+  caixa de seleção ("separados"), **porções recalculadas** (500 g para 6 → 833 g para 10), utensílios,
+  etapas, dicas, erros comuns, resultado final e informação nutricional **estimada**.
+- **Modo Cozinhar agora**: uma etapa por vez com **ilustração animada da ação** (cortar, refogar, despejar,
+  mexer, ferver, assar…), indicadores de tempo, fogo, forno e quantidade, **timer** (iniciar, pausar, reiniciar,
+  +1 min, aviso sonoro/vibração/notificação), alertas ⚠️ e dicas 💡, barra de progresso, arrastar para os lados,
+  tela sempre acesa e progresso salvo para continuar depois.
+- **Receita concluída**: comemoração, favoritar, foto do prato, avaliação, fazer de novo.
+- **Lista de compras** por seção do mercado, somando ingredientes iguais; marcar, excluir (com desfazer),
+  alterar quantidade, adicionar à mão e compartilhar.
+- **O que posso fazer com o que tenho?**: informe os ingredientes e veja as receitas que mais os aproveitam
+  ("Você tem 4 de 5"), com o que falta e atalho para a lista.
+- **Favoritos** (Favoritas, Quero fazer, Já fiz) e **histórico**; **Perfil** com foto, números da sua cozinha,
+  preferências e restrições alimentares, ingredientes que não gosta, nível, tempo disponível, backup e restauração.
+
+## Receitas e arquitetura
+- 20 receitas de demonstração em `receitas/js/data/recipes/` (formato em `README.md` dessa pasta). A interface
+  não conhece receitas específicas: tudo vem dos dados, então basta adicionar objetos para crescer.
+- Catálogos em `receitas/js/data/` (ingredientes com seção do mercado e marcações de dieta, utensílios, categorias);
+  lógica em `receitas/js/core/` (busca, porções, lista, despensa, timer, preferências, estado); telas em
+  `receitas/js/screens/`; ilustrações SVG geradas em `receitas/js/ui/` (pratos prontos e cenas das etapas).
+- `node receitas/scripts/check-data.mjs` confere ids, unidades, cenas e a lista de arquivos offline.
+
+## Observações
+- Os dados ficam salvos **somente neste aparelho**. Faça backup de vez em quando (Perfil).
+- Tempos e valores nutricionais são estimativas; não são orientação médica ou nutricional.

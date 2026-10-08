@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Tempero — Do primeiro ingrediente ao prato pronto</title>
+  <meta name="description" content="Tempero: seu assistente de cozinha. Receitas com ingredientes, utensílios, passo a passo ilustrado, timers, lista de compras e o que fazer com o que você tem em casa.">
+  <meta name="theme-color" content="#FBF6F0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Tempero">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,500..700,50&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="modulepreload" href="js/main.js">
+</head>
+<body>
+  <div id="splash" class="splash" aria-hidden="true">
+    <div>
+      <img class="logo" src="icon.svg" alt="" style="margin:0 auto;border-radius:24px">
+      <p class="word">Tempero</p>
+      <p class="tag">Do primeiro ingrediente ao prato pronto</p>
+    </div>
+  </div>
+
+  <div class="app">
+    <main id="view" class="view" tabindex="-1" aria-live="polite"></main>
+  </div>
+
+  <nav class="tabbar" id="tabbar" aria-label="Navegação principal">
+    <a class="tab" data-tab="home" href="#/">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/></svg><span>Início</span>
+    </a>
+    <a class="tab" data-tab="search" href="#/buscar">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Buscar</span>
+    </a>
+    <a class="tab heart" data-tab="favorites" href="#/favoritos">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/></svg><span>Favoritos</span>
+    </a>
+    <a class="tab" data-tab="shopping" href="#/lista">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2.5l2.2 11h10.6L20.5 7H6.6"/><circle cx="9.5" cy="19.5" r="1.5"/><circle cx="17" cy="19.5" r="1.5"/></svg><span>Lista</span>
+      <span class="badge" id="cart-badge" hidden>0</span>
+    </a>
+    <a class="tab" data-tab="profile" href="#/perfil">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span>Perfil</span>
+    </a>
+  </nav>
+
+  <noscript><p style="padding:24px;font-family:sans-serif">O Tempero precisa de JavaScript ativado para funcionar.</p></noscript>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
