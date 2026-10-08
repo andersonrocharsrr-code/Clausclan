@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Forja</string>
+    <string name="title_activity_main">Forja</string>
+    <string name="package_name">io.github.andersonrocharsrr_code.forja</string>
+    <string name="custom_url_scheme">io.github.andersonrocharsrr_code.forja</string>
+</resources>
