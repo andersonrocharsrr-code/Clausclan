@@ -1,4 +1,4 @@
-package io.github.andersonrocharsrr_code.forja;
+package io.github.andersonrocharsrr_code.kinora;
 
 import android.view.WindowManager;
 import com.getcapacitor.Plugin;
@@ -7,8 +7,8 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 /** Recursos do Android que o app web não tem: manter a tela acesa durante o treino. */
-@CapacitorPlugin(name = "ForjaNative")
-public class ForjaNativePlugin extends Plugin {
+@CapacitorPlugin(name = "KinoraNative")
+public class KinoraNativePlugin extends Plugin {
 
     @PluginMethod
     public void keepAwake(PluginCall call) {

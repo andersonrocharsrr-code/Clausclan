@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Forja — Musculação</title>
-  <meta name="description" content="Forja: monte suas fichas de musculação, registre séries e cargas, controle o descanso e acompanhe sua evolução.">
-  <meta name="theme-color" content="#f6f5f2" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0e0f12" media="(prefers-color-scheme: dark)">
+  <title>Kinora — Treinador de musculação</title>
+  <meta name="description" content="Kinora: seu treinador visual de musculação. Mostra o que fazer, como fazer, quanto fazer e quando descansar.">
+  <meta name="theme-color" content="#f4f5f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b0c0f" media="(prefers-color-scheme: dark)">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
@@ -14,21 +14,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
   <div class="app">
     <header class="top">
       <div class="brand">
-        <svg class="brand__logo" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="var(--accent)"/><g fill="#fff"><rect x="10" y="22" width="7" height="20" rx="2.5"/><rect x="18" y="17" width="7" height="30" rx="2.5"/><rect x="39" y="17" width="7" height="30" rx="2.5"/><rect x="47" y="22" width="7" height="20" rx="2.5"/><rect x="24" y="29" width="16" height="6" rx="2"/></g></svg>
+        <svg class="brand__logo" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="116" fill="var(--logo-bg)"/><g fill="none" stroke="var(--accent)" stroke-width="70" stroke-linecap="round"><path d="M167 147v218"/><path d="M180 286 352 150"/><path d="M214 262 352 365"/></g></svg>
         <div>
-          <h1 class="brand__name">Forja</h1>
-          <p class="brand__sub" id="topSub">Bora treinar</p>
+          <h1 class="brand__name" id="topTitle">Kinora</h1>
+          <p class="brand__sub" id="topSub"></p>
         </div>
       </div>
-      <button class="icon-btn" id="btnMenu" type="button" aria-label="Ajustes">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
-      </button>
+      <button class="avatar" id="btnProfile" type="button" aria-label="Perfil">K</button>
     </header>
 
     <main id="view" class="view" tabindex="-1"></main>
@@ -40,26 +38,41 @@
     </button>
 
     <nav class="tabs" aria-label="Seções">
-      <button type="button" class="tab" data-tab="treinar">
+      <button type="button" class="tab" data-tab="inicio">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/></svg>
+        <span>Início</span>
+      </button>
+      <button type="button" class="tab" data-tab="treinos">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"/></svg>
-        <span>Treinar</span>
-      </button>
-      <button type="button" class="tab" data-tab="historico">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
-        <span>Histórico</span>
-      </button>
-      <button type="button" class="tab" data-tab="progresso">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"/><path d="m5 15 4.5-5 3.5 3 6-7"/><path d="M15 6h4v4"/></svg>
-        <span>Progresso</span>
+        <span>Treinos</span>
       </button>
       <button type="button" class="tab" data-tab="exercicios">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14M5 12h14M5 19h9"/></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2"/><path d="m8 21 2.5-6.5L8 11l4-2 4 2-2.5 3.5L16 21"/><path d="M5 9.5 8 11M19 9.5 16 11"/></svg>
         <span>Exercícios</span>
+      </button>
+      <button type="button" class="tab" data-tab="evolucao">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"/><path d="m5 15 4.5-5 3.5 3 6-7"/><path d="M15 6h4v4"/></svg>
+        <span>Evolução</span>
+      </button>
+      <button type="button" class="tab" data-tab="perfil">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+        <span>Perfil</span>
       </button>
     </nav>
   </div>
 
-  <!-- Treino em andamento (tela cheia) -->
+  <!-- Primeiro acesso: objetivo, dias, nível → plano -->
+  <section class="onb" id="onb" hidden aria-label="Montar meu plano">
+    <div class="onb__top">
+      <button type="button" class="icon-btn" id="onbBack" aria-label="Voltar"><svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button>
+      <div class="onb__bar"><i id="onbFill"></i></div>
+      <button type="button" class="link" id="onbSkip">Pular</button>
+    </div>
+    <div class="onb__body" id="onbBody"></div>
+    <div class="onb__foot"><button type="button" class="btn btn--primary btn--block btn--lg" id="onbNext">Continuar</button></div>
+  </section>
+
+  <!-- Treino em andamento: um exercício por vez -->
   <section class="live" id="live" hidden aria-label="Treino em andamento">
     <header class="live__top">
       <button class="icon-btn" id="liveMin" type="button" aria-label="Minimizar treino">
@@ -67,24 +80,54 @@
       </button>
       <div class="live__title">
         <input id="liveName" class="live__name" type="text" maxlength="40" aria-label="Nome do treino">
-        <span class="live__meta"><span id="liveClock">0:00</span> · <span id="liveVol">0 kg</span> · <span id="liveSets">0 séries</span></span>
+        <span class="live__meta"><span id="liveClock">0:00</span> · <span id="liveSets">0 séries</span> · <span id="liveVol">0 kg</span></span>
       </div>
       <button class="btn btn--primary btn--sm" id="liveFinish" type="button">Finalizar</button>
     </header>
+    <div class="live__prog" id="liveProg"></div>
     <div class="live__body" id="liveBody"></div>
+    <footer class="live__nav">
+      <button type="button" class="nav-btn" id="livePrev" aria-label="Exercício anterior"><svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button>
+      <button type="button" class="nav-list" id="liveList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg><span id="livePos">1 de 6</span></button>
+      <button type="button" class="nav-btn" id="liveNext" aria-label="Próximo exercício"><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button>
+    </footer>
+
+    <!-- Descanso entre as séries -->
     <div class="rest" id="rest" hidden>
-      <div class="rest__bar"><i id="restFill"></i></div>
-      <div class="rest__row">
-        <button type="button" class="rest__btn" data-rest="-15">−15</button>
-        <div class="rest__time"><small>Descanso</small><strong id="restTime">1:30</strong></div>
-        <button type="button" class="rest__btn" data-rest="15">+15</button>
-        <button type="button" class="rest__skip" data-rest="skip">Pular</button>
+      <div class="rest__inner">
+        <p class="rest__label" id="restLabel">⏱️ DESCANSO</p>
+        <div class="ring">
+          <svg viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="88" class="ring__bg"/><circle cx="100" cy="100" r="88" class="ring__fg" id="restRing"/></svg>
+          <div class="ring__c">
+            <div class="breath" aria-hidden="true"><i></i></div>
+            <strong id="restTime">1:30</strong>
+            <small id="restBreath">Inspire…</small>
+          </div>
+        </div>
+        <p class="rest__msg" id="restMsg">Recupere-se para a próxima série.</p>
+        <div class="rest__adj">
+          <button type="button" class="rest__btn" data-rest="-15">− 15s</button>
+          <button type="button" class="rest__btn" data-rest="15">+ 15s</button>
+        </div>
+        <div class="rest__next" id="restNext"></div>
+        <button type="button" class="btn btn--primary btn--block btn--lg" data-rest="skip" id="restGo">PRÓXIMA SÉRIE →</button>
       </div>
     </div>
   </section>
 
+  <!-- Guia do exercício -->
+  <dialog class="sheet sheet--tall" id="dlgGuide">
+    <form method="dialog" class="sheet__inner" id="guideInner">
+      <header class="sheet__head">
+        <h2 id="guideTitle"></h2>
+        <button class="icon-btn" value="cancel" aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </header>
+      <div id="guideBody"></div>
+    </form>
+  </dialog>
+
   <!-- Escolher exercícios -->
-  <dialog class="sheet" id="dlgPick">
+  <dialog class="sheet sheet--tall" id="dlgPick">
     <form method="dialog" class="sheet__inner">
       <header class="sheet__head">
         <h2>Adicionar exercícios</h2>
@@ -101,7 +144,7 @@
   </dialog>
 
   <!-- Editar ficha -->
-  <dialog class="sheet" id="dlgRoutine">
+  <dialog class="sheet sheet--tall" id="dlgRoutine">
     <form method="dialog" class="sheet__inner">
       <header class="sheet__head">
         <h2 id="rtTitle">Nova ficha</h2>
@@ -117,7 +160,7 @@
     </form>
   </dialog>
 
-  <!-- Detalhe genérico (treino do histórico, exercício, resumo) -->
+  <!-- Detalhe genérico (treino do histórico, resumo, listas) -->
   <dialog class="sheet" id="dlgInfo">
     <form method="dialog" class="sheet__inner">
       <header class="sheet__head">
@@ -139,49 +182,17 @@
       <label class="field"><span>Grupo muscular</span><select id="exGroup"></select></label>
       <label class="field"><span>Equipamento</span><select id="exEquip"></select></label>
       <footer class="sheet__foot">
-        <button type="button" class="btn btn--ghost" value="cancel" onclick="this.closest('dialog').close()">Cancelar</button>
+        <button type="button" class="btn btn--ghost" onclick="this.closest('dialog').close()">Cancelar</button>
         <button type="submit" class="btn btn--primary" value="ok">Criar</button>
       </footer>
     </form>
   </dialog>
 
-  <!-- Ajustes -->
-  <dialog class="sheet" id="dlgSettings">
-    <form method="dialog" class="sheet__inner">
-      <header class="sheet__head">
-        <h2>Ajustes</h2>
-        <button class="icon-btn" value="cancel" aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
-      </header>
-      <div class="set-group">
-        <label class="set-row"><span>Tema</span>
-          <select id="stTheme"><option value="auto">Automático</option><option value="light">Claro</option><option value="dark">Escuro</option></select>
-        </label>
-        <label class="set-row"><span>Descanso padrão</span>
-          <select id="stRest"></select>
-        </label>
-        <label class="set-row"><span>Meta de treinos por semana</span>
-          <select id="stGoal"></select>
-        </label>
-        <label class="set-row"><span>Som e vibração no fim do descanso</span>
-          <input type="checkbox" id="stSound" class="switch">
-        </label>
-        <label class="set-row"><span>Aviso no fim do descanso (tela bloqueada)</span>
-          <input type="checkbox" id="stNotify" class="switch">
-        </label>
-      </div>
-      <div class="set-group">
-        <button type="button" class="set-row set-row--btn" id="stExport">Fazer backup (.json)</button>
-        <button type="button" class="set-row set-row--btn" id="stImport">Restaurar backup</button>
-        <button type="button" class="set-row set-row--btn" id="stCsv">Exportar treinos para planilha (.csv)</button>
-        <button type="button" class="set-row set-row--btn set-row--danger" id="stWipe">Apagar todos os dados</button>
-      </div>
-      <p class="fine">Seus dados ficam salvos só neste aparelho. Faça backup de vez em quando.</p>
-      <input type="file" id="stFile" accept="application/json,.json" hidden>
-    </form>
-  </dialog>
-
+  <input type="file" id="stFile" accept="application/json,.json" hidden>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=1"></script>
+  <script src="data.js?v=2"></script>
+  <script src="anim.js?v=2"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

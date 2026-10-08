@@ -154,37 +154,48 @@ Abra `ultimo-dia/index.html` por um servidor (GitHub Pages, ou `python3 -m http.
 
 ---
 
-# Forja — app de musculação (`treino/` e `treino-android/`)
+# Kinora — treinador visual de musculação (`treino/` e `treino-android/`)
 
-App web instalável (PWA, sem build) para treinar na academia: monte suas **fichas**, registre **séries, cargas e
-repetições**, controle o **descanso** e acompanhe sua **evolução**. Também vira um **app Android** (APK).
+App web instalável (PWA, sem build) e app Android (APK): um treinador de musculação no bolso que mostra
+**o que fazer, como fazer, quanto fazer e quando descansar**.
 
 Abra `treino/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server` na raiz e acesse
 `http://localhost:8000/treino/`). No celular, use o menu do navegador → "Instalar app" / "Adicionar à tela inicial".
 
 ## O que faz
-- **Fichas de treino**: crie as suas (exercícios, séries, repetições e descanso de cada um) ou comece com um
-  **modelo pronto**: Full body, ABC, Push/Pull/Legs ou Superior/Inferior. O app sugere a **próxima ficha** da sequência.
-- **Treino em andamento**: cronômetro, coluna "Anterior" com o que você fez da última vez (toque para copiar),
-  campos já sugeridos com a última carga e marcação de série com ✓. Toque no número da série para marcar
-  **aquecimento (A)** ou **drop set (D)**. Adicione, troque, reordene ou remova exercícios durante o treino e
-  escreva anotações (banco, pegada, regulagem). Dá para minimizar o treino e voltar pela barra laranja.
-- **Descanso automático** ao concluir uma série, com −15/+15 s e Pular. No fim toca um aviso com vibração;
-  no app Android chega uma notificação mesmo com a tela bloqueada. A tela fica acesa durante o treino.
-- **Recordes**: 1RM estimado (fórmula de Epley), maior carga e mais repetições. O resumo do treino mostra os
-  recordes batidos e o selo **PR** aparece na série.
-- **Histórico** por mês com duração, volume (carga × repetições) e séries; repita um treino ou salve-o como ficha.
-- **Progresso**: treinos no mês, volume da semana vs. a anterior, semanas seguidas na meta, mapa de frequência
-  de 12 semanas, volume por semana, séries por grupo muscular, evolução de cada exercício e **peso corporal**.
-- **Biblioteca** com mais de 80 exercícios por grupo muscular e equipamento, e exercícios criados por você.
-- Backup e restauração (`.json`) e exportação dos treinos para planilha (`.csv`). Tema claro/escuro.
+- **Plano sob medida**: no primeiro acesso o app pergunta nome, objetivo (ganho de massa, força,
+  condicionamento ou manutenção), dias por semana (2 a 6) e nível, e monta uma sugestão de rotina
+  (corpo inteiro, empurrar/puxar/pernas ou superior/inferior) com séries, repetições e descanso de acordo
+  com o objetivo. Iniciantes recebem versões mais fáceis de aprender. Mostra um aviso de saúde antes.
+- **Início**: "Olá, nome", treino do dia com grupos musculares, número de exercícios, tempo estimado e
+  intensidade, botão grande **Começar treino**, a semana e um resumo da evolução (treinos, semanas seguidas,
+  % de aumento da carga média).
+- **Figura animada em cada exercício** (desenhada pelo app, sem vídeo): posição inicial → movimento →
+  posição final, com **câmera lenta**, músculos trabalhados destacados e marcas de técnica:
+  🟢 trajetória correta, 🔴 limite que não deve ser ultrapassado, 🟡 abdômen estabilizado.
+- **Guia de cada exercício**: passo a passo, **erros a evitar** e músculos trabalhados (60 exercícios).
+- **Treino guiado**: um exercício por vez, "Série 1/4", carga e repetições com botões − / +, o que você fez
+  da última vez e **✓ Série concluída**. Depois vem a tela de **descanso** (contagem regressiva, −15 s / +15 s,
+  respiração guiada, prévia da próxima série) e **Próxima série →**. Cronômetro para prancha e cardio,
+  aquecimento e drop set, troca/reordenação de exercícios e anotações. A tela fica acesa durante o treino e,
+  no app Android, o fim do descanso avisa mesmo com a tela bloqueada.
+- **Evolução**: tabela semana a semana (carga e repetições) e gráfico de cada exercício, recordes pessoais
+  (1RM estimado), frequência semanal, volume, séries por grupo muscular e **medidas corporais**
+  (peso, cintura, quadril, peito, braço, coxa e % de gordura).
+- **Perfil**: refazer o plano, tema claro/escuro, descanso padrão, som e avisos, backup/restauração (`.json`)
+  e exportação para planilha (`.csv`).
+
+## Imagens licenciadas (opcional)
+Cada exercício em `treino/data.js` aceita um campo `media` com o caminho de um GIF, WebP ou vídeo (MP4/WebM).
+Quando existe, o app mostra essa mídia no lugar da figura animada (o vídeo também tem câmera lenta).
 
 ## App Android
-O projeto Capacitor fica em `treino-android/`. O GitHub Actions (`.github/workflows/forja-apk.yml`) gera o APK
+O projeto Capacitor fica em `treino-android/`. O GitHub Actions (`.github/workflows/kinora-apk.yml`) gera o APK
 a cada mudança em `treino/` ou `treino-android/`. No `main`, com o segredo `NEXA_SIGNING_SEED` configurado (o
 mesmo do Nexa Money), publica em:
-`https://github.com/andersonrocharsrr-code/Clausclan/releases/download/forja/forja.apk`.
+`https://github.com/andersonrocharsrr-code/Clausclan/releases/download/kinora/kinora.apk`.
 Sem o segredo, o APK de teste fica em "Artifacts" na execução.
 
 ## Observações
-- Os dados ficam salvos **somente neste aparelho**. Faça backup de vez em quando (⚙ Ajustes).
+- Os dados ficam salvos **somente neste aparelho**. Faça backup de vez em quando (Perfil).
+- O app oferece orientações gerais; não é prescrição médica nem substitui um profissional.

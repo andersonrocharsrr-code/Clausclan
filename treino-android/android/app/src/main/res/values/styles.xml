@@ -14,14 +14,14 @@
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
         <!-- Fundo escuro enquanto o app desenha a primeira tela (evita um clarão branco). -->
-        <item name="android:windowBackground">@color/forja_bg</item>
+        <item name="android:windowBackground">@color/kinora_bg</item>
     </style>
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/forja_bg</item>
+        <item name="windowSplashScreenBackground">@color/kinora_bg</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
-        <item name="android:windowBackground">@color/forja_bg</item>
+        <item name="android:windowBackground">@color/kinora_bg</item>
         <item name="android:background">@drawable/splash</item>
     </style>
 </resources>

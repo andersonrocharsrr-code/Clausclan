@@ -1,14 +1,14 @@
 {
-  "appId": "io.github.andersonrocharsrr_code.forja",
-  "appName": "Forja",
+  "appId": "io.github.andersonrocharsrr_code.kinora",
+  "appName": "Kinora",
   "webDir": "www",
   "android": {
-    "backgroundColor": "#0e0f12"
+    "backgroundColor": "#0b0c0f"
   },
   "plugins": {
     "LocalNotifications": {
-      "smallIcon": "ic_stat_forja",
-      "iconColor": "#e8521c"
+      "smallIcon": "ic_stat_kinora",
+      "iconColor": "#7cc400"
     }
   }
 }

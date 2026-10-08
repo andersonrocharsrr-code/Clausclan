@@ -1,8 +1,8 @@
 {
-  "name": "forja-android",
+  "name": "kinora-android",
   "private": true,
   "version": "1.0.0",
-  "description": "Forja (musculação) como app Android nativo (Capacitor). O APK é gerado pelo GitHub Actions.",
+  "description": "Kinora (musculação) como app Android nativo (Capacitor). O APK é gerado pelo GitHub Actions.",
   "scripts": {
     "www": "node scripts/prepare-www.mjs"
   },
