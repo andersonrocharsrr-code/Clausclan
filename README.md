@@ -211,8 +211,8 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
 
 ## O que faz
 - **Foto das notas**: a IA lê número, cliente, cidade, valor e se a nota foi paga nos 25% ou nos 40%/50%,
-  e coloca cada uma na lista certa (dá para mover com um toque se precisar)
-  (várias fotos de uma vez) e vai somando. Itens lidos ficam marcados em amarelo para conferir.
+  e coloca cada uma na lista certa (dá para mover com um toque). Aceita várias fotos de uma vez e vai somando.
+  Itens lidos ficam marcados em amarelo para conferir.
 - **Foto do pepino extra**: lê nº, cidade, valor e nome da vendedora/cliente.
 - **Foto da folha de fechamento** (em branco ou preenchida à mão): identifica os campos e preenche o app.
 - Contas automáticas: **V. pep. 5%** (5% do "foi cobrar"), totais das notas, **pepino extra** e
