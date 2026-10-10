@@ -199,3 +199,26 @@ Sem o segredo, o APK de teste fica em "Artifacts" na execução.
 ## Observações
 - Os dados ficam salvos **somente neste aparelho**. Faça backup de vez em quando (Perfil).
 - O app oferece orientações gerais; não é prescrição médica nem substitui um profissional.
+
+---
+
+# Fechamento de Caixa — app de caixa semanal (`caixa/`)
+
+App web instalável (PWA, sem build) que faz as contas da folha **CAIXA** e **lê fotos com IA** (Claude).
+
+Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server` na raiz e acesse
+`http://localhost:8000/caixa/`). No celular, use o menu do navegador → "Adicionar à tela inicial".
+
+## O que faz
+- **Foto das notas 25%** e **notas 40% e 50%**: a IA lê número, cliente, cidade e valor de cada nota
+  (várias fotos de uma vez) e vai somando. Itens lidos ficam marcados em amarelo para conferir.
+- **Foto do pepino extra**: lê nº, cidade, valor e nome da vendedora/cliente.
+- **Foto da folha de fechamento** (em branco ou preenchida à mão): identifica os campos e preenche o app.
+- Contas automáticas: **V. pep. 5%** (5% do "foi cobrar"), totais das notas, **pepino extra** e
+  **recebimento** = notas 25% + notas 40/50% + antecipados + pepino extra.
+- Depósitos e despesas, Outros e OBS com descrição; diferença para conferência.
+- Salvar fechamentos, mandar resumo pelo WhatsApp e imprimir/PDF no formato da folha.
+
+## Configurar a leitura por foto
+Toque em ⚙ e cole sua chave da API da Anthropic (console.anthropic.com). Ela fica salva só no aparelho.
+Cada foto lida é cobrada na sua conta da Anthropic. Sem chave, o app funciona normalmente digitando os valores.

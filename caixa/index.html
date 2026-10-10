@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Fechamento de Caixa</title>
+  <meta name="description" content="Fechamento de caixa semanal: lê as notas pela foto e faz as contas sozinho.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#1d4ed8">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Caixa">
+  <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+  <header class="top">
+    <div class="top__title">
+      <img src="icon.svg" alt="" width="32" height="32">
+      <div>
+        <h1>Fechamento de Caixa</h1>
+        <p id="subtitulo" class="muted">Novo fechamento</p>
+      </div>
+    </div>
+    <div class="top__actions">
+      <button class="icon-btn" id="btnLista" title="Fechamentos salvos" aria-label="Fechamentos salvos">☰</button>
+      <button class="icon-btn" id="btnConfig" title="Configurar" aria-label="Configurar">⚙</button>
+    </div>
+  </header>
+
+  <main id="app">
+    <!-- Ler a folha inteira pela foto -->
+    <section class="card card--accent">
+      <h2>📄 Ler folha de fechamento</h2>
+      <p class="muted">Tire foto de uma folha de fechamento (em branco ou já preenchida à mão). O app identifica os campos e preenche aqui.</p>
+      <label class="btn btn--primary">
+        📷 Foto da folha
+        <input type="file" accept="image/*" capture="environment" hidden data-ler="folha">
+      </label>
+    </section>
+
+    <!-- Cabeçalho -->
+    <section class="card">
+      <h2>Cabeçalho</h2>
+      <div class="grid">
+        <label>Cidade<input data-f="cidade" autocomplete="off"></label>
+        <label>Nome<input data-f="nome" autocomplete="off"></label>
+        <label>Data<input data-f="data" type="date"></label>
+        <label>Semana<input data-f="semana" inputmode="numeric"></label>
+        <label>Foi cobrar (R$)<input data-f="foiCobrar" data-money inputmode="decimal"></label>
+        <label>Qt. de notas<input data-f="qtNotas" inputmode="numeric"></label>
+        <label>Antecipados (R$)<input data-f="antecipados" data-money inputmode="decimal"></label>
+        <label>V. pep. 5% (R$)<output data-c="vPep5"></output></label>
+        <label>Qt. notas deixadas<input data-f="qtNotasDeixadas" inputmode="numeric"></label>
+        <label>Nº de pinos<input data-f="pinos" inputmode="numeric"></label>
+        <label>Valor dos pepinos (R$)<input data-f="valorPepinos" data-money inputmode="decimal"></label>
+        <label>Pepino parcial (R$)<input data-f="pepinoParcial" data-money inputmode="decimal"></label>
+      </div>
+    </section>
+
+    <!-- Notas 25% -->
+    <section class="card">
+      <div class="card__head">
+        <h2>Notas 25%</h2>
+        <strong class="total" data-c="notas25"></strong>
+      </div>
+      <div class="row-actions">
+        <label class="btn btn--primary">📷 Foto das notas<input type="file" accept="image/*" multiple hidden data-ler="notas25"></label>
+        <button class="btn" data-add="notas25">+ Digitar</button>
+      </div>
+      <div class="lista" data-lista="notas25"></div>
+    </section>
+
+    <!-- Notas 40% e 50% -->
+    <section class="card">
+      <div class="card__head">
+        <h2>Notas 40% e 50%</h2>
+        <strong class="total" data-c="notas4050"></strong>
+      </div>
+      <div class="row-actions">
+        <label class="btn btn--primary">📷 Foto das notas<input type="file" accept="image/*" multiple hidden data-ler="notas4050"></label>
+        <button class="btn" data-add="notas4050">+ Digitar</button>
+      </div>
+      <div class="lista" data-lista="notas4050"></div>
+    </section>
+
+    <!-- Pepino extra -->
+    <section class="card">
+      <div class="card__head">
+        <h2>Pepino extra</h2>
+        <strong class="total" data-c="extras"></strong>
+      </div>
+      <div class="row-actions">
+        <label class="btn btn--primary">📷 Foto do pepino<input type="file" accept="image/*" multiple hidden data-ler="extras"></label>
+        <button class="btn" data-add="extras">+ Digitar</button>
+      </div>
+      <div class="lista" data-lista="extras"></div>
+    </section>
+
+    <!-- Recebimento -->
+    <section class="card card--sum">
+      <div class="card__head">
+        <h2>Recebimento</h2>
+        <strong class="total total--big" data-c="recebimento"></strong>
+      </div>
+      <p class="muted small">Notas 25% + Notas 40% e 50% + Antecipados + Pepino extra</p>
+    </section>
+
+    <!-- Saídas -->
+    <section class="card">
+      <h2>Depósitos e despesas</h2>
+      <div class="grid">
+        <label>Depto. empresa espécie<input data-f="depEspecie" data-money inputmode="decimal"></label>
+        <label>Depto. Pix<input data-f="depPix" data-money inputmode="decimal"></label>
+        <label>Depto. banco/TED/trans.<input data-f="depBanco" data-money inputmode="decimal"></label>
+        <label>Vale adiantado<input data-f="vale" data-money inputmode="decimal"></label>
+        <label>Ajuda de custo<input data-f="ajuda" data-money inputmode="decimal"></label>
+        <label>Mecânica<input data-f="mecanica" data-money inputmode="decimal"></label>
+        <label>Despesas supervisor<input data-f="despSupervisor" data-money inputmode="decimal"></label>
+        <label>Excedido da despesa<input data-f="excedido" data-money inputmode="decimal"></label>
+      </div>
+      <h3>Outros</h3>
+      <div class="lista" data-lista="outros"></div>
+      <button class="btn" data-add="outros">+ Adicionar em Outros</button>
+      <h3>OBS</h3>
+      <div class="lista" data-lista="obs"></div>
+      <button class="btn" data-add="obs">+ Adicionar em OBS</button>
+    </section>
+
+    <!-- Final -->
+    <section class="card">
+      <h2>Fechamento</h2>
+      <div class="grid">
+        <label>Valor deixado (R$)<input data-f="valorDeixado" data-money inputmode="decimal"></label>
+        <label>Assinatura do vendedor<input data-f="assinatura" autocomplete="off"></label>
+      </div>
+      <div class="conf">
+        <div><span>Recebimento</span><b data-c="recebimento"></b></div>
+        <div><span>Depósitos e despesas</span><b data-c="saidas"></b></div>
+        <div class="conf__diff"><span>Diferença</span><b data-c="diferenca"></b></div>
+      </div>
+      <p class="muted small">A diferença é só para conferência (recebimento menos depósitos e despesas).</p>
+    </section>
+
+    <section class="card actions-final">
+      <button class="btn btn--primary" id="btnSalvar">💾 Salvar fechamento</button>
+      <button class="btn" id="btnWhats">💬 Mandar resumo</button>
+      <button class="btn" id="btnImprimir">🖨 Imprimir / PDF</button>
+      <button class="btn btn--ghost" id="btnNovo">＋ Novo fechamento</button>
+    </section>
+  </main>
+
+  <!-- Barra fixa com os totais -->
+  <footer class="bar">
+    <div><span>Recebimento</span><b data-c="recebimento"></b></div>
+    <div><span>Diferença</span><b data-c="diferenca"></b></div>
+  </footer>
+
+  <!-- Folha para impressão -->
+  <div id="folha" class="folha" aria-hidden="true"></div>
+
+  <!-- Janelas -->
+  <dialog id="dlgConfig">
+    <form method="dialog">
+      <h2>Configurar leitura por foto</h2>
+      <p class="muted">Para ler as fotos o app usa a IA Claude. Cole aqui sua chave da API da Anthropic
+        (crie em <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>).
+        Ela fica salva só neste aparelho.</p>
+      <label>Chave da API<input id="apiKey" type="password" autocomplete="off" placeholder="sk-ant-..."></label>
+      <div class="row-actions">
+        <button class="btn" value="cancel">Cancelar</button>
+        <button class="btn btn--primary" id="btnSalvarChave" value="ok">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlgLista">
+    <form method="dialog">
+      <h2>Fechamentos salvos</h2>
+      <div id="listaSalvos" class="salvos"></div>
+      <div class="row-actions">
+        <button class="btn" value="cancel">Fechar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="carregando" class="loading" hidden>
+    <div class="spinner"></div>
+    <p id="carregandoTxt">Lendo a foto…</p>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="app.js?v=1"></script>
+</body>
+</html>
