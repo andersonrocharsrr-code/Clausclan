@@ -1063,8 +1063,13 @@ button, .k, .tab, .fab, .chip, .seg__btn { touch-action: manipulation; -webkit-u
   .section-head { align-items: flex-start; }
 }
 
+/* Animações terminam na hora em vez de serem canceladas: telas que começam invisíveis
+   (início, entrada do app) dependem do fim da animação para aparecer. */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
+  *, *::before, *::after {
+    animation-duration: .001ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important;
+    transition: none !important;
+  }
 }
 
 /* ---------------- Tour guiado ---------------- */
