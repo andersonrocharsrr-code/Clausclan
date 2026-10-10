@@ -217,7 +217,8 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
 - **Foto da folha de fechamento** (em branco ou preenchida à mão): identifica os campos e preenche o app.
 - Contas automáticas: **V. pep. 5%** (5% do "foi cobrar"), totais das notas, **pepino extra** e
   **recebimento** = notas 25% + notas 40/50% + antecipados + pepino extra.
-- Depósitos e despesas, Outros e OBS com descrição; diferença para conferência.
+- Depósitos e despesas, Outros e OBS com descrição. O app avisa quanto **falta lançar** e mostra
+  **✓ Caixa fechado** quando o recebimento bate com os depósitos e despesas (diferença zero).
 - Salvar fechamentos, mandar resumo pelo WhatsApp e imprimir/PDF no formato da folha.
 
 ## Configurar a leitura por foto

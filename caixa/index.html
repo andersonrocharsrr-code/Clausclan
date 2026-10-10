@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
   <header class="top">
@@ -145,7 +145,8 @@
         <div><span>Depósitos e despesas</span><b data-c="saidas"></b></div>
         <div class="conf__diff"><span>Diferença</span><b data-c="diferenca"></b></div>
       </div>
-      <p class="muted small">A diferença é só para conferência (recebimento menos depósitos e despesas).</p>
+      <p data-status></p>
+      <p class="muted small">Diferença = recebimento menos depósitos e despesas. O caixa fecha quando ela fica em zero.</p>
     </section>
 
     <section class="card actions-final">
@@ -159,7 +160,7 @@
   <!-- Barra fixa com os totais -->
   <footer class="bar">
     <div><span>Recebimento</span><b data-c="recebimento"></b></div>
-    <div><span>Diferença</span><b data-c="diferenca"></b></div>
+    <div><span data-status></span><b data-c="diferenca"></b></div>
   </footer>
 
   <!-- Folha para impressão -->
@@ -196,6 +197,6 @@
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="app.js?v=2"></script>
+  <script type="module" src="app.js?v=3"></script>
 </body>
 </html>

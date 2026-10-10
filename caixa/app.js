@@ -93,7 +93,15 @@ function pintarTotais() {
   $$('[data-c]').forEach((el) => {
     const v = c[el.dataset.c];
     el.textContent = R$(v);
-    el.classList.toggle('neg', el.dataset.c === 'diferenca' && v < 0);
+    el.classList.toggle('neg', el.dataset.c === 'diferenca' && v !== 0);
+    el.classList.toggle('pos', el.dataset.c === 'diferenca' && v === 0);
+  });
+  // O caixa fecha quando tudo que foi recebido está lançado em depósitos e despesas.
+  const dif = c.diferenca;
+  $$('[data-status]').forEach((el) => {
+    el.textContent = dif === 0 ? '✓ Caixa fechado'
+      : dif > 0 ? `Falta lançar ${R$(dif)}` : `Lançou ${R$(-dif)} a mais`;
+    el.className = 'status ' + (dif === 0 ? 'pos' : 'neg');
   });
   const d = st.data ? new Date(st.data + 'T12:00').toLocaleDateString('pt-BR') : '';
   $('#subtitulo').textContent = [st.nome, st.cidade, d].filter(Boolean).join(' · ') || 'Novo fechamento';
