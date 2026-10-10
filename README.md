@@ -216,7 +216,7 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
 - **Foto do pepino extra**: lê nº, cidade, valor e nome da vendedora/cliente.
 - **Foto da folha de fechamento** (em branco ou preenchida à mão): identifica os campos e preenche o app.
 - Contas automáticas: **V. pep. 5%** (5% do "foi cobrar"), totais das notas, **pepino extra** e
-  **recebimento** = notas 25% + notas 40/50% + antecipados + pepino extra.
+  **recebimento** = notas 25% + notas 40/50% + antecipados + pepino extra + pepino parcial (o valor dos pepinos fica só como registro).
 - Depósitos e despesas, Outros e OBS com descrição. O app avisa quanto **falta lançar** e mostra
   **✓ Caixa fechado** quando o recebimento bate com os depósitos e despesas (diferença zero).
 - **Valor deixado** = vendas da semana, digitado à mão (não entra nas contas do caixa).

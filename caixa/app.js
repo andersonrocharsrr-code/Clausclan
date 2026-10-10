@@ -77,7 +77,7 @@ function calcular(s = st) {
   c.notas25 = soma(s.notas25);
   c.notas4050 = soma(s.notas4050);
   c.extras = soma(s.extras);
-  c.recebimento = arred(c.notas25 + c.notas4050 + s.antecipados + c.extras);
+  c.recebimento = arred(c.notas25 + c.notas4050 + s.antecipados + c.extras + s.pepinoParcial);
   c.outros = soma(s.outros);
   c.obs = soma(s.obs);
   c.saidas = arred(SAIDAS.reduce((t, k) => t + (Number(s[k]) || 0), 0) + c.outros + c.obs);
