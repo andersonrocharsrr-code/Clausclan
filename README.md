@@ -219,6 +219,7 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   **recebimento** = notas 25% + notas 40/50% + antecipados + pepino extra.
 - Depósitos e despesas, Outros e OBS com descrição. O app avisa quanto **falta lançar** e mostra
   **✓ Caixa fechado** quando o recebimento bate com os depósitos e despesas (diferença zero).
+- **Valor deixado** = vendas da semana, digitado à mão (não entra nas contas do caixa).
 - Salvar fechamentos, mandar resumo pelo WhatsApp e imprimir/PDF no formato da folha.
 
 ## Configurar a leitura por foto

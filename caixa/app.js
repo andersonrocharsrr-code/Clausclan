@@ -494,7 +494,7 @@ function resumo() {
   SAIDAS.forEach((k) => { if (st[k]) L.push(`${nomes[k]}: ${R$(st[k])}`); });
   st.outros.forEach((o) => L.push(`Outros: ${o.desc || ''} ${R$(o.valor)}`));
   st.obs.forEach((o) => L.push(`OBS: ${o.desc || ''} ${R$(o.valor)}`));
-  L.push('', `Valor deixado: ${R$(st.valorDeixado)}`);
+  L.push('', `Valor deixado (vendas da semana): ${R$(st.valorDeixado)}`);
   return L.join('\n');
 }
 
@@ -530,7 +530,7 @@ function montarFolha() {
       ${lin('Despesas supervisor', R$(st.despSupervisor))}${lin('Excedido da despesa', R$(st.excedido))}
       ${st.outros.map((o) => lin('Outros', esc(o.desc || '') + ' ' + R$(o.valor))).join('')}
       ${st.obs.map((o) => lin('OBS', esc(o.desc || '') + ' ' + R$(o.valor))).join('')}
-      ${lin('<b>Valor deixado</b>', '<b>' + R$(st.valorDeixado) + '</b>')}
+      ${lin('<b>Valor deixado (vendas da semana)</b>', '<b>' + R$(st.valorDeixado) + '</b>')}
       ${lin('Assinatura vendedor', esc(st.assinatura))}
     </table>
     ${st.extras.length ? tab('Pepino extra', st.extras, LISTAS.extras) : ''}
