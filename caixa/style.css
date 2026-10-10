@@ -106,3 +106,6 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
   .folha th{width:45%;font-weight:600}
   .folha__lista th{width:auto}
 }
+.item__extra{grid-column:1/-1;display:flex;align-items:center;gap:8px}
+.tag{font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent)}
+.item__mover{font:inherit;font-size:12px;color:var(--accent);background:transparent;border:0;padding:4px 0;cursor:pointer}

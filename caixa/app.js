@@ -122,6 +122,8 @@ function pintarLista(nome) {
         <input data-k="${k}" ${k === 'valor' ? 'inputmode="decimal"' : ''} value="${esc(k === 'valor' ? (item.valor ? brl(item.valor) : '') : item[k] || '')}">
       </label>`).join('') +
       `<button class="item__del" aria-label="Apagar" title="Apagar">✕</button>` +
+      (nome.startsWith('notas') ? `<div class="item__extra">${item.faixa ? `<span class="tag">${esc(item.faixa)}%</span>` : ''}
+        <button class="item__mover">↕ Mover para ${nome === 'notas25' ? '40% e 50%' : '25%'}</button></div>` : '') +
       (item.nota ? `<p class="item__nota">⚠ ${esc(item.nota)}</p>` : '');
     row.addEventListener('change', (e) => {
       const k = e.target.dataset.k;
@@ -131,6 +133,12 @@ function pintarLista(nome) {
       item.conferir = false;
       row.classList.remove('item--conferir');
       salvarAtual(); pintarTotais();
+    });
+    row.querySelector('.item__mover')?.addEventListener('click', () => {
+      const outra = nome === 'notas25' ? 'notas4050' : 'notas25';
+      st[nome].splice(i, 1);
+      st[outra].push({ ...item, faixa: outra === 'notas25' ? '25' : (item.faixa === '50' ? '50' : '40') });
+      salvarAtual(); pintarLista(nome); pintarLista(outra); pintarTotais();
     });
     row.querySelector('.item__del').addEventListener('click', () => {
       st[nome].splice(i, 1);
@@ -196,9 +204,10 @@ async function prepararFoto(file) {
 
 const ITEM_NOTA = {
   type: 'object', additionalProperties: false,
-  required: ['numero', 'cliente', 'cidade', 'valor', 'valor_total', 'duvida'],
+  required: ['numero', 'cliente', 'cidade', 'faixa', 'valor', 'valor_total', 'duvida'],
   properties: {
     numero: { type: 'string', description: 'Número da nota, como está escrito' },
+    faixa: { type: 'string', enum: ['25', '40', '50', ''], description: 'Faixa em que a nota foi paga, como está marcado na nota; vazio se não der para ver' },
     cliente: { type: 'string', description: 'Nome da cliente / compradora' },
     cidade: { type: 'string' },
     valor: { type: 'number', description: 'Valor pago/quitado, em reais' },
@@ -260,16 +269,11 @@ Copie números de nota e nomes exatamente como estão escritos. Nunca invente: c
 e você explica a dúvida no campo de dúvida.`;
 
 const PEDIDOS = {
-  notas25: {
+  notas: {
     schema: SCHEMA_NOTAS,
-    texto: `As fotos são de notas quitadas na faixa de 25%. Liste cada nota que aparece (uma foto pode ter várias notas;
-não repita a mesma nota se aparecer em duas fotos). Para cada uma: número, nome da cliente, cidade e o valor pago.
-Se a nota mostrar o valor total e o valor pago, ponha o pago em "valor" e o total em "valor_total".`,
-  },
-  notas4050: {
-    schema: SCHEMA_NOTAS,
-    texto: `As fotos são de notas quitadas na faixa de 40% e 50%. Liste cada nota que aparece (uma foto pode ter várias notas;
-não repita a mesma nota se aparecer em duas fotos). Para cada uma: número, nome da cliente, cidade e o valor pago.
+    texto: `As fotos são de notas quitadas. Cada nota mostra se foi paga nos 25%, nos 40% ou nos 50% — leia essa marca
+e devolva em "faixa" ("25", "40" ou "50"; vazio se não der para ver). Liste cada nota que aparece (uma foto pode ter várias
+notas; não repita a mesma nota se aparecer em duas fotos). Para cada uma: número, nome da cliente, cidade, faixa e o valor pago.
 Se a nota mostrar o valor total e o valor pago, ponha o pago em "valor" e o total em "valor_total".`,
   },
   extras: {
@@ -340,16 +344,24 @@ function mensagemErro(e) {
 }
 
 function aplicar(tipo, r) {
-  if (tipo === 'notas25' || tipo === 'notas4050') {
-    const novos = r.notas.map((n) => ({
-      id: uid(), numero: n.numero, cliente: n.cliente, cidade: n.cidade || st.cidade, valor: arred(n.valor),
-      conferir: true,
-      nota: [n.duvida, n.valor_total && n.valor_total !== n.valor ? `total da nota ${R$(n.valor_total)}` : '']
-        .filter(Boolean).join(' · '),
-    }));
-    st[tipo].push(...novos);
-    pintarLista(tipo);
-    toast(novos.length ? `${novos.length} nota(s) lida(s), somando ${R$(soma(novos))}. Confira!` : 'Nenhuma nota encontrada na foto.');
+  if (tipo === 'notas') {
+    let n25 = 0, n4050 = 0, semFaixa = 0;
+    r.notas.forEach((n) => {
+      const destino = n.faixa === '40' || n.faixa === '50' ? 'notas4050' : 'notas25';
+      if (!n.faixa) semFaixa++;
+      destino === 'notas25' ? n25++ : n4050++;
+      st[destino].push({
+        id: uid(), numero: n.numero, cliente: n.cliente, cidade: n.cidade || st.cidade, valor: arred(n.valor),
+        faixa: n.faixa, conferir: true,
+        nota: [n.faixa ? '' : 'não deu para ver se foi 25% ou 40/50% — confira', n.duvida,
+          n.valor_total && n.valor_total !== n.valor ? `total da nota ${R$(n.valor_total)}` : '']
+          .filter(Boolean).join(' · '),
+      });
+    });
+    pintarLista('notas25'); pintarLista('notas4050');
+    toast(r.notas.length
+      ? `${r.notas.length} nota(s): ${n25} em 25%, ${n4050} em 40/50%.` + (semFaixa ? ` ${semFaixa} sem faixa, confira!` : ' Confira!')
+      : 'Nenhuma nota encontrada na foto.');
   } else if (tipo === 'extras') {
     const novos = r.itens.map(itemExtra);
     st.extras.push(...novos);

@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
   <header class="top">
@@ -59,6 +59,13 @@
       </div>
     </section>
 
+    <!-- Fotos das notas: o app separa em 25% ou 40%/50% pelo que está escrito em cada nota -->
+    <section class="card card--accent">
+      <h2>📷 Notas quitadas</h2>
+      <p class="muted">Tire foto das notas (pode ser várias de uma vez). O app lê se cada uma foi paga nos 25% ou nos 40%/50% e coloca no lugar certo.</p>
+      <label class="btn btn--primary">📷 Foto das notas<input type="file" accept="image/*" multiple hidden data-ler="notas"></label>
+    </section>
+
     <!-- Notas 25% -->
     <section class="card">
       <div class="card__head">
@@ -66,7 +73,6 @@
         <strong class="total" data-c="notas25"></strong>
       </div>
       <div class="row-actions">
-        <label class="btn btn--primary">📷 Foto das notas<input type="file" accept="image/*" multiple hidden data-ler="notas25"></label>
         <button class="btn" data-add="notas25">+ Digitar</button>
       </div>
       <div class="lista" data-lista="notas25"></div>
@@ -79,7 +85,6 @@
         <strong class="total" data-c="notas4050"></strong>
       </div>
       <div class="row-actions">
-        <label class="btn btn--primary">📷 Foto das notas<input type="file" accept="image/*" multiple hidden data-ler="notas4050"></label>
         <button class="btn" data-add="notas4050">+ Digitar</button>
       </div>
       <div class="lista" data-lista="notas4050"></div>
@@ -191,6 +196,6 @@
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="app.js?v=1"></script>
+  <script type="module" src="app.js?v=2"></script>
 </body>
 </html>
