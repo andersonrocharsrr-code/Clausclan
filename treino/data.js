@@ -1,4 +1,4 @@
-/* Fibra — exercícios: como executar, erros comuns, músculos e animação.
+/* Fibrafit — exercícios: como executar, erros comuns, músculos e animação.
    kind: w = carga × repetições · bw = peso do corpo (carga extra opcional) · t = tempo em segundos
    c: 1 = exercício multiarticular (base do treino: mais carga e mais descanso). */
 (() => {

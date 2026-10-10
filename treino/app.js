@@ -1,4 +1,4 @@
-/* Fibra — treinador visual de musculação. Tudo fica salvo no aparelho (localStorage). */
+/* Fibrafit — treinador visual de musculação. Tudo fica salvo no aparelho (localStorage). */
 (() => {
   'use strict';
 
@@ -67,13 +67,13 @@
   /* ================================================================
      Estado
      ================================================================ */
-  const KEY = 'fibra-v1';
+  const KEY = 'fibrafit-v1';
   const blank = () => ({
     v: 2, profile: null, exercises: [], routines: [], workouts: [], active: null, body: [], seen: {},
     settings: { theme: 'auto', rest: 90, sound: true, notify: true },
   });
   let state = blank();
-  const loaded = store(() => JSON.parse(localStorage.getItem(KEY))) || store(() => JSON.parse(localStorage.getItem('kinora-v1'))) || store(() => JSON.parse(localStorage.getItem('forja-v1')));
+  const loaded = store(() => JSON.parse(localStorage.getItem(KEY))) || store(() => JSON.parse(localStorage.getItem('fibra-v1'))) || store(() => JSON.parse(localStorage.getItem('kinora-v1'))) || store(() => JSON.parse(localStorage.getItem('forja-v1')));
   if (loaded && loaded.workouts) state = { ...blank(), ...loaded, v: 2, settings: { ...blank().settings, ...(loaded.settings || {}) } };
   const save = () => store(() => localStorage.setItem(KEY, JSON.stringify(state)));
   const goal = () => (state.profile ? state.profile.days : 3);
@@ -251,7 +251,7 @@
   /* ================================================================
      Abas
      ================================================================ */
-  const TABS = { inicio: 'Fibra', treinos: 'Treinos', exercicios: 'Exercícios', evolucao: 'Evolução', perfil: 'Perfil' };
+  const TABS = { inicio: 'Fibrafit', treinos: 'Treinos', exercicios: 'Exercícios', evolucao: 'Evolução', perfil: 'Perfil' };
   function setTab(tab) {
     ui.tab = tab;
     $$('.tab').forEach((b) => b.setAttribute('aria-current', b.dataset.tab === tab ? 'page' : 'false'));
@@ -323,7 +323,7 @@
       </section>`;
     } else {
       card = `<section class="today"><div class="today__tag">VAMOS COMEÇAR</div><div class="today__name">Monte seu plano</div>
-        <p style="opacity:.8;margin-top:6px">Responda 4 perguntas e o Fibra sugere uma rotina para você.</p>
+        <p style="opacity:.8;margin-top:6px">Responda 4 perguntas e o Fibrafit sugere uma rotina para você.</p>
         <button class="btn btn--primary btn--block btn--lg" style="margin-top:16px" data-act="onboard">Montar meu plano</button></section>`;
     }
     const labels = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
@@ -716,8 +716,8 @@
         <button class="set-row set-row--btn" data-act="csv">Exportar treinos para planilha (.csv)</button>
         <button class="set-row set-row--btn set-row--danger" data-act="wipe">Apagar todos os dados</button>
       </div>
-      <p class="disclaimer"><b>Aviso de saúde.</b> O Fibra oferece orientações gerais de treino e técnica. Ele não é uma prescrição médica e não substitui a avaliação de um médico ou de um profissional de educação física. A quantidade ideal de séries, cargas e descanso depende da sua experiência, objetivo, recuperação e técnica. Se você tem lesões, dores, doenças, está gestante ou tem qualquer limitação, procure orientação profissional antes de treinar. Pare o exercício se sentir dor.</p>
-      <p class="fine" style="text-align:center;margin-top:14px">Fibra · seus dados ficam só neste aparelho</p>`;
+      <p class="disclaimer"><b>Aviso de saúde.</b> O Fibrafit oferece orientações gerais de treino e técnica. Ele não é uma prescrição médica e não substitui a avaliação de um médico ou de um profissional de educação física. A quantidade ideal de séries, cargas e descanso depende da sua experiência, objetivo, recuperação e técnica. Se você tem lesões, dores, doenças, está gestante ou tem qualquer limitação, procure orientação profissional antes de treinar. Pare o exercício se sentir dor.</p>
+      <p class="fine" style="text-align:center;margin-top:14px">Fibrafit · seus dados ficam só neste aparelho</p>`;
   }
 
   /* ================================================================
@@ -748,7 +748,7 @@
     $('#onbSkip').textContent = 'Fechar';
     let html = '', ok = true, label = 'Continuar';
     if (step === 'welcome') {
-      html = `<div class="welcome"><div id="onbFig"></div><h2>Fibra</h2><p class="lead">Seu treinador visual de musculação no bolso.</p>
+      html = `<div class="welcome"><div id="onbFig"></div><h2>Fibrafit</h2><p class="lead">Seu treinador visual de musculação no bolso.</p>
         <div class="pillars"><div><b>O que fazer</b>Treino do dia pronto</div><div><b>Como fazer</b>Movimento animado e passo a passo</div><div><b>Quanto fazer</b>Séries, repetições e carga</div><div><b>Quando descansar</b>Cronômetro entre as séries</div></div></div>`;
       label = 'Começar';
     } else if (step === 'name') {
@@ -765,7 +765,7 @@
       html = `<h2>Qual seu nível?</h2><p class="lead">Quem está começando recebe exercícios mais fáceis de aprender.</p><div class="choices">${Object.entries(LEVELS).map(([k, l], i) => `<button type="button" class="choice" data-level="${k}" aria-pressed="${d.level === k}"><span class="choice__ico">${['🌱', '💪', '🏆'][i]}</span><span><b>${l.label}</b><span>${l.desc}</span></span></button>`).join('')}</div>`;
       ok = !!d.level;
     } else if (step === 'health') {
-      html = `<h2>Antes de começar</h2><div class="health">O Fibra monta uma <b>sugestão de rotina</b> com orientações gerais. Não é uma prescrição médica e não garante que um número de séries sirva para todo mundo: o ideal depende da sua experiência, recuperação e técnica.
+      html = `<h2>Antes de começar</h2><div class="health">O Fibrafit monta uma <b>sugestão de rotina</b> com orientações gerais. Não é uma prescrição médica e não garante que um número de séries sirva para todo mundo: o ideal depende da sua experiência, recuperação e técnica.
         <ul><li>Tem lesão, dor, doença, está gestante ou tem alguma limitação? Procure um médico ou profissional de educação física antes.</li><li>Comece leve e aprenda a técnica antes de aumentar a carga.</li><li>Sentiu dor? Pare o exercício.</li></ul></div>
         <label class="check"><input type="checkbox" id="onbOk" ${d.ok ? 'checked' : ''}> Entendi e vou treinar com responsabilidade.</label>`;
       ok = d.ok; label = 'Montar meu plano';
@@ -1531,7 +1531,7 @@
         if (!confirm('Descartar este treino? Nada será salvo.')) return;
         $('#dlgInfo').close(); stopRest(); state.active = null; save(); closeLive();
         break;
-      case 'export': saveFile(`fibra-backup-${dayKey(Date.now())}.json`, JSON.stringify({ app: 'fibra', ...state }, null, 1), 'application/json'); break;
+      case 'export': saveFile(`fibrafit-backup-${dayKey(Date.now())}.json`, JSON.stringify({ app: 'fibrafit', ...state }, null, 1), 'application/json'); break;
       case 'import': $('#stFile').click(); break;
       case 'csv': exportCsv(); break;
       case 'wipe': wipe(); break;
@@ -1596,12 +1596,12 @@
     if (!f) return;
     try {
       const data = JSON.parse(await f.text());
-      if (!['fibra', 'kinora', 'forja'].includes(data.app) || !Array.isArray(data.workouts)) throw new Error('arquivo');
+      if (!['fibrafit', 'fibra', 'kinora', 'forja'].includes(data.app) || !Array.isArray(data.workouts)) throw new Error('arquivo');
       if (!confirm(`Restaurar backup com ${data.workouts.length} treinos e ${(data.routines || []).length} fichas? Os dados atuais serão substituídos.`)) return;
       delete data.app;
       state = { ...blank(), ...data, v: 2, settings: { ...blank().settings, ...(data.settings || {}) } };
       EXM = exMap(); save(); applyTheme(); toast('Backup restaurado'); render();
-    } catch { toast('Esse arquivo não é um backup do Fibra.'); }
+    } catch { toast('Esse arquivo não é um backup do Fibrafit.'); }
   });
   function exportCsv() {
     const rows = [['data', 'treino', 'exercicio', 'grupo', 'serie', 'tipo', 'carga_kg', 'reps_ou_seg', '1rm_estimado']];
@@ -1609,7 +1609,7 @@
       const e = ex(i.ex);
       i.sets.forEach((s, k) => rows.push([new Date(w.start).toISOString().slice(0, 16).replace('T', ' '), w.name, e.name, e.group, k + 1, s.t === 'w' ? 'aquecimento' : s.t === 'd' ? 'drop' : 'normal', String(s.w).replace('.', ','), s.r, e.kind === 'w' ? String(Math.round(e1rm(s.w, s.r) * 10) / 10).replace('.', ',') : '']));
     }));
-    saveFile(`fibra-treinos-${dayKey(Date.now())}.csv`, '﻿' + rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\n'), 'text/csv');
+    saveFile(`fibrafit-treinos-${dayKey(Date.now())}.csv`, '﻿' + rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\n'), 'text/csv');
   }
   function wipe() {
     if (!confirm('Apagar TODOS os treinos, fichas, medidas e o seu plano? Isso não pode ser desfeito.')) return;
@@ -1630,7 +1630,7 @@
   const LN = plugin('LocalNotifications');
   const FS = plugin('Filesystem');
   const SHARE = plugin('Share');
-  const KNATIVE = plugin('FibraNative');
+  const KNATIVE = plugin('FibrafitNative');
   const REST_NOTE = 4201;
   if (NATIVE) {
     document.documentElement.classList.add('is-native');
@@ -1665,7 +1665,7 @@
     save();
     if (!NATIVE || !LN || !state.settings.notify || !state.active?.restEnd) return;
     LN.cancel({ notifications: [{ id: REST_NOTE }] }).catch(() => {}).finally(() => {
-      LN.schedule({ notifications: [{ id: REST_NOTE, title: 'Descanso acabou 💪', body: restText(), schedule: { at: new Date(state.active.restEnd), allowWhileIdle: true }, channelId: 'descanso', smallIcon: 'ic_stat_fibra', iconColor: '#7cc400', autoCancel: true }] }).catch(() => {});
+      LN.schedule({ notifications: [{ id: REST_NOTE, title: 'Descanso acabou 💪', body: restText(), schedule: { at: new Date(state.active.restEnd), allowWhileIdle: true }, channelId: 'descanso', smallIcon: 'ic_stat_fibrafit', iconColor: '#7cc400', autoCancel: true }] }).catch(() => {});
     });
   }
   function cancelRestNote() { if (NATIVE && LN) LN.cancel({ notifications: [{ id: REST_NOTE }] }).catch(() => {}); }
@@ -1684,6 +1684,21 @@
     } catch { lock = null; }
   }
   if (!NATIVE && 'serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+
+  /* ---------------- Abertura animada ---------------- */
+  const splash = $('#splash');
+  if (splash) {
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let gone = false;
+    const hide = () => {
+      if (gone) return;
+      gone = true;
+      splash.classList.add('out');
+      setTimeout(() => splash.remove(), 520);
+    };
+    const t = setTimeout(hide, reduce ? 700 : 2500);
+    splash.addEventListener('click', () => { clearTimeout(t); hide(); });
+  }
 
   /* ---------------- Início ---------------- */
   applyTheme();

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Mesma cor do fundo do app no modo escuro (style.css). -->
-    <color name="fibra_bg">#0B0C0F</color>
+    <color name="fibrafit_bg">#0B0C0F</color>
 </resources>

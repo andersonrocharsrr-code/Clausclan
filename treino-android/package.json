@@ -1,8 +1,8 @@
 {
-  "name": "fibra-android",
+  "name": "fibrafit-android",
   "private": true,
   "version": "1.0.0",
-  "description": "Fibra (musculação) como app Android nativo (Capacitor). O APK é gerado pelo GitHub Actions.",
+  "description": "Fibrafit (musculação) como app Android nativo (Capacitor). O APK é gerado pelo GitHub Actions.",
   "scripts": {
     "www": "node scripts/prepare-www.mjs"
   },

@@ -1,4 +1,4 @@
-/* Fibra — treinador visual de musculação. Claro/escuro automático (ou escolhido no Perfil). */
+/* Fibrafit — treinador visual de musculação. Claro/escuro automático (ou escolhido no Perfil). */
 :root {
   --bg: #f4f5f7;
   --surface: #ffffff;
@@ -531,3 +531,46 @@ svg.kfig { display: block; width: 100%; height: auto; stroke: none; fill: none; 
 .note { width: 100%; margin-top: 10px; border: 0; border-radius: 12px; background: var(--surface-2); padding: 10px 12px; font-size: 14px; resize: none; }
 .kmedia { display: block; width: 100%; height: auto; object-fit: contain; background: var(--surface-2); }
 .pick .kmedia, .ov-item .kmedia, .rest__next .kmedia, .routine__figs .kmedia { width: 60px; height: 50px; border-radius: 10px; }
+
+/* Abertura animada (sempre escura, igual à tela de abertura do Android) */
+.splash {
+  position: fixed; inset: 0; z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: radial-gradient(90% 60% at 50% 42%, #161a12 0%, #0b0c0f 70%); color: #f2f3f5; overflow: hidden; cursor: pointer;
+  transition: opacity .5s ease, transform .5s ease;
+}
+.splash.out { opacity: 0; transform: scale(1.06); pointer-events: none; }
+.splash__stage { position: relative; width: 132px; height: 132px; }
+.splash__logo { position: relative; z-index: 2; width: 100%; height: 100%; overflow: visible; }
+.splash__box { fill: #1c2026; transform-origin: 256px 256px; transform: scale(.35); opacity: 0; animation: spBox .7s cubic-bezier(.2, 1.4, .4, 1) .1s forwards; }
+.splash__f path { stroke: #c2f74a; stroke-dasharray: 1; stroke-dashoffset: 1; }
+.splash__f .s1 { animation: spDraw .42s cubic-bezier(.6, 0, .3, 1) .45s forwards; }
+.splash__f .s2 { animation: spDraw .32s cubic-bezier(.6, 0, .3, 1) .8s forwards; }
+.splash__f .s3 { animation: spDraw .3s cubic-bezier(.6, 0, .3, 1) 1s forwards; }
+.splash__f { transform-origin: 256px 256px; animation: spPunch .35s ease-out 1.28s; }
+.splash__glow { position: absolute; inset: -60%; border-radius: 50%; z-index: 1; background: radial-gradient(circle, rgba(194, 247, 74, .38), transparent 62%); opacity: 0; transform: scale(.4); animation: spGlow 1.1s ease-out 1.2s forwards; }
+.splash__ring { position: absolute; inset: 0; z-index: 1; border-radius: 34px; border: 3px solid #c2f74a; opacity: 0; animation: spRing .9s ease-out 1.3s forwards; }
+.splash__name { display: flex; margin-top: 26px; font-size: 40px; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
+.splash__name span, .splash__name b { display: inline-block; opacity: 0; transform: translateY(18px); animation: spUp .5s cubic-bezier(.2, 1.2, .4, 1) forwards; }
+.splash__name b { color: #c2f74a; font-weight: 800; }
+.splash__name > :nth-child(1) { animation-delay: 1.15s; } .splash__name > :nth-child(2) { animation-delay: 1.2s; }
+.splash__name > :nth-child(3) { animation-delay: 1.25s; } .splash__name > :nth-child(4) { animation-delay: 1.3s; }
+.splash__name > :nth-child(5) { animation-delay: 1.35s; } .splash__name > :nth-child(6) { animation-delay: 1.48s; }
+.splash__name > :nth-child(7) { animation-delay: 1.53s; } .splash__name > :nth-child(8) { animation-delay: 1.58s; }
+.splash__tag { margin-top: 10px; font-size: 14px; font-weight: 500; color: #8c919d; opacity: 0; animation: spFade .6s ease 1.75s forwards; }
+.splash__bar { width: 120px; height: 3px; margin-top: 28px; border-radius: 2px; background: #22262d; overflow: hidden; opacity: 0; animation: spFade .3s ease .3s forwards; }
+.splash__bar i { display: block; height: 100%; width: 0; background: #c2f74a; animation: spBar 2.1s cubic-bezier(.4, 0, .2, 1) .3s forwards; }
+@keyframes spBox { to { transform: scale(1); opacity: 1; } }
+@keyframes spDraw { to { stroke-dashoffset: 0; } }
+@keyframes spPunch { 50% { transform: scale(1.12); } }
+@keyframes spGlow { 40% { opacity: 1; transform: scale(1); } to { opacity: .55; transform: scale(1.05); } }
+@keyframes spRing { 0% { opacity: .9; transform: scale(1); } to { opacity: 0; transform: scale(1.9); } }
+@keyframes spUp { to { opacity: 1; transform: none; } }
+@keyframes spFade { to { opacity: 1; } }
+@keyframes spBar { to { width: 100%; } }
+/* Com "reduzir movimento" ligado: a logo aparece pronta, sem animação. */
+@media (prefers-reduced-motion: reduce) {
+  .splash__box { opacity: 1; transform: none; }
+  .splash__f path { stroke-dashoffset: 0; }
+  .splash__name span, .splash__name b, .splash__tag { opacity: 1; transform: none; }
+  .splash__glow, .splash__ring, .splash__bar { display: none; }
+}

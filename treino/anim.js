@@ -1,4 +1,4 @@
-/* Fibra — figuras animadas dos exercícios (SVG desenhado na hora, sem vídeo).
+/* Fibrafit — figuras animadas dos exercícios (SVG desenhado na hora, sem vídeo).
    Cada movimento tem duas posições (início e fim). A figura é um "boneco" com juntas: o app interpola os
    ângulos entre as posições e mantém o ponto de apoio (pés, quadril, mãos) parado, como no exercício real.
    Ângulos em graus no sistema do SVG: 0 = direita, 90 = baixo, -90 = cima. A figura olha para a direita. */
