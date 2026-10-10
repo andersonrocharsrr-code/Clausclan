@@ -1694,9 +1694,9 @@
       if (gone) return;
       gone = true;
       splash.classList.add('out');
-      setTimeout(() => splash.remove(), 520);
+      setTimeout(() => splash.remove(), 760);
     };
-    const t = setTimeout(hide, reduce ? 700 : 2500);
+    const t = setTimeout(hide, reduce ? 700 : 3500);
     splash.addEventListener('click', () => { clearTimeout(t); hide(); });
   }
 

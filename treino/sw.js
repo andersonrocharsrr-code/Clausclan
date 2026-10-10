@@ -1,7 +1,7 @@
 /* Service worker: o Fibrafit abre e funciona offline. */
-const CACHE = 'fibrafit-v3';
+const CACHE = 'fibrafit-v4';
 // Os arquivos levam "?v=" no index.html: ao mudar a versão, o celular nunca mistura CSS/JS antigo com HTML novo.
-const FILES = ['./', 'index.html', 'style.css?v=3', 'data.js?v=3', 'anim.js?v=3', 'app.js?v=3', 'icon.svg', 'icon-192.png', 'manifest.webmanifest'];
+const FILES = ['./', 'index.html', 'style.css?v=4', 'data.js?v=4', 'anim.js?v=4', 'app.js?v=4', 'icon.svg', 'icon-192.png', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));

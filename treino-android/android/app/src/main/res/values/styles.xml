@@ -18,10 +18,12 @@
     </style>
 
 
+    <!-- Abertura do Android: só o fundo escuro, sem ícone, para emendar direto na animação da logo do app. -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/fibrafit_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_blank</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
         <item name="android:windowBackground">@color/fibrafit_bg</item>
-        <item name="android:background">@drawable/splash</item>
+        <item name="android:background">@color/fibrafit_bg</item>
     </style>
 </resources>
