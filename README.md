@@ -210,7 +210,7 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
 `http://localhost:8000/caixa/`). No celular, use o menu do navegador → "Adicionar à tela inicial".
 
 ## O que faz
-- **Foto das notas**: a IA lê número, cliente, cidade, valor e se a nota foi paga nos 25% ou nos 40%/50%,
+- **Foto das notas**: o app lê número, cliente, cidade, valor e se a nota foi paga nos 25% ou nos 40%/50%,
   e coloca cada uma na lista certa (dá para mover com um toque). Aceita várias fotos de uma vez e vai somando.
   Itens lidos ficam marcados em amarelo para conferir.
 - **Foto do pepino extra**: lê nº, cidade, valor e nome da vendedora/cliente.
@@ -244,6 +244,10 @@ O APK é gerado pelo GitHub Actions (`.github/workflows/caixa-apk.yml`) a cada m
 https://github.com/andersonrocharsrr-code/Clausclan/releases/download/caixa/caixa.apk
 Sem o segredo (ou fora do `main`) sai um APK de teste em "Artifacts" na execução.
 
-## Configurar a leitura por foto
-Toque em ⚙ e cole sua chave da API da Anthropic (console.anthropic.com). Ela fica salva só no aparelho.
-Cada foto lida é cobrada na sua conta da Anthropic. Sem chave, o app funciona normalmente digitando os valores.
+## Leitura das fotos (⚙)
+- **Gratuita** (padrão): leitor de texto no próprio celular (Tesseract.js, o mesmo do Nexa Money; baixado na 1ª vez).
+  Lê o que é **impresso**: as notas (cupom térmico: nº "N. 000001", cliente, cidade, TOTAL; "25%" no final = notas 25%,
+  "NOTA QUITADA" = notas 40% e 50%) e o cabeçalho da folha CAIXA em branco (semana, data, foi cobrar, qt. de notas).
+  Uma nota por foto, esticada e nítida. Não lê letra de mão (pepino extra, folha preenchida). Código em `caixa/leitor.js`.
+- **IA econômica** (Claude Haiku, centavos) e **IA mais precisa** (Claude Opus): leem foto tremida e letra de mão.
+  Precisam da chave da API da Anthropic (console.anthropic.com), salva só no aparelho; cada foto é cobrada na sua conta.

@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=9">
+  <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
   <div class="topo">
@@ -71,7 +71,7 @@
     <!-- Fotos das notas: o app separa em 25% ou 40%/50% pelo que está escrito em cada nota -->
     <section class="card card--accent">
       <h2>📷 Notas quitadas</h2>
-      <p class="muted">Tire foto das notas uma por uma pela câmera, ou escolha várias da galeria. O app lê se cada uma foi paga nos 25% ou nos 40%/50% e coloca no lugar certo.</p>
+      <p class="muted">Uma nota por foto, esticada e bem nítida (pode escolher várias da galeria). O app lê o "25%" ou o "NOTA QUITADA" no final da nota e coloca no lugar certo.</p>
       <div class="row-actions">
         <label class="btn btn--primary">📷 Câmera<input type="file" accept="image/*" capture="environment" hidden data-ler="notas"></label>
         <label class="btn btn--sec">🖼 Galeria (várias)<input type="file" accept="image/*" multiple hidden data-ler="notas"></label>
@@ -244,11 +244,18 @@
   <!-- Janelas -->
   <dialog id="dlgConfig">
     <form method="dialog">
-      <h2>Configurar leitura por foto</h2>
-      <p class="muted">Para ler as fotos o app usa a IA Claude. Cole aqui sua chave da API da Anthropic
-        (crie em <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>).
-        Ela fica salva só neste aparelho.</p>
-      <label>Chave da API<input id="apiKey" type="password" autocomplete="off" placeholder="sk-ant-..."></label>
+      <h2>Leitura das fotos</h2>
+      <div class="escolha" role="radiogroup">
+        <label><input type="radio" name="modo" value="gratis"> <span><b>Gratuita</b> (no celular)<br><small>Lê as notas e a folha em branco, que são impressas. Não lê letra de mão. Tire fotos nítidas.</small></span></label>
+        <label><input type="radio" name="modo" value="economica"> <span><b>IA econômica</b> (paga, centavos)<br><small>Lê melhor foto tremida e também letra de mão (pepino extra).</small></span></label>
+        <label><input type="radio" name="modo" value="precisa"> <span><b>IA mais precisa</b> (paga, mais cara)<br><small>Para quando a econômica errar.</small></span></label>
+      </div>
+      <div id="campoChave">
+        <p class="muted small">A IA é da Anthropic: crie a chave em
+          <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>
+          e cole aqui. Ela fica salva só neste aparelho; cada foto lida é cobrada na sua conta.</p>
+        <label>Chave da API<input id="apiKey" type="password" autocomplete="off" placeholder="sk-ant-..."></label>
+      </div>
       <div class="row-actions">
         <button class="btn" value="cancel">Cancelar</button>
         <button class="btn btn--primary" id="btnSalvarChave" value="ok">Salvar</button>
@@ -285,6 +292,6 @@
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="app.js?v=9"></script>
+  <script type="module" src="app.js?v=10"></script>
 </body>
 </html>
