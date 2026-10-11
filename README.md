@@ -224,7 +224,8 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   semana: semana 1 = empresa), digite o valor e toque em **Lançar depósito**. Nada é lançado sozinho. O app mostra
   **quanto falta depositar** = recebimento − despesas − já depositado, recalculado sempre que entra recebimento ou despesa.
   A semana vem impressa na folha CAIXA: tire a foto da folha em branco no início da semana e o app pega a semana (e
-  cidade, nome, data, foi cobrar e qt. de notas).
+  cidade, nome, data, foi cobrar e qt. de notas). O app não adivinha pela data. Ele confere o "foi cobrar" com o
+  V. pep. 5% impresso; se a folha for de outra semana, o fechamento atual é salvo em ☰ e começa um novo.
 - **Valor deixado** = vendas da semana, digitado à mão (não entra nas contas do caixa).
 - **Gerar caixa** (fim da semana): monta a folha CAIXA igual à impressa, já preenchida — o impresso em preto
   e o preenchido em azul com letra de mão (fonte Caveat, `caixa/fonts/`, licença OFL). Antes avisa o que pode
