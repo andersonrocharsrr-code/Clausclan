@@ -1,7 +1,7 @@
 /* Fechamento de Caixa — faz as contas da folha de caixa e lê notas/folhas pela foto (IA Claude). */
 import Anthropic from './vendor/anthropic.js';
 import { desenharCaixa } from './folha.js?v=9';
-import { lerNotaGratis, lerFolhaGratis } from './leitor.js?v=10';
+import { lerNotaGratis, lerFolhaGratis, ultimaLeitura } from './leitor.js?v=15';
 
 const KEY_ATUAL = 'caixa.atual';
 const KEY_SALVOS = 'caixa.salvos';
@@ -373,15 +373,17 @@ const PEDIDOS = {
   notas: {
     schema: SCHEMA_NOTAS,
     texto: `As fotos são de notas (cupons impressos em impressora térmica) que a empresa entrega às clientes.
-Cada nota tem: no topo "N. 000001" (esse é o número da nota; o número grande embaixo dele e o código de barras NÃO são),
-Representante, DATA DO ACERTO, nome da cliente (linha antes do CPF), endereço, "Cidade:XXX UF:AC", os itens
-("001 x 168,00 = 168,00") e "TOTAL R$228,00". No final da nota:
-- se aparecer "25%", a faixa é "25";
-- se aparecer "NOTA QUITADA" (com a comissão e as mercadorias pagas, sem porcentagem), a faixa é "40";
-- se não der para ver o final, a faixa fica vazia.
-Liste cada nota que aparece (uma foto pode ter várias; não repita a mesma nota se aparecer em duas fotos). Para cada uma:
-número, cliente, cidade (como está escrita, ex.: RIO BRANCO, CZS, BRASILEIA), faixa e em "valor" o TOTAL da nota.
-Se aparecer também um valor pago diferente do total, coloque o total em "valor_total" e explique em "duvida".`,
+Cada nota tem: no topo "N. 117613" (esse é o número da nota; o número grande embaixo dele e o código de barras NÃO são),
+Representante, DATA DO ACERTO, nome da cliente (linha antes do CPF), endereço, "Cidade:XXX UF:AC", os itens,
+"TOTAL R$616,00" (total da nota), às vezes DEVOLUCOES ou COMISSAO ("TOTAL DE COMISSAO R$308,00"), PAGAMENTOS
+("Total de pagamentos:616,00") e no final "Recebi o valor de R$616,00" seguido de:
+- "Nota quitada com 25% de desconto…" → faixa "25";
+- "Nota quitada." sem porcentagem → faixa "50" se a comissão for metade do TOTAL, "40" se for 40% do TOTAL
+  (sem comissão visível, use "40");
+- se não der para ver o final, faixa vazia.
+Em "valor" coloque o valor RECEBIDO ("Recebi o valor de R$…" ou "Total de pagamentos"), não o TOTAL; o TOTAL vai em
+"valor_total". Liste cada nota que aparece (uma foto pode ter várias; não repita a mesma nota). Para cada uma: número,
+cliente, cidade (como está escrita, ex.: RIO BRANCO, PORTO ACRE, CZS, BRASILEIA), faixa, valor e valor_total.`,
   },
   extras: {
     schema: SCHEMA_EXTRAS,
@@ -463,16 +465,17 @@ async function lerFotosGratis(tipo, files) {
     return;
   }
   const passo = (txt) => (m) => {
-    if (m.status === 'recognizing text') $('#carregandoTxt').textContent = `${txt} ${Math.round(m.progress * 100)}%`;
+    const tent = m.tentativa > 1 ? ` (tentativa ${m.tentativa} de ${m.total})` : '';
+    if (m.status === 'recognizing text') $('#carregandoTxt').textContent = `${txt} ${Math.round(m.progress * 100)}%${tent}`;
     else if (/load|initializ/.test(m.status)) $('#carregandoTxt').textContent = 'Preparando o leitor… (na 1ª vez baixa uns arquivos)';
   };
   carregando(true, 'Preparando o leitor…');
   try {
     if (tipo === 'folha') {
       const r = await lerFolhaGratis(files[0], passo('Lendo a folha…'));
-      if (!r.achados) throw new Error('Não consegui ler a folha. Tire a foto mais de perto, com a folha inteira e bem iluminada.');
+      if (!r.achados) { mostrarDiagnostico('a folha'); return; }
       // Folha preenchida à mão não sai na leitura gratuita: só o cabeçalho impresso.
-      aplicarFolha({ ...FOLHA_VAZIA, ...r, cidade: r.cidade || '', duvidas: r.achados < 5 ? 'confira os campos do cabeçalho.' : '' });
+      aplicarFolha({ ...FOLHA_VAZIA, ...r, cidade: r.cidade || '', duvidas: r.achados < 6 ? 'confira os campos do cabeçalho.' : '' });
       salvarAtual(); pintarTotais();
       return;
     }
@@ -480,12 +483,13 @@ async function lerFotosGratis(tipo, files) {
     for (let i = 0; i < files.length; i++) {
       const rot = files.length > 1 ? `Lendo nota ${i + 1} de ${files.length}…` : 'Lendo a nota…';
       const n = await lerNotaGratis(files[i], passo(rot));
-      const destino = n.faixa === '40' ? 'notas4050' : 'notas25';
+      const destino = n.faixa === '40' || n.faixa === '50' ? 'notas4050' : 'notas25';
       destino === 'notas25' ? n25++ : n4050++;
       st[destino].push({
         id: uid(), numero: n.numero, cliente: n.cliente, cidade: n.cidade || st.cidade, valor: n.valor,
-        faixa: n.faixa === '40' ? '' : n.faixa, conferir: true,
-        nota: n.faltou.length ? 'Leitura gratuita, confira: ' + n.faltou.join(', ') : 'Leitura gratuita: confira',
+        faixa: n.faixa, conferir: true,
+        nota: [n.faltou.length ? 'Leitura gratuita, confira: ' + n.faltou.join(', ') : 'Leitura gratuita: confira',
+          n.total && n.total !== n.valor ? `total da nota ${R$(n.total)}` : ''].filter(Boolean).join(' · '),
       });
       pintarLista(destino);
       salvarAtual(); pintarTotais();
@@ -497,6 +501,16 @@ async function lerFotosGratis(tipo, files) {
   } finally {
     carregando(false);
   }
+}
+
+// Quando a leitura gratuita não acha nada: mostra o que o leitor enxergou (para o vendedor mandar print).
+function mostrarDiagnostico(oque) {
+  const u = ultimaLeitura();
+  $('#diagTitulo').textContent = `Não consegui ler ${oque}`;
+  $('#diagImg').src = u ? u.canvas.toDataURL('image/jpeg', 0.6) : '';
+  $('#diagImg').hidden = !u;
+  $('#diagTexto').textContent = u ? (u.texto.trim() || '(nenhum texto)').slice(0, 1200) : '';
+  $('#dlgDiag').showModal();
 }
 
 function mensagemErro(e) {

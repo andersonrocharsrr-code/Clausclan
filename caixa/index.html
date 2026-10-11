@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=10">
+  <link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
   <div class="topo">
@@ -276,6 +276,17 @@
     </form>
   </dialog>
 
+  <dialog id="dlgDiag" class="dlg-caixa">
+    <form method="dialog">
+      <h2 id="diagTitulo">Não consegui ler</h2>
+      <p class="muted small">Tente de novo com a foto mais de perto, reta, inteira e com boa luz (sem sombra).
+        Se continuar, tire um print desta tela e mande para quem fez o app: é o que o leitor enxergou.</p>
+      <img id="diagImg" class="caixa-img" alt="Imagem como o leitor viu">
+      <pre id="diagTexto" class="diag-texto"></pre>
+      <div class="row-actions"><button class="btn btn--primary" value="ok">Entendi</button></div>
+    </form>
+  </dialog>
+
   <dialog id="dlgLista">
     <form method="dialog">
       <h2>Fechamentos salvos</h2>
@@ -292,6 +303,6 @@
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="app.js?v=10"></script>
+  <script type="module" src="app.js?v=15"></script>
 </body>
 </html>
