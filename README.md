@@ -199,3 +199,37 @@ Sem o segredo, o APK de teste fica em "Artifacts" na execução.
 ## Observações
 - Os dados ficam salvos **somente neste aparelho**. Faça backup de vez em quando (Perfil).
 - O app oferece orientações gerais; não é prescrição médica nem substitui um profissional.
+
+---
+
+# Fechamento de Caixa — app de caixa semanal (`caixa/`)
+
+App web instalável (PWA, sem build) que faz as contas da folha **CAIXA** e **lê fotos com IA** (Claude).
+
+Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server` na raiz e acesse
+`http://localhost:8000/caixa/`). No celular, use o menu do navegador → "Adicionar à tela inicial".
+
+## O que faz
+- **Foto das notas**: a IA lê número, cliente, cidade, valor e se a nota foi paga nos 25% ou nos 40%/50%,
+  e coloca cada uma na lista certa (dá para mover com um toque). Aceita várias fotos de uma vez e vai somando.
+  Itens lidos ficam marcados em amarelo para conferir.
+- **Foto do pepino extra**: lê nº, cidade, valor e nome da vendedora/cliente.
+- **Foto da folha de fechamento** (em branco ou preenchida à mão): identifica os campos e preenche o app.
+- Contas automáticas: **V. pep. 5%** (5% do "foi cobrar"), totais das notas, **pepino extra** e
+  **recebimento** = notas 25% + notas 40/50% + antecipados + pepino extra + pepino parcial (o valor dos pepinos fica só como registro).
+- **3 abas**: Recebimento, Despesas e Depósito.
+- **Despesas**: ajuda de custo, vale adiantado, salário (só entra na conta se for preenchido), mecânica,
+  despesas supervisor, excedido, **despesas do Pila** (refeição, salário, hotel ou outra), Outros e OBS.
+- **Depósito**: lance cada depósito que já fez (empresa/espécie, banco/TED ou Pix, com data e valor). O app mostra
+  **quanto falta depositar** = recebimento − despesas − já depositado, e recalcula sempre que entra recebimento
+  ou despesa. Na **semana 1** (semana de pagamento) o botão "Depositei tudo o que falta" lança na empresa;
+  nas outras semanas, no banco. A semana vem impressa na folha CAIXA: tire a foto da folha em branco no início
+  da semana e o app pega a semana (e cidade, nome, data, foi cobrar e qt. de notas). O app não adivinha pela data.
+  Ele confere o "foi cobrar" com o V. pep. 5% impresso e avisa se não bater. Se a folha for de outra semana,
+  o fechamento atual é salvo em ☰ e começa um novo.
+- **Valor deixado** = vendas da semana, digitado à mão (não entra nas contas do caixa).
+- Salvar fechamentos, mandar resumo pelo WhatsApp e imprimir/PDF no formato da folha.
+
+## Configurar a leitura por foto
+Toque em ⚙ e cole sua chave da API da Anthropic (console.anthropic.com). Ela fica salva só no aparelho.
+Cada foto lida é cobrada na sua conta da Anthropic. Sem chave, o app funciona normalmente digitando os valores.
