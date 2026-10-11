@@ -250,6 +250,8 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   os lançamentos do dia e o total soma todos até o dia do relatório. Notas em branco = notas
   a cobrar menos as pagas/parciais (pelo TOTAL impresso da nota). Placa, modelo, locadora, Km e supervisor
   ficam guardados para as próximas semanas. Mandar pelo WhatsApp ou copiar.
+- Listas de lançamentos (notas, pepinos, antecipadas, notas feitas, despesas, depósitos, parcial) ficam recolhidas:
+  **Ver lançamentos (N)** abre a lista (mostra também quantas estão para conferir); ao adicionar uma linha ela abre sozinha.
 - Salvar fechamentos e mandar resumo pelo WhatsApp.
 
 ## App Android (APK) — pasta `caixa-android/`

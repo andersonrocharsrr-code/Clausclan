@@ -226,14 +226,45 @@ function pintarCampos() {
   });
 }
 
+// Os lançamentos ficam recolhidos para a tela ficar limpa: "Ver lançamentos" abre a lista.
+const listasAbertas = new Set();
+function botaoVer(nome, box) {
+  let b = box.previousElementSibling;
+  if (!b?.classList.contains('ver-lanc')) {
+    b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn btn--ghost ver-lanc';
+    b.addEventListener('click', () => {
+      if (listasAbertas.has(nome)) listasAbertas.delete(nome); else listasAbertas.add(nome);
+      pintarLista(nome);
+    });
+    box.before(b);
+  }
+  return b;
+}
+function abrirLista(nome) { listasAbertas.add(nome); }
+
+function atualizarVer(nome) {
+  const box = $(`[data-lista="${nome}"]`);
+  const n = st[nome].length;
+  const aberta = listasAbertas.has(nome);
+  const conferir = st[nome].filter((x) => x.conferir).length;
+  const ver = botaoVer(nome, box);
+  ver.hidden = !n;
+  ver.setAttribute('aria-expanded', String(aberta));
+  ver.textContent = (aberta ? `▴ Esconder lançamentos (${n})` : `▾ Ver lançamentos (${n})`)
+    + (conferir ? ` · ⚠ ${conferir} para conferir` : '');
+  box.hidden = !aberta || !n;
+}
+
 function pintarLista(nome) {
   const box = $(`[data-lista="${nome}"]`);
   const cols = LISTAS[nome];
+  const n = st[nome].length;
+  const aberta = listasAbertas.has(nome);
+  atualizarVer(nome);
   box.innerHTML = '';
-  if (!st[nome].length) {
-    box.innerHTML = '<p class="vazio">Nada lançado ainda.</p>';
-    return;
-  }
+  if (!n || !aberta) return;
   st[nome].forEach((item, i) => {
     const row = document.createElement('div');
     row.className = 'item' + (item.conferir ? ' item--conferir' : '') + (cols.length === 2 ? ' item--2' : '')
@@ -264,6 +295,7 @@ function pintarLista(nome) {
       if (k === 'valor') e.target.value = item.valor ? brl(item.valor) : '';
       item.conferir = false;
       row.classList.remove('item--conferir');
+      atualizarVer(nome);
       salvarAtual(); pintarTotais();
     });
     const ok = row.querySelector('.item__ok');
@@ -323,6 +355,7 @@ $$('[data-f]').forEach((el) => {
 
 $$('[data-pila]').forEach((b) => b.addEventListener('click', () => {
   st.pila.push({ id: uid(), tipo: b.dataset.pila, valor: 0 });
+  abrirLista('pila');
   salvarAtual(); pintarLista('pila');
   const rows = $$('[data-lista="pila"] .item');
   rows[rows.length - 1]?.querySelector(b.dataset.pila ? '[data-k="valor"]' : 'input')?.focus();
@@ -354,6 +387,7 @@ $$('[data-ir]').forEach((b) => b.addEventListener('click', () => abrirAba(b.data
 
 $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
   const nome = b.dataset.add;
+  abrirLista(nome); // a linha nova aparece aberta para digitar
   st[nome].push(nome === 'feitas' ? { id: uid(), data: hoje(), ab: '', rp: '', valor: 0 }
     : { id: uid(), dia: hoje(), valor: 0, cidade: nome.startsWith('notas') || nome === 'extras' ? st.cidade : undefined });
   salvarAtual(); pintarLista(nome);

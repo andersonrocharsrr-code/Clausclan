@@ -182,3 +182,5 @@ label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--acc
 .item--feitas .item__data{grid-column:1/-1}
 .item--devendo{grid-template-columns:1fr 1.6fr}
 .item--devendo .item__data{grid-column:1/-1}
+/* "Ver lançamentos": as listas ficam recolhidas até tocar. */
+.ver-lanc{width:100%;justify-content:flex-start;margin-top:8px;font-size:14px;color:var(--accent);border-style:dashed}
