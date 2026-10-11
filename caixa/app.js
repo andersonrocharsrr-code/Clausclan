@@ -44,6 +44,7 @@ function numero(txt) {
 
 function toast(msg) {
   const t = $('#toast');
+  (document.querySelector('dialog[open]') || document.body).appendChild(t); // visível também com janela aberta
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(toast.t);
@@ -904,16 +905,18 @@ function dadosCaixa() {
   ];
   // Na folha o OBS é escrito "4.000,00 (Fernando)".
   const obs = st.obs.filter((o) => o.valor).map((o) => `${brl(o.valor)}${o.desc ? ` (${o.desc})` : ''}`);
-  if (c.falta > 0) obs.push(`Falta depositar ${brl(c.falta)}`);
-  if (c.falta < 0) obs.push(`Depositou a mais ${brl(-c.falta)}`);
+  // Depósito na folha: o TOTAL a depositar (já depositado + o que falta), num campo só:
+  // semana de pagamento → Depto. empresa espécie; outras semanas → Depto. banco/TED. Pix é só controle no app.
+  const totalDep = c.aDepositar > 0 ? c.aDepositar : 0;
+  const naEmpresa = tipoDeposito(st) === 'empresa';
   return {
     nome: st.nome, cidade: st.cidade, data: d, semana: st.semana, foiCobrar: vazioOu(st.foiCobrar),
     qtNotas: st.qtNotas, vPep5: vazioOu(c.vPep5),
     antecipados: vazioOu(st.antecipados), qtNotasDeixadas: st.qtNotasDeixadas, pinos: st.pinos,
     valorPepinos: vazioOu(st.valorPepinos), pepinoParcial: vazioOu(st.pepinoParcial),
     notas25: vazioOu(c.notas25), notas4050: vazioOu(c.notas4050), pepinoExtra: vazioOu(c.extras),
-    recebimento: vazioOu(c.recebimento), depEspecie: vazioOu(c.depEspecie), depPix: vazioOu(c.depPix),
-    depBanco: vazioOu(c.depBanco), vale: vazioOu(st.vale), ajuda: vazioOu(st.ajuda), mecanica: vazioOu(st.mecanica),
+    recebimento: vazioOu(c.recebimento), depEspecie: naEmpresa ? vazioOu(totalDep) : '', depPix: '',
+    depBanco: naEmpresa ? '' : vazioOu(totalDep), vale: vazioOu(st.vale), ajuda: vazioOu(st.ajuda), mecanica: vazioOu(st.mecanica),
     despSupervisor: vazioOu(st.despSupervisor), excedido: vazioOu(st.excedido), valorDeixado: vazioOu(st.valorDeixado),
     assinatura: st.assinatura, outros, obs,
     extras: st.extras.map((x) => ({ numero: x.numero || '', cidade: x.cidade || '', valor: vazioOu(x.valor), vendedora: x.vendedora || '' })),
@@ -974,6 +977,16 @@ $('#btnCaixaEnviar').addEventListener('click', async () => {
   }
 });
 
+// Aviso rápido e discreto no meio da tela: "✓ Salva".
+function avisoSalvo() {
+  const el = $('#salvo');
+  // Janela aberta (showModal) fica numa camada acima de tudo: o aviso precisa estar dentro dela para aparecer.
+  (document.querySelector('dialog[open]') || document.body).appendChild(el);
+  el.classList.remove('show');
+  void el.offsetWidth; // reinicia a animação se salvar duas vezes seguidas
+  el.classList.add('show');
+}
+
 // Salvar a imagem da folha: no app Android vai para a galeria (pasta Imagens/Caixa); no site, baixa o arquivo.
 $('#btnCaixaGaleria').addEventListener('click', async () => {
   if (!imagemCaixa) return;
@@ -981,7 +994,7 @@ $('#btnCaixaGaleria').addEventListener('click', async () => {
   try {
     if (NATIVO) {
       const r = await plugin('CaixaNative').salvarNaGaleria({ data: await blobBase64(imagemCaixa), nome });
-      toast(`Folha salva na galeria (${r?.pasta || 'Imagens/Caixa'}).`);
+      avisoSalvo();
       return;
     }
     const a = document.createElement('a');
@@ -989,7 +1002,7 @@ $('#btnCaixaGaleria').addEventListener('click', async () => {
     a.download = nome;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-    toast('Imagem baixada (pasta Downloads).');
+    avisoSalvo();
   } catch (e) {
     toast('Não deu para salvar: ' + (e?.message || 'erro'));
   }

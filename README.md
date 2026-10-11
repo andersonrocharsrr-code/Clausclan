@@ -226,6 +226,8 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
 - **Depósito**: lance cada depósito que fez — escolha onde (empresa/espécie, banco/TED ou Pix; vem marcado pela
   semana: semana 1 = empresa), digite o valor e toque em **Lançar depósito**. Nada é lançado sozinho. O app mostra
   **quanto falta depositar** = recebimento − despesas − já depositado, recalculado sempre que entra recebimento ou despesa.
+  O Pix é só controle no app. Na folha gerada vai o **total a depositar** num campo só: Depto. empresa espécie na
+  semana de pagamento, Depto. banco/TED nas outras.
   A semana vem impressa na folha CAIXA: tire a foto da folha em branco no início da semana e o app pega a semana (e
   cidade, nome, data, foi cobrar e qt. de notas). O app não adivinha pela data. Ele confere o "foi cobrar" com o
   V. pep. 5% impresso; se a folha for de outra semana, o fechamento atual é salvo em ☰ e começa um novo.
