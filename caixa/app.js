@@ -56,7 +56,7 @@ const MONEY = ['foiCobrar', 'antecipados', 'valorPepinos', 'pepinoParcial',
 // Despesas do vendedor (campo em branco vale 0, então o salário só entra quando é preenchido).
 const DESPESAS = ['ajuda', 'vale', 'salario', 'mecanica', 'despSupervisor', 'excedido'];
 const ONDE = { empresa: 'Depto. empresa espécie', banco: 'Depto. banco/TED/trans.', pix: 'Depto. Pix' };
-const ONDE_CURTO = { empresa: 'Empresa (espécie)', banco: 'Banco/TED', pix: 'Pix' };
+const ONDE_CURTO = { empresa: 'Empresa', banco: 'Banco/TED', pix: 'Pix' };
 const NOMES = { ajuda: 'Ajuda de custo', vale: 'Vale adiantado', salario: 'Salário', mecanica: 'Mecânica',
   despSupervisor: 'Despesas supervisor', excedido: 'Excedido da despesa' };
 const LISTAS = {
@@ -97,6 +97,7 @@ function normalizar(s) {
   return n;
 }
 
+let depOndeEscolhido = false;
 let st = normalizar(ls.get(KEY_ATUAL, null) || novo());
 
 // Semana de pagamento = 1ª semana do mês (pela "Semana" da folha, ou pela data se a semana estiver em branco).
@@ -155,8 +156,8 @@ function pintarTotais() {
           : c.aDepositar > 0 ? '✓ Tudo depositado' : '';
     el.className = 'status ' + (c.falta === 0 && c.aDepositar > 0 ? 'pos' : 'neg');
   });
-  $('#btnDepFalta').hidden = !(c.falta > 0);
-  $('#btnDepFalta').textContent = `✓ Depositei os ${R$(c.falta)} que faltam (${tipoDeposito(st) === 'empresa' ? 'empresa' : 'banco'})`;
+  // Sugere onde depositar pela semana, até o vendedor escolher.
+  if (!depOndeEscolhido) $$('input[name="depOnde"]').forEach((r) => { r.checked = r.value === tipoDeposito(st); });
   const pag = semanaPagamento(st);
   $('#depDica').textContent = pag === null
     ? 'Semana não identificada: tire a foto da folha em branco (aba Recebimento) ou preencha a Semana.'
@@ -223,6 +224,7 @@ function esc(s) {
 }
 
 function pintarTudo() {
+  depOndeEscolhido = false;
   pintarCampos();
   Object.keys(LISTAS).forEach(pintarLista);
   pintarTotais();
@@ -247,17 +249,18 @@ $$('[data-pila]').forEach((b) => b.addEventListener('click', () => {
   rows[rows.length - 1]?.querySelector(b.dataset.pila ? '[data-k="valor"]' : 'input')?.focus();
 }));
 
-function lancarDeposito(onde, valor = 0) {
-  st.depositos.push({ id: uid(), data: hoje(), onde, valor });
+// Depósito só entra quando o vendedor lança: onde + valor + data. Nada é lançado sozinho.
+$$('input[name="depOnde"]').forEach((r) => r.addEventListener('change', () => { depOndeEscolhido = true; }));
+$('#depData').value = hoje();
+$('#btnLancarDep').addEventListener('click', () => {
+  const valor = numero($('#depValor').value);
+  if (!(valor > 0)) { toast('Digite o valor que você depositou.'); $('#depValor').focus(); return; }
+  const onde = $('input[name="depOnde"]:checked')?.value || tipoDeposito(st);
+  st.depositos.push({ id: uid(), data: $('#depData').value || hoje(), onde, valor });
+  $('#depValor').value = '';
   salvarAtual(); pintarLista('depositos'); pintarTotais();
-}
-$$('[data-dep]').forEach((b) => b.addEventListener('click', () => {
-  lancarDeposito(b.dataset.dep);
-  $$('[data-lista="depositos"] .item').pop()?.querySelector('[data-k="valor"]')?.focus();
-}));
-$('#btnDepFalta').addEventListener('click', () => {
   const { falta } = calcular();
-  if (falta > 0) lancarDeposito(tipoDeposito(st), falta);
+  toast(`Depósito de ${R$(valor)} lançado (${ONDE_CURTO[onde]}).` + (falta > 0 ? ` Falta depositar ${R$(falta)}.` : falta === 0 ? ' Tudo depositado ✓' : ` Passou ${R$(-falta)}.`));
 });
 
 /* ---------- abas ---------- */
