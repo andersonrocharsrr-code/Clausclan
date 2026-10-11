@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Azul do ícone do app (icon.svg). -->
-    <color name="caixa_bg">#1D4ED8</color>
+    <!-- Céu da introdução do foguete: fundo da abertura do Android e do app enquanto carrega. -->
+    <color name="caixa_bg">#060A18</color>
 </resources>
