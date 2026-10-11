@@ -213,7 +213,10 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
 - **Foto das notas**: o app lê número, cliente, cidade, valor e se a nota foi paga nos 25% ou nos 40%/50%,
   e coloca cada uma na lista certa (dá para mover com um toque). Aceita várias fotos de uma vez e vai somando.
   Itens lidos ficam marcados em amarelo para conferir.
-- **Foto do pepino extra**: lê nº, cidade, valor e nome da vendedora/cliente.
+- **Pepino extra** (nota impressa, 2 fotos): a 1ª do **topo** (nº, cidade, cliente) cria a nota; a 2ª do **final**
+  lê cada pagamento com a data e lança **só o que foi pago na semana do caixa** (segunda a domingo, pela data da folha).
+  Ex.: na folha de 05/10, um pagamento de 09/10 entra e o de 12/10 fica para a outra semana (aviso na nota).
+  Datas com o zero cortado lido como 8/9/6 ("88/10") são acertadas pelo calendário.
 - **Foto da folha de fechamento** (em branco ou preenchida à mão): identifica os campos e preenche o app.
 - Contas automáticas: **V. pep. 5%** (5% do "foi cobrar"), totais das notas, **pepino extra** e
   **recebimento** = notas 25% + notas 40/50% + antecipados + pepino extra + pepino parcial (o valor dos pepinos fica só como registro).

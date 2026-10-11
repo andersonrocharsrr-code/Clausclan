@@ -1,7 +1,7 @@
 /* Fechamento de Caixa — faz as contas da folha de caixa e lê notas/folhas pela foto (IA Claude). */
 import Anthropic from './vendor/anthropic.js';
 import { desenharCaixa } from './folha.js?v=9';
-import { lerNotaGratis, lerFolhaGratis, ultimaLeitura } from './leitor.js?v=16';
+import { lerNotaGratis, lerFolhaGratis, lerPepinoGratis, semanaDe, ultimaLeitura } from './leitor.js?v=20';
 
 const KEY_ATUAL = 'caixa.atual';
 const KEY_SALVOS = 'caixa.salvos';
@@ -247,10 +247,20 @@ function pintarTudo() {
 }
 
 /* ---------- eventos dos campos ---------- */
+// Data da folha mudou: o pepino extra é recalculado pela nova semana (só os pagamentos de segunda a domingo).
+function recalcularPepinos() {
+  const { ini, fim } = semanaDe(st.data);
+  st.extras.forEach((x) => {
+    if (x.pagamentos?.length) x.valor = arred(x.pagamentos.filter((p) => p.data >= ini && p.data <= fim).reduce((t, p) => t + p.valor, 0));
+  });
+  pintarLista('extras');
+}
+
 $$('[data-f]').forEach((el) => {
   el.addEventListener('input', () => {
     const k = el.dataset.f;
     st[k] = MONEY.includes(k) ? numero(el.value) : el.value;
+    if (k === 'data') recalcularPepinos();
     salvarAtual(); pintarTotais();
   });
   if (el.hasAttribute('data-money')) {
@@ -375,9 +385,27 @@ const ITEM_EXTRA = {
   },
 };
 
+// Pepino extra (nota impressa): a IA devolve também cada pagamento com a data; o app soma só os da semana.
+const ITEM_PEPINO = {
+  type: 'object', additionalProperties: false,
+  required: ['numero', 'cidade', 'valor', 'vendedora', 'pagamentos', 'duvida'],
+  properties: {
+    numero: { type: 'string' }, cidade: { type: 'string' },
+    valor: { type: 'number', description: '"Recebi o valor de R$…" se aparecer; senão 0' },
+    vendedora: { type: 'string', description: 'Nome da cliente (linha antes do CPF)' },
+    pagamentos: {
+      type: 'array', description: 'Cada linha da seção PAGAMENTOS',
+      items: {
+        type: 'object', additionalProperties: false, required: ['data', 'valor'],
+        properties: { data: { type: 'string', description: 'AAAA-MM-DD' }, valor: { type: 'number' } },
+      },
+    },
+    duvida: { type: 'string' },
+  },
+};
 const SCHEMA_EXTRAS = {
   type: 'object', additionalProperties: false, required: ['itens'],
-  properties: { itens: { type: 'array', items: ITEM_EXTRA } },
+  properties: { itens: { type: 'array', items: ITEM_PEPINO } },
 };
 
 const linhaDesc = {
@@ -433,8 +461,12 @@ cliente, cidade (como está escrita, ex.: RIO BRANCO, PORTO ACRE, CZS, BRASILEIA
   },
   extras: {
     schema: SCHEMA_EXTRAS,
-    texto: `As fotos são de "pepino extra" (cobranças extras). Para cada lançamento: número, cidade, valor e o nome
-da vendedora/cliente. Não repita o mesmo lançamento se ele aparecer em duas fotos.`,
+    texto: `As fotos são de "pepino extra": notas impressas (cupom térmico) iguais às outras notas da empresa.
+Cada foto pode ser só o TOPO da nota (com "N. 117613", nome da cliente antes do CPF, "Cidade:XXX UF"), só o FINAL
+(seção PAGAMENTOS com linhas "DD/MM/AA valor", "Total de pagamentos", "Recebi o valor de R$…") ou a nota inteira.
+Para cada foto devolva um item: número, cidade, nome da cliente em "vendedora", "valor" = "Recebi o valor" (0 se não
+aparecer) e em "pagamentos" cada linha de pagamento com a data (AAAA-MM-DD) e o valor. Campo que não aparece na foto
+fica vazio/0/lista vazia. A impressora usa zero cortado (Ø): "88/10/26" é 08/10/2026 e "616,08" é 616,00.`,
   },
   folha: {
     schema: SCHEMA_FOLHA,
@@ -506,10 +538,6 @@ const FOLHA_VAZIA = {
 };
 
 async function lerFotosGratis(tipo, files) {
-  if (tipo === 'extras') {
-    toast('O pepino extra é escrito à mão e a leitura gratuita não lê letra de mão. Toque em "+ Digitar", ou ligue a IA em ⚙.');
-    return;
-  }
   const passo = (txt) => (m) => {
     const tent = m.tentativa > 1 ? ` (tentativa ${m.tentativa} de ${m.total})` : '';
     if (m.status === 'recognizing text') $('#carregandoTxt').textContent = `${txt} ${Math.round(m.progress * 100)}%${tent}`;
@@ -523,6 +551,15 @@ async function lerFotosGratis(tipo, files) {
       // Folha preenchida à mão não sai na leitura gratuita: só o cabeçalho impresso.
       aplicarFolha({ ...FOLHA_VAZIA, ...r, cidade: r.cidade || '', duvidas: r.achados < 6 ? 'confira os campos do cabeçalho.' : '' });
       salvarAtual(); pintarTotais();
+      return;
+    }
+    if (tipo === 'extras') {
+      const msgs = [];
+      for (let i = 0; i < files.length; i++) {
+        const rot = files.length > 1 ? `Lendo foto ${i + 1} de ${files.length}…` : 'Lendo o pepino extra…';
+        msgs.push(aplicarPepino(await lerPepinoGratis(files[i], passo(rot), semanaDe(st.data))));
+      }
+      toast(msgs.join(' '));
       return;
     }
     let n25 = 0, n4050 = 0, duvidas = 0;
@@ -589,14 +626,68 @@ function aplicar(tipo, r) {
       ? `${r.notas.length} nota(s): ${n25} em 25%, ${n4050} em 40/50%.` + (semFaixa ? ` ${semFaixa} sem faixa, confira!` : ' Confira!')
       : 'Nenhuma nota encontrada na foto.');
   } else if (tipo === 'extras') {
-    const novos = r.itens.map(itemExtra);
-    st.extras.push(...novos);
-    pintarLista('extras');
-    toast(novos.length ? `${novos.length} pepino(s) extra lido(s). Confira!` : 'Nada encontrado na foto.');
+    const msgs = r.itens.map((n) => aplicarPepino({
+      numero: n.numero, cliente: n.vendedora, cidade: n.cidade, recebi: n.valor,
+      pagamentos: n.pagamentos || [], topo: !!(n.numero || n.vendedora || n.cidade), fim: !!(n.pagamentos?.length || n.valor),
+    }));
+    toast(msgs.length ? msgs.join(' ') : 'Nada encontrado na foto.');
   } else if (tipo === 'folha') {
     aplicarFolha(r);
   }
   salvarAtual(); pintarTotais();
+}
+
+/* ---------- pepino extra: 2 fotos (topo + final) e só o que foi pago na semana ---------- */
+const dataBR = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : '');
+
+// Recebe a leitura de uma foto (topo, final ou a nota inteira) e junta na nota certa:
+// foto do topo cria a nota (nº, cidade, cliente) esperando o final; foto do final completa a última nota que espera.
+function aplicarPepino(r) {
+  const semana = semanaDe(st.data);
+  let item = null, msg = '';
+  if (r.fim && !r.topo) item = [...st.extras].reverse().find((x) => x.esperaFinal);
+  if (!item) {
+    item = { id: uid(), numero: '', cidade: '', vendedora: '', valor: 0, conferir: true };
+    st.extras.push(item);
+  }
+  if (r.topo) {
+    item.temTopo = true;
+    item.numero = item.numero || r.numero;
+    item.vendedora = item.vendedora || r.cliente;
+    if (!item.cidade) { item.cidade = r.cidade || st.cidade; item.cidadeDaFolha = !r.cidade; }
+  }
+  if (r.fim) {
+    item.esperaFinal = false;
+    const pagos = r.pagamentos || [];
+    const daSemana = pagos.filter((p) => p.data >= semana.ini && p.data <= semana.fim);
+    const fora = pagos.filter((p) => !daSemana.includes(p));
+    item.pagamentos = pagos;
+    item.valor = arred(daSemana.reduce((t, p) => t + p.valor, 0));
+    const avisos = [];
+    if (!pagos.length && r.recebi) {
+      item.valor = arred(r.recebi);
+      avisos.push('não li as datas dos pagamentos: usei o "Recebi o valor", confira se é tudo desta semana');
+    }
+    if (fora.length) avisos.push('fora desta semana, não lançado: ' + fora.map((p) => `${dataBR(p.data)} ${R$(p.valor)}`).join(', '));
+    pagos.filter((p) => p.lida).forEach((p) => avisos.push(`data lida "${p.lida}", considerei ${dataBR(p.data)}`));
+    if (!item.valor && !avisos.length) avisos.push('nenhum valor lido');
+    if (!item.temTopo) avisos.push('falta a foto do topo (nº, cidade e cliente)');
+    else {
+      const falta = [!item.numero && 'número', !item.vendedora && 'cliente'].filter(Boolean);
+      if (falta.length) avisos.push(`não li ${falta.join(' e ')} no topo: digite`);
+      if (item.cidadeDaFolha) avisos.push('cidade não lida, usei a da folha');
+    }
+    item.nota = avisos.join(' · ');
+    item.conferir = avisos.length > 0;
+    msg = `Pepino${item.numero ? ` nº ${item.numero}` : ''}${item.vendedora ? ` (${item.vendedora})` : ''}: ${R$(item.valor)} desta semana.` + (fora.length ? ` ${fora.length} pagamento(s) de outra semana ficaram de fora.` : '');
+  } else {
+    item.esperaFinal = true;
+    item.conferir = true;
+    item.nota = 'falta a foto do final (pagamentos)';
+    msg = `Topo lido${item.numero ? ` (nº ${item.numero})` : ''}${item.vendedora ? `: ${item.vendedora}` : ''}. Agora tire a foto do FINAL da nota.`;
+  }
+  salvarAtual(); pintarLista('extras'); pintarTotais();
+  return msg;
 }
 
 const itemExtra = (n) => ({

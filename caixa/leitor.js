@@ -120,17 +120,22 @@ export function entenderNota(texto) {
   // Número: o "N. 000001" do topo (os números de endereço, "N.876", têm menos dígitos).
   const iAcerto = LIN.findIndex((l) => /DATA DO ACERTO/.test(l));
   const topo = (iAcerto > 0 ? LIN.slice(0, iAcerto) : LIN.slice(0, 6)).join('\n');
-  const mNum = topo.match(/\bN\s*[.º°:]?\s*(\d{5,7})\b/);
+  const mNum = topo.match(/\bN\s*[.,º°:]?\s*(\d{5,7})\b/);
   if (mNum) r.numero = mNum[1];
 
-  const iCpf = LIN.findIndex((l) => /\bC[PF]F\s*[:;.]/.test(l) || /^.{0,3}PF\s*[:;]\s*\d/.test(l));
+  // Linha do CPF: pela palavra, ou pelo formato 000.000.000-00 (o leitor às vezes perde o "CPF").
+  const iCpf = LIN.findIndex((l) => /\bC[PF]F\s*[:;.]/.test(l) || /^.{0,3}PF\s*[:;]\s*\d/.test(l)
+    || /\d{3}\s*[.,]\s*\d{3}\s*[.,]\s*\d{3}\s*-\s*\d{2}/.test(l));
   // Cliente: a linha logo acima do CPF que pareça um nome (2+ palavras em maiúsculas); sujeira lida no meio é pulada.
   for (let i = iCpf - 1; i >= Math.max(0, iCpf - 3) && !r.cliente; i--) {
     const m = linhas[i].match(/[A-ZÀ-Ú]{2,}(?:\s+[A-ZÀ-Ú]{2,})+/);
+    if (m && /CPF|END|REF|BAIRRO/.test(m[0])) continue;
     if (m) r.cliente = m[0].trim();
   }
 
-  const mCid = tudo.match(/CIDADE\s*[:;.,]?\s*([A-Z0-9 .'-]+?)\s+UF\b/);
+  // "Cidade:PORTO ACRE UF:AC" — tolera o rótulo meio apagado ("nydade:") e o "UF" perdido.
+  const mCid = tudo.match(/CIDADE\s*[:;.,]?\s*([A-Z0-9 .'-]+?)\s+UF\b/)
+    || tudo.match(/(?:C?[I1L]?D?ADE|[A-Z]{1,3}DADE)\s*[:;.,]\s*([A-Z][A-Z .'-]{2,}?)\s*(?:\bUF\b|[)|\]]|$)/m);
   if (mCid) r.cidade = mCid[1].replace(/\s+/g, ' ').trim();
 
   const depois = iAcerto >= 0 ? LIN.slice(iAcerto, iAcerto + 3).join(' ') : tudo;
@@ -232,7 +237,87 @@ export function entenderFolha(texto) {
   return r;
 }
 
+/* ---------- pepino extra ---------- */
+// Também é nota impressa, fotografada em 2 partes: o TOPO (número, cliente, cidade) e o FINAL (PAGAMENTOS, cada um
+// com data e valor). A cliente pode pagar uma parte no sábado e o resto na terça seguinte, por isso o app guarda
+// cada pagamento com a data e só lança o que caiu na semana do caixa.
+// Dígitos que a impressora/leitor confundem com o zero cortado (Ø): 0, 6, 8 e 9.
+const variantes = (dd) => {
+  const out = new Set([dd]);
+  const pos = [...dd].map((c, i) => (/[0689]/.test(c) ? i : -1)).filter((i) => i >= 0);
+  for (let mask = 1; mask < 1 << pos.length; mask++) {
+    let v = [...dd];
+    pos.forEach((p, b) => { if (mask & (1 << b)) v[p] = '0'; });
+    out.add(v.join(''));
+  }
+  return [...out];
+};
+const dataValida = (a, m, d) => { const x = new Date(a, m - 1, d); return x.getMonth() === m - 1 && x.getDate() === d; };
+const diasEntre = (a, b) => Math.round((new Date(a + 'T12:00') - new Date(b + 'T12:00')) / 86400000);
+
+// Escolhe a data certa entre a lida e as versões com "zero cortado" corrigido: a que cai na semana do caixa
+// (ou a mais perto dela). Ex.: "88/10/26" → 08/10/2026.
+function corrigirData(dd, mm, ano, semana) {
+  const iso = (d, m) => `${ano}-${m}-${d}`;
+  const cands = [];
+  for (const d of variantes(dd)) for (const m of variantes(mm)) {
+    if (dataValida(ano, Number(m), Number(d))) cands.push(iso(d, m));
+  }
+  if (!cands.length) return null;
+  if (!semana) return cands[0];
+  const dist = (x) => (x < semana.ini ? diasEntre(semana.ini, x) : x > semana.fim ? diasEntre(x, semana.fim) : 0);
+  const original = iso(dd, mm);
+  const ord = cands.sort((a, b) => dist(a) - dist(b) || (a === original ? -1 : b === original ? 1 : 0));
+  return ord[0];
+}
+
+export function entenderPepino(texto, semana) {
+  const nota = entenderNota(texto);
+  const LIN = texto.split('\n').map((l) => semAcento(l).toUpperCase().trim()).filter(Boolean);
+  const tudo = LIN.join('\n');
+  const r = {
+    numero: nota.numero, cliente: nota.cliente, cidade: nota.cidade,
+    recebi: nota.valor, pagamentos: [],
+    topo: /REPRESENTANTE|DATA DO ACERTO|C[PF]F\s*[:;.]|BAIRRO|CIDADE\s*[:;]/.test(tudo),
+    // ("Ao efetuar pagamento", no singular, está no topo de toda nota: não conta.)
+    fim: /PAGAMENT[O0]S|RECEB[I1L]\s*[O0]\s*VAL|QUITAD/.test(tudo),
+  };
+  // Linhas de pagamento: "08/10/26 616,00" ou "09/10/2026 R$100,00" (entre "PAGAMENTOS" e "Total de pagamentos").
+  const iIni = LIN.findIndex((l) => /^.{0,3}PAGAMENT[O0]S\b/.test(l) && !/T[O0]TAL/.test(l));
+  const iFim = LIN.findIndex((l, i) => i > iIni && /T[O0]TAL DE PAGAMENT|RECEB[I1L]/.test(l));
+  const faixa = LIN.slice(iIni >= 0 ? iIni : 0, iFim > iIni ? iFim : LIN.length);
+  for (const l of faixa) {
+    const m = l.match(/(\d{2})\s*[\/.-]\s*(\d{2})\s*[\/.-]\s*(\d{2,4})\s+(?:R\s*[$5S]\s*)?(\d{1,3}(?:[.\s]\d{3})+|\d+)\s*[,.]\s*([0-9A-Z]{0,2})/);
+    if (!m) continue;
+    let ano = m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3]);
+    if (Math.abs(ano - new Date().getFullYear()) > 1) ano = new Date().getFullYear(); // "2028" no lugar de "2026"
+    const data = corrigirData(m[1], m[2], ano, semana);
+    if (!data) continue;
+    let v = Number(m[4].replace(/\D/g, '')) + Number((m[5] + '00').slice(0, 2).replace(/[^0-9]/g, '0')) / 100;
+    const cent = Math.round((v % 1) * 100);
+    if (cent && /^[0689]{2}$/.test(String(cent).padStart(2, '0'))) v = Math.trunc(v); // zero cortado da impressora
+    const lida = `${m[1]}/${m[2]}`;
+    if (v > 0) r.pagamentos.push({ data, valor: v, ...(lida !== `${data.slice(8, 10)}/${data.slice(5, 7)}` ? { lida } : {}) });
+  }
+  return r;
+}
+
+// Semana do caixa: de segunda a domingo, contando da data da folha (a folha é datada na segunda-feira).
+export function semanaDe(dataISO) {
+  const d = dataISO ? new Date(dataISO + 'T12:00') : new Date();
+  const seg = new Date(d);
+  seg.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  const dom = new Date(seg);
+  dom.setDate(seg.getDate() + 6);
+  const iso = (x) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+  return { ini: iso(seg), fim: iso(dom) };
+}
+
 /* ---------- o que o app chama ---------- */
+export async function lerPepinoGratis(file, aoProgredir, semana) {
+  return entenderPepino(await lerTexto(file, 0, aoProgredir), semana);
+}
+
 export async function lerNotaGratis(file, aoProgredir) {
   return entenderNota(await lerTexto(file, 0, aoProgredir));
 }
