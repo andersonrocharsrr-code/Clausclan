@@ -588,6 +588,35 @@ $('#btnLista').addEventListener('click', () => {
   $('#dlgLista').showModal();
 });
 
+/* ---------- app Android (APK feito com Capacitor, pasta caixa-android/) ---------- */
+// No APK o app roda num WebView sem o Chrome: compartilhar, salvar arquivo e o botão "voltar" usam os plugins.
+const Cap = window.Capacitor;
+const NATIVO = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
+const plugin = (nome) => (NATIVO ? Cap.Plugins?.[nome] || Cap.registerPlugin?.(nome) : null);
+
+const blobBase64 = (blob) => new Promise((ok, erro) => {
+  const r = new FileReader();
+  r.onload = () => ok(String(r.result).split(',')[1]);
+  r.onerror = erro;
+  r.readAsDataURL(blob);
+});
+async function compartilharArquivo(blob, nome) {
+  const { uri } = await plugin('Filesystem').writeFile({ path: nome, data: await blobBase64(blob), directory: 'CACHE' });
+  await plugin('Share').share({ title: nome, files: [uri], dialogTitle: 'Mandar ou salvar a folha' });
+}
+
+if (NATIVO) {
+  document.documentElement.classList.add('is-native');
+  $('#btnImprimir').textContent = '🖼 Folha em imagem';
+  // Voltar do Android: fecha a janela aberta, depois volta para a 1ª aba, depois minimiza o app.
+  plugin('App')?.addListener('backButton', () => {
+    const aberta = [...document.querySelectorAll('dialog[open]')].pop();
+    if (aberta) { aberta.close(); return; }
+    if ($('[data-tab="receb"]').hidden) { abrirAba('receb'); return; }
+    plugin('App').minimizeApp();
+  });
+}
+
 /* ---------- resumo para WhatsApp ---------- */
 function resumo() {
   const c = calcular();
@@ -619,6 +648,10 @@ function resumo() {
 
 $('#btnWhats').addEventListener('click', async () => {
   const txt = resumo();
+  if (NATIVO) {
+    try { await plugin('Share').share({ text: txt, dialogTitle: 'Mandar resumo' }); } catch { /* cancelou */ }
+    return;
+  }
   if (navigator.share) {
     try { await navigator.share({ text: txt }); return; } catch (e) { if (e.name === 'AbortError') return; }
   }
@@ -626,40 +659,97 @@ $('#btnWhats').addEventListener('click', async () => {
 });
 
 /* ---------- impressão no formato da folha ---------- */
-function montarFolha() {
+// Conteúdo da folha (usado na impressão e na imagem da folha): linhas [rótulo, valor, negrito] e tabelas.
+function dadosFolha() {
   const c = calcular();
   const d = st.data ? new Date(st.data + 'T12:00').toLocaleDateString('pt-BR') : '';
-  const lin = (rot, v) => `<tr><th>${rot}</th><td>${v}</td></tr>`;
-  const tab = (titulo, itens, cols) => `<h3>${titulo}</h3><table class="folha__lista"><tr>${cols.map(([, r]) => `<th>${r}</th>`).join('')}</tr>
-    ${itens.map((i) => `<tr>${cols.map(([k]) => `<td>${k === 'valor' ? brl(i.valor) : esc(i[k] || '')}</td>`).join('')}</tr>`).join('')}</table>`;
-  $('#folha').innerHTML = `
-    <h2>CAIXA — NOME: ${esc(st.nome)}</h2>
-    <table>
-      ${lin('Cidade', esc(st.cidade))}${lin('Data', d)}${lin('Semana', esc(st.semana))}
-      ${lin('Foi cobrar', R$(st.foiCobrar) + ' · Qt. de notas: ' + esc(st.qtNotas))}
-      ${lin('Antecipados', R$(st.antecipados))}${lin('V. pep. 5%', R$(c.vPep5))}
-      ${lin('Qt. notas deixadas', esc(st.qtNotasDeixadas))}${lin('Nº de pinos', esc(st.pinos))}
-      ${lin('Valor dos pepinos', R$(st.valorPepinos))}${lin('Pepino parcial', R$(st.pepinoParcial))}
-      ${lin('Pepino extra', R$(c.extras))}
-      ${lin('Notas 25%', R$(c.notas25))}${lin('Notas 40% e 50%', R$(c.notas4050))}
-      ${lin('<b>Recebimento</b>', '<b>' + R$(c.recebimento) + '</b>')}
-      ${lin('Depto. empresa espécie', R$(c.depEspecie))}${lin('Depto. Pix', R$(c.depPix))}
-      ${lin('Depto. banco/TED/trans.', R$(c.depBanco))}
-      ${c.falta ? lin('<b>Falta depositar</b>', '<b>' + R$(c.falta) + '</b>') : ''}
-      ${DESPESAS.map((k) => (k === 'salario' && !st.salario ? '' : lin(NOMES[k], R$(st[k])))).join('')}
-      ${st.pila.map((o) => lin('Despesas do Pila — ' + esc(o.tipo || ''), R$(o.valor))).join('')}
-      ${st.outros.map((o) => lin('Outros', esc(o.desc || '') + ' ' + R$(o.valor))).join('')}
-      ${st.obs.map((o) => lin('OBS', esc(o.desc || '') + ' ' + R$(o.valor))).join('')}
-      ${lin('<b>Valor deixado (vendas da semana)</b>', '<b>' + R$(st.valorDeixado) + '</b>')}
-      ${lin('Assinatura vendedor', esc(st.assinatura))}
-    </table>
-    ${st.extras.length ? tab('Pepino extra', st.extras, LISTAS.extras) : ''}
-    ${st.notas25.length ? tab('Notas 25%', st.notas25, LISTAS.notas25) : ''}
-    ${st.notas4050.length ? tab('Notas 40% e 50%', st.notas4050, LISTAS.notas4050) : ''}`;
+  const L = (rot, v, b = false) => [rot, String(v ?? ''), b];
+  const linhas = [
+    L('Cidade', st.cidade), L('Data', d), L('Semana', st.semana),
+    L('Foi cobrar', R$(st.foiCobrar) + ' · Qt. de notas: ' + (st.qtNotas || '')),
+    L('Antecipados', R$(st.antecipados)), L('V. pep. 5%', R$(c.vPep5)),
+    L('Qt. notas deixadas', st.qtNotasDeixadas), L('Nº de pinos', st.pinos),
+    L('Valor dos pepinos', R$(st.valorPepinos)), L('Pepino parcial', R$(st.pepinoParcial)),
+    L('Pepino extra', R$(c.extras)),
+    L('Notas 25%', R$(c.notas25)), L('Notas 40% e 50%', R$(c.notas4050)),
+    L('Recebimento', R$(c.recebimento), true),
+    L('Depto. empresa espécie', R$(c.depEspecie)), L('Depto. Pix', R$(c.depPix)),
+    L('Depto. banco/TED/trans.', R$(c.depBanco)),
+    ...(c.falta ? [L('Falta depositar', R$(c.falta), true)] : []),
+    ...DESPESAS.filter((k) => k !== 'salario' || st.salario).map((k) => L(NOMES[k], R$(st[k]))),
+    ...st.pila.map((o) => L('Despesas do Pila — ' + (o.tipo || ''), R$(o.valor))),
+    ...st.outros.map((o) => L('Outros', (o.desc || '') + ' ' + R$(o.valor))),
+    ...st.obs.map((o) => L('OBS', (o.desc || '') + ' ' + R$(o.valor))),
+    L('Valor deixado (vendas da semana)', R$(st.valorDeixado), true),
+    L('Assinatura vendedor', st.assinatura),
+  ];
+  const tabelas = [['Pepino extra', 'extras'], ['Notas 25%', 'notas25'], ['Notas 40% e 50%', 'notas4050']]
+    .filter(([, k]) => st[k].length)
+    .map(([titulo, k]) => ({
+      titulo, cols: LISTAS[k].map(([, r]) => r),
+      linhas: st[k].map((i) => LISTAS[k].map(([col]) => (col === 'valor' ? brl(i.valor) : String(i[col] || '')))),
+    }));
+  return { titulo: 'CAIXA — NOME: ' + (st.nome || ''), linhas, tabelas };
 }
-$('#btnImprimir').addEventListener('click', () => { montarFolha(); print(); });
+
+function montarFolha() {
+  const f = dadosFolha();
+  const neg = (t, b) => (b ? `<b>${esc(t)}</b>` : esc(t));
+  $('#folha').innerHTML = `<h2>${esc(f.titulo)}</h2>
+    <table>${f.linhas.map(([r, v, b]) => `<tr><th>${neg(r, b)}</th><td>${neg(v, b)}</td></tr>`).join('')}</table>
+    ${f.tabelas.map((t) => `<h3>${esc(t.titulo)}</h3><table class="folha__lista"><tr>${t.cols.map((c) => `<th>${esc(c)}</th>`).join('')}</tr>
+      ${t.linhas.map((l) => `<tr>${l.map((v) => `<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</table>`).join('')}`;
+}
+
+// Desenha a folha numa imagem PNG (no app Android não dá para imprimir; a imagem vai pelo WhatsApp ou fica salva).
+function imagemFolha() {
+  const f = dadosFolha();
+  const W = 1080, P = 40, H_LIN = 50, FS = 26;
+  const altura = P * 2 + 70 + f.linhas.length * H_LIN
+    + f.tabelas.reduce((t, tb) => t + 70 + (tb.linhas.length + 1) * H_LIN, 0);
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = altura;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, W, altura);
+  g.strokeStyle = '#000'; g.lineWidth = 2; g.fillStyle = '#000'; g.textBaseline = 'middle';
+  const fonte = (b, px = FS) => { g.font = `${b ? '700 ' : ''}${px}px system-ui, Roboto, sans-serif`; };
+  const caber = (t, w) => { let s = t; while (s && g.measureText(s).width > w) s = s.slice(0, -1); return s === t ? t : s.slice(0, -1) + '…'; };
+  let y = P;
+  fonte(true, 34); g.fillText(f.titulo, P, y + 25); y += 70;
+  const meio = P + (W - 2 * P) * 0.48;
+  f.linhas.forEach(([r, v, b]) => {
+    g.strokeRect(P, y, W - 2 * P, H_LIN); g.beginPath(); g.moveTo(meio, y); g.lineTo(meio, y + H_LIN); g.stroke();
+    fonte(b); g.fillText(caber(r, meio - P - 24), P + 12, y + H_LIN / 2); g.fillText(caber(v, W - P - meio - 24), meio + 12, y + H_LIN / 2);
+    y += H_LIN;
+  });
+  f.tabelas.forEach((t) => {
+    y += 20; fonte(true, 28); g.fillText(t.titulo, P, y + 25); y += 50;
+    const cw = (W - 2 * P) / t.cols.length;
+    [t.cols, ...t.linhas].forEach((linha, i) => {
+      fonte(i === 0);
+      linha.forEach((v, j) => {
+        g.strokeRect(P + j * cw, y, cw, H_LIN);
+        g.fillText(caber(v, cw - 20), P + j * cw + 10, y + H_LIN / 2);
+      });
+      y += H_LIN;
+    });
+  });
+  return new Promise((ok) => cv.toBlob(ok, 'image/png'));
+}
+
+const nomeArquivo = () => `caixa-${(st.nome || 'vendedor').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-semana-${soDigitos(st.semana) || 'x'}.png`;
+
+$('#btnImprimir').addEventListener('click', async () => {
+  if (!NATIVO) { montarFolha(); print(); return; }
+  try {
+    await compartilharArquivo(await imagemFolha(), nomeArquivo());
+  } catch (e) {
+    if (!/cancel/i.test(String(e?.message))) toast('Não deu para gerar a imagem da folha.');
+  }
+});
 
 /* ---------- início ---------- */
 pintarTudo();
 try { abrirAba(sessionStorage.getItem('caixa.aba') || 'receb'); } catch { abrirAba('receb'); }
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+// No APK os arquivos já estão dentro do app; o service worker é só para o site.
+if (!NATIVO && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

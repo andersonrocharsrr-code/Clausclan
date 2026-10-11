@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
   <div class="topo">
@@ -43,10 +43,10 @@
     <section class="card card--accent">
       <h2>📄 Ler folha de fechamento</h2>
       <p class="muted">Tire foto de uma folha de fechamento (em branco ou já preenchida à mão). O app identifica os campos e preenche aqui.</p>
-      <label class="btn btn--primary">
-        📷 Foto da folha
-        <input type="file" accept="image/*" capture="environment" hidden data-ler="folha">
-      </label>
+      <div class="row-actions">
+        <label class="btn btn--primary">📷 Câmera<input type="file" accept="image/*" capture="environment" hidden data-ler="folha"></label>
+        <label class="btn btn--sec">🖼 Galeria<input type="file" accept="image/*" hidden data-ler="folha"></label>
+      </div>
     </section>
 
     <!-- Cabeçalho -->
@@ -71,8 +71,11 @@
     <!-- Fotos das notas: o app separa em 25% ou 40%/50% pelo que está escrito em cada nota -->
     <section class="card card--accent">
       <h2>📷 Notas quitadas</h2>
-      <p class="muted">Tire foto das notas (pode ser várias de uma vez). O app lê se cada uma foi paga nos 25% ou nos 40%/50% e coloca no lugar certo.</p>
-      <label class="btn btn--primary">📷 Foto das notas<input type="file" accept="image/*" multiple hidden data-ler="notas"></label>
+      <p class="muted">Tire foto das notas uma por uma pela câmera, ou escolha várias da galeria. O app lê se cada uma foi paga nos 25% ou nos 40%/50% e coloca no lugar certo.</p>
+      <div class="row-actions">
+        <label class="btn btn--primary">📷 Câmera<input type="file" accept="image/*" capture="environment" hidden data-ler="notas"></label>
+        <label class="btn btn--sec">🖼 Galeria (várias)<input type="file" accept="image/*" multiple hidden data-ler="notas"></label>
+      </div>
     </section>
 
     <!-- Notas 25% -->
@@ -106,7 +109,8 @@
         <strong class="total" data-c="extras"></strong>
       </div>
       <div class="row-actions">
-        <label class="btn btn--primary">📷 Foto do pepino<input type="file" accept="image/*" multiple hidden data-ler="extras"></label>
+        <label class="btn btn--primary">📷 Câmera<input type="file" accept="image/*" capture="environment" hidden data-ler="extras"></label>
+        <label class="btn btn--sec">🖼 Galeria<input type="file" accept="image/*" multiple hidden data-ler="extras"></label>
         <button class="btn" data-add="extras">+ Digitar</button>
       </div>
       <div class="lista" data-lista="extras"></div>
@@ -263,6 +267,6 @@
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="app.js?v=7"></script>
+  <script type="module" src="app.js?v=8"></script>
 </body>
 </html>

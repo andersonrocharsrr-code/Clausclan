@@ -131,3 +131,4 @@ label small{font-size:11px}
 .item--dep{grid-template-columns:1fr 1fr}
 .item--dep .item__valor{grid-column:1/-1}
 .item select{font:inherit;font-size:14px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:7px 6px;width:100%;min-width:0}
+label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--accent)}
