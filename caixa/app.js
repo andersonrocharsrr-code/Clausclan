@@ -1,11 +1,19 @@
 /* Fechamento de Caixa — faz as contas da folha de caixa e lê notas/folhas pela foto (IA Claude). */
 import Anthropic from './vendor/anthropic.js';
 import { desenharCaixa } from './folha.js?v=9';
+import { lerNotaGratis, lerFolhaGratis } from './leitor.js?v=10';
 
 const KEY_ATUAL = 'caixa.atual';
 const KEY_SALVOS = 'caixa.salvos';
 const KEY_API = 'caixa.apiKey';
-const MODELO = 'claude-opus-5-5';
+const KEY_MODO = 'caixa.modoLeitura';
+// Como ler as fotos: 'gratis' (no celular, sem custo, só texto impresso) ou IA Claude (paga, lê letra de mão).
+const MODOS = {
+  gratis: { nome: 'Gratuita (no celular)' },
+  economica: { nome: 'IA econômica', modelo: 'claude-haiku-5-5' },
+  precisa: { nome: 'IA mais precisa', modelo: 'claude-opus-5-5' },
+};
+const modoLeitura = () => (MODOS[ls.get(KEY_MODO, 'gratis')] ? ls.get(KEY_MODO, 'gratis') : 'gratis');
 
 /* ---------- utilidades ---------- */
 const $ = (s, el = document) => el.querySelector(s);
@@ -364,10 +372,16 @@ e você explica a dúvida no campo de dúvida.`;
 const PEDIDOS = {
   notas: {
     schema: SCHEMA_NOTAS,
-    texto: `As fotos são de notas quitadas. Cada nota mostra se foi paga nos 25%, nos 40% ou nos 50% — leia essa marca
-e devolva em "faixa" ("25", "40" ou "50"; vazio se não der para ver). Liste cada nota que aparece (uma foto pode ter várias
-notas; não repita a mesma nota se aparecer em duas fotos). Para cada uma: número, nome da cliente, cidade, faixa e o valor pago.
-Se a nota mostrar o valor total e o valor pago, ponha o pago em "valor" e o total em "valor_total".`,
+    texto: `As fotos são de notas (cupons impressos em impressora térmica) que a empresa entrega às clientes.
+Cada nota tem: no topo "N. 000001" (esse é o número da nota; o número grande embaixo dele e o código de barras NÃO são),
+Representante, DATA DO ACERTO, nome da cliente (linha antes do CPF), endereço, "Cidade:XXX UF:AC", os itens
+("001 x 168,00 = 168,00") e "TOTAL R$228,00". No final da nota:
+- se aparecer "25%", a faixa é "25";
+- se aparecer "NOTA QUITADA" (com a comissão e as mercadorias pagas, sem porcentagem), a faixa é "40";
+- se não der para ver o final, a faixa fica vazia.
+Liste cada nota que aparece (uma foto pode ter várias; não repita a mesma nota se aparecer em duas fotos). Para cada uma:
+número, cliente, cidade (como está escrita, ex.: RIO BRANCO, CZS, BRASILEIA), faixa e em "valor" o TOTAL da nota.
+Se aparecer também um valor pago diferente do total, coloque o total em "valor_total" e explique em "duvida".`,
   },
   extras: {
     schema: SCHEMA_EXTRAS,
@@ -393,21 +407,21 @@ esses campos impressos, principalmente a SEMANA (só o número). Os campos sem n
 };
 
 async function lerFotos(tipo, files) {
+  const modo = modoLeitura();
+  if (modo === 'gratis') { await lerFotosGratis(tipo, files); return; }
   const api = getCliente();
   if (!api) {
-    toast('Configure a chave da IA primeiro.');
+    toast('Para usar a IA, cole a chave em ⚙ (ou volte para a leitura gratuita).');
     abrirConfig();
     return;
   }
-  const pedido = PEDIDOS[tipo];
+  const pedido = PEDIDOS[tipo === 'notas' ? 'notas' : tipo];
   carregando(true, files.length > 1 ? `Lendo ${files.length} fotos…` : 'Lendo a foto…');
   try {
     const imagens = await Promise.all(files.slice(0, 20).map(prepararFoto));
-    const resp = await api.beta.messages.create({
-      model: MODELO,
+    const pedidoIA = {
+      model: MODOS[modo].modelo,
       max_tokens: 16000,
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
       output_config: { effort: 'medium', format: { type: 'json_schema', schema: pedido.schema } },
       system: CONTEXTO,
       messages: [{
@@ -417,7 +431,11 @@ async function lerFotos(tipo, files) {
           { type: 'text', text: pedido.texto },
         ],
       }],
-    });
+    };
+    // Na IA mais precisa, se ela recusar por engano, a própria Anthropic refaz com outro modelo.
+    const resp = modo === 'precisa'
+      ? await api.beta.messages.create({ ...pedidoIA, betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' })
+      : await api.messages.create(pedidoIA);
     if (resp.stop_reason === 'refusal') throw new Error('A IA não quis ler esta foto. Tente outra foto.');
     if (resp.stop_reason === 'max_tokens') throw new Error('Fotos demais de uma vez. Mande menos fotos por vez.');
     const txt = resp.content.find((b) => b.type === 'text')?.text;
@@ -426,6 +444,56 @@ async function lerFotos(tipo, files) {
   } catch (e) {
     console.error(e);
     toast(mensagemErro(e));
+  } finally {
+    carregando(false);
+  }
+}
+
+/* ---------- leitura gratuita (no celular) ---------- */
+const FOLHA_VAZIA = {
+  cidade: '', nome: '', data: '', semana: '', foiCobrar: 0, vPep5: 0, qtNotas: '', qtNotasDeixadas: '', pinos: '',
+  antecipados: 0, valorPepinos: 0, pepinoParcial: 0, notas25: 0, notas4050: 0, depEspecie: 0, depPix: 0, depBanco: 0,
+  vale: 0, ajuda: 0, salario: 0, mecanica: 0, despSupervisor: 0, excedido: 0, outros: [], obs: [], extras: [],
+  valorDeixado: 0, assinatura: '', duvidas: '',
+};
+
+async function lerFotosGratis(tipo, files) {
+  if (tipo === 'extras') {
+    toast('O pepino extra é escrito à mão e a leitura gratuita não lê letra de mão. Toque em "+ Digitar", ou ligue a IA em ⚙.');
+    return;
+  }
+  const passo = (txt) => (m) => {
+    if (m.status === 'recognizing text') $('#carregandoTxt').textContent = `${txt} ${Math.round(m.progress * 100)}%`;
+    else if (/load|initializ/.test(m.status)) $('#carregandoTxt').textContent = 'Preparando o leitor… (na 1ª vez baixa uns arquivos)';
+  };
+  carregando(true, 'Preparando o leitor…');
+  try {
+    if (tipo === 'folha') {
+      const r = await lerFolhaGratis(files[0], passo('Lendo a folha…'));
+      if (!r.achados) throw new Error('Não consegui ler a folha. Tire a foto mais de perto, com a folha inteira e bem iluminada.');
+      // Folha preenchida à mão não sai na leitura gratuita: só o cabeçalho impresso.
+      aplicarFolha({ ...FOLHA_VAZIA, ...r, cidade: r.cidade || '', duvidas: r.achados < 5 ? 'confira os campos do cabeçalho.' : '' });
+      salvarAtual(); pintarTotais();
+      return;
+    }
+    let n25 = 0, n4050 = 0;
+    for (let i = 0; i < files.length; i++) {
+      const rot = files.length > 1 ? `Lendo nota ${i + 1} de ${files.length}…` : 'Lendo a nota…';
+      const n = await lerNotaGratis(files[i], passo(rot));
+      const destino = n.faixa === '40' ? 'notas4050' : 'notas25';
+      destino === 'notas25' ? n25++ : n4050++;
+      st[destino].push({
+        id: uid(), numero: n.numero, cliente: n.cliente, cidade: n.cidade || st.cidade, valor: n.valor,
+        faixa: n.faixa === '40' ? '' : n.faixa, conferir: true,
+        nota: n.faltou.length ? 'Leitura gratuita, confira: ' + n.faltou.join(', ') : 'Leitura gratuita: confira',
+      });
+      pintarLista(destino);
+      salvarAtual(); pintarTotais();
+    }
+    toast(`${files.length} nota(s) lida(s): ${n25} em 25%, ${n4050} em 40/50%. Confira os valores em amarelo.`);
+  } catch (e) {
+    console.error(e);
+    toast(e.message || 'Não deu para ler a foto.');
   } finally {
     carregando(false);
   }
@@ -531,13 +599,23 @@ function carregando(on, txt) {
 }
 
 /* ---------- configurar chave ---------- */
+function mostrarChave() {
+  $('#campoChave').hidden = $('input[name="modo"]:checked')?.value === 'gratis';
+}
+$$('input[name="modo"]').forEach((r) => r.addEventListener('change', mostrarChave));
 function abrirConfig() {
   $('#apiKey').value = ls.get(KEY_API, '');
+  const modo = modoLeitura();
+  $$('input[name="modo"]').forEach((r) => { r.checked = r.value === modo; });
+  mostrarChave();
   $('#dlgConfig').showModal();
 }
 $('#btnConfig').addEventListener('click', abrirConfig);
 $('#btnSalvarChave').addEventListener('click', () => {
+  const modo = $('input[name="modo"]:checked')?.value || 'gratis';
+  ls.set(KEY_MODO, modo);
   ls.set(KEY_API, $('#apiKey').value.trim());
+  if (modo !== 'gratis' && !$('#apiKey').value.trim()) toast('Sem chave a IA não funciona: cole a chave ou use a leitura gratuita.');
   toast('Chave salva neste aparelho.');
 });
 

@@ -1,0 +1,202 @@
+/* Leitura GRATUITA das fotos, feita no próprio celular (Tesseract.js, o mesmo leitor do Nexa Money).
+   Serve para o que é IMPRESSO: as notas (cupom térmico) e o cabeçalho da folha CAIXA em branco.
+   Letra de mão (pepino extra, folha preenchida) só a IA lê direito. */
+
+// Leitor baixado só no primeiro uso; depois o navegador guarda os arquivos no aparelho.
+const TESS = {
+  script: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js',
+  workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js',
+  corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1',
+  langPath: 'https://cdn.jsdelivr.net/npm/@tesseract.js-data/por@1.0.0/4.0.0',
+};
+
+let workerP = null;
+let progresso = null;
+
+function carregarScript(src) {
+  return new Promise((ok, erro) => {
+    const el = document.createElement('script');
+    el.src = src;
+    el.onload = ok;
+    el.onerror = () => { el.remove(); erro(new Error('Não deu para baixar o leitor. Precisa de internet na 1ª vez.')); };
+    document.head.appendChild(el);
+  });
+}
+
+function leitor() {
+  if (!workerP) {
+    workerP = (async () => {
+      if (!window.Tesseract) await carregarScript(TESS.script);
+      return window.Tesseract.createWorker('por', 1, {
+        workerPath: TESS.workerPath, corePath: TESS.corePath, langPath: TESS.langPath,
+        logger: (m) => progresso && progresso(m),
+      });
+    })().catch((e) => { workerP = null; throw e; });
+  }
+  return workerP;
+}
+
+/* ---------- tratar a foto antes de ler ---------- */
+// Cinza + limiar adaptativo (cada ponto comparado com a média em volta): tira sombra, fundo e cor do papel.
+// Sem isso o leitor se perde com o fundo, o dedo e o papel térmico amarelado.
+async function tratar(file, giro = 0) {
+  const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  const k = Math.min(1, 1800 / Math.max(bmp.width, bmp.height));
+  const w0 = Math.round(bmp.width * k), h0 = Math.round(bmp.height * k);
+  const deitado = giro === 90 || giro === 270;
+  const w = deitado ? h0 : w0, h = deitado ? w0 : h0;
+  const cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  const g = cv.getContext('2d', { willReadFrequently: true });
+  g.translate(w / 2, h / 2);
+  g.rotate((giro * Math.PI) / 180);
+  g.drawImage(bmp, -w0 / 2, -h0 / 2, w0, h0);
+  const img = g.getImageData(0, 0, w, h);
+  const px = img.data;
+  const cinza = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) cinza[i] = 0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2];
+  // Soma acumulada para tirar a média de qualquer quadrado em tempo constante.
+  const S = new Float64Array((w + 1) * (h + 1));
+  for (let y = 1; y <= h; y++) {
+    let linha = 0;
+    for (let x = 1; x <= w; x++) {
+      linha += cinza[(y - 1) * w + (x - 1)];
+      S[y * (w + 1) + x] = S[(y - 1) * (w + 1) + x] + linha;
+    }
+  }
+  const r = 25, desc = 12;
+  for (let y = 0; y < h; y++) {
+    const y1 = Math.max(0, y - r), y2 = Math.min(h, y + r + 1);
+    for (let x = 0; x < w; x++) {
+      const x1 = Math.max(0, x - r), x2 = Math.min(w, x + r + 1);
+      const soma = S[y2 * (w + 1) + x2] - S[y1 * (w + 1) + x2] - S[y2 * (w + 1) + x1] + S[y1 * (w + 1) + x1];
+      const media = soma / ((x2 - x1) * (y2 - y1));
+      const v = cinza[y * w + x] < media - desc ? 0 : 255;
+      const i = (y * w + x) * 4;
+      px[i] = px[i + 1] = px[i + 2] = v;
+    }
+  }
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.putImageData(img, 0, 0);
+  return cv;
+}
+
+async function lerTexto(file, giro, aoProgredir) {
+  const w = await leitor();
+  progresso = aoProgredir;
+  try {
+    const { data } = await w.recognize(await tratar(file, giro));
+    return data.text;
+  } finally {
+    progresso = null;
+  }
+}
+
+/* ---------- entender o texto ---------- */
+const DINHEIRO = /(\d{1,3}(?:\.\d{3})+,\d{2}|\d+,\d{2})(?!\d)/g;
+const valorBR = (t) => Number(t.replace(/\./g, '').replace(',', '.'));
+// O leitor costuma confundir letras e números parecidos dentro de valores.
+const consertarNumeros = (t) => t.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/S/g, '5').replace(/Z/g, '2').replace(/B/g, '8');
+const semAcento = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+// Nota (cupom da empresa): número "N. 000001", cliente (linha antes do CPF), cidade, data do acerto, total,
+// e a faixa: "25%" no final = notas 25%; "NOTA QUITADA" (sem porcentagem) = notas 40% e 50%.
+export function entenderNota(texto) {
+  const linhas = texto.split('\n').map((l) => l.trim()).filter(Boolean);
+  const LIN = linhas.map((l) => semAcento(l).toUpperCase());
+  const tudo = LIN.join('\n');
+  const r = { numero: '', cliente: '', cidade: '', data: '', valor: 0, faixa: '', faltou: [] };
+
+  // Número: o "N. 000001" do topo (os números de endereço, "N.876", têm menos dígitos).
+  const iAcerto = LIN.findIndex((l) => /DATA DO ACERTO/.test(l));
+  const topo = (iAcerto > 0 ? LIN.slice(0, iAcerto) : LIN.slice(0, 6)).join('\n');
+  const mNum = topo.match(/\bN\s*[.º°:]?\s*(\d{5,7})\b/);
+  if (mNum) r.numero = mNum[1];
+
+  const iCpf = LIN.findIndex((l) => /\bC[PF]F\s*[:;.]/.test(l) || /^.{0,3}PF\s*[:;]\s*\d/.test(l));
+  // Cliente: a linha logo acima do CPF que pareça um nome (2+ palavras em maiúsculas); sujeira lida no meio é pulada.
+  for (let i = iCpf - 1; i >= Math.max(0, iCpf - 3) && !r.cliente; i--) {
+    const m = linhas[i].match(/[A-ZÀ-Ú]{2,}(?:\s+[A-ZÀ-Ú]{2,})+/);
+    if (m) r.cliente = m[0].trim();
+  }
+
+  const mCid = tudo.match(/CIDADE\s*[:;.,]?\s*([A-Z0-9 .'-]+?)\s+UF\b/);
+  if (mCid) r.cidade = mCid[1].replace(/\s+/g, ' ').trim();
+
+  const depois = iAcerto >= 0 ? LIN.slice(iAcerto, iAcerto + 3).join(' ') : tudo;
+  const mData = depois.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  // Ano lido errado (ex.: 2028) é descartado.
+  if (mData && Math.abs(Number(mData[3]) - new Date().getFullYear()) <= 1) r.data = `${mData[3]}-${mData[2]}-${mData[1]}`;
+
+  // Total: linha "TOTAL R$228,00" (não a "Total de peças"). Se não der, soma os itens "001 x 168,00 = 168,00".
+  for (let i = LIN.length - 1; i >= 0 && !r.valor; i--) {
+    if (!/T[O0]TAL/.test(LIN[i]) || /PE[CÇ]AS|PECA/.test(LIN[i])) continue;
+    const resto = consertarNumeros(LIN[i].replace(/^.*?T[O0]TAL/, '').replace(/R\s*\$|R5|RS/, ' '));
+    const vals = [...resto.matchAll(DINHEIRO)].map((m) => valorBR(m[1]));
+    if (vals.length) r.valor = vals[vals.length - 1];
+  }
+  if (!r.valor) {
+    const itens = LIN.map((l) => l.match(/=\s*([\dOSIl.,]+,\s*\d{2})/)).filter(Boolean)
+      .map((m) => valorBR(consertarNumeros(m[1]).replace(/\s/g, ''))).filter((v) => v > 0);
+    if (itens.length) {
+      r.valor = Math.round(itens.reduce((a, b) => a + b, 0) * 100) / 100;
+      r.faltou.push('total não lido: somei os itens');
+    }
+  }
+
+  if (/QUITAD/.test(tudo)) r.faixa = '40';
+  else if (/\b25\s*%/.test(tudo)) r.faixa = '25';
+
+  if (!r.numero) r.faltou.push('número');
+  if (!r.valor) r.faltou.push('valor');
+  if (!r.faixa) r.faltou.push('não achei "25%" nem "NOTA QUITADA"');
+  return r;
+}
+
+// Cabeçalho impresso da folha CAIXA em branco.
+export function entenderFolha(texto) {
+  const original = semAcento(texto).replace(/[ \t]+/g, ' ');
+  const T = original.toUpperCase();
+  const pega = (re) => (T.match(re) || [])[1] || '';
+  const r = {
+    // No texto original o nome impresso vem em maiúsculas; o lixo lido em volta costuma vir misturado.
+    nome: ((original.match(/NOME\s*[:;.]?\s*([A-Z]{2,}(?: [A-Z]{2,})*)/) || [])[1] || '').trim(),
+    cidade: pega(/CIDADE\s*[:;.]?\s*([A-Z]+(?: [A-Z]+){0,3}?)(?=\s+(?:DATA|SEMANA|\||$)|\n)/).trim(),
+    data: '', semana: pega(/SEMANA\s*[:;.]?\s*(\d{1,2})\b/),
+    foiCobrar: 0, qtNotas: pega(/NOTAS\s*[:;.]\s*(\d{1,3})\b/), vPep5: 0,
+  };
+  const mData = T.match(/DATA\s*[:;.]?\s*(\d{2})\/(\d{2})\/(\d{4})/);
+  if (mData) r.data = `${mData[3]}-${mData[2]}-${mData[1]}`;
+  // Valores impressos: aceita também quando o leitor perde a vírgula e o ponto ("2031800" = 20.318,00).
+  const valorImpresso = (re) => {
+    const m = T.match(re);
+    if (!m) return 0;
+    const t = m[1];
+    if (/,\d{2}$/.test(t)) return valorBR(t);
+    const so = t.replace(/\D/g, '');
+    return so.length >= 3 ? Number(so) / 100 : 0;
+  };
+  r.foiCobrar = valorImpresso(/COBRAR[^\d\n]*?(\d[\d.,]{2,}\d)/);
+  r.vPep5 = valorImpresso(/PEP\.?\s*5\s*%[^\d\n]*?(\d[\d.,]{2,}\d)/);
+  // O V. pep. 5% é exatamente 5% do foi cobrar: se um dos dois saiu errado, o outro conserta.
+  if (r.vPep5 && Math.abs(r.foiCobrar * 0.05 - r.vPep5) > 0.01) r.foiCobrar = Math.round(r.vPep5 * 20 * 100) / 100;
+  r.achados = ['semana', 'cidade', 'data', 'foiCobrar', 'qtNotas'].filter((k) => r[k]).length;
+  return r;
+}
+
+/* ---------- o que o app chama ---------- */
+export async function lerNotaGratis(file, aoProgredir) {
+  return entenderNota(await lerTexto(file, 0, aoProgredir));
+}
+
+// A folha costuma ser fotografada de lado: tenta em pé e, se achar pouca coisa, gira.
+export async function lerFolhaGratis(file, aoProgredir) {
+  let melhor = null;
+  // Ordem: em pé, depois de lado (o jeito mais comum de fotografar a folha), depois o outro lado.
+  for (const giro of [0, 270, 90, 180]) {
+    const r = entenderFolha(await lerTexto(file, giro, aoProgredir));
+    if (!melhor || r.achados > melhor.achados) melhor = r;
+    if (r.achados >= 4) break;
+  }
+  return melhor;
+}
