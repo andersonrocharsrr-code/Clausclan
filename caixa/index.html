@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=10">
+  <link rel="stylesheet" href="style.css?v=16">
 </head>
 <body>
   <div class="topo">
@@ -71,7 +71,7 @@
     <!-- Fotos das notas: o app separa em 25% ou 40%/50% pelo que está escrito em cada nota -->
     <section class="card card--accent">
       <h2>📷 Notas quitadas</h2>
-      <p class="muted">Uma nota por foto, esticada e bem nítida (pode escolher várias da galeria). O app lê o "25%" ou o "NOTA QUITADA" no final da nota e coloca no lugar certo.</p>
+      <p class="muted">Uma nota por foto, esticada e nítida (pode escolher várias da galeria). Basta aparecer o <b>final da nota</b>: "Recebi o valor de R$…" e "Nota quitada" (com 25% ou sem). O app pega o valor e põe em 25% ou 40%/50%.</p>
       <div class="row-actions">
         <label class="btn btn--primary">📷 Câmera<input type="file" accept="image/*" capture="environment" hidden data-ler="notas"></label>
         <label class="btn btn--sec">🖼 Galeria (várias)<input type="file" accept="image/*" multiple hidden data-ler="notas"></label>
@@ -276,6 +276,17 @@
     </form>
   </dialog>
 
+  <dialog id="dlgDiag" class="dlg-caixa">
+    <form method="dialog">
+      <h2 id="diagTitulo">Não consegui ler</h2>
+      <p class="muted small">Tente de novo com a foto mais de perto, reta, inteira e com boa luz (sem sombra).
+        Se continuar, tire um print desta tela e mande para quem fez o app: é o que o leitor enxergou.</p>
+      <img id="diagImg" class="caixa-img" alt="Imagem como o leitor viu">
+      <pre id="diagTexto" class="diag-texto"></pre>
+      <div class="row-actions"><button class="btn btn--primary" value="ok">Entendi</button></div>
+    </form>
+  </dialog>
+
   <dialog id="dlgLista">
     <form method="dialog">
       <h2>Fechamentos salvos</h2>
@@ -292,6 +303,6 @@
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="app.js?v=10"></script>
+  <script type="module" src="app.js?v=16"></script>
 </body>
 </html>

@@ -246,8 +246,11 @@ Sem o segredo (ou fora do `main`) sai um APK de teste em "Artifacts" na execuç�
 
 ## Leitura das fotos (⚙)
 - **Gratuita** (padrão): leitor de texto no próprio celular (Tesseract.js, o mesmo do Nexa Money; baixado na 1ª vez).
-  Lê o que é **impresso**: as notas (cupom térmico: nº "N. 000001", cliente, cidade, TOTAL; "25%" no final = notas 25%,
-  "NOTA QUITADA" = notas 40% e 50%) e o cabeçalho da folha CAIXA em branco (semana, data, foi cobrar, qt. de notas).
-  Uma nota por foto, esticada e nítida. Não lê letra de mão (pepino extra, folha preenchida). Código em `caixa/leitor.js`.
+  Lê o que é **impresso**: as notas (cupom térmico: cliente, cidade e o valor de "Recebi o valor de R$…" /
+  "Total de pagamentos"; "Nota quitada com 25% de desconto" = notas 25%, "Nota quitada" = notas 40% e 50%, com 50%
+  quando a comissão é metade do TOTAL) e o cabeçalho da folha CAIXA (semana, data, foi cobrar, qt. de notas).
+  Fotos pequenas são ampliadas; o zero cortado da impressora lido como 8/9 nos centavos vira ,00. A folha é tentada em
+  4 giros e 2 tamanhos, juntando o que cada tentativa leu. Se não achar nada, mostra o que o leitor enxergou.
+  Uma nota por foto, esticada e nítida. Não lê letra de mão (pepino extra). Código em `caixa/leitor.js`.
 - **IA econômica** (Claude Haiku, centavos) e **IA mais precisa** (Claude Opus): leem foto tremida e letra de mão.
   Precisam da chave da API da Anthropic (console.anthropic.com), salva só no aparelho; cada foto é cobrada na sua conta.
