@@ -841,6 +841,27 @@ $('#btnCaixaEnviar').addEventListener('click', async () => {
   }
 });
 
+// Salvar a imagem da folha: no app Android vai para a galeria (pasta Imagens/Caixa); no site, baixa o arquivo.
+$('#btnCaixaGaleria').addEventListener('click', async () => {
+  if (!imagemCaixa) return;
+  const nome = nomeArquivo();
+  try {
+    if (NATIVO) {
+      const r = await plugin('CaixaNative').salvarNaGaleria({ data: await blobBase64(imagemCaixa), nome });
+      toast(`Folha salva na galeria (${r?.pasta || 'Imagens/Caixa'}).`);
+      return;
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(imagemCaixa);
+    a.download = nome;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    toast('Imagem baixada (pasta Downloads).');
+  } catch (e) {
+    toast('Não deu para salvar: ' + (e?.message || 'erro'));
+  }
+});
+
 $('#btnCaixaImprimir').addEventListener('click', () => {
   $('#folha').innerHTML = `<img src="${$('#caixaImg').src}" alt="">`;
   print();

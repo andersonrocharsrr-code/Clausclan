@@ -41,4 +41,6 @@
 
     <!-- Câmera para tirar foto das notas e da folha de caixa -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Salvar a folha do caixa na galeria: só o Android 9 ou mais antigo pede esta permissão. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
 </manifest>

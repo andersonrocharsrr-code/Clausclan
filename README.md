@@ -229,8 +229,9 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
 - **Valor deixado** = vendas da semana, digitado à mão (não entra nas contas do caixa).
 - **Gerar caixa** (fim da semana): monta a folha CAIXA igual à impressa, já preenchida — o impresso em preto
   e o preenchido em azul com letra de mão (fonte Caveat, `caixa/fonts/`, licença OFL). Antes avisa o que pode
-  estar faltando (depósito, valor deixado, assinatura, itens para conferir). Dá para mandar/salvar a imagem
-  ou imprimir (no site). O desenho fica em `caixa/folha.js`.
+  estar faltando (depósito, valor deixado, assinatura, itens para conferir). **Salvar na galeria** (no APK vai
+  para Imagens/Caixa pelo plugin nativo `CaixaNativePlugin`; no site baixa o PNG), mandar a imagem ou imprimir (no
+  site). O desenho fica em `caixa/folha.js`.
 - Salvar fechamentos e mandar resumo pelo WhatsApp.
 
 ## App Android (APK) — pasta `caixa-android/`
