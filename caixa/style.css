@@ -140,3 +140,6 @@ label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--acc
 .escolha input{margin-top:2px;flex:none}
 .diag-texto{white-space:pre-wrap;font-size:11px;max-height:160px;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;margin:0 0 8px}
 .item__mover{white-space:nowrap}
+.novo-dep{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0 4px;background:var(--bg)}
+.novo-dep h3{margin-top:0}
+.novo-dep .grid{margin:8px 0 10px}

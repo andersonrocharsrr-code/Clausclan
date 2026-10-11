@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=16">
+  <link rel="stylesheet" href="style.css?v=17">
 </head>
 <body>
   <div class="topo">
@@ -198,14 +198,21 @@
         <h2>Depósitos feitos</h2>
         <strong class="total" data-c="depositado"></strong>
       </div>
-      <p class="muted small">Lance aqui cada depósito que você já fez.</p>
-      <div class="row-actions">
-        <button class="btn" data-dep="empresa">+ Empresa (espécie)</button>
-        <button class="btn" data-dep="banco">+ Banco/TED/transf.</button>
-        <button class="btn" data-dep="pix">+ Pix</button>
+      <div class="novo-dep">
+        <h3>Lançar um depósito que você fez</h3>
+        <div class="escolha" role="radiogroup" aria-label="Onde depositou">
+          <label><input type="radio" name="depOnde" value="empresa"> Depto. empresa espécie</label>
+          <label><input type="radio" name="depOnde" value="banco"> Depto. banco/TED/transferência</label>
+          <label><input type="radio" name="depOnde" value="pix"> Depto. Pix</label>
+        </div>
+        <p class="muted small" id="depDica"></p>
+        <div class="grid">
+          <label>Valor depositado (R$)<input id="depValor" inputmode="decimal" placeholder="0,00" autocomplete="off"></label>
+          <label>Data<input id="depData" type="date"></label>
+        </div>
+        <button class="btn btn--primary btn--grande" id="btnLancarDep">＋ Lançar depósito</button>
       </div>
-      <button class="btn btn--primary" id="btnDepFalta" style="width:100%">✓ Depositei tudo o que falta</button>
-      <p class="muted small" id="depDica"></p>
+      <h3>Depósitos lançados</h3>
       <div class="lista" data-lista="depositos"></div>
     </section>
 
@@ -303,6 +310,6 @@
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="app.js?v=16"></script>
+  <script type="module" src="app.js?v=17"></script>
 </body>
 </html>
