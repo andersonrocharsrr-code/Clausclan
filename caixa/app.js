@@ -1332,6 +1332,13 @@ $('#btnCaixaImprimir').addEventListener('click', () => {
 });
 
 /* ---------- início ---------- */
+// Introdução: some sozinha no fim da animação (CSS); um toque pula. Depois sai da página.
+const intro = $('#intro');
+if (intro) {
+  const tirar = () => intro.remove();
+  intro.addEventListener('click', () => { intro.classList.add('pular'); setTimeout(tirar, 320); });
+  intro.addEventListener('animationend', (e) => { if (e.target === intro) tirar(); });
+}
 pintarTudo();
 try { abrirAba(sessionStorage.getItem('caixa.aba') || 'receb'); } catch { abrirAba('receb'); }
 // No APK os arquivos já estão dentro do app; o service worker é só para o site.
