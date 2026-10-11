@@ -7,6 +7,7 @@ const KEY_ATUAL = 'caixa.atual';
 const KEY_SALVOS = 'caixa.salvos';
 const KEY_API = 'caixa.apiKey';
 const KEY_MODO = 'caixa.modoLeitura';
+const KEY_REL = 'caixa.relatorio'; // placa, modelo, locadora, km e supervisor: valem para todas as semanas
 // Como ler as fotos: 'gratis' (no celular, sem custo, só texto impresso) ou IA Claude (paga, lê letra de mão).
 const MODOS = {
   gratis: { nome: 'Gratuita (no celular)' },
@@ -22,6 +23,8 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const brl = (n) => (Number(n) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const R$ = (n) => 'R$ ' + brl(n);
 const arred = (n) => Math.round((Number(n) || 0) * 100) / 100;
+// Data de hoje no horário do celular (no Acre, depois das 19h o UTC já é o dia seguinte).
+const hoje = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
 const ls = {
   get(k, def) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch { return def; } },
@@ -76,12 +79,14 @@ function novo() {
   return {
     id: uid(),
     cidade: ultimo?.cidade || '', nome: ultimo?.nome || '',
-    data: new Date().toISOString().slice(0, 10), semana: '',
+    data: hoje(), semana: '',
     foiCobrar: 0, qtNotas: '', qtNotasDeixadas: '', pinos: '',
     antecipados: 0, valorPepinos: 0, pepinoParcial: 0,
     notas25: [], notas4050: [], extras: [], pila: [], outros: [], obs: [], depositos: [],
     vale: 0, ajuda: 0, salario: 0, mecanica: 0, despSupervisor: 0, excedido: 0,
     valorDeixado: 0, assinatura: ultimo?.assinatura || '',
+    // Relatório diário: o que só o vendedor sabe (da semana e de cada dia) e os acumulados de cada dia.
+    rel: {}, relDia: {}, diario: {},
   };
 }
 
@@ -110,7 +115,6 @@ function semanaPagamento(s) {
 }
 // Onde costuma depositar: na semana de pagamento vai para a empresa, nas outras para o banco.
 const tipoDeposito = (s) => (semanaPagamento(s) ? 'empresa' : 'banco');
-const hoje = () => new Date().toISOString().slice(0, 10);
 
 const soma = (lista) => arred(lista.reduce((t, i) => t + (Number(i.valor) || 0), 0));
 
@@ -137,7 +141,7 @@ function calcular(s = st) {
   return c;
 }
 
-function salvarAtual() { ls.set(KEY_ATUAL, st); }
+function salvarAtual() { anotarDia(); ls.set(KEY_ATUAL, st); }
 
 /* ---------- tela ---------- */
 function pintarTotais() {
@@ -166,6 +170,7 @@ function pintarTotais() {
       : `Semana ${st.semana}: normalmente o depósito é no banco/transferência.`;
   const d = st.data ? new Date(st.data + 'T12:00').toLocaleDateString('pt-BR') : '';
   $('#subtitulo').textContent = [st.nome, st.cidade, d].filter(Boolean).join(' · ') || 'Novo fechamento';
+  pintarRelatorio();
 }
 
 function pintarCampos() {
@@ -243,6 +248,7 @@ function esc(s) {
 function pintarTudo() {
   depOndeEscolhido = false;
   pintarCampos();
+  pintarCamposRel();
   Object.keys(LISTAS).forEach(pintarLista);
   pintarTotais();
 }
@@ -302,7 +308,7 @@ $$('[data-ir]').forEach((b) => b.addEventListener('click', () => abrirAba(b.data
 
 $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
   const nome = b.dataset.add;
-  st[nome].push({ id: uid(), valor: 0, cidade: nome.startsWith('notas') || nome === 'extras' ? st.cidade : undefined });
+  st[nome].push({ id: uid(), dia: hoje(), valor: 0, cidade: nome.startsWith('notas') || nome === 'extras' ? st.cidade : undefined });
   salvarAtual(); pintarLista(nome);
   const rows = $$(`[data-lista="${nome}"] .item`);
   const ultima = rows[rows.length - 1];
@@ -576,6 +582,7 @@ async function lerFotosGratis(tipo, files) {
       if (n.faltou.length) duvidas++;
       st[destino].push({
         id: uid(), numero: n.numero, cliente: n.cliente, cidade: n.cidade || st.cidade, valor: n.valor,
+        total: n.total || 0, dia: diaDaNota(n.data),
         // Da nota só importam o valor recebido e a faixa: fica amarela só quando um dos dois está em dúvida.
         faixa: n.faixa, conferir: n.faltou.length > 0,
         nota: n.faltou.length ? 'Confira: ' + n.faltou.join(', ') : '',
@@ -620,7 +627,7 @@ function aplicar(tipo, r) {
       destino === 'notas25' ? n25++ : n4050++;
       st[destino].push({
         id: uid(), numero: n.numero, cliente: n.cliente, cidade: n.cidade || st.cidade, valor: arred(n.valor),
-        faixa: n.faixa, conferir: true,
+        total: arred(n.valor_total || 0), dia: diaDaNota(n.data), faixa: n.faixa, conferir: true,
         nota: [n.faixa ? '' : 'não deu para ver se foi 25% ou 40/50% — confira', n.duvida,
           n.valor_total && n.valor_total !== n.valor ? `total da nota ${R$(n.valor_total)}` : '']
           .filter(Boolean).join(' · '),
@@ -652,7 +659,7 @@ function aplicarPepino(r) {
   let item = null, msg = '';
   if (r.fim && !r.topo) item = [...st.extras].reverse().find((x) => x.esperaFinal);
   if (!item) {
-    item = { id: uid(), numero: '', cidade: '', vendedora: '', valor: 0, conferir: true };
+    item = { id: uid(), dia: hoje(), numero: '', cidade: '', vendedora: '', valor: 0, conferir: true };
     st.extras.push(item);
   }
   if (r.topo) {
@@ -696,7 +703,7 @@ function aplicarPepino(r) {
 }
 
 const itemExtra = (n) => ({
-  id: uid(), numero: n.numero, cidade: n.cidade, valor: arred(n.valor), vendedora: n.vendedora,
+  id: uid(), dia: hoje(), numero: n.numero, cidade: n.cidade, valor: arred(n.valor), vendedora: n.vendedora,
   conferir: true, nota: n.duvida,
 });
 
@@ -888,6 +895,176 @@ if (NATIVO) {
   });
 }
 
+/* ---------- relatório do dia ---------- */
+// O relatório separa "do dia" e "total". Notas, pepinos e depósitos têm a data em que foram pagos/lançados;
+// campos que o vendedor vai somando (antecipados, pepino parcial, valor deixado, notas deixadas) guardam
+// o total de cada dia: o do dia é o total de hoje menos o do último dia anterior.
+const ACUMULADOS = ['antecipados', 'pepinoParcial', 'valorDeixado', 'qtNotasDeixadas'];
+const REL_MONEY = ['avistaValor', 'devolValor'];
+const acumuladosAgora = () => Object.fromEntries(ACUMULADOS.map((k) => [k, numero(st[k])]));
+function anotarDia() {
+  st.diario ||= {};
+  st.diario[hoje()] = acumuladosAgora();
+}
+
+// Data impressa na nota (dia do acerto), se for desta semana e não for depois de hoje; senão, hoje.
+function diaDaNota(data) {
+  const { ini } = semanaDe(st.data);
+  return /^\d{4}-\d{2}-\d{2}$/.test(data || '') && data >= ini && data <= hoje() ? data : hoje();
+}
+
+// Valor de face da nota (o TOTAL impresso), para saber quanto ainda está nas notas em branco.
+const valorDeFace = (n) => Number(n.total) || (n.faixa === '25' ? arred(n.valor / 0.75) : Number(n.valor) || 0);
+
+// Quanto do pepino extra foi pago no dia: pelas datas dos pagamentos da nota, ou pelo dia em que foi lançado.
+function pepinoNoDia(x, dia) {
+  if (x.pagamentos?.length) {
+    const { ini, fim } = semanaDe(st.data);
+    return arred(x.pagamentos.filter((p) => p.data === dia && p.data >= ini && p.data <= fim).reduce((t, p) => t + p.valor, 0));
+  }
+  return x.dia === dia ? Number(x.valor) || 0 : 0;
+}
+
+function relatorio(dia) {
+  const c = calcular();
+  const g = ls.get(KEY_REL, {});
+  const rel = st.rel || {};
+  const dias = st.relDia || {};
+  const hojeRel = dias[dia] || {};
+  // Acumulados: total do dia escolhido e do último dia antes dele.
+  const datas = Object.keys(st.diario || {}).sort();
+  const antes = datas.filter((x) => x < dia).pop();
+  const base = antes ? st.diario[antes] : {};
+  const ate = dia === hoje() ? acumuladosAgora() : (st.diario?.[dia] || base);
+  const doDia = (k) => arred((Number(ate[k]) || 0) - (Number(base[k]) || 0));
+
+  const n25 = st.notas25.filter((n) => n.dia === dia);
+  const n4050 = st.notas4050.filter((n) => n.dia === dia);
+  const pagasTotal = st.notas25.length + st.notas4050.length;
+  const pepDia = st.extras.map((x) => pepinoNoDia(x, dia)).filter((v) => v > 0);
+  const pepTotal = st.extras.filter((x) => Number(x.valor) > 0);
+  const parcialQtTotal = Object.values(dias).reduce((t, d) => t + (Number(d.parcialQt) || 0), 0);
+  const recebidoDia = arred(soma(n25) + soma(n4050) + pepDia.reduce((t, v) => t + v, 0)
+    + doDia('antecipados') + doDia('pepinoParcial'));
+  const emBrancoQt = Math.max(0, (Number(st.qtNotas) || 0) - pagasTotal - parcialQtTotal);
+  const emBrancoValor = Math.max(0, arred(st.foiCobrar - [...st.notas25, ...st.notas4050].reduce((t, n) => t + valorDeFace(n), 0) - st.pepinoParcial));
+  const depDia = st.depositos.filter((d) => d.data === dia);
+
+  const qt = (n) => String(Math.round(Number(n) || 0)).padStart(2, '0');
+  const vl = (v) => (Number(v) ? brl(v) : '00');
+  const tx = (v) => String(v ?? '').trim();
+  const dataBr = dia ? `${dia.slice(8, 10)}/${dia.slice(5, 7)}/${dia.slice(0, 4)}` : '';
+  const semana = soDigitos(st.semana);
+  return [
+    `Nome: ${tx(st.nome)}`,
+    `Placa: ${tx(g.placa)}`,
+    `Modelo: ${tx(g.modelo)}`,
+    `Locadora: ${tx(g.locadora)}`,
+    `Km : ${tx(g.km)}`,
+    `Supervisor : ${tx(g.supervisor)}`,
+    ' ',
+    `Semana do mês: ${semana ? semana + '°' : ''}`,
+    `Cidade : ${tx(st.cidade)}`,
+    `Data : ${dataBr}`,
+    '',
+    `Valor a cobrar: ${vl(st.foiCobrar)}`,
+    `Notas: ${qt(st.qtNotas)}`,
+    'Vlr Max pepino ',
+    `5% ${vl(c.vPep5)}`,
+    '',
+    `Nt Pg do dia : ${qt(n25.length + n4050.length)}`,
+    `25%: ${qt(n25.length)}`,
+    `40%: ${qt(n4050.length)}`,
+    `Nt pg total: ${qt(pagasTotal)}`,
+    '',
+    `Nt antecipada: ${qt(rel.antecipadasQt)}`,
+    `Valor: ${vl(st.antecipados)}`,
+    `Nt avista: ${qt(rel.avistaQt)}`,
+    `Valor: ${vl(rel.avistaValor)}`,
+    '',
+    `Recebido dia: ${vl(recebidoDia)}`,
+    `Recebido total: ${vl(c.recebimento)}`,
+    '',
+    `Nt parcial dia: ${qt(hojeRel.parcialQt)}`,
+    `Valor: ${vl(doDia('pepinoParcial'))}`,
+    `Nt parcial total: ${qt(parcialQtTotal)}`,
+    `Valor : ${vl(st.pepinoParcial)}`,
+    '',
+    `Notas em branco: ${qt(emBrancoQt)}`,
+    `Valor: ${vl(emBrancoValor)}`,
+    '',
+    `Nts feita dia: ${qt(doDia('qtNotasDeixadas'))}`,
+    `Ab: ${qt(hojeRel.ab)} Rp: ${qt(hojeRel.rp)}`,
+    `Valor: ${vl(doDia('valorDeixado'))}`,
+    `Notas feitas total: ${qt(st.qtNotasDeixadas)}`,
+    `Valor: ${vl(st.valorDeixado)}`,
+    '',
+    `Nt extra resolvido dia: ${qt(pepDia.length)}`,
+    `Valor : ${vl(pepDia.reduce((t, v) => t + v, 0))}`,
+    `Total resolvido: ${qt(pepTotal.length)}`,
+    `Valor: ${vl(c.extras)}`,
+    '',
+    `Devolu total de produts: ${qt(rel.devolQt)}`,
+    `Valor: ${vl(rel.devolValor)}`,
+    '',
+    `Depósito dia: ${vl(soma(depDia.filter((d) => d.onde !== 'pix')))}`,
+    `Transferencia: ${vl(soma(depDia.filter((d) => d.onde === 'pix')))}`,
+    `Deposito total: ${vl(c.depositado)}`,
+    `Valor em mãos: ${vl(c.falta)}`,
+  ].join('\n');
+}
+
+const relDia = () => $('#relData').value || hoje();
+function pintarRelatorio() {
+  const pre = $('#relTexto');
+  if (pre) pre.textContent = relatorio(relDia());
+}
+function pintarCamposRel() {
+  const g = ls.get(KEY_REL, {});
+  const d = (st.relDia || {})[relDia()] || {};
+  $$('[data-rg]').forEach((el) => { el.value = g[el.dataset.rg] ?? ''; });
+  $$('[data-rs]').forEach((el) => {
+    const v = (st.rel || {})[el.dataset.rs];
+    el.value = REL_MONEY.includes(el.dataset.rs) ? (v ? brl(v) : '') : (v ?? '');
+  });
+  $$('[data-rd]').forEach((el) => { el.value = d[el.dataset.rd] ?? ''; });
+}
+$('#relData').value = hoje();
+$('#relData').addEventListener('change', () => { pintarCamposRel(); pintarRelatorio(); });
+$$('[data-rg]').forEach((el) => el.addEventListener('input', () => {
+  const g = ls.get(KEY_REL, {});
+  g[el.dataset.rg] = el.value;
+  ls.set(KEY_REL, g);
+  pintarRelatorio();
+}));
+$$('[data-rs]').forEach((el) => {
+  const k = el.dataset.rs;
+  el.addEventListener('input', () => {
+    st.rel ||= {};
+    st.rel[k] = REL_MONEY.includes(k) ? numero(el.value) : el.value;
+    salvarAtual(); pintarRelatorio();
+  });
+  if (REL_MONEY.includes(k)) el.addEventListener('blur', () => { el.value = st.rel?.[k] ? brl(st.rel[k]) : ''; });
+});
+$$('[data-rd]').forEach((el) => el.addEventListener('input', () => {
+  st.relDia ||= {};
+  (st.relDia[relDia()] ||= {})[el.dataset.rd] = el.value;
+  salvarAtual(); pintarRelatorio();
+}));
+
+async function copiar(txt) {
+  try { await navigator.clipboard.writeText(txt); return true; } catch {
+    const t = document.createElement('textarea');
+    t.value = txt; document.body.appendChild(t); t.select();
+    const ok = document.execCommand('copy'); t.remove();
+    return ok;
+  }
+}
+$('#btnRelCopiar').addEventListener('click', async () => {
+  toast((await copiar(relatorio(relDia()))) ? 'Relatório copiado ✓ Cole no WhatsApp.' : 'Não deu para copiar.');
+});
+$('#btnRelEnviar').addEventListener('click', () => compartilhar(relatorio(relDia()), 'Mandar relatório'));
+
 /* ---------- resumo para WhatsApp ---------- */
 function resumo() {
   const c = calcular();
@@ -917,17 +1094,17 @@ function resumo() {
   return L.join('\n');
 }
 
-$('#btnWhats').addEventListener('click', async () => {
-  const txt = resumo();
+async function compartilhar(txt, titulo) {
   if (NATIVO) {
-    try { await plugin('Share').share({ text: txt, dialogTitle: 'Mandar resumo' }); } catch { /* cancelou */ }
+    try { await plugin('Share').share({ text: txt, dialogTitle: titulo }); } catch { /* cancelou */ }
     return;
   }
   if (navigator.share) {
     try { await navigator.share({ text: txt }); return; } catch (e) { if (e.name === 'AbortError') return; }
   }
   open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
-});
+}
+$('#btnWhats').addEventListener('click', () => compartilhar(resumo(), 'Mandar resumo'));
 
 /* ---------- impressão no formato da folha ---------- */
 /* ---------- gerar a folha CAIXA da semana (imagem igual à folha impressa) ---------- */

@@ -237,6 +237,12 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   estar faltando (depósito, valor deixado, assinatura, itens para conferir). **Salvar na galeria** (no APK vai
   para Imagens/Caixa pelo plugin nativo `CaixaNativePlugin`; no site baixa o PNG), mandar a imagem ou imprimir (no
   site). O desenho fica em `caixa/folha.js`.
+- **Relatório** (aba própria): o relatório diário no modelo do vendedor, preenchido com o que foi lançado.
+  Notas pagas do dia (25% / 40%) e total, recebido do dia e total, pepino extra resolvido no dia (pelas datas dos
+  pagamentos) e total, depósitos do dia, valor em mãos. Valor deixado e notas deixadas são digitados como total
+  da semana: o app guarda o total de cada dia e o "do dia" é hoje menos o dia anterior. Notas em branco = notas
+  a cobrar menos as pagas/parciais (pelo TOTAL impresso da nota). Placa, modelo, locadora, Km e supervisor
+  ficam guardados para as próximas semanas. Mandar pelo WhatsApp ou copiar.
 - Salvar fechamentos e mandar resumo pelo WhatsApp.
 
 ## App Android (APK) — pasta `caixa-android/`
