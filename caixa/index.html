@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=24">
+  <link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
   <div class="topo">
@@ -60,9 +60,7 @@
         <label>Semana<input data-f="semana" enterkeyhint="done" inputmode="numeric"></label>
         <label>Foi cobrar (R$)<input data-f="foiCobrar" enterkeyhint="done" data-money inputmode="decimal"></label>
         <label>Qt. de notas<input data-f="qtNotas" enterkeyhint="done" inputmode="numeric"></label>
-        <label>Antecipados (R$)<input data-f="antecipados" enterkeyhint="done" data-money inputmode="decimal"></label>
         <label>V. pep. 5% (R$)<output data-c="vPep5"></output></label>
-        <label>Qt. notas deixadas<input data-f="qtNotasDeixadas" enterkeyhint="done" inputmode="numeric"></label>
         <label>Nº de pinos<input data-f="pinos" enterkeyhint="done" inputmode="numeric"></label>
         <label>Valor dos pepinos (R$)<input data-f="valorPepinos" enterkeyhint="done" data-money inputmode="decimal"></label>
         <label>Pepino parcial (R$)<input data-f="pepinoParcial" enterkeyhint="done" data-money inputmode="decimal"></label>
@@ -117,6 +115,28 @@
         <button class="btn" data-add="extras">+ Digitar</button>
       </div>
       <div class="lista" data-lista="extras"></div>
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <h2>Notas antecipadas</h2>
+        <strong class="total" data-c="antecipados"></strong>
+      </div>
+      <p class="muted small">Uma linha para cada nota, com o nome. A quantidade e o total vão para "Antecipados" e para o relatório.</p>
+      <button class="btn" data-add="antecipadas">+ Nota antecipada</button>
+      <div class="lista" data-lista="antecipadas"></div>
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <h2>Notas feitas (vendas)</h2>
+        <strong class="total" data-c="valorDeixado"></strong>
+      </div>
+      <p class="muted small">Todo dia lance quantas notas fez e o valor vendido no dia. O app soma tudo: o total vira o
+        <b>Valor deixado</b> e as <b>Notas deixadas</b> da folha, e o relatório mostra o do dia e o total.</p>
+      <button class="btn" data-add="feitas">+ Notas feitas do dia</button>
+      <div class="lista" data-lista="feitas"></div>
+      <p class="muted small" id="feitasTotal"></p>
     </section>
 
     <!-- Recebimento -->
@@ -221,8 +241,9 @@
 
     <section class="card">
       <h2>Fechamento</h2>
+      <p class="muted small">O valor deixado é a soma das <b>Notas feitas</b> (aba Recebimento).</p>
       <div class="grid">
-        <label>Valor deixado — vendas da semana (R$)<input data-f="valorDeixado" enterkeyhint="done" data-money inputmode="decimal" placeholder="Digite o total vendido"></label>
+        <label>Valor deixado — vendas da semana (R$)<output data-c="valorDeixado"></output></label>
         <label>Assinatura do vendedor<input data-f="assinatura" enterkeyhint="done" autocomplete="off"></label>
       </div>
     </section>
@@ -261,13 +282,12 @@
         <label>Ab<input data-rd="ab" enterkeyhint="done" inputmode="numeric"></label>
         <label>Rp<input data-rd="rp" enterkeyhint="done" inputmode="numeric"></label>
       </div>
-      <p class="muted small">O valor do parcial do dia vem do "Pepino parcial" (aba Recebimento). O vendido do dia vem do "Valor deixado": digite sempre o total da semana (ex.: ontem 4.000, hoje mais 2.000 → 6.000) e o app calcula o do dia.</p>
+      <p class="muted small">O valor do parcial do dia vem do "Pepino parcial" (aba Recebimento). Notas feitas e antecipadas vêm das listas da aba Recebimento, pelo dia de cada uma.</p>
     </section>
 
     <section class="card">
       <h2>Da semana</h2>
       <div class="grid">
-        <label>Nt antecipada (qtd.)<input data-rs="antecipadasQt" enterkeyhint="done" inputmode="numeric"></label>
         <label>Nt à vista (qtd.)<input data-rs="avistaQt" enterkeyhint="done" inputmode="numeric"></label>
         <label>Nt à vista — valor (R$)<input data-rs="avistaValor" enterkeyhint="done" inputmode="decimal"></label>
         <label>Devolução de produtos (qtd.)<input data-rs="devolQt" enterkeyhint="done" inputmode="numeric"></label>
@@ -382,6 +402,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=24"></script>
+  <script type="module" src="app.js?v=25"></script>
 </body>
 </html>
