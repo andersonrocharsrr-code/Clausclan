@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=25">
+  <link rel="stylesheet" href="style.css?v=26">
 </head>
 <body>
   <div class="topo">
@@ -63,7 +63,6 @@
         <label>V. pep. 5% (R$)<output data-c="vPep5"></output></label>
         <label>Nº de pinos<input data-f="pinos" enterkeyhint="done" inputmode="numeric"></label>
         <label>Valor dos pepinos (R$)<input data-f="valorPepinos" enterkeyhint="done" data-money inputmode="decimal"></label>
-        <label>Pepino parcial (R$)<input data-f="pepinoParcial" enterkeyhint="done" data-money inputmode="decimal"></label>
       </div>
     </section>
 
@@ -122,9 +121,19 @@
         <h2>Notas antecipadas</h2>
         <strong class="total" data-c="antecipados"></strong>
       </div>
-      <p class="muted small">Uma linha para cada nota, com o nome. A quantidade e o total vão para "Antecipados" e para o relatório.</p>
+      <p class="muted small">Uma linha para cada nota, com o nome. Entra no recebimento e no relatório (quantidade e total).</p>
       <button class="btn" data-add="antecipadas">+ Nota antecipada</button>
       <div class="lista" data-lista="antecipadas"></div>
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <h2>Pepino parcial</h2>
+        <strong class="total" data-c="pepinoParcial"></strong>
+      </div>
+      <p class="muted small">Uma linha para cada pepino pago em parte, com o nome. Entra no recebimento e no relatório (do dia e total).</p>
+      <button class="btn" data-add="parciais">+ Pepino parcial</button>
+      <div class="lista" data-lista="parciais"></div>
     </section>
 
     <section class="card">
@@ -278,11 +287,10 @@
     <section class="card">
       <h2>Do dia</h2>
       <div class="grid">
-        <label>Nt parcial do dia (qtd.)<input data-rd="parcialQt" enterkeyhint="done" inputmode="numeric"></label>
         <label>Ab<input data-rd="ab" enterkeyhint="done" inputmode="numeric"></label>
         <label>Rp<input data-rd="rp" enterkeyhint="done" inputmode="numeric"></label>
       </div>
-      <p class="muted small">O valor do parcial do dia vem do "Pepino parcial" (aba Recebimento). Notas feitas e antecipadas vêm das listas da aba Recebimento, pelo dia de cada uma.</p>
+      <p class="muted small">Notas pagas, pepino extra, pepino parcial, antecipadas e notas feitas vêm das listas da aba Recebimento, pelo dia de cada uma.</p>
     </section>
 
     <section class="card">
@@ -402,6 +410,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=25"></script>
+  <script type="module" src="app.js?v=26"></script>
 </body>
 </html>
