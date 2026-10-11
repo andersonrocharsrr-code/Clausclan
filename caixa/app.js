@@ -190,12 +190,21 @@ function pintarLista(nome) {
       <label class="item__${k}">${rot}
         ${tipo === 'select'
           ? `<select data-k="${k}">${Object.entries(ONDE_CURTO).map(([v, t]) => `<option value="${v}" ${item[k] === v ? 'selected' : ''}>${t}</option>`).join('')}</select>`
-          : `<input data-k="${k}" ${tipo === 'date' ? 'type="date"' : ''} ${k === 'valor' ? 'inputmode="decimal"' : ''} value="${esc(k === 'valor' ? (item.valor ? brl(item.valor) : '') : item[k] || '')}">`}
+          : `<input data-k="${k}" enterkeyhint="done" ${tipo === 'date' ? 'type="date"' : ''} ${k === 'valor' ? 'inputmode="decimal"' : ''} value="${esc(k === 'valor' ? (item.valor ? brl(item.valor) : '') : item[k] || '')}">`}
       </label>`).join('') +
       `<button class="item__del" aria-label="Apagar" title="Apagar">✕</button>` +
+      // Aparece enquanto a linha está sendo preenchida: confirma o valor e fecha o teclado.
+      `<button type="button" class="btn btn--primary item__ok">✓ Lançar</button>` +
       (nome.startsWith('notas') ? `<div class="item__extra">${item.faixa ? `<span class="tag">${esc(item.faixa)}%</span>` : ''}
         <button class="item__mover">↕ Mover para ${nome === 'notas25' ? '40% e 50%' : '25%'}</button></div>` : '') +
       (item.nota ? `<p class="item__nota">⚠ ${esc(item.nota)}</p>` : '');
+    // Enquanto digita, o valor já entra nos totais; ao sair do campo ele é formatado.
+    row.addEventListener('input', (e) => {
+      const k = e.target.dataset.k;
+      if (!k) return;
+      item[k] = k === 'valor' ? numero(e.target.value) : e.target.value;
+      salvarAtual(); pintarTotais();
+    });
     row.addEventListener('change', (e) => {
       const k = e.target.dataset.k;
       if (!k) return;
@@ -204,6 +213,13 @@ function pintarLista(nome) {
       item.conferir = false;
       row.classList.remove('item--conferir');
       salvarAtual(); pintarTotais();
+    });
+    const ok = row.querySelector('.item__ok');
+    // Sem isso, o toque no botão tira o foco do campo antes do clique e o botão some.
+    ok.addEventListener('pointerdown', (e) => e.preventDefault());
+    ok.addEventListener('click', () => {
+      document.activeElement?.blur();
+      toast(item.valor ? `Lançado: ${R$(item.valor)} ✓` : 'Lançado ✓');
     });
     row.querySelector('.item__mover')?.addEventListener('click', () => {
       const outra = nome === 'notas25' ? 'notas4050' : 'notas25';
@@ -278,8 +294,34 @@ $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
   st[nome].push({ id: uid(), valor: 0, cidade: nome.startsWith('notas') || nome === 'extras' ? st.cidade : undefined });
   salvarAtual(); pintarLista(nome);
   const rows = $$(`[data-lista="${nome}"] .item`);
-  rows[rows.length - 1]?.querySelector('input')?.focus();
+  const ultima = rows[rows.length - 1];
+  // Nas notas só importa o valor: o cursor já vai para ele.
+  (nome.startsWith('notas') ? ultima?.querySelector('[data-k="valor"]') : ultima?.querySelector('input'))?.focus();
 }));
+
+/* ---------- teclado do celular ---------- */
+// Enquanto digita: esconde a barra de totais de baixo (ela sobe junto com o teclado e tampa o campo)
+// e deixa o campo no meio da tela, logo acima do teclado. "Concluído/Enter" do teclado confirma o campo.
+const ehCampo = (el) => el && el.matches?.('input:not([type="radio"]):not([type="checkbox"]):not([type="file"]), select, textarea');
+function centralizar() {
+  const el = document.activeElement;
+  if (ehCampo(el)) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+document.addEventListener('focusin', (e) => {
+  if (!ehCampo(e.target)) return;
+  document.documentElement.classList.add('digitando');
+  setTimeout(centralizar, 350); // espera o teclado abrir
+});
+document.addEventListener('focusout', () => {
+  setTimeout(() => { if (!ehCampo(document.activeElement)) document.documentElement.classList.remove('digitando'); }, 100);
+});
+window.visualViewport?.addEventListener('resize', () => setTimeout(centralizar, 50));
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && ehCampo(e.target) && e.target.tagName === 'INPUT') {
+    e.preventDefault();
+    e.target.blur();
+  }
+});
 
 /* ---------- leitura por foto (IA) ---------- */
 let cliente = null;
