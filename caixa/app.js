@@ -1,5 +1,6 @@
 /* Fechamento de Caixa — faz as contas da folha de caixa e lê notas/folhas pela foto (IA Claude). */
 import Anthropic from './vendor/anthropic.js';
+import { desenharCaixa } from './folha.js?v=9';
 
 const KEY_ATUAL = 'caixa.atual';
 const KEY_SALVOS = 'caixa.salvos';
@@ -607,7 +608,7 @@ async function compartilharArquivo(blob, nome) {
 
 if (NATIVO) {
   document.documentElement.classList.add('is-native');
-  $('#btnImprimir').textContent = '🖼 Folha em imagem';
+  $('#btnCaixaImprimir').hidden = true; // o WebView do Android não imprime
   // Voltar do Android: fecha a janela aberta, depois volta para a 1ª aba, depois minimiza o app.
   plugin('App')?.addListener('backButton', () => {
     const aberta = [...document.querySelectorAll('dialog[open]')].pop();
@@ -659,93 +660,93 @@ $('#btnWhats').addEventListener('click', async () => {
 });
 
 /* ---------- impressão no formato da folha ---------- */
-// Conteúdo da folha (usado na impressão e na imagem da folha): linhas [rótulo, valor, negrito] e tabelas.
-function dadosFolha() {
+/* ---------- gerar a folha CAIXA da semana (imagem igual à folha impressa) ---------- */
+const vazioOu = (v) => (Number(v) ? brl(v) : '');
+
+function dadosCaixa() {
   const c = calcular();
   const d = st.data ? new Date(st.data + 'T12:00').toLocaleDateString('pt-BR') : '';
-  const L = (rot, v, b = false) => [rot, String(v ?? ''), b];
-  const linhas = [
-    L('Cidade', st.cidade), L('Data', d), L('Semana', st.semana),
-    L('Foi cobrar', R$(st.foiCobrar) + ' · Qt. de notas: ' + (st.qtNotas || '')),
-    L('Antecipados', R$(st.antecipados)), L('V. pep. 5%', R$(c.vPep5)),
-    L('Qt. notas deixadas', st.qtNotasDeixadas), L('Nº de pinos', st.pinos),
-    L('Valor dos pepinos', R$(st.valorPepinos)), L('Pepino parcial', R$(st.pepinoParcial)),
-    L('Pepino extra', R$(c.extras)),
-    L('Notas 25%', R$(c.notas25)), L('Notas 40% e 50%', R$(c.notas4050)),
-    L('Recebimento', R$(c.recebimento), true),
-    L('Depto. empresa espécie', R$(c.depEspecie)), L('Depto. Pix', R$(c.depPix)),
-    L('Depto. banco/TED/trans.', R$(c.depBanco)),
-    ...(c.falta ? [L('Falta depositar', R$(c.falta), true)] : []),
-    ...DESPESAS.filter((k) => k !== 'salario' || st.salario).map((k) => L(NOMES[k], R$(st[k]))),
-    ...st.pila.map((o) => L('Despesas do Pila — ' + (o.tipo || ''), R$(o.valor))),
-    ...st.outros.map((o) => L('Outros', (o.desc || '') + ' ' + R$(o.valor))),
-    ...st.obs.map((o) => L('OBS', (o.desc || '') + ' ' + R$(o.valor))),
-    L('Valor deixado (vendas da semana)', R$(st.valorDeixado), true),
-    L('Assinatura vendedor', st.assinatura),
+  const comValor = (desc, v) => `${desc} (${brl(v)})`.trim();
+  const outros = [
+    ...(st.salario ? [comValor('Salário', st.salario)] : []),
+    ...st.pila.filter((o) => o.valor).map((o) => comValor('Pila ' + (o.tipo || 'despesa').toLowerCase(), o.valor)),
+    ...st.outros.filter((o) => o.valor).map((o) => comValor(o.desc || 'Outros', o.valor)),
   ];
-  const tabelas = [['Pepino extra', 'extras'], ['Notas 25%', 'notas25'], ['Notas 40% e 50%', 'notas4050']]
-    .filter(([, k]) => st[k].length)
-    .map(([titulo, k]) => ({
-      titulo, cols: LISTAS[k].map(([, r]) => r),
-      linhas: st[k].map((i) => LISTAS[k].map(([col]) => (col === 'valor' ? brl(i.valor) : String(i[col] || '')))),
-    }));
-  return { titulo: 'CAIXA — NOME: ' + (st.nome || ''), linhas, tabelas };
+  // Na folha o OBS é escrito "4.000,00 (Fernando)".
+  const obs = st.obs.filter((o) => o.valor).map((o) => `${brl(o.valor)}${o.desc ? ` (${o.desc})` : ''}`);
+  if (c.falta > 0) obs.push(`Falta depositar ${brl(c.falta)}`);
+  if (c.falta < 0) obs.push(`Depositou a mais ${brl(-c.falta)}`);
+  return {
+    nome: st.nome, cidade: st.cidade, data: d, semana: st.semana, foiCobrar: vazioOu(st.foiCobrar),
+    qtNotas: st.qtNotas, vPep5: vazioOu(c.vPep5),
+    antecipados: vazioOu(st.antecipados), qtNotasDeixadas: st.qtNotasDeixadas, pinos: st.pinos,
+    valorPepinos: vazioOu(st.valorPepinos), pepinoParcial: vazioOu(st.pepinoParcial),
+    notas25: vazioOu(c.notas25), notas4050: vazioOu(c.notas4050), pepinoExtra: vazioOu(c.extras),
+    recebimento: vazioOu(c.recebimento), depEspecie: vazioOu(c.depEspecie), depPix: vazioOu(c.depPix),
+    depBanco: vazioOu(c.depBanco), vale: vazioOu(st.vale), ajuda: vazioOu(st.ajuda), mecanica: vazioOu(st.mecanica),
+    despSupervisor: vazioOu(st.despSupervisor), excedido: vazioOu(st.excedido), valorDeixado: vazioOu(st.valorDeixado),
+    assinatura: st.assinatura, outros, obs,
+    extras: st.extras.map((x) => ({ numero: x.numero || '', cidade: x.cidade || '', valor: vazioOu(x.valor), vendedora: x.vendedora || '' })),
+  };
 }
 
-function montarFolha() {
-  const f = dadosFolha();
-  const neg = (t, b) => (b ? `<b>${esc(t)}</b>` : esc(t));
-  $('#folha').innerHTML = `<h2>${esc(f.titulo)}</h2>
-    <table>${f.linhas.map(([r, v, b]) => `<tr><th>${neg(r, b)}</th><td>${neg(v, b)}</td></tr>`).join('')}</table>
-    ${f.tabelas.map((t) => `<h3>${esc(t.titulo)}</h3><table class="folha__lista"><tr>${t.cols.map((c) => `<th>${esc(c)}</th>`).join('')}</tr>
-      ${t.linhas.map((l) => `<tr>${l.map((v) => `<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</table>`).join('')}`;
-}
-
-// Desenha a folha numa imagem PNG (no app Android não dá para imprimir; a imagem vai pelo WhatsApp ou fica salva).
-function imagemFolha() {
-  const f = dadosFolha();
-  const W = 1080, P = 40, H_LIN = 50, FS = 26;
-  const altura = P * 2 + 70 + f.linhas.length * H_LIN
-    + f.tabelas.reduce((t, tb) => t + 70 + (tb.linhas.length + 1) * H_LIN, 0);
-  const cv = document.createElement('canvas');
-  cv.width = W; cv.height = altura;
-  const g = cv.getContext('2d');
-  g.fillStyle = '#fff'; g.fillRect(0, 0, W, altura);
-  g.strokeStyle = '#000'; g.lineWidth = 2; g.fillStyle = '#000'; g.textBaseline = 'middle';
-  const fonte = (b, px = FS) => { g.font = `${b ? '700 ' : ''}${px}px system-ui, Roboto, sans-serif`; };
-  const caber = (t, w) => { let s = t; while (s && g.measureText(s).width > w) s = s.slice(0, -1); return s === t ? t : s.slice(0, -1) + '…'; };
-  let y = P;
-  fonte(true, 34); g.fillText(f.titulo, P, y + 25); y += 70;
-  const meio = P + (W - 2 * P) * 0.48;
-  f.linhas.forEach(([r, v, b]) => {
-    g.strokeRect(P, y, W - 2 * P, H_LIN); g.beginPath(); g.moveTo(meio, y); g.lineTo(meio, y + H_LIN); g.stroke();
-    fonte(b); g.fillText(caber(r, meio - P - 24), P + 12, y + H_LIN / 2); g.fillText(caber(v, W - P - meio - 24), meio + 12, y + H_LIN / 2);
-    y += H_LIN;
-  });
-  f.tabelas.forEach((t) => {
-    y += 20; fonte(true, 28); g.fillText(t.titulo, P, y + 25); y += 50;
-    const cw = (W - 2 * P) / t.cols.length;
-    [t.cols, ...t.linhas].forEach((linha, i) => {
-      fonte(i === 0);
-      linha.forEach((v, j) => {
-        g.strokeRect(P + j * cw, y, cw, H_LIN);
-        g.fillText(caber(v, cw - 20), P + j * cw + 10, y + H_LIN / 2);
-      });
-      y += H_LIN;
-    });
-  });
-  return new Promise((ok) => cv.toBlob(ok, 'image/png'));
+// O que ainda pode estar faltando antes de fechar a semana (só avisa, não impede).
+function pendencias() {
+  const c = calcular();
+  const p = [];
+  if (!st.semana) p.push('A semana não está preenchida.');
+  if (c.falta > 0) p.push(`Ainda falta depositar ${R$(c.falta)}.`);
+  if (c.falta < 0) p.push(`Os depósitos passaram ${R$(-c.falta)} do que tinha para depositar.`);
+  if (!st.valorDeixado) p.push('O valor deixado (vendas da semana) está vazio.');
+  if (!st.assinatura) p.push('A assinatura do vendedor está vazia.');
+  const conferir = Object.keys(LISTAS).reduce((t, k) => t + st[k].filter((i) => i.conferir).length, 0);
+  if (conferir) p.push(`${conferir} item(ns) lido(s) pela foto ainda marcado(s) em amarelo para conferir.`);
+  return p;
 }
 
 const nomeArquivo = () => `caixa-${(st.nome || 'vendedor').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-semana-${soDigitos(st.semana) || 'x'}.png`;
+let imagemCaixa = null;
 
-$('#btnImprimir').addEventListener('click', async () => {
-  if (!NATIVO) { montarFolha(); print(); return; }
+$('#btnGerar').addEventListener('click', async () => {
+  carregando(true, 'Gerando a folha do caixa…');
   try {
-    await compartilharArquivo(await imagemFolha(), nomeArquivo());
+    imagemCaixa = await desenharCaixa(dadosCaixa());
+    const url = URL.createObjectURL(imagemCaixa);
+    const img = $('#caixaImg');
+    if (img.src) URL.revokeObjectURL(img.src);
+    img.src = url;
+    const pend = pendencias();
+    $('#caixaAvisos').hidden = !pend.length;
+    $('#caixaAvisos').innerHTML = pend.length ? '<b>Antes de entregar, confira:</b><ul>' + pend.map((t) => `<li>${esc(t)}</li>`).join('') + '</ul>' : '';
+    $('#dlgCaixa').showModal();
   } catch (e) {
-    if (!/cancel/i.test(String(e?.message))) toast('Não deu para gerar a imagem da folha.');
+    console.error(e);
+    toast('Não deu para gerar a folha.');
+  } finally {
+    carregando(false);
   }
+});
+
+$('#btnCaixaEnviar').addEventListener('click', async () => {
+  if (!imagemCaixa) return;
+  const nome = nomeArquivo();
+  try {
+    if (NATIVO) { await compartilharArquivo(imagemCaixa, nome); return; }
+    const arq = new File([imagemCaixa], nome, { type: 'image/png' });
+    if (navigator.canShare?.({ files: [arq] })) { await navigator.share({ files: [arq], title: nome }); return; }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(imagemCaixa);
+    a.download = nome;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  } catch (e) {
+    if (e?.name !== 'AbortError' && !/cancel/i.test(String(e?.message))) toast('Não deu para enviar a imagem.');
+  }
+});
+
+$('#btnCaixaImprimir').addEventListener('click', () => {
+  $('#folha').innerHTML = `<img src="${$('#caixaImg').src}" alt="">`;
+  print();
 });
 
 /* ---------- início ---------- */

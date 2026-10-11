@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=8">
+  <link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
   <div class="topo">
@@ -217,10 +217,15 @@
       </div>
     </section>
 
+    <section class="card card--accent">
+      <h2>📋 Fim da semana</h2>
+      <p class="muted">Quando tudo estiver lançado, gere a folha CAIXA preenchida, igual à folha impressa, para entregar ou mandar.</p>
+      <button class="btn btn--primary btn--grande" id="btnGerar">📋 Gerar caixa</button>
+    </section>
+
     <section class="card actions-final">
       <button class="btn btn--primary" id="btnSalvar">💾 Salvar fechamento</button>
       <button class="btn" id="btnWhats">💬 Mandar resumo</button>
-      <button class="btn" id="btnImprimir">🖨 Imprimir / PDF</button>
       <button class="btn btn--ghost" id="btnNovo">＋ Novo fechamento</button>
     </section>
   </div>
@@ -251,6 +256,19 @@
     </form>
   </dialog>
 
+  <dialog id="dlgCaixa" class="dlg-caixa">
+    <form method="dialog">
+      <h2>Folha do caixa</h2>
+      <div id="caixaAvisos" class="avisos" hidden></div>
+      <img id="caixaImg" class="caixa-img" alt="Folha CAIXA preenchida">
+      <div class="row-actions">
+        <button type="button" class="btn btn--primary" id="btnCaixaEnviar">📤 Mandar / salvar</button>
+        <button type="button" class="btn" id="btnCaixaImprimir">🖨 Imprimir</button>
+        <button class="btn btn--ghost" value="cancel">Fechar</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="dlgLista">
     <form method="dialog">
       <h2>Fechamentos salvos</h2>
@@ -267,6 +285,6 @@
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="app.js?v=8"></script>
+  <script type="module" src="app.js?v=9"></script>
 </body>
 </html>
