@@ -168,9 +168,9 @@ label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--acc
 .digitando .bar{display:none}
 .digitando body{padding-bottom:55vh}
 /* "✓ Salva": aviso transparente e simples no meio da tela, some sozinho. */
-.salvo{position:fixed;left:50%;top:50%;z-index:70;transform:translate(-50%,-50%) scale(.9);padding:14px 26px;border-radius:16px;
+.aviso-salvo{position:fixed;left:50%;top:50%;z-index:70;transform:translate(-50%,-50%) scale(.9);padding:14px 26px;border-radius:16px;
   background:rgba(20,28,45,.72);color:#fff;font-size:20px;font-weight:700;opacity:0;pointer-events:none;
   -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
-.salvo.show{animation:salvo 1.4s ease forwards}
-@keyframes salvo{0%{opacity:0;transform:translate(-50%,-50%) scale(.9)}15%,70%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
-@media (prefers-reduced-motion:reduce){.salvo.show{animation-duration:1.8s}}
+.aviso-salvo.show{animation:aviso-salvo 1.4s ease forwards}
+@keyframes aviso-salvo{0%{opacity:0;transform:translate(-50%,-50%) scale(.9)}15%,70%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+@media (prefers-reduced-motion:reduce){.aviso-salvo.show{animation-duration:1.8s}}
