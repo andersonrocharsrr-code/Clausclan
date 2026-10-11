@@ -1,7 +1,7 @@
 /* Fechamento de Caixa — faz as contas da folha de caixa e lê notas/folhas pela foto (IA Claude). */
 import Anthropic from './vendor/anthropic.js';
 import { desenharCaixa } from './folha.js?v=9';
-import { lerNotaGratis, lerFolhaGratis, ultimaLeitura } from './leitor.js?v=15';
+import { lerNotaGratis, lerFolhaGratis, ultimaLeitura } from './leitor.js?v=16';
 
 const KEY_ATUAL = 'caixa.atual';
 const KEY_SALVOS = 'caixa.salvos';
@@ -60,8 +60,9 @@ const ONDE_CURTO = { empresa: 'Empresa (espécie)', banco: 'Banco/TED', pix: 'Pi
 const NOMES = { ajuda: 'Ajuda de custo', vale: 'Vale adiantado', salario: 'Salário', mecanica: 'Mecânica',
   despSupervisor: 'Despesas supervisor', excedido: 'Excedido da despesa' };
 const LISTAS = {
-  notas25: [['numero', 'Nº'], ['cliente', 'Cliente'], ['cidade', 'Cidade'], ['valor', 'Valor']],
-  notas4050: [['numero', 'Nº'], ['cliente', 'Cliente'], ['cidade', 'Cidade'], ['valor', 'Valor']],
+  // Da nota o caixa só precisa do valor recebido (e da faixa, que é a lista onde ela está); o nome ajuda a achar a nota.
+  notas25: [['cliente', 'Cliente'], ['valor', 'Valor']],
+  notas4050: [['cliente', 'Cliente'], ['valor', 'Valor']],
   extras: [['numero', 'Nº'], ['vendedora', 'Vendedora/cliente'], ['cidade', 'Cidade'], ['valor', 'Valor']],
   pila: [['tipo', 'Despesa'], ['valor', 'Valor']],
   depositos: [['data', 'Data', 'date'], ['onde', 'Onde', 'select'], ['valor', 'Valor']],
@@ -479,22 +480,23 @@ async function lerFotosGratis(tipo, files) {
       salvarAtual(); pintarTotais();
       return;
     }
-    let n25 = 0, n4050 = 0;
+    let n25 = 0, n4050 = 0, duvidas = 0;
     for (let i = 0; i < files.length; i++) {
       const rot = files.length > 1 ? `Lendo nota ${i + 1} de ${files.length}…` : 'Lendo a nota…';
       const n = await lerNotaGratis(files[i], passo(rot));
       const destino = n.faixa === '40' || n.faixa === '50' ? 'notas4050' : 'notas25';
       destino === 'notas25' ? n25++ : n4050++;
+      if (n.faltou.length) duvidas++;
       st[destino].push({
         id: uid(), numero: n.numero, cliente: n.cliente, cidade: n.cidade || st.cidade, valor: n.valor,
-        faixa: n.faixa, conferir: true,
-        nota: [n.faltou.length ? 'Leitura gratuita, confira: ' + n.faltou.join(', ') : 'Leitura gratuita: confira',
-          n.total && n.total !== n.valor ? `total da nota ${R$(n.total)}` : ''].filter(Boolean).join(' · '),
+        // Da nota só importam o valor recebido e a faixa: fica amarela só quando um dos dois está em dúvida.
+        faixa: n.faixa, conferir: n.faltou.length > 0,
+        nota: n.faltou.length ? 'Confira: ' + n.faltou.join(', ') : '',
       });
       pintarLista(destino);
       salvarAtual(); pintarTotais();
     }
-    toast(`${files.length} nota(s) lida(s): ${n25} em 25%, ${n4050} em 40/50%. Confira os valores em amarelo.`);
+    toast(`${files.length} nota(s) lida(s): ${n25} em 25%, ${n4050} em 40/50%.` + (duvidas ? ` ${duvidas} em amarelo para conferir.` : ''));
   } catch (e) {
     console.error(e);
     toast(e.message || 'Não deu para ler a foto.');

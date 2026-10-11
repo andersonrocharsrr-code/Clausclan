@@ -157,11 +157,12 @@ export function entenderNota(texto) {
   };
   // A impressora usa o zero cortado (Ø), que o leitor lê como 8, 9 ou 6: "616,08" é 616,00.
   // Os valores das notas quase nunca têm centavos, então centavos só com esses dígitos viram ,00.
+  let acertouCentavos = false;
   const zeroCortado = (v) => {
     if (!v) return v;
     const cent = Math.round((v % 1) * 100);
     const ds = String(cent).padStart(2, '0');
-    if (cent && /^[0689]{2}$/.test(ds)) { r.faltou.push('centavos acertados para ,00 (zero cortado da impressora)'); return Math.trunc(v); }
+    if (cent && /^[0689]{2}$/.test(ds)) { acertouCentavos = true; return Math.trunc(v); }
     return v;
   };
   const recebi = zeroCortado(valorDe(/RECEB[I1L]\s*[O0]\s*VAL[O0]R/));
@@ -170,6 +171,10 @@ export function entenderNota(texto) {
   r.valor = recebi && pagos && Math.trunc(recebi) !== Math.trunc(pagos)
     ? (r.faltou.push(`"Recebi" (${recebi}) e "Total de pagamentos" (${pagos}) diferentes`), recebi)
     : recebi || pagos;
+  // Centavos acertados só pedem conferência quando não deu para comparar o "Recebi" com o "Total de pagamentos".
+  if (acertouCentavos && !(recebi && pagos && recebi === pagos)) r.faltou.push('confira os centavos');
+  // Achou o valor por só um dos dois: tudo bem, mas vale uma olhada.
+  if (r.valor && !(recebi && pagos)) r.faltou.push('valor lido de uma linha só');
   r.total = zeroCortado(valorDe(/^.{0,3}T[O0]TAL\s*R/));
   r.comissao = zeroCortado(valorDe(/T[O0]TAL DE C[O0]M[I1]SS/));
   if (!r.valor && r.total) { r.valor = r.total; r.faltou.push('não achei o "Recebi o valor": usei o TOTAL'); }
@@ -191,7 +196,6 @@ export function entenderNota(texto) {
     r.faixa = p > 0.45 ? '50' : '40';
   }
 
-  if (!r.numero) r.faltou.push('número');
   if (!r.valor) r.faltou.push('valor');
   if (!r.faixa) r.faltou.push('não achei "25%" nem "Nota quitada" no final');
   r.faltou = [...new Set(r.faltou)];

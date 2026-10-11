@@ -139,3 +139,4 @@ label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--acc
 .escolha label{align-items:flex-start}
 .escolha input{margin-top:2px;flex:none}
 .diag-texto{white-space:pre-wrap;font-size:11px;max-height:160px;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;margin:0 0 8px}
+.item__mover{white-space:nowrap}
