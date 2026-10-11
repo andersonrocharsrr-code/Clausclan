@@ -90,10 +90,11 @@ function normalizar(s) {
 let st = normalizar(ls.get(KEY_ATUAL, null) || novo());
 
 // Semana de pagamento = 1ª semana do mês (pela "Semana" da folha, ou pela data se a semana estiver em branco).
+// A semana vem impressa na folha CAIXA (lida pela foto da folha em branco). Semana 1 = semana de pagamento.
+// Sem a semana, o app não adivinha pela data: devolve null.
 function semanaPagamento(s) {
-  const sem = String(s.semana || '').trim();
-  if (sem) return sem === '1';
-  return s.data ? Number(s.data.slice(8, 10)) <= 7 : false;
+  const sem = String(s.semana || '').replace(/\D/g, '');
+  return sem ? sem === '1' : null;
 }
 // Onde costuma depositar: na semana de pagamento vai para a empresa, nas outras para o banco.
 const tipoDeposito = (s) => (semanaPagamento(s) ? 'empresa' : 'banco');
@@ -146,9 +147,11 @@ function pintarTotais() {
   });
   $('#btnDepFalta').hidden = !(c.falta > 0);
   $('#btnDepFalta').textContent = `✓ Depositei os ${R$(c.falta)} que faltam (${tipoDeposito(st) === 'empresa' ? 'empresa' : 'banco'})`;
-  $('#depDica').textContent = semanaPagamento(st)
-    ? 'Semana de pagamento (1ª do mês): normalmente o depósito é na empresa.'
-    : 'Fora da semana de pagamento: normalmente o depósito é no banco/transferência.';
+  const pag = semanaPagamento(st);
+  $('#depDica').textContent = pag === null
+    ? 'Semana não identificada: tire a foto da folha em branco (aba Recebimento) ou preencha a Semana.'
+    : pag ? `Semana ${st.semana}: semana de pagamento, normalmente o depósito é na empresa.`
+      : `Semana ${st.semana}: normalmente o depósito é no banco/transferência.`;
   const d = st.data ? new Date(st.data + 'T12:00').toLocaleDateString('pt-BR') : '';
   $('#subtitulo').textContent = [st.nome, st.cidade, d].filter(Boolean).join(' · ') || 'Novo fechamento';
 }
@@ -379,7 +382,9 @@ DESPESAS SUPERVISOR, EXCEDIDO DA DESPESA (excedido), OUTROS e OBS (cada linha es
 estiver entre parênteses, ele é o valor da linha; uma linha de salário do vendedor vai para "salario", não para outros),
 VALOR DEIXADO, ASSINATURA VENDEDOR.
 À direita há blocos "VENDEDORA:" com colunas Nº, CIDADE, VALOR — são os pepinos extras: cada bloco preenchido vira um item
-de "extras" (vendedora = nome escrito depois de VENDEDORA:). Se a folha estiver em branco, devolva tudo vazio/0.`,
+de "extras" (vendedora = nome escrito depois de VENDEDORA:).
+A folha "em branco" já vem com o cabeçalho IMPRESSO (CIDADE, NOME, DATA, SEMANA, FOI COBRAR, QT. DE NOTAS): leia sempre
+esses campos impressos, principalmente a SEMANA (só o número). Os campos sem nada escrito ficam vazios/0.`,
   },
 };
 
@@ -469,7 +474,7 @@ const itemExtra = (n) => ({
 function aplicarFolha(r) {
   const temAlgo = Object.entries(r).some(([k, v]) => k !== 'duvidas' && (Array.isArray(v) ? v.length : v));
   if (!temAlgo) {
-    toast('Folha em branco reconhecida. Preencha os campos aqui no app.');
+    toast('Não achei nada na folha. Tente uma foto mais nítida, com a folha inteira.');
     return;
   }
   ['cidade', 'nome', 'semana', 'qtNotas', 'qtNotasDeixadas', 'pinos', 'assinatura'].forEach((k) => { if (r[k]) st[k] = r[k]; });
@@ -485,7 +490,10 @@ function aplicarFolha(r) {
   if (r.outros.length) st.outros = r.outros.map((o) => ({ id: uid(), desc: o.desc, valor: arred(o.valor), conferir: true }));
   if (r.obs.length) st.obs = r.obs.map((o) => ({ id: uid(), desc: o.desc, valor: arred(o.valor), conferir: true }));
   pintarTudo();
-  toast(r.duvidas ? 'Folha lida. Atenção: ' + r.duvidas : 'Folha lida! Confira os campos marcados.');
+  const pag = semanaPagamento(st);
+  const sem = pag === null ? ' Não achei a semana, preencha à mão.'
+    : ` Semana ${st.semana}${pag ? ' (semana de pagamento)' : ''}.`;
+  toast((r.duvidas ? 'Folha lida. Atenção: ' + r.duvidas : 'Folha lida!') + sem);
 }
 
 $$('input[data-ler]').forEach((inp) => inp.addEventListener('change', () => {
