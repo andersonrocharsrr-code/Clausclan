@@ -42,10 +42,12 @@ function toast(msg) {
 }
 
 /* ---------- estado ---------- */
-const MONEY = ['foiCobrar', 'antecipados', 'valorPepinos', 'pepinoParcial', 'depPix',
+const MONEY = ['foiCobrar', 'antecipados', 'valorPepinos', 'pepinoParcial',
   'vale', 'ajuda', 'salario', 'mecanica', 'despSupervisor', 'excedido', 'valorDeixado'];
 // Despesas do vendedor (campo em branco vale 0, então o salário só entra quando é preenchido).
 const DESPESAS = ['ajuda', 'vale', 'salario', 'mecanica', 'despSupervisor', 'excedido'];
+const ONDE = { empresa: 'Depto. empresa espécie', banco: 'Depto. banco/TED/trans.', pix: 'Depto. Pix' };
+const ONDE_CURTO = { empresa: 'Empresa (espécie)', banco: 'Banco/TED', pix: 'Pix' };
 const NOMES = { ajuda: 'Ajuda de custo', vale: 'Vale adiantado', salario: 'Salário', mecanica: 'Mecânica',
   despSupervisor: 'Despesas supervisor', excedido: 'Excedido da despesa' };
 const LISTAS = {
@@ -53,6 +55,7 @@ const LISTAS = {
   notas4050: [['numero', 'Nº'], ['cliente', 'Cliente'], ['cidade', 'Cidade'], ['valor', 'Valor']],
   extras: [['numero', 'Nº'], ['vendedora', 'Vendedora/cliente'], ['cidade', 'Cidade'], ['valor', 'Valor']],
   pila: [['tipo', 'Despesa'], ['valor', 'Valor']],
+  depositos: [['data', 'Data', 'date'], ['onde', 'Onde', 'select'], ['valor', 'Valor']],
   outros: [['desc', 'Descrição'], ['valor', 'Valor']],
   obs: [['desc', 'Descrição'], ['valor', 'Valor']],
 };
@@ -65,15 +68,24 @@ function novo() {
     data: new Date().toISOString().slice(0, 10), semana: '',
     foiCobrar: 0, qtNotas: '', qtNotasDeixadas: '', pinos: '',
     antecipados: 0, valorPepinos: 0, pepinoParcial: 0,
-    notas25: [], notas4050: [], extras: [], pila: [], outros: [], obs: [],
-    vale: 0, ajuda: 0, salario: 0, mecanica: 0, despSupervisor: 0, excedido: 0, depPix: 0,
-    depTipo: '', // '' = automático pela semana; 'empresa' ou 'banco' quando o vendedor escolhe
+    notas25: [], notas4050: [], extras: [], pila: [], outros: [], obs: [], depositos: [],
+    vale: 0, ajuda: 0, salario: 0, mecanica: 0, despSupervisor: 0, excedido: 0,
     valorDeixado: 0, assinatura: ultimo?.assinatura || '',
   };
 }
 
 // Fechamentos salvos antes de existirem campos novos ganham os valores padrão.
-const normalizar = (s) => ({ ...novo(), ...s });
+function normalizar(s) {
+  const n = { ...novo(), ...s };
+  if (!s.depositos) {
+    // Versões antigas guardavam o depósito em campos soltos; viram depósitos lançados.
+    [['empresa', s.depEspecie], ['banco', s.depBanco], ['pix', s.depPix]].forEach(([onde, v]) => {
+      if (Number(v) > 0) n.depositos.push({ id: uid(), data: s.data || hoje(), onde, valor: arred(v) });
+    });
+  }
+  delete n.depEspecie; delete n.depBanco; delete n.depPix; delete n.depTipo;
+  return n;
+}
 
 let st = normalizar(ls.get(KEY_ATUAL, null) || novo());
 
@@ -83,7 +95,9 @@ function semanaPagamento(s) {
   if (sem) return sem === '1';
   return s.data ? Number(s.data.slice(8, 10)) <= 7 : false;
 }
-const tipoDeposito = (s) => s.depTipo || (semanaPagamento(s) ? 'empresa' : 'banco');
+// Onde costuma depositar: na semana de pagamento vai para a empresa, nas outras para o banco.
+const tipoDeposito = (s) => (semanaPagamento(s) ? 'empresa' : 'banco');
+const hoje = () => new Date().toISOString().slice(0, 10);
 
 const soma = (lista) => arred(lista.reduce((t, i) => t + (Number(i.valor) || 0), 0));
 
@@ -99,12 +113,14 @@ function calcular(s = st) {
   c.outros = soma(s.outros);
   c.obs = soma(s.obs);
   c.despesas = arred(c.despVendedor + c.pila + c.outros + c.obs);
-  c.depPix = arred(s.depPix);
-  // O que sobra depois das despesas é o depósito.
-  c.deposito = arred(c.recebimento - c.despesas - c.depPix);
-  c.tipo = tipoDeposito(s);
-  c.depEspecie = c.tipo === 'empresa' ? c.deposito : 0;
-  c.depBanco = c.tipo === 'banco' ? c.deposito : 0;
+  // O que sobra depois das despesas tem que ser depositado; os depósitos lançados vão abatendo.
+  c.aDepositar = arred(c.recebimento - c.despesas);
+  c.depositado = soma(s.depositos);
+  c.falta = arred(c.aDepositar - c.depositado);
+  const porOnde = (o) => soma(s.depositos.filter((d) => d.onde === o));
+  c.depEspecie = porOnde('empresa');
+  c.depBanco = porOnde('banco');
+  c.depPix = porOnde('pix');
   return c;
 }
 
@@ -116,21 +132,23 @@ function pintarTotais() {
   $$('[data-c]').forEach((el) => {
     const v = c[el.dataset.c];
     el.textContent = R$(v);
-    el.classList.toggle('neg', el.dataset.c === 'deposito' && v < 0);
+    if (el.dataset.c === 'falta') {
+      el.classList.toggle('neg', v !== 0);
+      el.classList.toggle('pos', v === 0 && c.aDepositar > 0);
+    }
   });
-  const onde = c.tipo === 'empresa' ? 'na empresa (espécie)' : 'no banco/TED/transferência';
   $$('[data-status]').forEach((el) => {
-    el.textContent = c.deposito < 0 ? `As despesas passaram o recebimento em ${R$(-c.deposito)}`
-      : `Depositar ${R$(c.deposito)} ${onde}`;
-    el.className = 'status ' + (c.deposito < 0 ? 'neg' : 'pos');
+    el.textContent = c.aDepositar < 0 ? `As despesas passaram o recebimento em ${R$(-c.aDepositar)}`
+      : c.falta > 0 ? `Falta depositar ${R$(c.falta)}`
+        : c.falta < 0 ? `Depositou ${R$(-c.falta)} a mais`
+          : c.aDepositar > 0 ? '✓ Tudo depositado' : '';
+    el.className = 'status ' + (c.falta === 0 && c.aDepositar > 0 ? 'pos' : 'neg');
   });
-  $$('input[name="depTipo"]').forEach((r) => { r.checked = r.value === c.tipo; });
-  $('#depDica').textContent = st.depTipo
-    ? 'Você escolheu. Toque em "automático" para voltar a seguir a semana.'
-    : semanaPagamento(st) ? 'Automático: 1ª semana do mês é semana de pagamento, depósito na empresa.'
-      : 'Automático: fora da semana de pagamento, depósito no banco/transferência.';
-  $('#depAuto').hidden = !st.depTipo;
-  $$('[data-se-pix]').forEach((el) => { el.hidden = !c.depPix; });
+  $('#btnDepFalta').hidden = !(c.falta > 0);
+  $('#btnDepFalta').textContent = `✓ Depositei os ${R$(c.falta)} que faltam (${tipoDeposito(st) === 'empresa' ? 'empresa' : 'banco'})`;
+  $('#depDica').textContent = semanaPagamento(st)
+    ? 'Semana de pagamento (1ª do mês): normalmente o depósito é na empresa.'
+    : 'Fora da semana de pagamento: normalmente o depósito é no banco/transferência.';
   const d = st.data ? new Date(st.data + 'T12:00').toLocaleDateString('pt-BR') : '';
   $('#subtitulo').textContent = [st.nome, st.cidade, d].filter(Boolean).join(' · ') || 'Novo fechamento';
 }
@@ -152,10 +170,13 @@ function pintarLista(nome) {
   }
   st[nome].forEach((item, i) => {
     const row = document.createElement('div');
-    row.className = 'item' + (item.conferir ? ' item--conferir' : '') + (cols.length === 2 ? ' item--2' : '');
-    row.innerHTML = cols.map(([k, rot]) => `
+    row.className = 'item' + (item.conferir ? ' item--conferir' : '') + (cols.length === 2 ? ' item--2' : '')
+      + (nome === 'depositos' ? ' item--dep' : '');
+    row.innerHTML = cols.map(([k, rot, tipo]) => `
       <label class="item__${k}">${rot}
-        <input data-k="${k}" ${k === 'valor' ? 'inputmode="decimal"' : ''} value="${esc(k === 'valor' ? (item.valor ? brl(item.valor) : '') : item[k] || '')}">
+        ${tipo === 'select'
+          ? `<select data-k="${k}">${Object.entries(ONDE_CURTO).map(([v, t]) => `<option value="${v}" ${item[k] === v ? 'selected' : ''}>${t}</option>`).join('')}</select>`
+          : `<input data-k="${k}" ${tipo === 'date' ? 'type="date"' : ''} ${k === 'valor' ? 'inputmode="decimal"' : ''} value="${esc(k === 'valor' ? (item.valor ? brl(item.valor) : '') : item[k] || '')}">`}
       </label>`).join('') +
       `<button class="item__del" aria-label="Apagar" title="Apagar">✕</button>` +
       (nome.startsWith('notas') ? `<div class="item__extra">${item.faixa ? `<span class="tag">${esc(item.faixa)}%</span>` : ''}
@@ -213,13 +234,17 @@ $$('[data-pila]').forEach((b) => b.addEventListener('click', () => {
   rows[rows.length - 1]?.querySelector(b.dataset.pila ? '[data-k="valor"]' : 'input')?.focus();
 }));
 
-$$('input[name="depTipo"]').forEach((r) => r.addEventListener('change', () => {
-  st.depTipo = r.value;
-  salvarAtual(); pintarTotais();
+function lancarDeposito(onde, valor = 0) {
+  st.depositos.push({ id: uid(), data: hoje(), onde, valor });
+  salvarAtual(); pintarLista('depositos'); pintarTotais();
+}
+$$('[data-dep]').forEach((b) => b.addEventListener('click', () => {
+  lancarDeposito(b.dataset.dep);
+  $$('[data-lista="depositos"] .item').pop()?.querySelector('[data-k="valor"]')?.focus();
 }));
-$('#depAuto').addEventListener('click', () => {
-  st.depTipo = '';
-  salvarAtual(); pintarTotais();
+$('#btnDepFalta').addEventListener('click', () => {
+  const { falta } = calcular();
+  if (falta > 0) lancarDeposito(tipoDeposito(st), falta);
 });
 
 /* ---------- abas ---------- */
@@ -304,7 +329,7 @@ const linhaDesc = {
 const SCHEMA_FOLHA = {
   type: 'object', additionalProperties: false,
   required: ['cidade', 'nome', 'data', 'semana', 'foiCobrar', 'qtNotas', 'qtNotasDeixadas', 'pinos', 'antecipados',
-    'valorPepinos', 'pepinoParcial', 'notas25', 'notas4050', 'depPix', 'vale', 'ajuda', 'salario',
+    'valorPepinos', 'pepinoParcial', 'notas25', 'notas4050', 'depEspecie', 'depPix', 'depBanco', 'vale', 'ajuda', 'salario',
     'mecanica', 'despSupervisor', 'excedido', 'outros', 'obs', 'extras', 'valorDeixado', 'assinatura', 'duvidas'],
   properties: {
     cidade: { type: 'string' }, nome: { type: 'string' },
@@ -314,7 +339,7 @@ const SCHEMA_FOLHA = {
     antecipados: { type: 'number' }, valorPepinos: { type: 'number' }, pepinoParcial: { type: 'number' },
     notas25: { type: 'number', description: 'Total escrito no campo NOTAS 25%' },
     notas4050: { type: 'number', description: 'Total escrito no campo NOTAS 40% e 50%' },
-    depPix: { type: 'number' }, salario: { type: 'number', description: 'Salário do vendedor; 0 se não tiver' },
+    depEspecie: { type: 'number' }, depPix: { type: 'number' }, depBanco: { type: 'number' }, salario: { type: 'number', description: 'Salário do vendedor; 0 se não tiver' },
     vale: { type: 'number' }, ajuda: { type: 'number' }, mecanica: { type: 'number' },
     despSupervisor: { type: 'number' }, excedido: { type: 'number' },
     outros: { type: 'array', items: linhaDesc }, obs: { type: 'array', items: linhaDesc },
@@ -348,8 +373,8 @@ da vendedora/cliente. Não repita o mesmo lançamento se ele aparecer em duas fo
     texto: `A foto é uma folha "CAIXA" de fechamento (pode estar em branco ou preenchida à mão). Campos da folha:
 CIDADE, NOME, DATA, SEMANA, FOI COBRAR R$ (foiCobrar), QT. DE NOTAS (qtNotas), ANTECIPADOS R$, V. PEP. 5% (ignore, é calculado),
 QT. NOTAS DEIXADAS, Nº DE PINOS, VALOR DOS PEPINOS, PEPINO PARCIAL, PEPINO EXTRA (ignore o total, é calculado),
-NOTAS 25% (notas25), NOTAS 40% e 50% (notas4050), RECEBIMENTO (ignore, é calculado), DEPTO. EMPRESA ESPÉCIE e
-DEPTO BANCO/TED/TRANS. (ignore os dois, o depósito é calculado), DEPTO PIX (depPix), VALE ADIANTADO (vale), AJUDA DE CUSTO (ajuda), MECÂNICA,
+NOTAS 25% (notas25), NOTAS 40% e 50% (notas4050), RECEBIMENTO (ignore, é calculado), DEPTO. EMPRESA ESPÉCIE (depEspecie),
+DEPTO PIX (depPix), DEPTO BANCO/TED/TRANS. (depBanco), VALE ADIANTADO (vale), AJUDA DE CUSTO (ajuda), MECÂNICA,
 DESPESAS SUPERVISOR, EXCEDIDO DA DESPESA (excedido), OUTROS e OBS (cada linha escrita vira {desc, valor}; se o valor
 estiver entre parênteses, ele é o valor da linha; uma linha de salário do vendedor vai para "salario", não para outros),
 VALOR DEIXADO, ASSINATURA VENDEDOR.
@@ -450,6 +475,8 @@ function aplicarFolha(r) {
   ['cidade', 'nome', 'semana', 'qtNotas', 'qtNotasDeixadas', 'pinos', 'assinatura'].forEach((k) => { if (r[k]) st[k] = r[k]; });
   if (/^\d{4}-\d{2}-\d{2}$/.test(r.data)) st.data = r.data;
   MONEY.forEach((k) => { if (r[k]) st[k] = arred(r[k]); });
+  const deps = [['empresa', r.depEspecie], ['banco', r.depBanco], ['pix', r.depPix]].filter(([, v]) => v > 0);
+  if (deps.length) st.depositos = deps.map(([onde, v]) => ({ id: uid(), data: st.data || hoje(), onde, valor: arred(v), conferir: true }));
   // Na folha só aparece o total das notas; vira uma linha "total da folha" que pode ser trocada pelas notas uma a uma.
   [['notas25', r.notas25], ['notas4050', r.notas4050]].forEach(([k, v]) => {
     if (v) st[k] = [{ id: uid(), numero: '', cliente: 'Total escrito na folha', cidade: st.cidade, valor: arred(v), conferir: true }];
@@ -550,8 +577,9 @@ function resumo() {
   st.outros.forEach((o) => L.push(`Outros: ${o.desc || ''} ${R$(o.valor)}`));
   st.obs.forEach((o) => L.push(`OBS: ${o.desc || ''} ${R$(o.valor)}`));
   L.push(`*Total de despesas: ${R$(c.despesas)}*`, '');
-  if (c.depPix) L.push(`Depto. Pix: ${R$(c.depPix)}`);
-  L.push(`*${c.tipo === 'empresa' ? 'Depto. empresa espécie' : 'Depto. banco/TED/trans.'}: ${R$(c.deposito)}*`);
+  L.push(`Total para depositar: ${R$(c.aDepositar)}`);
+  st.depositos.forEach((d) => L.push(`${ONDE[d.onde]}: ${R$(d.valor)}`));
+  L.push(c.falta === 0 ? '*✓ Tudo depositado*' : c.falta > 0 ? `*Falta depositar: ${R$(c.falta)}*` : `*Depositou a mais: ${R$(-c.falta)}*`);
   L.push('', `Valor deixado (vendas da semana): ${R$(st.valorDeixado)}`);
   return L.join('\n');
 }
@@ -584,6 +612,7 @@ function montarFolha() {
       ${lin('<b>Recebimento</b>', '<b>' + R$(c.recebimento) + '</b>')}
       ${lin('Depto. empresa espécie', R$(c.depEspecie))}${lin('Depto. Pix', R$(c.depPix))}
       ${lin('Depto. banco/TED/trans.', R$(c.depBanco))}
+      ${c.falta ? lin('<b>Falta depositar</b>', '<b>' + R$(c.falta) + '</b>') : ''}
       ${DESPESAS.map((k) => (k === 'salario' && !st.salario ? '' : lin(NOMES[k], R$(st[k])))).join('')}
       ${st.pila.map((o) => lin('Despesas do Pila — ' + esc(o.tipo || ''), R$(o.valor))).join('')}
       ${st.outros.map((o) => lin('Outros', esc(o.desc || '') + ' ' + R$(o.valor))).join('')}

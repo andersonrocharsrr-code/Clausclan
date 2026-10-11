@@ -220,9 +220,10 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
 - **3 abas**: Recebimento, Despesas e Depósito.
 - **Despesas**: ajuda de custo, vale adiantado, salário (só entra na conta se for preenchido), mecânica,
   despesas supervisor, excedido, **despesas do Pila** (refeição, salário, hotel ou outra), Outros e OBS.
-- **Depósito calculado sozinho**: recebimento − despesas (− o que já foi por Pix). Escolha onde depositar:
-  **Depto. empresa espécie** ou **Depto. banco/TED/transferência**. No automático, a 1ª semana do mês
-  (semana de pagamento) vai para a empresa e as outras para o banco; dá para trocar com um toque.
+- **Depósito**: lance cada depósito que já fez (empresa/espécie, banco/TED ou Pix, com data e valor). O app mostra
+  **quanto falta depositar** = recebimento − despesas − já depositado, e recalcula sempre que entra recebimento
+  ou despesa. Na 1ª semana do mês (semana de pagamento) o botão "Depositei tudo o que falta" lança na empresa;
+  nas outras semanas, no banco.
 - **Valor deixado** = vendas da semana, digitado à mão (não entra nas contas do caixa).
 - Salvar fechamentos, mandar resumo pelo WhatsApp e imprimir/PDF no formato da folha.
 

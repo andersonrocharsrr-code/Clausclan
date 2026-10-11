@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
   <div class="topo">
@@ -177,23 +177,32 @@
   <!-- ===== Depósito ===== -->
   <div data-tab="dep" hidden>
     <section class="card card--sum">
-      <h2>Depósito</h2>
+      <h2>Quanto falta depositar</h2>
       <div class="conf">
         <div><span>Recebimento</span><b data-c="recebimento"></b></div>
         <div><span>− Despesas</span><b data-c="despesas"></b></div>
-        <div data-se-pix><span>− Já mandou por Pix</span><b data-c="depPix"></b></div>
-        <div class="conf__diff"><span>= Depositar</span><b data-c="deposito"></b></div>
+        <div><span>= Total para depositar</span><b data-c="aDepositar"></b></div>
+        <div><span>− Já depositado</span><b data-c="depositado"></b></div>
+        <div class="conf__diff"><span>= Falta depositar</span><b data-c="falta"></b></div>
       </div>
       <p data-status></p>
+      <p class="muted small">Sempre que entrar recebimento ou despesa, o que falta depositar é recalculado.</p>
+    </section>
 
-      <h3>Onde vai depositar</h3>
-      <div class="escolha" role="radiogroup">
-        <label><input type="radio" name="depTipo" value="empresa"> Depto. empresa espécie</label>
-        <label><input type="radio" name="depTipo" value="banco"> Depto. banco/TED/transferência</label>
+    <section class="card">
+      <div class="card__head">
+        <h2>Depósitos feitos</h2>
+        <strong class="total" data-c="depositado"></strong>
       </div>
+      <p class="muted small">Lance aqui cada depósito que você já fez.</p>
+      <div class="row-actions">
+        <button class="btn" data-dep="empresa">+ Empresa (espécie)</button>
+        <button class="btn" data-dep="banco">+ Banco/TED/transf.</button>
+        <button class="btn" data-dep="pix">+ Pix</button>
+      </div>
+      <button class="btn btn--primary" id="btnDepFalta" style="width:100%">✓ Depositei tudo o que falta</button>
       <p class="muted small" id="depDica"></p>
-      <button type="button" class="btn btn--ghost" id="depAuto" hidden>↺ Voltar ao automático</button>
-      <label>Parte mandada por Pix (se tiver)<input data-f="depPix" data-money inputmode="decimal"></label>
+      <div class="lista" data-lista="depositos"></div>
     </section>
 
     <section class="card">
@@ -217,7 +226,7 @@
   <footer class="bar">
     <div><span>Recebimento</span><b data-c="recebimento"></b></div>
     <div><span>Despesas</span><b data-c="despesas"></b></div>
-    <div><span data-status-curto>Depósito</span><b data-c="deposito"></b></div>
+    <div><span>Falta depositar</span><b data-c="falta"></b></div>
   </footer>
 
   <!-- Folha para impressão -->
@@ -254,6 +263,6 @@
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="app.js?v=4"></script>
+  <script type="module" src="app.js?v=5"></script>
 </body>
 </html>
