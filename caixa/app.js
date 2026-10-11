@@ -78,6 +78,8 @@ const LISTAS = {
   // Notas feitas (vendas) de cada dia: Ab (abertura) + Rp (reposição) = notas do dia; a soma dos valores é o
   // "Valor deixado" e a das notas, as "Notas deixadas".
   feitas: [['data', 'Dia', 'date'], ['ab', 'Ab'], ['rp', 'Rp'], ['valor', 'Valor']],
+  // Pepino parcial do relatório: quanto as clientes ficaram devendo, lançado no dia (pode lançar várias vezes).
+  devendo: [['data', 'Dia', 'date'], ['qtd', 'Qtd. de notas'], ['valor', 'Ficou devendo']],
   obs: [['desc', 'Descrição'], ['valor', 'Valor']],
 };
 
@@ -89,7 +91,7 @@ function novo() {
     data: hoje(), semana: '',
     foiCobrar: 0, qtNotas: '', qtNotasDeixadas: '', pinos: '',
     antecipados: 0, valorPepinos: 0, pepinoParcial: 0,
-    notas25: [], notas4050: [], extras: [], pila: [], outros: [], obs: [], depositos: [], antecipadas: [], parciais: [], feitas: [],
+    notas25: [], notas4050: [], extras: [], pila: [], outros: [], obs: [], depositos: [], antecipadas: [], parciais: [], feitas: [], devendo: [],
     vale: 0, ajuda: 0, salario: 0, mecanica: 0, despSupervisor: 0, excedido: 0,
     valorDeixado: 0, assinatura: ultimo?.assinatura || '',
     // Relatório diário: o que só o vendedor sabe (da semana e de cada dia) e os acumulados de cada dia.
@@ -118,6 +120,12 @@ function normalizar(s) {
     const d = n.relDia?.[f.data];
     if (d && f.ab == null && f.rp == null) { f.ab = d.ab || ''; f.rp = d.rp || ''; }
   });
+  // O devendo do relatório era digitado uma vez por dia; vira um lançamento daquele dia.
+  if (!s.devendo) {
+    Object.entries(n.relDia || {}).forEach(([data, d]) => {
+      if (numero(d.parcialQt) || numero(d.parcialValor)) n.devendo.push({ id: uid(), data, qtd: String(d.parcialQt || ''), valor: numero(d.parcialValor) });
+    });
+  }
   if (!s.feitas && (Number(s.valorDeixado) > 0 || numero(s.qtNotasDeixadas) > 0)) {
     n.feitas = [{ id: uid(), data: s.data || hoje(), qtd: String(s.qtNotasDeixadas || ''), valor: arred(s.valorDeixado) }];
   }
@@ -229,7 +237,7 @@ function pintarLista(nome) {
   st[nome].forEach((item, i) => {
     const row = document.createElement('div');
     row.className = 'item' + (item.conferir ? ' item--conferir' : '') + (cols.length === 2 ? ' item--2' : '')
-      + (nome === 'depositos' ? ' item--dep' : '') + (nome === 'feitas' ? ' item--feitas' : '');
+      + (nome === 'depositos' ? ' item--dep' : '') + (nome === 'feitas' ? ' item--feitas' : '') + (nome === 'devendo' ? ' item--devendo' : '');
     row.innerHTML = cols.map(([k, rot, tipo]) => `
       <label class="item__${k}">${rot}
         ${tipo === 'select'
@@ -944,7 +952,7 @@ if (NATIVO) {
 // O relatório separa "do dia" e "total": notas (dia em que a foto foi lida/lançada), pepinos, antecipadas,
 // notas feitas e depósitos têm o dia de cada um. O pepino parcial do relatório (quanto a cliente ficou
 // devendo) é digitado dia a dia; o total soma os dias.
-const REL_MONEY = ['avistaValor', 'devolValor', 'parcialValor'];
+const REL_MONEY = ['avistaValor', 'devolValor'];
 
 // Valor de face da nota (o TOTAL impresso), para saber quanto ainda está nas notas em branco.
 const valorDeFace = (n) => Number(n.total) || (n.faixa === '25' ? arred(n.valor / 0.75) : Number(n.valor) || 0);
@@ -962,8 +970,6 @@ function relatorio(dia) {
   const c = calcular();
   const g = ls.get(KEY_REL, {});
   const rel = st.rel || {};
-  const dias = st.relDia || {};
-  const hojeRel = dias[dia] || {};
 
   // Os totais contam só até o dia do relatório: o relatório de ontem mostra o total de ontem.
   // (Itens sem dia, de versões antigas, contam em todos.)
@@ -988,10 +994,11 @@ function relatorio(dia) {
   const pepTotal = st.extras.map(pepinoAte).filter((v) => v > 0);
   const parcDia = st.parciais.filter((x) => x.dia === dia && Number(x.valor) > 0);
   const parcPagoTotal = soma(st.parciais.filter((x) => ate(x.dia)));
-  // Pepino parcial do relatório: o que as clientes ficaram devendo, digitado em cada dia.
-  const diasAte = Object.entries(dias).filter(([d]) => d <= dia).map(([, v]) => v);
-  const parcQtTotal = diasAte.reduce((t, d) => t + numero(d.parcialQt), 0);
-  const parcValorTotal = arred(diasAte.reduce((t, d) => t + numero(d.parcialValor), 0));
+  // Pepino parcial do relatório: o que as clientes ficaram devendo, pelos lançamentos de cada dia.
+  const devDia = st.devendo.filter((x) => x.data === dia);
+  const devAte = st.devendo.filter((x) => ate(x.data));
+  const parcQtTotal = somaK(devAte, 'qtd');
+  const parcValorTotal = soma(devAte);
   const recebidoDia = arred(soma(n25) + soma(n4050) + pepDia.reduce((t, v) => t + v, 0)
     + soma(antecDia) + soma(parcDia));
   const recebidoTotal = arred(soma(pagas) + pepTotal.reduce((t, v) => t + v, 0) + soma(antecTotal) + parcPagoTotal);
@@ -1036,8 +1043,8 @@ function relatorio(dia) {
     `Recebido dia: ${vl(recebidoDia)}`,
     `Recebido total: ${vl(recebidoTotal)}`,
     '',
-    `Nt parcial dia: ${qt(hojeRel.parcialQt)}`,
-    `Valor: ${vl(numero(hojeRel.parcialValor))}`,
+    `Nt parcial dia: ${qt(somaK(devDia, 'qtd'))}`,
+    `Valor: ${vl(soma(devDia))}`,
     `Nt parcial total: ${qt(parcQtTotal)}`,
     `Valor : ${vl(parcValorTotal)}`,
     '',
@@ -1073,13 +1080,11 @@ function pintarRelatorio() {
 }
 function pintarCamposRel() {
   const g = ls.get(KEY_REL, {});
-  const d = (st.relDia || {})[relDia()] || {};
   $$('[data-rg]').forEach((el) => { el.value = g[el.dataset.rg] ?? ''; });
   $$('[data-rs]').forEach((el) => {
     const v = (st.rel || {})[el.dataset.rs];
     el.value = REL_MONEY.includes(el.dataset.rs) ? (v ? brl(v) : '') : (v ?? '');
   });
-  $$('[data-rd]').forEach((el) => { el.value = d[el.dataset.rd] ?? ''; });
 }
 $('#relData').value = hoje();
 $('#relData').addEventListener('change', () => { pintarCamposRel(); pintarRelatorio(); });
@@ -1098,15 +1103,18 @@ $$('[data-rs]').forEach((el) => {
   });
   if (REL_MONEY.includes(k)) el.addEventListener('blur', () => { el.value = st.rel?.[k] ? brl(st.rel[k]) : ''; });
 });
-$$('[data-rd]').forEach((el) => el.addEventListener('input', () => {
-  st.relDia ||= {};
-  (st.relDia[relDia()] ||= {})[el.dataset.rd] = el.value;
-  salvarAtual(); pintarRelatorio();
-}));
-$$('[data-rd="parcialValor"]').forEach((el) => el.addEventListener('blur', () => {
-  const v = numero(el.value);
-  el.value = v ? brl(v) : '';
-}));
+// Lançar o que as clientes ficaram devendo (pepino parcial do relatório) no dia do relatório.
+$('#btnLancarDevendo').addEventListener('click', () => {
+  const qtd = numero($('#devQtd').value);
+  const valor = numero($('#devValor').value);
+  if (!(valor > 0)) { toast('Digite o valor que a cliente ficou devendo.'); $('#devValor').focus(); return; }
+  st.devendo.push({ id: uid(), data: relDia(), qtd: qtd ? String(qtd) : '1', valor });
+  $('#devQtd').value = ''; $('#devValor').value = '';
+  document.activeElement?.blur();
+  salvarAtual(); pintarLista('devendo'); pintarTotais();
+  const doDia = st.devendo.filter((x) => x.data === relDia());
+  toast(`Lançado ✓ No dia: ${doDia.reduce((t, x) => t + numero(x.qtd), 0)} nota(s) · ${R$(soma(doDia))}`);
+});
 
 async function copiar(txt) {
   try { await navigator.clipboard.writeText(txt); return true; } catch {

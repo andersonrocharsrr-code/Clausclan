@@ -180,3 +180,5 @@ label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--acc
 /* Notas feitas: dia em cima; Ab, Rp e valor lado a lado. */
 .item--feitas{grid-template-columns:1fr 1fr 1.6fr}
 .item--feitas .item__data{grid-column:1/-1}
+.item--devendo{grid-template-columns:1fr 1.6fr}
+.item--devendo .item__data{grid-column:1/-1}

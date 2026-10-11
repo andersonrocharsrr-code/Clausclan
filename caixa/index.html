@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=27">
+  <link rel="stylesheet" href="style.css?v=28">
 </head>
 <body>
   <div class="topo">
@@ -285,12 +285,17 @@
     </section>
 
     <section class="card">
-      <h2>Do dia</h2>
+      <h2>Pepino parcial (ficou devendo)</h2>
+      <p class="muted small">Lance quanto a cliente ficou devendo. Pode lançar várias vezes: o relatório soma os lançamentos do dia
+        (Nt parcial dia) e de todos os dias até ele (Nt parcial total). Entra no dia escolhido em "Dia do relatório".</p>
       <div class="grid">
-        <label>Nt parcial do dia (qtd.)<input data-rd="parcialQt" enterkeyhint="done" inputmode="numeric"></label>
-        <label>Parcial — valor que ficou devendo (R$)<input data-rd="parcialValor" enterkeyhint="done" inputmode="decimal"></label>
+        <label>Qtd. de notas<input id="devQtd" enterkeyhint="done" inputmode="numeric" placeholder="1" autocomplete="off"></label>
+        <label>Ficou devendo (R$)<input id="devValor" enterkeyhint="done" inputmode="decimal" placeholder="0,00" autocomplete="off"></label>
       </div>
-      <p class="muted small">Pepino parcial no relatório = quanto a cliente ficou devendo: digite no dia; o total soma os dias. Notas pagas, pepino extra, antecipadas e notas feitas (Ab/Rp) vêm das listas da aba Recebimento, pelo dia de cada uma.</p>
+      <button class="btn btn--primary btn--grande" id="btnLancarDevendo">＋ Lançar parcial</button>
+      <h3>Lançados</h3>
+      <div class="lista" data-lista="devendo"></div>
+      <p class="muted small">Notas pagas, pepino extra, antecipadas e notas feitas (Ab/Rp) vêm das listas da aba Recebimento, pelo dia de cada uma.</p>
     </section>
 
     <section class="card">
@@ -410,6 +415,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=27"></script>
+  <script type="module" src="app.js?v=28"></script>
 </body>
 </html>
