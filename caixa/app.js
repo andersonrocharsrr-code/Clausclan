@@ -71,6 +71,12 @@ const LISTAS = {
   pila: [['tipo', 'Despesa'], ['valor', 'Valor']],
   depositos: [['data', 'Data', 'date'], ['onde', 'Onde', 'select'], ['valor', 'Valor']],
   outros: [['desc', 'Descrição'], ['valor', 'Valor']],
+  // Cada nota antecipada com o nome; o total vai para "Antecipados".
+  antecipadas: [['cliente', 'Nome'], ['valor', 'Valor']],
+  // Cada pepino parcial com o nome; o total vai para "Pepino parcial".
+  parciais: [['cliente', 'Nome'], ['valor', 'Valor']],
+  // Notas feitas (vendas) de cada dia: a soma é o "Valor deixado" e a quantidade, as "Notas deixadas".
+  feitas: [['data', 'Dia', 'date'], ['qtd', 'Qtd. de notas'], ['valor', 'Valor']],
   obs: [['desc', 'Descrição'], ['valor', 'Valor']],
 };
 
@@ -82,13 +88,15 @@ function novo() {
     data: hoje(), semana: '',
     foiCobrar: 0, qtNotas: '', qtNotasDeixadas: '', pinos: '',
     antecipados: 0, valorPepinos: 0, pepinoParcial: 0,
-    notas25: [], notas4050: [], extras: [], pila: [], outros: [], obs: [], depositos: [],
+    notas25: [], notas4050: [], extras: [], pila: [], outros: [], obs: [], depositos: [], antecipadas: [], parciais: [], feitas: [],
     vale: 0, ajuda: 0, salario: 0, mecanica: 0, despSupervisor: 0, excedido: 0,
     valorDeixado: 0, assinatura: ultimo?.assinatura || '',
     // Relatório diário: o que só o vendedor sabe (da semana e de cada dia) e os acumulados de cada dia.
-    rel: {}, relDia: {}, diario: {},
+    rel: {}, relDia: {},
   };
 }
+
+const soma = (lista) => arred(lista.reduce((t, i) => t + (Number(i.valor) || 0), 0));
 
 // Fechamentos salvos antes de existirem campos novos ganham os valores padrão.
 function normalizar(s) {
@@ -100,7 +108,24 @@ function normalizar(s) {
     });
   }
   delete n.depEspecie; delete n.depBanco; delete n.depPix; delete n.depTipo;
+  // Antes antecipados, valor deixado e notas deixadas eram digitados como total; viram uma linha da lista.
+  if (!s.antecipadas && Number(s.antecipados) > 0) n.antecipadas = [{ id: uid(), dia: s.data || hoje(), cliente: '', valor: arred(s.antecipados) }];
+  if (!s.parciais && Number(s.pepinoParcial) > 0) n.parciais = [{ id: uid(), dia: s.data || hoje(), cliente: '', valor: arred(s.pepinoParcial) }];
+  delete n.diario;
+  if (!s.feitas && (Number(s.valorDeixado) > 0 || numero(s.qtNotasDeixadas) > 0)) {
+    n.feitas = [{ id: uid(), data: s.data || hoje(), qtd: String(s.qtNotasDeixadas || ''), valor: arred(s.valorDeixado) }];
+  }
+  sincronizar(n);
   return n;
+}
+
+// Antecipados, pepino parcial, valor deixado e notas deixadas saem das listas (a folha e o resumo continuam usando os totais).
+function sincronizar(f = st) {
+  f.antecipados = soma(f.antecipadas || []);
+  f.pepinoParcial = soma(f.parciais || []);
+  f.valorDeixado = soma(f.feitas || []);
+  const qt = (f.feitas || []).reduce((t, x) => t + numero(x.qtd), 0);
+  f.qtNotasDeixadas = qt ? String(qt) : '';
 }
 
 let depOndeEscolhido = false;
@@ -116,7 +141,6 @@ function semanaPagamento(s) {
 // Onde costuma depositar: na semana de pagamento vai para a empresa, nas outras para o banco.
 const tipoDeposito = (s) => (semanaPagamento(s) ? 'empresa' : 'banco');
 
-const soma = (lista) => arred(lista.reduce((t, i) => t + (Number(i.valor) || 0), 0));
 
 function calcular(s = st) {
   const c = {};
@@ -124,7 +148,10 @@ function calcular(s = st) {
   c.notas25 = soma(s.notas25);
   c.notas4050 = soma(s.notas4050);
   c.extras = soma(s.extras);
-  c.recebimento = arred(c.notas25 + c.notas4050 + s.antecipados + c.extras + s.pepinoParcial);
+  c.antecipados = soma(s.antecipadas || []);
+  c.pepinoParcial = soma(s.parciais || []);
+  c.valorDeixado = soma(s.feitas || []);
+  c.recebimento = arred(c.notas25 + c.notas4050 + c.antecipados + c.extras + c.pepinoParcial);
   c.despVendedor = arred(DESPESAS.reduce((t, k) => t + (Number(s[k]) || 0), 0));
   c.pila = soma(s.pila);
   c.outros = soma(s.outros);
@@ -141,10 +168,11 @@ function calcular(s = st) {
   return c;
 }
 
-function salvarAtual() { anotarDia(); ls.set(KEY_ATUAL, st); }
+function salvarAtual() { sincronizar(); ls.set(KEY_ATUAL, st); }
 
 /* ---------- tela ---------- */
 function pintarTotais() {
+  sincronizar();
   const c = calcular();
   $$('[data-c]').forEach((el) => {
     const v = c[el.dataset.c];
@@ -170,6 +198,7 @@ function pintarTotais() {
       : `Semana ${st.semana}: normalmente o depósito é no banco/transferência.`;
   const d = st.data ? new Date(st.data + 'T12:00').toLocaleDateString('pt-BR') : '';
   $('#subtitulo').textContent = [st.nome, st.cidade, d].filter(Boolean).join(' · ') || 'Novo fechamento';
+  $('#feitasTotal').textContent = st.feitas.length ? `Total da semana: ${numero(st.qtNotasDeixadas)} nota(s) · ${R$(c.valorDeixado)}` : '';
   pintarRelatorio();
 }
 
@@ -191,12 +220,12 @@ function pintarLista(nome) {
   st[nome].forEach((item, i) => {
     const row = document.createElement('div');
     row.className = 'item' + (item.conferir ? ' item--conferir' : '') + (cols.length === 2 ? ' item--2' : '')
-      + (nome === 'depositos' ? ' item--dep' : '');
+      + (nome === 'depositos' || nome === 'feitas' ? ' item--dep' : '');
     row.innerHTML = cols.map(([k, rot, tipo]) => `
       <label class="item__${k}">${rot}
         ${tipo === 'select'
           ? `<select data-k="${k}">${Object.entries(ONDE_CURTO).map(([v, t]) => `<option value="${v}" ${item[k] === v ? 'selected' : ''}>${t}</option>`).join('')}</select>`
-          : `<input data-k="${k}" enterkeyhint="done" ${tipo === 'date' ? 'type="date"' : ''} ${k === 'valor' ? 'inputmode="decimal"' : ''} value="${esc(k === 'valor' ? (item.valor ? brl(item.valor) : '') : item[k] || '')}">`}
+          : `<input data-k="${k}" enterkeyhint="done" ${tipo === 'date' ? 'type="date"' : ''} ${k === 'valor' ? 'inputmode="decimal"' : k === 'qtd' ? 'inputmode="numeric"' : ''} value="${esc(k === 'valor' ? (item.valor ? brl(item.valor) : '') : item[k] || '')}">`}
       </label>`).join('') +
       `<button class="item__del" aria-label="Apagar" title="Apagar">✕</button>` +
       // Aparece enquanto a linha está sendo preenchida: confirma o valor e fecha o teclado.
@@ -308,12 +337,14 @@ $$('[data-ir]').forEach((b) => b.addEventListener('click', () => abrirAba(b.data
 
 $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
   const nome = b.dataset.add;
-  st[nome].push({ id: uid(), dia: hoje(), valor: 0, cidade: nome.startsWith('notas') || nome === 'extras' ? st.cidade : undefined });
+  st[nome].push(nome === 'feitas' ? { id: uid(), data: hoje(), qtd: '', valor: 0 }
+    : { id: uid(), dia: hoje(), valor: 0, cidade: nome.startsWith('notas') || nome === 'extras' ? st.cidade : undefined });
   salvarAtual(); pintarLista(nome);
   const rows = $$(`[data-lista="${nome}"] .item`);
   const ultima = rows[rows.length - 1];
   // Nas notas só importa o valor: o cursor já vai para ele.
-  (nome.startsWith('notas') ? ultima?.querySelector('[data-k="valor"]') : ultima?.querySelector('input'))?.focus();
+  (nome.startsWith('notas') ? ultima?.querySelector('[data-k="valor"]')
+    : nome === 'feitas' ? ultima?.querySelector('[data-k="qtd"]') : ultima?.querySelector('input'))?.focus();
 }));
 
 /* ---------- teclado do celular ---------- */
@@ -739,6 +770,11 @@ function aplicarFolha(r) {
     if (v) st[k] = [{ id: uid(), numero: '', cliente: 'Total escrito na folha', cidade: st.cidade, valor: arred(v), conferir: true }];
   });
   if (r.extras.length) st.extras = r.extras.map(itemExtra);
+  if (r.pepinoParcial) st.parciais = [{ id: uid(), dia: st.data || hoje(), cliente: 'Escrito na folha', valor: arred(r.pepinoParcial), conferir: true }];
+  if (r.antecipados) st.antecipadas = [{ id: uid(), dia: st.data || hoje(), cliente: 'Escrito na folha', valor: arred(r.antecipados), conferir: true }];
+  if (r.valorDeixado || numero(r.qtNotasDeixadas)) {
+    st.feitas = [{ id: uid(), data: st.data || hoje(), qtd: String(r.qtNotasDeixadas || ''), valor: arred(r.valorDeixado), conferir: true }];
+  }
   if (r.outros.length) st.outros = r.outros.map((o) => ({ id: uid(), desc: o.desc, valor: arred(o.valor), conferir: true }));
   if (r.obs.length) st.obs = r.obs.map((o) => ({ id: uid(), desc: o.desc, valor: arred(o.valor), conferir: true }));
   pintarTudo();
@@ -896,16 +932,9 @@ if (NATIVO) {
 }
 
 /* ---------- relatório do dia ---------- */
-// O relatório separa "do dia" e "total". Notas, pepinos e depósitos têm a data em que foram pagos/lançados;
-// campos que o vendedor vai somando (antecipados, pepino parcial, valor deixado, notas deixadas) guardam
-// o total de cada dia: o do dia é o total de hoje menos o do último dia anterior.
-const ACUMULADOS = ['antecipados', 'pepinoParcial', 'valorDeixado', 'qtNotasDeixadas'];
+// O relatório separa "do dia" e "total": notas, pepinos, antecipadas, parciais, notas feitas e depósitos
+// têm o dia em que foram pagos/lançados.
 const REL_MONEY = ['avistaValor', 'devolValor'];
-const acumuladosAgora = () => Object.fromEntries(ACUMULADOS.map((k) => [k, numero(st[k])]));
-function anotarDia() {
-  st.diario ||= {};
-  st.diario[hoje()] = acumuladosAgora();
-}
 
 // Data impressa na nota (dia do acerto), se for desta semana e não for depois de hoje; senão, hoje.
 function diaDaNota(data) {
@@ -931,22 +960,21 @@ function relatorio(dia) {
   const rel = st.rel || {};
   const dias = st.relDia || {};
   const hojeRel = dias[dia] || {};
-  // Acumulados: total do dia escolhido e do último dia antes dele.
-  const datas = Object.keys(st.diario || {}).sort();
-  const antes = datas.filter((x) => x < dia).pop();
-  const base = antes ? st.diario[antes] : {};
-  const ate = dia === hoje() ? acumuladosAgora() : (st.diario?.[dia] || base);
-  const doDia = (k) => arred((Number(ate[k]) || 0) - (Number(base[k]) || 0));
 
   const n25 = st.notas25.filter((n) => n.dia === dia);
   const n4050 = st.notas4050.filter((n) => n.dia === dia);
   const pagasTotal = st.notas25.length + st.notas4050.length;
+  const antecDia = st.antecipadas.filter((a) => a.dia === dia);
+  const antecTotal = st.antecipadas.filter((a) => Number(a.valor) > 0);
+  const feitasDia = st.feitas.filter((f) => f.data === dia);
+  const qtFeitas = (l) => l.reduce((t, f) => t + numero(f.qtd), 0);
   const pepDia = st.extras.map((x) => pepinoNoDia(x, dia)).filter((v) => v > 0);
   const pepTotal = st.extras.filter((x) => Number(x.valor) > 0);
-  const parcialQtTotal = Object.values(dias).reduce((t, d) => t + (Number(d.parcialQt) || 0), 0);
+  const parcDia = st.parciais.filter((x) => x.dia === dia && Number(x.valor) > 0);
+  const parcTotal = st.parciais.filter((x) => Number(x.valor) > 0);
   const recebidoDia = arred(soma(n25) + soma(n4050) + pepDia.reduce((t, v) => t + v, 0)
-    + doDia('antecipados') + doDia('pepinoParcial'));
-  const emBrancoQt = Math.max(0, (Number(st.qtNotas) || 0) - pagasTotal - parcialQtTotal);
+    + soma(antecDia) + soma(parcDia));
+  const emBrancoQt = Math.max(0, (Number(st.qtNotas) || 0) - pagasTotal - parcTotal.length);
   const emBrancoValor = Math.max(0, arred(st.foiCobrar - [...st.notas25, ...st.notas4050].reduce((t, n) => t + valorDeFace(n), 0) - st.pepinoParcial));
   const depDia = st.depositos.filter((d) => d.data === dia);
 
@@ -977,7 +1005,7 @@ function relatorio(dia) {
     `40%: ${qt(n4050.length)}`,
     `Nt pg total: ${qt(pagasTotal)}`,
     '',
-    `Nt antecipada: ${qt(rel.antecipadasQt)}`,
+    `Nt antecipada: ${qt(antecTotal.length)}`,
     `Valor: ${vl(st.antecipados)}`,
     `Nt avista: ${qt(rel.avistaQt)}`,
     `Valor: ${vl(rel.avistaValor)}`,
@@ -985,18 +1013,18 @@ function relatorio(dia) {
     `Recebido dia: ${vl(recebidoDia)}`,
     `Recebido total: ${vl(c.recebimento)}`,
     '',
-    `Nt parcial dia: ${qt(hojeRel.parcialQt)}`,
-    `Valor: ${vl(doDia('pepinoParcial'))}`,
-    `Nt parcial total: ${qt(parcialQtTotal)}`,
+    `Nt parcial dia: ${qt(parcDia.length)}`,
+    `Valor: ${vl(soma(parcDia))}`,
+    `Nt parcial total: ${qt(parcTotal.length)}`,
     `Valor : ${vl(st.pepinoParcial)}`,
     '',
     `Notas em branco: ${qt(emBrancoQt)}`,
     `Valor: ${vl(emBrancoValor)}`,
     '',
-    `Nts feita dia: ${qt(doDia('qtNotasDeixadas'))}`,
+    `Nts feita dia: ${qt(qtFeitas(feitasDia))}`,
     `Ab: ${qt(hojeRel.ab)} Rp: ${qt(hojeRel.rp)}`,
-    `Valor: ${vl(doDia('valorDeixado'))}`,
-    `Notas feitas total: ${qt(st.qtNotasDeixadas)}`,
+    `Valor: ${vl(soma(feitasDia))}`,
+    `Notas feitas total: ${qt(qtFeitas(st.feitas))}`,
     `Valor: ${vl(st.valorDeixado)}`,
     '',
     `Nt extra resolvido dia: ${qt(pepDia.length)}`,
@@ -1149,7 +1177,7 @@ function pendencias() {
   if (!st.semana) p.push('A semana não está preenchida.');
   if (c.falta > 0) p.push(`Ainda falta depositar ${R$(c.falta)}.`);
   if (c.falta < 0) p.push(`Os depósitos passaram ${R$(-c.falta)} do que tinha para depositar.`);
-  if (!st.valorDeixado) p.push('O valor deixado (vendas da semana) está vazio.');
+  if (!st.valorDeixado) p.push('O valor deixado está vazio: lance as Notas feitas (aba Recebimento).');
   if (!st.assinatura) p.push('A assinatura do vendedor está vazia.');
   const conferir = Object.keys(LISTAS).reduce((t, k) => t + st[k].filter((i) => i.conferir).length, 0);
   if (conferir) p.push(`${conferir} item(ns) lido(s) pela foto ainda marcado(s) em amarelo para conferir.`);

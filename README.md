@@ -231,7 +231,11 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   A semana vem impressa na folha CAIXA: tire a foto da folha em branco no início da semana e o app pega a semana (e
   cidade, nome, data, foi cobrar e qt. de notas). O app não adivinha pela data. Ele confere o "foi cobrar" com o
   V. pep. 5% impresso; se a folha for de outra semana, o fechamento atual é salvo em ☰ e começa um novo.
-- **Valor deixado** = vendas da semana, digitado à mão (não entra nas contas do caixa).
+- **Notas feitas (vendas)**: uma linha por dia (dia, quantidade de notas, valor). A soma vira o **Valor deixado**
+  e as **Notas deixadas** da folha (não entram nas contas do caixa).
+- **Notas antecipadas**: uma linha por nota (nome e valor); o total vira **Antecipados**.
+- **Pepino parcial**: uma linha por pepino pago em parte (nome e valor); o total vira **Pepino parcial**.
+  Antecipadas, pepino extra e pepino parcial entram no recebimento.
 - **Gerar caixa** (fim da semana): monta a folha CAIXA igual à impressa, já preenchida — o impresso em preto
   e o preenchido em azul com letra de mão (fonte Caveat, `caixa/fonts/`, licença OFL). Antes avisa o que pode
   estar faltando (depósito, valor deixado, assinatura, itens para conferir). **Salvar na galeria** (no APK vai
@@ -239,8 +243,8 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   site). O desenho fica em `caixa/folha.js`.
 - **Relatório** (aba própria): o relatório diário no modelo do vendedor, preenchido com o que foi lançado.
   Notas pagas do dia (25% / 40%) e total, recebido do dia e total, pepino extra resolvido no dia (pelas datas dos
-  pagamentos) e total, depósitos do dia, valor em mãos. Valor deixado e notas deixadas são digitados como total
-  da semana: o app guarda o total de cada dia e o "do dia" é hoje menos o dia anterior. Notas em branco = notas
+  pagamentos) e total, depósitos do dia, valor em mãos, notas feitas, antecipadas e pepino parcial (do dia e total, pelas
+  listas). Cada item da lista guarda o dia em que foi pago/lançado. Notas em branco = notas
   a cobrar menos as pagas/parciais (pelo TOTAL impresso da nota). Placa, modelo, locadora, Km e supervisor
   ficam guardados para as próximas semanas. Mandar pelo WhatsApp ou copiar.
 - Salvar fechamentos e mandar resumo pelo WhatsApp.
