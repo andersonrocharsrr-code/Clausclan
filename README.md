@@ -231,7 +231,7 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   A semana vem impressa na folha CAIXA: tire a foto da folha em branco no início da semana e o app pega a semana (e
   cidade, nome, data, foi cobrar e qt. de notas). O app não adivinha pela data. Ele confere o "foi cobrar" com o
   V. pep. 5% impresso; se a folha for de outra semana, o fechamento atual é salvo em ☰ e começa um novo.
-- **Notas feitas (vendas)**: uma linha por dia (dia, quantidade de notas, valor). A soma vira o **Valor deixado**
+- **Notas feitas (vendas)**: uma linha por dia (dia, Ab, Rp, valor). A soma vira o **Valor deixado**
   e as **Notas deixadas** da folha (não entram nas contas do caixa).
 - **Notas antecipadas**: uma linha por nota (nome e valor); o total vira **Antecipados**.
 - **Pepino parcial**: uma linha por pepino pago em parte (nome e valor); o total vira **Pepino parcial**.
@@ -243,8 +243,10 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   site). O desenho fica em `caixa/folha.js`.
 - **Relatório** (aba própria): o relatório diário no modelo do vendedor, preenchido com o que foi lançado.
   Notas pagas do dia (25% / 40%) e total, recebido do dia e total, pepino extra resolvido no dia (pelas datas dos
-  pagamentos) e total, depósitos do dia, valor em mãos, notas feitas, antecipadas e pepino parcial (do dia e total, pelas
-  listas). Cada item da lista guarda o dia em que foi pago/lançado. Notas em branco = notas
+  pagamentos) e total, depósitos do dia, valor em mãos, notas feitas e antecipadas (do dia e total, pelas
+  listas). Cada item da lista guarda o dia em que foi pago/lançado (as notas, o dia em que a foto foi lida) e os
+  totais contam só até o dia do relatório. Notas feitas: Ab (abertura) + Rp (reposição) por dia. O pepino parcial
+  do relatório é quanto a cliente ficou devendo: digitado no dia, o total soma os dias. Notas em branco = notas
   a cobrar menos as pagas/parciais (pelo TOTAL impresso da nota). Placa, modelo, locadora, Km e supervisor
   ficam guardados para as próximas semanas. Mandar pelo WhatsApp ou copiar.
 - Salvar fechamentos e mandar resumo pelo WhatsApp.

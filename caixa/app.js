@@ -75,8 +75,9 @@ const LISTAS = {
   antecipadas: [['cliente', 'Nome'], ['valor', 'Valor']],
   // Cada pepino parcial com o nome; o total vai para "Pepino parcial".
   parciais: [['cliente', 'Nome'], ['valor', 'Valor']],
-  // Notas feitas (vendas) de cada dia: a soma é o "Valor deixado" e a quantidade, as "Notas deixadas".
-  feitas: [['data', 'Dia', 'date'], ['qtd', 'Qtd. de notas'], ['valor', 'Valor']],
+  // Notas feitas (vendas) de cada dia: Ab (abertura) + Rp (reposição) = notas do dia; a soma dos valores é o
+  // "Valor deixado" e a das notas, as "Notas deixadas".
+  feitas: [['data', 'Dia', 'date'], ['ab', 'Ab'], ['rp', 'Rp'], ['valor', 'Valor']],
   obs: [['desc', 'Descrição'], ['valor', 'Valor']],
 };
 
@@ -112,6 +113,11 @@ function normalizar(s) {
   if (!s.antecipadas && Number(s.antecipados) > 0) n.antecipadas = [{ id: uid(), dia: s.data || hoje(), cliente: '', valor: arred(s.antecipados) }];
   if (!s.parciais && Number(s.pepinoParcial) > 0) n.parciais = [{ id: uid(), dia: s.data || hoje(), cliente: '', valor: arred(s.pepinoParcial) }];
   delete n.diario;
+  // Ab e Rp eram digitados na aba Relatório; passam para a linha das notas feitas do mesmo dia.
+  (n.feitas || []).forEach((f) => {
+    const d = n.relDia?.[f.data];
+    if (d && f.ab == null && f.rp == null) { f.ab = d.ab || ''; f.rp = d.rp || ''; }
+  });
   if (!s.feitas && (Number(s.valorDeixado) > 0 || numero(s.qtNotasDeixadas) > 0)) {
     n.feitas = [{ id: uid(), data: s.data || hoje(), qtd: String(s.qtNotasDeixadas || ''), valor: arred(s.valorDeixado) }];
   }
@@ -119,12 +125,15 @@ function normalizar(s) {
   return n;
 }
 
+// Notas feitas numa linha: Ab + Rp (linhas antigas tinham só a quantidade).
+const qtdFeita = (x) => (numero(x.ab) + numero(x.rp)) || numero(x.qtd);
+
 // Antecipados, pepino parcial, valor deixado e notas deixadas saem das listas (a folha e o resumo continuam usando os totais).
 function sincronizar(f = st) {
   f.antecipados = soma(f.antecipadas || []);
   f.pepinoParcial = soma(f.parciais || []);
   f.valorDeixado = soma(f.feitas || []);
-  const qt = (f.feitas || []).reduce((t, x) => t + numero(x.qtd), 0);
+  const qt = (f.feitas || []).reduce((t, x) => t + qtdFeita(x), 0);
   f.qtNotasDeixadas = qt ? String(qt) : '';
 }
 
@@ -220,12 +229,12 @@ function pintarLista(nome) {
   st[nome].forEach((item, i) => {
     const row = document.createElement('div');
     row.className = 'item' + (item.conferir ? ' item--conferir' : '') + (cols.length === 2 ? ' item--2' : '')
-      + (nome === 'depositos' || nome === 'feitas' ? ' item--dep' : '');
+      + (nome === 'depositos' ? ' item--dep' : '') + (nome === 'feitas' ? ' item--feitas' : '');
     row.innerHTML = cols.map(([k, rot, tipo]) => `
       <label class="item__${k}">${rot}
         ${tipo === 'select'
           ? `<select data-k="${k}">${Object.entries(ONDE_CURTO).map(([v, t]) => `<option value="${v}" ${item[k] === v ? 'selected' : ''}>${t}</option>`).join('')}</select>`
-          : `<input data-k="${k}" enterkeyhint="done" ${tipo === 'date' ? 'type="date"' : ''} ${k === 'valor' ? 'inputmode="decimal"' : k === 'qtd' ? 'inputmode="numeric"' : ''} value="${esc(k === 'valor' ? (item.valor ? brl(item.valor) : '') : item[k] || '')}">`}
+          : `<input data-k="${k}" enterkeyhint="done" ${tipo === 'date' ? 'type="date"' : ''} ${k === 'valor' ? 'inputmode="decimal"' : ['qtd', 'ab', 'rp'].includes(k) ? 'inputmode="numeric"' : ''} value="${esc(k === 'valor' ? (item.valor ? brl(item.valor) : '') : item[k] || '')}">`}
       </label>`).join('') +
       `<button class="item__del" aria-label="Apagar" title="Apagar">✕</button>` +
       // Aparece enquanto a linha está sendo preenchida: confirma o valor e fecha o teclado.
@@ -337,14 +346,14 @@ $$('[data-ir]').forEach((b) => b.addEventListener('click', () => abrirAba(b.data
 
 $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
   const nome = b.dataset.add;
-  st[nome].push(nome === 'feitas' ? { id: uid(), data: hoje(), qtd: '', valor: 0 }
+  st[nome].push(nome === 'feitas' ? { id: uid(), data: hoje(), ab: '', rp: '', valor: 0 }
     : { id: uid(), dia: hoje(), valor: 0, cidade: nome.startsWith('notas') || nome === 'extras' ? st.cidade : undefined });
   salvarAtual(); pintarLista(nome);
   const rows = $$(`[data-lista="${nome}"] .item`);
   const ultima = rows[rows.length - 1];
   // Nas notas só importa o valor: o cursor já vai para ele.
   (nome.startsWith('notas') ? ultima?.querySelector('[data-k="valor"]')
-    : nome === 'feitas' ? ultima?.querySelector('[data-k="qtd"]') : ultima?.querySelector('input'))?.focus();
+    : nome === 'feitas' ? ultima?.querySelector('[data-k="ab"]') : ultima?.querySelector('input'))?.focus();
 }));
 
 /* ---------- teclado do celular ---------- */
@@ -613,7 +622,7 @@ async function lerFotosGratis(tipo, files) {
       if (n.faltou.length) duvidas++;
       st[destino].push({
         id: uid(), numero: n.numero, cliente: n.cliente, cidade: n.cidade || st.cidade, valor: n.valor,
-        total: n.total || 0, dia: diaDaNota(n.data),
+        total: n.total || 0, dia: hoje(),
         // Da nota só importam o valor recebido e a faixa: fica amarela só quando um dos dois está em dúvida.
         faixa: n.faixa, conferir: n.faltou.length > 0,
         nota: n.faltou.length ? 'Confira: ' + n.faltou.join(', ') : '',
@@ -658,7 +667,7 @@ function aplicar(tipo, r) {
       destino === 'notas25' ? n25++ : n4050++;
       st[destino].push({
         id: uid(), numero: n.numero, cliente: n.cliente, cidade: n.cidade || st.cidade, valor: arred(n.valor),
-        total: arred(n.valor_total || 0), dia: diaDaNota(n.data), faixa: n.faixa, conferir: true,
+        total: arred(n.valor_total || 0), dia: hoje(), faixa: n.faixa, conferir: true,
         nota: [n.faixa ? '' : 'não deu para ver se foi 25% ou 40/50% — confira', n.duvida,
           n.valor_total && n.valor_total !== n.valor ? `total da nota ${R$(n.valor_total)}` : '']
           .filter(Boolean).join(' · '),
@@ -932,15 +941,10 @@ if (NATIVO) {
 }
 
 /* ---------- relatório do dia ---------- */
-// O relatório separa "do dia" e "total": notas, pepinos, antecipadas, parciais, notas feitas e depósitos
-// têm o dia em que foram pagos/lançados.
-const REL_MONEY = ['avistaValor', 'devolValor'];
-
-// Data impressa na nota (dia do acerto), se for desta semana e não for depois de hoje; senão, hoje.
-function diaDaNota(data) {
-  const { ini } = semanaDe(st.data);
-  return /^\d{4}-\d{2}-\d{2}$/.test(data || '') && data >= ini && data <= hoje() ? data : hoje();
-}
+// O relatório separa "do dia" e "total": notas (dia em que a foto foi lida/lançada), pepinos, antecipadas,
+// notas feitas e depósitos têm o dia de cada um. O pepino parcial do relatório (quanto a cliente ficou
+// devendo) é digitado dia a dia; o total soma os dias.
+const REL_MONEY = ['avistaValor', 'devolValor', 'parcialValor'];
 
 // Valor de face da nota (o TOTAL impresso), para saber quanto ainda está nas notas em branco.
 const valorDeFace = (n) => Number(n.total) || (n.faixa === '25' ? arred(n.valor / 0.75) : Number(n.valor) || 0);
@@ -961,22 +965,41 @@ function relatorio(dia) {
   const dias = st.relDia || {};
   const hojeRel = dias[dia] || {};
 
+  // Os totais contam só até o dia do relatório: o relatório de ontem mostra o total de ontem.
+  // (Itens sem dia, de versões antigas, contam em todos.)
+  const ate = (d) => !d || d <= dia;
+  const qtFeitas = (l) => l.reduce((t, f) => t + qtdFeita(f), 0);
+  const somaK = (l, k) => l.reduce((t, f) => t + numero(f[k]), 0);
+  // Pepino extra até o dia: pelos pagamentos da semana até o dia, ou pelo dia em que foi lançado.
+  const pepinoAte = (x) => {
+    if (!x.pagamentos?.length) return ate(x.dia) ? Number(x.valor) || 0 : 0;
+    const { ini, fim } = semanaDe(st.data);
+    return arred(x.pagamentos.filter((p) => p.data >= ini && p.data <= fim && p.data <= dia).reduce((t, p) => t + p.valor, 0));
+  };
+
   const n25 = st.notas25.filter((n) => n.dia === dia);
   const n4050 = st.notas4050.filter((n) => n.dia === dia);
-  const pagasTotal = st.notas25.length + st.notas4050.length;
+  const pagas = [...st.notas25, ...st.notas4050].filter((n) => ate(n.dia));
   const antecDia = st.antecipadas.filter((a) => a.dia === dia);
-  const antecTotal = st.antecipadas.filter((a) => Number(a.valor) > 0);
+  const antecTotal = st.antecipadas.filter((a) => Number(a.valor) > 0 && ate(a.dia));
   const feitasDia = st.feitas.filter((f) => f.data === dia);
-  const qtFeitas = (l) => l.reduce((t, f) => t + numero(f.qtd), 0);
+  const feitasTotal = st.feitas.filter((f) => ate(f.data));
   const pepDia = st.extras.map((x) => pepinoNoDia(x, dia)).filter((v) => v > 0);
-  const pepTotal = st.extras.filter((x) => Number(x.valor) > 0);
+  const pepTotal = st.extras.map(pepinoAte).filter((v) => v > 0);
   const parcDia = st.parciais.filter((x) => x.dia === dia && Number(x.valor) > 0);
-  const parcTotal = st.parciais.filter((x) => Number(x.valor) > 0);
+  const parcPagoTotal = soma(st.parciais.filter((x) => ate(x.dia)));
+  // Pepino parcial do relatório: o que as clientes ficaram devendo, digitado em cada dia.
+  const diasAte = Object.entries(dias).filter(([d]) => d <= dia).map(([, v]) => v);
+  const parcQtTotal = diasAte.reduce((t, d) => t + numero(d.parcialQt), 0);
+  const parcValorTotal = arred(diasAte.reduce((t, d) => t + numero(d.parcialValor), 0));
   const recebidoDia = arred(soma(n25) + soma(n4050) + pepDia.reduce((t, v) => t + v, 0)
     + soma(antecDia) + soma(parcDia));
-  const emBrancoQt = Math.max(0, (Number(st.qtNotas) || 0) - pagasTotal - parcTotal.length);
-  const emBrancoValor = Math.max(0, arred(st.foiCobrar - [...st.notas25, ...st.notas4050].reduce((t, n) => t + valorDeFace(n), 0) - st.pepinoParcial));
+  const recebidoTotal = arred(soma(pagas) + pepTotal.reduce((t, v) => t + v, 0) + soma(antecTotal) + parcPagoTotal);
+  const emBrancoQt = Math.max(0, (Number(st.qtNotas) || 0) - pagas.length - parcQtTotal);
+  const emBrancoValor = Math.max(0, arred(st.foiCobrar - pagas.reduce((t, n) => t + valorDeFace(n), 0)
+    - parcPagoTotal - parcValorTotal));
   const depDia = st.depositos.filter((d) => d.data === dia);
+  const depTotal = soma(st.depositos.filter((d) => ate(d.data)));
 
   const qt = (n) => String(Math.round(Number(n) || 0)).padStart(2, '0');
   const vl = (v) => (Number(v) ? brl(v) : '00');
@@ -1003,42 +1026,43 @@ function relatorio(dia) {
     `Nt Pg do dia : ${qt(n25.length + n4050.length)}`,
     `25%: ${qt(n25.length)}`,
     `40%: ${qt(n4050.length)}`,
-    `Nt pg total: ${qt(pagasTotal)}`,
+    `Nt pg total: ${qt(pagas.length)}`,
     '',
     `Nt antecipada: ${qt(antecTotal.length)}`,
-    `Valor: ${vl(st.antecipados)}`,
+    `Valor: ${vl(soma(antecTotal))}`,
     `Nt avista: ${qt(rel.avistaQt)}`,
     `Valor: ${vl(rel.avistaValor)}`,
     '',
     `Recebido dia: ${vl(recebidoDia)}`,
-    `Recebido total: ${vl(c.recebimento)}`,
+    `Recebido total: ${vl(recebidoTotal)}`,
     '',
-    `Nt parcial dia: ${qt(parcDia.length)}`,
-    `Valor: ${vl(soma(parcDia))}`,
-    `Nt parcial total: ${qt(parcTotal.length)}`,
-    `Valor : ${vl(st.pepinoParcial)}`,
+    `Nt parcial dia: ${qt(hojeRel.parcialQt)}`,
+    `Valor: ${vl(numero(hojeRel.parcialValor))}`,
+    `Nt parcial total: ${qt(parcQtTotal)}`,
+    `Valor : ${vl(parcValorTotal)}`,
     '',
     `Notas em branco: ${qt(emBrancoQt)}`,
     `Valor: ${vl(emBrancoValor)}`,
     '',
     `Nts feita dia: ${qt(qtFeitas(feitasDia))}`,
-    `Ab: ${qt(hojeRel.ab)} Rp: ${qt(hojeRel.rp)}`,
+    `Ab: ${qt(somaK(feitasDia, 'ab'))} Rp: ${qt(somaK(feitasDia, 'rp'))}`,
     `Valor: ${vl(soma(feitasDia))}`,
-    `Notas feitas total: ${qt(qtFeitas(st.feitas))}`,
-    `Valor: ${vl(st.valorDeixado)}`,
+    `Notas feitas total: ${qt(qtFeitas(feitasTotal))}`,
+    `Valor: ${vl(soma(feitasTotal))}`,
     '',
     `Nt extra resolvido dia: ${qt(pepDia.length)}`,
     `Valor : ${vl(pepDia.reduce((t, v) => t + v, 0))}`,
     `Total resolvido: ${qt(pepTotal.length)}`,
-    `Valor: ${vl(c.extras)}`,
+    `Valor: ${vl(pepTotal.reduce((t, v) => t + v, 0))}`,
     '',
     `Devolu total de produts: ${qt(rel.devolQt)}`,
     `Valor: ${vl(rel.devolValor)}`,
     '',
     `Depósito dia: ${vl(soma(depDia.filter((d) => d.onde !== 'pix')))}`,
     `Transferencia: ${vl(soma(depDia.filter((d) => d.onde === 'pix')))}`,
-    `Deposito total: ${vl(c.depositado)}`,
-    `Valor em mãos: ${vl(c.falta)}`,
+    `Deposito total: ${vl(depTotal)}`,
+    // Em mãos: recebido até o dia, menos as despesas da semana e o que já foi depositado.
+    `Valor em mãos: ${vl(arred(recebidoTotal - c.despesas - depTotal))}`,
   ].join('\n');
 }
 
@@ -1078,6 +1102,10 @@ $$('[data-rd]').forEach((el) => el.addEventListener('input', () => {
   st.relDia ||= {};
   (st.relDia[relDia()] ||= {})[el.dataset.rd] = el.value;
   salvarAtual(); pintarRelatorio();
+}));
+$$('[data-rd="parcialValor"]').forEach((el) => el.addEventListener('blur', () => {
+  const v = numero(el.value);
+  el.value = v ? brl(v) : '';
 }));
 
 async function copiar(txt) {

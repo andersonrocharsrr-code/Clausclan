@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=26">
+  <link rel="stylesheet" href="style.css?v=27">
 </head>
 <body>
   <div class="topo">
@@ -131,7 +131,7 @@
         <h2>Pepino parcial</h2>
         <strong class="total" data-c="pepinoParcial"></strong>
       </div>
-      <p class="muted small">Uma linha para cada pepino pago em parte, com o nome. Entra no recebimento e no relatório (do dia e total).</p>
+      <p class="muted small">Uma linha para cada pepino pago em parte, com o nome e o valor pago. Entra no recebimento (no relatório, o que a cliente ficou devendo é digitado na aba Relatório).</p>
       <button class="btn" data-add="parciais">+ Pepino parcial</button>
       <div class="lista" data-lista="parciais"></div>
     </section>
@@ -141,7 +141,7 @@
         <h2>Notas feitas (vendas)</h2>
         <strong class="total" data-c="valorDeixado"></strong>
       </div>
-      <p class="muted small">Todo dia lance quantas notas fez e o valor vendido no dia. O app soma tudo: o total vira o
+      <p class="muted small">Todo dia lance as notas feitas: <b>Ab</b> (abertura) e <b>Rp</b> (reposição) e o valor vendido no dia. O app soma tudo: o total vira o
         <b>Valor deixado</b> e as <b>Notas deixadas</b> da folha, e o relatório mostra o do dia e o total.</p>
       <button class="btn" data-add="feitas">+ Notas feitas do dia</button>
       <div class="lista" data-lista="feitas"></div>
@@ -287,10 +287,10 @@
     <section class="card">
       <h2>Do dia</h2>
       <div class="grid">
-        <label>Ab<input data-rd="ab" enterkeyhint="done" inputmode="numeric"></label>
-        <label>Rp<input data-rd="rp" enterkeyhint="done" inputmode="numeric"></label>
+        <label>Nt parcial do dia (qtd.)<input data-rd="parcialQt" enterkeyhint="done" inputmode="numeric"></label>
+        <label>Parcial — valor que ficou devendo (R$)<input data-rd="parcialValor" enterkeyhint="done" inputmode="decimal"></label>
       </div>
-      <p class="muted small">Notas pagas, pepino extra, pepino parcial, antecipadas e notas feitas vêm das listas da aba Recebimento, pelo dia de cada uma.</p>
+      <p class="muted small">Pepino parcial no relatório = quanto a cliente ficou devendo: digite no dia; o total soma os dias. Notas pagas, pepino extra, antecipadas e notas feitas (Ab/Rp) vêm das listas da aba Recebimento, pelo dia de cada uma.</p>
     </section>
 
     <section class="card">
@@ -410,6 +410,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=26"></script>
+  <script type="module" src="app.js?v=27"></script>
 </body>
 </html>

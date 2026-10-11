@@ -177,3 +177,6 @@ label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--acc
 /* Relatório do dia: texto pronto para mandar, igual ao modelo. */
 .rel-texto{white-space:pre-wrap;font:14px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--bg);color:var(--ink);
   border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;max-height:60vh;overflow:auto}
+/* Notas feitas: dia em cima; Ab, Rp e valor lado a lado. */
+.item--feitas{grid-template-columns:1fr 1fr 1.6fr}
+.item--feitas .item__data{grid-column:1/-1}
