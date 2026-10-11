@@ -143,3 +143,9 @@ label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--acc
 .novo-dep{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0 4px;background:var(--bg)}
 .novo-dep h3{margin-top:0}
 .novo-dep .grid{margin:8px 0 10px}
+/* Linha sendo preenchida: mostra o botão "Lançar". */
+.item__ok{display:none;grid-column:1/-1;padding:8px 12px;font-size:14px}
+.item:focus-within .item__ok{display:inline-flex}
+/* Teclado aberto: some a barra de totais e sobra espaço para o último campo subir até o meio da tela. */
+.digitando .bar{display:none}
+.digitando body{padding-bottom:55vh}
