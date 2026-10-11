@@ -1,5 +1,6 @@
 /* Fechamento de Caixa — faz as contas da folha de caixa e lê notas/folhas pela foto (IA Claude). */
 import Anthropic from './vendor/anthropic.js';
+import { desenharCaixa } from './folha.js?v=9';
 
 const KEY_ATUAL = 'caixa.atual';
 const KEY_SALVOS = 'caixa.salvos';
@@ -588,6 +589,35 @@ $('#btnLista').addEventListener('click', () => {
   $('#dlgLista').showModal();
 });
 
+/* ---------- app Android (APK feito com Capacitor, pasta caixa-android/) ---------- */
+// No APK o app roda num WebView sem o Chrome: compartilhar, salvar arquivo e o botão "voltar" usam os plugins.
+const Cap = window.Capacitor;
+const NATIVO = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
+const plugin = (nome) => (NATIVO ? Cap.Plugins?.[nome] || Cap.registerPlugin?.(nome) : null);
+
+const blobBase64 = (blob) => new Promise((ok, erro) => {
+  const r = new FileReader();
+  r.onload = () => ok(String(r.result).split(',')[1]);
+  r.onerror = erro;
+  r.readAsDataURL(blob);
+});
+async function compartilharArquivo(blob, nome) {
+  const { uri } = await plugin('Filesystem').writeFile({ path: nome, data: await blobBase64(blob), directory: 'CACHE' });
+  await plugin('Share').share({ title: nome, files: [uri], dialogTitle: 'Mandar ou salvar a folha' });
+}
+
+if (NATIVO) {
+  document.documentElement.classList.add('is-native');
+  $('#btnCaixaImprimir').hidden = true; // o WebView do Android não imprime
+  // Voltar do Android: fecha a janela aberta, depois volta para a 1ª aba, depois minimiza o app.
+  plugin('App')?.addListener('backButton', () => {
+    const aberta = [...document.querySelectorAll('dialog[open]')].pop();
+    if (aberta) { aberta.close(); return; }
+    if ($('[data-tab="receb"]').hidden) { abrirAba('receb'); return; }
+    plugin('App').minimizeApp();
+  });
+}
+
 /* ---------- resumo para WhatsApp ---------- */
 function resumo() {
   const c = calcular();
@@ -619,6 +649,10 @@ function resumo() {
 
 $('#btnWhats').addEventListener('click', async () => {
   const txt = resumo();
+  if (NATIVO) {
+    try { await plugin('Share').share({ text: txt, dialogTitle: 'Mandar resumo' }); } catch { /* cancelou */ }
+    return;
+  }
   if (navigator.share) {
     try { await navigator.share({ text: txt }); return; } catch (e) { if (e.name === 'AbortError') return; }
   }
@@ -626,40 +660,97 @@ $('#btnWhats').addEventListener('click', async () => {
 });
 
 /* ---------- impressão no formato da folha ---------- */
-function montarFolha() {
+/* ---------- gerar a folha CAIXA da semana (imagem igual à folha impressa) ---------- */
+const vazioOu = (v) => (Number(v) ? brl(v) : '');
+
+function dadosCaixa() {
   const c = calcular();
   const d = st.data ? new Date(st.data + 'T12:00').toLocaleDateString('pt-BR') : '';
-  const lin = (rot, v) => `<tr><th>${rot}</th><td>${v}</td></tr>`;
-  const tab = (titulo, itens, cols) => `<h3>${titulo}</h3><table class="folha__lista"><tr>${cols.map(([, r]) => `<th>${r}</th>`).join('')}</tr>
-    ${itens.map((i) => `<tr>${cols.map(([k]) => `<td>${k === 'valor' ? brl(i.valor) : esc(i[k] || '')}</td>`).join('')}</tr>`).join('')}</table>`;
-  $('#folha').innerHTML = `
-    <h2>CAIXA — NOME: ${esc(st.nome)}</h2>
-    <table>
-      ${lin('Cidade', esc(st.cidade))}${lin('Data', d)}${lin('Semana', esc(st.semana))}
-      ${lin('Foi cobrar', R$(st.foiCobrar) + ' · Qt. de notas: ' + esc(st.qtNotas))}
-      ${lin('Antecipados', R$(st.antecipados))}${lin('V. pep. 5%', R$(c.vPep5))}
-      ${lin('Qt. notas deixadas', esc(st.qtNotasDeixadas))}${lin('Nº de pinos', esc(st.pinos))}
-      ${lin('Valor dos pepinos', R$(st.valorPepinos))}${lin('Pepino parcial', R$(st.pepinoParcial))}
-      ${lin('Pepino extra', R$(c.extras))}
-      ${lin('Notas 25%', R$(c.notas25))}${lin('Notas 40% e 50%', R$(c.notas4050))}
-      ${lin('<b>Recebimento</b>', '<b>' + R$(c.recebimento) + '</b>')}
-      ${lin('Depto. empresa espécie', R$(c.depEspecie))}${lin('Depto. Pix', R$(c.depPix))}
-      ${lin('Depto. banco/TED/trans.', R$(c.depBanco))}
-      ${c.falta ? lin('<b>Falta depositar</b>', '<b>' + R$(c.falta) + '</b>') : ''}
-      ${DESPESAS.map((k) => (k === 'salario' && !st.salario ? '' : lin(NOMES[k], R$(st[k])))).join('')}
-      ${st.pila.map((o) => lin('Despesas do Pila — ' + esc(o.tipo || ''), R$(o.valor))).join('')}
-      ${st.outros.map((o) => lin('Outros', esc(o.desc || '') + ' ' + R$(o.valor))).join('')}
-      ${st.obs.map((o) => lin('OBS', esc(o.desc || '') + ' ' + R$(o.valor))).join('')}
-      ${lin('<b>Valor deixado (vendas da semana)</b>', '<b>' + R$(st.valorDeixado) + '</b>')}
-      ${lin('Assinatura vendedor', esc(st.assinatura))}
-    </table>
-    ${st.extras.length ? tab('Pepino extra', st.extras, LISTAS.extras) : ''}
-    ${st.notas25.length ? tab('Notas 25%', st.notas25, LISTAS.notas25) : ''}
-    ${st.notas4050.length ? tab('Notas 40% e 50%', st.notas4050, LISTAS.notas4050) : ''}`;
+  const comValor = (desc, v) => `${desc} (${brl(v)})`.trim();
+  const outros = [
+    ...(st.salario ? [comValor('Salário', st.salario)] : []),
+    ...st.pila.filter((o) => o.valor).map((o) => comValor('Pila ' + (o.tipo || 'despesa').toLowerCase(), o.valor)),
+    ...st.outros.filter((o) => o.valor).map((o) => comValor(o.desc || 'Outros', o.valor)),
+  ];
+  // Na folha o OBS é escrito "4.000,00 (Fernando)".
+  const obs = st.obs.filter((o) => o.valor).map((o) => `${brl(o.valor)}${o.desc ? ` (${o.desc})` : ''}`);
+  if (c.falta > 0) obs.push(`Falta depositar ${brl(c.falta)}`);
+  if (c.falta < 0) obs.push(`Depositou a mais ${brl(-c.falta)}`);
+  return {
+    nome: st.nome, cidade: st.cidade, data: d, semana: st.semana, foiCobrar: vazioOu(st.foiCobrar),
+    qtNotas: st.qtNotas, vPep5: vazioOu(c.vPep5),
+    antecipados: vazioOu(st.antecipados), qtNotasDeixadas: st.qtNotasDeixadas, pinos: st.pinos,
+    valorPepinos: vazioOu(st.valorPepinos), pepinoParcial: vazioOu(st.pepinoParcial),
+    notas25: vazioOu(c.notas25), notas4050: vazioOu(c.notas4050), pepinoExtra: vazioOu(c.extras),
+    recebimento: vazioOu(c.recebimento), depEspecie: vazioOu(c.depEspecie), depPix: vazioOu(c.depPix),
+    depBanco: vazioOu(c.depBanco), vale: vazioOu(st.vale), ajuda: vazioOu(st.ajuda), mecanica: vazioOu(st.mecanica),
+    despSupervisor: vazioOu(st.despSupervisor), excedido: vazioOu(st.excedido), valorDeixado: vazioOu(st.valorDeixado),
+    assinatura: st.assinatura, outros, obs,
+    extras: st.extras.map((x) => ({ numero: x.numero || '', cidade: x.cidade || '', valor: vazioOu(x.valor), vendedora: x.vendedora || '' })),
+  };
 }
-$('#btnImprimir').addEventListener('click', () => { montarFolha(); print(); });
+
+// O que ainda pode estar faltando antes de fechar a semana (só avisa, não impede).
+function pendencias() {
+  const c = calcular();
+  const p = [];
+  if (!st.semana) p.push('A semana não está preenchida.');
+  if (c.falta > 0) p.push(`Ainda falta depositar ${R$(c.falta)}.`);
+  if (c.falta < 0) p.push(`Os depósitos passaram ${R$(-c.falta)} do que tinha para depositar.`);
+  if (!st.valorDeixado) p.push('O valor deixado (vendas da semana) está vazio.');
+  if (!st.assinatura) p.push('A assinatura do vendedor está vazia.');
+  const conferir = Object.keys(LISTAS).reduce((t, k) => t + st[k].filter((i) => i.conferir).length, 0);
+  if (conferir) p.push(`${conferir} item(ns) lido(s) pela foto ainda marcado(s) em amarelo para conferir.`);
+  return p;
+}
+
+const nomeArquivo = () => `caixa-${(st.nome || 'vendedor').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-semana-${soDigitos(st.semana) || 'x'}.png`;
+let imagemCaixa = null;
+
+$('#btnGerar').addEventListener('click', async () => {
+  carregando(true, 'Gerando a folha do caixa…');
+  try {
+    imagemCaixa = await desenharCaixa(dadosCaixa());
+    const url = URL.createObjectURL(imagemCaixa);
+    const img = $('#caixaImg');
+    if (img.src) URL.revokeObjectURL(img.src);
+    img.src = url;
+    const pend = pendencias();
+    $('#caixaAvisos').hidden = !pend.length;
+    $('#caixaAvisos').innerHTML = pend.length ? '<b>Antes de entregar, confira:</b><ul>' + pend.map((t) => `<li>${esc(t)}</li>`).join('') + '</ul>' : '';
+    $('#dlgCaixa').showModal();
+  } catch (e) {
+    console.error(e);
+    toast('Não deu para gerar a folha.');
+  } finally {
+    carregando(false);
+  }
+});
+
+$('#btnCaixaEnviar').addEventListener('click', async () => {
+  if (!imagemCaixa) return;
+  const nome = nomeArquivo();
+  try {
+    if (NATIVO) { await compartilharArquivo(imagemCaixa, nome); return; }
+    const arq = new File([imagemCaixa], nome, { type: 'image/png' });
+    if (navigator.canShare?.({ files: [arq] })) { await navigator.share({ files: [arq], title: nome }); return; }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(imagemCaixa);
+    a.download = nome;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  } catch (e) {
+    if (e?.name !== 'AbortError' && !/cancel/i.test(String(e?.message))) toast('Não deu para enviar a imagem.');
+  }
+});
+
+$('#btnCaixaImprimir').addEventListener('click', () => {
+  $('#folha').innerHTML = `<img src="${$('#caixaImg').src}" alt="">`;
+  print();
+});
 
 /* ---------- início ---------- */
 pintarTudo();
 try { abrirAba(sessionStorage.getItem('caixa.aba') || 'receb'); } catch { abrirAba('receb'); }
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+// No APK os arquivos já estão dentro do app; o service worker é só para o site.
+if (!NATIVO && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

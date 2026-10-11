@@ -228,7 +228,21 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   Ele confere o "foi cobrar" com o V. pep. 5% impresso e avisa se não bater. Se a folha for de outra semana,
   o fechamento atual é salvo em ☰ e começa um novo.
 - **Valor deixado** = vendas da semana, digitado à mão (não entra nas contas do caixa).
-- Salvar fechamentos, mandar resumo pelo WhatsApp e imprimir/PDF no formato da folha.
+- **Gerar caixa** (fim da semana): monta a folha CAIXA igual à impressa, já preenchida — o impresso em preto
+  e o preenchido em azul com letra de mão (fonte Caveat, `caixa/fonts/`, licença OFL). Antes avisa o que pode
+  estar faltando (depósito, valor deixado, assinatura, itens para conferir). Dá para mandar/salvar a imagem
+  ou imprimir (no site). O desenho fica em `caixa/folha.js`.
+- Salvar fechamentos e mandar resumo pelo WhatsApp.
+
+## App Android (APK) — pasta `caixa-android/`
+O mesmo app empacotado com **Capacitor**: lê as fotos pela IA do mesmo jeito, com câmera e galeria.
+No Android, "Mandar resumo" e "Mandar / salvar" da folha gerada abrem o compartilhar do celular
+(o WebView não imprime). O botão voltar fecha janelas e volta para a 1ª aba.
+
+O APK é gerado pelo GitHub Actions (`.github/workflows/caixa-apk.yml`) a cada mudança em `caixa/` ou
+`caixa-android/`. No `main`, com o segredo `NEXA_SIGNING_SEED`, ele fica no link fixo:
+https://github.com/andersonrocharsrr-code/Clausclan/releases/download/caixa/caixa.apk
+Sem o segredo (ou fora do `main`) sai um APK de teste em "Artifacts" na execução.
 
 ## Configurar a leitura por foto
 Toque em ⚙ e cole sua chave da API da Anthropic (console.anthropic.com). Ela fica salva só no aparelho.
