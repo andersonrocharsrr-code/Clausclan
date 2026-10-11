@@ -38,7 +38,7 @@ function toast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(toast.t);
-  toast.t = setTimeout(() => t.classList.remove('show'), 3200);
+  toast.t = setTimeout(() => t.classList.remove('show'), Math.max(3200, msg.length * 70));
 }
 
 /* ---------- estado ---------- */
@@ -331,13 +331,15 @@ const linhaDesc = {
 };
 const SCHEMA_FOLHA = {
   type: 'object', additionalProperties: false,
-  required: ['cidade', 'nome', 'data', 'semana', 'foiCobrar', 'qtNotas', 'qtNotasDeixadas', 'pinos', 'antecipados',
+  required: ['cidade', 'nome', 'data', 'semana', 'foiCobrar', 'vPep5', 'qtNotas', 'qtNotasDeixadas', 'pinos', 'antecipados',
     'valorPepinos', 'pepinoParcial', 'notas25', 'notas4050', 'depEspecie', 'depPix', 'depBanco', 'vale', 'ajuda', 'salario',
     'mecanica', 'despSupervisor', 'excedido', 'outros', 'obs', 'extras', 'valorDeixado', 'assinatura', 'duvidas'],
   properties: {
     cidade: { type: 'string' }, nome: { type: 'string' },
     data: { type: 'string', description: 'Data no formato AAAA-MM-DD, ou vazio' },
-    semana: { type: 'string' }, foiCobrar: { type: 'number' }, qtNotas: { type: 'string' },
+    semana: { type: 'string' }, foiCobrar: { type: 'number' },
+    vPep5: { type: 'number', description: 'Valor impresso em V. PEP. 5%, só para conferir; 0 se não tiver' },
+    qtNotas: { type: 'string' },
     qtNotasDeixadas: { type: 'string' }, pinos: { type: 'string' },
     antecipados: { type: 'number' }, valorPepinos: { type: 'number' }, pepinoParcial: { type: 'number' },
     notas25: { type: 'number', description: 'Total escrito no campo NOTAS 25%' },
@@ -373,8 +375,9 @@ da vendedora/cliente. Não repita o mesmo lançamento se ele aparecer em duas fo
   },
   folha: {
     schema: SCHEMA_FOLHA,
-    texto: `A foto é uma folha "CAIXA" de fechamento (pode estar em branco ou preenchida à mão). Campos da folha:
-CIDADE, NOME, DATA, SEMANA, FOI COBRAR R$ (foiCobrar), QT. DE NOTAS (qtNotas), ANTECIPADOS R$, V. PEP. 5% (ignore, é calculado),
+    texto: `A foto é uma folha "CAIXA" de fechamento (pode estar em branco ou preenchida à mão; a foto pode estar de lado
+ou de cabeça para baixo, leia na orientação certa). Campos da folha:
+CIDADE, NOME, DATA, SEMANA, FOI COBRAR R$ (foiCobrar), QT. DE NOTAS (qtNotas), ANTECIPADOS R$, V. PEP. 5% (vPep5),
 QT. NOTAS DEIXADAS, Nº DE PINOS, VALOR DOS PEPINOS, PEPINO PARCIAL, PEPINO EXTRA (ignore o total, é calculado),
 NOTAS 25% (notas25), NOTAS 40% e 50% (notas4050), RECEBIMENTO (ignore, é calculado), DEPTO. EMPRESA ESPÉCIE (depEspecie),
 DEPTO PIX (depPix), DEPTO BANCO/TED/TRANS. (depBanco), VALE ADIANTADO (vale), AJUDA DE CUSTO (ajuda), MECÂNICA,
@@ -471,11 +474,27 @@ const itemExtra = (n) => ({
   conferir: true, nota: n.duvida,
 });
 
+const soDigitos = (v) => String(v || '').replace(/\D/g, '');
+// Tem algo lançado além do cabeçalho impresso?
+const temLancamentos = (f) => Object.keys(LISTAS).some((k) => f[k]?.length)
+  || MONEY.some((k) => k !== 'foiCobrar' && Number(f[k]) > 0);
+
 function aplicarFolha(r) {
   const temAlgo = Object.entries(r).some(([k, v]) => k !== 'duvidas' && (Array.isArray(v) ? v.length : v));
   if (!temAlgo) {
     toast('Não achei nada na folha. Tente uma foto mais nítida, com a folha inteira.');
     return;
+  }
+  // Folha de outra semana: guarda o fechamento atual e começa um novo, para não misturar as semanas.
+  const outraSemana = (r.semana && st.semana && soDigitos(r.semana) !== soDigitos(st.semana))
+    || (/^\d{4}-\d{2}-\d{2}$/.test(r.data) && st.data && r.data !== st.data && soDigitos(r.semana) !== soDigitos(st.semana));
+  let aviso = '';
+  if (outraSemana) {
+    if (temLancamentos(st)) {
+      guardar(st);
+      aviso = ` O fechamento da semana ${st.semana || 'anterior'} foi salvo em ☰.`;
+    }
+    st = novo();
   }
   ['cidade', 'nome', 'semana', 'qtNotas', 'qtNotasDeixadas', 'pinos', 'assinatura'].forEach((k) => { if (r[k]) st[k] = r[k]; });
   if (/^\d{4}-\d{2}-\d{2}$/.test(r.data)) st.data = r.data;
@@ -493,7 +512,10 @@ function aplicarFolha(r) {
   const pag = semanaPagamento(st);
   const sem = pag === null ? ' Não achei a semana, preencha à mão.'
     : ` Semana ${st.semana}${pag ? ' (semana de pagamento)' : ''}.`;
-  toast((r.duvidas ? 'Folha lida. Atenção: ' + r.duvidas : 'Folha lida!') + sem);
+  // Confere o "foi cobrar" com o V. PEP. 5% impresso: se não bater, algum dos dois foi lido errado.
+  const conf = r.vPep5 && r.foiCobrar && Math.abs(arred(r.foiCobrar * 0.05) - r.vPep5) > 0.01
+    ? ` ⚠ Confira o "Foi cobrar": 5% dele dá ${R$(r.foiCobrar * 0.05)}, mas a folha diz ${R$(r.vPep5)}.` : '';
+  toast((r.duvidas ? 'Folha lida. Atenção: ' + r.duvidas : 'Folha lida!') + sem + conf + aviso);
 }
 
 $$('input[data-ler]').forEach((inp) => inp.addEventListener('change', () => {
@@ -519,10 +541,13 @@ $('#btnSalvarChave').addEventListener('click', () => {
 });
 
 /* ---------- salvar / lista / novo ---------- */
-function salvarFechamento() {
-  const salvos = ls.get(KEY_SALVOS, []).filter((s) => s.id !== st.id);
-  salvos.unshift(structuredClone(st));
+function guardar(f) {
+  const salvos = ls.get(KEY_SALVOS, []).filter((s) => s.id !== f.id);
+  salvos.unshift(structuredClone(f));
   ls.set(KEY_SALVOS, salvos);
+}
+function salvarFechamento() {
+  guardar(st);
   toast('Fechamento salvo.');
 }
 $('#btnSalvar').addEventListener('click', salvarFechamento);

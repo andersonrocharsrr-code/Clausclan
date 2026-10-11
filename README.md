@@ -225,6 +225,8 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   ou despesa. Na **semana 1** (semana de pagamento) o botão "Depositei tudo o que falta" lança na empresa;
   nas outras semanas, no banco. A semana vem impressa na folha CAIXA: tire a foto da folha em branco no início
   da semana e o app pega a semana (e cidade, nome, data, foi cobrar e qt. de notas). O app não adivinha pela data.
+  Ele confere o "foi cobrar" com o V. pep. 5% impresso e avisa se não bater. Se a folha for de outra semana,
+  o fechamento atual é salvo em ☰ e começa um novo.
 - **Valor deixado** = vendas da semana, digitado à mão (não entra nas contas do caixa).
 - Salvar fechamentos, mandar resumo pelo WhatsApp e imprimir/PDF no formato da folha.
 
