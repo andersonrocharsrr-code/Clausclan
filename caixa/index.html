@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=23">
+  <link rel="stylesheet" href="style.css?v=24">
 </head>
 <body>
   <div class="topo">
@@ -34,6 +34,7 @@
     <button role="tab" data-tabbtn="receb" aria-selected="true">Recebimento</button>
     <button role="tab" data-tabbtn="desp" aria-selected="false">Despesas</button>
     <button role="tab" data-tabbtn="dep" aria-selected="false">Depósito</button>
+    <button role="tab" data-tabbtn="rel" aria-selected="false">Relatório</button>
   </nav>
   </div>
 
@@ -238,6 +239,54 @@
       <button class="btn btn--ghost" id="btnNovo">＋ Novo fechamento</button>
     </section>
   </div>
+
+  <div data-tab="rel" hidden>
+    <section class="card card--accent">
+      <h2>📝 Relatório do dia</h2>
+      <p class="muted">Preenchido sozinho com o que você lança no app: notas pagas (25% e 40%), recebido do dia e total, vendido (valor deixado), pepino extra e depósitos. Só digite abaixo o que o app não tem.</p>
+      <div class="grid">
+        <label>Dia do relatório<input id="relData" type="date"></label>
+      </div>
+      <pre id="relTexto" class="rel-texto"></pre>
+      <div class="row-actions">
+        <button class="btn btn--primary" id="btnRelEnviar">💬 Mandar relatório</button>
+        <button class="btn" id="btnRelCopiar">📋 Copiar</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Do dia</h2>
+      <div class="grid">
+        <label>Nt parcial do dia (qtd.)<input data-rd="parcialQt" enterkeyhint="done" inputmode="numeric"></label>
+        <label>Ab<input data-rd="ab" enterkeyhint="done" inputmode="numeric"></label>
+        <label>Rp<input data-rd="rp" enterkeyhint="done" inputmode="numeric"></label>
+      </div>
+      <p class="muted small">O valor do parcial do dia vem do "Pepino parcial" (aba Recebimento). O vendido do dia vem do "Valor deixado": digite sempre o total da semana (ex.: ontem 4.000, hoje mais 2.000 → 6.000) e o app calcula o do dia.</p>
+    </section>
+
+    <section class="card">
+      <h2>Da semana</h2>
+      <div class="grid">
+        <label>Nt antecipada (qtd.)<input data-rs="antecipadasQt" enterkeyhint="done" inputmode="numeric"></label>
+        <label>Nt à vista (qtd.)<input data-rs="avistaQt" enterkeyhint="done" inputmode="numeric"></label>
+        <label>Nt à vista — valor (R$)<input data-rs="avistaValor" enterkeyhint="done" inputmode="decimal"></label>
+        <label>Devolução de produtos (qtd.)<input data-rs="devolQt" enterkeyhint="done" inputmode="numeric"></label>
+        <label>Devolução — valor (R$)<input data-rs="devolValor" enterkeyhint="done" inputmode="decimal"></label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Carro e supervisor</h2>
+      <div class="grid">
+        <label>Placa<input data-rg="placa" enterkeyhint="done" autocomplete="off" autocapitalize="characters"></label>
+        <label>Modelo<input data-rg="modelo" enterkeyhint="done" autocomplete="off" autocapitalize="characters"></label>
+        <label>Locadora<input data-rg="locadora" enterkeyhint="done" autocomplete="off"></label>
+        <label>Km<input data-rg="km" enterkeyhint="done" inputmode="numeric"></label>
+        <label>Supervisor<input data-rg="supervisor" enterkeyhint="done" autocomplete="off"></label>
+      </div>
+      <p class="muted small">Ficam guardados para as próximas semanas. Atualize o Km todo dia.</p>
+    </section>
+  </div>
   </main>
 
   <!-- Barra fixa com os totais -->
@@ -333,6 +382,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=23"></script>
+  <script type="module" src="app.js?v=24"></script>
 </body>
 </html>

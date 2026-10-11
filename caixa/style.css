@@ -135,7 +135,7 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 .status{font-weight:700;margin:8px 0 4px}
 .bar .status{margin:0;font-size:12px}
 .tabs{display:flex;gap:4px;padding:8px 16px;background:var(--bg);border-bottom:1px solid var(--line)}
-.tabs button{flex:1;font:inherit;font-weight:600;font-size:14px;padding:9px 4px;border-radius:10px;border:1px solid var(--line);
+.tabs button{flex:1;min-width:0;font:inherit;font-weight:600;font-size:13px;padding:9px 2px;border-radius:10px;border:1px solid var(--line);
   background:var(--card);color:var(--muted);cursor:pointer}
 .tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 [data-tab][hidden]{display:none}
@@ -174,3 +174,6 @@ label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--acc
 .aviso-salvo.show{animation:aviso-salvo 1.4s ease forwards}
 @keyframes aviso-salvo{0%{opacity:0;transform:translate(-50%,-50%) scale(.9)}15%,70%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
 @media (prefers-reduced-motion:reduce){.aviso-salvo.show{animation-duration:1.8s}}
+/* Relatório do dia: texto pronto para mandar, igual ao modelo. */
+.rel-texto{white-space:pre-wrap;font:14px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--bg);color:var(--ink);
+  border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;max-height:60vh;overflow:auto}
