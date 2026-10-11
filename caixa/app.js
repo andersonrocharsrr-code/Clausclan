@@ -497,7 +497,8 @@ async function lerFotos(tipo, files) {
     return;
   }
   const pedido = PEDIDOS[tipo === 'notas' ? 'notas' : tipo];
-  carregando(true, files.length > 1 ? `Lendo ${files.length} fotos…` : 'Lendo a foto…');
+  carregando(true);
+  progressoSimulado(files.length > 1 ? `A IA está lendo ${files.length} fotos…` : 'A IA está lendo a foto…');
   try {
     const imagens = await Promise.all(files.slice(0, 20).map(prepararFoto));
     const pedidoIA = {
@@ -539,12 +540,15 @@ const FOLHA_VAZIA = {
 };
 
 async function lerFotosGratis(tipo, files) {
-  const passo = (txt) => (m) => {
-    const tent = m.tentativa > 1 ? ` (tentativa ${m.tentativa} de ${m.total})` : '';
-    if (m.status === 'recognizing text') $('#carregandoTxt').textContent = `${txt} ${Math.round(m.progress * 100)}%${tent}`;
-    else if (/load|initializ/.test(m.status)) $('#carregandoTxt').textContent = 'Preparando o leitor… (na 1ª vez baixa uns arquivos)';
+  // Porcentagem geral: foto i de n (e, na folha, tentativa t de T) somadas ao progresso da leitura atual.
+  const passo = (txt, i = 0, n = 1) => (m) => {
+    if (m.status === 'recognizing text') {
+      const t = m.total > 1 ? (m.tentativa - 1 + m.progress) / m.total : m.progress;
+      progresso({ titulo: txt + (m.tentativa > 1 ? ` (tentativa ${m.tentativa} de ${m.total})` : ''), pct: (i + t) / n, etapa: i });
+    } else if (/load|initializ/.test(m.status)) progresso({ titulo: 'Preparando o leitor… (na 1ª vez baixa uns arquivos)' });
   };
-  carregando(true, 'Preparando o leitor…');
+  const nome = tipo === 'folha' ? null : tipo === 'extras' ? 'Foto' : 'Nota';
+  carregando(true, 'Preparando o leitor…', { etapas: nome ? files.map((_, i) => `${nome} ${i + 1}`) : [] });
   try {
     if (tipo === 'folha') {
       const r = await lerFolhaGratis(files[0], passo('Lendo a folha…'));
@@ -558,7 +562,7 @@ async function lerFotosGratis(tipo, files) {
       const msgs = [];
       for (let i = 0; i < files.length; i++) {
         const rot = files.length > 1 ? `Lendo foto ${i + 1} de ${files.length}…` : 'Lendo o pepino extra…';
-        msgs.push(aplicarPepino(await lerPepinoGratis(files[i], passo(rot), semanaDe(st.data))));
+        msgs.push(aplicarPepino(await lerPepinoGratis(files[i], passo(rot, i, files.length), semanaDe(st.data))));
       }
       toast(msgs.join(' '));
       return;
@@ -566,7 +570,7 @@ async function lerFotosGratis(tipo, files) {
     let n25 = 0, n4050 = 0, duvidas = 0;
     for (let i = 0; i < files.length; i++) {
       const rot = files.length > 1 ? `Lendo nota ${i + 1} de ${files.length}…` : 'Lendo a nota…';
-      const n = await lerNotaGratis(files[i], passo(rot));
+      const n = await lerNotaGratis(files[i], passo(rot, i, files.length));
       const destino = n.faixa === '40' || n.faixa === '50' ? 'notas4050' : 'notas25';
       destino === 'notas25' ? n25++ : n4050++;
       if (n.faltou.length) duvidas++;
@@ -746,9 +750,44 @@ $$('input[data-ler]').forEach((inp) => inp.addEventListener('change', () => {
   if (files.length) lerFotos(inp.dataset.ler, files);
 }));
 
-function carregando(on, txt) {
-  $('#carregando').hidden = !on;
-  if (txt) $('#carregandoTxt').textContent = txt;
+/* ---------- carregamento: foguete subindo ---------- */
+// carregando(true, 'Lendo…', { etapas: ['Nota 1', 'Nota 2'] }) abre; progresso({ pct, titulo, etapa }) atualiza.
+// Sem porcentagem de verdade (IA, gerar a folha), a porcentagem anda sozinha até perto de 90% e completa no fim.
+let simulacao = null, fechando = null;
+function carregando(on, txt, { etapas = [] } = {}) {
+  clearInterval(simulacao);
+  clearTimeout(fechando);
+  simulacao = null;
+  if (!on) {
+    progresso({ pct: 1 }); // o foguete chega no topo antes de sumir
+    fechando = setTimeout(() => { $('#carregando').hidden = true; }, 350);
+    return;
+  }
+  $('#carregando').hidden = false;
+  $('#carregandoEtapas').innerHTML = etapas.length > 1 ? etapas.map((t) => `<span>${esc(t)}</span>`).join('') : '';
+  progresso({ pct: 0, titulo: txt || 'Carregando…', etapa: 0 });
+}
+function progresso({ pct, titulo, etapa } = {}) {
+  if (titulo) $('#carregandoTxt').textContent = titulo;
+  if (pct != null) {
+    const p = Math.max(0, Math.min(1, pct));
+    $('#foguete').style.setProperty('--p', p);
+    $('#carregandoPct').textContent = Math.round(p * 100) + '%';
+  }
+  if (etapa != null) {
+    $$('#carregandoEtapas span').forEach((el, i) => {
+      el.classList.toggle('feita', i < etapa);
+      el.classList.toggle('atual', i === etapa);
+      el.textContent = el.textContent.replace(/ ✓$/, '') + (i < etapa ? ' ✓' : '');
+    });
+  }
+}
+// Para o que não informa porcentagem: sobe devagar e nunca passa de 90% antes de terminar.
+function progressoSimulado(titulo) {
+  let p = 0;
+  progresso({ pct: 0, titulo });
+  clearInterval(simulacao);
+  simulacao = setInterval(() => { p += (0.9 - p) * 0.06; progresso({ pct: p }); }, 200);
 }
 
 /* ---------- configurar chave ---------- */
@@ -944,7 +983,8 @@ const nomeArquivo = () => `caixa-${(st.nome || 'vendedor').toLowerCase().replace
 let imagemCaixa = null;
 
 $('#btnGerar').addEventListener('click', async () => {
-  carregando(true, 'Gerando a folha do caixa…');
+  carregando(true);
+  progressoSimulado('Gerando a folha do caixa…');
   try {
     imagemCaixa = await desenharCaixa(dadosCaixa());
     const url = URL.createObjectURL(imagemCaixa);
