@@ -12,9 +12,28 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=27">
+  <link rel="stylesheet" href="style.css?v=30">
 </head>
 <body>
+  <!-- Introdução ao abrir: contagem 3, 2, 1 e o foguete decola. Um toque pula. -->
+  <div id="intro" class="intro" aria-hidden="true">
+    <div class="intro__estrelas"></div>
+    <div class="intro__num n3">3</div><div class="intro__num n2">2</div><div class="intro__num n1">1</div>
+    <div class="intro__rastro"></div>
+    <div class="intro__fog">
+      <svg viewBox="0 0 64 120" width="64" height="120">
+        <g class="chama"><path d="M24 92 Q32 124 40 92 Z" fill="#ff9f1c"/><path d="M27 92 Q32 112 37 92 Z" fill="#ffe066"/></g>
+        <path d="M18 70 L6 92 L20 86 Z" fill="#e63946"/><path d="M46 70 L58 92 L44 86 Z" fill="#e63946"/>
+        <path d="M32 4 C48 18 50 50 46 90 L18 90 C14 50 16 18 32 4 Z" fill="#f1f5ff"/>
+        <path d="M32 4 C40 11 44 20 46 30 L18 30 C20 20 24 11 32 4 Z" fill="#e63946"/>
+        <circle cx="32" cy="50" r="9" fill="#1d4ed8" stroke="#94a3b8" stroke-width="3"/>
+        <rect x="26" y="86" width="12" height="6" rx="2" fill="#64748b"/>
+      </svg>
+    </div>
+    <div class="intro__chao"></div>
+    <div class="intro__fumaca f1"></div><div class="intro__fumaca f2"></div><div class="intro__fumaca f3"></div>
+    <div class="intro__titulo">Fechamento de Caixa</div>
+  </div>
   <div class="topo">
   <header class="top">
     <div class="top__title">
@@ -244,7 +263,6 @@
         </div>
         <button class="btn btn--primary btn--grande" id="btnLancarDep">＋ Lançar depósito</button>
       </div>
-      <h3>Depósitos lançados</h3>
       <div class="lista" data-lista="depositos"></div>
     </section>
 
@@ -285,12 +303,16 @@
     </section>
 
     <section class="card">
-      <h2>Do dia</h2>
+      <h2>Pepino parcial (ficou devendo)</h2>
+      <p class="muted small">Lance quanto a cliente ficou devendo. Pode lançar várias vezes: o relatório soma os lançamentos do dia
+        (Nt parcial dia) e de todos os dias até ele (Nt parcial total). Entra no dia escolhido em "Dia do relatório".</p>
       <div class="grid">
-        <label>Nt parcial do dia (qtd.)<input data-rd="parcialQt" enterkeyhint="done" inputmode="numeric"></label>
-        <label>Parcial — valor que ficou devendo (R$)<input data-rd="parcialValor" enterkeyhint="done" inputmode="decimal"></label>
+        <label>Qtd. de notas<input id="devQtd" enterkeyhint="done" inputmode="numeric" placeholder="1" autocomplete="off"></label>
+        <label>Ficou devendo (R$)<input id="devValor" enterkeyhint="done" inputmode="decimal" placeholder="0,00" autocomplete="off"></label>
       </div>
-      <p class="muted small">Pepino parcial no relatório = quanto a cliente ficou devendo: digite no dia; o total soma os dias. Notas pagas, pepino extra, antecipadas e notas feitas (Ab/Rp) vêm das listas da aba Recebimento, pelo dia de cada uma.</p>
+      <button class="btn btn--primary btn--grande" id="btnLancarDevendo">＋ Lançar parcial</button>
+      <div class="lista" data-lista="devendo"></div>
+      <p class="muted small">Notas pagas, pepino extra, antecipadas e notas feitas (Ab/Rp) vêm das listas da aba Recebimento, pelo dia de cada uma.</p>
     </section>
 
     <section class="card">
@@ -410,6 +432,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=27"></script>
+  <script type="module" src="app.js?v=30"></script>
 </body>
 </html>

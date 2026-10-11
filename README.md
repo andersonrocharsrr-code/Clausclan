@@ -246,9 +246,13 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   pagamentos) e total, depósitos do dia, valor em mãos, notas feitas e antecipadas (do dia e total, pelas
   listas). Cada item da lista guarda o dia em que foi pago/lançado (as notas, o dia em que a foto foi lida) e os
   totais contam só até o dia do relatório. Notas feitas: Ab (abertura) + Rp (reposição) por dia. O pepino parcial
-  do relatório é quanto a cliente ficou devendo: digitado no dia, o total soma os dias. Notas em branco = notas
+  do relatório é quanto a cliente ficou devendo: cada valor é lançado (pode lançar várias vezes no dia); o do dia soma
+  os lançamentos do dia e o total soma todos até o dia do relatório. Notas em branco = notas
   a cobrar menos as pagas/parciais (pelo TOTAL impresso da nota). Placa, modelo, locadora, Km e supervisor
   ficam guardados para as próximas semanas. Mandar pelo WhatsApp ou copiar.
+- Listas de lançamentos (notas, pepinos, antecipadas, notas feitas, despesas, depósitos, parcial) ficam recolhidas:
+  **Ver lançamentos (N)** abre a lista (mostra também quantas estão para conferir); ao adicionar uma linha ela abre sozinha.
+- **Introdução** ao abrir: contagem 3, 2, 1, o foguete decola e aparece "Fechamento de Caixa" (≈3 s; um toque pula).
 - Salvar fechamentos e mandar resumo pelo WhatsApp.
 
 ## App Android (APK) — pasta `caixa-android/`
