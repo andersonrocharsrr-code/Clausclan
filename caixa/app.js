@@ -909,6 +909,9 @@ function dadosCaixa() {
   // semana de pagamento → Depto. empresa espécie; outras semanas → Depto. banco/TED. Pix é só controle no app.
   const totalDep = c.aDepositar > 0 ? c.aDepositar : 0;
   const naEmpresa = tipoDeposito(st) === 'empresa';
+  // E no OBS continua o aviso do que ainda falta depositar.
+  if (c.falta > 0) obs.push(`Falta depositar ${brl(c.falta)}`);
+  if (c.falta < 0) obs.push(`Depositou a mais ${brl(-c.falta)}`);
   return {
     nome: st.nome, cidade: st.cidade, data: d, semana: st.semana, foiCobrar: vazioOu(st.foiCobrar),
     qtNotas: st.qtNotas, vPep5: vazioOu(c.vPep5),
