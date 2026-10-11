@@ -12,9 +12,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
+  <div class="topo">
   <header class="top">
     <div class="top__title">
       <img src="icon.svg" alt="" width="32" height="32">
@@ -29,7 +30,15 @@
     </div>
   </header>
 
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tabbtn="receb" aria-selected="true">Recebimento</button>
+    <button role="tab" data-tabbtn="desp" aria-selected="false">Despesas</button>
+    <button role="tab" data-tabbtn="dep" aria-selected="false">Depósito</button>
+  </nav>
+  </div>
+
   <main id="app">
+  <div data-tab="receb">
     <!-- Ler a folha inteira pela foto -->
     <section class="card card--accent">
       <h2>📄 Ler folha de fechamento</h2>
@@ -112,19 +121,42 @@
       <p class="muted small">Notas 25% + Notas 40% e 50% + Antecipados + Pepino extra + Pepino parcial</p>
     </section>
 
-    <!-- Saídas -->
+    <button class="btn btn--primary btn--next" data-ir="desp">Próximo: despesas →</button>
+  </div>
+
+  <!-- ===== Despesas ===== -->
+  <div data-tab="desp" hidden>
     <section class="card">
-      <h2>Depósitos e despesas</h2>
+      <div class="card__head">
+        <h2>Despesas do vendedor</h2>
+        <strong class="total" data-c="despVendedor"></strong>
+      </div>
       <div class="grid">
-        <label>Depto. empresa espécie<input data-f="depEspecie" data-money inputmode="decimal"></label>
-        <label>Depto. Pix<input data-f="depPix" data-money inputmode="decimal"></label>
-        <label>Depto. banco/TED/trans.<input data-f="depBanco" data-money inputmode="decimal"></label>
-        <label>Vale adiantado<input data-f="vale" data-money inputmode="decimal"></label>
         <label>Ajuda de custo<input data-f="ajuda" data-money inputmode="decimal"></label>
+        <label>Vale adiantado<input data-f="vale" data-money inputmode="decimal"></label>
+        <label>Salário <small>(só entra se preencher)</small><input data-f="salario" data-money inputmode="decimal" placeholder="Em branco = não entra"></label>
         <label>Mecânica<input data-f="mecanica" data-money inputmode="decimal"></label>
         <label>Despesas supervisor<input data-f="despSupervisor" data-money inputmode="decimal"></label>
         <label>Excedido da despesa<input data-f="excedido" data-money inputmode="decimal"></label>
       </div>
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <h2>Despesas do Pila</h2>
+        <strong class="total" data-c="pila"></strong>
+      </div>
+      <div class="row-actions">
+        <button class="btn" data-pila="Refeição">+ Refeição</button>
+        <button class="btn" data-pila="Salário">+ Salário</button>
+        <button class="btn" data-pila="Hotel">+ Hotel</button>
+        <button class="btn" data-pila="">+ Outra</button>
+      </div>
+      <div class="lista" data-lista="pila"></div>
+    </section>
+
+    <section class="card">
+      <h2>Outros e OBS</h2>
       <h3>Outros</h3>
       <div class="lista" data-lista="outros"></div>
       <button class="btn" data-add="outros">+ Adicionar em Outros</button>
@@ -133,20 +165,43 @@
       <button class="btn" data-add="obs">+ Adicionar em OBS</button>
     </section>
 
-    <!-- Final -->
+    <section class="card card--sum">
+      <div class="card__head">
+        <h2>Total de despesas</h2>
+        <strong class="total total--big" data-c="despesas"></strong>
+      </div>
+    </section>
+    <button class="btn btn--primary btn--next" data-ir="dep">Próximo: depósito →</button>
+  </div>
+
+  <!-- ===== Depósito ===== -->
+  <div data-tab="dep" hidden>
+    <section class="card card--sum">
+      <h2>Depósito</h2>
+      <div class="conf">
+        <div><span>Recebimento</span><b data-c="recebimento"></b></div>
+        <div><span>− Despesas</span><b data-c="despesas"></b></div>
+        <div data-se-pix><span>− Já mandou por Pix</span><b data-c="depPix"></b></div>
+        <div class="conf__diff"><span>= Depositar</span><b data-c="deposito"></b></div>
+      </div>
+      <p data-status></p>
+
+      <h3>Onde vai depositar</h3>
+      <div class="escolha" role="radiogroup">
+        <label><input type="radio" name="depTipo" value="empresa"> Depto. empresa espécie</label>
+        <label><input type="radio" name="depTipo" value="banco"> Depto. banco/TED/transferência</label>
+      </div>
+      <p class="muted small" id="depDica"></p>
+      <button type="button" class="btn btn--ghost" id="depAuto" hidden>↺ Voltar ao automático</button>
+      <label>Parte mandada por Pix (se tiver)<input data-f="depPix" data-money inputmode="decimal"></label>
+    </section>
+
     <section class="card">
       <h2>Fechamento</h2>
       <div class="grid">
         <label>Valor deixado — vendas da semana (R$)<input data-f="valorDeixado" data-money inputmode="decimal" placeholder="Digite o total vendido"></label>
         <label>Assinatura do vendedor<input data-f="assinatura" autocomplete="off"></label>
       </div>
-      <div class="conf">
-        <div><span>Recebimento</span><b data-c="recebimento"></b></div>
-        <div><span>Depósitos e despesas</span><b data-c="saidas"></b></div>
-        <div class="conf__diff"><span>Diferença</span><b data-c="diferenca"></b></div>
-      </div>
-      <p data-status></p>
-      <p class="muted small">Diferença = recebimento menos depósitos e despesas. O caixa fecha quando ela fica em zero.</p>
     </section>
 
     <section class="card actions-final">
@@ -155,12 +210,14 @@
       <button class="btn" id="btnImprimir">🖨 Imprimir / PDF</button>
       <button class="btn btn--ghost" id="btnNovo">＋ Novo fechamento</button>
     </section>
+  </div>
   </main>
 
   <!-- Barra fixa com os totais -->
   <footer class="bar">
     <div><span>Recebimento</span><b data-c="recebimento"></b></div>
-    <div><span data-status></span><b data-c="diferenca"></b></div>
+    <div><span>Despesas</span><b data-c="despesas"></b></div>
+    <div><span data-status-curto>Depósito</span><b data-c="deposito"></b></div>
   </footer>
 
   <!-- Folha para impressão -->
@@ -197,6 +254,6 @@
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="app.js?v=3"></script>
+  <script type="module" src="app.js?v=4"></script>
 </body>
 </html>

@@ -42,13 +42,17 @@ function toast(msg) {
 }
 
 /* ---------- estado ---------- */
-const MONEY = ['foiCobrar', 'antecipados', 'valorPepinos', 'pepinoParcial', 'depEspecie', 'depPix', 'depBanco',
-  'vale', 'ajuda', 'mecanica', 'despSupervisor', 'excedido', 'valorDeixado'];
-const SAIDAS = ['depEspecie', 'depPix', 'depBanco', 'vale', 'ajuda', 'mecanica', 'despSupervisor', 'excedido'];
+const MONEY = ['foiCobrar', 'antecipados', 'valorPepinos', 'pepinoParcial', 'depPix',
+  'vale', 'ajuda', 'salario', 'mecanica', 'despSupervisor', 'excedido', 'valorDeixado'];
+// Despesas do vendedor (campo em branco vale 0, então o salário só entra quando é preenchido).
+const DESPESAS = ['ajuda', 'vale', 'salario', 'mecanica', 'despSupervisor', 'excedido'];
+const NOMES = { ajuda: 'Ajuda de custo', vale: 'Vale adiantado', salario: 'Salário', mecanica: 'Mecânica',
+  despSupervisor: 'Despesas supervisor', excedido: 'Excedido da despesa' };
 const LISTAS = {
   notas25: [['numero', 'Nº'], ['cliente', 'Cliente'], ['cidade', 'Cidade'], ['valor', 'Valor']],
   notas4050: [['numero', 'Nº'], ['cliente', 'Cliente'], ['cidade', 'Cidade'], ['valor', 'Valor']],
   extras: [['numero', 'Nº'], ['vendedora', 'Vendedora/cliente'], ['cidade', 'Cidade'], ['valor', 'Valor']],
+  pila: [['tipo', 'Despesa'], ['valor', 'Valor']],
   outros: [['desc', 'Descrição'], ['valor', 'Valor']],
   obs: [['desc', 'Descrição'], ['valor', 'Valor']],
 };
@@ -61,13 +65,25 @@ function novo() {
     data: new Date().toISOString().slice(0, 10), semana: '',
     foiCobrar: 0, qtNotas: '', qtNotasDeixadas: '', pinos: '',
     antecipados: 0, valorPepinos: 0, pepinoParcial: 0,
-    notas25: [], notas4050: [], extras: [], outros: [], obs: [],
-    depEspecie: 0, depPix: 0, depBanco: 0, vale: 0, ajuda: 0, mecanica: 0, despSupervisor: 0, excedido: 0,
+    notas25: [], notas4050: [], extras: [], pila: [], outros: [], obs: [],
+    vale: 0, ajuda: 0, salario: 0, mecanica: 0, despSupervisor: 0, excedido: 0, depPix: 0,
+    depTipo: '', // '' = automático pela semana; 'empresa' ou 'banco' quando o vendedor escolhe
     valorDeixado: 0, assinatura: ultimo?.assinatura || '',
   };
 }
 
-let st = ls.get(KEY_ATUAL, null) || novo();
+// Fechamentos salvos antes de existirem campos novos ganham os valores padrão.
+const normalizar = (s) => ({ ...novo(), ...s });
+
+let st = normalizar(ls.get(KEY_ATUAL, null) || novo());
+
+// Semana de pagamento = 1ª semana do mês (pela "Semana" da folha, ou pela data se a semana estiver em branco).
+function semanaPagamento(s) {
+  const sem = String(s.semana || '').trim();
+  if (sem) return sem === '1';
+  return s.data ? Number(s.data.slice(8, 10)) <= 7 : false;
+}
+const tipoDeposito = (s) => s.depTipo || (semanaPagamento(s) ? 'empresa' : 'banco');
 
 const soma = (lista) => arred(lista.reduce((t, i) => t + (Number(i.valor) || 0), 0));
 
@@ -78,10 +94,17 @@ function calcular(s = st) {
   c.notas4050 = soma(s.notas4050);
   c.extras = soma(s.extras);
   c.recebimento = arred(c.notas25 + c.notas4050 + s.antecipados + c.extras + s.pepinoParcial);
+  c.despVendedor = arred(DESPESAS.reduce((t, k) => t + (Number(s[k]) || 0), 0));
+  c.pila = soma(s.pila);
   c.outros = soma(s.outros);
   c.obs = soma(s.obs);
-  c.saidas = arred(SAIDAS.reduce((t, k) => t + (Number(s[k]) || 0), 0) + c.outros + c.obs);
-  c.diferenca = arred(c.recebimento - c.saidas);
+  c.despesas = arred(c.despVendedor + c.pila + c.outros + c.obs);
+  c.depPix = arred(s.depPix);
+  // O que sobra depois das despesas é o depósito.
+  c.deposito = arred(c.recebimento - c.despesas - c.depPix);
+  c.tipo = tipoDeposito(s);
+  c.depEspecie = c.tipo === 'empresa' ? c.deposito : 0;
+  c.depBanco = c.tipo === 'banco' ? c.deposito : 0;
   return c;
 }
 
@@ -93,16 +116,21 @@ function pintarTotais() {
   $$('[data-c]').forEach((el) => {
     const v = c[el.dataset.c];
     el.textContent = R$(v);
-    el.classList.toggle('neg', el.dataset.c === 'diferenca' && v !== 0);
-    el.classList.toggle('pos', el.dataset.c === 'diferenca' && v === 0);
+    el.classList.toggle('neg', el.dataset.c === 'deposito' && v < 0);
   });
-  // O caixa fecha quando tudo que foi recebido está lançado em depósitos e despesas.
-  const dif = c.diferenca;
+  const onde = c.tipo === 'empresa' ? 'na empresa (espécie)' : 'no banco/TED/transferência';
   $$('[data-status]').forEach((el) => {
-    el.textContent = dif === 0 ? '✓ Caixa fechado'
-      : dif > 0 ? `Falta lançar ${R$(dif)}` : `Lançou ${R$(-dif)} a mais`;
-    el.className = 'status ' + (dif === 0 ? 'pos' : 'neg');
+    el.textContent = c.deposito < 0 ? `As despesas passaram o recebimento em ${R$(-c.deposito)}`
+      : `Depositar ${R$(c.deposito)} ${onde}`;
+    el.className = 'status ' + (c.deposito < 0 ? 'neg' : 'pos');
   });
+  $$('input[name="depTipo"]').forEach((r) => { r.checked = r.value === c.tipo; });
+  $('#depDica').textContent = st.depTipo
+    ? 'Você escolheu. Toque em "automático" para voltar a seguir a semana.'
+    : semanaPagamento(st) ? 'Automático: 1ª semana do mês é semana de pagamento, depósito na empresa.'
+      : 'Automático: fora da semana de pagamento, depósito no banco/transferência.';
+  $('#depAuto').hidden = !st.depTipo;
+  $$('[data-se-pix]').forEach((el) => { el.hidden = !c.depPix; });
   const d = st.data ? new Date(st.data + 'T12:00').toLocaleDateString('pt-BR') : '';
   $('#subtitulo').textContent = [st.nome, st.cidade, d].filter(Boolean).join(' · ') || 'Novo fechamento';
 }
@@ -178,6 +206,32 @@ $$('[data-f]').forEach((el) => {
   }
 });
 
+$$('[data-pila]').forEach((b) => b.addEventListener('click', () => {
+  st.pila.push({ id: uid(), tipo: b.dataset.pila, valor: 0 });
+  salvarAtual(); pintarLista('pila');
+  const rows = $$('[data-lista="pila"] .item');
+  rows[rows.length - 1]?.querySelector(b.dataset.pila ? '[data-k="valor"]' : 'input')?.focus();
+}));
+
+$$('input[name="depTipo"]').forEach((r) => r.addEventListener('change', () => {
+  st.depTipo = r.value;
+  salvarAtual(); pintarTotais();
+}));
+$('#depAuto').addEventListener('click', () => {
+  st.depTipo = '';
+  salvarAtual(); pintarTotais();
+});
+
+/* ---------- abas ---------- */
+function abrirAba(nome) {
+  $$('[data-tab]').forEach((el) => { el.hidden = el.dataset.tab !== nome; });
+  $$('[data-tabbtn]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tabbtn === nome)));
+  try { sessionStorage.setItem('caixa.aba', nome); } catch {}
+  scrollTo({ top: 0 });
+}
+$$('[data-tabbtn]').forEach((b) => b.addEventListener('click', () => abrirAba(b.dataset.tabbtn)));
+$$('[data-ir]').forEach((b) => b.addEventListener('click', () => abrirAba(b.dataset.ir)));
+
 $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
   const nome = b.dataset.add;
   st[nome].push({ id: uid(), valor: 0, cidade: nome.startsWith('notas') || nome === 'extras' ? st.cidade : undefined });
@@ -250,7 +304,7 @@ const linhaDesc = {
 const SCHEMA_FOLHA = {
   type: 'object', additionalProperties: false,
   required: ['cidade', 'nome', 'data', 'semana', 'foiCobrar', 'qtNotas', 'qtNotasDeixadas', 'pinos', 'antecipados',
-    'valorPepinos', 'pepinoParcial', 'notas25', 'notas4050', 'depEspecie', 'depPix', 'depBanco', 'vale', 'ajuda',
+    'valorPepinos', 'pepinoParcial', 'notas25', 'notas4050', 'depPix', 'vale', 'ajuda', 'salario',
     'mecanica', 'despSupervisor', 'excedido', 'outros', 'obs', 'extras', 'valorDeixado', 'assinatura', 'duvidas'],
   properties: {
     cidade: { type: 'string' }, nome: { type: 'string' },
@@ -260,7 +314,7 @@ const SCHEMA_FOLHA = {
     antecipados: { type: 'number' }, valorPepinos: { type: 'number' }, pepinoParcial: { type: 'number' },
     notas25: { type: 'number', description: 'Total escrito no campo NOTAS 25%' },
     notas4050: { type: 'number', description: 'Total escrito no campo NOTAS 40% e 50%' },
-    depEspecie: { type: 'number' }, depPix: { type: 'number' }, depBanco: { type: 'number' },
+    depPix: { type: 'number' }, salario: { type: 'number', description: 'Salário do vendedor; 0 se não tiver' },
     vale: { type: 'number' }, ajuda: { type: 'number' }, mecanica: { type: 'number' },
     despSupervisor: { type: 'number' }, excedido: { type: 'number' },
     outros: { type: 'array', items: linhaDesc }, obs: { type: 'array', items: linhaDesc },
@@ -294,10 +348,11 @@ da vendedora/cliente. Não repita o mesmo lançamento se ele aparecer em duas fo
     texto: `A foto é uma folha "CAIXA" de fechamento (pode estar em branco ou preenchida à mão). Campos da folha:
 CIDADE, NOME, DATA, SEMANA, FOI COBRAR R$ (foiCobrar), QT. DE NOTAS (qtNotas), ANTECIPADOS R$, V. PEP. 5% (ignore, é calculado),
 QT. NOTAS DEIXADAS, Nº DE PINOS, VALOR DOS PEPINOS, PEPINO PARCIAL, PEPINO EXTRA (ignore o total, é calculado),
-NOTAS 25% (notas25), NOTAS 40% e 50% (notas4050), RECEBIMENTO (ignore, é calculado), DEPTO. EMPRESA ESPÉCIE (depEspecie),
-DEPTO PIX (depPix), DEPTO BANCO/TED/TRANS. (depBanco), VALE ADIANTADO (vale), AJUDA DE CUSTO (ajuda), MECÂNICA,
+NOTAS 25% (notas25), NOTAS 40% e 50% (notas4050), RECEBIMENTO (ignore, é calculado), DEPTO. EMPRESA ESPÉCIE e
+DEPTO BANCO/TED/TRANS. (ignore os dois, o depósito é calculado), DEPTO PIX (depPix), VALE ADIANTADO (vale), AJUDA DE CUSTO (ajuda), MECÂNICA,
 DESPESAS SUPERVISOR, EXCEDIDO DA DESPESA (excedido), OUTROS e OBS (cada linha escrita vira {desc, valor}; se o valor
-estiver entre parênteses, ele é o valor da linha), VALOR DEIXADO, ASSINATURA VENDEDOR.
+estiver entre parênteses, ele é o valor da linha; uma linha de salário do vendedor vai para "salario", não para outros),
+VALOR DEIXADO, ASSINATURA VENDEDOR.
 À direita há blocos "VENDEDORA:" com colunas Nº, CIDADE, VALOR — são os pepinos extras: cada bloco preenchido vira um item
 de "extras" (vendedora = nome escrito depois de VENDEDORA:). Se a folha estiver em branco, devolva tudo vazio/0.`,
   },
@@ -459,7 +514,7 @@ $('#btnLista').addEventListener('click', () => {
       </button>
       <button type="button" class="item__del" aria-label="Apagar">✕</button>`;
     row.querySelector('.salvo__abrir').addEventListener('click', () => {
-      st = structuredClone(s);
+      st = normalizar(structuredClone(s));
       salvarAtual(); pintarTudo();
       $('#dlgLista').close();
     });
@@ -489,11 +544,14 @@ function resumo() {
   L.push(`Pepino extra: ${R$(c.extras)}`);
   st.extras.forEach((x) => L.push(`  • ${x.numero || ''} ${x.cidade || ''} ${x.vendedora || ''} — ${R$(x.valor)}`));
   L.push('', `*Recebimento: ${R$(c.recebimento)}*`, '');
-  const nomes = { depEspecie: 'Depto. espécie', depPix: 'Depto. Pix', depBanco: 'Depto. banco', vale: 'Vale adiantado',
-    ajuda: 'Ajuda de custo', mecanica: 'Mecânica', despSupervisor: 'Desp. supervisor', excedido: 'Excedido da despesa' };
-  SAIDAS.forEach((k) => { if (st[k]) L.push(`${nomes[k]}: ${R$(st[k])}`); });
+  L.push('*Despesas*');
+  DESPESAS.forEach((k) => { if (st[k]) L.push(`${NOMES[k]}: ${R$(st[k])}`); });
+  st.pila.forEach((o) => L.push(`Pila — ${o.tipo || 'despesa'}: ${R$(o.valor)}`));
   st.outros.forEach((o) => L.push(`Outros: ${o.desc || ''} ${R$(o.valor)}`));
   st.obs.forEach((o) => L.push(`OBS: ${o.desc || ''} ${R$(o.valor)}`));
+  L.push(`*Total de despesas: ${R$(c.despesas)}*`, '');
+  if (c.depPix) L.push(`Depto. Pix: ${R$(c.depPix)}`);
+  L.push(`*${c.tipo === 'empresa' ? 'Depto. empresa espécie' : 'Depto. banco/TED/trans.'}: ${R$(c.deposito)}*`);
   L.push('', `Valor deixado (vendas da semana): ${R$(st.valorDeixado)}`);
   return L.join('\n');
 }
@@ -524,10 +582,10 @@ function montarFolha() {
       ${lin('Pepino extra', R$(c.extras))}
       ${lin('Notas 25%', R$(c.notas25))}${lin('Notas 40% e 50%', R$(c.notas4050))}
       ${lin('<b>Recebimento</b>', '<b>' + R$(c.recebimento) + '</b>')}
-      ${lin('Depto. empresa espécie', R$(st.depEspecie))}${lin('Depto. Pix', R$(st.depPix))}
-      ${lin('Depto. banco/TED/trans.', R$(st.depBanco))}${lin('Vale adiantado', R$(st.vale))}
-      ${lin('Ajuda de custo', R$(st.ajuda))}${lin('Mecânica', R$(st.mecanica))}
-      ${lin('Despesas supervisor', R$(st.despSupervisor))}${lin('Excedido da despesa', R$(st.excedido))}
+      ${lin('Depto. empresa espécie', R$(c.depEspecie))}${lin('Depto. Pix', R$(c.depPix))}
+      ${lin('Depto. banco/TED/trans.', R$(c.depBanco))}
+      ${DESPESAS.map((k) => (k === 'salario' && !st.salario ? '' : lin(NOMES[k], R$(st[k])))).join('')}
+      ${st.pila.map((o) => lin('Despesas do Pila — ' + esc(o.tipo || ''), R$(o.valor))).join('')}
       ${st.outros.map((o) => lin('Outros', esc(o.desc || '') + ' ' + R$(o.valor))).join('')}
       ${st.obs.map((o) => lin('OBS', esc(o.desc || '') + ' ' + R$(o.valor))).join('')}
       ${lin('<b>Valor deixado (vendas da semana)</b>', '<b>' + R$(st.valorDeixado) + '</b>')}
@@ -541,4 +599,5 @@ $('#btnImprimir').addEventListener('click', () => { montarFolha(); print(); });
 
 /* ---------- início ---------- */
 pintarTudo();
+try { abrirAba(sessionStorage.getItem('caixa.aba') || 'receb'); } catch { abrirAba('receb'); }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

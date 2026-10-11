@@ -12,6 +12,7 @@
   }
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.4;padding-bottom:84px}
 h1{font-size:18px;margin:0}
 h2{font-size:17px;margin:0 0 10px}
@@ -20,7 +21,8 @@ p{margin:0 0 10px}
 .muted{color:var(--muted)}.small{font-size:13px}
 a{color:var(--accent)}
 
-.top{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:10px;
+.topo{position:sticky;top:0;z-index:10}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:calc(10px + env(safe-area-inset-top)) 16px 10px;background:var(--card);border-bottom:1px solid var(--line)}
 .top__title{display:flex;align-items:center;gap:10px;min-width:0}
 .top__title p{margin:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -112,3 +114,17 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 .pos{color:var(--pos)}
 .status{font-weight:700;margin:8px 0 4px}
 .bar .status{margin:0;font-size:12px}
+.tabs{display:flex;gap:4px;padding:8px 16px;background:var(--bg);border-bottom:1px solid var(--line)}
+.tabs button{flex:1;font:inherit;font-weight:600;font-size:14px;padding:9px 4px;border-radius:10px;border:1px solid var(--line);
+  background:var(--card);color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+[data-tab][hidden]{display:none}
+.btn--next{width:100%;margin-bottom:12px}
+.escolha{display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
+.escolha label{flex-direction:row;align-items:center;gap:10px;font-size:15px;color:var(--ink);padding:10px 12px;
+  border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.escolha input{width:20px;height:20px;padding:0;accent-color:var(--accent)}
+.escolha label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+label small{font-size:11px}
+.bar b{font-size:16px}
+@media print{.topo{display:none!important}}

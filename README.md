@@ -217,8 +217,12 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
 - **Foto da folha de fechamento** (em branco ou preenchida à mão): identifica os campos e preenche o app.
 - Contas automáticas: **V. pep. 5%** (5% do "foi cobrar"), totais das notas, **pepino extra** e
   **recebimento** = notas 25% + notas 40/50% + antecipados + pepino extra + pepino parcial (o valor dos pepinos fica só como registro).
-- Depósitos e despesas, Outros e OBS com descrição. O app avisa quanto **falta lançar** e mostra
-  **✓ Caixa fechado** quando o recebimento bate com os depósitos e despesas (diferença zero).
+- **3 abas**: Recebimento, Despesas e Depósito.
+- **Despesas**: ajuda de custo, vale adiantado, salário (só entra na conta se for preenchido), mecânica,
+  despesas supervisor, excedido, **despesas do Pila** (refeição, salário, hotel ou outra), Outros e OBS.
+- **Depósito calculado sozinho**: recebimento − despesas (− o que já foi por Pix). Escolha onde depositar:
+  **Depto. empresa espécie** ou **Depto. banco/TED/transferência**. No automático, a 1ª semana do mês
+  (semana de pagamento) vai para a empresa e as outras para o banco; dá para trocar com um toque.
 - **Valor deixado** = vendas da semana, digitado à mão (não entra nas contas do caixa).
 - Salvar fechamentos, mandar resumo pelo WhatsApp e imprimir/PDF no formato da folha.
 
