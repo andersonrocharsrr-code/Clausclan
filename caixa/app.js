@@ -55,7 +55,7 @@ function toast(msg) {
 }
 
 /* ---------- estado ---------- */
-const MONEY = ['foiCobrar', 'antecipados', 'valorPepinos', 'pepinoParcial',
+const MONEY = ['foiCobrar', 'antecipados', 'valorPepinos', 'pepinosOutros', 'pepinoParcial',
   'vale', 'ajuda', 'salario', 'mecanica', 'despSupervisor', 'excedido', 'valorDeixado'];
 // Despesas do vendedor (campo em branco vale 0, então o salário só entra quando é preenchido).
 const DESPESAS = ['ajuda', 'vale', 'salario', 'mecanica', 'despSupervisor', 'excedido'];
@@ -93,7 +93,7 @@ function novo() {
     cidade: ultimo?.cidade || '', nome: ultimo?.nome || '',
     data: hoje(), semana: '',
     foiCobrar: 0, qtNotas: '', qtNotasDeixadas: '', pinos: '',
-    antecipados: 0, valorPepinos: 0, pepinoParcial: 0,
+    antecipados: 0, valorPepinos: 0, pepinosOutros: 0, pepinoParcial: 0,
     notas25: [], notas4050: [], extras: [], pila: [], outros: [], obs: [], depositos: [], antecipadas: [], parciais: [], feitas: [], devendo: [],
     vale: 0, ajuda: 0, salario: 0, mecanica: 0, despSupervisor: 0, excedido: 0,
     valorDeixado: 0, assinatura: ultimo?.assinatura || '',
@@ -133,6 +133,12 @@ function normalizar(s) {
   if (!s.feitas && (Number(s.valorDeixado) > 0 || numero(s.qtNotasDeixadas) > 0)) {
     n.feitas = [{ id: uid(), data: s.data || hoje(), qtd: String(s.qtNotasDeixadas || ''), valor: arred(s.valorDeixado) }];
   }
+  // "Valor dos pepinos" passou a somar o que ficou devendo nos pepinos parciais; o que já estava digitado
+  // além disso vira "outros pepinos".
+  if (s.pepinosOutros == null) {
+    const devendo = (n.parciais || []).reduce((t, x) => t + numero(x.devendo), 0);
+    n.pepinosOutros = Math.max(0, arred(numero(s.valorPepinos) - devendo));
+  }
   sincronizar(n);
   return n;
 }
@@ -144,6 +150,8 @@ const qtdFeita = (x) => (numero(x.ab) + numero(x.rp)) || numero(x.qtd);
 function sincronizar(f = st) {
   f.antecipados = soma(f.antecipadas || []);
   f.pepinoParcial = soma(f.parciais || []);
+  // Valor dos pepinos = o que ficou devendo nos pepinos parciais + outros pepinos digitados.
+  f.valorPepinos = arred((f.parciais || []).reduce((t, x) => t + numero(x.devendo), 0) + numero(f.pepinosOutros));
   f.valorDeixado = soma(f.feitas || []);
   const qt = (f.feitas || []).reduce((t, x) => t + qtdFeita(x), 0);
   f.qtNotasDeixadas = qt ? String(qt) : '';
@@ -171,6 +179,7 @@ function calcular(s = st) {
   c.extras = soma(s.extras);
   c.antecipados = soma(s.antecipadas || []);
   c.pepinoParcial = soma(s.parciais || []);
+  c.valorPepinos = arred((s.parciais || []).reduce((t, x) => t + numero(x.devendo), 0) + numero(s.pepinosOutros));
   c.valorDeixado = soma(s.feitas || []);
   c.recebimento = arred(c.notas25 + c.notas4050 + c.antecipados + c.extras + c.pepinoParcial);
   c.despVendedor = arred(DESPESAS.reduce((t, k) => t + (Number(s[k]) || 0), 0));
@@ -835,6 +844,8 @@ function aplicarFolha(r) {
   ['cidade', 'nome', 'semana', 'qtNotas', 'qtNotasDeixadas', 'pinos', 'assinatura'].forEach((k) => { if (r[k]) st[k] = r[k]; });
   if (/^\d{4}-\d{2}-\d{2}$/.test(r.data)) st.data = r.data;
   MONEY.forEach((k) => { if (r[k]) st[k] = arred(r[k]); });
+  if (r.valorPepinos) st.pepinosOutros = arred(r.valorPepinos); // o valor escrito na folha entra como "outros pepinos"
+
   const deps = [['empresa', r.depEspecie], ['banco', r.depBanco], ['pix', r.depPix]].filter(([, v]) => v > 0);
   if (deps.length) st.depositos = deps.map(([onde, v]) => ({ id: uid(), data: st.data || hoje(), onde, valor: arred(v), conferir: true }));
   // Na folha só aparece o total das notas; vira uma linha "total da folha" que pode ser trocada pelas notas uma a uma.
