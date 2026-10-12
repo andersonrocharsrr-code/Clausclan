@@ -77,7 +77,7 @@ const LISTAS = {
   // Cada nota antecipada com o nome; o total vai para "Antecipados".
   antecipadas: [['cliente', 'Nome'], ['valor', 'Valor']],
   // Cada pepino parcial com o nome; o total vai para "Pepino parcial".
-  parciais: [['cliente', 'Nome'], ['valor', 'Valor']],
+  parciais: [['cliente', 'Nome'], ['valor', 'Valor pago'], ['devolucao', 'Devolução']],
   // Notas feitas (vendas) de cada dia: Ab (abertura) + Rp (reposição) = notas do dia; a soma dos valores é o
   // "Valor deixado" e a das notas, as "Notas deixadas".
   feitas: [['data', 'Dia', 'date'], ['ab', 'Ab'], ['rp', 'Rp'], ['valor', 'Valor']],
@@ -270,7 +270,7 @@ function pintarLista(nome) {
   if (!n || !aberta) return;
   st[nome].forEach((item, i) => {
     const row = document.createElement('div');
-    row.className = 'item' + (item.conferir ? ' item--conferir' : '') + (cols.length === 2 ? ' item--2' : '') + (nome.startsWith('notas') ? ' item--nota' : '')
+    row.className = 'item' + (item.conferir ? ' item--conferir' : '') + (cols.length === 2 ? ' item--2' : '') + (nome.startsWith('notas') || nome === 'parciais' ? ' item--nota' : '')
       + (nome === 'depositos' ? ' item--dep' : '') + (nome === 'feitas' ? ' item--feitas' : '') + (nome === 'devendo' ? ' item--devendo' : '');
     row.innerHTML = cols.map(([k, rot, tipo]) => `
       <label class="item__${k}">${rot}
@@ -348,7 +348,7 @@ $$('[data-f]').forEach((el) => {
   el.addEventListener('input', () => {
     const k = el.dataset.f;
     st[k] = MONEY.includes(k) ? numero(el.value) : el.value;
-    if (k === 'data') recalcularPepinos();
+    if (k === 'data') { st.dataManualEm = hoje(); recalcularPepinos(); } // mudou à mão: vale só por hoje
     salvarAtual(); pintarTotais();
   });
   if (el.hasAttribute('data-money')) {
@@ -1041,7 +1041,9 @@ function relatorio(dia) {
   const pepDia = st.extras.map((x) => pepinoNoDia(x, dia)).filter((v) => v > 0);
   const pepTotal = st.extras.map(pepinoAte).filter((v) => v > 0);
   const parcDia = st.parciais.filter((x) => x.dia === dia && Number(x.valor) > 0);
-  const parcPagoTotal = soma(st.parciais.filter((x) => ate(x.dia)));
+  const parcAte = st.parciais.filter((x) => ate(x.dia));
+  const parcPagoTotal = soma(parcAte);
+  const parcDevolTotal = arred(somaK(parcAte, 'devolucao'));
   // Pepino parcial do relatório: o que as clientes ficaram devendo, pelos lançamentos de cada dia.
   const devDia = st.devendo.filter((x) => x.data === dia);
   const devAte = st.devendo.filter((x) => ate(x.data));
@@ -1050,10 +1052,12 @@ function relatorio(dia) {
   const recebidoDia = arred(soma(n25) + soma(n4050) + pepDia.reduce((t, v) => t + v, 0)
     + soma(antecDia) + soma(parcDia));
   const recebidoTotal = arred(soma(pagas) + pepTotal.reduce((t, v) => t + v, 0) + soma(antecTotal) + parcPagoTotal);
-  const emBrancoQt = Math.max(0, (Number(st.qtNotas) || 0) - pagas.length - parcQtTotal);
+  // Nota com pepino parcial sai das notas em branco e fica no parcial: o que pagou + devolução + o que ficou devendo.
+  const parcNotas = Math.max(parcQtTotal, parcAte.filter((x) => Number(x.valor) > 0).length);
+  const emBrancoQt = Math.max(0, (Number(st.qtNotas) || 0) - pagas.length - parcNotas);
   const emBrancoValor = Math.max(0, arred(st.foiCobrar - (pagas25.reduce((t, n) => t + valorDeFace(n, 'notas25'), 0)
     + pagas4050.reduce((t, n) => t + valorDeFace(n, 'notas4050'), 0))
-    - parcPagoTotal - parcValorTotal));
+    - parcPagoTotal - parcDevolTotal - parcValorTotal));
   const depDia = st.depositos.filter((d) => d.data === dia);
   const depTotal = soma(st.depositos.filter((d) => ate(d.data)));
 
@@ -1355,6 +1359,30 @@ if (intro) {
   intro.addEventListener('animationend', (e) => { if (e.target === intro) tirar(); });
 }
 pintarTudo();
+
+// A data acompanha o calendário: ao abrir, ao voltar para o app e na virada do dia. Mudada à mão, vale só
+// naquele dia. Numa semana nova a data não pula sozinha (os pepinos são da semana da folha): avisa para
+// começar o fechamento novo.
+let ultimoHoje = hoje(), avisouSemanaNova = '';
+function dataDeHoje() {
+  const h = hoje();
+  if ($('#relData').value === ultimoHoje && h !== ultimoHoje) { $('#relData').value = h; pintarCamposRel(); }
+  ultimoHoje = h;
+  if (!st.data || st.data === h || st.dataManualEm === h) { pintarRelatorio(); return; }
+  const { ini, fim } = semanaDe(st.data);
+  if (h < ini || h > fim) {
+    if (avisouSemanaNova !== h && temLancamentos(st)) {
+      avisouSemanaNova = h;
+      toast('Começou uma semana nova: tire a foto da folha nova ou toque em ＋ Novo fechamento (aba Depósito).');
+    }
+    return;
+  }
+  st.data = h;
+  salvarAtual(); pintarCampos(); pintarTotais();
+}
+dataDeHoje();
+setInterval(dataDeHoje, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) dataDeHoje(); });
 try { abrirAba(sessionStorage.getItem('caixa.aba') || 'receb'); } catch { abrirAba('receb'); }
 // No APK os arquivos já estão dentro do app; o service worker é só para o site.
 if (!NATIVO && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
