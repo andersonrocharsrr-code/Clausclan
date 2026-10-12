@@ -247,3 +247,14 @@ html,body{overscroll-behavior-y:contain}
 .snack::after{content:'';position:absolute;left:0;bottom:0;height:3px;width:100%;background:#5b8cff;transform-origin:left;transform:scaleX(0)}
 .snack.show::after{animation:snack-tempo 3s linear forwards}
 @keyframes snack-tempo{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+/* Lançamento travado: só muda tocando em "Editar"; editando, aparece "✓ Lançar" e "Cancelar". */
+.item--travada input,.item--travada select{background:transparent;border-color:transparent;pointer-events:none;padding-left:2px;color:var(--ink);opacity:1}
+.item__editar{position:absolute;top:8px;right:42px;font:inherit;font-size:13px;font-weight:600;color:var(--accent);background:transparent;
+  border:0;border-radius:8px;padding:4px 8px;cursor:pointer;opacity:.85}
+.item--parcial .item__devendo{right:110px}
+.item--editando{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.item__acoes{grid-column:1/-1;display:flex;gap:8px;margin-top:2px}
+.item__acoes .item__ok{display:inline-flex;flex:1}
+.item__acoes .item__cancelar{padding:8px 12px;font-size:14px}
+.item__acr{grid-column:1/-1;margin:0;font-size:12px;color:var(--muted)}
+.item__dica{grid-column:1/-1;margin:0;font-size:12px;color:var(--accent)}

@@ -260,7 +260,7 @@ function abrirLista(nome) { listasAbertas.add(nome); }
 function atualizarVer(nome) {
   const box = $(`[data-lista="${nome}"]`);
   const n = st[nome].length;
-  const aberta = listasAbertas.has(nome);
+  const aberta = listasAbertas.has(nome) || !!rascunhos[nome];
   const conferir = st[nome].filter((x) => x.conferir).length;
   const ver = botaoVer(nome, box);
   ver.hidden = !n;
@@ -270,79 +270,119 @@ function atualizarVer(nome) {
   box.hidden = !aberta || !n;
 }
 
-function pintarLista(nome) {
-  const box = $(`[data-lista="${nome}"]`);
+// Lançamentos ficam travados: só mudam com "Editar" → "✓ Lançar". Sair da linha sem lançar desfaz o que foi digitado.
+// Linha nova (+ Digitar) é um rascunho: só entra nas contas quando é lançada.
+const rascunhos = {};
+// Notas feitas editadas em outro dia: o que foi acrescentado vira um acréscimo daquele dia (o antigo não muda de dia).
+const fmtDia = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : '');
+function aplicarEdicao(nome, item, novo) {
+  if (nome === 'feitas' && item.data && novo.data === item.data && item.data !== hoje()) {
+    const d = { ab: numero(novo.ab) - numero(item.ab), rp: numero(novo.rp) - numero(item.rp), valor: arred(numero(novo.valor) - numero(item.valor)) };
+    if (d.ab || d.rp || d.valor) (item.acrescimos ||= []).push({ data: hoje(), ...d });
+  }
+  Object.assign(item, novo);
+}
+
+function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascunho'
   const cols = LISTAS[nome];
-  const n = st[nome].length;
-  const aberta = listasAbertas.has(nome);
-  atualizarVer(nome);
-  box.innerHTML = '';
-  if (!n || !aberta) return;
-  st[nome].forEach((item, i) => {
-    const row = document.createElement('div');
-    row.className = 'item' + (item.conferir ? ' item--conferir' : '') + (cols.length === 2 ? ' item--2' : '') + (nome.startsWith('notas') ? ' item--nota' : '')
-      + (nome === 'depositos' ? ' item--dep' : '') + (nome === 'feitas' ? ' item--feitas' : '') + (nome === 'parciais' ? ' item--parcial' : '');
-    row.innerHTML = cols.map(([k, rot, tipo]) => `
-      <label class="item__${k}">${rot}
-        ${tipo === 'select'
-          ? `<select data-k="${k}">${Object.entries(ONDE_CURTO).map(([v, t]) => `<option value="${v}" ${item[k] === v ? 'selected' : ''}>${t}</option>`).join('')}</select>`
-          : `<input data-k="${k}" enterkeyhint="done" ${tipo === 'date' ? 'type="date"' : ''} ${K_DINHEIRO.includes(k) ? 'inputmode="decimal"' : ['qtd', 'ab', 'rp'].includes(k) ? 'inputmode="numeric"' : ''} ${k === 'devolucao' ? 'placeholder="0,00"' : ''} value="${esc(K_DINHEIRO.includes(k) ? (item[k] ? brl(item[k]) : '') : item[k] || '')}">`}
-      </label>`).join('') +
-      `<button class="item__del" aria-label="Apagar" title="Apagar">✕</button>` +
-      // Aparece enquanto a linha está sendo preenchida: confirma o valor e fecha o teclado.
-      `<button type="button" class="btn btn--primary item__ok">✓ Lançar</button>` +
-      (nome.startsWith('notas') ? `<div class="item__extra">${item.faixa ? `<span class="tag">${esc(item.faixa)}%</span>` : ''}
-        <button class="item__mover">↕ Mover para ${nome === 'notas25' ? '40% e 50%' : '25%'}</button></div>` : '') +
-      (nome === 'parciais' ? `<span class="item__devendo">ficou devendo ${R$(item.devendo)}</span>` : '') +
-      (item.nota ? `<p class="item__nota">⚠ ${esc(item.nota)}</p>` : '');
-    // Enquanto digita, o valor já entra nos totais; ao sair do campo ele é formatado.
+  const edita = modo !== 'travada';
+  const rasc = { ...item };
+  const row = document.createElement('div');
+  row.className = 'item' + (item.conferir ? ' item--conferir' : '') + (cols.length === 2 ? ' item--2' : '') + (nome.startsWith('notas') ? ' item--nota' : '')
+    + (nome === 'depositos' ? ' item--dep' : '') + (nome === 'feitas' ? ' item--feitas' : '') + (nome === 'parciais' ? ' item--parcial' : '')
+    + (edita ? ' item--editando' : ' item--travada');
+  const acr = (item.acrescimos || []).map((a) => `+ ${fmtDia(a.data)}: ${[a.ab ? `${a.ab} Ab` : '', a.rp ? `${a.rp} Rp` : '', a.valor ? R$(a.valor) : ''].filter(Boolean).join(' · ')}`);
+  row.innerHTML = cols.map(([k, rot, tipo]) => `
+    <label class="item__${k}">${rot}
+      ${tipo === 'select'
+        ? `<select data-k="${k}" ${edita ? '' : 'disabled'}>${Object.entries(ONDE_CURTO).map(([v, t]) => `<option value="${v}" ${item[k] === v ? 'selected' : ''}>${t}</option>`).join('')}</select>`
+        : `<input data-k="${k}" enterkeyhint="done" ${edita ? '' : 'readonly tabindex="-1"'} ${tipo === 'date' ? 'type="date"' : ''} ${K_DINHEIRO.includes(k) ? 'inputmode="decimal"' : ['qtd', 'ab', 'rp'].includes(k) ? 'inputmode="numeric"' : ''} ${k === 'devolucao' ? 'placeholder="0,00"' : ''} value="${esc(K_DINHEIRO.includes(k) ? (item[k] ? brl(item[k]) : '') : item[k] || '')}">`}
+    </label>`).join('') +
+    (modo === 'rascunho' ? '' : `<button class="item__del" aria-label="Apagar" title="Apagar">✕</button>`) +
+    (modo === 'travada' ? `<button type="button" class="item__editar">Editar</button>` : '') +
+    (edita ? `<div class="item__acoes"><button type="button" class="btn btn--primary item__ok">✓ Lançar</button>
+      <button type="button" class="btn btn--ghost item__cancelar">${modo === 'rascunho' ? 'Descartar' : 'Cancelar'}</button></div>` : '') +
+    (nome.startsWith('notas') && modo === 'travada' ? `<div class="item__extra">${item.faixa ? `<span class="tag">${esc(item.faixa)}%</span>` : ''}
+      <button class="item__mover">↕ Mover para ${nome === 'notas25' ? '40% e 50%' : '25%'}</button></div>` : '') +
+    (nome === 'parciais' ? `<span class="item__devendo">ficou devendo ${R$(item.devendo)}</span>` : '') +
+    (acr.length ? `<p class="item__acr">Lançado em ${fmtDia(item.data)} · ${acr.join(' · ')}</p>` : '') +
+    (edita && nome === 'feitas' && modo === 'editando' && item.data !== hoje()
+      ? `<p class="item__dica">O que você acrescentar entra no relatório de hoje (${fmtDia(hoje())}).</p>` : '') +
+    (item.nota ? `<p class="item__nota">⚠ ${esc(item.nota)}</p>` : '');
+
+  const sair = () => pintarLista(nome);
+  if (modo === 'travada') {
+    row.querySelector('.item__editar').addEventListener('click', () => {
+      const nova = linhaLista(nome, item, 'editando');
+      row.replaceWith(nova);
+      nova.querySelector('[data-k="valor"], input:not([type="date"])')?.focus();
+    });
+  } else {
     row.addEventListener('input', (e) => {
       const k = e.target.dataset.k;
       if (!k) return;
-      item[k] = K_DINHEIRO.includes(k) ? numero(e.target.value) : e.target.value;
-      if (nome === 'parciais' && item.valorNota) {
-        item.devendo = devendoCalculado(item);
-        row.querySelector('.item__devendo').textContent = `ficou devendo ${R$(item.devendo)}`;
+      rasc[k] = K_DINHEIRO.includes(k) ? numero(e.target.value) : e.target.value;
+      if (nome === 'parciais' && rasc.valorNota) {
+        rasc.devendo = devendoCalculado(rasc);
+        row.querySelector('.item__devendo').textContent = `ficou devendo ${R$(rasc.devendo)}`;
       }
-      salvarAtual(); pintarTotais();
     });
     row.addEventListener('change', (e) => {
       const k = e.target.dataset.k;
-      if (!k) return;
-      item[k] = K_DINHEIRO.includes(k) ? numero(e.target.value) : e.target.value.trim();
-      if (K_DINHEIRO.includes(k)) e.target.value = item[k] ? brl(item[k]) : '';
-      item.conferir = false;
-      row.classList.remove('item--conferir');
-      atualizarVer(nome);
-      salvarAtual(); pintarTotais();
+      if (k && K_DINHEIRO.includes(k)) e.target.value = rasc[k] ? brl(rasc[k]) : '';
     });
-    const ok = row.querySelector('.item__ok');
-    // Sem isso, o toque no botão tira o foco do campo antes do clique e o botão some.
-    ok.addEventListener('pointerdown', (e) => e.preventDefault());
-    ok.addEventListener('click', () => {
+    const lancar = () => {
       document.activeElement?.blur();
-      toast(item.valor ? `Lançado: ${R$(item.valor)} ✓` : 'Lançado ✓');
-    });
-    row.querySelector('.item__mover')?.addEventListener('click', () => {
-      const outra = nome === 'notas25' ? 'notas4050' : 'notas25';
-      st[nome].splice(i, 1);
-      st[outra].push({ ...item, faixa: outra === 'notas25' ? '25' : (item.faixa === '50' ? '50' : '40') });
-      salvarAtual(); pintarLista(nome); pintarLista(outra); pintarTotais();
-    });
-    row.querySelector('.item__del').addEventListener('click', async () => {
-      if (!(await perguntarRemover(descreverItem(nome, item)))) return;
-      const pos = st[nome].indexOf(item);
-      if (pos < 0) return;
-      st[nome].splice(pos, 1);
+      rasc.conferir = false;
+      if (modo === 'rascunho') { st[nome].push(rasc); delete rascunhos[nome]; } else aplicarEdicao(nome, item, rasc);
       salvarAtual(); pintarLista(nome); pintarTotais();
-      oferecerDesfazer('Lançamento removido', () => {
-        st[nome].splice(Math.min(pos, st[nome].length), 0, item);
-        abrirLista(nome);
-        salvarAtual(); pintarLista(nome); pintarTotais();
-      });
-    });
-    box.appendChild(row);
+      toast(rasc.valor ? `Lançado: ${R$(rasc.valor)} ✓` : 'Lançado ✓');
+    };
+    const acoes = row.querySelectorAll('.item__ok, .item__cancelar');
+    // Sem isso, o toque no botão tira o foco do campo antes do clique.
+    acoes.forEach((b) => b.addEventListener('pointerdown', (e) => e.preventDefault()));
+    row.querySelector('.item__ok').addEventListener('click', lancar);
+    row.querySelector('.item__cancelar').addEventListener('click', () => { if (modo === 'rascunho') delete rascunhos[nome]; sair(); });
+    // Enter no último campo lança.
+    row.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); lancar(); } });
+    // Saiu da linha sem lançar: o que foi digitado some (a linha volta como estava).
+    if (modo === 'editando') {
+      row.addEventListener('focusout', () => setTimeout(() => {
+        if (row.isConnected && !row.contains(document.activeElement)) sair();
+      }, 150));
+    }
+  }
+  row.querySelector('.item__mover')?.addEventListener('click', () => {
+    const outra = nome === 'notas25' ? 'notas4050' : 'notas25';
+    st[nome].splice(st[nome].indexOf(item), 1);
+    st[outra].push({ ...item, faixa: outra === 'notas25' ? '25' : (item.faixa === '50' ? '50' : '40') });
+    salvarAtual(); pintarLista(nome); pintarLista(outra); pintarTotais();
   });
+  row.querySelector('.item__del')?.addEventListener('click', async () => {
+    if (!(await perguntarRemover(descreverItem(nome, item)))) return;
+    const pos = st[nome].indexOf(item);
+    if (pos < 0) return;
+    st[nome].splice(pos, 1);
+    salvarAtual(); pintarLista(nome); pintarTotais();
+    oferecerDesfazer('Lançamento removido', () => {
+      st[nome].splice(Math.min(pos, st[nome].length), 0, item);
+      abrirLista(nome);
+      salvarAtual(); pintarLista(nome); pintarTotais();
+    });
+  });
+  return row;
+}
+
+function pintarLista(nome) {
+  const box = $(`[data-lista="${nome}"]`);
+  const n = st[nome].length + (rascunhos[nome] ? 1 : 0);
+  const aberta = listasAbertas.has(nome) || !!rascunhos[nome];
+  atualizarVer(nome);
+  box.hidden = !aberta || !n;
+  box.innerHTML = '';
+  if (!n || !aberta) return;
+  st[nome].forEach((item) => box.appendChild(linhaLista(nome, item, 'travada')));
+  if (rascunhos[nome]) box.appendChild(linhaLista(nome, rascunhos[nome], 'rascunho'));
 }
 
 // Remover um lançamento: pergunta antes e, depois, deixa desfazer por 3 segundos.
@@ -412,9 +452,9 @@ $$('[data-f]').forEach((el) => {
 });
 
 $$('[data-pila]').forEach((b) => b.addEventListener('click', () => {
-  st.pila.push({ id: uid(), tipo: b.dataset.pila, valor: 0 });
+  rascunhos.pila = { id: uid(), tipo: b.dataset.pila, valor: 0 };
   abrirLista('pila');
-  salvarAtual(); pintarLista('pila');
+  pintarLista('pila');
   const rows = $$('[data-lista="pila"] .item');
   rows[rows.length - 1]?.querySelector(b.dataset.pila ? '[data-k="valor"]' : 'input')?.focus();
 }));
@@ -457,9 +497,9 @@ $$('[data-ir]').forEach((b) => b.addEventListener('click', () => abrirAba(b.data
 $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
   const nome = b.dataset.add;
   abrirLista(nome); // a linha nova aparece aberta para digitar
-  st[nome].push(nome === 'feitas' ? { id: uid(), data: hoje(), ab: '', rp: '', valor: 0 }
-    : { id: uid(), dia: hoje(), valor: 0, cidade: nome.startsWith('notas') || nome === 'extras' ? st.cidade : undefined });
-  salvarAtual(); pintarLista(nome);
+  rascunhos[nome] = nome === 'feitas' ? { id: uid(), data: hoje(), ab: '', rp: '', valor: 0 }
+    : { id: uid(), dia: hoje(), valor: 0, cidade: nome.startsWith('notas') || nome === 'extras' ? st.cidade : undefined };
+  pintarLista(nome);
   const rows = $$(`[data-lista="${nome}"] .item`);
   const ultima = rows[rows.length - 1];
   // Nas notas só importa o valor: o cursor já vai para ele.
@@ -1112,8 +1152,15 @@ function relatorio(dia) {
   const pagas = [...pagas25, ...pagas4050];
   const antecDia = st.antecipadas.filter((a) => a.dia === dia);
   const antecTotal = st.antecipadas.filter((a) => Number(a.valor) > 0 && ate(a.dia));
-  const feitasDia = st.feitas.filter((f) => f.data === dia);
-  const feitasTotal = st.feitas.filter((f) => ate(f.data));
+  // Notas feitas por dia: o lançamento original no dia dele e cada acréscimo no dia em que foi feito.
+  const parcelas = st.feitas.flatMap((f) => {
+    const ac = f.acrescimos || [];
+    const base = { data: f.data, qtd: f.qtd, ab: numero(f.ab) - ac.reduce((t, a) => t + numero(a.ab), 0),
+      rp: numero(f.rp) - ac.reduce((t, a) => t + numero(a.rp), 0), valor: arred(numero(f.valor) - ac.reduce((t, a) => t + numero(a.valor), 0)) };
+    return [base, ...ac];
+  });
+  const feitasDia = parcelas.filter((f) => f.data === dia);
+  const feitasTotal = parcelas.filter((f) => ate(f.data));
   const pepDia = st.extras.map((x) => pepinoNoDia(x, dia)).filter((v) => v > 0);
   const pepTotal = st.extras.map(pepinoAte).filter((v) => v > 0);
   // Pepino parcial: no relatório vai o que as clientes ficaram devendo; o recebido entra no "Recebido".
