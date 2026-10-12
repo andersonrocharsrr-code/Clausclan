@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=31">
+  <link rel="stylesheet" href="style.css?v=32">
 </head>
 <body>
   <!-- Introdução ao abrir: contagem 3, 2, 1 e o foguete decola. Um toque pula. -->
@@ -34,6 +34,10 @@
     <div class="intro__fumaca f1"></div><div class="intro__fumaca f2"></div><div class="intro__fumaca f3"></div>
     <div class="intro__titulo">Fechamento de Caixa</div>
   </div>
+  <!-- Ao atualizar puxando a tela, o app volta sem a introdução. -->
+  <script>try { if (sessionStorage.getItem('caixa.semIntro')) { sessionStorage.removeItem('caixa.semIntro'); document.getElementById('intro').remove(); } } catch (e) {}</script>
+  <!-- Puxar para atualizar -->
+  <div id="puxar" class="puxar" hidden aria-hidden="true"><span>↻</span></div>
   <div class="topo">
   <header class="top">
     <div class="top__title">
@@ -432,6 +436,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=33"></script>
+  <script type="module" src="app.js?v=34"></script>
 </body>
 </html>

@@ -379,11 +379,22 @@ $('#btnLancarDep').addEventListener('click', () => {
 });
 
 /* ---------- abas ---------- */
+// Cada aba lembra onde parou: ao voltar para ela, a tela fica no mesmo lugar (também depois de atualizar).
+let abaAtual = null;
+const posicoes = (() => { try { return JSON.parse(sessionStorage.getItem('caixa.posicoes')) || {}; } catch { return {}; } })();
+function guardarPosicao() {
+  if (!abaAtual) return;
+  posicoes[abaAtual] = scrollY;
+  try { sessionStorage.setItem('caixa.posicoes', JSON.stringify(posicoes)); } catch {}
+}
 function abrirAba(nome) {
+  if (nome === abaAtual) return;
+  guardarPosicao();
   $$('[data-tab]').forEach((el) => { el.hidden = el.dataset.tab !== nome; });
   $$('[data-tabbtn]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tabbtn === nome)));
   try { sessionStorage.setItem('caixa.aba', nome); } catch {}
-  scrollTo({ top: 0 });
+  abaAtual = nome;
+  scrollTo({ top: posicoes[nome] || 0 });
 }
 $$('[data-tabbtn]').forEach((b) => b.addEventListener('click', () => abrirAba(b.dataset.tabbtn)));
 $$('[data-ir]').forEach((b) => b.addEventListener('click', () => abrirAba(b.dataset.ir)));
@@ -1382,7 +1393,41 @@ function dataDeHoje() {
 }
 dataDeHoje();
 setInterval(dataDeHoje, 60000);
-document.addEventListener('visibilitychange', () => { if (!document.hidden) dataDeHoje(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) dataDeHoje(); else guardarPosicao(); });
+
+// Puxar para atualizar: no topo da tela, arrastar para baixo e soltar recarrega o app (os dados ficam salvos).
+const puxar = $('#puxar');
+const LIMITE = 70;
+let puxarY0 = null, puxado = 0;
+const podePuxar = () => scrollY <= 0 && !document.querySelector('dialog[open]') && $('#carregando').hidden
+  && !$('#intro') && !document.documentElement.classList.contains('digitando');
+function soltarPuxar() {
+  puxado = 0;
+  puxar.classList.remove('pronto');
+  puxar.style.transform = '';
+  puxar.hidden = true;
+}
+addEventListener('touchstart', (e) => {
+  puxarY0 = e.touches.length === 1 && podePuxar() ? e.touches[0].clientY : null;
+}, { passive: true });
+addEventListener('touchmove', (e) => {
+  if (puxarY0 === null) return;
+  const d = e.touches[0].clientY - puxarY0;
+  if (d <= 0 || scrollY > 0) { soltarPuxar(); return; }
+  puxado = Math.min(d * 0.5, 110);
+  puxar.hidden = false;
+  puxar.classList.toggle('pronto', puxado >= LIMITE);
+  puxar.style.transform = `translate(-50%, ${puxado}px) rotate(${puxado * 4}deg)`;
+}, { passive: true });
+addEventListener('touchend', () => {
+  if (puxarY0 === null) return;
+  puxarY0 = null;
+  if (puxado < LIMITE) { soltarPuxar(); return; }
+  puxar.classList.add('girando');
+  salvarAtual(); guardarPosicao();
+  try { sessionStorage.setItem('caixa.semIntro', '1'); } catch {}
+  setTimeout(() => location.reload(), 450);
+});
 try { abrirAba(sessionStorage.getItem('caixa.aba') || 'receb'); } catch { abrirAba('receb'); }
 // No APK os arquivos já estão dentro do app; o service worker é só para o site.
 if (!NATIVO && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
