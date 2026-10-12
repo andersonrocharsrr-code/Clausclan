@@ -554,7 +554,22 @@ document.addEventListener('focusin', (e) => {
 document.addEventListener('focusout', () => {
   setTimeout(() => { if (!ehCampo(document.activeElement)) document.documentElement.classList.remove('digitando'); }, 100);
 });
-window.visualViewport?.addEventListener('resize', () => setTimeout(centralizar, 50));
+// O "voltar" do Android fecha o teclado mas deixa o campo selecionado: quando a tela volta ao tamanho cheio,
+// solta o campo para sumir o espaço do teclado e voltar a barra de totais.
+let alturaCheia = window.visualViewport?.height || innerHeight, tecladoAberto = false;
+function vigiarTeclado() {
+  const vv = window.visualViewport;
+  if (!vv) return;
+  alturaCheia = Math.max(alturaCheia, vv.height, innerHeight);
+  const aberto = vv.height < alturaCheia * 0.8;
+  if (tecladoAberto && !aberto && ehCampo(document.activeElement) && document.activeElement.tagName !== 'SELECT') {
+    document.activeElement.blur();
+  }
+  tecladoAberto = aberto;
+  if (aberto) setTimeout(centralizar, 50);
+}
+window.visualViewport?.addEventListener('resize', vigiarTeclado);
+addEventListener('orientationchange', () => { alturaCheia = 0; tecladoAberto = false; });
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && ehCampo(e.target) && e.target.tagName === 'INPUT') {
     e.preventDefault();
