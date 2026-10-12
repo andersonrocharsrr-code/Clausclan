@@ -45,6 +45,28 @@ function numero(txt) {
   }, 0));
 }
 
+// Campos de dinheiro: começam em 0,00 e os números entram pela direita, já com ponto e vírgula
+// (6 → 0,06 · 617 → 6,17 · 61700 → 617,00 · 1234567 → 12.345,67).
+const SEL_DINHEIRO = '[data-money], #depValor, [data-parc="valorNota"], [data-parc="valor"], [data-parc="devolucao"], [data-rs="avistaValor"], [data-rs="devolValor"]';
+const ehDinheiro = (el) => el?.tagName === 'INPUT' && !el.readOnly
+  && (el.matches(SEL_DINHEIRO) || (el.dataset.k && ['valor', 'devolucao', 'valorNota', 'devendo'].includes(el.dataset.k)));
+function mascaraDinheiro(el) {
+  const digitos = el.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 13);
+  el.value = brl(Number(digitos || '0') / 100);
+  try { el.setSelectionRange(el.value.length, el.value.length); } catch { /* alguns tipos não deixam */ }
+}
+// Roda antes dos outros "input" (fase de captura): quem lê o campo já recebe o valor formatado.
+document.addEventListener('input', (e) => { if (ehDinheiro(e.target)) mascaraDinheiro(e.target); }, true);
+document.addEventListener('focusin', (e) => {
+  const el = e.target;
+  if (!ehDinheiro(el)) return;
+  el.setAttribute('inputmode', 'numeric');
+  if (!el.value.trim()) el.value = '0,00';
+  setTimeout(() => { try { el.setSelectionRange(el.value.length, el.value.length); } catch { /* */ } }, 0);
+}, true);
+// Saiu do campo com 0,00: volta a ficar vazio (como antes).
+document.addEventListener('focusout', (e) => { const el = e.target; if (ehDinheiro(el) && !numero(el.value)) el.value = ''; }, true);
+
 function toast(msg) {
   const t = $('#toast');
   (document.querySelector('dialog[open]') || document.body).appendChild(t); // visível também com janela aberta
