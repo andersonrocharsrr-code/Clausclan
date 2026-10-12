@@ -228,8 +228,7 @@ label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--acc
 .item--nota{grid-template-columns:1fr 1fr}
 .item--nota .item__cliente{grid-column:1/-1}
 /* Puxar para atualizar: bolinha com ↻ que desce com o dedo; gira ao soltar. O navegador não faz o dele. */
-html,body{overscroll-behavior-y:contain;overflow-x:hidden;max-width:100%}
-.item>*{min-width:0}
+html,body{overscroll-behavior-y:contain}
 .puxar{position:fixed;left:50%;top:-44px;z-index:60;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;
   background:var(--card);color:var(--muted);border:1px solid var(--line);box-shadow:0 4px 14px rgba(0,0,0,.25);
   font:700 22px/1 system-ui,sans-serif;transform:translate(-50%,0);pointer-events:none}
@@ -263,7 +262,7 @@ html,body{overscroll-behavior-y:contain;overflow-x:hidden;max-width:100%}
 .item__rot{display:block;font-size:11px;margin-bottom:2px}
 .item__tipoTxt{display:block;padding:7px 2px;font-size:15px;font-weight:700}
 .tipo-sel{display:flex;gap:6px}
-.tipo-op{flex:1;position:relative;min-width:0}
-.tipo-op input{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;opacity:0;pointer-events:none}
+.tipo-op{flex:1}
+.tipo-op input{position:absolute;opacity:0;pointer-events:none}
 .tipo-op span{display:block;text-align:center;padding:7px 0;border-radius:10px;border:1px solid var(--line);background:var(--card);font-weight:700;font-size:15px;cursor:pointer}
 .tipo-op input:checked+span{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
