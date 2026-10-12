@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=33">
+  <link rel="stylesheet" href="style.css?v=34">
 </head>
 <body>
   <!-- Introdução ao abrir: contagem 3, 2, 1 e o foguete decola. Um toque pula. -->
@@ -306,16 +306,16 @@
     </section>
 
     <section class="card">
-      <h2>Pepino parcial</h2>
-      <p class="muted small">Uma nota por lançamento. "Ficou devendo" em branco: o app calcula pela nota com os 25%
-        ((nota − devolução) × 0,75 − recebido). O recebido entra no recebimento; a nota inteira sai das notas em branco.
+      <div class="card__head">
+        <h2>Pepino parcial</h2>
+        <small class="parc-devendo" id="parcDevendo"></small>
+      </div>
+      <p class="muted small">Uma nota por lançamento. O recebido entra no recebimento; a nota inteira sai das notas em branco.
         Entra no dia escolhido em "Dia do relatório".</p>
       <div class="grid">
-        <label>Nome<input data-parc="cliente" enterkeyhint="done" autocomplete="off"></label>
         <label>Valor da nota (R$)<input data-parc="valorNota" enterkeyhint="done" inputmode="decimal" placeholder="0,00" autocomplete="off"></label>
         <label>Recebido (R$)<input data-parc="valor" enterkeyhint="done" inputmode="decimal" placeholder="0,00" autocomplete="off"></label>
         <label>Devolução (R$)<input data-parc="devolucao" enterkeyhint="done" inputmode="decimal" placeholder="0,00" autocomplete="off"></label>
-        <label>Ficou devendo (R$)<input data-parc="devendo" enterkeyhint="done" inputmode="decimal" placeholder="0,00" autocomplete="off"></label>
       </div>
       <button class="btn btn--primary btn--grande" id="btnLancarParcial">＋ Lançar parcial</button>
       <div class="lista" data-lista="parciais"></div>
@@ -439,6 +439,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=35"></script>
+  <script type="module" src="app.js?v=36"></script>
 </body>
 </html>

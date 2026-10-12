@@ -78,8 +78,8 @@ const LISTAS = {
   antecipadas: [['cliente', 'Nome'], ['valor', 'Valor']],
   // Cada pepino parcial com o nome; o total vai para "Pepino parcial".
   // Pepino parcial (aba Relatório): a nota, o que recebeu, o que devolveu e o que ficou devendo, juntos.
-  parciais: [['dia', 'Dia', 'date'], ['cliente', 'Nome'], ['valorNota', 'Valor da nota'], ['valor', 'Recebido'],
-    ['devolucao', 'Devolução'], ['devendo', 'Ficou devendo']],
+  // (o que ficou devendo é calculado e aparece discreto no canto da linha)
+  parciais: [['dia', 'Dia', 'date'], ['valorNota', 'Valor da nota'], ['valor', 'Recebido'], ['devolucao', 'Devolução']],
   // Notas feitas (vendas) de cada dia: Ab (abertura) + Rp (reposição) = notas do dia; a soma dos valores é o
   // "Valor deixado" e a das notas, as "Notas deixadas".
   feitas: [['data', 'Dia', 'date'], ['ab', 'Ab'], ['rp', 'Rp'], ['valor', 'Valor']],
@@ -284,19 +284,16 @@ function pintarLista(nome) {
       `<button type="button" class="btn btn--primary item__ok">✓ Lançar</button>` +
       (nome.startsWith('notas') ? `<div class="item__extra">${item.faixa ? `<span class="tag">${esc(item.faixa)}%</span>` : ''}
         <button class="item__mover">↕ Mover para ${nome === 'notas25' ? '40% e 50%' : '25%'}</button></div>` : '') +
+      (nome === 'parciais' ? `<span class="item__devendo">ficou devendo ${R$(item.devendo)}</span>` : '') +
       (item.nota ? `<p class="item__nota">⚠ ${esc(item.nota)}</p>` : '');
     // Enquanto digita, o valor já entra nos totais; ao sair do campo ele é formatado.
     row.addEventListener('input', (e) => {
       const k = e.target.dataset.k;
       if (!k) return;
       item[k] = K_DINHEIRO.includes(k) ? numero(e.target.value) : e.target.value;
-      if (nome === 'parciais') {
-        if (k === 'devendo') item.devendoAuto = false;
-        else if (item.devendoAuto !== false && item.valorNota) {
-          item.devendo = devendoCalculado(item);
-          const campo = row.querySelector('[data-k="devendo"]');
-          if (campo) campo.value = item.devendo ? brl(item.devendo) : '';
-        }
+      if (nome === 'parciais' && item.valorNota) {
+        item.devendo = devendoCalculado(item);
+        row.querySelector('.item__devendo').textContent = `ficou devendo ${R$(item.devendo)}`;
       }
       salvarAtual(); pintarTotais();
     });
@@ -1179,27 +1176,25 @@ $$('[data-rs]').forEach((el) => {
   });
   if (REL_MONEY.includes(k)) el.addEventListener('blur', () => { el.value = st.rel?.[k] ? brl(st.rel[k]) : ''; });
 });
-// Lançar um pepino parcial no dia do relatório: nota, recebido, devolução e o que ficou devendo
-// (em branco, o app calcula pela nota com os 25%).
+// Lançar um pepino parcial no dia do relatório: valor da nota, recebido e devolução. O que ficou devendo
+// é calculado com os 25% e aparece discreto no canto.
 const campoParc = (k) => $(`[data-parc="${k}"]`);
+const lerParc = () => Object.fromEntries(['valorNota', 'valor', 'devolucao'].map((k) => [k, numero(campoParc(k).value)]));
 function previaDevendo() {
-  const x = { valorNota: campoParc('valorNota').value, valor: campoParc('valor').value, devolucao: campoParc('devolucao').value };
-  campoParc('devendo').placeholder = numero(x.valorNota) ? `${brl(devendoCalculado(x))} (calculado)` : '0,00';
+  const x = lerParc();
+  $('#parcDevendo').textContent = x.valorNota ? `ficou devendo ${R$(devendoCalculado(x))}` : '';
 }
 ['valorNota', 'valor', 'devolucao'].forEach((k) => campoParc(k).addEventListener('input', previaDevendo));
 $('#btnLancarParcial').addEventListener('click', () => {
-  const x = { id: uid(), dia: relDia(), cliente: campoParc('cliente').value.trim() };
-  ['valorNota', 'valor', 'devolucao', 'devendo'].forEach((k) => { x[k] = numero(campoParc(k).value); });
-  x.devendoAuto = !campoParc('devendo').value.trim();
-  if (x.devendoAuto && x.valorNota) x.devendo = devendoCalculado(x);
-  if (!(x.valorNota || x.valor || x.devendo)) { toast('Digite o valor da nota (ou o que recebeu / ficou devendo).'); campoParc('valorNota').focus(); return; }
+  const x = { id: uid(), dia: relDia(), ...lerParc() };
+  if (!(x.valorNota > 0)) { toast('Digite o valor da nota.'); campoParc('valorNota').focus(); return; }
+  x.devendo = devendoCalculado(x);
   st.parciais.push(x);
-  Object.keys(x).forEach((k) => { const c = campoParc(k); if (c) c.value = ''; });
+  ['valorNota', 'valor', 'devolucao'].forEach((k) => { campoParc(k).value = ''; });
   previaDevendo();
   document.activeElement?.blur();
   salvarAtual(); pintarLista('parciais'); pintarTotais();
-  toast(`Parcial lançado ✓ Ficou devendo ${R$(x.devendo)}` + (x.valor ? ` · recebido ${R$(x.valor)}` : '')
-    + ` · sai ${R$(valorDaParcial(x))} das notas em branco`);
+  toast(`Parcial lançado ✓ Ficou devendo ${R$(x.devendo)}. Está em "Ver lançamentos".`);
 });
 
 async function copiar(txt) {
