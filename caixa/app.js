@@ -989,7 +989,14 @@ if (NATIVO) {
 const REL_MONEY = ['avistaValor', 'devolValor'];
 
 // Valor de face da nota (o TOTAL impresso), para saber quanto ainda está nas notas em branco.
-const valorDeFace = (n) => Number(n.total) || (n.faixa === '25' ? arred(n.valor / 0.75) : Number(n.valor) || 0);
+// O recebido é o total menos a comissão da cliente: 25% → recebe 75% (750 recebidos = nota de 1.000);
+// 40% → recebe 60%; 50% → recebe 50%. A faixa vem da lista onde a nota está (25% ou 40/50%).
+function valorDeFace(n, lista) {
+  const valor = Number(n.valor) || 0;
+  if (Number(n.total) > valor) return Number(n.total); // TOTAL impresso, quando foi lido
+  const pago = lista === 'notas25' ? 0.75 : n.faixa === '50' ? 0.5 : 0.6;
+  return arred(valor / pago);
+}
 
 // Quanto do pepino extra foi pago no dia: pelas datas dos pagamentos da nota, ou pelo dia em que foi lançado.
 function pepinoNoDia(x, dia) {
@@ -1019,7 +1026,9 @@ function relatorio(dia) {
 
   const n25 = st.notas25.filter((n) => n.dia === dia);
   const n4050 = st.notas4050.filter((n) => n.dia === dia);
-  const pagas = [...st.notas25, ...st.notas4050].filter((n) => ate(n.dia));
+  const pagas25 = st.notas25.filter((n) => ate(n.dia));
+  const pagas4050 = st.notas4050.filter((n) => ate(n.dia));
+  const pagas = [...pagas25, ...pagas4050];
   const antecDia = st.antecipadas.filter((a) => a.dia === dia);
   const antecTotal = st.antecipadas.filter((a) => Number(a.valor) > 0 && ate(a.dia));
   const feitasDia = st.feitas.filter((f) => f.data === dia);
@@ -1037,7 +1046,8 @@ function relatorio(dia) {
     + soma(antecDia) + soma(parcDia));
   const recebidoTotal = arred(soma(pagas) + pepTotal.reduce((t, v) => t + v, 0) + soma(antecTotal) + parcPagoTotal);
   const emBrancoQt = Math.max(0, (Number(st.qtNotas) || 0) - pagas.length - parcQtTotal);
-  const emBrancoValor = Math.max(0, arred(st.foiCobrar - pagas.reduce((t, n) => t + valorDeFace(n), 0)
+  const emBrancoValor = Math.max(0, arred(st.foiCobrar - (pagas25.reduce((t, n) => t + valorDeFace(n, 'notas25'), 0)
+    + pagas4050.reduce((t, n) => t + valorDeFace(n, 'notas4050'), 0))
     - parcPagoTotal - parcValorTotal));
   const depDia = st.depositos.filter((d) => d.data === dia);
   const depTotal = soma(st.depositos.filter((d) => ate(d.data)));
