@@ -64,7 +64,7 @@ const ONDE_CURTO = { empresa: 'Empresa', banco: 'Banco/TED', pix: 'Pix' };
 const NOMES = { ajuda: 'Ajuda de custo', vale: 'Vale adiantado', salario: 'Salário', mecanica: 'Mecânica',
   despSupervisor: 'Despesas supervisor', excedido: 'Excedido da despesa' };
 // Campos das listas que são dinheiro.
-const K_DINHEIRO = ['valor', 'devolucao'];
+const K_DINHEIRO = ['valor', 'devolucao', 'valorNota', 'devendo'];
 const LISTAS = {
   // Da nota o caixa só precisa do valor recebido (e da faixa, que é a lista onde ela está); o nome ajuda a achar a nota.
   // Devolução: o "TOTAL DE DEVOLUCOES" da nota (lido da foto ou digitado), para as notas em branco.
@@ -77,12 +77,12 @@ const LISTAS = {
   // Cada nota antecipada com o nome; o total vai para "Antecipados".
   antecipadas: [['cliente', 'Nome'], ['valor', 'Valor']],
   // Cada pepino parcial com o nome; o total vai para "Pepino parcial".
-  parciais: [['cliente', 'Nome'], ['valor', 'Valor pago'], ['devolucao', 'Devolução']],
+  // Pepino parcial (aba Relatório): a nota, o que recebeu, o que devolveu e o que ficou devendo, juntos.
+  parciais: [['dia', 'Dia', 'date'], ['cliente', 'Nome'], ['valorNota', 'Valor da nota'], ['valor', 'Recebido'],
+    ['devolucao', 'Devolução'], ['devendo', 'Ficou devendo']],
   // Notas feitas (vendas) de cada dia: Ab (abertura) + Rp (reposição) = notas do dia; a soma dos valores é o
   // "Valor deixado" e a das notas, as "Notas deixadas".
   feitas: [['data', 'Dia', 'date'], ['ab', 'Ab'], ['rp', 'Rp'], ['valor', 'Valor']],
-  // Pepino parcial do relatório: quanto as clientes ficaram devendo, lançado no dia (pode lançar várias vezes).
-  devendo: [['data', 'Dia', 'date'], ['qtd', 'Qtd. de notas'], ['valor', 'Ficou devendo']],
   obs: [['desc', 'Descrição'], ['valor', 'Valor']],
 };
 
@@ -123,12 +123,13 @@ function normalizar(s) {
     const d = n.relDia?.[f.data];
     if (d && f.ab == null && f.rp == null) { f.ab = d.ab || ''; f.rp = d.rp || ''; }
   });
-  // O devendo do relatório era digitado uma vez por dia; vira um lançamento daquele dia.
-  if (!s.devendo) {
-    Object.entries(n.relDia || {}).forEach(([data, d]) => {
-      if (numero(d.parcialQt) || numero(d.parcialValor)) n.devendo.push({ id: uid(), data, qtd: String(d.parcialQt || ''), valor: numero(d.parcialValor) });
-    });
-  }
+  // O "ficou devendo" era lançado à parte (antes ainda, digitado uma vez por dia): vira pepino parcial do mesmo dia.
+  const devendoAntigo = s.devendo || Object.entries(n.relDia || {})
+    .filter(([, d]) => numero(d.parcialQt) || numero(d.parcialValor))
+    .map(([data, d]) => ({ data, qtd: d.parcialQt, valor: numero(d.parcialValor) }));
+  devendoAntigo.forEach((d) => n.parciais.push({ id: uid(), dia: d.data, cliente: '', valor: 0, devolucao: 0,
+    devendo: numero(d.valor), qtd: numero(d.qtd) > 1 ? String(numero(d.qtd)) : '' }));
+  n.devendo = [];
   if (!s.feitas && (Number(s.valorDeixado) > 0 || numero(s.qtNotasDeixadas) > 0)) {
     n.feitas = [{ id: uid(), data: s.data || hoje(), qtd: String(s.qtNotasDeixadas || ''), valor: arred(s.valorDeixado) }];
   }
@@ -270,8 +271,8 @@ function pintarLista(nome) {
   if (!n || !aberta) return;
   st[nome].forEach((item, i) => {
     const row = document.createElement('div');
-    row.className = 'item' + (item.conferir ? ' item--conferir' : '') + (cols.length === 2 ? ' item--2' : '') + (nome.startsWith('notas') || nome === 'parciais' ? ' item--nota' : '')
-      + (nome === 'depositos' ? ' item--dep' : '') + (nome === 'feitas' ? ' item--feitas' : '') + (nome === 'devendo' ? ' item--devendo' : '');
+    row.className = 'item' + (item.conferir ? ' item--conferir' : '') + (cols.length === 2 ? ' item--2' : '') + (nome.startsWith('notas') ? ' item--nota' : '')
+      + (nome === 'depositos' ? ' item--dep' : '') + (nome === 'feitas' ? ' item--feitas' : '') + (nome === 'parciais' ? ' item--parcial' : '');
     row.innerHTML = cols.map(([k, rot, tipo]) => `
       <label class="item__${k}">${rot}
         ${tipo === 'select'
@@ -289,6 +290,14 @@ function pintarLista(nome) {
       const k = e.target.dataset.k;
       if (!k) return;
       item[k] = K_DINHEIRO.includes(k) ? numero(e.target.value) : e.target.value;
+      if (nome === 'parciais') {
+        if (k === 'devendo') item.devendoAuto = false;
+        else if (item.devendoAuto !== false && item.valorNota) {
+          item.devendo = devendoCalculado(item);
+          const campo = row.querySelector('[data-k="devendo"]');
+          if (campo) campo.value = item.devendo ? brl(item.devendo) : '';
+        }
+      }
       salvarAtual(); pintarTotais();
     });
     row.addEventListener('change', (e) => {
@@ -1004,6 +1013,14 @@ if (NATIVO) {
 const REL_MONEY = ['avistaValor', 'devolValor'];
 
 // Valor de face da nota (o TOTAL impresso), para saber quanto ainda está nas notas em branco.
+// Pepino parcial: a cliente fica devendo o resto da nota com os 25% de desconto: (nota − devolução) × 0,75 − recebido.
+// Ex.: nota 436, devolveu 118, não pagou nada → (436 − 118) × 0,75 = 238,50.
+const devendoCalculado = (x) => Math.max(0, arred((numero(x.valorNota) - numero(x.devolucao)) * 0.75 - numero(x.valor)));
+// O que a nota parcial tira das notas em branco: o valor da nota; sem ele, devolução + (recebido + devendo) ÷ 0,75.
+const valorDaParcial = (x) => numero(x.valorNota)
+  || arred(numero(x.devolucao) + (numero(x.valor) + numero(x.devendo)) / 0.75);
+const qtdParcial = (x) => numero(x.qtd) || 1;
+
 // Valor da nota que sai das notas em branco: o recebido com a comissão da cliente de volta
 // (25% → recebe 75%: 426 recebidos = 568; 40% → recebe 60%; 50% → recebe 50%), mais o que foi devolvido
 // ("TOTAL DE DEVOLUCOES"): 568 + 284 = 852. A faixa vem da lista onde a nota está (25% ou 40/50%).
@@ -1051,24 +1068,19 @@ function relatorio(dia) {
   const feitasTotal = st.feitas.filter((f) => ate(f.data));
   const pepDia = st.extras.map((x) => pepinoNoDia(x, dia)).filter((v) => v > 0);
   const pepTotal = st.extras.map(pepinoAte).filter((v) => v > 0);
-  const parcDia = st.parciais.filter((x) => x.dia === dia && Number(x.valor) > 0);
+  // Pepino parcial: no relatório vai o que as clientes ficaram devendo; o recebido entra no "Recebido".
+  const parcDia = st.parciais.filter((x) => x.dia === dia);
   const parcAte = st.parciais.filter((x) => ate(x.dia));
   const parcPagoTotal = soma(parcAte);
-  const parcDevolTotal = arred(somaK(parcAte, 'devolucao'));
-  // Pepino parcial do relatório: o que as clientes ficaram devendo, pelos lançamentos de cada dia.
-  const devDia = st.devendo.filter((x) => x.data === dia);
-  const devAte = st.devendo.filter((x) => ate(x.data));
-  const parcQtTotal = somaK(devAte, 'qtd');
-  const parcValorTotal = soma(devAte);
+  const parcQtd = (l) => l.reduce((t, x) => t + qtdParcial(x), 0);
   const recebidoDia = arred(soma(n25) + soma(n4050) + pepDia.reduce((t, v) => t + v, 0)
     + soma(antecDia) + soma(parcDia));
   const recebidoTotal = arred(soma(pagas) + pepTotal.reduce((t, v) => t + v, 0) + soma(antecTotal) + parcPagoTotal);
   // Nota com pepino parcial sai das notas em branco e fica no parcial: o que pagou + devolução + o que ficou devendo.
-  const parcNotas = Math.max(parcQtTotal, parcAte.filter((x) => Number(x.valor) > 0).length);
-  const emBrancoQt = Math.max(0, (Number(st.qtNotas) || 0) - pagas.length - parcNotas);
+  const emBrancoQt = Math.max(0, (Number(st.qtNotas) || 0) - pagas.length - parcQtd(parcAte));
   const emBrancoValor = Math.max(0, arred(st.foiCobrar - (pagas25.reduce((t, n) => t + valorDeFace(n, 'notas25'), 0)
     + pagas4050.reduce((t, n) => t + valorDeFace(n, 'notas4050'), 0))
-    - parcPagoTotal - parcDevolTotal - parcValorTotal));
+    - parcAte.reduce((t, x) => t + valorDaParcial(x), 0)));
   const depDia = st.depositos.filter((d) => d.data === dia);
   const depTotal = soma(st.depositos.filter((d) => ate(d.data)));
 
@@ -1107,10 +1119,10 @@ function relatorio(dia) {
     `Recebido dia: ${vl(recebidoDia)}`,
     `Recebido total: ${vl(recebidoTotal)}`,
     '',
-    `Nt parcial dia: ${qt(somaK(devDia, 'qtd'))}`,
-    `Valor: ${vl(soma(devDia))}`,
-    `Nt parcial total: ${qt(parcQtTotal)}`,
-    `Valor : ${vl(parcValorTotal)}`,
+    `Nt parcial dia: ${qt(parcQtd(parcDia))}`,
+    `Valor: ${vl(somaK(parcDia, 'devendo'))}`,
+    `Nt parcial total: ${qt(parcQtd(parcAte))}`,
+    `Valor : ${vl(somaK(parcAte, 'devendo'))}`,
     '',
     `Notas em branco: ${qt(emBrancoQt)}`,
     `Valor: ${vl(emBrancoValor)}`,
@@ -1167,17 +1179,27 @@ $$('[data-rs]').forEach((el) => {
   });
   if (REL_MONEY.includes(k)) el.addEventListener('blur', () => { el.value = st.rel?.[k] ? brl(st.rel[k]) : ''; });
 });
-// Lançar o que as clientes ficaram devendo (pepino parcial do relatório) no dia do relatório.
-$('#btnLancarDevendo').addEventListener('click', () => {
-  const qtd = numero($('#devQtd').value);
-  const valor = numero($('#devValor').value);
-  if (!(valor > 0)) { toast('Digite o valor que a cliente ficou devendo.'); $('#devValor').focus(); return; }
-  st.devendo.push({ id: uid(), data: relDia(), qtd: qtd ? String(qtd) : '1', valor });
-  $('#devQtd').value = ''; $('#devValor').value = '';
+// Lançar um pepino parcial no dia do relatório: nota, recebido, devolução e o que ficou devendo
+// (em branco, o app calcula pela nota com os 25%).
+const campoParc = (k) => $(`[data-parc="${k}"]`);
+function previaDevendo() {
+  const x = { valorNota: campoParc('valorNota').value, valor: campoParc('valor').value, devolucao: campoParc('devolucao').value };
+  campoParc('devendo').placeholder = numero(x.valorNota) ? `${brl(devendoCalculado(x))} (calculado)` : '0,00';
+}
+['valorNota', 'valor', 'devolucao'].forEach((k) => campoParc(k).addEventListener('input', previaDevendo));
+$('#btnLancarParcial').addEventListener('click', () => {
+  const x = { id: uid(), dia: relDia(), cliente: campoParc('cliente').value.trim() };
+  ['valorNota', 'valor', 'devolucao', 'devendo'].forEach((k) => { x[k] = numero(campoParc(k).value); });
+  x.devendoAuto = !campoParc('devendo').value.trim();
+  if (x.devendoAuto && x.valorNota) x.devendo = devendoCalculado(x);
+  if (!(x.valorNota || x.valor || x.devendo)) { toast('Digite o valor da nota (ou o que recebeu / ficou devendo).'); campoParc('valorNota').focus(); return; }
+  st.parciais.push(x);
+  Object.keys(x).forEach((k) => { const c = campoParc(k); if (c) c.value = ''; });
+  previaDevendo();
   document.activeElement?.blur();
-  salvarAtual(); pintarLista('devendo'); pintarTotais();
-  const doDia = st.devendo.filter((x) => x.data === relDia());
-  toast(`Lançado ✓ No dia: ${doDia.reduce((t, x) => t + numero(x.qtd), 0)} nota(s) · ${R$(soma(doDia))}`);
+  salvarAtual(); pintarLista('parciais'); pintarTotais();
+  toast(`Parcial lançado ✓ Ficou devendo ${R$(x.devendo)}` + (x.valor ? ` · recebido ${R$(x.valor)}` : '')
+    + ` · sai ${R$(valorDaParcial(x))} das notas em branco`);
 });
 
 async function copiar(txt) {
