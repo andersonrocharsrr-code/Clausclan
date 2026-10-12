@@ -261,6 +261,8 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
 - Cada aba lembra onde a tela parou. **Puxar para atualizar**: no topo, arrastar para baixo e soltar recarrega o app
   (sem a introdução; dados, aba e posição continuam).
 - **Introdução** ao abrir: contagem 3, 2, 1, o foguete decola e aparece "Fechamento de Caixa" (≈3 s; um toque pula).
+- **Remover lançamento**: o ✕ pergunta antes (mostra o tipo, o nome e o valor); depois de remover, uma barra embaixo
+  oferece **Desfazer** por 3 segundos e devolve o lançamento ao mesmo lugar.
 - Salvar fechamentos e mandar resumo pelo WhatsApp.
 
 ## App Android (APK) — pasta `caixa-android/`

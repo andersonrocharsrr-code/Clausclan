@@ -235,3 +235,15 @@ html,body{overscroll-behavior-y:contain}
 .puxar.pronto{color:var(--accent);border-color:var(--accent)}
 .puxar.girando span{display:block;animation:puxar-gira .6s linear infinite}
 @keyframes puxar-gira{to{transform:rotate(360deg)}}
+/* Remover lançamento: confirmação e "Desfazer" embaixo por 3 segundos */
+.btn--perigo{background:#dc2626;border-color:#dc2626;color:#fff}
+.dlg-remover .row-actions{justify-content:flex-end;margin-top:14px}
+.snack{position:fixed;left:16px;right:16px;bottom:90px;z-index:61;max-width:520px;margin:0 auto;display:flex;align-items:center;
+  justify-content:space-between;gap:12px;padding:8px 8px 8px 16px;border-radius:14px;background:#14213d;color:#fff;font-size:14px;
+  box-shadow:0 10px 28px rgba(0,0,0,.3);opacity:0;transform:translateY(12px);transition:.2s;pointer-events:none;overflow:hidden}
+.snack.show{opacity:1;transform:none;pointer-events:auto}
+.snack button{font:inherit;font-weight:800;font-size:14px;letter-spacing:.4px;text-transform:uppercase;color:#8fb0ff;
+  background:transparent;border:0;border-radius:10px;padding:10px 12px;cursor:pointer}
+.snack::after{content:'';position:absolute;left:0;bottom:0;height:3px;width:100%;background:#5b8cff;transform-origin:left;transform:scaleX(0)}
+.snack.show::after{animation:snack-tempo 3s linear forwards}
+@keyframes snack-tempo{from{transform:scaleX(1)}to{transform:scaleX(0)}}

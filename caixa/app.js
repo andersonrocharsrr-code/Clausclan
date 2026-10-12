@@ -329,13 +329,53 @@ function pintarLista(nome) {
       st[outra].push({ ...item, faixa: outra === 'notas25' ? '25' : (item.faixa === '50' ? '50' : '40') });
       salvarAtual(); pintarLista(nome); pintarLista(outra); pintarTotais();
     });
-    row.querySelector('.item__del').addEventListener('click', () => {
-      st[nome].splice(i, 1);
+    row.querySelector('.item__del').addEventListener('click', async () => {
+      if (!(await perguntarRemover(descreverItem(nome, item)))) return;
+      const pos = st[nome].indexOf(item);
+      if (pos < 0) return;
+      st[nome].splice(pos, 1);
       salvarAtual(); pintarLista(nome); pintarTotais();
+      oferecerDesfazer('Lançamento removido', () => {
+        st[nome].splice(Math.min(pos, st[nome].length), 0, item);
+        abrirLista(nome);
+        salvarAtual(); pintarLista(nome); pintarTotais();
+      });
     });
     box.appendChild(row);
   });
 }
+
+// Remover um lançamento: pergunta antes e, depois, deixa desfazer por 3 segundos.
+const NOME_LISTA = { notas25: 'Nota 25%', notas4050: 'Nota 40% e 50%', extras: 'Pepino extra', antecipadas: 'Nota antecipada',
+  parciais: 'Pepino parcial', feitas: 'Notas feitas', pila: 'Despesa do Pila', outros: 'Outros', obs: 'OBS', depositos: 'Depósito' };
+function descreverItem(nome, item) {
+  const v = Number(nome === 'parciais' ? item.valorNota : item.valor) || 0;
+  const quem = item.cliente || item.vendedora || item.tipo || item.desc || '';
+  return [NOME_LISTA[nome] || 'Lançamento', quem, v ? R$(v) : ''].filter(Boolean).join(' · ');
+}
+function perguntarRemover(texto) {
+  const d = $('#dlgRemover');
+  $('#removerTxt').textContent = texto;
+  d.returnValue = '';
+  d.showModal();
+  return new Promise((ok) => d.addEventListener('close', () => ok(d.returnValue === 'sim'), { once: true }));
+}
+let desfazerAcao = null, desfazerTimer = null;
+function oferecerDesfazer(texto, acao) {
+  const s = $('#desfazer');
+  $('#desfazerTxt').textContent = texto;
+  desfazerAcao = acao;
+  $('#toast').classList.remove('show');
+  s.classList.remove('show'); void s.offsetWidth; s.classList.add('show'); // reinicia a barrinha de 3 s
+  clearTimeout(desfazerTimer);
+  desfazerTimer = setTimeout(() => { s.classList.remove('show'); desfazerAcao = null; }, 3000);
+}
+$('#btnDesfazer').addEventListener('click', () => {
+  clearTimeout(desfazerTimer);
+  $('#desfazer').classList.remove('show');
+  const acao = desfazerAcao; desfazerAcao = null;
+  if (acao) { acao(); toast('Lançamento de volta ✓'); }
+});
 
 function esc(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
