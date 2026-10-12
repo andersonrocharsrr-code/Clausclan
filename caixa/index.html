@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=34">
+  <link rel="stylesheet" href="style.css?v=35">
 </head>
 <body>
   <!-- Introdução ao abrir: contagem 3, 2, 1 e o foguete decola. Um toque pula. -->
@@ -404,6 +404,17 @@
     </form>
   </dialog>
 
+  <dialog id="dlgRemover" class="dlg-remover">
+    <form method="dialog">
+      <h2>Remover lançamento?</h2>
+      <p id="removerTxt" class="muted"></p>
+      <div class="row-actions">
+        <button class="btn" value="nao">Cancelar</button>
+        <button class="btn btn--perigo" value="sim">Remover</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="dlgLista">
     <form method="dialog">
       <h2>Fechamentos salvos</h2>
@@ -438,8 +449,13 @@
     <div id="carregandoEtapas" class="carr-etapas"></div>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <!-- Depois de remover um lançamento: "Desfazer" por 3 segundos -->
+  <div id="desfazer" class="snack" role="status" aria-live="polite">
+    <span id="desfazerTxt">Lançamento removido</span>
+    <button type="button" id="btnDesfazer">Desfazer</button>
+  </div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=37"></script>
+  <script type="module" src="app.js?v=38"></script>
 </body>
 </html>
