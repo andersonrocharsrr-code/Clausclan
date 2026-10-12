@@ -235,7 +235,7 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   e as **Notas deixadas** da folha (não entram nas contas do caixa).
 - **Notas antecipadas**: uma linha por nota (nome e valor); o total vira **Antecipados**.
 - **Pepino parcial** (aba Relatório): por nota, só valor da nota, recebido e devolução. O que ficou devendo é
-  calculado com os 25% e aparece discreto no canto: (nota − devolução) × 0,75 − recebido (nota 436, devolveu 118,
+  calculado com os 25%, aparece discreto no canto e soma no **Valor dos pepinos** (junto com "Outros pepinos", digitado): (nota − devolução) × 0,75 − recebido (nota 436, devolveu 118,
   nada pago → 238,50). O recebido entra no recebimento; nas notas em branco sai a nota inteira (sem o valor da nota:
   devolução + (recebido + devendo) ÷ 0,75). No relatório, o parcial é o que ficou devendo.
 - **Data automática**: a data do fechamento acompanha o calendário (ao abrir, ao voltar ao app e na virada do dia).
