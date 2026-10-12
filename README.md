@@ -234,7 +234,10 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
 - **Notas feitas (vendas)**: uma linha por dia (dia, Ab, Rp, valor). A soma vira o **Valor deixado**
   e as **Notas deixadas** da folha (não entram nas contas do caixa).
 - **Notas antecipadas**: uma linha por nota (nome e valor); o total vira **Antecipados**.
-- **Pepino parcial**: uma linha por pepino pago em parte (nome e valor); o total vira **Pepino parcial**.
+- **Pepino parcial**: uma linha por pepino pago em parte (nome, valor pago e devolução); o total pago vira **Pepino parcial**.
+  Nas notas em branco, a nota parcial sai inteira (pago + devolução + o que ficou devendo, lançado na aba Relatório).
+- **Data automática**: a data do fechamento acompanha o calendário (ao abrir, ao voltar ao app e na virada do dia).
+  Mudada à mão, vale só naquele dia; numa semana nova a data não pula e o app avisa para começar o fechamento novo.
   Antecipadas, pepino extra e pepino parcial entram no recebimento.
 - **Gerar caixa** (fim da semana): monta a folha CAIXA igual à impressa, já preenchida — o impresso em preto
   e o preenchido em azul com letra de mão (fonte Caveat, `caixa/fonts/`, licença OFL). Antes avisa o que pode
@@ -253,6 +256,8 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   ficam guardados para as próximas semanas. Mandar pelo WhatsApp ou copiar.
 - Listas de lançamentos (notas, pepinos, antecipadas, notas feitas, despesas, depósitos, parcial) ficam recolhidas:
   **Ver lançamentos (N)** abre a lista (mostra também quantas estão para conferir); ao adicionar uma linha ela abre sozinha.
+- Cada aba lembra onde a tela parou. **Puxar para atualizar**: no topo, arrastar para baixo e soltar recarrega o app
+  (sem a introdução; dados, aba e posição continuam).
 - **Introdução** ao abrir: contagem 3, 2, 1, o foguete decola e aparece "Fechamento de Caixa" (≈3 s; um toque pula).
 - Salvar fechamentos e mandar resumo pelo WhatsApp.
 

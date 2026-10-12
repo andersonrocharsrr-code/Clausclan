@@ -224,3 +224,11 @@ label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--acc
 /* Notas: cliente em cima; valor recebido e devolução lado a lado. */
 .item--nota{grid-template-columns:1fr 1fr}
 .item--nota .item__cliente{grid-column:1/-1}
+/* Puxar para atualizar: bolinha com ↻ que desce com o dedo; gira ao soltar. O navegador não faz o dele. */
+html,body{overscroll-behavior-y:contain}
+.puxar{position:fixed;left:50%;top:-44px;z-index:60;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;
+  background:var(--card);color:var(--muted);border:1px solid var(--line);box-shadow:0 4px 14px rgba(0,0,0,.25);
+  font:700 22px/1 system-ui,sans-serif;transform:translate(-50%,0);pointer-events:none}
+.puxar.pronto{color:var(--accent);border-color:var(--accent)}
+.puxar.girando span{display:block;animation:puxar-gira .6s linear infinite}
+@keyframes puxar-gira{to{transform:rotate(360deg)}}

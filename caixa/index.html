@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=31">
+  <link rel="stylesheet" href="style.css?v=32">
 </head>
 <body>
   <!-- Introdução ao abrir: contagem 3, 2, 1 e o foguete decola. Um toque pula. -->
@@ -34,6 +34,10 @@
     <div class="intro__fumaca f1"></div><div class="intro__fumaca f2"></div><div class="intro__fumaca f3"></div>
     <div class="intro__titulo">Fechamento de Caixa</div>
   </div>
+  <!-- Ao atualizar puxando a tela, o app volta sem a introdução. -->
+  <script>try { if (sessionStorage.getItem('caixa.semIntro')) { sessionStorage.removeItem('caixa.semIntro'); document.getElementById('intro').remove(); } } catch (e) {}</script>
+  <!-- Puxar para atualizar -->
+  <div id="puxar" class="puxar" hidden aria-hidden="true"><span>↻</span></div>
   <div class="topo">
   <header class="top">
     <div class="top__title">
@@ -150,7 +154,7 @@
         <h2>Pepino parcial</h2>
         <strong class="total" data-c="pepinoParcial"></strong>
       </div>
-      <p class="muted small">Uma linha para cada pepino pago em parte, com o nome e o valor pago. Entra no recebimento (no relatório, o que a cliente ficou devendo é digitado na aba Relatório).</p>
+      <p class="muted small">Uma linha para cada pepino pago em parte: nome, valor pago e devolução. O valor pago entra no recebimento. A nota sai das notas em branco e fica no parcial (pago + devolução + o que ficou devendo, lançado na aba Relatório).</p>
       <button class="btn" data-add="parciais">+ Pepino parcial</button>
       <div class="lista" data-lista="parciais"></div>
     </section>
@@ -432,6 +436,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=32"></script>
+  <script type="module" src="app.js?v=34"></script>
 </body>
 </html>
