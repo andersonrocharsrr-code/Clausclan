@@ -178,7 +178,7 @@ label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--acc
 .rel-texto{white-space:pre-wrap;font:14px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--bg);color:var(--ink);
   border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;max-height:60vh;overflow:auto}
 /* Notas feitas: dia em cima; Ab, Rp e valor lado a lado. */
-.item--feitas{grid-template-columns:1fr 1fr 1.6fr}
+.item--feitas{grid-template-columns:1fr 1.6fr}
 .item--feitas .item__data{grid-column:1/-1}
 .item--parcial{grid-template-columns:1fr 1fr}
 .item--parcial .item__dia{grid-column:1/-1}
@@ -258,3 +258,11 @@ html,body{overscroll-behavior-y:contain}
 .item__acoes .item__cancelar{padding:8px 12px;font-size:14px}
 .item__acr{grid-column:1/-1;margin:0;font-size:12px;color:var(--muted)}
 .item__dica{grid-column:1/-1;margin:0;font-size:12px;color:var(--accent)}
+/* Notas feitas: escolher Ab ou Rp; depois de lançada mostra "1 Ab" */
+.item__rot{display:block;font-size:11px;margin-bottom:2px}
+.item__tipoTxt{display:block;padding:7px 2px;font-size:15px;font-weight:700}
+.tipo-sel{display:flex;gap:6px}
+.tipo-op{flex:1}
+.tipo-op input{position:absolute;opacity:0;pointer-events:none}
+.tipo-op span{display:block;text-align:center;padding:7px 0;border-radius:10px;border:1px solid var(--line);background:var(--card);font-weight:700;font-size:15px;cursor:pointer}
+.tipo-op input:checked+span{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}

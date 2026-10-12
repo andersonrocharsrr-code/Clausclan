@@ -82,7 +82,8 @@ const LISTAS = {
   parciais: [['dia', 'Dia', 'date'], ['valorNota', 'Valor da nota'], ['valor', 'Recebido'], ['devolucao', 'Devolução']],
   // Notas feitas (vendas) de cada dia: Ab (abertura) + Rp (reposição) = notas do dia; a soma dos valores é o
   // "Valor deixado" e a das notas, as "Notas deixadas".
-  feitas: [['data', 'Dia', 'date'], ['ab', 'Ab'], ['rp', 'Rp'], ['valor', 'Valor']],
+  // Cada linha é a nota de uma cliente: Ab (abertura) ou Rp (reposição) e o valor.
+  feitas: [['data', 'Dia', 'date'], ['tipo', 'Nota', 'tipo'], ['valor', 'Valor']],
   obs: [['desc', 'Descrição'], ['valor', 'Valor']],
 };
 
@@ -292,7 +293,13 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
     + (nome === 'depositos' ? ' item--dep' : '') + (nome === 'feitas' ? ' item--feitas' : '') + (nome === 'parciais' ? ' item--parcial' : '')
     + (edita ? ' item--editando' : ' item--travada');
   const acr = (item.acrescimos || []).map((a) => `+ ${fmtDia(a.data)}: ${[a.ab ? `${a.ab} Ab` : '', a.rp ? `${a.rp} Rp` : '', a.valor ? R$(a.valor) : ''].filter(Boolean).join(' · ')}`);
-  row.innerHTML = cols.map(([k, rot, tipo]) => `
+  // Ab/Rp: no rascunho escolhe; depois de lançada a nota mostra só "1 Ab" (ou "1 Rp") e não muda mais.
+  const tipoTxt = (x) => (x.tipo ? `1 ${x.tipo === 'rp' ? 'Rp' : 'Ab'}`
+    : [numero(x.ab) ? `${numero(x.ab)} Ab` : '', numero(x.rp) ? `${numero(x.rp)} Rp` : ''].filter(Boolean).join(' · ') || (x.qtd ? `${x.qtd} nota(s)` : '—'));
+  const campoTipo = (k) => (modo === 'rascunho'
+    ? `<span class="tipo-sel" role="radiogroup">${['ab', 'rp'].map((t) => `<label class="tipo-op"><input type="radio" name="tipo-${item.id}" data-k="${k}" value="${t}" ${item.tipo === t ? 'checked' : ''}><span>${t === 'ab' ? 'Ab' : 'Rp'}</span></label>`).join('')}</span>`
+    : `<span class="item__tipoTxt">${tipoTxt(item)}</span>`);
+  row.innerHTML = cols.map(([k, rot, tipo]) => tipo === 'tipo' ? `<div class="item__${k}"><span class="item__rot">${rot}</span>${campoTipo(k)}</div>` : `
     <label class="item__${k}">${rot}
       ${tipo === 'select'
         ? `<select data-k="${k}" ${edita ? '' : 'disabled'}>${Object.entries(ONDE_CURTO).map(([v, t]) => `<option value="${v}" ${item[k] === v ? 'selected' : ''}>${t}</option>`).join('')}</select>`
@@ -307,7 +314,7 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
     (nome === 'parciais' ? `<span class="item__devendo">ficou devendo ${R$(item.devendo)}</span>` : '') +
     (acr.length ? `<p class="item__acr">Lançado em ${fmtDia(item.data)} · ${acr.join(' · ')}</p>` : '') +
     (edita && nome === 'feitas' && modo === 'editando' && item.data !== hoje()
-      ? `<p class="item__dica">O que você acrescentar entra no relatório de hoje (${fmtDia(hoje())}).</p>` : '') +
+      ? `<p class="item__dica">O valor que você acrescentar entra no relatório de hoje (${fmtDia(hoje())}).</p>` : '') +
     (item.nota ? `<p class="item__nota">⚠ ${esc(item.nota)}</p>` : '');
 
   const sair = () => pintarLista(nome);
@@ -322,6 +329,7 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
       const k = e.target.dataset.k;
       if (!k) return;
       rasc[k] = K_DINHEIRO.includes(k) ? numero(e.target.value) : e.target.value;
+      if (k === 'tipo') { rasc.ab = rasc.tipo === 'ab' ? 1 : 0; rasc.rp = rasc.tipo === 'rp' ? 1 : 0; }
       if (nome === 'parciais' && rasc.valorNota) {
         rasc.devendo = devendoCalculado(rasc);
         row.querySelector('.item__devendo').textContent = `ficou devendo ${R$(rasc.devendo)}`;
@@ -332,6 +340,7 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
       if (k && K_DINHEIRO.includes(k)) e.target.value = rasc[k] ? brl(rasc[k]) : '';
     });
     const lancar = () => {
+      if (nome === 'feitas' && modo === 'rascunho' && !rasc.tipo) { toast('Escolha Ab ou Rp.'); return; }
       document.activeElement?.blur();
       rasc.conferir = false;
       if (modo === 'rascunho') { st[nome].push(rasc); delete rascunhos[nome]; } else aplicarEdicao(nome, item, rasc);
@@ -497,14 +506,14 @@ $$('[data-ir]').forEach((b) => b.addEventListener('click', () => abrirAba(b.data
 $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
   const nome = b.dataset.add;
   abrirLista(nome); // a linha nova aparece aberta para digitar
-  rascunhos[nome] = nome === 'feitas' ? { id: uid(), data: hoje(), ab: '', rp: '', valor: 0 }
+  rascunhos[nome] = nome === 'feitas' ? { id: uid(), data: hoje(), tipo: '', ab: 0, rp: 0, valor: 0 }
     : { id: uid(), dia: hoje(), valor: 0, cidade: nome.startsWith('notas') || nome === 'extras' ? st.cidade : undefined };
   pintarLista(nome);
   const rows = $$(`[data-lista="${nome}"] .item`);
   const ultima = rows[rows.length - 1];
   // Nas notas só importa o valor: o cursor já vai para ele.
   (nome.startsWith('notas') ? ultima?.querySelector('[data-k="valor"]')
-    : nome === 'feitas' ? ultima?.querySelector('[data-k="ab"]') : ultima?.querySelector('input'))?.focus();
+    : nome === 'feitas' ? null : ultima?.querySelector('input'))?.focus();
 }));
 
 /* ---------- teclado do celular ---------- */
