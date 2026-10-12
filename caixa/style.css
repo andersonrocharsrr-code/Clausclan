@@ -181,7 +181,10 @@ label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--acc
 .item--feitas{grid-template-columns:1fr 1fr 1.6fr}
 .item--feitas .item__data{grid-column:1/-1}
 .item--parcial{grid-template-columns:1fr 1fr}
-.item--parcial .item__dia,.item--parcial .item__cliente{grid-column:1/-1}
+.item--parcial .item__dia{grid-column:1/-1}
+/* "ficou devendo": discreto, no canto (do cartão e de cada lançamento) */
+.parc-devendo,.item__devendo{font-size:12px;color:var(--muted);font-weight:500}
+.item__devendo{position:absolute;right:42px;top:12px}
 /* "Ver lançamentos": as listas ficam recolhidas até tocar. */
 .ver-lanc{width:100%;justify-content:flex-start;margin-top:8px;font-size:14px;color:var(--accent);border-style:dashed}
 
