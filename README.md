@@ -253,7 +253,7 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   totais contam só até o dia do relatório. Notas feitas: Ab (abertura) + Rp (reposição) por dia. O pepino parcial
   do relatório é quanto a cliente ficou devendo: cada valor é lançado (pode lançar várias vezes no dia); o do dia soma
   os lançamentos do dia e o total soma todos até o dia do relatório. Notas em branco = notas
-  a cobrar menos as pagas/parciais, pelo valor da nota com a comissão (25%: recebido ÷ 0,75; 40%: ÷ 0,6; 50%: ÷ 0,5; ou o TOTAL impresso, quando lido)
+  a cobrar menos as pagas/parciais, pelo valor da nota (25%: recebido ÷ 0,75, com a comissão da cliente; 40% e 50%: o próprio recebido, pois a nota quitada é paga cheia; ou o TOTAL impresso, quando lido; arredondado para o real)
   mais a devolução ("TOTAL DE DEVOLUCOES", lido da foto e conferido com os itens devolvidos, ou digitado na nota). Placa, modelo, locadora, Km e supervisor
   ficam guardados para as próximas semanas. Mandar pelo WhatsApp ou copiar.
 - Listas de lançamentos (notas, pepinos, antecipadas, notas feitas, despesas, depósitos, parcial) ficam recolhidas:

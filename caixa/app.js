@@ -1140,14 +1140,15 @@ const valorDaParcial = (x) => numero(x.valorNota)
   || arred(numero(x.devolucao) + (numero(x.valor) + numero(x.devendo)) / 0.75);
 const qtdParcial = (x) => numero(x.qtd) || 1;
 
-// Valor da nota que sai das notas em branco: o recebido com a comissão da cliente de volta
-// (25% → recebe 75%: 426 recebidos = 568; 40% → recebe 60%; 50% → recebe 50%), mais o que foi devolvido
-// ("TOTAL DE DEVOLUCOES"): 568 + 284 = 852. A faixa vem da lista onde a nota está (25% ou 40/50%).
+// Valor da nota que sai das notas em branco. Nota de 25%: o recebido com a comissão da cliente de volta
+// (recebe 75%: 426 recebidos = 568), mais o que foi devolvido ("TOTAL DE DEVOLUCOES"): 568 + 284 = 852.
+// Nota de 40% e 50% (nota quitada): a cliente paga a nota cheia, então o recebido já é o valor da nota.
+// As notas são sempre preço cheio (sem centavos): o valor é arredondado para o real inteiro.
 function valorDeFace(n, lista) {
   const valor = Number(n.valor) || 0;
-  const pago = lista === 'notas25' ? 0.75 : n.faixa === '50' ? 0.5 : 0.6;
+  const pago = lista === 'notas25' ? 0.75 : 1;
   const vendido = Number(n.total) > valor ? Number(n.total) : valor / pago; // TOTAL impresso, quando foi lido
-  return arred(vendido + (Number(n.devolucao) || 0));
+  return Math.round(vendido + (Number(n.devolucao) || 0));
 }
 
 // Quanto do pepino extra foi pago no dia: pelas datas dos pagamentos da nota, ou pelo dia em que foi lançado.
