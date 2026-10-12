@@ -544,7 +544,7 @@ $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
 const ehCampo = (el) => el && el.matches?.('input:not([type="radio"]):not([type="checkbox"]):not([type="file"]), select, textarea');
 function centralizar() {
   const el = document.activeElement;
-  if (ehCampo(el)) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  if (ehCampo(el)) el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
 }
 document.addEventListener('focusin', (e) => {
   if (!ehCampo(e.target)) return;
