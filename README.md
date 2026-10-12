@@ -263,6 +263,10 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
 - **Introdução** ao abrir: contagem 3, 2, 1, o foguete decola e aparece "Fechamento de Caixa" (≈3 s; um toque pula).
 - **Remover lançamento**: o ✕ pergunta antes (mostra o tipo, o nome e o valor); depois de remover, uma barra embaixo
   oferece **Desfazer** por 3 segundos e devolve o lançamento ao mesmo lugar.
+- **Lançamentos travados**: depois de lançada, a linha só muda em **Editar** → **✓ Lançar** (sair sem lançar desfaz). Linha nova
+  só conta depois de lançada. Notas feitas: cada linha é uma nota (Ab ou Rp) e o valor; editada em outro dia, só o valor
+  acrescentado entra no relatório daquele dia.
+- **Campos de dinheiro** começam em 0,00 e os números entram pela direita (617 → 6,17; 61700 → 617,00).
 - Salvar fechamentos e mandar resumo pelo WhatsApp.
 
 ## App Android (APK) — pasta `caixa-android/`

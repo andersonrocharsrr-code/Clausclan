@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=35">
+  <link rel="stylesheet" href="style.css?v=36">
 </head>
 <body>
   <!-- Introdução ao abrir: contagem 3, 2, 1 e o foguete decola. Um toque pula. -->
@@ -164,8 +164,7 @@
         <h2>Notas feitas (vendas)</h2>
         <strong class="total" data-c="valorDeixado"></strong>
       </div>
-      <p class="muted small">Todo dia lance as notas feitas: <b>Ab</b> (abertura) e <b>Rp</b> (reposição) e o valor vendido no dia. O app soma tudo: o total vira o
-        <b>Valor deixado</b> e as <b>Notas deixadas</b> da folha, e o relatório mostra o do dia e o total.</p>
+      <p class="muted small">Uma linha para cada nota feita: escolha <b>Ab</b> (abertura) ou <b>Rp</b> (reposição) e o valor. Depois de lançada, toque em <b>Editar</b> para acrescentar valor em outro dia: só o acréscimo entra no relatório daquele dia. O total vira o <b>Valor deixado</b> e as <b>Notas deixadas</b> da folha.</p>
       <button class="btn" data-add="feitas">+ Notas feitas do dia</button>
       <div class="lista" data-lista="feitas"></div>
       <p class="muted small" id="feitasTotal"></p>
@@ -456,6 +455,6 @@
   </div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=38"></script>
+  <script type="module" src="app.js?v=40"></script>
 </body>
 </html>
