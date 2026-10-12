@@ -221,3 +221,6 @@ label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--acc
   animation:intro-surge .6s ease-out forwards;animation-delay:2.25s}
 @keyframes intro-surge{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.intro{animation-delay:.6s}.intro *{animation:none!important}.intro__titulo{opacity:1}}
+/* Notas: cliente em cima; valor recebido e devolução lado a lado. */
+.item--nota{grid-template-columns:1fr 1fr}
+.item--nota .item__cliente{grid-column:1/-1}

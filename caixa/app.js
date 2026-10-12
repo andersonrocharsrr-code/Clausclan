@@ -1,7 +1,7 @@
 /* Fechamento de Caixa — faz as contas da folha de caixa e lê notas/folhas pela foto (IA Claude). */
 import Anthropic from './vendor/anthropic.js';
 import { desenharCaixa } from './folha.js?v=9';
-import { lerNotaGratis, lerFolhaGratis, lerPepinoGratis, semanaDe, ultimaLeitura } from './leitor.js?v=20';
+import { lerNotaGratis, lerFolhaGratis, lerPepinoGratis, semanaDe, ultimaLeitura } from './leitor.js?v=21';
 
 const KEY_ATUAL = 'caixa.atual';
 const KEY_SALVOS = 'caixa.salvos';
@@ -63,10 +63,13 @@ const ONDE = { empresa: 'Depto. empresa espécie', banco: 'Depto. banco/TED/tran
 const ONDE_CURTO = { empresa: 'Empresa', banco: 'Banco/TED', pix: 'Pix' };
 const NOMES = { ajuda: 'Ajuda de custo', vale: 'Vale adiantado', salario: 'Salário', mecanica: 'Mecânica',
   despSupervisor: 'Despesas supervisor', excedido: 'Excedido da despesa' };
+// Campos das listas que são dinheiro.
+const K_DINHEIRO = ['valor', 'devolucao'];
 const LISTAS = {
   // Da nota o caixa só precisa do valor recebido (e da faixa, que é a lista onde ela está); o nome ajuda a achar a nota.
-  notas25: [['cliente', 'Cliente'], ['valor', 'Valor']],
-  notas4050: [['cliente', 'Cliente'], ['valor', 'Valor']],
+  // Devolução: o "TOTAL DE DEVOLUCOES" da nota (lido da foto ou digitado), para as notas em branco.
+  notas25: [['cliente', 'Cliente'], ['valor', 'Valor recebido'], ['devolucao', 'Devolução']],
+  notas4050: [['cliente', 'Cliente'], ['valor', 'Valor recebido'], ['devolucao', 'Devolução']],
   extras: [['numero', 'Nº'], ['vendedora', 'Vendedora/cliente'], ['cidade', 'Cidade'], ['valor', 'Valor']],
   pila: [['tipo', 'Despesa'], ['valor', 'Valor']],
   depositos: [['data', 'Data', 'date'], ['onde', 'Onde', 'select'], ['valor', 'Valor']],
@@ -267,13 +270,13 @@ function pintarLista(nome) {
   if (!n || !aberta) return;
   st[nome].forEach((item, i) => {
     const row = document.createElement('div');
-    row.className = 'item' + (item.conferir ? ' item--conferir' : '') + (cols.length === 2 ? ' item--2' : '')
+    row.className = 'item' + (item.conferir ? ' item--conferir' : '') + (cols.length === 2 ? ' item--2' : '') + (nome.startsWith('notas') ? ' item--nota' : '')
       + (nome === 'depositos' ? ' item--dep' : '') + (nome === 'feitas' ? ' item--feitas' : '') + (nome === 'devendo' ? ' item--devendo' : '');
     row.innerHTML = cols.map(([k, rot, tipo]) => `
       <label class="item__${k}">${rot}
         ${tipo === 'select'
           ? `<select data-k="${k}">${Object.entries(ONDE_CURTO).map(([v, t]) => `<option value="${v}" ${item[k] === v ? 'selected' : ''}>${t}</option>`).join('')}</select>`
-          : `<input data-k="${k}" enterkeyhint="done" ${tipo === 'date' ? 'type="date"' : ''} ${k === 'valor' ? 'inputmode="decimal"' : ['qtd', 'ab', 'rp'].includes(k) ? 'inputmode="numeric"' : ''} value="${esc(k === 'valor' ? (item.valor ? brl(item.valor) : '') : item[k] || '')}">`}
+          : `<input data-k="${k}" enterkeyhint="done" ${tipo === 'date' ? 'type="date"' : ''} ${K_DINHEIRO.includes(k) ? 'inputmode="decimal"' : ['qtd', 'ab', 'rp'].includes(k) ? 'inputmode="numeric"' : ''} ${k === 'devolucao' ? 'placeholder="0,00"' : ''} value="${esc(K_DINHEIRO.includes(k) ? (item[k] ? brl(item[k]) : '') : item[k] || '')}">`}
       </label>`).join('') +
       `<button class="item__del" aria-label="Apagar" title="Apagar">✕</button>` +
       // Aparece enquanto a linha está sendo preenchida: confirma o valor e fecha o teclado.
@@ -285,14 +288,14 @@ function pintarLista(nome) {
     row.addEventListener('input', (e) => {
       const k = e.target.dataset.k;
       if (!k) return;
-      item[k] = k === 'valor' ? numero(e.target.value) : e.target.value;
+      item[k] = K_DINHEIRO.includes(k) ? numero(e.target.value) : e.target.value;
       salvarAtual(); pintarTotais();
     });
     row.addEventListener('change', (e) => {
       const k = e.target.dataset.k;
       if (!k) return;
-      item[k] = k === 'valor' ? numero(e.target.value) : e.target.value.trim();
-      if (k === 'valor') e.target.value = item.valor ? brl(item.valor) : '';
+      item[k] = K_DINHEIRO.includes(k) ? numero(e.target.value) : e.target.value.trim();
+      if (K_DINHEIRO.includes(k)) e.target.value = item[k] ? brl(item[k]) : '';
       item.conferir = false;
       row.classList.remove('item--conferir');
       atualizarVer(nome);
@@ -448,7 +451,7 @@ async function prepararFoto(file) {
 
 const ITEM_NOTA = {
   type: 'object', additionalProperties: false,
-  required: ['numero', 'cliente', 'cidade', 'faixa', 'valor', 'valor_total', 'duvida'],
+  required: ['numero', 'cliente', 'cidade', 'faixa', 'valor', 'valor_total', 'devolucao', 'duvida'],
   properties: {
     numero: { type: 'string', description: 'Número da nota, como está escrito' },
     faixa: { type: 'string', enum: ['25', '40', '50', ''], description: 'Faixa em que a nota foi paga, como está marcado na nota; vazio se não der para ver' },
@@ -456,6 +459,7 @@ const ITEM_NOTA = {
     cidade: { type: 'string' },
     valor: { type: 'number', description: 'Valor pago/quitado, em reais' },
     valor_total: { type: 'number', description: 'Valor total da nota, se aparecer; senão 0' },
+    devolucao: { type: 'number', description: 'TOTAL DE DEVOLUCOES da nota, se aparecer; senão 0' },
     duvida: { type: 'string', description: 'O que ficou ilegível ou duvidoso; vazio se tudo claro' },
   },
 };
@@ -545,8 +549,8 @@ Representante, DATA DO ACERTO, nome da cliente (linha antes do CPF), endereço, 
   (sem comissão visível, use "40");
 - se não der para ver o final, faixa vazia.
 Em "valor" coloque o valor RECEBIDO ("Recebi o valor de R$…" ou "Total de pagamentos"), não o TOTAL; o TOTAL vai em
-"valor_total". Liste cada nota que aparece (uma foto pode ter várias; não repita a mesma nota). Para cada uma: número,
-cliente, cidade (como está escrita, ex.: RIO BRANCO, PORTO ACRE, CZS, BRASILEIA), faixa, valor e valor_total.`,
+"valor_total"; o "TOTAL DE DEVOLUCOES" (se houver) vai em "devolucao". Liste cada nota que aparece (uma foto pode ter várias; não repita a mesma nota). Para cada uma: número,
+cliente, cidade (como está escrita, ex.: RIO BRANCO, PORTO ACRE, CZS, BRASILEIA), faixa, valor, valor_total e devolucao.`,
   },
   extras: {
     schema: SCHEMA_EXTRAS,
@@ -664,7 +668,7 @@ async function lerFotosGratis(tipo, files) {
       if (n.faltou.length) duvidas++;
       st[destino].push({
         id: uid(), numero: n.numero, cliente: n.cliente, cidade: n.cidade || st.cidade, valor: n.valor,
-        total: n.total || 0, dia: hoje(),
+        total: n.total || 0, devolucao: n.devolucao || 0, dia: hoje(),
         // Da nota só importam o valor recebido e a faixa: fica amarela só quando um dos dois está em dúvida.
         faixa: n.faixa, conferir: n.faltou.length > 0,
         nota: n.faltou.length ? 'Confira: ' + n.faltou.join(', ') : '',
@@ -709,7 +713,7 @@ function aplicar(tipo, r) {
       destino === 'notas25' ? n25++ : n4050++;
       st[destino].push({
         id: uid(), numero: n.numero, cliente: n.cliente, cidade: n.cidade || st.cidade, valor: arred(n.valor),
-        total: arred(n.valor_total || 0), dia: hoje(), faixa: n.faixa, conferir: true,
+        total: arred(n.valor_total || 0), devolucao: arred(n.devolucao || 0), dia: hoje(), faixa: n.faixa, conferir: true,
         nota: [n.faixa ? '' : 'não deu para ver se foi 25% ou 40/50% — confira', n.duvida,
           n.valor_total && n.valor_total !== n.valor ? `total da nota ${R$(n.valor_total)}` : '']
           .filter(Boolean).join(' · '),
@@ -989,13 +993,14 @@ if (NATIVO) {
 const REL_MONEY = ['avistaValor', 'devolValor'];
 
 // Valor de face da nota (o TOTAL impresso), para saber quanto ainda está nas notas em branco.
-// O recebido é o total menos a comissão da cliente: 25% → recebe 75% (750 recebidos = nota de 1.000);
-// 40% → recebe 60%; 50% → recebe 50%. A faixa vem da lista onde a nota está (25% ou 40/50%).
+// Valor da nota que sai das notas em branco: o recebido com a comissão da cliente de volta
+// (25% → recebe 75%: 426 recebidos = 568; 40% → recebe 60%; 50% → recebe 50%), mais o que foi devolvido
+// ("TOTAL DE DEVOLUCOES"): 568 + 284 = 852. A faixa vem da lista onde a nota está (25% ou 40/50%).
 function valorDeFace(n, lista) {
   const valor = Number(n.valor) || 0;
-  if (Number(n.total) > valor) return Number(n.total); // TOTAL impresso, quando foi lido
   const pago = lista === 'notas25' ? 0.75 : n.faixa === '50' ? 0.5 : 0.6;
-  return arred(valor / pago);
+  const vendido = Number(n.total) > valor ? Number(n.total) : valor / pago; // TOTAL impresso, quando foi lido
+  return arred(vendido + (Number(n.devolucao) || 0));
 }
 
 // Quanto do pepino extra foi pago no dia: pelas datas dos pagamentos da nota, ou pelo dia em que foi lançado.

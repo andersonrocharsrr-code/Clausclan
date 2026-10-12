@@ -115,7 +115,7 @@ export function entenderNota(texto) {
   const linhas = texto.split('\n').map((l) => l.trim()).filter(Boolean);
   const LIN = linhas.map((l) => semAcento(l).toUpperCase());
   const tudo = LIN.join('\n');
-  const r = { numero: '', cliente: '', cidade: '', data: '', valor: 0, total: 0, comissao: 0, faixa: '', faltou: [] };
+  const r = { numero: '', cliente: '', cidade: '', data: '', valor: 0, total: 0, comissao: 0, devolucao: 0, faixa: '', faltou: [] };
 
   // Número: o "N. 000001" do topo (os números de endereço, "N.876", têm menos dígitos).
   const iAcerto = LIN.findIndex((l) => /DATA DO ACERTO/.test(l));
@@ -182,6 +182,21 @@ export function entenderNota(texto) {
   if (r.valor && !(recebi && pagos)) r.faltou.push('valor lido de uma linha só');
   r.total = zeroCortado(valorDe(/^.{0,3}T[O0]TAL\s*R/));
   r.comissao = zeroCortado(valorDe(/T[O0]TAL DE C[O0]M[I1]SS/));
+  // "TOTAL DE DEVOLUCOES R$284,00": peças devolvidas; somam no valor da nota para as notas em branco.
+  r.devolucao = zeroCortado(valorDe(/T[O0]TAL DE DEV[O0]LU/));
+  // Confere com os itens devolvidos ("002 x 142,00 = 284,00"), entre "DEVOLUCOES" e o total: o leitor às vezes
+  // troca um dígito no total ("R$784"). Se discordarem, valem os itens e a nota fica para conferir.
+  const iDevTot = LIN.findIndex((l) => /T[O0]TAL DE DEV[O0]LU/.test(l));
+  const iDev = LIN.findIndex((l, i) => i < iDevTot && /DEV[O0]LU[CÇ]/.test(l));
+  if (iDev >= 0) {
+    const itensDev = LIN.slice(iDev + 1, iDevTot).map((l) => l.match(/=\s*([\dOSIl.,]+,\s*\d{2})/)).filter(Boolean)
+      .map((m) => valorBR(consertarNumeros(m[1]).replace(/\s/g, ''))).filter((v) => v > 0);
+    const somaDev = Math.round(itensDev.reduce((a, b) => a + b, 0) * 100) / 100;
+    if (somaDev && Math.round(somaDev) !== Math.round(r.devolucao)) {
+      if (r.devolucao) r.faltou.push(`devolução lida ${r.devolucao}, os itens somam ${somaDev}: usei ${somaDev}`);
+      r.devolucao = somaDev;
+    }
+  }
   if (!r.valor && r.total) { r.valor = r.total; r.faltou.push('não achei o "Recebi o valor": usei o TOTAL'); }
   if (!r.valor) {
     const itens = LIN.map((l) => l.match(/=\s*([\dOSIl.,]+,\s*\d{2})/)).filter(Boolean)
