@@ -4,7 +4,7 @@
   --accent:#2563eb;--accent-ink:#ffffff;--accent-soft:#eaf1ff;--warn:#b45309;--warn-soft:#fff6e5;
   --neg:#dc2626;--pos:#16a34a;--radius:20px;
   --head-bg:linear-gradient(135deg,#1d4ed8 0%,#2563eb 50%,#0ea5e9 100%);--head-ink:#ffffff;--head-muted:rgba(255,255,255,.85);
-  --btn-bg:linear-gradient(135deg,#2563eb,#0ea5e9);--glow:rgba(37,99,235,.28);
+  --btn-bg:linear-gradient(135deg,#3b6fd8,#3b8fc9);--glow:rgba(37,99,235,.14); /* botões azul fosco leve */
   --shadow:0 6px 20px rgba(15,27,51,.07);--input-bg:#f6f8fc;--item-bg:#f8fafd;--bar-bg:rgba(255,255,255,.92);
   --accent-card:linear-gradient(160deg,#eaf1ff,#e6f6ff);--money:#1d4ed8;--tab-bg:rgba(37,99,235,.10);--tab-ink:#1d4ed8;
   font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color-scheme:light;
@@ -16,7 +16,7 @@
     --accent:#5b8cff;--accent-ink:#ffffff;--accent-soft:#16223f;--warn:#f0b35a;--warn-soft:#2d2414;
     --neg:#ff7a70;--pos:#4ade80;
     --head-bg:linear-gradient(135deg,#1e3a8a 0%,#1d4ed8 55%,#0369a1 100%);--head-muted:rgba(255,255,255,.8);
-    --glow:rgba(37,99,235,.35);--shadow:0 8px 24px rgba(0,0,0,.35);
+    --shadow:0 8px 24px rgba(0,0,0,.35);
     --input-bg:#0e1626;--item-bg:#0f1829;--bar-bg:rgba(15,22,38,.9);
     --accent-card:linear-gradient(160deg,#16223f,#122a3a);--money:#8fb0ff;--tab-bg:rgba(91,140,255,.16);--tab-ink:#b8ccff;
     color-scheme:dark;
