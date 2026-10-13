@@ -5,7 +5,7 @@
   --neg:#dc2626;--pos:#16a34a;--radius:20px;
   --head-bg:linear-gradient(135deg,#1d4ed8 0%,#2563eb 50%,#0ea5e9 100%);--head-ink:#ffffff;--head-muted:rgba(255,255,255,.85);
   --btn-bg:linear-gradient(135deg,#3b6fd8,#3b8fc9);--glow:rgba(37,99,235,.14); /* botões azul fosco leve */
-  --shadow:0 6px 20px rgba(15,27,51,.07);--input-bg:#f6f8fc;--item-bg:#f8fafd;--bar-bg:rgba(255,255,255,.92);
+  --shadow:0 6px 20px rgba(15,27,51,.07);--input-bg:#f6f8fc;--item-bg:#e9eef6;--bar-bg:rgba(255,255,255,.92);
   --accent-card:linear-gradient(160deg,#eaf1ff,#e6f6ff);--money:#1d4ed8;--tab-bg:rgba(37,99,235,.10);--tab-ink:#1d4ed8;
   font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color-scheme:light;
 }
