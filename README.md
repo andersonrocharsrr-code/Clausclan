@@ -268,7 +268,7 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   `@capacitor/local-notifications`), agendados no Android: lembrete às 8h, quinta/sexta às 8h, parcial 24 h depois
   de lançado e depois às 9h de cada dia enquanto estiver devendo. São refeitos a cada mudança nos lançamentos.
 - **Meta pessoal** (☰ → 🎯): o vendedor define a meta dele (valor deixado e notas feitas) e escolhe a meta da rota
-  (Capital ou Município). O app mostra quanto falta deixar, quantas notas faltam e a média por nota para fechar até
+  (Capital ou Município). O app mostra quanto falta deixar, quantas notas faltam e a média por nota (sem centavos, arredondada para mais no próximo valor par) para fechar até
   sexta-feira (e por dia); no sábado e no domingo, se ainda não fechou, recalcula para o dia. Barras de progresso.
 - **Salvar fechamento**: depois do primeiro salvamento, salva sozinho a cada 30 min se algo mudou; abrir um salvamento
   pergunta antes ("Carregar último salvamento?").

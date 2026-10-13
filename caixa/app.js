@@ -1248,7 +1248,8 @@ function calculoMeta(agora = new Date()) {
   const prazo = dia >= 1 && dia <= 5 ? 'até sexta-feira' : dia === 6 ? 'até sábado (hoje)' : 'até domingo (hoje)';
   const dias = dia >= 1 && dia <= 5 ? 6 - dia : 1; // dias de trabalho que faltam, contando hoje
   return { meta, feitas, deixado, faltaValor, faltaNotas, prazo, dias,
-    media: faltaNotas ? arred(faltaValor / faltaNotas) : 0 };
+    // Média por nota sem centavos e sempre para mais, no próximo valor par (as notas são preço cheio): 770,80 → 772.
+    media: faltaNotas ? Math.ceil(faltaValor / faltaNotas / 2) * 2 : 0 };
 }
 const notasTxt = (n) => `${n} ${n === 1 ? 'nota' : 'notas'}`;
 function pintarMeta() {
@@ -1261,7 +1262,7 @@ function pintarMeta() {
   else {
     frase = `<p class="meta-frase">Você precisa deixar <b>${R$(c.faltaValor)}</b> e <b>${notasTxt(c.faltaNotas)}</b> pra fechar com ${R$(c.meta.valor)} e ${notasTxt(c.meta.notas)} ${c.prazo}.</p>
       <p class="meta-media">São <b>${R$(c.media)}</b> de média por nota.</p>`;
-    if (c.dias > 1) frase += `<p class="muted small">Em ${c.dias} dias (contando hoje): cerca de ${R$(arred(c.faltaValor / c.dias))} e ${Math.ceil(c.faltaNotas / c.dias)} ${Math.ceil(c.faltaNotas / c.dias) === 1 ? 'nota' : 'notas'} por dia.</p>`;
+    if (c.dias > 1) frase += `<p class="muted small">Em ${c.dias} dias (contando hoje): cerca de ${R$(Math.ceil(c.faltaValor / c.dias))} e ${Math.ceil(c.faltaNotas / c.dias)} ${Math.ceil(c.faltaNotas / c.dias) === 1 ? 'nota' : 'notas'} por dia.</p>`;
   }
   const largura = (v, m) => `${pct(v, m)}%`;
   $('#metaCalc').innerHTML = `${frase}
