@@ -78,6 +78,9 @@ label.btn{flex-direction:row;color:var(--accent-ink)}
 .bar b{font-size:18px;font-variant-numeric:tabular-nums}
 
 dialog{border:0;border-radius:var(--radius);padding:18px;width:min(92vw,480px);background:var(--card);color:var(--ink)}
+/* Janela aberta: a página de trás não rola (só a janela, se for maior que a tela). */
+html.com-janela,html.com-janela body{overflow:hidden}
+dialog{overscroll-behavior:contain;max-height:calc(100dvh - 32px);overflow:auto}
 dialog::backdrop{background:rgba(0,0,0,.45)}
 .salvos{display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow:auto;margin-bottom:8px}
 .salvo{position:relative}
