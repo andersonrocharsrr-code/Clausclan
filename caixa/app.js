@@ -553,9 +553,22 @@ $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
 // Enquanto digita: esconde a barra de totais de baixo (ela sobe junto com o teclado e tampa o campo)
 // e deixa o campo no meio da tela, logo acima do teclado. "Concluído/Enter" do teclado confirma o campo.
 const ehCampo = (el) => el && el.matches?.('input:not([type="radio"]):not([type="checkbox"]):not([type="file"]), select, textarea');
+// Num lançamento aberto (linha nova ou em edição), centraliza a linha inteira na parte visível, entre o topo fixo
+// e o teclado, para não ficar cortada; se ela não couber, centraliza só o campo.
 function centralizar() {
   const el = document.activeElement;
-  if (ehCampo(el)) el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+  if (!ehCampo(el)) return;
+  const linha = el.closest('.item--editando');
+  const vv = window.visualViewport;
+  const altura = vv ? vv.height : innerHeight;
+  const topo = $('.topo')?.getBoundingClientRect().bottom || 0;
+  const livre = altura - topo;
+  if (linha && linha.offsetHeight + 16 <= livre) {
+    const r = linha.getBoundingClientRect();
+    scrollTo({ top: r.top + scrollY - topo - (livre - r.height) / 2, behavior: 'smooth' });
+    return;
+  }
+  el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
 }
 document.addEventListener('focusin', (e) => {
   if (!ehCampo(e.target)) return;
@@ -1727,7 +1740,6 @@ function pendencias() {
   if (c.falta > 0) p.push(`Ainda falta depositar ${R$(c.falta)}.`);
   if (c.falta < 0) p.push(`Os depósitos passaram ${R$(-c.falta)} do que tinha para depositar.`);
   if (!st.valorDeixado) p.push('O valor deixado está vazio: lance as Notas feitas (aba Recebimento).');
-  if (!st.assinatura) p.push('A assinatura do vendedor está vazia.');
   const conferir = Object.keys(LISTAS).reduce((t, k) => t + st[k].filter((i) => i.conferir).length, 0);
   if (conferir) p.push(`${conferir} item(ns) lido(s) pela foto ainda marcado(s) em amarelo para conferir.`);
   return p;
