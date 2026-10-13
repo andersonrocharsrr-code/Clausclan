@@ -552,13 +552,6 @@ $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
     : nome === 'feitas' ? null : ultima?.querySelector('input'))?.focus();
 }));
 
-/* ---------- barra de totais ---------- */
-// O espaço no fim da página acompanha a altura real da barra de baixo (muda com a barra de navegação do celular).
-const barra = $('.bar');
-if (barra && 'ResizeObserver' in window) {
-  new ResizeObserver(() => document.documentElement.style.setProperty('--bar-h', `${barra.offsetHeight}px`)).observe(barra);
-}
-
 /* ---------- janelas ---------- */
 // Com uma janela aberta (☰, ⚙, notificações, meta, folha…), a página de trás fica parada.
 const travarFundo = () => document.documentElement.classList.toggle('com-janela', !!document.querySelector('dialog[open]'));
@@ -1214,20 +1207,39 @@ const REGRAS_ROTA = [
   { dia: 4, id: 301, tipo: 'meta', icone: '🚩', titulo: 'Vamos fechar essa rota até sexta-feira', vale: (m) => m.faltaNotas > 7 && m.faltaValor > 6000 },
   { dia: 5, id: 302, tipo: 'urgente', icone: '🔥', titulo: 'Quero essa rota fechada hoje', vale: (m) => m.faltaNotas > 4 && m.faltaValor >= 3000 },
 ];
+// Lembrete do dia e meta da rota aparecem a partir das 8h (a mesma hora em que chegam no celular).
+const HORA_AVISO = 8;
 function notificacoes(agora = new Date()) {
   const cfg = avisosCfg();
+  const dia = isoDia(agora);
   const lista = [];
+  const manha = agora.getHours() >= HORA_AVISO;
   const lembrete = (cfg.lembretes[agora.getDay()] || '').trim();
-  if (lembrete) lista.push({ tipo: 'lembrete', icone: '📌', titulo: `Lembrete de ${DIAS_SEMANA[agora.getDay()].toLowerCase()}`, texto: lembrete });
+  if (lembrete && manha) lista.push({ chave: `lemb-${dia}`, tipo: 'lembrete', icone: '📌', titulo: `Lembrete de ${DIAS_SEMANA[agora.getDay()].toLowerCase()}`, texto: lembrete });
   const parados = parciaisParados(agora);
-  if (parados.length) lista.push({ tipo: 'alerta', icone: '⏰', titulo: 'Vamo receber esses parcial', texto: textoParcial(parados) });
+  if (parados.length) lista.push({ chave: `parc-${dia}`, tipo: 'alerta', icone: '⏰', titulo: 'Vamo receber esses parcial', texto: textoParcial(parados) });
   const m = metaRota();
-  REGRAS_ROTA.forEach((r) => { if (agora.getDay() === r.dia && r.vale(m)) lista.push({ ...r, texto: m.texto }); });
-  return lista;
+  REGRAS_ROTA.forEach((r) => { if (manha && agora.getDay() === r.dia && r.vale(m)) lista.push({ ...r, chave: `rota${r.id}-${dia}`, texto: m.texto }); });
+  const { dispensadas } = estadoNotif();
+  return lista.filter((n) => !dispensadas.includes(n.chave));
 }
-// Bolinha no ☰ quando há notificação.
+// O que já foi visto (some a bolinha) e o que foi dispensado (some da lista) valem só para o dia.
+const KEY_NOTIF_VISTAS = 'caixa.notifVistas';
+const isoDia = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+function estadoNotif() {
+  const e = ls.get(KEY_NOTIF_VISTAS, {});
+  return e.dia === isoDia(new Date()) ? { dia: e.dia, vistas: e.vistas || [], dispensadas: e.dispensadas || [] }
+    : { dia: isoDia(new Date()), vistas: [], dispensadas: [] };
+}
+function marcarNotif(campo, chaves) {
+  const e = estadoNotif();
+  e[campo] = [...new Set([...e[campo], ...chaves])];
+  ls.set(KEY_NOTIF_VISTAS, e);
+}
+// Bolinha no ☰ quando há notificação ainda não vista.
 function pintarSino() {
-  const qt = notificacoes().length;
+  const { vistas } = estadoNotif();
+  const qt = notificacoes().filter((n) => !vistas.includes(n.chave)).length;
   $('#sinoPonto').hidden = !qt;
   $('#notifQt').hidden = !qt;
   $('#notifQt').textContent = qt;
@@ -1239,9 +1251,14 @@ function pintarListaNotif() {
   lista.forEach((n) => {
     const el = document.createElement('div');
     el.className = `notif notif--${n.tipo}`;
-    el.innerHTML = `<span class="notif__icone">${n.icone}</span><div><b>${esc(n.titulo)}</b><p>${esc(n.texto)}</p></div>`;
+    el.innerHTML = `<span class="notif__icone">${n.icone}</span><div><b>${esc(n.titulo)}</b><p>${esc(n.texto)}</p></div>
+      <button type="button" class="notif__fechar" aria-label="Dispensar">✕</button>`;
+    el.querySelector('.notif__fechar').addEventListener('click', () => { marcarNotif('dispensadas', [n.chave]); pintarListaNotif(); pintarSino(); });
     box.appendChild(el);
   });
+  // Abriu a lista: tudo o que está nela conta como visto.
+  marcarNotif('vistas', lista.map((n) => n.chave));
+  pintarSino();
 }
 function pintarNotificacoes() {
   pintarListaNotif();
@@ -1371,13 +1388,23 @@ if (NATIVO) {
 // cada dia enquanto estiver devendo) e a meta da rota na quinta e na sexta às 8h.
 const LN = NATIVO ? plugin('LocalNotifications') : null;
 const KEY_AVISADO = 'caixa.avisado';
-const NOTIF_BASE = { channelId: 'avisos', smallIcon: 'ic_stat_caixa', iconColor: '#5b8cff', autoCancel: true };
-const isoDe = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+// isExactNotification:false: o Android entrega perto da hora sem pedir a permissão de "alarmes exatos".
+const NOTIF_BASE = { channelId: 'avisos', smallIcon: 'ic_stat_caixa', iconColor: '#5b8cff', autoCancel: true, isExactNotification: false };
 function proximaHora(h, base = new Date()) {
   const d = new Date(base);
   d.setHours(h, 0, 0, 0);
   if (d <= base) d.setDate(d.getDate() + 1);
   return d;
+}
+// Avisos no celular só durante o dia (8h às 18h): o que cairia de noite ou de madrugada passa para as 8h seguintes.
+const FIM_DO_DIA = 18;
+const deDia = (d) => d.getHours() >= HORA_AVISO && d.getHours() < FIM_DO_DIA;
+function paraODia(d) {
+  if (deDia(d)) return d;
+  const r = new Date(d);
+  if (r.getHours() >= FIM_DO_DIA) r.setDate(r.getDate() + 1);
+  r.setHours(HORA_AVISO, 0, 0, 0);
+  return r;
 }
 async function barraLigada() {
   try { return LN && (await LN.checkPermissions()).display === 'granted'; } catch { return false; }
@@ -1391,15 +1418,21 @@ async function agendarAvisos() {
     const agora = new Date();
     const cfg = avisosCfg();
     const lista = [];
-    Object.entries(cfg.lembretes).forEach(([d, txt]) => {
-      if (!String(txt).trim()) return;
-      lista.push({ ...NOTIF_BASE, id: 100 + Number(d), title: `📌 Lembrete de ${DIAS_SEMANA[d].toLowerCase()}`, body: String(txt).trim(),
-        schedule: { on: { weekday: Number(d) + 1, hour: 8, minute: 0 }, allowWhileIdle: true } });
-    });
+    // Lembretes dos próximos 7 dias, cada um às 8h do dia dele (refeitos sempre que o app abre ou muda algo).
+    for (let i = 0; i < 8; i++) {
+      const at = new Date(agora);
+      at.setDate(agora.getDate() + i);
+      at.setHours(HORA_AVISO, 0, 0, 0);
+      const txt = String(cfg.lembretes[at.getDay()] || '').trim();
+      if (!txt || at <= agora) continue;
+      lista.push({ ...NOTIF_BASE, id: 100 + i, title: `📌 Lembrete de ${DIAS_SEMANA[at.getDay()].toLowerCase()}`, body: txt,
+        schedule: { at, allowWhileIdle: true } });
+    }
     const devendo = (st.parciais || []).filter((x) => numero(x.devendo) > 0);
     if (devendo.length) {
       let at = new Date(Math.min(...devendo.map(lancadoEm)) + 24 * 3600000);
       if (at <= agora) at = proximaHora(9, agora);
+      at = paraODia(at);
       lista.push({ ...NOTIF_BASE, id: 200, title: '⏰ Vamo receber esses parcial', body: textoParcial(parciaisParados(at)), schedule: { at, allowWhileIdle: true } });
     }
     // Quinta e sexta da semana do fechamento, às 8h. Se já passou das 8h do dia, avisa agora (uma vez no dia).
@@ -1410,10 +1443,10 @@ async function agendarAvisos() {
       if (!r.vale(m)) return;
       let at = new Date(segunda);
       at.setDate(segunda.getDate() + r.dia - 1);
-      const dia = isoDe(at);
+      const dia = isoDia(at);
       let id = r.id;
       if (at <= agora) {
-        if (dia !== hoje() || avisado[r.id] === dia) return;
+        if (dia !== hoje() || avisado[r.id] === dia || !deDia(agora)) return; // de noite não avisa na hora
         at = new Date(Date.now() + 3000);
         id = r.id + 100; // fora da faixa que é cancelada a cada mudança: o aviso de agora não se perde
       }

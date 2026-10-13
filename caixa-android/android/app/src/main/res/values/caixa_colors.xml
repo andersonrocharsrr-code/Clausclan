@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Céu da introdução do foguete: fundo da abertura do Android e do app enquanto carrega. -->
+    <!-- Azul-escuro da introdução (a maquininha imprimindo a nota): fundo da abertura do Android e do app enquanto carrega. -->
     <color name="caixa_bg">#060A18</color>
 </resources>
