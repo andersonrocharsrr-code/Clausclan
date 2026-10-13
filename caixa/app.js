@@ -1120,6 +1120,7 @@ $('#btnNovo').addEventListener('click', () => {
 });
 
 $('#btnLista').addEventListener('click', () => {
+  pintarMeta();
   const salvos = ls.get(KEY_SALVOS, []);
   const box = $('#listaSalvos');
   box.innerHTML = salvos.length ? '' : '<p class="vazio">Nenhum fechamento salvo.</p>';
@@ -1217,8 +1218,6 @@ function pintarListaNotif() {
 function pintarNotificacoes() {
   pintarListaNotif();
   const cfg = avisosCfg();
-  $('[data-meta="notas"]').value = cfg.metaNotas;
-  $('[data-meta="valor"]').value = brl(cfg.metaValor);
   $('#notifDias').innerHTML = [1, 2, 3, 4, 5, 6, 0].map((d) => `<label>${DIAS_SEMANA[d]}
     <input data-lembrete="${d}" value="${esc(cfg.lembretes[d] || '')}" enterkeyhint="done" autocomplete="off" placeholder="Sem lembrete"></label>`).join('');
 }
@@ -1228,8 +1227,75 @@ function salvarAvisos(muda) {
   ls.set(KEY_AVISOS, a);
   pintarListaNotif(); pintarSino(); agendarDepois();
 }
-$('[data-meta="notas"]').addEventListener('input', (e) => salvarAvisos((a) => { a.metaNotas = Math.max(0, Math.round(numero(e.target.value))); }));
-$('[data-meta="valor"]').addEventListener('input', (e) => salvarAvisos((a) => { a.metaValor = numero(e.target.value); }));
+
+/* ---------- meta pessoal (☰ → 🎯) ---------- */
+// Meta da rota (da empresa): Capital 22 mil e 25 notas, Município 32 mil e 30 notas. A meta pessoal é a do vendedor
+// (começa igual à da rota). O app mostra quanto falta deixar e a média por nota para fechar até sexta; no sábado
+// e no domingo, se ainda não fechou, recalcula para o dia.
+const ROTAS = { capital: { valor: 22000, notas: 25 }, municipio: { valor: 32000, notas: 30 } };
+function metaPessoal() {
+  const a = ls.get(KEY_AVISOS, {});
+  const cfg = avisosCfg();
+  return { valor: a.pessoalValor ?? cfg.metaValor, notas: a.pessoalNotas ?? cfg.metaNotas };
+}
+function calculoMeta(agora = new Date()) {
+  const meta = metaPessoal();
+  const feitas = (st.feitas || []).reduce((t, f) => t + qtdFeita(f), 0);
+  const deixado = soma(st.feitas || []);
+  const faltaValor = Math.max(0, arred(meta.valor - deixado));
+  const faltaNotas = Math.max(0, meta.notas - feitas);
+  const dia = agora.getDay(); // 0 domingo … 6 sábado
+  const prazo = dia >= 1 && dia <= 5 ? 'até sexta-feira' : dia === 6 ? 'até sábado (hoje)' : 'até domingo (hoje)';
+  const dias = dia >= 1 && dia <= 5 ? 6 - dia : 1; // dias de trabalho que faltam, contando hoje
+  return { meta, feitas, deixado, faltaValor, faltaNotas, prazo, dias,
+    media: faltaNotas ? arred(faltaValor / faltaNotas) : 0 };
+}
+const notasTxt = (n) => `${n} ${n === 1 ? 'nota' : 'notas'}`;
+function pintarMeta() {
+  const c = calculoMeta();
+  const pct = (v, m) => Math.min(100, m ? Math.round((v / m) * 100) : 0);
+  let frase;
+  if (!c.faltaValor && !c.faltaNotas) frase = `<p class="meta-frase meta-frase--ok">🎉 Meta pessoal batida! ${R$(c.deixado)} em ${notasTxt(c.feitas)}.</p>`;
+  else if (!c.faltaNotas) frase = `<p class="meta-frase">As ${notasTxt(c.meta.notas)} já estão feitas. Falta deixar <b>${R$(c.faltaValor)}</b> para fechar com ${R$(c.meta.valor)} ${c.prazo}.</p>`;
+  else if (!c.faltaValor) frase = `<p class="meta-frase">O valor já passou de ${R$(c.meta.valor)}. Faltam <b>${notasTxt(c.faltaNotas)}</b> para fechar com ${notasTxt(c.meta.notas)} ${c.prazo}.</p>`;
+  else {
+    frase = `<p class="meta-frase">Você precisa deixar <b>${R$(c.faltaValor)}</b> e <b>${notasTxt(c.faltaNotas)}</b> pra fechar com ${R$(c.meta.valor)} e ${notasTxt(c.meta.notas)} ${c.prazo}.</p>
+      <p class="meta-media">São <b>${R$(c.media)}</b> de média por nota.</p>`;
+    if (c.dias > 1) frase += `<p class="muted small">Em ${c.dias} dias (contando hoje): cerca de ${R$(arred(c.faltaValor / c.dias))} e ${Math.ceil(c.faltaNotas / c.dias)} ${Math.ceil(c.faltaNotas / c.dias) === 1 ? 'nota' : 'notas'} por dia.</p>`;
+  }
+  const largura = (v, m) => `${pct(v, m)}%`;
+  $('#metaCalc').innerHTML = `${frase}
+    <div class="meta-barra"><div class="meta-barra__txt"><span>Valor deixado</span><b>${R$(c.deixado)} de ${R$(c.meta.valor)}</b></div>
+      <div class="meta-barra__fundo"><div style="width:${largura(c.deixado, c.meta.valor)}"></div></div></div>
+    <div class="meta-barra"><div class="meta-barra__txt"><span>Notas feitas</span><b>${c.feitas} de ${c.meta.notas}</b></div>
+      <div class="meta-barra__fundo"><div style="width:${largura(c.feitas, c.meta.notas)}"></div></div></div>`;
+  $('#metaResumo').textContent = c.faltaValor || c.faltaNotas ? `faltam ${R$(c.faltaValor)}` : 'batida ✓';
+}
+function pintarCamposMeta() {
+  const m = metaPessoal();
+  $('[data-pessoal="valor"]').value = brl(m.valor);
+  $('[data-pessoal="notas"]').value = m.notas;
+  const cfg = avisosCfg();
+  const rota = Object.keys(ROTAS).find((k) => ROTAS[k].valor === cfg.metaValor && ROTAS[k].notas === cfg.metaNotas);
+  $$('#metaRota input').forEach((r) => { r.checked = r.value === rota; });
+}
+function salvarMeta(muda) {
+  const a = ls.get(KEY_AVISOS, {});
+  muda(a);
+  ls.set(KEY_AVISOS, a);
+  pintarMeta(); pintarSino(); agendarDepois();
+}
+$('[data-pessoal="valor"]').addEventListener('input', (e) => salvarMeta((a) => { a.pessoalValor = numero(e.target.value); }));
+$('[data-pessoal="notas"]').addEventListener('input', (e) => salvarMeta((a) => { a.pessoalNotas = Math.max(0, Math.round(numero(e.target.value))); }));
+$$('#metaRota input').forEach((r) => r.addEventListener('change', () => salvarMeta((a) => {
+  a.metaValor = ROTAS[r.value].valor; a.metaNotas = ROTAS[r.value].notas;
+})));
+$('#btnMeta').addEventListener('click', () => {
+  pintarCamposMeta(); pintarMeta();
+  $('#dlgLista').close();
+  $('#dlgMeta').showModal();
+  document.activeElement?.blur(); // abre sem campo selecionado (sem teclado)
+});
 $('#notifDias').addEventListener('input', (e) => {
   const d = e.target.dataset.lembrete;
   if (d !== undefined) salvarAvisos((a) => { a.lembretes = { ...(a.lembretes || {}), [d]: e.target.value }; });

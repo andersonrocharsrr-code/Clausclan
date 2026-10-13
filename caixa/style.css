@@ -289,3 +289,17 @@ body{overflow-x:clip}
 .notif-ajustes summary{cursor:pointer;color:var(--accent);font-weight:600;padding:6px 0}
 .notif-dias{display:grid;gap:6px}
 .dlg-notif .row-actions{justify-content:flex-end;margin-top:12px}
+/* Meta pessoal */
+.meta-resumo{font-size:13px;font-weight:600;color:var(--muted)}
+.meta-sub{font-size:15px;margin:16px 0 6px}
+.meta-calc{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:12px;background:var(--accent-soft);border:1px solid var(--line)}
+.meta-frase{margin:0;font-size:16px;line-height:1.4}
+.meta-frase b,.meta-media b{color:var(--accent)}
+.meta-frase--ok{color:var(--pos);font-weight:700}
+.meta-media{margin:0;font-size:15px}
+.meta-barra__txt{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:4px}
+.meta-barra__txt b{color:var(--ink)}
+.meta-barra__fundo{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.meta-barra__fundo div{height:100%;background:var(--accent);border-radius:4px}
+.meta-rota .tipo-op span{padding:9px 0;line-height:1.2}
+.meta-rota small{display:block;font-weight:500;font-size:12px;opacity:.85}

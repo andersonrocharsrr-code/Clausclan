@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=40">
+  <link rel="stylesheet" href="style.css?v=41">
 </head>
 <body>
   <!-- Introdução ao abrir: contagem 3, 2, 1 e o foguete decola. Um toque pula. -->
@@ -422,11 +422,7 @@
       <p class="muted small notif-barra" id="notifBarra" hidden></p>
       <details class="notif-ajustes">
         <summary>Metas e lembretes</summary>
-        <p class="muted small">Meta da rota na semana: notas feitas (Ab + Rp) e valor deixado. Na quinta e na sexta o app avisa se estiver longe da meta.</p>
-        <div class="grid">
-          <label>Meta de notas<input data-meta="notas" inputmode="numeric" enterkeyhint="done" autocomplete="off"></label>
-          <label>Meta de valor (R$)<input data-meta="valor" data-money enterkeyhint="done" autocomplete="off"></label>
-        </div>
+        <p class="muted small">A meta da rota (Capital ou Município) e a sua meta pessoal ficam em ☰ → 🎯 Meta pessoal.</p>
         <p class="muted small">Lembrete de cada dia (aparece nas notificações no dia). Ex.: Hoje é dia de fazer 5 aberturas na Palma.</p>
         <div class="notif-dias" id="notifDias"></div>
       </details>
@@ -436,7 +432,28 @@
     </form>
   </dialog>
 
-  <dialog id="dlgCarregar" class="dlg-remover">
+  <dialog id="dlgMeta" class="dlg-notif">
+    <form method="dialog">
+      <h2>🎯 Meta pessoal</h2>
+      <div id="metaCalc" class="meta-calc"></div>
+      <h3 class="meta-sub">Minha meta da semana</h3>
+      <div class="grid">
+        <label>Valor deixado (R$)<input data-pessoal="valor" data-money enterkeyhint="done" autocomplete="off"></label>
+        <label>Notas feitas<input data-pessoal="notas" inputmode="numeric" enterkeyhint="done" autocomplete="off"></label>
+      </div>
+      <h3 class="meta-sub">Meta da rota</h3>
+      <div class="tipo-sel meta-rota" id="metaRota">
+        <label class="tipo-op"><input type="radio" name="rota" value="capital"><span>Capital<small>R$ 22 mil · 25 notas</small></span></label>
+        <label class="tipo-op"><input type="radio" name="rota" value="municipio"><span>Município<small>R$ 32 mil · 30 notas</small></span></label>
+      </div>
+      <p class="muted small">A meta da rota é a da empresa: os avisos de quinta e sexta usam ela. A meta pessoal é a sua, pode ser maior.</p>
+      <div class="row-actions">
+        <button class="btn btn--perigo" value="cancel">Fechar</button>
+      </div>
+    </form>
+  </dialog>
+
+    <dialog id="dlgCarregar" class="dlg-remover">
     <form method="dialog">
       <h2>Carregar último salvamento?</h2>
       <p id="carregarTxt" class="muted"></p>
@@ -450,6 +467,7 @@
   <dialog id="dlgLista">
     <form method="dialog">
       <button type="button" class="btn btn--notif" id="btnNotif">🔔 Notificações <span class="notif-qt" id="notifQt" hidden></span></button>
+      <button type="button" class="btn btn--notif" id="btnMeta">🎯 Meta pessoal <span class="meta-resumo" id="metaResumo"></span></button>
       <h2>Fechamentos salvos</h2>
       <div id="listaSalvos" class="salvos"></div>
       <div class="row-actions">
@@ -489,6 +507,6 @@
   </div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=46"></script>
+  <script type="module" src="app.js?v=47"></script>
 </body>
 </html>
