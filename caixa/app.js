@@ -549,6 +549,11 @@ $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
     : nome === 'feitas' ? null : ultima?.querySelector('input'))?.focus();
 }));
 
+/* ---------- janelas ---------- */
+// Com uma janela aberta (☰, ⚙, notificações, meta, folha…), a página de trás fica parada.
+const travarFundo = () => document.documentElement.classList.toggle('com-janela', !!document.querySelector('dialog[open]'));
+new MutationObserver(travarFundo).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['open'] });
+
 /* ---------- teclado do celular ---------- */
 // Enquanto digita: esconde a barra de totais de baixo (ela sobe junto com o teclado e tampa o campo)
 // e deixa o campo no meio da tela, logo acima do teclado. "Concluído/Enter" do teclado confirma o campo.
