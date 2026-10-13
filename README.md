@@ -260,6 +260,18 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   **Ver lançamentos (N)** abre a lista (mostra também quantas estão para conferir); ao adicionar uma linha ela abre sozinha.
 - Cada aba lembra onde a tela parou. **Puxar para atualizar**: no topo, arrastar para baixo e soltar recarrega o app
   (sem a introdução; dados, aba e posição continuam).
+- **Notificações** (☰ → 🔔; bolinha vermelha no ☰ quando há aviso): lembrete escrito para cada dia da semana;
+  "Vamo receber esses parcial" quando um pepino parcial passa de 24 h ainda devendo; na quinta, faltando mais de 7
+  notas e mais de R$ 6.000 para a meta da rota (Capital: 25 notas feitas / R$ 22.000 de valor deixado; Município:
+  30 notas / R$ 32.000; escolhida em ☰ → 🎯 Meta pessoal), "Vamos fechar essa rota até sexta-feira"; na sexta, faltando mais de 4 notas e R$ 3.000 ou mais, "Quero
+  essa rota fechada hoje". No APK os mesmos avisos vão para a **barra de notificações do celular** (plugin
+  `@capacitor/local-notifications`), agendados no Android: lembrete às 8h, quinta/sexta às 8h, parcial 24 h depois
+  de lançado e depois às 9h de cada dia enquanto estiver devendo. São refeitos a cada mudança nos lançamentos.
+- **Meta pessoal** (☰ → 🎯): o vendedor define a meta dele (valor deixado e notas feitas) e escolhe a meta da rota
+  (Capital ou Município). O app mostra quanto falta deixar, quantas notas faltam e a média por nota (sem centavos, arredondada para mais no próximo valor par) para fechar até
+  sexta-feira (e por dia); no sábado e no domingo, se ainda não fechou, recalcula para o dia. Barras de progresso.
+- **Salvar fechamento**: depois do primeiro salvamento, salva sozinho a cada 30 min se algo mudou; abrir um salvamento
+  pergunta antes ("Carregar último salvamento?").
 - **Introdução** ao abrir: contagem 3, 2, 1, o foguete decola e aparece "Fechamento de Caixa" (≈3 s; um toque pula).
 - **Remover lançamento**: o ✕ pergunta antes (mostra o tipo, o nome e o valor); depois de remover, uma barra embaixo
   oferece **Desfazer** por 3 segundos e devolve o lançamento ao mesmo lugar.

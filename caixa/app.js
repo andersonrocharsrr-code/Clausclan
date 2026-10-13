@@ -224,8 +224,11 @@ function calcular(s = st) {
 function salvarAtual() { sincronizar(); ls.set(KEY_ATUAL, st); }
 
 /* ---------- tela ---------- */
+// A bolinha das notificações (☰) acompanha os lançamentos; só depois que a parte de notificações carregou.
+var avisosProntos = false; // eslint-disable-line no-var
 function pintarTotais() {
   sincronizar();
+  if (avisosProntos) { pintarSino(); agendarDepois(); }
   const c = calcular();
   $$('[data-c]').forEach((el) => {
     const v = c[el.dataset.c];
@@ -1117,6 +1120,7 @@ $('#btnNovo').addEventListener('click', () => {
 });
 
 $('#btnLista').addEventListener('click', () => {
+  pintarMeta();
   const salvos = ls.get(KEY_SALVOS, []);
   const box = $('#listaSalvos');
   box.innerHTML = salvos.length ? '' : '<p class="vazio">Nenhum fechamento salvo.</p>';
@@ -1155,6 +1159,156 @@ $('#btnLista').addEventListener('click', () => {
   $('#dlgLista').showModal();
 });
 
+/* ---------- notificações (☰ → 🔔) ---------- */
+// Metas da rota e lembretes de cada dia ficam no aparelho e valem para todas as semanas.
+const KEY_AVISOS = 'caixa.avisos';
+const DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+function avisosCfg() {
+  const a = ls.get(KEY_AVISOS, {});
+  return { metaNotas: a.metaNotas ?? 25, metaValor: a.metaValor ?? 22000, lembretes: a.lembretes || {} };
+}
+// Quando o parcial foi lançado: guardado no lançamento; os antigos contam do fim do dia em que entraram.
+const lancadoEm = (x) => x.criadoEm || (x.dia ? new Date(x.dia + 'T23:59').getTime() : Date.now());
+// Pepinos parciais ainda devendo que, no momento "quando", passaram de 24 horas sem resolução.
+const parciaisParados = (quando) => (st.parciais || []).filter((x) => numero(x.devendo) > 0 && quando - lancadoEm(x) >= 24 * 3600000);
+const textoParcial = (l) => `${l.length} ${l.length > 1 ? 'notas parciais' : 'nota parcial'} sem resolução há mais de 24 horas · `
+  + `${R$(l.reduce((t, x) => t + numero(x.devendo), 0))} devendo.`;
+// Meta da rota: o que falta de notas feitas (Ab + Rp) e de valor deixado. Quinta e sexta avisam se estiver longe.
+function metaRota() {
+  const cfg = avisosCfg();
+  const feitas = (st.feitas || []).reduce((t, f) => t + qtdFeita(f), 0);
+  const faltaNotas = Math.max(0, cfg.metaNotas - feitas);
+  const faltaValor = Math.max(0, arred(cfg.metaValor - soma(st.feitas || [])));
+  return { faltaNotas, faltaValor,
+    texto: `Faltam ${faltaNotas} ${faltaNotas === 1 ? 'nota' : 'notas'} e ${R$(faltaValor)} para ${cfg.metaNotas} notas e ${R$(cfg.metaValor)}.` };
+}
+const REGRAS_ROTA = [
+  { dia: 4, id: 301, tipo: 'meta', icone: '🚩', titulo: 'Vamos fechar essa rota até sexta-feira', vale: (m) => m.faltaNotas > 7 && m.faltaValor > 6000 },
+  { dia: 5, id: 302, tipo: 'urgente', icone: '🔥', titulo: 'Quero essa rota fechada hoje', vale: (m) => m.faltaNotas > 4 && m.faltaValor >= 3000 },
+];
+function notificacoes(agora = new Date()) {
+  const cfg = avisosCfg();
+  const lista = [];
+  const lembrete = (cfg.lembretes[agora.getDay()] || '').trim();
+  if (lembrete) lista.push({ tipo: 'lembrete', icone: '📌', titulo: `Lembrete de ${DIAS_SEMANA[agora.getDay()].toLowerCase()}`, texto: lembrete });
+  const parados = parciaisParados(agora);
+  if (parados.length) lista.push({ tipo: 'alerta', icone: '⏰', titulo: 'Vamo receber esses parcial', texto: textoParcial(parados) });
+  const m = metaRota();
+  REGRAS_ROTA.forEach((r) => { if (agora.getDay() === r.dia && r.vale(m)) lista.push({ ...r, texto: m.texto }); });
+  return lista;
+}
+// Bolinha no ☰ quando há notificação.
+function pintarSino() {
+  const qt = notificacoes().length;
+  $('#sinoPonto').hidden = !qt;
+  $('#notifQt').hidden = !qt;
+  $('#notifQt').textContent = qt;
+}
+function pintarListaNotif() {
+  const lista = notificacoes();
+  const box = $('#listaNotif');
+  box.innerHTML = lista.length ? '' : '<p class="vazio">Nenhuma notificação agora. Tudo em dia! ✓</p>';
+  lista.forEach((n) => {
+    const el = document.createElement('div');
+    el.className = `notif notif--${n.tipo}`;
+    el.innerHTML = `<span class="notif__icone">${n.icone}</span><div><b>${esc(n.titulo)}</b><p>${esc(n.texto)}</p></div>`;
+    box.appendChild(el);
+  });
+}
+function pintarNotificacoes() {
+  pintarListaNotif();
+  const cfg = avisosCfg();
+  $('#notifDias').innerHTML = [1, 2, 3, 4, 5, 6, 0].map((d) => `<label>${DIAS_SEMANA[d]}
+    <input data-lembrete="${d}" value="${esc(cfg.lembretes[d] || '')}" enterkeyhint="done" autocomplete="off" placeholder="Sem lembrete"></label>`).join('');
+}
+function salvarAvisos(muda) {
+  const a = ls.get(KEY_AVISOS, {});
+  muda(a);
+  ls.set(KEY_AVISOS, a);
+  pintarListaNotif(); pintarSino(); agendarDepois();
+}
+
+/* ---------- meta pessoal (☰ → 🎯) ---------- */
+// Meta da rota (da empresa): Capital 22 mil e 25 notas, Município 32 mil e 30 notas. A meta pessoal é a do vendedor
+// (começa igual à da rota). O app mostra quanto falta deixar e a média por nota para fechar até sexta; no sábado
+// e no domingo, se ainda não fechou, recalcula para o dia.
+const ROTAS = { capital: { valor: 22000, notas: 25 }, municipio: { valor: 32000, notas: 30 } };
+function metaPessoal() {
+  const a = ls.get(KEY_AVISOS, {});
+  const cfg = avisosCfg();
+  return { valor: a.pessoalValor ?? cfg.metaValor, notas: a.pessoalNotas ?? cfg.metaNotas };
+}
+function calculoMeta(agora = new Date()) {
+  const meta = metaPessoal();
+  const feitas = (st.feitas || []).reduce((t, f) => t + qtdFeita(f), 0);
+  const deixado = soma(st.feitas || []);
+  const faltaValor = Math.max(0, arred(meta.valor - deixado));
+  const faltaNotas = Math.max(0, meta.notas - feitas);
+  const dia = agora.getDay(); // 0 domingo … 6 sábado
+  const prazo = dia >= 1 && dia <= 5 ? 'até sexta-feira' : dia === 6 ? 'até sábado (hoje)' : 'até domingo (hoje)';
+  const dias = dia >= 1 && dia <= 5 ? 6 - dia : 1; // dias de trabalho que faltam, contando hoje
+  return { meta, feitas, deixado, faltaValor, faltaNotas, prazo, dias,
+    // Média por nota sem centavos e sempre para mais, no próximo valor par (as notas são preço cheio): 770,80 → 772.
+    media: faltaNotas ? Math.ceil(faltaValor / faltaNotas / 2) * 2 : 0 };
+}
+const notasTxt = (n) => `${n} ${n === 1 ? 'nota' : 'notas'}`;
+function pintarMeta() {
+  const c = calculoMeta();
+  const pct = (v, m) => Math.min(100, m ? Math.round((v / m) * 100) : 0);
+  let frase;
+  if (!c.faltaValor && !c.faltaNotas) frase = `<p class="meta-frase meta-frase--ok">🎉 Meta pessoal batida! ${R$(c.deixado)} em ${notasTxt(c.feitas)}.</p>`;
+  else if (!c.faltaNotas) frase = `<p class="meta-frase">As ${notasTxt(c.meta.notas)} já estão feitas. Falta deixar <b>${R$(c.faltaValor)}</b> para fechar com ${R$(c.meta.valor)} ${c.prazo}.</p>`;
+  else if (!c.faltaValor) frase = `<p class="meta-frase">O valor já passou de ${R$(c.meta.valor)}. Faltam <b>${notasTxt(c.faltaNotas)}</b> para fechar com ${notasTxt(c.meta.notas)} ${c.prazo}.</p>`;
+  else {
+    frase = `<p class="meta-frase">Você precisa deixar <b>${R$(c.faltaValor)}</b> e <b>${notasTxt(c.faltaNotas)}</b> pra fechar com ${R$(c.meta.valor)} e ${notasTxt(c.meta.notas)} ${c.prazo}.</p>
+      <p class="meta-media">São <b>${R$(c.media)}</b> de média por nota.</p>`;
+    if (c.dias > 1) frase += `<p class="muted small">Em ${c.dias} dias (contando hoje): cerca de ${R$(Math.ceil(c.faltaValor / c.dias))} e ${Math.ceil(c.faltaNotas / c.dias)} ${Math.ceil(c.faltaNotas / c.dias) === 1 ? 'nota' : 'notas'} por dia.</p>`;
+  }
+  const largura = (v, m) => `${pct(v, m)}%`;
+  $('#metaCalc').innerHTML = `${frase}
+    <div class="meta-barra"><div class="meta-barra__txt"><span>Valor deixado</span><b>${R$(c.deixado)} de ${R$(c.meta.valor)}</b></div>
+      <div class="meta-barra__fundo"><div style="width:${largura(c.deixado, c.meta.valor)}"></div></div></div>
+    <div class="meta-barra"><div class="meta-barra__txt"><span>Notas feitas</span><b>${c.feitas} de ${c.meta.notas}</b></div>
+      <div class="meta-barra__fundo"><div style="width:${largura(c.feitas, c.meta.notas)}"></div></div></div>`;
+  $('#metaResumo').textContent = c.faltaValor || c.faltaNotas ? `faltam ${R$(c.faltaValor)}` : 'batida ✓';
+}
+function pintarCamposMeta() {
+  const m = metaPessoal();
+  $('[data-pessoal="valor"]').value = brl(m.valor);
+  $('[data-pessoal="notas"]').value = m.notas;
+  const cfg = avisosCfg();
+  const rota = Object.keys(ROTAS).find((k) => ROTAS[k].valor === cfg.metaValor && ROTAS[k].notas === cfg.metaNotas);
+  $$('#metaRota input').forEach((r) => { r.checked = r.value === rota; });
+}
+function salvarMeta(muda) {
+  const a = ls.get(KEY_AVISOS, {});
+  muda(a);
+  ls.set(KEY_AVISOS, a);
+  pintarMeta(); pintarSino(); agendarDepois();
+}
+$('[data-pessoal="valor"]').addEventListener('input', (e) => salvarMeta((a) => { a.pessoalValor = numero(e.target.value); }));
+$('[data-pessoal="notas"]').addEventListener('input', (e) => salvarMeta((a) => { a.pessoalNotas = Math.max(0, Math.round(numero(e.target.value))); }));
+$$('#metaRota input').forEach((r) => r.addEventListener('change', () => salvarMeta((a) => {
+  a.metaValor = ROTAS[r.value].valor; a.metaNotas = ROTAS[r.value].notas;
+})));
+$('#btnMeta').addEventListener('click', () => {
+  pintarCamposMeta(); pintarMeta();
+  $('#dlgLista').close();
+  $('#dlgMeta').showModal();
+  document.activeElement?.blur(); // abre sem campo selecionado (sem teclado)
+});
+$('#notifDias').addEventListener('input', (e) => {
+  const d = e.target.dataset.lembrete;
+  if (d !== undefined) salvarAvisos((a) => { a.lembretes = { ...(a.lembretes || {}), [d]: e.target.value }; });
+});
+$('#btnNotif').addEventListener('click', () => {
+  pintarNotificacoes(); pintarBarra();
+  $('#dlgLista').close();
+  $('#dlgNotif').showModal();
+});
+setInterval(pintarSino, 60000); // a virada do dia e as 24 h dos parciais
+document.addEventListener('visibilitychange', () => { if (!document.hidden) pintarSino(); });
+
 /* ---------- app Android (APK feito com Capacitor, pasta caixa-android/) ---------- */
 // No APK o app roda num WebView sem o Chrome: compartilhar, salvar arquivo e o botão "voltar" usam os plugins.
 const Cap = window.Capacitor;
@@ -1183,6 +1337,95 @@ if (NATIVO) {
     plugin('App').minimizeApp();
   });
 }
+
+// Avisos na barra de notificações do celular (só no APK): agendados no Android, chegam com o app fechado.
+// São refeitos a cada mudança: lembrete de cada dia às 8h, o parcial 24 h depois de lançado (depois às 9h de
+// cada dia enquanto estiver devendo) e a meta da rota na quinta e na sexta às 8h.
+const LN = NATIVO ? plugin('LocalNotifications') : null;
+const KEY_AVISADO = 'caixa.avisado';
+const NOTIF_BASE = { channelId: 'avisos', smallIcon: 'ic_stat_caixa', iconColor: '#5b8cff', autoCancel: true };
+const isoDe = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+function proximaHora(h, base = new Date()) {
+  const d = new Date(base);
+  d.setHours(h, 0, 0, 0);
+  if (d <= base) d.setDate(d.getDate() + 1);
+  return d;
+}
+async function barraLigada() {
+  try { return LN && (await LN.checkPermissions()).display === 'granted'; } catch { return false; }
+}
+async function agendarAvisos() {
+  if (!(await barraLigada())) return;
+  try {
+    const { notifications: pend } = await LN.getPending();
+    const nossos = pend.filter((n) => n.id >= 100 && n.id < 400).map((n) => ({ id: n.id }));
+    if (nossos.length) await LN.cancel({ notifications: nossos });
+    const agora = new Date();
+    const cfg = avisosCfg();
+    const lista = [];
+    Object.entries(cfg.lembretes).forEach(([d, txt]) => {
+      if (!String(txt).trim()) return;
+      lista.push({ ...NOTIF_BASE, id: 100 + Number(d), title: `📌 Lembrete de ${DIAS_SEMANA[d].toLowerCase()}`, body: String(txt).trim(),
+        schedule: { on: { weekday: Number(d) + 1, hour: 8, minute: 0 }, allowWhileIdle: true } });
+    });
+    const devendo = (st.parciais || []).filter((x) => numero(x.devendo) > 0);
+    if (devendo.length) {
+      let at = new Date(Math.min(...devendo.map(lancadoEm)) + 24 * 3600000);
+      if (at <= agora) at = proximaHora(9, agora);
+      lista.push({ ...NOTIF_BASE, id: 200, title: '⏰ Vamo receber esses parcial', body: textoParcial(parciaisParados(at)), schedule: { at, allowWhileIdle: true } });
+    }
+    // Quinta e sexta da semana do fechamento, às 8h. Se já passou das 8h do dia, avisa agora (uma vez no dia).
+    const m = metaRota();
+    const avisado = ls.get(KEY_AVISADO, {});
+    const segunda = new Date(semanaDe(st.data).ini + 'T08:00');
+    REGRAS_ROTA.forEach((r) => {
+      if (!r.vale(m)) return;
+      let at = new Date(segunda);
+      at.setDate(segunda.getDate() + r.dia - 1);
+      const dia = isoDe(at);
+      let id = r.id;
+      if (at <= agora) {
+        if (dia !== hoje() || avisado[r.id] === dia) return;
+        at = new Date(Date.now() + 3000);
+        id = r.id + 100; // fora da faixa que é cancelada a cada mudança: o aviso de agora não se perde
+      }
+      avisado[r.id] = dia;
+      lista.push({ ...NOTIF_BASE, id, title: `${r.icone} ${r.titulo}`, body: m.texto, schedule: { at, allowWhileIdle: true } });
+    });
+    ls.set(KEY_AVISADO, avisado);
+    if (lista.length) await LN.schedule({ notifications: lista });
+  } catch { /* sem permissão ou plugin indisponível: fica só dentro do app */ }
+}
+let agendarTimer = 0;
+function agendarDepois() { if (!LN) return; clearTimeout(agendarTimer); agendarTimer = setTimeout(agendarAvisos, 1500); }
+async function pintarBarra() {
+  const el = $('#notifBarra');
+  if (!LN) { el.hidden = true; return; }
+  el.hidden = false;
+  const ligada = await barraLigada();
+  el.innerHTML = ligada ? '✓ Avisos na barra de notificações do celular ligados.'
+    : '<button type="button" class="btn btn--primary" id="btnLigarBarra">Ligar avisos na barra do celular</button>';
+  $('#btnLigarBarra')?.addEventListener('click', ligarBarra);
+}
+async function ligarBarra() {
+  try {
+    const p = await LN.requestPermissions();
+    if (p.display !== 'granted') toast('Sem permissão: libere as notificações do Caixa nas configurações do celular.');
+  } catch { /* nada */ }
+  pintarBarra(); agendarAvisos();
+}
+if (LN) {
+  LN.createChannel({ id: 'avisos', name: 'Avisos do caixa', description: 'Lembretes do dia, pepino parcial e meta da rota',
+    importance: 4, visibility: 1, vibration: true }).catch(() => {});
+  // Tocar na notificação abre a lista de notificações do app.
+  LN.addListener('localNotificationActionPerformed', () => { pintarNotificacoes(); pintarBarra(); $('#dlgNotif').showModal(); });
+  // Na primeira vez pede a permissão (Android 13+ pergunta ao usuário).
+  if (!ls.get('caixa.barraPedida', false)) { ls.set('caixa.barraPedida', true); ligarBarra(); } else agendarDepois();
+  document.addEventListener('visibilitychange', () => { if (document.hidden) agendarAvisos(); });
+}
+
+avisosProntos = true;
+pintarSino();
 
 /* ---------- relatório do dia ---------- */
 // O relatório separa "do dia" e "total": notas (dia em que a foto foi lida/lançada), pepinos, antecipadas,
@@ -1375,7 +1618,7 @@ function previaDevendo() {
 }
 ['valorNota', 'valor', 'devolucao'].forEach((k) => campoParc(k).addEventListener('input', previaDevendo));
 $('#btnLancarParcial').addEventListener('click', () => {
-  const x = { id: uid(), dia: relDia(), ...lerParc() };
+  const x = { id: uid(), dia: relDia(), criadoEm: Date.now(), ...lerParc() };
   if (!(x.valorNota > 0)) { toast('Digite o valor da nota.'); campoParc('valorNota').focus(); return; }
   x.devendo = devendoCalculado(x);
   st.parciais.push(x);

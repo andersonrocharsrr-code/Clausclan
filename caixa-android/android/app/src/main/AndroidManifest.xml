@@ -33,6 +33,8 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Avisos na barra de notificações (lembretes, pepino parcial e meta da rota) -->
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Android 11+: sem isto o app não "enxerga" o app de câmera e cai direto na galeria. -->
     <queries>
         <intent>

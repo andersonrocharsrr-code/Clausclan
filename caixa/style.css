@@ -270,3 +270,36 @@ body{overflow-x:clip}
 .tipo-op input:checked+span{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .auto-salvo{margin:4px 0 0;text-align:center}
 #cardParcial{scroll-margin-top:12px}
+/* Notificações: bolinha no ☰, botão no topo da lista de salvos e os avisos. */
+.icon-btn--sino{position:relative}
+.sino-ponto{position:absolute;top:5px;right:5px;width:10px;height:10px;border-radius:50%;background:var(--neg);border:2px solid var(--card)}
+.btn--notif{width:100%;justify-content:space-between;display:flex;align-items:center;margin-bottom:12px}
+.notif-qt{min-width:24px;height:24px;padding:0 7px;border-radius:12px;background:var(--neg);color:#fff;font-size:13px;font-weight:700;display:inline-grid;place-items:center}
+.notifs{display:flex;flex-direction:column;gap:8px;max-height:55vh;overflow:auto;margin:6px 0 10px}
+.notif{display:flex;gap:10px;align-items:flex-start;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--bg)}
+.notif b{display:block;font-size:16px}
+.notif p{margin:3px 0 0;font-size:13px;color:var(--muted)}
+.notif__icone{font-size:22px;line-height:1.1}
+.notif--lembrete{border-left:4px solid var(--accent)}
+.notif--alerta{border-left:4px solid var(--warn);background:var(--warn-soft)}
+.notif--meta{border-left:4px solid var(--warn)}
+.notif--urgente{border-left:4px solid var(--neg)}
+.notif--urgente b{color:var(--neg)}
+.notif-ajustes{border-top:1px solid var(--line);padding-top:8px}
+.notif-ajustes summary{cursor:pointer;color:var(--accent);font-weight:600;padding:6px 0}
+.notif-dias{display:grid;gap:6px}
+.dlg-notif .row-actions{justify-content:flex-end;margin-top:12px}
+/* Meta pessoal */
+.meta-resumo{font-size:13px;font-weight:600;color:var(--muted)}
+.meta-sub{font-size:15px;margin:16px 0 6px}
+.meta-calc{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:12px;background:var(--accent-soft);border:1px solid var(--line)}
+.meta-frase{margin:0;font-size:16px;line-height:1.4}
+.meta-frase b,.meta-media b{color:var(--accent)}
+.meta-frase--ok{color:var(--pos);font-weight:700}
+.meta-media{margin:0;font-size:15px}
+.meta-barra__txt{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:4px}
+.meta-barra__txt b{color:var(--ink)}
+.meta-barra__fundo{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.meta-barra__fundo div{height:100%;background:var(--accent);border-radius:4px}
+.meta-rota .tipo-op span{padding:9px 0;line-height:1.2}
+.meta-rota small{display:block;font-weight:500;font-size:12px;opacity:.85}
