@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=38">
+  <link rel="stylesheet" href="style.css?v=39">
 </head>
 <body>
   <!-- Introdução ao abrir: contagem 3, 2, 1 e o foguete decola. Um toque pula. -->
@@ -156,7 +156,7 @@
         <strong class="total" data-c="pepinoParcial"></strong>
       </div>
       <p class="muted small">O pepino parcial (recebido, devolução e o que ficou devendo) é lançado na aba Relatório. O recebido entra aqui no recebimento.</p>
-      <button class="btn" data-ir="rel">Lançar pepino parcial ›</button>
+      <button class="btn" data-ir="rel" data-alvo="cardParcial">Lançar pepino parcial ›</button>
     </section>
 
     <section class="card">
@@ -286,6 +286,7 @@
 
     <section class="card actions-final">
       <button class="btn btn--primary" id="btnSalvar">💾 Salvar fechamento</button>
+      <p class="muted small auto-salvo" id="autoSalvo" hidden></p>
       <button class="btn" id="btnWhats">💬 Mandar resumo</button>
       <button class="btn btn--ghost" id="btnNovo">＋ Novo fechamento</button>
     </section>
@@ -305,7 +306,7 @@
       </div>
     </section>
 
-    <section class="card">
+    <section class="card" id="cardParcial">
       <div class="card__head">
         <h2>Pepino parcial</h2>
         <small class="parc-devendo" id="parcDevendo"></small>
@@ -414,12 +415,23 @@
     </form>
   </dialog>
 
+  <dialog id="dlgCarregar" class="dlg-remover">
+    <form method="dialog">
+      <h2>Carregar último salvamento?</h2>
+      <p id="carregarTxt" class="muted"></p>
+      <div class="row-actions">
+        <button class="btn" value="nao">Cancelar</button>
+        <button class="btn btn--primary" value="sim">Carregar</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="dlgLista">
     <form method="dialog">
       <h2>Fechamentos salvos</h2>
       <div id="listaSalvos" class="salvos"></div>
       <div class="row-actions">
-        <button class="btn" value="cancel">Fechar</button>
+        <button class="btn btn--perigo" value="cancel">Fechar</button>
       </div>
     </form>
   </dialog>
@@ -455,6 +467,6 @@
   </div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=43"></script>
+  <script type="module" src="app.js?v=44"></script>
 </body>
 </html>

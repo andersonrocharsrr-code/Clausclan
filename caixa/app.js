@@ -523,7 +523,15 @@ function abrirAba(nome) {
   scrollTo({ top: posicoes[nome] || 0 });
 }
 $$('[data-tabbtn]').forEach((b) => b.addEventListener('click', () => abrirAba(b.dataset.tabbtn)));
-$$('[data-ir]').forEach((b) => b.addEventListener('click', () => abrirAba(b.dataset.ir)));
+// "Lançar pepino parcial ›": abre o Relatório já no quadro do pepino parcial, sem selecionar campo nenhum.
+$$('[data-ir]').forEach((b) => b.addEventListener('click', () => {
+  abrirAba(b.dataset.ir);
+  const alvo = b.dataset.alvo && document.getElementById(b.dataset.alvo);
+  if (!alvo) return;
+  document.activeElement?.blur();
+  const topo = $('.topo')?.getBoundingClientRect().bottom || 0;
+  scrollTo({ top: alvo.getBoundingClientRect().top + scrollY - topo - 12 });
+}));
 
 $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
   const nome = b.dataset.add;
@@ -1069,16 +1077,42 @@ function guardar(f) {
   salvos.unshift(structuredClone(f));
   ls.set(KEY_SALVOS, salvos);
 }
+// Depois de salvar o fechamento, ele se salva sozinho a cada 30 minutos se algo mudou (nota, valor, qualquer coisa).
+const KEY_AUTO = 'caixa.autoSalvar';
+const AUTO_MIN = 30;
+const horaCurta = (t) => new Date(t).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+function pintarAutoSalvo() {
+  const a = ls.get(KEY_AUTO, null);
+  const el = $('#autoSalvo');
+  el.hidden = !(a && a.id === st.id);
+  if (!el.hidden) el.textContent = `Salvamento automático a cada ${AUTO_MIN} min quando houver mudança · último às ${horaCurta(a.em)}`;
+}
 function salvarFechamento() {
   guardar(st);
-  toast('Fechamento salvo.');
+  ls.set(KEY_AUTO, { id: st.id, em: Date.now(), copia: JSON.stringify(st) });
+  pintarAutoSalvo();
+  toast('Fechamento salvo. Agora ele se salva sozinho a cada 30 minutos se houver mudança.');
 }
 $('#btnSalvar').addEventListener('click', salvarFechamento);
+function autoSalvar() {
+  const a = ls.get(KEY_AUTO, null);
+  if (!a || a.id !== st.id || Date.now() - a.em < AUTO_MIN * 60000) return;
+  sincronizar();
+  const copia = JSON.stringify(st);
+  if (copia === a.copia) return; // nada mudou desde o último salvamento
+  guardar(st);
+  ls.set(KEY_AUTO, { id: st.id, em: Date.now(), copia });
+  pintarAutoSalvo();
+  toast('Fechamento salvo automaticamente.');
+}
+setInterval(autoSalvar, 60000);
+pintarAutoSalvo();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) autoSalvar(); });
 
 $('#btnNovo').addEventListener('click', () => {
   if (!confirm('Começar um fechamento novo? Salve este antes se quiser guardar.')) return;
   st = novo();
-  salvarAtual(); pintarTudo();
+  salvarAtual(); pintarTudo(); pintarAutoSalvo();
   scrollTo({ top: 0, behavior: 'smooth' });
 });
 
@@ -1096,10 +1130,20 @@ $('#btnLista').addEventListener('click', () => {
         <span>${esc(s.nome)} · ${esc(s.cidade)} — Recebimento ${R$(c.recebimento)}</span>
       </button>
       <button type="button" class="item__del" aria-label="Apagar">✕</button>`;
+    // Um toque sem querer não troca o fechamento: pergunta antes de carregar.
     row.querySelector('.salvo__abrir').addEventListener('click', () => {
-      st = normalizar(structuredClone(s));
-      salvarAtual(); pintarTudo();
-      $('#dlgLista').close();
+      const dlg = $('#dlgCarregar');
+      $('#carregarTxt').textContent = `${d} · Semana ${s.semana || '-'} — Recebimento ${R$(c.recebimento)}. `
+        + 'O que está na tela agora será trocado por este salvamento.';
+      dlg.returnValue = '';
+      dlg.onclose = () => {
+        if (dlg.returnValue !== 'sim') return;
+        st = normalizar(structuredClone(s));
+        salvarAtual(); pintarTudo(); pintarAutoSalvo();
+        $('#dlgLista').close();
+        toast('Salvamento carregado.');
+      };
+      dlg.showModal();
     });
     row.querySelector('.item__del').addEventListener('click', () => {
       if (!confirm('Apagar este fechamento salvo?')) return;
