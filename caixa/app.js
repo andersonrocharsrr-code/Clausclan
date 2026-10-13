@@ -549,6 +549,13 @@ $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
     : nome === 'feitas' ? null : ultima?.querySelector('input'))?.focus();
 }));
 
+/* ---------- barra de totais ---------- */
+// O espaço no fim da página acompanha a altura real da barra de baixo (muda com a barra de navegação do celular).
+const barra = $('.bar');
+if (barra && 'ResizeObserver' in window) {
+  new ResizeObserver(() => document.documentElement.style.setProperty('--bar-h', `${barra.offsetHeight}px`)).observe(barra);
+}
+
 /* ---------- janelas ---------- */
 // Com uma janela aberta (☰, ⚙, notificações, meta, folha…), a página de trás fica parada.
 const travarFundo = () => document.documentElement.classList.toggle('com-janela', !!document.querySelector('dialog[open]'));
