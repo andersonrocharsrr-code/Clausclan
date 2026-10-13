@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=39">
+  <link rel="stylesheet" href="style.css?v=40">
 </head>
 <body>
   <!-- Introdução ao abrir: contagem 3, 2, 1 e o foguete decola. Um toque pula. -->
@@ -48,7 +48,7 @@
       </div>
     </div>
     <div class="top__actions">
-      <button class="icon-btn" id="btnLista" title="Fechamentos salvos" aria-label="Fechamentos salvos">☰</button>
+      <button class="icon-btn icon-btn--sino" id="btnLista" title="Fechamentos salvos e notificações" aria-label="Fechamentos salvos e notificações">☰<span class="sino-ponto" id="sinoPonto" hidden></span></button>
       <button class="icon-btn" id="btnConfig" title="Configurar" aria-label="Configurar">⚙</button>
     </div>
   </header>
@@ -415,6 +415,26 @@
     </form>
   </dialog>
 
+  <dialog id="dlgNotif" class="dlg-notif">
+    <form method="dialog">
+      <h2>🔔 Notificações</h2>
+      <div id="listaNotif" class="notifs"></div>
+      <details class="notif-ajustes">
+        <summary>Metas e lembretes</summary>
+        <p class="muted small">Meta da rota na semana: notas feitas (Ab + Rp) e valor deixado. Na quinta e na sexta o app avisa se estiver longe da meta.</p>
+        <div class="grid">
+          <label>Meta de notas<input data-meta="notas" inputmode="numeric" enterkeyhint="done" autocomplete="off"></label>
+          <label>Meta de valor (R$)<input data-meta="valor" data-money enterkeyhint="done" autocomplete="off"></label>
+        </div>
+        <p class="muted small">Lembrete de cada dia (aparece nas notificações no dia). Ex.: Hoje é dia de fazer 5 aberturas na Palma.</p>
+        <div class="notif-dias" id="notifDias"></div>
+      </details>
+      <div class="row-actions">
+        <button class="btn btn--perigo" value="cancel">Fechar</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="dlgCarregar" class="dlg-remover">
     <form method="dialog">
       <h2>Carregar último salvamento?</h2>
@@ -428,6 +448,7 @@
 
   <dialog id="dlgLista">
     <form method="dialog">
+      <button type="button" class="btn btn--notif" id="btnNotif">🔔 Notificações <span class="notif-qt" id="notifQt" hidden></span></button>
       <h2>Fechamentos salvos</h2>
       <div id="listaSalvos" class="salvos"></div>
       <div class="row-actions">
@@ -467,6 +488,6 @@
   </div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=44"></script>
+  <script type="module" src="app.js?v=45"></script>
 </body>
 </html>
