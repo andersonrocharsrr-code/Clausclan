@@ -266,13 +266,13 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   30 notas / R$ 32.000; escolhida em ☰ → 🎯 Meta pessoal), "Vamos fechar essa rota até sexta-feira"; na sexta, faltando mais de 4 notas e R$ 3.000 ou mais, "Quero
   essa rota fechada hoje". No APK os mesmos avisos vão para a **barra de notificações do celular** (plugin
   `@capacitor/local-notifications`), agendados no Android: lembrete às 8h, quinta/sexta às 8h, parcial 24 h depois
-  de lançado e depois às 9h de cada dia enquanto estiver devendo. São refeitos a cada mudança nos lançamentos.
+  de lançado e depois às 9h de cada dia enquanto estiver devendo; só entre 8h e 18h (o que cairia de noite vai para as 8h seguintes). São refeitos a cada mudança nos lançamentos.
 - **Meta pessoal** (☰ → 🎯): o vendedor define a meta dele (valor deixado e notas feitas) e escolhe a meta da rota
   (Capital ou Município). O app mostra quanto falta deixar, quantas notas faltam e a média por nota (sem centavos, arredondada para mais no próximo valor par) para fechar até
   sexta-feira (e por dia); no sábado e no domingo, se ainda não fechou, recalcula para o dia. Barras de progresso.
 - **Salvar fechamento**: depois do primeiro salvamento, salva sozinho a cada 30 min se algo mudou; abrir um salvamento
   pergunta antes ("Carregar último salvamento?").
-- **Introdução** ao abrir: contagem 3, 2, 1, o foguete decola e aparece "Fechamento de Caixa" (≈3 s; um toque pula).
+- **Introdução** ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO ✓" bate e aparece "Fechamento de Caixa" (≈3 s; um toque pula).
 - **Remover lançamento**: o ✕ pergunta antes (mostra o tipo, o nome e o valor); depois de remover, uma barra embaixo
   oferece **Desfazer** por 3 segundos e devolve o lançamento ao mesmo lugar.
 - **Lançamentos travados**: depois de lançada, a linha só muda em **Editar** → **✓ Lançar** (sair sem lançar desfaz). Linha nova

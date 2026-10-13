@@ -1396,6 +1396,16 @@ function proximaHora(h, base = new Date()) {
   if (d <= base) d.setDate(d.getDate() + 1);
   return d;
 }
+// Avisos no celular só durante o dia (8h às 18h): o que cairia de noite ou de madrugada passa para as 8h seguintes.
+const FIM_DO_DIA = 18;
+const deDia = (d) => d.getHours() >= HORA_AVISO && d.getHours() < FIM_DO_DIA;
+function paraODia(d) {
+  if (deDia(d)) return d;
+  const r = new Date(d);
+  if (r.getHours() >= FIM_DO_DIA) r.setDate(r.getDate() + 1);
+  r.setHours(HORA_AVISO, 0, 0, 0);
+  return r;
+}
 async function barraLigada() {
   try { return LN && (await LN.checkPermissions()).display === 'granted'; } catch { return false; }
 }
@@ -1422,6 +1432,7 @@ async function agendarAvisos() {
     if (devendo.length) {
       let at = new Date(Math.min(...devendo.map(lancadoEm)) + 24 * 3600000);
       if (at <= agora) at = proximaHora(9, agora);
+      at = paraODia(at);
       lista.push({ ...NOTIF_BASE, id: 200, title: '⏰ Vamo receber esses parcial', body: textoParcial(parciaisParados(at)), schedule: { at, allowWhileIdle: true } });
     }
     // Quinta e sexta da semana do fechamento, às 8h. Se já passou das 8h do dia, avisa agora (uma vez no dia).
@@ -1435,7 +1446,7 @@ async function agendarAvisos() {
       const dia = isoDia(at);
       let id = r.id;
       if (at <= agora) {
-        if (dia !== hoje() || avisado[r.id] === dia) return;
+        if (dia !== hoje() || avisado[r.id] === dia || !deDia(agora)) return; // de noite não avisa na hora
         at = new Date(Date.now() + 3000);
         id = r.id + 100; // fora da faixa que é cancelada a cada mudança: o aviso de agora não se perde
       }

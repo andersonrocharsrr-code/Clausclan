@@ -12,27 +12,24 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=49">
+  <link rel="stylesheet" href="style.css?v=50">
 </head>
 <body>
-  <!-- Introdução ao abrir: contagem 3, 2, 1 e o foguete decola. Um toque pula. -->
+  <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
   <div id="intro" class="intro" aria-hidden="true">
-    <div class="intro__estrelas"></div>
-    <div class="intro__num n3">3</div><div class="intro__num n2">2</div><div class="intro__num n1">1</div>
-    <div class="intro__rastro"></div>
-    <div class="intro__fog">
-      <svg viewBox="0 0 64 120" width="64" height="120">
-        <g class="chama"><path d="M24 92 Q32 124 40 92 Z" fill="#ff9f1c"/><path d="M27 92 Q32 112 37 92 Z" fill="#ffe066"/></g>
-        <path d="M18 70 L6 92 L20 86 Z" fill="#e63946"/><path d="M46 70 L58 92 L44 86 Z" fill="#e63946"/>
-        <path d="M32 4 C48 18 50 50 46 90 L18 90 C14 50 16 18 32 4 Z" fill="#f1f5ff"/>
-        <path d="M32 4 C40 11 44 20 46 30 L18 30 C20 20 24 11 32 4 Z" fill="#e63946"/>
-        <circle cx="32" cy="50" r="9" fill="#1d4ed8" stroke="#94a3b8" stroke-width="3"/>
-        <rect x="26" y="86" width="12" height="6" rx="2" fill="#64748b"/>
-      </svg>
+    <div class="intro__brilho"></div>
+    <div class="intro__maquina"><span></span></div>
+    <div class="intro__papel">
+      <div class="intro__nota">
+        <div class="intro__cab">CAIXA DA SEMANA</div>
+        <div class="intro__linha"><span>Recebimento</span><b>R$ 15.348,00</b></div>
+        <div class="intro__linha"><span>Despesas</span><b>R$ 640,00</b></div>
+        <div class="intro__linha"><span>Depositado</span><b>R$ 14.708,00</b></div>
+        <div class="intro__linha intro__linha--total"><span>Falta depositar</span><b>R$ 0,00</b></div>
+        <div class="intro__carimbo">FECHADO ✓</div>
+      </div>
     </div>
-    <div class="intro__chao"></div>
-    <div class="intro__fumaca f1"></div><div class="intro__fumaca f2"></div><div class="intro__fumaca f3"></div>
-    <div class="intro__titulo">Fechamento de Caixa</div>
+    <div class="intro__titulo">Fechamento de Caixa<small>tudo conferido</small></div>
   </div>
   <!-- Ao atualizar puxando a tela, o app volta sem a introdução. -->
   <script>try { if (sessionStorage.getItem('caixa.semIntro')) { sessionStorage.removeItem('caixa.semIntro'); document.getElementById('intro').remove(); } } catch (e) {}</script>
@@ -507,6 +504,6 @@
   </div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=53"></script>
+  <script type="module" src="app.js?v=54"></script>
 </body>
 </html>
