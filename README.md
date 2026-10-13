@@ -272,7 +272,7 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   sexta-feira (e por dia); no sábado e no domingo, se ainda não fechou, recalcula para o dia. Barras de progresso.
 - **Salvar fechamento**: depois do primeiro salvamento, salva sozinho a cada 30 min se algo mudou; abrir um salvamento
   pergunta antes ("Carregar último salvamento?").
-- **Introdução** ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO ✓" bate e aparece "Fechamento de Caixa" (≈3 s; um toque pula).
+- **Introdução** ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO ✓" bate e aparece "Fechamento de Caixa" (≈4 s; um toque pula).
 - **Remover lançamento**: o ✕ pergunta antes (mostra o tipo, o nome e o valor); depois de remover, uma barra embaixo
   oferece **Desfazer** por 3 segundos e devolve o lançamento ao mesmo lugar.
 - **Lançamentos travados**: depois de lançada, a linha só muda em **Editar** → **✓ Lançar** (sair sem lançar desfaz). Linha nova

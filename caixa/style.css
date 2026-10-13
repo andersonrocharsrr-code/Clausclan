@@ -213,14 +213,14 @@ label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--acc
 /* "Ver lançamentos": as listas ficam recolhidas até tocar. */
 .ver-lanc{width:100%;justify-content:flex-start;margin-top:8px;font-size:14px;color:var(--accent);border-style:dashed}
 
-/* ---------- Introdução: a maquininha imprime a nota, o carimbo "FECHADO" bate e aparece o nome (≈3 s; um toque pula) ---------- */
+/* ---------- Introdução: a maquininha imprime a nota, o carimbo "FECHADO" bate e aparece o nome (≈4 s; um toque pula) ---------- */
 .intro{position:fixed;inset:0;z-index:90;overflow:hidden;background:radial-gradient(120% 80% at 50% 30%,#1d3a8a 0%,#0d1838 55%,#060a18 100%);
-  animation:intro-sai .5s ease-in forwards;animation-delay:3.1s;cursor:pointer}
+  animation:intro-sai .5s ease-in forwards;animation-delay:4.1s;cursor:pointer}
 .intro.pular{animation:intro-sai .3s ease-in forwards}
 @keyframes intro-sai{to{opacity:0;transform:scale(1.04);visibility:hidden}}
 .intro > *{position:absolute}
 .intro__brilho{left:50%;top:34%;width:420px;height:420px;margin:-210px 0 0 -210px;border-radius:50%;
-  background:radial-gradient(circle,rgba(91,140,255,.35),transparent 65%);opacity:0;animation:intro-brilho 1.2s ease-out forwards;animation-delay:1.45s}
+  background:radial-gradient(circle,rgba(91,140,255,.35),transparent 65%);opacity:0;animation:intro-brilho 1.4s ease-out forwards;animation-delay:1.95s}
 @keyframes intro-brilho{0%{opacity:0;transform:scale(.6)}40%{opacity:1}100%{opacity:.55;transform:scale(1)}}
 /* Maquininha: barra escura com a fenda por onde a nota sai. */
 .intro__maquina{left:50%;top:16%;width:304px;height:34px;margin-left:-152px;border-radius:12px 12px 8px 8px;
@@ -231,7 +231,7 @@ label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--acc
 /* Papel: a nota desce pela fenda, em pequenos trancos como impressora. */
 .intro__papel{left:50%;top:calc(16% + 27px);width:268px;height:270px;margin-left:-134px;overflow:hidden}
 .intro__nota{position:relative;background:#fffdf7;color:#14213d;border-radius:0 0 6px 6px;padding:14px 16px 26px;
-  box-shadow:0 12px 26px rgba(0,0,0,.35);padding-bottom:70px;transform:translateY(-102%);animation:intro-imprime 1.15s steps(16,end) forwards;animation-delay:.3s;
+  box-shadow:0 12px 26px rgba(0,0,0,.35);padding-bottom:70px;transform:translateY(-102%);animation:intro-imprime 1.55s steps(20,end) forwards;animation-delay:.35s;
   -webkit-mask:linear-gradient(#000 0 0) top/100% calc(100% - 8px) no-repeat,radial-gradient(circle 6px at 6px 100%,transparent 5.5px,#000 6px) bottom left/12px 8px repeat-x;
           mask:linear-gradient(#000 0 0) top/100% calc(100% - 8px) no-repeat,radial-gradient(circle 6px at 6px 100%,transparent 5.5px,#000 6px) bottom left/12px 8px repeat-x}
 @keyframes intro-imprime{to{transform:translateY(0)}}
@@ -242,10 +242,10 @@ label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--acc
 .intro__linha--total span,.intro__linha--total b{color:#14213d;font-weight:800}
 .intro__carimbo{position:absolute;left:50%;bottom:20px;margin-left:-76px;width:152px;text-align:center;padding:7px 0;border:3px solid #16a34a;border-radius:8px;color:#16a34a;
   font:900 20px/1 system-ui,sans-serif;letter-spacing:.06em;background:rgba(22,163,74,.06);transform:rotate(-12deg) scale(2.6);opacity:0;
-  animation:intro-carimbo .38s cubic-bezier(.2,1.4,.4,1) forwards;animation-delay:1.55s}
+  animation:intro-carimbo .4s cubic-bezier(.2,1.4,.4,1) forwards;animation-delay:2.1s}
 @keyframes intro-carimbo{0%{opacity:0;transform:rotate(-12deg) scale(2.6)}60%{opacity:1}100%{opacity:1;transform:rotate(-12deg) scale(1)}}
 .intro__titulo{left:16px;right:16px;top:calc(16% + 312px);text-align:center;color:#fff;font:800 28px/1.2 system-ui,sans-serif;opacity:0;
-  animation:intro-surge .6s ease-out forwards;animation-delay:2.05s}
+  animation:intro-surge .7s ease-out forwards;animation-delay:2.7s}
 .intro__titulo small{display:block;margin-top:6px;font:600 14px/1.2 system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#9fb4ea}
 @keyframes intro-surge{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @media (max-height:620px){.intro__maquina{top:8%}.intro__papel{top:calc(8% + 27px)}.intro__titulo{top:calc(8% + 312px)}}
