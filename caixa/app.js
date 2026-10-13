@@ -253,7 +253,10 @@ function pintarTotais() {
     : pag ? `Semana ${st.semana}: semana de pagamento, normalmente o depósito é na empresa.`
       : `Semana ${st.semana}: normalmente o depósito é no banco/transferência.`;
   const d = st.data ? new Date(st.data + 'T12:00').toLocaleDateString('pt-BR') : '';
-  $('#subtitulo').textContent = [st.nome, st.cidade, d].filter(Boolean).join(' · ') || 'Novo fechamento';
+  // A data fica sempre inteira; se faltar espaço, quem encurta é o nome/cidade.
+  const quem = [st.nome, st.cidade].filter(Boolean).join(' · ');
+  $('#subtitulo').innerHTML = quem || d ? `<span class="sub__quem">${esc(quem)}</span>${d ? `<span class="sub__data">${quem ? ' · ' : ''}${esc(d)}</span>` : ''}`
+    : 'Novo fechamento';
   $('#feitasTotal').textContent = st.feitas.length ? `Total da semana: ${numero(st.qtNotasDeixadas)} nota(s) · ${R$(c.valorDeixado)}` : '';
   pintarRelatorio();
 }
