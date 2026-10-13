@@ -228,7 +228,7 @@ function salvarAtual() { sincronizar(); ls.set(KEY_ATUAL, st); }
 var avisosProntos = false; // eslint-disable-line no-var
 function pintarTotais() {
   sincronizar();
-  if (avisosProntos) pintarSino();
+  if (avisosProntos) { pintarSino(); agendarDepois(); }
   const c = calcular();
   $$('[data-c]').forEach((el) => {
     const v = c[el.dataset.c];
@@ -1168,29 +1168,32 @@ function avisosCfg() {
 }
 // Quando o parcial foi lançado: guardado no lançamento; os antigos contam do fim do dia em que entraram.
 const lancadoEm = (x) => x.criadoEm || (x.dia ? new Date(x.dia + 'T23:59').getTime() : Date.now());
+// Pepinos parciais ainda devendo que, no momento "quando", passaram de 24 horas sem resolução.
+const parciaisParados = (quando) => (st.parciais || []).filter((x) => numero(x.devendo) > 0 && quando - lancadoEm(x) >= 24 * 3600000);
+const textoParcial = (l) => `${l.length} ${l.length > 1 ? 'notas parciais' : 'nota parcial'} sem resolução há mais de 24 horas · `
+  + `${R$(l.reduce((t, x) => t + numero(x.devendo), 0))} devendo.`;
+// Meta da rota: o que falta de notas feitas (Ab + Rp) e de valor deixado. Quinta e sexta avisam se estiver longe.
+function metaRota() {
+  const cfg = avisosCfg();
+  const feitas = (st.feitas || []).reduce((t, f) => t + qtdFeita(f), 0);
+  const faltaNotas = Math.max(0, cfg.metaNotas - feitas);
+  const faltaValor = Math.max(0, arred(cfg.metaValor - soma(st.feitas || [])));
+  return { faltaNotas, faltaValor,
+    texto: `Faltam ${faltaNotas} ${faltaNotas === 1 ? 'nota' : 'notas'} e ${R$(faltaValor)} para ${cfg.metaNotas} notas e ${R$(cfg.metaValor)}.` };
+}
+const REGRAS_ROTA = [
+  { dia: 4, id: 301, tipo: 'meta', icone: '🚩', titulo: 'Vamos fechar essa rota até sexta-feira', vale: (m) => m.faltaNotas > 7 && m.faltaValor > 6000 },
+  { dia: 5, id: 302, tipo: 'urgente', icone: '🔥', titulo: 'Quero essa rota fechada hoje', vale: (m) => m.faltaNotas > 4 && m.faltaValor >= 3000 },
+];
 function notificacoes(agora = new Date()) {
   const cfg = avisosCfg();
   const lista = [];
   const lembrete = (cfg.lembretes[agora.getDay()] || '').trim();
   if (lembrete) lista.push({ tipo: 'lembrete', icone: '📌', titulo: `Lembrete de ${DIAS_SEMANA[agora.getDay()].toLowerCase()}`, texto: lembrete });
-  // Pepino parcial sem resolução (ainda devendo) há mais de 24 horas.
-  const parados = (st.parciais || []).filter((x) => numero(x.devendo) > 0 && agora - lancadoEm(x) > 24 * 3600000);
-  if (parados.length) {
-    const devendo = parados.reduce((t, x) => t + numero(x.devendo), 0);
-    lista.push({ tipo: 'alerta', icone: '⏰', titulo: 'Vamo receber esses parcial',
-      texto: `${parados.length} ${parados.length > 1 ? 'notas parciais' : 'nota parcial'} sem resolução há mais de 24 horas · ${R$(devendo)} devendo.` });
-  }
-  // Meta da rota: na quinta e na sexta, pelo que falta de notas feitas e de valor deixado.
-  const feitas = (st.feitas || []).reduce((t, f) => t + qtdFeita(f), 0);
-  const faltaNotas = Math.max(0, cfg.metaNotas - feitas);
-  const faltaValor = Math.max(0, arred(cfg.metaValor - soma(st.feitas || [])));
-  const detalhe = `Faltam ${faltaNotas} ${faltaNotas === 1 ? 'nota' : 'notas'} e ${R$(faltaValor)} para ${cfg.metaNotas} notas e ${R$(cfg.metaValor)}.`;
-  if (agora.getDay() === 4 && faltaNotas > 7 && faltaValor > 6000) {
-    lista.push({ tipo: 'meta', icone: '🚩', titulo: 'Vamos fechar essa rota até sexta-feira', texto: detalhe });
-  }
-  if (agora.getDay() === 5 && faltaNotas > 4 && faltaValor >= 3000) {
-    lista.push({ tipo: 'urgente', icone: '🔥', titulo: 'Quero essa rota fechada hoje', texto: detalhe });
-  }
+  const parados = parciaisParados(agora);
+  if (parados.length) lista.push({ tipo: 'alerta', icone: '⏰', titulo: 'Vamo receber esses parcial', texto: textoParcial(parados) });
+  const m = metaRota();
+  REGRAS_ROTA.forEach((r) => { if (agora.getDay() === r.dia && r.vale(m)) lista.push({ ...r, texto: m.texto }); });
   return lista;
 }
 // Bolinha no ☰ quando há notificação.
@@ -1223,7 +1226,7 @@ function salvarAvisos(muda) {
   const a = ls.get(KEY_AVISOS, {});
   muda(a);
   ls.set(KEY_AVISOS, a);
-  pintarListaNotif(); pintarSino();
+  pintarListaNotif(); pintarSino(); agendarDepois();
 }
 $('[data-meta="notas"]').addEventListener('input', (e) => salvarAvisos((a) => { a.metaNotas = Math.max(0, Math.round(numero(e.target.value))); }));
 $('[data-meta="valor"]').addEventListener('input', (e) => salvarAvisos((a) => { a.metaValor = numero(e.target.value); }));
@@ -1232,14 +1235,12 @@ $('#notifDias').addEventListener('input', (e) => {
   if (d !== undefined) salvarAvisos((a) => { a.lembretes = { ...(a.lembretes || {}), [d]: e.target.value }; });
 });
 $('#btnNotif').addEventListener('click', () => {
-  pintarNotificacoes();
+  pintarNotificacoes(); pintarBarra();
   $('#dlgLista').close();
   $('#dlgNotif').showModal();
 });
 setInterval(pintarSino, 60000); // a virada do dia e as 24 h dos parciais
 document.addEventListener('visibilitychange', () => { if (!document.hidden) pintarSino(); });
-avisosProntos = true;
-pintarSino();
 
 /* ---------- app Android (APK feito com Capacitor, pasta caixa-android/) ---------- */
 // No APK o app roda num WebView sem o Chrome: compartilhar, salvar arquivo e o botão "voltar" usam os plugins.
@@ -1269,6 +1270,95 @@ if (NATIVO) {
     plugin('App').minimizeApp();
   });
 }
+
+// Avisos na barra de notificações do celular (só no APK): agendados no Android, chegam com o app fechado.
+// São refeitos a cada mudança: lembrete de cada dia às 8h, o parcial 24 h depois de lançado (depois às 9h de
+// cada dia enquanto estiver devendo) e a meta da rota na quinta e na sexta às 8h.
+const LN = NATIVO ? plugin('LocalNotifications') : null;
+const KEY_AVISADO = 'caixa.avisado';
+const NOTIF_BASE = { channelId: 'avisos', smallIcon: 'ic_stat_caixa', iconColor: '#5b8cff', autoCancel: true };
+const isoDe = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+function proximaHora(h, base = new Date()) {
+  const d = new Date(base);
+  d.setHours(h, 0, 0, 0);
+  if (d <= base) d.setDate(d.getDate() + 1);
+  return d;
+}
+async function barraLigada() {
+  try { return LN && (await LN.checkPermissions()).display === 'granted'; } catch { return false; }
+}
+async function agendarAvisos() {
+  if (!(await barraLigada())) return;
+  try {
+    const { notifications: pend } = await LN.getPending();
+    const nossos = pend.filter((n) => n.id >= 100 && n.id < 400).map((n) => ({ id: n.id }));
+    if (nossos.length) await LN.cancel({ notifications: nossos });
+    const agora = new Date();
+    const cfg = avisosCfg();
+    const lista = [];
+    Object.entries(cfg.lembretes).forEach(([d, txt]) => {
+      if (!String(txt).trim()) return;
+      lista.push({ ...NOTIF_BASE, id: 100 + Number(d), title: `📌 Lembrete de ${DIAS_SEMANA[d].toLowerCase()}`, body: String(txt).trim(),
+        schedule: { on: { weekday: Number(d) + 1, hour: 8, minute: 0 }, allowWhileIdle: true } });
+    });
+    const devendo = (st.parciais || []).filter((x) => numero(x.devendo) > 0);
+    if (devendo.length) {
+      let at = new Date(Math.min(...devendo.map(lancadoEm)) + 24 * 3600000);
+      if (at <= agora) at = proximaHora(9, agora);
+      lista.push({ ...NOTIF_BASE, id: 200, title: '⏰ Vamo receber esses parcial', body: textoParcial(parciaisParados(at)), schedule: { at, allowWhileIdle: true } });
+    }
+    // Quinta e sexta da semana do fechamento, às 8h. Se já passou das 8h do dia, avisa agora (uma vez no dia).
+    const m = metaRota();
+    const avisado = ls.get(KEY_AVISADO, {});
+    const segunda = new Date(semanaDe(st.data).ini + 'T08:00');
+    REGRAS_ROTA.forEach((r) => {
+      if (!r.vale(m)) return;
+      let at = new Date(segunda);
+      at.setDate(segunda.getDate() + r.dia - 1);
+      const dia = isoDe(at);
+      let id = r.id;
+      if (at <= agora) {
+        if (dia !== hoje() || avisado[r.id] === dia) return;
+        at = new Date(Date.now() + 3000);
+        id = r.id + 100; // fora da faixa que é cancelada a cada mudança: o aviso de agora não se perde
+      }
+      avisado[r.id] = dia;
+      lista.push({ ...NOTIF_BASE, id, title: `${r.icone} ${r.titulo}`, body: m.texto, schedule: { at, allowWhileIdle: true } });
+    });
+    ls.set(KEY_AVISADO, avisado);
+    if (lista.length) await LN.schedule({ notifications: lista });
+  } catch { /* sem permissão ou plugin indisponível: fica só dentro do app */ }
+}
+let agendarTimer = 0;
+function agendarDepois() { if (!LN) return; clearTimeout(agendarTimer); agendarTimer = setTimeout(agendarAvisos, 1500); }
+async function pintarBarra() {
+  const el = $('#notifBarra');
+  if (!LN) { el.hidden = true; return; }
+  el.hidden = false;
+  const ligada = await barraLigada();
+  el.innerHTML = ligada ? '✓ Avisos na barra de notificações do celular ligados.'
+    : '<button type="button" class="btn btn--primary" id="btnLigarBarra">Ligar avisos na barra do celular</button>';
+  $('#btnLigarBarra')?.addEventListener('click', ligarBarra);
+}
+async function ligarBarra() {
+  try {
+    const p = await LN.requestPermissions();
+    if (p.display !== 'granted') toast('Sem permissão: libere as notificações do Caixa nas configurações do celular.');
+  } catch { /* nada */ }
+  pintarBarra(); agendarAvisos();
+}
+if (LN) {
+  LN.createChannel({ id: 'avisos', name: 'Avisos do caixa', description: 'Lembretes do dia, pepino parcial e meta da rota',
+    importance: 4, visibility: 1, vibration: true }).catch(() => {});
+  // Tocar na notificação abre a lista de notificações do app.
+  LN.addListener('localNotificationActionPerformed', () => { pintarNotificacoes(); pintarBarra(); $('#dlgNotif').showModal(); });
+  // Na primeira vez pede a permissão (Android 13+ pergunta ao usuário).
+  if (!ls.get('caixa.barraPedida', false)) { ls.set('caixa.barraPedida', true); ligarBarra(); } else agendarDepois();
+  document.addEventListener('visibilitychange', () => { if (document.hidden) agendarAvisos(); });
+}
+
+avisosProntos = true;
+pintarSino();
 
 /* ---------- relatório do dia ---------- */
 // O relatório separa "do dia" e "total": notas (dia em que a foto foi lida/lançada), pepinos, antecipadas,
