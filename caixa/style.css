@@ -6,11 +6,26 @@
   --head-bg:linear-gradient(135deg,#1d4ed8 0%,#2563eb 50%,#0ea5e9 100%);--head-ink:#ffffff;--head-muted:rgba(255,255,255,.85);
   --btn-bg:linear-gradient(135deg,#2563eb,#0ea5e9);--glow:rgba(37,99,235,.28);
   --shadow:0 6px 20px rgba(15,27,51,.07);--input-bg:#f6f8fc;--item-bg:#f8fafd;--bar-bg:rgba(255,255,255,.92);
+  --accent-card:linear-gradient(160deg,#eaf1ff,#e6f6ff);--money:#1d4ed8;--tab-bg:rgba(37,99,235,.10);--tab-ink:#1d4ed8;
   font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color-scheme:light;
+}
+/* Celular no modo escuro: o mesmo visual em tons escuros (segue o celular sozinho). */
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0b1220;--card:#131c2e;--ink:#e8eefb;--muted:#93a0bb;--line:#22304a;
+    --accent:#5b8cff;--accent-ink:#ffffff;--accent-soft:#16223f;--warn:#f0b35a;--warn-soft:#2d2414;
+    --neg:#ff7a70;--pos:#4ade80;
+    --head-bg:linear-gradient(135deg,#1e3a8a 0%,#1d4ed8 55%,#0369a1 100%);--head-muted:rgba(255,255,255,.8);
+    --glow:rgba(37,99,235,.35);--shadow:0 8px 24px rgba(0,0,0,.35);
+    --input-bg:#0e1626;--item-bg:#0f1829;--bar-bg:rgba(15,22,38,.9);
+    --accent-card:linear-gradient(160deg,#16223f,#122a3a);--money:#8fb0ff;--tab-bg:rgba(91,140,255,.16);--tab-ink:#b8ccff;
+    color-scheme:dark;
+  }
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{margin:0;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.4;padding-bottom:84px}
+/* Espaço embaixo = altura da barra de totais (medida pelo app) + folga, para nada ficar escondido atrás dela. */
+body{margin:0;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.4;padding-bottom:calc(var(--bar-h,96px) - 12px)}
 h1{font-size:18px;margin:0}
 h2{font-size:17px;margin:0 0 10px;font-weight:700;letter-spacing:-.01em}
 h3{font-size:14px;margin:16px 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
@@ -19,23 +34,28 @@ p{margin:0 0 10px}
 a{color:var(--accent)}
 
 .topo{position:sticky;top:0;z-index:10}
-.top{display:flex;align-items:center;justify-content:space-between;gap:10px;
+.top{display:flex;align-items:center;justify-content:space-between;gap:6px;
   padding:calc(12px + env(safe-area-inset-top)) 16px 12px;background:var(--head-bg);color:var(--head-ink)}
-.top h1{font-size:19px;letter-spacing:-.01em}
+.top h1{font-size:clamp(15.5px,4.6vw,19px);letter-spacing:-.01em}
 .top .muted{color:var(--head-muted)}
 .top img{border-radius:9px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))}
-.top__title{display:flex;align-items:center;gap:10px;min-width:0}
-.top__title p{margin:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.top__actions{display:flex;gap:6px}
-.icon-btn{width:40px;height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.14);color:var(--head-ink);font-size:18px}
+.top__title{display:flex;align-items:center;gap:8px;min-width:0}
+.top__title p{margin:0;font-size:clamp(11px,3.1vw,13px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top__title>div{min-width:0}
+#subtitulo{display:flex;min-width:0}
+.sub__quem{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sub__data{flex:none;white-space:pre}
+.top__title h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top__actions{display:flex;gap:5px;flex:none}
+.icon-btn{width:38px;height:38px;border-radius:12px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.14);color:var(--head-ink);font-size:18px}
 
 main{max-width:760px;margin:0 auto;padding:12px 16px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:14px;box-shadow:var(--shadow)}
-.card--accent{background:linear-gradient(160deg,#eaf1ff,#e6f6ff);border-color:transparent}
+.card--accent{background:var(--accent-card);border-color:transparent}
 .card--sum{border-color:var(--accent)}
 .card__head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
 .total{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
-.total--big{font-size:26px;font-weight:800;color:#1d4ed8}
+.total--big{font-size:26px;font-weight:800;color:var(--money)}
 
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media (max-width:420px){.grid{grid-template-columns:1fr}}
@@ -139,8 +159,9 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 .status{font-weight:700;margin:8px 0 4px}
 .bar .status{margin:0;font-size:12px}
 .tabs{display:flex;gap:6px;padding:10px 16px 12px;background:var(--bg)}
-.tabs button{flex:1;min-width:0;font:inherit;font-weight:600;font-size:13px;padding:9px 2px;border-radius:999px;border:0;
-  background:var(--card);color:var(--muted);cursor:pointer;box-shadow:0 1px 3px rgba(15,27,51,.06)}
+/* Abas: azul claro transparente; a largura acompanha o nome, para "Recebimento" caber inteiro. */
+.tabs button{flex:1 1 auto;min-width:0;font:inherit;font-weight:600;font-size:clamp(11.5px,3.3vw,13px);padding:9px 6px;border-radius:999px;border:0;
+  white-space:nowrap;background:var(--tab-bg);color:var(--tab-ink);cursor:pointer}
 .tabs button[aria-selected="true"]{background:var(--btn-bg);color:var(--accent-ink);box-shadow:0 4px 14px var(--glow)}
 [data-tab][hidden]{display:none}
 .btn--next{width:100%;margin-bottom:12px}
