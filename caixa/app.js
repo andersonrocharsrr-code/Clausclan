@@ -550,7 +550,18 @@ $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
   // Nas notas só importa o valor: o cursor já vai para ele.
   (nome.startsWith('notas') ? ultima?.querySelector('[data-k="valor"]')
     : nome === 'feitas' ? null : ultima?.querySelector('input'))?.focus();
+  // Notas feitas não abrem o teclado (primeiro escolhe Ab/Rp): a tela desce sozinha até o bloco novo.
+  if (nome === 'feitas' && ultima) mostrarNoMeio(ultima);
 }));
+// Rola a tela para o elemento ficar no meio da parte visível (entre o topo fixo e a barra de totais).
+function mostrarNoMeio(el) {
+  const topo = $('.topo')?.getBoundingClientRect().bottom || 0;
+  const base = innerHeight - ($('.bar')?.offsetHeight || 0);
+  const r = el.getBoundingClientRect();
+  const livre = base - topo;
+  const alvo = r.height < livre ? r.top - topo - (livre - r.height) / 2 : r.top - topo - 12;
+  scrollTo({ top: scrollY + alvo, behavior: 'smooth' });
+}
 
 /* ---------- janelas ---------- */
 // Com uma janela aberta (☰, ⚙, notificações, meta, folha…), a página de trás fica parada.
