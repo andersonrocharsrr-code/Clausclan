@@ -285,6 +285,23 @@ function botaoVer(nome, box) {
   return b;
 }
 function abrirLista(nome) { listasAbertas.add(nome); }
+// Lista comprida (mais de 3): um "Recolher" discreto no fim, para não ter que subir até o "Esconder".
+function botaoRecolher(nome, box) {
+  let b = box.nextElementSibling;
+  if (!b?.classList.contains('recolher-lanc')) {
+    b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'recolher-lanc';
+    b.textContent = '▴ Recolher';
+    b.addEventListener('click', () => {
+      listasAbertas.delete(nome);
+      pintarLista(nome);
+      mostrarNoMeio(box.closest('.card') || box.previousElementSibling);
+    });
+    box.after(b);
+  }
+  return b;
+}
 
 function atualizarVer(nome) {
   const box = $(`[data-lista="${nome}"]`);
@@ -297,6 +314,7 @@ function atualizarVer(nome) {
   ver.textContent = (aberta ? `▴ Esconder lançamentos (${n})` : `▾ Ver lançamentos (${n})`)
     + (conferir ? ` · ⚠ ${conferir} para conferir` : '');
   box.hidden = !aberta || !n;
+  botaoRecolher(nome, box).hidden = box.hidden || n <= 3 || !!rascunhos[nome];
 }
 
 // Lançamentos ficam travados: só mudam com "Editar" → "✓ Lançar". Sair da linha sem lançar desfaz o que foi digitado.
