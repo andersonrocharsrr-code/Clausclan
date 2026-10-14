@@ -493,7 +493,9 @@ $$('[data-pila]').forEach((b) => b.addEventListener('click', () => {
   abrirLista('pila');
   pintarLista('pila');
   const rows = $$('[data-lista="pila"] .item');
-  rows[rows.length - 1]?.querySelector(b.dataset.pila ? '[data-k="valor"]' : 'input')?.focus();
+  const ultima = rows[rows.length - 1];
+  ultima?.querySelector(b.dataset.pila ? '[data-k="valor"]' : 'input')?.focus({ preventScroll: true });
+  if (ultima) mostrarNoMeio(ultima);
 }));
 
 // Depósito só entra quando o vendedor lança: onde + valor + data. Nada é lançado sozinho.
@@ -547,11 +549,11 @@ $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
   pintarLista(nome);
   const rows = $$(`[data-lista="${nome}"] .item`);
   const ultima = rows[rows.length - 1];
-  // Nas notas só importa o valor: o cursor já vai para ele.
+  // Nas notas só importa o valor: o cursor já vai para ele (notas feitas: primeiro escolhe Ab/Rp, sem teclado).
   (nome.startsWith('notas') ? ultima?.querySelector('[data-k="valor"]')
-    : nome === 'feitas' ? null : ultima?.querySelector('input'))?.focus();
-  // Notas feitas não abrem o teclado (primeiro escolhe Ab/Rp): a tela desce sozinha até o bloco novo.
-  if (nome === 'feitas' && ultima) mostrarNoMeio(ultima);
+    : nome === 'feitas' ? null : ultima?.querySelector('input'))?.focus({ preventScroll: true });
+  // Em todas as listas a tela desce suave, passando pelos lançamentos, até o bloco novo no meio da tela.
+  if (ultima) mostrarNoMeio(ultima);
 }));
 // Rola a tela para o elemento ficar no meio da parte visível (entre o topo fixo e a barra de totais).
 function mostrarNoMeio(el) {
@@ -1701,8 +1703,12 @@ $('#btnLancarParcial').addEventListener('click', () => {
   ['valorNota', 'valor', 'devolucao'].forEach((k) => { campoParc(k).value = ''; });
   previaDevendo();
   document.activeElement?.blur();
+  abrirLista('parciais');
   salvarAtual(); pintarLista('parciais'); pintarTotais();
-  toast(`Parcial lançado ✓ Ficou devendo ${R$(x.devendo)}. Está em "Ver lançamentos".`);
+  // Como nas outras listas: a tela desce até o lançamento novo.
+  const ult = [...$$('[data-lista="parciais"] .item')].pop();
+  if (ult) mostrarNoMeio(ult);
+  toast(`Parcial lançado ✓ Ficou devendo ${R$(x.devendo)}.`);
 });
 
 async function copiar(txt) {

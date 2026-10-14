@@ -277,6 +277,8 @@ body{overflow-x:clip}
 .snack.show::after{animation:snack-tempo 3s linear forwards}
 @keyframes snack-tempo{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 /* Lançamento travado: só muda tocando em "Editar"; editando, aparece "✓ Lançar" e "Cancelar". */
+/* Lançamento travado: tocar no rótulo ou no campo não seleciona nada (só "Editar" abre a edição). */
+.item--travada label{pointer-events:none;-webkit-user-select:none;user-select:none}
 .item--travada input,.item--travada select{background:transparent;border-color:transparent;pointer-events:none;padding-left:2px;color:var(--ink);opacity:1}
 .item__editar{position:absolute;top:8px;right:42px;font:inherit;font-size:13px;font-weight:600;color:var(--accent);background:transparent;
   border:0;border-radius:8px;padding:4px 8px;cursor:pointer;opacity:.85}
