@@ -450,7 +450,18 @@
     </form>
   </dialog>
 
-    <dialog id="dlgCarregar" class="dlg-remover">
+    <dialog id="dlgNovaNota" class="dlg-remover">
+    <form method="dialog">
+      <h2>Lançar nova nota?</h2>
+      <p class="muted">A nota foi quitada. Quer abrir uma linha em <b>Notas feitas</b> para a nota nova?</p>
+      <div class="row-actions">
+        <button class="btn" value="nao">Não</button>
+        <button class="btn btn--primary" value="sim">Sim</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlgCarregar" class="dlg-remover">
     <form method="dialog">
       <h2>Carregar último salvamento?</h2>
       <p id="carregarTxt" class="muted"></p>
@@ -504,6 +515,6 @@
   </div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=60"></script>
+  <script type="module" src="app.js?v=61"></script>
 </body>
 </html>
