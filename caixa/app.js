@@ -529,14 +529,28 @@ function abrirAba(nome) {
   scrollTo({ top: posicoes[nome] || 0 });
 }
 $$('[data-tabbtn]').forEach((b) => b.addEventListener('click', () => abrirAba(b.dataset.tabbtn)));
-// "Lançar pepino parcial ›": abre o Relatório já no quadro do pepino parcial, sem selecionar campo nenhum.
+// Botões que levam a outra aba ("Próximo", "Lançar pepino parcial ›"): a tela desliza para o lado até a aba e,
+// se o botão aponta um quadro (data-alvo), desce suave até ele, sem selecionar campo nenhum.
+const ORDEM_ABAS = ['receb', 'desp', 'dep', 'rel'];
+function deslizarPara(aba, depois, { doTopo = false } = {}) {
+  const m = $('main');
+  const lado = ORDEM_ABAS.indexOf(aba) >= ORDEM_ABAS.indexOf(abaAtual) ? 1 : -1;
+  const trocar = () => { abrirAba(aba); if (doTopo) scrollTo({ top: 0 }); }; // com quadro-alvo, desce a partir do topo
+  if (!m.animate || matchMedia('(prefers-reduced-motion: reduce)').matches) { trocar(); depois?.(); return; }
+  m.animate([{ transform: 'none', opacity: 1 }, { transform: `translateX(${-lado * 70}px)`, opacity: 0 }],
+    { duration: 170, easing: 'ease-in' }).onfinish = () => {
+    trocar();
+    m.animate([{ transform: `translateX(${lado * 70}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }],
+      { duration: 230, easing: 'ease-out' }).onfinish = () => depois?.();
+  };
+}
 $$('[data-ir]').forEach((b) => b.addEventListener('click', () => {
-  abrirAba(b.dataset.ir);
-  const alvo = b.dataset.alvo && document.getElementById(b.dataset.alvo);
-  if (!alvo) return;
   document.activeElement?.blur();
-  const topo = $('.topo')?.getBoundingClientRect().bottom || 0;
-  scrollTo({ top: alvo.getBoundingClientRect().top + scrollY - topo - 12 });
+  const alvo = b.dataset.alvo && document.getElementById(b.dataset.alvo);
+  deslizarPara(b.dataset.ir, alvo ? () => {
+    const topo = $('.topo')?.getBoundingClientRect().bottom || 0;
+    scrollTo({ top: alvo.getBoundingClientRect().top + scrollY - topo - 12, behavior: 'smooth' });
+  } : null, { doTopo: !!alvo });
 }));
 
 $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
