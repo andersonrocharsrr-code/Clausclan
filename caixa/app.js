@@ -391,7 +391,8 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
       if (modo === 'rascunho') { st[nome].push(rasc); delete rascunhos[nome]; } else aplicarEdicao(nome, item, rasc);
       salvarAtual(); pintarLista(nome); pintarTotais();
       toast(rasc.valor ? `Lançado: ${R$(rasc.valor)} ✓` : 'Lançado ✓');
-      if (modo === 'rascunho' && nome.startsWith('notas')) perguntarNovaNota();
+      // Espera 1 s para a pessoa ver a nota lançada antes da pergunta aparecer.
+      if (modo === 'rascunho' && nome.startsWith('notas')) setTimeout(perguntarNovaNota, 1000);
     };
     const acoes = row.querySelectorAll('.item__ok, .item__cancelar');
     // Sem isso, o toque no botão tira o foco do campo antes do clique.
@@ -586,6 +587,7 @@ $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
 // Quitou uma nota (25% ou 40/50%): pergunta se já lança a nota nova; "Sim" desce até Notas feitas com uma linha aberta (sem teclado).
 function perguntarNovaNota() {
   const dlg = $('#dlgNovaNota');
+  if (dlg.open || document.querySelector('dialog[open]')) return;
   dlg.returnValue = '';
   dlg.onclose = () => {
     if (dlg.returnValue !== 'sim') return;
