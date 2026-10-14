@@ -349,8 +349,7 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
   if (modo === 'travada') {
     row.querySelector('.item__editar').addEventListener('click', () => {
       const nova = linhaLista(nome, item, 'editando');
-      row.replaceWith(nova);
-      nova.querySelector('[data-k="valor"], input:not([type="date"])')?.focus();
+      row.replaceWith(nova); // o teclado só abre quando a pessoa toca no campo que quer mudar
     });
   } else {
     row.addEventListener('input', (e) => {
@@ -494,8 +493,7 @@ $$('[data-pila]').forEach((b) => b.addEventListener('click', () => {
   pintarLista('pila');
   const rows = $$('[data-lista="pila"] .item');
   const ultima = rows[rows.length - 1];
-  ultima?.querySelector(b.dataset.pila ? '[data-k="valor"]' : 'input')?.focus({ preventScroll: true });
-  if (ultima) mostrarNoMeio(ultima);
+  if (ultima) mostrarNoMeio(ultima); // sem abrir o teclado sozinho
 }));
 
 // Depósito só entra quando o vendedor lança: onde + valor + data. Nada é lançado sozinho.
@@ -503,7 +501,7 @@ $$('input[name="depOnde"]').forEach((r) => r.addEventListener('change', () => { 
 $('#depData').value = hoje();
 $('#btnLancarDep').addEventListener('click', () => {
   const valor = numero($('#depValor').value);
-  if (!(valor > 0)) { toast('Digite o valor que você depositou.'); $('#depValor').focus(); return; }
+  if (!(valor > 0)) { toast('Digite o valor que você depositou.'); return; }
   const onde = $('input[name="depOnde"]:checked')?.value || tipoDeposito(st);
   st.depositos.push({ id: uid(), data: $('#depData').value || hoje(), onde, valor });
   $('#depValor').value = '';
@@ -549,10 +547,7 @@ $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
   pintarLista(nome);
   const rows = $$(`[data-lista="${nome}"] .item`);
   const ultima = rows[rows.length - 1];
-  // Nas notas só importa o valor: o cursor já vai para ele (notas feitas: primeiro escolhe Ab/Rp, sem teclado).
-  (nome.startsWith('notas') ? ultima?.querySelector('[data-k="valor"]')
-    : nome === 'feitas' ? null : ultima?.querySelector('input'))?.focus({ preventScroll: true });
-  // Em todas as listas a tela desce suave, passando pelos lançamentos, até o bloco novo no meio da tela.
+  // A tela desce suave até o bloco novo no meio da tela; o teclado só abre quando a pessoa toca num campo.
   if (ultima) mostrarNoMeio(ultima);
 }));
 // Rola a tela para o elemento ficar no meio da parte visível (entre o topo fixo e a barra de totais).
@@ -1697,7 +1692,7 @@ function previaDevendo() {
 ['valorNota', 'valor', 'devolucao'].forEach((k) => campoParc(k).addEventListener('input', previaDevendo));
 $('#btnLancarParcial').addEventListener('click', () => {
   const x = { id: uid(), dia: relDia(), criadoEm: Date.now(), ...lerParc() };
-  if (!(x.valorNota > 0)) { toast('Digite o valor da nota.'); campoParc('valorNota').focus(); return; }
+  if (!(x.valorNota > 0)) { toast('Digite o valor da nota.'); return; }
   x.devendo = devendoCalculado(x);
   st.parciais.push(x);
   ['valorNota', 'valor', 'devolucao'].forEach((k) => { campoParc(k).value = ''; });
