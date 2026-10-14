@@ -391,6 +391,7 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
       if (modo === 'rascunho') { st[nome].push(rasc); delete rascunhos[nome]; } else aplicarEdicao(nome, item, rasc);
       salvarAtual(); pintarLista(nome); pintarTotais();
       toast(rasc.valor ? `Lançado: ${R$(rasc.valor)} ✓` : 'Lançado ✓');
+      if (modo === 'rascunho' && nome.startsWith('notas')) perguntarNovaNota();
     };
     const acoes = row.querySelectorAll('.item__ok, .item__cancelar');
     // Sem isso, o toque no botão tira o foco do campo antes do clique.
@@ -582,6 +583,17 @@ $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
   // A tela desce suave até o bloco novo no meio da tela; o teclado só abre quando a pessoa toca num campo.
   if (ultima) mostrarNoMeio(ultima);
 }));
+// Quitou uma nota (25% ou 40/50%): pergunta se já lança a nota nova; "Sim" desce até Notas feitas com uma linha aberta (sem teclado).
+function perguntarNovaNota() {
+  const dlg = $('#dlgNovaNota');
+  dlg.returnValue = '';
+  dlg.onclose = () => {
+    if (dlg.returnValue !== 'sim') return;
+    if (abaAtual !== 'receb') abrirAba('receb');
+    $('[data-add="feitas"]').click();
+  };
+  dlg.showModal();
+}
 // Rola a tela para o elemento ficar no meio da parte visível (entre o topo fixo e a barra de totais).
 function mostrarNoMeio(el) {
   const topo = $('.topo')?.getBoundingClientRect().bottom || 0;
