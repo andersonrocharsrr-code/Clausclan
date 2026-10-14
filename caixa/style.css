@@ -212,6 +212,9 @@ label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--acc
 .item__devendo{position:absolute;right:42px;top:12px}
 /* "Ver lançamentos": as listas ficam recolhidas até tocar. */
 .ver-lanc{width:100%;justify-content:flex-start;margin-top:8px;font-size:14px;color:var(--accent);border-style:dashed}
+.recolher-lanc{display:block;margin:6px 0 0 auto;padding:6px 12px;background:none;border:0;border-radius:999px;font:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+.recolher-lanc:active{background:var(--item-bg)}
+.recolher-lanc[hidden]{display:none}
 
 /* ---------- Introdução: a maquininha imprime a nota, o carimbo "FECHADO" bate e aparece o nome (≈4 s; um toque pula) ---------- */
 .intro{position:fixed;inset:0;z-index:90;overflow:hidden;background:radial-gradient(120% 80% at 50% 30%,#1d3a8a 0%,#0d1838 55%,#060a18 100%);
