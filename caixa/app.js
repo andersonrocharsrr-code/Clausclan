@@ -550,7 +550,18 @@ $$('[data-add]').forEach((b) => b.addEventListener('click', () => {
   // Nas notas só importa o valor: o cursor já vai para ele.
   (nome.startsWith('notas') ? ultima?.querySelector('[data-k="valor"]')
     : nome === 'feitas' ? null : ultima?.querySelector('input'))?.focus();
+  // Notas feitas não abrem o teclado (primeiro escolhe Ab/Rp): a tela desce sozinha até o bloco novo.
+  if (nome === 'feitas' && ultima) mostrarNoMeio(ultima);
 }));
+// Rola a tela para o elemento ficar no meio da parte visível (entre o topo fixo e a barra de totais).
+function mostrarNoMeio(el) {
+  const topo = $('.topo')?.getBoundingClientRect().bottom || 0;
+  const base = innerHeight - ($('.bar')?.offsetHeight || 0);
+  const r = el.getBoundingClientRect();
+  const livre = base - topo;
+  const alvo = r.height < livre ? r.top - topo - (livre - r.height) / 2 : r.top - topo - 12;
+  scrollTo({ top: scrollY + alvo, behavior: 'smooth' });
+}
 
 /* ---------- janelas ---------- */
 // Com uma janela aberta (☰, ⚙, notificações, meta, folha…), a página de trás fica parada.
@@ -560,7 +571,11 @@ new MutationObserver(travarFundo).observe(document.body, { subtree: true, attrib
 /* ---------- teclado do celular ---------- */
 // Enquanto digita: esconde a barra de totais de baixo (ela sobe junto com o teclado e tampa o campo)
 // e deixa o campo no meio da tela, logo acima do teclado. "Concluído/Enter" do teclado confirma o campo.
-const ehCampo = (el) => el && el.matches?.('input:not([type="radio"]):not([type="checkbox"]):not([type="file"]), select, textarea');
+// Só campos que abrem o teclado: data, hora e listas abrem um seletor do Android, e com eles o app não pode
+// esconder a barra nem deixar o espaço do teclado (o "voltar" fecha o seletor e o espaço ficava sobrando).
+const ehCampo = (el) => el && !el.readOnly && el.matches?.('input:not([type="radio"]):not([type="checkbox"]):not([type="file"])'
+  + ':not([type="date"]):not([type="time"]):not([type="datetime-local"]):not([type="month"]):not([type="week"])'
+  + ':not([type="color"]):not([type="range"]), textarea');
 // Num lançamento aberto (linha nova ou em edição), centraliza a linha inteira na parte visível, entre o topo fixo
 // e o teclado, para não ficar cortada; se ela não couber, centraliza só o campo.
 function centralizar() {
