@@ -270,6 +270,12 @@ body{overflow-x:clip}
 /* Remover lançamento: confirmação e "Desfazer" embaixo por 3 segundos */
 .btn--perigo{background:#dc2626;border-color:#dc2626;color:#fff}
 .dlg-remover .row-actions{justify-content:flex-end;margin-top:14px}
+/* "Lançar nova nota?": entra suave, sem susto. */
+#dlgNovaNota[open]{animation:dlg-entra .35s ease-out}
+#dlgNovaNota[open]::backdrop{animation:fundo-entra .35s ease-out}
+@keyframes dlg-entra{from{opacity:0;transform:translateY(14px) scale(.97)}}
+@keyframes fundo-entra{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){#dlgNovaNota[open],#dlgNovaNota[open]::backdrop{animation:none}}
 .snack{position:fixed;left:16px;right:16px;bottom:90px;z-index:61;max-width:520px;margin:0 auto;display:flex;align-items:center;
   justify-content:space-between;gap:12px;padding:8px 8px 8px 16px;border-radius:14px;background:#14213d;color:#fff;font-size:14px;
   box-shadow:0 10px 28px rgba(0,0,0,.3);opacity:0;transform:translateY(12px);transition:.2s;pointer-events:none;overflow:hidden}
