@@ -1630,7 +1630,8 @@ function relatorio(dia) {
     + pagas4050.reduce((t, n) => t + valorDeFace(n, 'notas4050'), 0))
     - parcAte.reduce((t, x) => t + valorDaParcial(x), 0)));
   const depDia = st.depositos.filter((d) => d.data === dia);
-  const depTotal = soma(st.depositos.filter((d) => ate(d.data)));
+  const depAte = st.depositos.filter((d) => ate(d.data));
+  const depTotal = soma(depAte);
 
   const qt = (n) => String(Math.round(Number(n) || 0)).padStart(2, '0');
   const vl = (v) => (Number(v) ? brl(v) : '00');
@@ -1690,7 +1691,8 @@ function relatorio(dia) {
     `Valor: ${vl(rel.devolValor)}`,
     '',
     `Depósito dia: ${vl(soma(depDia.filter((d) => d.onde !== 'pix')))}`,
-    `Transferencia: ${vl(soma(depDia.filter((d) => d.onde === 'pix')))}`,
+    // Pix soma a semana toda até o dia (feito em dias diferentes, entra tudo); também está no Deposito total.
+    `Transferencia: ${vl(soma(depAte.filter((d) => d.onde === 'pix')))}`,
     `Deposito total: ${vl(depTotal)}`,
     // Em mãos: recebido até o dia, menos as despesas da semana e o que já foi depositado.
     `Valor em mãos: ${vl(arred(recebidoTotal - c.despesas - depTotal))}`,
