@@ -105,7 +105,7 @@ const LISTAS = {
   // Notas feitas (vendas) de cada dia: Ab (abertura) + Rp (reposição) = notas do dia; a soma dos valores é o
   // "Valor deixado" e a das notas, as "Notas deixadas".
   // Cada linha é a nota de uma cliente: Ab (abertura) ou Rp (reposição) e o valor.
-  feitas: [['data', 'Dia', 'date'], ['tipo', 'Nota', 'tipo'], ['valor', 'Valor']],
+  feitas: [['cliente', 'Cliente'], ['data', 'Dia', 'date'], ['tipo', 'Nota', 'tipo'], ['valor', 'Valor']],
   obs: [['desc', 'Descrição'], ['valor', 'Valor']],
 };
 
@@ -392,7 +392,7 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
       salvarAtual(); pintarLista(nome); pintarTotais();
       toast(rasc.valor ? `Lançado: ${R$(rasc.valor)} ✓` : 'Lançado ✓');
       // Espera 1 s para a pessoa ver a nota lançada antes da pergunta aparecer.
-      if (modo === 'rascunho' && nome.startsWith('notas')) setTimeout(perguntarNovaNota, 1000);
+      if (modo === 'rascunho' && nome.startsWith('notas')) setTimeout(() => perguntarNovaNota(rasc.cliente), 1000);
     };
     const acoes = row.querySelectorAll('.item__ok, .item__cancelar');
     // Sem isso, o toque no botão tira o foco do campo antes do clique.
@@ -573,26 +573,26 @@ $$('[data-ir]').forEach((b) => b.addEventListener('click', () => {
   } : null, { doTopo: !!alvo });
 }));
 
-$$('[data-add]').forEach((b) => b.addEventListener('click', () => {
-  const nome = b.dataset.add;
+$$('[data-add]').forEach((b) => b.addEventListener('click', () => novaLinha(b.dataset.add)));
+function novaLinha(nome, extra = {}) {
   abrirLista(nome); // a linha nova aparece aberta para digitar
-  rascunhos[nome] = nome === 'feitas' ? { id: uid(), data: hoje(), tipo: '', ab: 0, rp: 0, valor: 0 }
-    : { id: uid(), dia: hoje(), valor: 0, cidade: nome.startsWith('notas') || nome === 'extras' ? st.cidade : undefined };
+  rascunhos[nome] = nome === 'feitas' ? { id: uid(), cliente: '', data: hoje(), tipo: '', ab: 0, rp: 0, valor: 0, ...extra }
+    : { id: uid(), dia: hoje(), valor: 0, cidade: nome.startsWith('notas') || nome === 'extras' ? st.cidade : undefined, ...extra };
   pintarLista(nome);
   const rows = $$(`[data-lista="${nome}"] .item`);
   const ultima = rows[rows.length - 1];
   // A tela desce suave até o bloco novo no meio da tela; o teclado só abre quando a pessoa toca num campo.
   if (ultima) mostrarNoMeio(ultima);
-}));
+}
 // Quitou uma nota (25% ou 40/50%): pergunta se já lança a nota nova; "Sim" desce até Notas feitas com uma linha aberta (sem teclado).
-function perguntarNovaNota() {
+function perguntarNovaNota(cliente = '') {
   const dlg = $('#dlgNovaNota');
   if (dlg.open || document.querySelector('dialog[open]')) return;
   dlg.returnValue = '';
   dlg.onclose = () => {
     if (dlg.returnValue !== 'sim') return;
     if (abaAtual !== 'receb') abrirAba('receb');
-    $('[data-add="feitas"]').click();
+    novaLinha('feitas', { cliente }); // já vem com o nome do cliente da nota quitada
   };
   dlg.showModal();
 }

@@ -203,8 +203,12 @@ label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--acc
 .rel-texto{white-space:pre-wrap;font:14px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--bg);color:var(--ink);
   border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;max-height:60vh;overflow:auto}
 /* Notas feitas: dia em cima; Ab, Rp e valor lado a lado. */
-.item--feitas{grid-template-columns:1fr 1.6fr}
-.item--feitas .item__data{grid-column:1/-1}
+/* Notas feitas: cliente e dia (menor, do outro lado) em cima; Ab/Rp e valor embaixo. */
+.item--feitas{grid-template-columns:96px 1fr 124px}
+.item--feitas .item__cliente{grid-column:1/3;min-width:0}
+.item--feitas .item__data{grid-column:3;min-width:0}
+.item--feitas .item__data input{padding:7px 4px 7px 6px;font-size:13px}
+.item--feitas .item__valor{grid-column:2/4}
 .item--parcial{grid-template-columns:1fr 1fr}
 .item--parcial .item__dia{grid-column:1/-1}
 /* "ficou devendo": discreto, no canto (do cartão e de cada lançamento) */
