@@ -233,7 +233,9 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   V. pep. 5% impresso; se a folha for de outra semana, o fechamento atual é salvo em ☰ e começa um novo.
 - **Notas feitas (vendas)**: uma linha por dia (dia, Ab, Rp, valor). A soma vira o **Valor deixado**
   e as **Notas deixadas** da folha (não entram nas contas do caixa).
-- **Nº de pinos / Valor dos pepinos**: o valor é digitado e só abre depois que o Nº de pinos é preenchido.
+- **Nº de pinos / Valor dos pepinos**: o valor é digitado e só abre depois que o Nº de pinos é preenchido. Na folha
+  (e no resumo) eles somam também os pepinos parciais (quantidade e o que ficou devendo) e as notas em branco
+  (quantidade e valor).
 - **Notas antecipadas**: uma linha por nota (nome e valor); o total vira **Antecipados**.
 - **Pepino parcial** (aba Relatório): por nota, só valor da nota, recebido e devolução. O que ficou devendo é
   calculado com os 25%, aparece discreto no canto: (nota − devolução) × 0,75 − recebido (nota 436, devolveu 118,

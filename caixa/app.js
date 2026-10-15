@@ -1591,6 +1591,29 @@ function pepinoNoDia(x, dia) {
   return x.dia === dia ? Number(x.valor) || 0 : 0;
 }
 
+// Notas em branco (até o dia): o que foi cobrar menos as notas pagas (valor de face) e as notas com pepino parcial.
+// Nota com pepino parcial sai das notas em branco e fica no parcial: o que pagou + devolução + o que ficou devendo.
+function notasEmBranco(ate = () => true) {
+  const pagas25 = st.notas25.filter((n) => ate(n.dia));
+  const pagas4050 = st.notas4050.filter((n) => ate(n.dia));
+  const parc = st.parciais.filter((x) => ate(x.dia));
+  const qt = Math.max(0, (Number(st.qtNotas) || 0) - pagas25.length - pagas4050.length - parc.reduce((t, x) => t + qtdParcial(x), 0));
+  const valor = Math.max(0, arred(st.foiCobrar - (pagas25.reduce((t, n) => t + valorDeFace(n, 'notas25'), 0)
+    + pagas4050.reduce((t, n) => t + valorDeFace(n, 'notas4050'), 0))
+    - parc.reduce((t, x) => t + valorDaParcial(x), 0)));
+  return { qt, valor };
+}
+// Pepinos da folha: o digitado + os pepinos parciais (quantidade e o que ficou devendo) + as notas em branco.
+function pepinosDaSemana() {
+  const b = notasEmBranco();
+  const parcQt = st.parciais.reduce((t, x) => t + qtdParcial(x), 0);
+  const parcDevendo = st.parciais.reduce((t, x) => t + numero(x.devendo), 0);
+  return {
+    pinos: (parseInt(soDigitos(st.pinos), 10) || 0) + parcQt + b.qt,
+    valor: arred(numero(st.valorPepinos) + parcDevendo + b.valor),
+  };
+}
+
 function relatorio(dia) {
   const c = calcular();
   const g = ls.get(KEY_REL, {});
@@ -1634,11 +1657,7 @@ function relatorio(dia) {
   const recebidoDia = arred(soma(n25) + soma(n4050) + pepDia.reduce((t, v) => t + v, 0)
     + soma(antecDia) + soma(parcDia));
   const recebidoTotal = arred(soma(pagas) + pepTotal.reduce((t, v) => t + v, 0) + soma(antecTotal) + parcPagoTotal);
-  // Nota com pepino parcial sai das notas em branco e fica no parcial: o que pagou + devolução + o que ficou devendo.
-  const emBrancoQt = Math.max(0, (Number(st.qtNotas) || 0) - pagas.length - parcQtd(parcAte));
-  const emBrancoValor = Math.max(0, arred(st.foiCobrar - (pagas25.reduce((t, n) => t + valorDeFace(n, 'notas25'), 0)
-    + pagas4050.reduce((t, n) => t + valorDeFace(n, 'notas4050'), 0))
-    - parcAte.reduce((t, x) => t + valorDaParcial(x), 0)));
+  const { qt: emBrancoQt, valor: emBrancoValor } = notasEmBranco(ate);
   const depDia = st.depositos.filter((d) => d.data === dia);
   const depAte = st.depositos.filter((d) => ate(d.data));
   const depTotal = soma(depAte);
@@ -1785,9 +1804,10 @@ function resumo() {
   L.push(`*CAIXA — ${st.nome || ''}*`, `${st.cidade || ''} · ${d} · Semana ${st.semana || '-'}`, '');
   L.push(`Foi cobrar: ${R$(st.foiCobrar)} (${st.qtNotas || 0} notas)`);
   L.push(`V. pep. 5%: ${R$(c.vPep5)}`);
-  L.push(`Notas deixadas: ${st.qtNotasDeixadas || 0} · Pinos: ${st.pinos || 0}`);
+  const pep = pepinosDaSemana();
+  L.push(`Notas deixadas: ${st.qtNotasDeixadas || 0} · Pinos: ${pep.pinos}`);
   L.push(`Antecipados: ${R$(st.antecipados)}`);
-  if (st.valorPepinos) L.push(`Valor dos pepinos: ${R$(st.valorPepinos)}`);
+  if (pep.valor) L.push(`Valor dos pepinos: ${R$(pep.valor)}`);
   if (st.pepinoParcial) L.push(`Pepino parcial: ${R$(st.pepinoParcial)}`);
   L.push('', `Notas 25%: ${R$(c.notas25)} (${st.notas25.length})`, `Notas 40% e 50%: ${R$(c.notas4050)} (${st.notas4050.length})`);
   L.push(`Pepino extra: ${R$(c.extras)}`);
@@ -1840,11 +1860,12 @@ function dadosCaixa() {
   // E no OBS continua o aviso do que ainda falta depositar.
   if (c.falta > 0) obs.push(`Falta depositar ${brl(c.falta)}`);
   if (c.falta < 0) obs.push(`Depositou a mais ${brl(-c.falta)}`);
+  const pep = pepinosDaSemana();
   return {
     nome: st.nome, cidade: st.cidade, data: d, semana: st.semana, foiCobrar: vazioOu(st.foiCobrar),
     qtNotas: st.qtNotas, vPep5: vazioOu(c.vPep5),
-    antecipados: vazioOu(st.antecipados), qtNotasDeixadas: st.qtNotasDeixadas, pinos: st.pinos,
-    valorPepinos: vazioOu(st.valorPepinos), pepinoParcial: vazioOu(st.pepinoParcial),
+    antecipados: vazioOu(st.antecipados), qtNotasDeixadas: st.qtNotasDeixadas, pinos: pep.pinos ? String(pep.pinos) : '',
+    valorPepinos: vazioOu(pep.valor), pepinoParcial: vazioOu(st.pepinoParcial),
     notas25: vazioOu(c.notas25), notas4050: vazioOu(c.notas4050), pepinoExtra: vazioOu(c.extras),
     recebimento: vazioOu(c.recebimento), depEspecie: naEmpresa ? vazioOu(totalDep) : '', depPix: '',
     depBanco: naEmpresa ? '' : vazioOu(totalDep), vale: vazioOu(st.vale), ajuda: vazioOu(st.ajuda), mecanica: vazioOu(st.mecanica),
