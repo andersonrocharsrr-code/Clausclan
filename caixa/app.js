@@ -616,6 +616,12 @@ new MutationObserver(travarFundo).observe(document.body, { subtree: true, attrib
 // e deixa o campo no meio da tela, logo acima do teclado. "Concluído/Enter" do teclado confirma o campo.
 // Só campos que abrem o teclado: data, hora e listas abrem um seletor do Android, e com eles o app não pode
 // esconder a barra nem deixar o espaço do teclado (o "voltar" fecha o seletor e o espaço ficava sobrando).
+// Data: tocar em qualquer parte do campo abre o calendário (no Android só o ícone abria; o resto marcava o ano).
+document.addEventListener('click', (e) => {
+  const el = e.target.closest?.('input[type="date"], input[type="time"], input[type="month"]');
+  if (!el || el.readOnly || el.disabled || !el.showPicker) return;
+  try { el.showPicker(); } catch { /* já aberto ou sem permissão: segue o padrão do navegador */ }
+});
 const ehCampo = (el) => el && !el.readOnly && el.matches?.('input:not([type="radio"]):not([type="checkbox"]):not([type="file"])'
   + ':not([type="date"]):not([type="time"]):not([type="datetime-local"]):not([type="month"]):not([type="week"])'
   + ':not([type="color"]):not([type="range"]), textarea');
