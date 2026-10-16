@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Confirma Nota</title>
+  <meta name="description" content="Mensagens de confirmação de compra e de cobrança, com ditado por voz e lembretes.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#15803d">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Confirma">
+  <link rel="stylesheet" href="style.css?v=5">
+</head>
+<body>
+  <header class="top">
+    <div class="top__title">
+      <h1>Confirma Nota</h1>
+      <small id="resumo">—</small>
+    </div>
+    <button id="btnSino" class="icone" type="button" aria-label="Ativar notificações">🔔</button>
+  </header>
+
+  <nav class="abas" role="tablist">
+    <button type="button" role="tab" data-aba="nova" class="is-on"><i>✅</i>Confirmação</button>
+    <button type="button" role="tab" data-aba="cobranca"><i>💰</i>Cobrança</button>
+    <button type="button" role="tab" data-aba="lista"><i>📋</i>Contatos <span id="contaPend" class="bolha" hidden></span></button>
+    <button type="button" role="tab" data-aba="ajustes"><i>⚙️</i>Ajustes</button>
+  </nav>
+
+  <main>
+    <!-- ============ Confirmação da compra ============ -->
+    <section id="aba-nova" class="aba" data-tipo="confirmacao">
+      <form class="card" autocomplete="off">
+        <label class="campo">
+          <span>Nome da cliente</span>
+          <div class="campo__linha">
+            <input data-campo="cliente" id="confirmacao-cliente" placeholder="Ex.: Maria da Silva">
+            <button type="button" class="mic" data-mic="confirmacao-cliente" aria-label="Falar o nome da cliente">🎤</button>
+          </div>
+        </label>
+        <label class="campo">
+          <span>Nome do vendedor</span>
+          <select data-campo="vendedor"></select>
+        </label>
+        <label class="campo">
+          <span>Data da nota</span>
+          <input data-campo="data" type="date">
+        </label>
+        <label class="campo">
+          <span>Telefone</span>
+          <div class="campo__linha">
+            <input data-campo="fone" id="confirmacao-fone" type="tel" inputmode="tel" placeholder="(11) 99999-9999">
+            <button type="button" class="mic" data-mic="confirmacao-fone" aria-label="Falar o número do telefone">🎤</button>
+          </div>
+        </label>
+        <p class="ouvindo" hidden>🎙️ Ouvindo… pode falar</p>
+      </form>
+
+      <div class="card">
+        <div class="card__cab">
+          <h2>Mensagem</h2>
+          <button type="button" class="link" data-limpar>Limpar</button>
+        </div>
+        <div class="previa"></div>
+        <div class="acoes">
+          <button type="button" class="btn btn--whats" data-enviar="whats">Enviar no WhatsApp</button>
+          <button type="button" class="btn btn--sec" data-enviar="copiar">Copiar</button>
+          <button type="button" class="btn btn--sec" data-enviar="compartilhar">Compartilhar</button>
+        </div>
+        <p class="dica">Ao enviar, a cliente entra em <b>Contatos</b> como “Aguardando” e o app te lembra de cobrar a resposta.</p>
+      </div>
+    </section>
+
+    <!-- ============ Cobrança ============ -->
+    <section id="aba-cobranca" class="aba" hidden data-tipo="cobranca">
+      <form class="card" autocomplete="off">
+        <label class="campo">
+          <span>Nome da cliente</span>
+          <div class="campo__linha">
+            <input data-campo="cliente" id="cobranca-cliente" placeholder="Ex.: Maria da Silva">
+            <button type="button" class="mic" data-mic="cobranca-cliente" aria-label="Falar o nome da cliente">🎤</button>
+          </div>
+        </label>
+        <label class="campo">
+          <span>Nome do vendedor</span>
+          <select data-campo="vendedor"></select>
+        </label>
+        <div class="dupla">
+          <label class="campo">
+            <span>Valor da nota</span>
+            <input data-campo="valor" inputmode="decimal" placeholder="215,00">
+          </label>
+          <label class="campo">
+            <span>Venceu no dia</span>
+            <input data-campo="vencimento" type="date">
+          </label>
+        </div>
+        <label class="campo">
+          <span>Telefone</span>
+          <div class="campo__linha">
+            <input data-campo="fone" id="cobranca-fone" type="tel" inputmode="tel" placeholder="(11) 99999-9999">
+            <button type="button" class="mic" data-mic="cobranca-fone" aria-label="Falar o número do telefone">🎤</button>
+          </div>
+        </label>
+        <p class="ouvindo" hidden>🎙️ Ouvindo… pode falar</p>
+      </form>
+
+      <div class="card">
+        <div class="card__cab">
+          <h2>Mensagem</h2>
+          <button type="button" class="link" data-limpar>Limpar</button>
+        </div>
+        <div class="previa"></div>
+        <div class="acoes">
+          <button type="button" class="btn btn--whats" data-enviar="whats">Enviar no WhatsApp</button>
+          <button type="button" class="btn btn--sec" data-enviar="copiar">Copiar</button>
+          <button type="button" class="btn btn--sec" data-enviar="compartilhar">Compartilhar</button>
+        </div>
+        <p class="dica">Ao enviar, a cobrança entra em <b>Contatos</b> como “Em aberto” até você marcar que a cliente pagou.</p>
+      </div>
+    </section>
+
+    <!-- ============ Contatos (gestão) ============ -->
+    <section id="aba-lista" class="aba" hidden>
+      <div class="card card--fino">
+        <input id="busca" type="search" placeholder="Buscar cliente ou vendedor">
+        <div class="filtros" role="group" data-grupo="tipo">
+          <button type="button" data-filtro="todos" class="is-on">Todos</button>
+          <button type="button" data-filtro="confirmacao">Confirmações</button>
+          <button type="button" data-filtro="cobranca">Cobranças</button>
+        </div>
+        <div class="filtros" role="group" data-grupo="status">
+          <button type="button" data-filtro="aguardando" class="is-on">Pendentes</button>
+          <button type="button" data-filtro="confirmada">Resolvidas</button>
+          <button type="button" data-filtro="todas">Todas</button>
+        </div>
+      </div>
+      <div id="lista"></div>
+    </section>
+
+    <!-- ============ Ajustes ============ -->
+    <section id="aba-ajustes" class="aba" hidden>
+      <div class="card">
+        <h2>Quem envia</h2>
+        <label class="campo"><span>Seu nome (atendente)</span><input id="aAtendente" placeholder="Mary"></label>
+        <label class="campo"><span>Empresa</span><input id="aEmpresa" placeholder="FC ENXOVAIS"></label>
+      </div>
+      <div class="card">
+        <h2>Vendedores</h2>
+        <p class="dica">Os nomes daqui aparecem para escolher no campo “Nome do vendedor”.</p>
+        <div class="campo__linha campo--add">
+          <input id="aNovoVendedor" placeholder="Nome do vendedor" enterkeyhint="done">
+          <button id="btnAddVendedor" type="button" class="btn btn--add">Adicionar</button>
+        </div>
+        <ul id="listaVend" class="vends"></ul>
+      </div>
+      <div class="card">
+        <h2>Mensagem de confirmação</h2>
+        <p class="dica">Use: <code>{saudacao}</code> (Bom dia/Boa tarde/Boa noite), <code>{cliente}</code>, <code>{atendente}</code>, <code>{vendedor}</code>, <code>{data}</code>.</p>
+        <textarea data-modelo="confirmacao" rows="9"></textarea>
+        <button type="button" class="link" data-modelo-padrao="confirmacao">Voltar ao modelo original</button>
+      </div>
+      <div class="card">
+        <h2>Mensagem de cobrança</h2>
+        <p class="dica">Use: <code>{saudacao}</code>, <code>{cliente}</code>, <code>{atendente}</code>, <code>{empresa}</code>, <code>{vendedor}</code>, <code>{valor}</code>, <code>{vencimento}</code>.</p>
+        <textarea data-modelo="cobranca" rows="10"></textarea>
+        <button type="button" class="link" data-modelo-padrao="cobranca">Voltar ao modelo original</button>
+      </div>
+      <div class="card">
+        <h2>Lembretes</h2>
+        <label class="campo">
+          <span>Lembrar de cobrar a resposta depois de</span>
+          <select id="aLembrete">
+            <option value="0">Não lembrar</option>
+            <option value="1">1 hora</option>
+            <option value="2">2 horas</option>
+            <option value="4">4 horas</option>
+            <option value="24">1 dia</option>
+            <option value="48">2 dias</option>
+          </select>
+        </label>
+        <label class="campo">
+          <span>Resumo diário das pendentes</span>
+          <select id="aResumo">
+            <option value="">Desligado</option>
+            <option value="09:00">09:00</option>
+            <option value="12:00">12:00</option>
+            <option value="17:00">17:00</option>
+            <option value="18:00">18:00</option>
+          </select>
+        </label>
+        <button id="btnTesteNotif" type="button" class="btn btn--sec">Testar notificação</button>
+      </div>
+      <div class="card">
+        <h2>Backup</h2>
+        <div class="acoes">
+          <button id="btnExportar" type="button" class="btn btn--sec">Exportar contatos</button>
+          <label class="btn btn--sec">Importar<input id="fImportar" type="file" accept="application/json,.json" hidden></label>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Confirmar valor -->
+  <dialog id="dlgValor" class="dlg">
+    <form method="dialog">
+      <h2 id="dlgValorTitulo">Confirmar nota</h2>
+      <p id="dlgValorQuem" class="dica"></p>
+      <label class="campo"><span id="dlgValorRotulo">Valor da compra</span><input id="dValor" inputmode="decimal" placeholder="R$ 0,00"></label>
+      <label class="campo"><span>Observação</span><input id="dObs" placeholder="Ex.: mandou foto da nota"></label>
+      <div class="acoes">
+        <button value="cancel" class="btn btn--sec">Cancelar</button>
+        <button value="ok" class="btn">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <script src="app.js?v=5"></script>
+</body>
+</html>

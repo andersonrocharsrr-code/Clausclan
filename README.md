@@ -304,3 +304,28 @@ Sem o segredo (ou fora do `main`) sai um APK de teste em "Artifacts" na execuç�
   Uma nota por foto, esticada e nítida. Não lê letra de mão (pepino extra). Código em `caixa/leitor.js`.
 - **IA econômica** (Claude Haiku, centavos) e **IA mais precisa** (Claude Opus): leem foto tremida e letra de mão.
   Precisam da chave da API da Anthropic (console.anthropic.com), salva só no aparelho; cada foto é cobrada na sua conta.
+
+---
+
+# Confirma Nota — confirmação de compra e cobrança (`confirma/` e `confirma-android/`)
+
+App para mandar duas mensagens automáticas pelo WhatsApp e acompanhar as respostas.
+
+- **✅ Confirmação**: "Aqui é Mary, o motivo do meu contato é SOMENTE para confirmar a sua nota com vendedor … no dia …".
+  Campos **Nome da cliente** (com 🎤 para falar e preencher), **Nome do vendedor** (toque e escolha na lista
+  cadastrada em Ajustes, ou cadastre um novo ali mesmo), **Data da nota** (sai como `07.08.2026`) e **Telefone** (também com 🎤: fale os números e ele vira `(68) 99212-6985`).
+- **💰 Cobrança**: "Me chamo Mary, Trabalho na empresa FC ENXOVAIS com o vendedor de enxoval … nota em aberto … no
+  valor de 215,00 tal qual venceu no dia 18/05/2026 …". Campos cliente (🎤), vendedor (lista), **Valor da nota**,
+  **Venceu no dia** e **Telefone** (com 🎤).
+- Nas duas abas a mensagem aparece pronta, com saudação automática (Bom dia / Boa tarde / Boa noite), e os botões
+  **Enviar no WhatsApp**, **Copiar** e **Compartilhar**.
+- **📋 Contatos**: confirmações ficam "Aguardando" até **✅ Respondeu** (anota o valor da compra); cobranças ficam
+  "Em aberto" até **💵 Pagou** (anota o valor pago). Separados em blocos (Confirmações e Cobranças) com a quantidade; com mais de 3, os outros ficam recolhidos em
+  "▾ Ver todas as … (N)". Filtros por tipo e por situação; "Cobrar de novo" reabre o WhatsApp.
+- **⚙️ Ajustes**: nome da atendente, empresa, lista de vendedores, os dois modelos de mensagem
+  (`{saudacao}`, `{cliente}`, `{atendente}`, `{empresa}`, `{vendedor}`, `{data}`, `{valor}`, `{vencimento}`),
+  lembrete para cobrar a resposta (1 h a 2 dias), resumo diário das pendentes e backup em `.json`.
+- **App Android** (`confirma-android/`, Capacitor): ditado por voz nativo do Android e **notificações** agendadas
+  no celular (funcionam com o app fechado). O APK é gerado pelo GitHub Actions (`.github/workflows/confirma-apk.yml`);
+  no `main`, com o segredo `NEXA_SIGNING_SEED`, sai no link fixo
+  `https://github.com/andersonrocharsrr-code/Clausclan/releases/download/confirma/confirma.apk`.
