@@ -327,6 +327,6 @@ App para mandar duas mensagens automáticas pelo WhatsApp e acompanhar as respos
   (`{saudacao}`, `{cliente}`, `{atendente}`, `{empresa}`, `{vendedor}`, `{data}`, `{valor}`, `{vencimento}`),
   lembrete para cobrar a resposta (1 h a 2 dias), resumo diário das pendentes e backup em `.json`.
 - **App Android** (`confirma-android/`, Capacitor): ditado por voz nativo do Android e **notificações** agendadas
-  no celular (funcionam com o app fechado). O APK é gerado pelo GitHub Actions (`.github/workflows/confirma-apk.yml`);
+  no celular (funcionam com o app fechado). Funciona do Android 7 em diante (inclusive Android 12). O APK é gerado pelo GitHub Actions (`.github/workflows/confirma-apk.yml`);
   no `main`, com o segredo `NEXA_SIGNING_SEED`, sai no link fixo
   `https://github.com/andersonrocharsrr-code/Clausclan/releases/download/confirma/confirma.apk`.

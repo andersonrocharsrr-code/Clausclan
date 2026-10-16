@@ -36,6 +36,9 @@
     <!-- Lembretes na barra de notificações (cobrar a resposta da cliente) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Android 13+: aviso na hora certa sem abrir a tela "Alarmes e lembretes" (no Android 12 a
+         permissão SCHEDULE_EXACT_ALARM, que vem do plugin, já é concedida na instalação). -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <!-- Ditado por voz: preencher o nome da cliente e do vendedor falando -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <queries>

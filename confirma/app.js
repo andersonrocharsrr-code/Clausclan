@@ -532,6 +532,8 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
           ? `Cobrança de ${dinheiro(c.valor)} (vendedor ${c.vendedor}). Toque para cobrar de novo.`
           : `Nota com ${c.vendedor} de ${dataBR(c.data)}. Toque para cobrar de novo.`,
         schedule: { at, allowWhileIdle: true }, channelId: 'lembretes', smallIcon: 'ic_stat_confirma', iconColor: '#22c55e', autoCancel: true,
+        // Lembrete não precisa ser no minuto exato: assim o Android 12+ nunca abre a tela "Alarmes e lembretes".
+        isExactNotification: false,
       }] }).catch(() => {});
     });
   }
@@ -546,6 +548,7 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
         id: RESUMO_ID, title: `${pend} cliente${pend === 1 ? '' : 's'} sem responder`,
         body: 'Confirmações e cobranças pendentes. Abra o Confirma Nota para cobrar as respostas.',
         schedule: { on: { hour: h, minute: m || 0 }, allowWhileIdle: true }, channelId: 'lembretes', smallIcon: 'ic_stat_confirma', iconColor: '#22c55e', autoCancel: true,
+        isExactNotification: false,
       }] }).catch(() => {});
     });
   }
