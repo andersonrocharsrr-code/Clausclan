@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Confirma Nota</title>
-  <meta name="description" content="Mensagens de confirmação de nota: cliente, vendedor e data, com ditado por voz e lembretes.">
+  <meta name="description" content="Mensagens de confirmação de compra e de cobrança, com ditado por voz e lembretes.">
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#15803d">
   <link rel="manifest" href="manifest.webmanifest">
@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Confirma">
-  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
   <header class="top">
@@ -24,51 +24,98 @@
   </header>
 
   <nav class="abas" role="tablist">
-    <button type="button" role="tab" data-aba="nova" class="is-on">✍️ Nova</button>
-    <button type="button" role="tab" data-aba="lista">📋 Contatos <span id="contaPend" class="bolha" hidden></span></button>
-    <button type="button" role="tab" data-aba="ajustes">⚙️ Ajustes</button>
+    <button type="button" role="tab" data-aba="nova" class="is-on"><i>✅</i>Confirmação</button>
+    <button type="button" role="tab" data-aba="cobranca"><i>💰</i>Cobrança</button>
+    <button type="button" role="tab" data-aba="lista"><i>📋</i>Contatos <span id="contaPend" class="bolha" hidden></span></button>
+    <button type="button" role="tab" data-aba="ajustes"><i>⚙️</i>Ajustes</button>
   </nav>
 
   <main>
-    <!-- ============ Nova mensagem ============ -->
-    <section id="aba-nova" class="aba">
-      <form id="form" class="card" autocomplete="off">
+    <!-- ============ Confirmação da compra ============ -->
+    <section id="aba-nova" class="aba" data-tipo="confirmacao">
+      <form class="card" autocomplete="off">
         <label class="campo">
           <span>Nome da cliente</span>
           <div class="campo__linha">
-            <input id="fCliente" name="cliente" placeholder="Ex.: Maria da Silva" required>
-            <button type="button" class="mic" data-mic="fCliente" aria-label="Falar o nome da cliente">🎤</button>
+            <input data-campo="cliente" id="confirmacao-cliente" placeholder="Ex.: Maria da Silva">
+            <button type="button" class="mic" data-mic="confirmacao-cliente" aria-label="Falar o nome da cliente">🎤</button>
           </div>
         </label>
         <label class="campo">
           <span>Nome do vendedor</span>
-          <select id="fVendedor" name="vendedor" required></select>
+          <select data-campo="vendedor"></select>
         </label>
         <div class="dupla">
           <label class="campo">
             <span>Data da nota</span>
-            <input id="fData" name="data" type="date" required>
+            <input data-campo="data" type="date">
           </label>
           <label class="campo">
-            <span>WhatsApp (opcional)</span>
-            <input id="fFone" name="fone" type="tel" inputmode="tel" placeholder="(11) 99999-9999">
+            <span>Telefone</span>
+            <input data-campo="fone" type="tel" inputmode="tel" placeholder="(11) 99999-9999">
           </label>
         </div>
-        <p id="ouvindo" class="ouvindo" hidden>🎙️ Ouvindo… fale o nome</p>
+        <p class="ouvindo" hidden>🎙️ Ouvindo… fale o nome</p>
       </form>
 
       <div class="card">
         <div class="card__cab">
           <h2>Mensagem</h2>
-          <button id="btnLimpar" type="button" class="link">Limpar</button>
+          <button type="button" class="link" data-limpar>Limpar</button>
         </div>
-        <div id="previa" class="previa"></div>
+        <div class="previa"></div>
         <div class="acoes">
-          <button id="btnWhats" type="button" class="btn btn--whats">Enviar no WhatsApp</button>
-          <button id="btnCopiar" type="button" class="btn btn--sec">Copiar</button>
-          <button id="btnCompartilhar" type="button" class="btn btn--sec">Compartilhar</button>
+          <button type="button" class="btn btn--whats" data-enviar="whats">Enviar no WhatsApp</button>
+          <button type="button" class="btn btn--sec" data-enviar="copiar">Copiar</button>
+          <button type="button" class="btn btn--sec" data-enviar="compartilhar">Compartilhar</button>
         </div>
         <p class="dica">Ao enviar, a cliente entra em <b>Contatos</b> como “Aguardando” e o app te lembra de cobrar a resposta.</p>
+      </div>
+    </section>
+
+    <!-- ============ Cobrança ============ -->
+    <section id="aba-cobranca" class="aba" hidden data-tipo="cobranca">
+      <form class="card" autocomplete="off">
+        <label class="campo">
+          <span>Nome da cliente</span>
+          <div class="campo__linha">
+            <input data-campo="cliente" id="cobranca-cliente" placeholder="Ex.: Maria da Silva">
+            <button type="button" class="mic" data-mic="cobranca-cliente" aria-label="Falar o nome da cliente">🎤</button>
+          </div>
+        </label>
+        <label class="campo">
+          <span>Nome do vendedor</span>
+          <select data-campo="vendedor"></select>
+        </label>
+        <div class="dupla">
+          <label class="campo">
+            <span>Valor da nota</span>
+            <input data-campo="valor" inputmode="decimal" placeholder="215,00">
+          </label>
+          <label class="campo">
+            <span>Venceu no dia</span>
+            <input data-campo="vencimento" type="date">
+          </label>
+        </div>
+          <label class="campo">
+            <span>Telefone</span>
+            <input data-campo="fone" type="tel" inputmode="tel" placeholder="(11) 99999-9999">
+          </label>
+        <p class="ouvindo" hidden>🎙️ Ouvindo… fale o nome</p>
+      </form>
+
+      <div class="card">
+        <div class="card__cab">
+          <h2>Mensagem</h2>
+          <button type="button" class="link" data-limpar>Limpar</button>
+        </div>
+        <div class="previa"></div>
+        <div class="acoes">
+          <button type="button" class="btn btn--whats" data-enviar="whats">Enviar no WhatsApp</button>
+          <button type="button" class="btn btn--sec" data-enviar="copiar">Copiar</button>
+          <button type="button" class="btn btn--sec" data-enviar="compartilhar">Compartilhar</button>
+        </div>
+        <p class="dica">Ao enviar, a cobrança entra em <b>Contatos</b> como “Em aberto” até você marcar que a cliente pagou.</p>
       </div>
     </section>
 
@@ -76,9 +123,14 @@
     <section id="aba-lista" class="aba" hidden>
       <div class="card card--fino">
         <input id="busca" type="search" placeholder="Buscar cliente ou vendedor">
-        <div class="filtros" role="group">
-          <button type="button" data-filtro="aguardando" class="is-on">Aguardando</button>
-          <button type="button" data-filtro="confirmada">Confirmadas</button>
+        <div class="filtros" role="group" data-grupo="tipo">
+          <button type="button" data-filtro="todos" class="is-on">Todos</button>
+          <button type="button" data-filtro="confirmacao">Confirmações</button>
+          <button type="button" data-filtro="cobranca">Cobranças</button>
+        </div>
+        <div class="filtros" role="group" data-grupo="status">
+          <button type="button" data-filtro="aguardando" class="is-on">Pendentes</button>
+          <button type="button" data-filtro="confirmada">Resolvidas</button>
           <button type="button" data-filtro="todas">Todas</button>
         </div>
       </div>
@@ -90,6 +142,7 @@
       <div class="card">
         <h2>Quem envia</h2>
         <label class="campo"><span>Seu nome (atendente)</span><input id="aAtendente" placeholder="Mary"></label>
+        <label class="campo"><span>Empresa</span><input id="aEmpresa" placeholder="FC ENXOVAIS"></label>
       </div>
       <div class="card">
         <h2>Vendedores</h2>
@@ -101,10 +154,16 @@
         <ul id="listaVend" class="vends"></ul>
       </div>
       <div class="card">
-        <h2>Modelo da mensagem</h2>
+        <h2>Mensagem de confirmação</h2>
         <p class="dica">Use: <code>{saudacao}</code> (Bom dia/Boa tarde/Boa noite), <code>{cliente}</code>, <code>{atendente}</code>, <code>{vendedor}</code>, <code>{data}</code>.</p>
-        <textarea id="aModelo" rows="10"></textarea>
-        <button id="btnModeloPadrao" type="button" class="link">Voltar ao modelo original</button>
+        <textarea data-modelo="confirmacao" rows="9"></textarea>
+        <button type="button" class="link" data-modelo-padrao="confirmacao">Voltar ao modelo original</button>
+      </div>
+      <div class="card">
+        <h2>Mensagem de cobrança</h2>
+        <p class="dica">Use: <code>{saudacao}</code>, <code>{cliente}</code>, <code>{atendente}</code>, <code>{empresa}</code>, <code>{vendedor}</code>, <code>{valor}</code>, <code>{vencimento}</code>.</p>
+        <textarea data-modelo="cobranca" rows="10"></textarea>
+        <button type="button" class="link" data-modelo-padrao="cobranca">Voltar ao modelo original</button>
       </div>
       <div class="card">
         <h2>Lembretes</h2>
@@ -144,9 +203,9 @@
   <!-- Confirmar valor -->
   <dialog id="dlgValor" class="dlg">
     <form method="dialog">
-      <h2>Confirmar nota</h2>
+      <h2 id="dlgValorTitulo">Confirmar nota</h2>
       <p id="dlgValorQuem" class="dica"></p>
-      <label class="campo"><span>Valor da compra</span><input id="dValor" inputmode="decimal" placeholder="R$ 0,00"></label>
+      <label class="campo"><span id="dlgValorRotulo">Valor da compra</span><input id="dValor" inputmode="decimal" placeholder="R$ 0,00"></label>
       <label class="campo"><span>Observação</span><input id="dObs" placeholder="Ex.: mandou foto da nota"></label>
       <div class="acoes">
         <button value="cancel" class="btn btn--sec">Cancelar</button>
@@ -157,6 +216,6 @@
 
   <div id="toast" class="toast" role="status" hidden></div>
 
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

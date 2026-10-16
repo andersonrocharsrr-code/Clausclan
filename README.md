@@ -307,19 +307,23 @@ Sem o segredo (ou fora do `main`) sai um APK de teste em "Artifacts" na execuç�
 
 ---
 
-# Confirma Nota — mensagens de confirmação de nota (`confirma/` e `confirma-android/`)
+# Confirma Nota — confirmação de compra e cobrança (`confirma/` e `confirma-android/`)
 
-Modelo inicial de um app para gerenciar a mensagem automática de confirmação de nota
-("Aqui é Mary, o motivo do meu contato é SOMENTE para confirmar a sua nota com vendedor … no dia …").
+App para mandar duas mensagens automáticas pelo WhatsApp e acompanhar as respostas.
 
-- **Nova**: campo **Nome da cliente** com botão 🎤 para falar e preencher, **Nome do vendedor** (toque e escolha
-  na lista de vendedores cadastrados em Ajustes, ou cadastre um novo ali mesmo), **Data da nota** e WhatsApp (opcional). A mensagem aparece pronta embaixo, com a saudação automática
-  (Bom dia / Boa tarde / Boa noite) e a data no formato `07.08.2026`.
-  Botões **Enviar no WhatsApp**, **Copiar** e **Compartilhar**.
-- **Contatos**: quem recebeu a mensagem fica como **Aguardando**; ao responder, toque em **✅ Respondeu**
-  e anote o valor da compra. "Cobrar de novo" reabre o WhatsApp com a mensagem.
-- **Ajustes**: nome da atendente, lista de vendedores, modelo da mensagem (`{saudacao}`, `{cliente}`, `{atendente}`, `{vendedor}`, `{data}`),
-  lembrete para cobrar a resposta (1 h a 2 dias) e resumo diário das pendentes; backup em `.json`.
+- **✅ Confirmação**: "Aqui é Mary, o motivo do meu contato é SOMENTE para confirmar a sua nota com vendedor … no dia …".
+  Campos **Nome da cliente** (com 🎤 para falar e preencher), **Nome do vendedor** (toque e escolha na lista
+  cadastrada em Ajustes, ou cadastre um novo ali mesmo), **Data da nota** (sai como `07.08.2026`) e **Telefone**.
+- **💰 Cobrança**: "Me chamo Mary, Trabalho na empresa FC ENXOVAIS com o vendedor de enxoval … nota em aberto … no
+  valor de 215,00 tal qual venceu no dia 18/05/2026 …". Campos cliente (🎤), vendedor (lista), **Valor da nota**,
+  **Venceu no dia** e **Telefone**.
+- Nas duas abas a mensagem aparece pronta, com saudação automática (Bom dia / Boa tarde / Boa noite), e os botões
+  **Enviar no WhatsApp**, **Copiar** e **Compartilhar**.
+- **📋 Contatos**: confirmações ficam "Aguardando" até **✅ Respondeu** (anota o valor da compra); cobranças ficam
+  "Em aberto" até **💵 Pagou** (anota o valor pago). Filtros por tipo e por situação; "Cobrar de novo" reabre o WhatsApp.
+- **⚙️ Ajustes**: nome da atendente, empresa, lista de vendedores, os dois modelos de mensagem
+  (`{saudacao}`, `{cliente}`, `{atendente}`, `{empresa}`, `{vendedor}`, `{data}`, `{valor}`, `{vencimento}`),
+  lembrete para cobrar a resposta (1 h a 2 dias), resumo diário das pendentes e backup em `.json`.
 - **App Android** (`confirma-android/`, Capacitor): ditado por voz nativo do Android e **notificações** agendadas
   no celular (funcionam com o app fechado). O APK é gerado pelo GitHub Actions (`.github/workflows/confirma-apk.yml`);
   no `main`, com o segredo `NEXA_SIGNING_SEED`, sai no link fixo
