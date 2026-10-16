@@ -63,6 +63,7 @@ input,output{font:inherit;font-size:16px;color:var(--ink);background:var(--input
   border-radius:12px;padding:10px 12px;width:100%;min-width:0}
 output{background:transparent;border-style:dashed;font-variant-numeric:tabular-nums}
 input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+input:disabled{opacity:.55;cursor:not-allowed}
 /* Data: o toque abre o calendário; nada fica marcado de azul (nem o contorno, nem o dia/mês/ano). */
 input[type="date"]:focus{outline:none}
 input[type="date"]::-webkit-datetime-edit-day-field,input[type="date"]::-webkit-datetime-edit-month-field,

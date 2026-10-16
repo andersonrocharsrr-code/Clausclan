@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=56">
+  <link rel="stylesheet" href="style.css?v=57">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -82,8 +82,7 @@
         <label>Qt. de notas<input data-f="qtNotas" enterkeyhint="done" inputmode="numeric"></label>
         <label>V. pep. 5% (R$)<output data-c="vPep5"></output></label>
         <label>Nº de pinos<input data-f="pinos" enterkeyhint="done" inputmode="numeric"></label>
-        <label>Valor dos pepinos (R$)<output data-c="valorPepinos"></output></label>
-        <label>Outros pepinos (R$)<input data-f="pepinosOutros" enterkeyhint="done" data-money inputmode="decimal" placeholder="0,00"></label>
+        <label>Valor dos pepinos (R$)<input data-f="valorPepinos" enterkeyhint="done" data-money inputmode="decimal" placeholder="Preencha o Nº de pinos"></label>
       </div>
     </section>
 
@@ -203,7 +202,7 @@
       </div>
       <div class="row-actions">
         <button class="btn" data-pila="Refeição">+ Refeição</button>
-        <button class="btn" data-pila="Salário">+ Salário</button>
+        <button class="btn" data-pila="Semanal">+ Semanal</button>
         <button class="btn" data-pila="Hotel">+ Hotel</button>
         <button class="btn" data-pila="">+ Outra</button>
       </div>
@@ -515,6 +514,6 @@
   </div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=65"></script>
+  <script type="module" src="app.js?v=71"></script>
 </body>
 </html>

@@ -129,20 +129,20 @@ export async function desenharCaixa(d) {
     ['RECEBIMENTO:R$', d.recebimento, true], ['DEPTO. EMPRESA ESPECIE:R$', d.depEspecie], ['DEPTO PIX:R$', d.depPix],
     ['DEPTO BANCO/TED/TRANS.:R$', d.depBanco], ['VALE ADIANTADO:R$', d.vale], ['AJUDA DE CUSTO:R$', d.ajuda],
     ['MECANICA:R$', d.mecanica], ['DESPESAS SUPERVISOR:R$', d.despSupervisor], ['EXCEDIDO DA DESPESA:R$', d.excedido],
-    ['OUTROS:R$', ''], ['', ''], ['OBS:R$', ''], ['', ''], ['', ''], ['', ''], ['', ''],
+    ['OUTROS:R$', ''], ['', ''], ['', ''], ['OBS:R$', ''], ['', ''], ['', ''], ['', ''],
     ['VALOR DEIXADO:R$', d.valorDeixado, false, true],
   ];
   const yCorpo = y;
   // As linhas do corpo crescem para a folha ocupar a página inteira, como a impressa.
   const hLin = Math.floor((H - 36 - yCorpo - 6 - (d.extras.length > 10 ? 50 : 0)) / (ROTULOS.length + 1));
-  // Outros (2 linhas) e OBS (5 linhas): se tiver mais itens que linhas, junta na mesma linha.
+  // Outros (3 linhas) e OBS (4 linhas): se tiver mais itens que linhas, junta na mesma linha.
   const distribuir = (itens, n) => {
     if (itens.length <= n) return Array.from({ length: n }, (_, i) => itens[i] || '');
     const por = Math.ceil(itens.length / n);
     return Array.from({ length: n }, (_, i) => itens.slice(i * por, i * por + por).join(' · '));
   };
-  const outros = distribuir(d.outros, 2);
-  const obs = distribuir(d.obs, 5);
+  const outros = distribuir(d.outros, 3);
+  const obs = distribuir(d.obs, 4);
 
   ROTULOS.forEach(([rot, val, negrito, grande], i) => {
     const yy = yCorpo + i * hLin;
@@ -151,8 +151,8 @@ export async function desenharCaixa(d) {
     const fonte = grande ? '600 26px Arial, Helvetica, sans-serif' : negrito ? '700 20px Arial, Helvetica, sans-serif' : ROTULO;
     const fim = texto(rot, X0 + 10, ym2, x(0.5) - X0 - 20, { fonte });
     if (val) mao(val, fim, x(0.5), ym2);
-    if (i === 9 || i === 10) mao(outros[i - 9], i === 9 ? fim : X0 + 40, x(0.5), ym2);
-    if (i >= 11 && i <= 15) mao(obs[i - 11], i === 11 ? fim : X0 + 40, x(0.5), ym2);
+    if (i >= 9 && i <= 11) mao(outros[i - 9], i === 9 ? fim : X0 + 40, x(0.5), ym2);
+    if (i >= 12 && i <= 15) mao(obs[i - 12], i === 12 ? fim : X0 + 40, x(0.5), ym2);
   });
 
   // Blocos de pepino extra: Nº | CIDADE | VALOR, a linha com os dados e VENDEDORA:, em duas colunas.
