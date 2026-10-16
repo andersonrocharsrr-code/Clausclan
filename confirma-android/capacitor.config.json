@@ -3,7 +3,7 @@
   "appName": "Confirma Nota",
   "webDir": "www",
   "android": {
-    "backgroundColor": "#0f1b2d"
+    "backgroundColor": "#0c1511"
   },
   "plugins": {
     "LocalNotifications": {

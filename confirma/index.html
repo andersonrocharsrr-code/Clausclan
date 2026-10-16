@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="com-intro">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Confirma">
-  <link rel="stylesheet" href="style.css?v=8">
+  <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
   <!-- Abertura: a logo se monta (nota, linhas, selo e o ✓) e some. Um toque pula. -->
@@ -46,9 +46,12 @@
     // Some sozinha depois da animação; um toque pula.
     (function () {
       var el = document.getElementById('intro');
-      var fim = function () { if (!el) return; el.classList.add('is-saindo'); var e = el; el = null; setTimeout(function () { e.remove(); }, 450); };
+      var fim = function () {
+        if (!el) return; el.classList.add('is-saindo'); var e = el; el = null;
+        setTimeout(function () { e.remove(); document.documentElement.classList.remove('com-intro'); }, 700);
+      };
       var reduz = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-      setTimeout(fim, reduz ? 900 : 2700);
+      setTimeout(fim, reduz ? 900 : 3200);
       document.getElementById('intro').addEventListener('click', fim);
     })();
   </script>
