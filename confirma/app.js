@@ -193,7 +193,6 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     $('form', sec).addEventListener('submit', (e) => e.preventDefault());
     campo(tipo, 'cliente').addEventListener('blur', (e) => { e.target.value = nomeBonito(e.target.value); atualizarPrevia(tipo); });
     const valor = campo(tipo, 'valor');
-    if (valor) valor.addEventListener('blur', (e) => { const n = lerValor(e.target.value); if (n != null) e.target.value = numeroBR(n); atualizarPrevia(tipo); });
     campo(tipo, 'vendedor').addEventListener('change', (e) => {
       if (e.target.value === NOVO) {
         const nome = nomeBonito(prompt('Nome do novo vendedor:') || '');
@@ -652,7 +651,32 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
       e.preventDefault();
       try { el.showPicker(); } catch { /* sem calendário: fica a digitação normal */ }
     });
+    // Depois de escolher, tira o foco: o dia/mês/ano não fica marcado em azul.
+    el.addEventListener('change', () => setTimeout(() => el.blur(), 0));
   });
+
+  // Valor como maquininha: começa em 0,00 e os números entram pela direita (2 → 0,02 → 0,21 → 2,15 → 21,50 → 215,00).
+  function mascaraDinheiro(el) {
+    const dig = el.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 11);
+    el.value = dig ? numeroBR(Number(dig) / 100) : '';
+    const fim = el.value.length;
+    try { el.setSelectionRange(fim, fim); } catch { /* campo sem cursor */ }
+  }
+  $$('input[data-mascara="dinheiro"]').forEach((el) => {
+    el.addEventListener('input', () => mascaraDinheiro(el));
+    el.addEventListener('focus', () => { if (!el.value) { el.value = '0,00'; } const fim = el.value.length; setTimeout(() => { try { el.setSelectionRange(fim, fim); } catch { /* */ } }, 0); });
+    el.addEventListener('blur', () => { if (el.value === '0,00') { el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); } });
+  });
+
+  // Teclado aberto: o campo em que se digita fica no meio da parte visível (não some atrás das abas nem do teclado).
+  function mostrarCampo() {
+    const el = document.activeElement;
+    if (!el || !el.matches('input:not([type="date"]), textarea')) return;
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+  document.addEventListener('focusin', () => setTimeout(mostrarCampo, 350));
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', () => setTimeout(mostrarCampo, 50));
+  else window.addEventListener('resize', () => setTimeout(mostrarCampo, 50));
 
   // Ao rolar, as abas grudam no topo: uma faixa da cor do fundo cobre a barra de status do Android.
   const marcarRolagem = () => document.documentElement.classList.toggle('rolou', window.scrollY > 8);

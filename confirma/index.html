@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Confirma">
-  <link rel="stylesheet" href="style.css?v=13">
+  <link rel="stylesheet" href="style.css?v=14">
 </head>
 <body>
   <!-- Abertura: a logo se monta (nota, linhas, selo e o ✓) e some. Um toque pula. -->
@@ -133,7 +133,7 @@
         <div class="dupla">
           <label class="campo">
             <span>Valor da nota</span>
-            <input data-campo="valor" inputmode="decimal" placeholder="215,00">
+            <input data-campo="valor" data-mascara="dinheiro" inputmode="numeric" placeholder="0,00" autocomplete="off">
           </label>
           <label class="campo">
             <span>Venceu no dia</span>
@@ -251,7 +251,7 @@
     <form method="dialog">
       <h2 id="dlgValorTitulo">Confirmar nota</h2>
       <p id="dlgValorQuem" class="dica"></p>
-      <label class="campo"><span id="dlgValorRotulo">Valor da compra</span><input id="dValor" inputmode="decimal" placeholder="R$ 0,00"></label>
+      <label class="campo"><span id="dlgValorRotulo">Valor da compra</span><input id="dValor" data-mascara="dinheiro" inputmode="numeric" placeholder="0,00" autocomplete="off"></label>
       <label class="campo"><span>Observação</span><input id="dObs" placeholder="Ex.: mandou foto da nota"></label>
       <div class="acoes">
         <button value="cancel" class="btn btn--sec">Cancelar</button>
@@ -280,6 +280,6 @@
 
   <div id="toast" class="toast" role="status" hidden></div>
 
-  <script src="app.js?v=9"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>

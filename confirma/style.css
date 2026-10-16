@@ -32,6 +32,13 @@ code{background:var(--accent-soft);padding:1px 5px;border-radius:6px;font-size:1
 /* Faixa atrás da barra de status do celular, só depois de rolar (no topo fica o cabeçalho verde). */
 html.rolou body::before{content:"";position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);background:var(--bg);z-index:6}
 input[type="date"]{cursor:pointer}
+/* Sem a marca azul no dia/mês/ano do campo de data. */
+input[type="date"]::-webkit-datetime-edit-day-field:focus,
+input[type="date"]::-webkit-datetime-edit-month-field:focus,
+input[type="date"]::-webkit-datetime-edit-year-field:focus{background:transparent;color:inherit}
+/* Ao focar um campo, ele para abaixo das abas grudadas no topo. */
+input,select,textarea{scroll-margin-top:calc(110px + env(safe-area-inset-top));scroll-margin-bottom:24px}
+input[data-mascara="dinheiro"]{font-variant-numeric:tabular-nums}
 .abas button{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:transparent;color:var(--muted);font:inherit;font-size:12.5px;font-weight:600;padding:7px 2px;border-radius:12px;cursor:pointer;position:relative;white-space:nowrap}
 .abas button i{font-style:normal;font-size:18px;line-height:1}
 .abas button.is-on{background:var(--accent-soft);color:var(--accent)}
