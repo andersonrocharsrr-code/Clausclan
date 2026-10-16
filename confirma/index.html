@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Confirma">
-  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
   <!-- Abertura: a logo se monta (nota, linhas, selo e o ✓) e some. Um toque pula. -->
@@ -40,6 +40,7 @@
       </g>
     </svg>
     <div class="intro__titulo">Confirma Nota<small>confirmação e cobrança</small></div>
+    <img class="intro__empresa" src="dtx.png" alt="DTX Tecnologia" width="480" height="250">
   </div>
   <script>
     // Some sozinha depois da animação; um toque pula.
@@ -47,7 +48,7 @@
       var el = document.getElementById('intro');
       var fim = function () { if (!el) return; el.classList.add('is-saindo'); var e = el; el = null; setTimeout(function () { e.remove(); }, 450); };
       var reduz = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-      setTimeout(fim, reduz ? 600 : 2100);
+      setTimeout(fim, reduz ? 900 : 2700);
       document.getElementById('intro').addEventListener('click', fim);
     })();
   </script>
