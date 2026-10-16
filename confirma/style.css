@@ -63,6 +63,15 @@ textarea{resize:vertical;line-height:1.45}
 .btn--whats{flex-basis:100%;background:var(--whats);color:#06210f}
 .btn:disabled{opacity:.5}
 .link{border:0;background:none;color:var(--accent);font:inherit;font-weight:600;padding:6px 0;cursor:pointer}
+select{appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:36px;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px;background-repeat:no-repeat}
+select.is-vazio{color:var(--muted)}
+.campo--add{margin-top:10px}
+.btn--add{flex:none;min-width:0}
+.vends{list-style:none;margin:12px 0 0;padding:0}
+.vends li{display:flex;align-items:center;gap:8px;padding:9px 4px;border-top:1px solid var(--line)}
+.vends li span{flex:1;font-weight:600}
+.vends li button{border:0;background:none;color:var(--neg);font-size:18px;cursor:pointer;padding:4px 8px}
+.vends .vazia{padding:12px 0;border:0;justify-content:center}
 .dica{font-size:13px;color:var(--muted);margin:10px 0 0}
 
 .filtros{display:flex;gap:6px;margin-top:10px}

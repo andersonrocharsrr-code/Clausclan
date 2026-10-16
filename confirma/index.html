@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Confirma">
-  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
   <header class="top">
@@ -42,11 +42,7 @@
         </label>
         <label class="campo">
           <span>Nome do vendedor</span>
-          <div class="campo__linha">
-            <input id="fVendedor" name="vendedor" list="listaVendedores" placeholder="Ex.: João" required>
-            <button type="button" class="mic" data-mic="fVendedor" aria-label="Falar o nome do vendedor">🎤</button>
-          </div>
-          <datalist id="listaVendedores"></datalist>
+          <select id="fVendedor" name="vendedor" required></select>
         </label>
         <div class="dupla">
           <label class="campo">
@@ -94,6 +90,15 @@
       <div class="card">
         <h2>Quem envia</h2>
         <label class="campo"><span>Seu nome (atendente)</span><input id="aAtendente" placeholder="Mary"></label>
+      </div>
+      <div class="card">
+        <h2>Vendedores</h2>
+        <p class="dica">Os nomes daqui aparecem para escolher no campo “Nome do vendedor”.</p>
+        <div class="campo__linha campo--add">
+          <input id="aNovoVendedor" placeholder="Nome do vendedor" enterkeyhint="done">
+          <button id="btnAddVendedor" type="button" class="btn btn--add">Adicionar</button>
+        </div>
+        <ul id="listaVend" class="vends"></ul>
       </div>
       <div class="card">
         <h2>Modelo da mensagem</h2>
@@ -152,6 +157,6 @@
 
   <div id="toast" class="toast" role="status" hidden></div>
 
-  <script src="app.js?v=1"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

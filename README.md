@@ -312,13 +312,13 @@ Sem o segredo (ou fora do `main`) sai um APK de teste em "Artifacts" na execuç�
 Modelo inicial de um app para gerenciar a mensagem automática de confirmação de nota
 ("Aqui é Mary, o motivo do meu contato é SOMENTE para confirmar a sua nota com vendedor … no dia …").
 
-- **Nova**: campos **Nome da cliente**, **Nome do vendedor** (cada um com botão 🎤 para falar e preencher),
-  **Data da nota** e WhatsApp (opcional). A mensagem aparece pronta embaixo, com a saudação automática
+- **Nova**: campo **Nome da cliente** com botão 🎤 para falar e preencher, **Nome do vendedor** (toque e escolha
+  na lista de vendedores cadastrados em Ajustes, ou cadastre um novo ali mesmo), **Data da nota** e WhatsApp (opcional). A mensagem aparece pronta embaixo, com a saudação automática
   (Bom dia / Boa tarde / Boa noite) e a data no formato `07.08.2026`.
   Botões **Enviar no WhatsApp**, **Copiar** e **Compartilhar**.
 - **Contatos**: quem recebeu a mensagem fica como **Aguardando**; ao responder, toque em **✅ Respondeu**
   e anote o valor da compra. "Cobrar de novo" reabre o WhatsApp com a mensagem.
-- **Ajustes**: nome da atendente, modelo da mensagem (`{saudacao}`, `{cliente}`, `{atendente}`, `{vendedor}`, `{data}`),
+- **Ajustes**: nome da atendente, lista de vendedores, modelo da mensagem (`{saudacao}`, `{cliente}`, `{atendente}`, `{vendedor}`, `{data}`),
   lembrete para cobrar a resposta (1 h a 2 dias) e resumo diário das pendentes; backup em `.json`.
 - **App Android** (`confirma-android/`, Capacitor): ditado por voz nativo do Android e **notificações** agendadas
   no celular (funcionam com o app fechado). O APK é gerado pelo GitHub Actions (`.github/workflows/confirma-apk.yml`);

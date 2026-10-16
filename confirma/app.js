@@ -21,7 +21,10 @@ Aqui é {atendente}, O motivo do meu contato é SOMENTE para confirmar a sua not
     try { s = JSON.parse(localStorage.getItem(CHAVE)); } catch { s = null; }
     s = s && typeof s === 'object' ? s : {};
     s.contatos = Array.isArray(s.contatos) ? s.contatos : [];
-    s.ajustes = Object.assign({ atendente: 'Mary', modelo: MODELO_PADRAO, lembreteHoras: 4, resumo: '17:00', avisosWeb: {} }, s.ajustes || {});
+    s.ajustes = Object.assign({ atendente: 'Mary', modelo: MODELO_PADRAO, lembreteHoras: 4, resumo: '17:00', avisosWeb: {}, vendedores: [] }, s.ajustes || {});
+    if (!Array.isArray(s.ajustes.vendedores)) s.ajustes.vendedores = [];
+    // Primeira vez: aproveita os vendedores que já foram usados nas mensagens.
+    if (!s.ajustes.vendedores.length) s.ajustes.vendedores = [...new Set(s.contatos.map((c) => c.vendedor).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
     s.rascunho = s.rascunho || {};
     return s;
   }
@@ -87,7 +90,7 @@ Aqui é {atendente}, O motivo do meu contato é SOMENTE para confirmar a sua not
   }
   function validar(c) {
     if (!c.cliente) { toast('Falta o nome da cliente.'); $('#fCliente').focus(); return false; }
-    if (!c.vendedor) { toast('Falta o nome do vendedor.'); $('#fVendedor').focus(); return false; }
+    if (!c.vendedor) { toast(state.ajustes.vendedores.length ? 'Escolha o vendedor.' : 'Cadastre os vendedores em Ajustes.'); $('#fVendedor').focus(); return false; }
     if (!c.data) { toast('Falta a data da nota.'); $('#fData').focus(); return false; }
     return true;
   }
@@ -126,7 +129,15 @@ Aqui é {atendente}, O motivo do meu contato é SOMENTE para confirmar a sua not
   $('#form').addEventListener('input', atualizarPrevia);
   $('#form').addEventListener('submit', (e) => e.preventDefault());
   $('#fCliente').addEventListener('blur', (e) => { e.target.value = nomeBonito(e.target.value); atualizarPrevia(); });
-  $('#fVendedor').addEventListener('blur', (e) => { e.target.value = nomeBonito(e.target.value); atualizarPrevia(); });
+  $('#fVendedor').addEventListener('change', (e) => {
+    if (e.target.value === NOVO) {
+      const nome = nomeBonito(prompt('Nome do novo vendedor:') || '');
+      if (nome) addVendedor(nome);
+      e.target.value = nome && state.ajustes.vendedores.includes(nome) ? nome : '';
+    }
+    e.target.classList.toggle('is-vazio', !e.target.value);
+    atualizarPrevia();
+  });
   $('#btnLimpar').addEventListener('click', limparForm);
   $('#btnWhats').addEventListener('click', () => {
     const c = lerForm(); if (!validar(c)) return;
@@ -220,6 +231,46 @@ Aqui é {atendente}, O motivo do meu contato é SOMENTE para confirmar a sua not
     if (SR_NATIVO) ouvirNativo(campo, botao); else ouvirWeb(campo, botao);
   }));
 
+  /* ---------------- Vendedores ---------------- */
+  const NOVO = '__novo';
+  // Campo "Nome do vendedor": ao tocar, mostra todos os vendedores cadastrados para escolher.
+  function renderVendedores() {
+    const sel = $('#fVendedor');
+    const atual = sel.value && sel.value !== NOVO ? sel.value : (state.rascunho.vendedor || '');
+    const lista = state.ajustes.vendedores;
+    sel.innerHTML = `<option value="">${lista.length ? 'Toque para escolher o vendedor' : 'Nenhum vendedor cadastrado'}</option>`
+      + lista.map((v) => `<option value="${esc(v)}">${esc(v)}</option>`).join('')
+      + `<option value="${NOVO}">➕ Cadastrar novo vendedor…</option>`;
+    sel.value = lista.includes(atual) ? atual : '';
+    sel.classList.toggle('is-vazio', !sel.value);
+    $('#listaVend').innerHTML = lista.length
+      ? lista.map((v, i) => `<li><span>${esc(v)}</span><button type="button" data-del="${i}" aria-label="Remover ${esc(v)}">🗑️</button></li>`).join('')
+      : '<li class="vazia">Nenhum vendedor ainda. Adicione acima.</li>';
+  }
+  function addVendedor(nome) {
+    nome = nomeBonito(nome);
+    if (!nome) return false;
+    if (state.ajustes.vendedores.some((v) => v.toLowerCase() === nome.toLowerCase())) { toast(`${nome} já está na lista.`); return false; }
+    state.ajustes.vendedores.push(nome);
+    state.ajustes.vendedores.sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    salvar(); renderVendedores();
+    return true;
+  }
+  $('#btnAddVendedor').addEventListener('click', () => {
+    const el = $('#aNovoVendedor');
+    if (!el.value.trim()) { el.focus(); return; }
+    if (addVendedor(el.value)) { toast('Vendedor adicionado.'); el.value = ''; }
+    el.focus();
+  });
+  $('#aNovoVendedor').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('#btnAddVendedor').click(); } });
+  $('#listaVend').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-del]'); if (!b) return;
+    const nome = state.ajustes.vendedores[Number(b.dataset.del)];
+    if (!nome || !confirm(`Remover ${nome} da lista de vendedores?`)) return;
+    state.ajustes.vendedores = state.ajustes.vendedores.filter((v) => v !== nome);
+    salvar(); renderVendedores(); atualizarPrevia();
+  });
+
   /* ---------------- Contatos (gestão) ---------------- */
   let filtro = 'aguardando';
   function renderLista() {
@@ -230,9 +281,6 @@ Aqui é {atendente}, O motivo do meu contato é SOMENTE para confirmar a sua not
     const total = conf.reduce((s, c) => s + (c.valor || 0), 0);
     $('#resumo').textContent = `${pend} aguardando · ${conf.length} confirmada${conf.length === 1 ? '' : 's'}${total ? ` · ${dinheiro(total)}` : ''}`;
     $('#contaPend').hidden = !pend; $('#contaPend').textContent = pend;
-    // Vendedores já usados viram sugestões.
-    const vend = [...new Set(state.contatos.map((c) => c.vendedor).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-    $('#listaVendedores').innerHTML = vend.map((v) => `<option value="${esc(v)}">`).join('');
 
     if (!itens.length) {
       $('#lista').innerHTML = `<p class="vazia">${filtro === 'aguardando' ? 'Ninguém aguardando resposta. 🎉' : 'Nada por aqui ainda.'}</p>`;
@@ -408,7 +456,9 @@ Aqui é {atendente}, O motivo do meu contato é SOMENTE para confirmar a sua not
       const ids = new Set(state.contatos.map((c) => c.id));
       const novos = d.contatos.filter((c) => c && c.id && !ids.has(c.id));
       state.contatos = [...novos, ...state.contatos].sort((a, b) => (b.enviadoEm || 0) - (a.enviadoEm || 0));
-      salvar(); reagendarTudo(); renderLista();
+      if (d.ajustes && Array.isArray(d.ajustes.vendedores)) d.ajustes.vendedores.forEach((v) => { if (v && !state.ajustes.vendedores.includes(v)) state.ajustes.vendedores.push(v); });
+      state.ajustes.vendedores.sort((x, y) => x.localeCompare(y, 'pt-BR'));
+      salvar(); reagendarTudo(); renderLista(); renderVendedores();
       toast(`${novos.length} contato${novos.length === 1 ? '' : 's'} importado${novos.length === 1 ? '' : 's'}.`);
     } catch { toast('Arquivo inválido.'); }
   });
@@ -434,7 +484,7 @@ Aqui é {atendente}, O motivo do meu contato é SOMENTE para confirmar a sua not
   /* ---------------- Início ---------------- */
   const r = state.rascunho;
   $('#fCliente').value = r.cliente || '';
-  $('#fVendedor').value = r.vendedor || '';
+  renderVendedores();
   $('#fData').value = r.data || hojeISO();
   $('#fFone').value = r.fone || '';
   atualizarPrevia();
