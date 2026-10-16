@@ -120,6 +120,7 @@ select.is-vazio{color:var(--muted)}
 .item__acoes button,.item__acoes a{flex:1;min-width:80px;border:0;border-radius:10px;padding:8px;font:inherit;font-size:13px;font-weight:700;background:var(--accent-soft);color:var(--accent);cursor:pointer;text-align:center;text-decoration:none}
 .item__acoes .is-whats{background:var(--whats);color:#06210f}
 .item__acoes .is-del{background:transparent;color:var(--neg);flex:0 0 auto}
+.sugestao{margin:0 4px 10px;font-size:14px;color:var(--warn);font-weight:600}
 .vazia{text-align:center;color:var(--muted);padding:30px 10px}
 
 .dlg{border:0;border-radius:var(--radius);background:var(--card);color:var(--ink);width:min(92vw,420px);padding:18px;box-shadow:var(--shadow)}
