@@ -130,6 +130,8 @@ const soma = (lista) => arred(lista.reduce((t, i) => t + (Number(i.valor) || 0),
 // Fechamentos salvos antes de existirem campos novos ganham os valores padrão.
 function normalizar(s) {
   const n = { ...novo(), ...s };
+  // Na Pila, "Salário" passou a se chamar "Semanal".
+  (n.pila || []).forEach((o) => { if (/^sal[aá]rio$/i.test((o.tipo || '').trim())) o.tipo = 'Semanal'; });
   if (!s.depositos) {
     // Versões antigas guardavam o depósito em campos soltos; viram depósitos lançados.
     [['empresa', s.depEspecie], ['banco', s.depBanco], ['pix', s.depPix]].forEach(([onde, v]) => {
@@ -1846,11 +1848,14 @@ function dadosCaixa() {
   const c = calcular();
   const d = st.data ? new Date(st.data + 'T12:00').toLocaleDateString('pt-BR') : '';
   const comValor = (desc, v) => `${desc} (${brl(v)})`.trim();
+  const ehSemanal = (o) => /^(semanal|sal[aá]rio)$/i.test((o.tipo || '').trim());
+  const semanal = st.pila.filter(ehSemanal);
+  const pilaResto = st.pila.filter((o) => !ehSemanal(o));
   const outros = [
     ...(st.salario ? [comValor('Salário', st.salario)] : []),
-    // Pila (almoço, hotel…) vai somada numa linha só; o salário fica separado.
-    // Escrita como no OBS: "410,00 (Despesa pila)".
-    ...(soma(st.pila) ? [`${brl(soma(st.pila))} (Despesa pila)`] : []),
+    // Pila (almoço, hotel…) vai somada numa linha só; o semanal fica separado. Escritos como no OBS: "410,00 (Despesa pila)".
+    ...(soma(semanal) ? [`${brl(soma(semanal))} (Semanal)`] : []),
+    ...(soma(pilaResto) ? [`${brl(soma(pilaResto))} (Despesa pila)`] : []),
     ...st.outros.filter((o) => o.valor).map((o) => comValor(o.desc || 'Outros', o.valor)),
   ];
   // Na folha o OBS é escrito "4.000,00 (Fernando)".
