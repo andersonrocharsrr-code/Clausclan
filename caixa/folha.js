@@ -82,24 +82,23 @@ export async function desenharCaixa(d) {
   const hCab = 58;
   // Linha 1
   caixa(X0, y, X1, y + hCab);
-  [0.25, 0.47, 0.58, 0.7, 0.74, 0.84].forEach((f) => linhaV(x(f), y, y + hCab));
+  [0.25, 0.47, 0.58, 0.7, 0.84].forEach((f) => linhaV(x(f), y, y + hCab));
   let ym = y + hCab / 2;
   campo('CIDADE:', d.cidade, x(0), x(0.25), ym, { impresso: true });
   campo('DATA:', d.data, x(0.25), x(0.47), ym, { impresso: true });
   campo('SEMANA:', d.semana, x(0.47), x(0.58), ym, { impresso: true });
   texto('FOI COBRAR:', x(0.58) + 10, ym, x(0.7) - x(0.58) - 20);
-  texto('R$', x(0.7) + 8, ym, x(0.74) - x(0.7) - 12, { fonte: IMPRESSO });
-  texto(d.foiCobrar, x(0.74) + 8, ym, x(0.84) - x(0.74) - 14, { fonte: IMPRESSO });
+  // Traço depois do rótulo; o "R$" fica junto do valor (sem traço entre eles).
+  texto(`R$ ${d.foiCobrar || ''}`.trim(), x(0.7) + 8, ym, x(0.84) - x(0.7) - 12, { fonte: IMPRESSO });
   campo('QT. DE NOTAS:', d.qtNotas, x(0.84), x(1), ym, { impresso: true });
   y += hCab;
   // Linha 2
   caixa(X0, y, X1, y + hCab);
-  [0.25, 0.38, 0.42, 0.5, 0.75].forEach((f) => linhaV(x(f), y, y + hCab));
+  [0.25, 0.38, 0.5, 0.75].forEach((f) => linhaV(x(f), y, y + hCab));
   ym = y + hCab / 2;
   campo('ANTECIPADOS:R$', d.antecipados, x(0), x(0.25), ym);
   texto('V. PEP. 5%:', x(0.25) + 10, ym, x(0.38) - x(0.25) - 20);
-  texto('R$', x(0.38) + 8, ym, x(0.42) - x(0.38) - 12, { fonte: IMPRESSO });
-  texto(d.vPep5, x(0.42) + 6, ym, x(0.5) - x(0.42) - 10, { fonte: IMPRESSO });
+  texto(`R$ ${d.vPep5 || ''}`.trim(), x(0.38) + 8, ym, x(0.5) - x(0.38) - 10, { fonte: IMPRESSO });
   campo('QT.NOTAS DEIXADAS:', d.qtNotasDeixadas, x(0.5), x(0.75), ym);
   campo('Nº DE PINOS:', d.pinos, x(0.75), x(1), ym);
   y += hCab;
