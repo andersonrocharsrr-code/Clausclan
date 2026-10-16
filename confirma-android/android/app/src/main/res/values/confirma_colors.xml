@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Verde-escuro do app: fundo da abertura do Android e do app enquanto carrega. -->
+    <color name="confirma_bg">#0C1511</color>
+</resources>

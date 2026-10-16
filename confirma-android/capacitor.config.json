@@ -1,0 +1,14 @@
+{
+  "appId": "io.github.andersonrocharsrr_code.confirma",
+  "appName": "Confirma Nota",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#0f1b2d"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_confirma",
+      "iconColor": "#22c55e"
+    }
+  }
+}
