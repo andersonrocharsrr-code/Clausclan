@@ -255,6 +255,8 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
   function preencher(id, texto) {
     const el = document.getElementById(id);
     el.value = el.dataset.campo === 'fone' ? foneBonito(digitosFalados(texto)) : nomeBonito(texto);
+    const aviso = $('.ouvindo', el.closest('form'));
+    if (ouvindo && aviso) aviso.innerHTML = `🎙️ Ouvindo… <q>${esc(texto)}</q>`;
     atualizarPrevia(el.closest('section').dataset.tipo);
   }
   async function ouvirNativo(campo, botao) {
@@ -269,18 +271,19 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
       if (p.speechRecognition !== 'granted') p = await SR_NATIVO.requestPermissions();
       if (p.speechRecognition !== 'granted') { toast('Permita o microfone para usar a voz.'); fimOuvir(); return; }
       let parando = false;
+      // Vai preenchendo enquanto a pessoa fala: cada pedaço reconhecido já aparece no campo
+      // (o Android às vezes corrige uma palavra; mostra sempre a versão mais nova).
       subs.push(await SR_NATIVO.addListener('partialResults', (d) => {
-        const t = d && d.matches && d.matches[0];
-        if (t && t.trim().length >= melhor.length) melhor = t.trim();
-        if (melhor) preencher(campo, melhor);
+        const t = d && d.matches && d.matches[0] && d.matches[0].trim();
+        if (t) { melhor = t; preencher(campo, melhor); }
         if (parando) fimLogo(350);
       }));
       // O Android avisa que parou ANTES da frase final: espera um pouco por ela.
       subs.push(await SR_NATIVO.addListener('listeningState', (d) => { if (d && d.status === 'stopped') { parando = true; fimLogo(1500); } }));
-      const r = await SR_NATIVO.start({ language: 'pt-BR', maxResults: 1, partialResults: true, popup: false });
+      const r = await SR_NATIVO.start({ language: 'pt-BR', maxResults: 1, partialResults: true, popup: false, prompt: 'Fale agora' });
       if (r && r.matches && r.matches[0]) { melhor = r.matches[0]; terminar(); }
     } catch {
-      toast('Não ouvi nada. Toque no 🎤 e fale de novo.');
+      toast('Não ouvi nada. Toque no microfone e fale de novo.');
       terminar();
     }
   }
@@ -290,7 +293,7 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     rec.onresult = (e) => preencher(campo, [...e.results].map((r) => r[0].transcript).join(' '));
     rec.onerror = (e) => {
       if (e.error === 'not-allowed' || e.error === 'service-not-allowed') toast('Permita o microfone para usar a voz.');
-      else if (e.error === 'no-speech') toast('Não ouvi nada. Toque no 🎤 e fale de novo.');
+      else if (e.error === 'no-speech') toast('Não ouvi nada. Toque no microfone e fale de novo.');
     };
     rec.onend = fimOuvir;
     ouvindo = { botao, parar: () => rec.stop() };
@@ -300,7 +303,8 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     if (ouvindo) { const mesmo = ouvindo.botao === botao; ouvindo.parar(); if (mesmo) return; }
     if (!SR_NATIVO && !SR_WEB) { toast('Este navegador não tem ditado por voz. Use o teclado ou o app Android.'); return; }
     botao.classList.add('is-ouvindo');
-    $('.ouvindo', botao.closest('form')).hidden = false;
+    const aviso = $('.ouvindo', botao.closest('form'));
+    aviso.textContent = '🎙️ Ouvindo… pode falar'; aviso.hidden = false;
     const id = botao.dataset.mic;
     if (SR_NATIVO) ouvirNativo(id, botao); else ouvirWeb(id, botao);
   }));
@@ -528,6 +532,8 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
           ? `Cobrança de ${dinheiro(c.valor)} (vendedor ${c.vendedor}). Toque para cobrar de novo.`
           : `Nota com ${c.vendedor} de ${dataBR(c.data)}. Toque para cobrar de novo.`,
         schedule: { at, allowWhileIdle: true }, channelId: 'lembretes', smallIcon: 'ic_stat_confirma', iconColor: '#22c55e', autoCancel: true,
+        // Lembrete não precisa ser no minuto exato: assim o Android 12+ nunca abre a tela "Alarmes e lembretes".
+        isExactNotification: false,
       }] }).catch(() => {});
     });
   }
@@ -542,6 +548,7 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
         id: RESUMO_ID, title: `${pend} cliente${pend === 1 ? '' : 's'} sem responder`,
         body: 'Confirmações e cobranças pendentes. Abra o Confirma Nota para cobrar as respostas.',
         schedule: { on: { hour: h, minute: m || 0 }, allowWhileIdle: true }, channelId: 'lembretes', smallIcon: 'ic_stat_confirma', iconColor: '#22c55e', autoCancel: true,
+        isExactNotification: false,
       }] }).catch(() => {});
     });
   }

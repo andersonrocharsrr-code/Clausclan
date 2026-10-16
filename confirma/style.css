@@ -53,10 +53,19 @@ textarea{resize:vertical;line-height:1.45}
 .dupla{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media (max-width:420px){.dupla{grid-template-columns:1fr}}
 
-.mic{flex:none;width:48px;border:0;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-size:20px;cursor:pointer}
-.mic.is-ouvindo{background:var(--neg);animation:pulsa 1s infinite}
-@keyframes pulsa{50%{transform:scale(1.08)}}
+.mic{flex:none;width:48px;border:0;border-radius:12px;background:var(--accent);color:#fff;cursor:pointer;display:grid;place-items:center;position:relative;transition:background-color .2s}
+.mic svg{width:24px;height:24px;grid-area:1/1}
+.mic__ico rect{fill:currentColor}
+.mic__ico path{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.mic__parar{display:none;fill:currentColor}
+/* Ouvindo: botão vermelho com onda pulsando e ícone de parar. */
+.mic.is-ouvindo{background:var(--neg)}
+.mic.is-ouvindo .mic__ico{display:none}
+.mic.is-ouvindo .mic__parar{display:block}
+.mic.is-ouvindo::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:0 0 0 0 rgba(220,38,38,.55);animation:onda 1.2s ease-out infinite}
+@keyframes onda{to{box-shadow:0 0 0 12px rgba(220,38,38,0)}}
 .ouvindo{margin:0;color:var(--neg);font-weight:600;font-size:14px}
+.ouvindo q{color:var(--ink);font-weight:500}
 
 .previa{white-space:pre-wrap;word-wrap:break-word;background:var(--bolha);border-radius:4px 14px 14px 14px;padding:12px 14px;font-size:15px;margin-bottom:14px}
 .previa b{font-weight:700}
