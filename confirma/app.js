@@ -335,14 +335,33 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
       $('#lista').innerHTML = `<p class="vazia">${filtro.status === 'aguardando' ? 'Nada pendente por aqui. 🎉' : 'Nada por aqui ainda.'}</p>`;
       return;
     }
-    $('#lista').innerHTML = itens.map((c) => {
+    // Cada tipo vira um bloco; com mais de 3, os outros ficam recolhidos ("Ver todas… (N)"), como no Caixa.
+    const grupos = Object.keys(TIPOS).map((tipo) => [tipo, itens.filter((c) => tipoDe(c) === tipo)]).filter(([, l]) => l.length);
+    $('#lista').innerHTML = grupos.map(([tipo, lista]) => {
+      const aberto = abertos[tipo] || !!busca;
+      const nome = GRUPO[tipo];
+      const ver = lista.length > LIMITE && !busca
+        ? `<button type="button" class="ver" data-ver="${tipo}">${aberto ? `▴ Esconder ${nome.toLowerCase()} (${lista.length})` : `▾ Ver todas as ${nome.toLowerCase()} (${lista.length})`}</button>`
+        : '';
+      return `
+      <div class="grupo">
+        <div class="grupo__cab"><h2>${nome}</h2><span class="grupo__n">${lista.length}</span></div>
+        ${cartoes(aberto ? lista : lista.slice(0, LIMITE))}
+        ${ver}
+      </div>`;
+    }).join('');
+  }
+  const LIMITE = 3;
+  const GRUPO = { confirmacao: 'Confirmações', cobranca: 'Cobranças' };
+  const abertos = { confirmacao: false, cobranca: false };
+  function cartoes(itens) {
+    return itens.map((c) => {
       const tipo = tipoDe(c); const T = TIPOS[tipo]; const cob = tipo === 'cobranca';
       const valorOk = cob ? c.valorPago : c.valor;
       const selo = c.status === 'aguardando' ? T.pendente : `${T.resolvida}${valorOk != null ? ` · ${dinheiro(valorOk)}` : ''}`;
       const info = cob ? `Vendedor ${esc(c.vendedor)} · ${dinheiro(c.valor)} · venceu ${dataBR(c.vencimento, '/')}` : `Vendedor ${esc(c.vendedor)} · nota de ${dataBR(c.data)}`;
       return `
       <div class="item" data-id="${c.id}">
-        <div class="tipo tipo--${tipo}">${T.nome}</div>
         <div class="item__topo">
           <span class="item__nome">${esc(c.cliente)}</span>
           <span class="selo selo--${c.status}">${selo}</span>
@@ -367,6 +386,8 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     renderLista();
   })));
   $('#lista').addEventListener('click', (e) => {
+    const ver = e.target.closest('[data-ver]');
+    if (ver) { abertos[ver.dataset.ver] = !abertos[ver.dataset.ver]; renderLista(); return; }
     const alvo = e.target.closest('[data-acao]'); if (!alvo) return;
     const c = state.contatos.find((x) => x.id === alvo.closest('.item').dataset.id); if (!c) return;
     const acao = alvo.dataset.acao;
