@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Confirma">
-  <link rel="stylesheet" href="style.css?v=10">
+  <link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
   <!-- Abertura: a logo se monta (nota, linhas, selo e o ✓) e some. Um toque pula. -->
@@ -48,7 +48,9 @@
       var el = document.getElementById('intro');
       var fim = function () {
         if (!el) return; el.classList.add('is-saindo'); var e = el; el = null;
-        setTimeout(function () { e.remove(); document.documentElement.classList.remove('com-intro'); }, 700);
+        // O fundo da página volta a clarear junto com a saída da abertura (sem bordas escuras no fim).
+        document.documentElement.classList.remove('com-intro');
+        setTimeout(function () { e.remove(); }, 700);
       };
       var reduz = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
       setTimeout(fim, reduz ? 900 : 3200);
