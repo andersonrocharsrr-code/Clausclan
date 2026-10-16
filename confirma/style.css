@@ -107,3 +107,13 @@ select.is-vazio{color:var(--muted)}
 .dlg::backdrop{background:rgba(0,0,0,.45)}
 
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#0f1f17;color:#fff;padding:11px 16px;border-radius:12px;font-size:14px;z-index:50;max-width:90vw;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+
+/* Resumo do contato (toque no cartão) */
+.item{cursor:pointer}
+.dlg--detalhe{width:min(94vw,480px);max-height:88vh;overflow:auto}
+.det__cab{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.dlg--detalhe h2{font-size:19px;margin:0 0 10px;word-wrap:break-word}
+.det__dados{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0 0 14px;font-size:14px}
+.det__dados dt{color:var(--muted);font-weight:600}
+.det__dados dd{margin:0;word-wrap:break-word}
+.det__sub{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 8px}

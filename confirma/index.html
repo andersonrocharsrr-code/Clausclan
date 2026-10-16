@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Confirma">
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
   <header class="top">
@@ -218,8 +218,26 @@
     </form>
   </dialog>
 
+  <!-- Resumo do contato: abre ao tocar no cartão em Contatos -->
+  <dialog id="dlgDetalhe" class="dlg dlg--detalhe">
+    <form method="dialog">
+      <div class="det__cab">
+        <span id="detTipo" class="tipo"></span>
+        <span id="detSelo" class="selo"></span>
+      </div>
+      <h2 id="detNome"></h2>
+      <dl id="detDados" class="det__dados"></dl>
+      <h3 class="det__sub">Mensagem enviada</h3>
+      <div id="detMsg" class="previa"></div>
+      <div class="acoes">
+        <button type="button" id="detCopiar" class="btn btn--sec">Copiar mensagem</button>
+        <button value="fechar" class="btn">Fechar</button>
+      </div>
+    </form>
+  </dialog>
+
   <div id="toast" class="toast" role="status" hidden></div>
 
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>

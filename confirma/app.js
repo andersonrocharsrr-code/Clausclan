@@ -144,6 +144,7 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     if (c.tipo === 'cobranca') Object.assign(r, { valor: c.valor, vencimento: c.vencimento });
     else r.data = c.data;
     r.envios = (r.envios || 0) + 1;
+    r.mensagem = montar(c);
     salvar();
     agendarLembrete(r);
     agendarResumo();
@@ -415,19 +416,54 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     renderLista();
   })));
   $('#lista').addEventListener('click', (e) => {
+    // Toque no cartão (fora dos botões): abre o resumo do que foi enviado.
+    if (!e.target.closest('[data-acao],[data-ver]') && e.target.closest('.item')) {
+      const c = state.contatos.find((x) => x.id === e.target.closest('.item').dataset.id);
+      if (c) abrirDetalhe(c);
+      return;
+    }
     const ver = e.target.closest('[data-ver]');
     if (ver) { abertos[ver.dataset.ver] = !abertos[ver.dataset.ver]; renderLista(); return; }
     const alvo = e.target.closest('[data-acao]'); if (!alvo) return;
     const c = state.contatos.find((x) => x.id === alvo.closest('.item').dataset.id); if (!c) return;
     const acao = alvo.dataset.acao;
     if (acao === 'confirmar' || acao === 'editar') abrirValor(c);
-    else if (acao === 'reenviar') { c.enviadoEm = Date.now(); c.envios = (c.envios || 0) + 1; salvar(); agendarLembrete(c); setTimeout(renderLista, 300); }
+    else if (acao === 'reenviar') { c.enviadoEm = Date.now(); c.envios = (c.envios || 0) + 1; c.mensagem = montar(c); salvar(); agendarLembrete(c); setTimeout(renderLista, 300); }
     else if (acao === 'reabrir') { c.status = 'aguardando'; c.enviadoEm = Date.now(); salvar(); agendarLembrete(c); agendarResumo(); renderLista(); }
     else if (acao === 'excluir' && confirm(`Excluir ${c.cliente} da lista?`)) {
       cancelarLembrete(c);
       state.contatos = state.contatos.filter((x) => x !== c); salvar(); agendarResumo(); renderLista();
     }
   });
+
+  let detalhe = null;
+  function abrirDetalhe(c) {
+    detalhe = c;
+    const tipo = tipoDe(c); const T = TIPOS[tipo]; const cob = tipo === 'cobranca';
+    $('#detTipo').textContent = T.nome; $('#detTipo').className = `tipo tipo--${tipo}`;
+    const valorOk = cob ? c.valorPago : c.valor;
+    $('#detSelo').textContent = c.status === 'aguardando' ? T.pendente : `${T.resolvida}${valorOk != null ? ` · ${dinheiro(valorOk)}` : ''}`;
+    $('#detSelo').className = `selo selo--${c.status}`;
+    $('#detNome').textContent = c.cliente;
+    const linhas = [
+      ['Vendedor', c.vendedor],
+      cob ? ['Valor da nota', dinheiro(c.valor)] : ['Data da nota', dataBR(c.data)],
+      cob && ['Venceu em', dataBR(c.vencimento, '/')],
+      ['Telefone', c.fone || '—'],
+      ['Enviada', `${quando(c.enviadoEm)}${c.envios > 1 ? ` · ${c.envios} envios` : ''}`],
+      c.status !== 'aguardando' && [T.resolvida, quando(c.confirmadoEm)],
+      c.status !== 'aguardando' && valorOk != null && [cob ? 'Valor pago' : 'Valor da compra', dinheiro(valorOk)],
+      c.obs && ['Observação', c.obs],
+    ].filter(Boolean);
+    $('#detDados').innerHTML = linhas.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
+    // Contatos antigos não guardaram o texto: remonta com o modelo atual.
+    $('#detMsg').innerHTML = esc(c.mensagem || montar(c)).replace(/\*([^*\n]+)\*/g, '<b>$1</b>');
+    $('#dlgDetalhe').showModal();
+  }
+  $('#detCopiar').addEventListener('click', async () => {
+    if (detalhe && await copiar(detalhe.mensagem || montar(detalhe))) toast('Mensagem copiada.');
+  });
+  $('#dlgDetalhe').addEventListener('close', () => { detalhe = null; });
 
   let editando = null;
   function abrirValor(c) {
@@ -595,6 +631,7 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     const App = plugin('App');
     if (App) App.addListener('backButton', () => {
       if ($('#dlgValor').open) { $('#dlgValor').close(); return; }
+      if ($('#dlgDetalhe').open) { $('#dlgDetalhe').close(); return; }
       if (!$('#aba-nova').hidden) App.minimizeApp(); else abrirAba('nova');
     });
   }
