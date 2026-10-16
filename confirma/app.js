@@ -222,9 +222,38 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     $$('.ouvindo').forEach((el) => { el.hidden = true; });
     ouvindo = null;
   }
+  // Telefone falado: "sessenta e oito, nove nove dois um..." ou "68 99212 6985" → "(68) 99212-6985".
+  const UNID = { zero: 0, um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5, seis: 6, meia: 6, sete: 7, oito: 8, nove: 9 };
+  const DEZ_A_DEZENOVE = { dez: 10, onze: 11, doze: 12, treze: 13, catorze: 14, quatorze: 14, quinze: 15, dezesseis: 16, dezasseis: 16, dezessete: 17, dezoito: 18, dezenove: 19 };
+  const DEZENAS = { vinte: 20, trinta: 30, quarenta: 40, cinquenta: 50, sessenta: 60, setenta: 70, oitenta: 80, noventa: 90 };
+  function digitosFalados(texto) {
+    const p = String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/(\d)/g, ' $1 ').split(/[^a-z0-9]+/).filter(Boolean);
+    let out = '';
+    for (let i = 0; i < p.length; i++) {
+      const w = p[i];
+      if (/^\d$/.test(w)) out += w;
+      else if (w in UNID) out += UNID[w];
+      else if (w in DEZ_A_DEZENOVE) out += DEZ_A_DEZENOVE[w];
+      else if (w in DEZENAS) {
+        // "sessenta e oito" = 68; "sessenta" sozinho = 60.
+        if (p[i + 1] === 'e' && p[i + 2] in UNID) { out += DEZENAS[w] + UNID[p[i + 2]]; i += 2; }
+        else if (p[i + 1] in UNID) { out += DEZENAS[w] + UNID[p[i + 1]]; i += 1; }
+        else out += DEZENAS[w];
+      }
+    }
+    return out;
+  }
+  function foneBonito(d) {
+    d = soDigitos(d);
+    if (d.length > 11 && d.startsWith('55')) d = d.slice(2);
+    if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+    if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+    return d;
+  }
   function preencher(id, texto) {
     const el = document.getElementById(id);
-    el.value = nomeBonito(texto);
+    el.value = el.dataset.campo === 'fone' ? foneBonito(digitosFalados(texto)) : nomeBonito(texto);
     atualizarPrevia(el.closest('section').dataset.tipo);
   }
   async function ouvirNativo(campo, botao) {
@@ -237,7 +266,7 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     try {
       let p = await SR_NATIVO.checkPermissions();
       if (p.speechRecognition !== 'granted') p = await SR_NATIVO.requestPermissions();
-      if (p.speechRecognition !== 'granted') { toast('Permita o microfone para falar o nome.'); fimOuvir(); return; }
+      if (p.speechRecognition !== 'granted') { toast('Permita o microfone para usar a voz.'); fimOuvir(); return; }
       let parando = false;
       subs.push(await SR_NATIVO.addListener('partialResults', (d) => {
         const t = d && d.matches && d.matches[0];
@@ -259,7 +288,7 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     rec.lang = 'pt-BR'; rec.interimResults = true; rec.maxAlternatives = 1;
     rec.onresult = (e) => preencher(campo, [...e.results].map((r) => r[0].transcript).join(' '));
     rec.onerror = (e) => {
-      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') toast('Permita o microfone para falar o nome.');
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') toast('Permita o microfone para usar a voz.');
       else if (e.error === 'no-speech') toast('Não ouvi nada. Toque no 🎤 e fale de novo.');
     };
     rec.onend = fimOuvir;

@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Confirma">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
   <header class="top">
@@ -45,17 +45,18 @@
           <span>Nome do vendedor</span>
           <select data-campo="vendedor"></select>
         </label>
-        <div class="dupla">
-          <label class="campo">
-            <span>Data da nota</span>
-            <input data-campo="data" type="date">
-          </label>
-          <label class="campo">
-            <span>Telefone</span>
-            <input data-campo="fone" type="tel" inputmode="tel" placeholder="(11) 99999-9999">
-          </label>
-        </div>
-        <p class="ouvindo" hidden>🎙️ Ouvindo… fale o nome</p>
+        <label class="campo">
+          <span>Data da nota</span>
+          <input data-campo="data" type="date">
+        </label>
+        <label class="campo">
+          <span>Telefone</span>
+          <div class="campo__linha">
+            <input data-campo="fone" id="confirmacao-fone" type="tel" inputmode="tel" placeholder="(11) 99999-9999">
+            <button type="button" class="mic" data-mic="confirmacao-fone" aria-label="Falar o número do telefone">🎤</button>
+          </div>
+        </label>
+        <p class="ouvindo" hidden>🎙️ Ouvindo… pode falar</p>
       </form>
 
       <div class="card">
@@ -97,11 +98,14 @@
             <input data-campo="vencimento" type="date">
           </label>
         </div>
-          <label class="campo">
-            <span>Telefone</span>
-            <input data-campo="fone" type="tel" inputmode="tel" placeholder="(11) 99999-9999">
-          </label>
-        <p class="ouvindo" hidden>🎙️ Ouvindo… fale o nome</p>
+        <label class="campo">
+          <span>Telefone</span>
+          <div class="campo__linha">
+            <input data-campo="fone" id="cobranca-fone" type="tel" inputmode="tel" placeholder="(11) 99999-9999">
+            <button type="button" class="mic" data-mic="cobranca-fone" aria-label="Falar o número do telefone">🎤</button>
+          </div>
+        </label>
+        <p class="ouvindo" hidden>🎙️ Ouvindo… pode falar</p>
       </form>
 
       <div class="card">
@@ -216,6 +220,6 @@
 
   <div id="toast" class="toast" role="status" hidden></div>
 
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

@@ -313,10 +313,10 @@ App para mandar duas mensagens automáticas pelo WhatsApp e acompanhar as respos
 
 - **✅ Confirmação**: "Aqui é Mary, o motivo do meu contato é SOMENTE para confirmar a sua nota com vendedor … no dia …".
   Campos **Nome da cliente** (com 🎤 para falar e preencher), **Nome do vendedor** (toque e escolha na lista
-  cadastrada em Ajustes, ou cadastre um novo ali mesmo), **Data da nota** (sai como `07.08.2026`) e **Telefone**.
+  cadastrada em Ajustes, ou cadastre um novo ali mesmo), **Data da nota** (sai como `07.08.2026`) e **Telefone** (também com 🎤: fale os números e ele vira `(68) 99212-6985`).
 - **💰 Cobrança**: "Me chamo Mary, Trabalho na empresa FC ENXOVAIS com o vendedor de enxoval … nota em aberto … no
   valor de 215,00 tal qual venceu no dia 18/05/2026 …". Campos cliente (🎤), vendedor (lista), **Valor da nota**,
-  **Venceu no dia** e **Telefone**.
+  **Venceu no dia** e **Telefone** (com 🎤).
 - Nas duas abas a mensagem aparece pronta, com saudação automática (Bom dia / Boa tarde / Boa noite), e os botões
   **Enviar no WhatsApp**, **Copiar** e **Compartilhar**.
 - **📋 Contatos**: confirmações ficam "Aguardando" até **✅ Respondeu** (anota o valor da compra); cobranças ficam
