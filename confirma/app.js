@@ -42,7 +42,7 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     try { s = JSON.parse(localStorage.getItem(CHAVE)); } catch { s = null; }
     s = s && typeof s === 'object' ? s : {};
     s.contatos = Array.isArray(s.contatos) ? s.contatos : [];
-    s.ajustes = Object.assign({ atendente: 'Mary', empresa: 'FC ENXOVAIS', modelo: MODELO_CONFIRMACAO, modeloCobranca: MODELO_COBRANCA, lembreteHoras: 4, resumo: '17:00', avisosWeb: {}, vendedores: [] }, s.ajustes || {});
+    s.ajustes = Object.assign({ atendente: 'Mary', empresa: 'FC ENXOVAIS', modelo: MODELO_CONFIRMACAO, modeloCobranca: MODELO_COBRANCA, lembreteHoras: 4, resumo: '17:00', avisosWeb: {}, vendedores: [], notificacoes: true }, s.ajustes || {});
     if (!Array.isArray(s.ajustes.vendedores)) s.ajustes.vendedores = [];
     // Primeira vez: aproveita os vendedores que já foram usados nas mensagens.
     if (!s.ajustes.vendedores.length) s.ajustes.vendedores = [...new Set(s.contatos.map((c) => c.vendedor).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
@@ -553,10 +553,27 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     if (NATIVE && LN) { try { return (await LN.checkPermissions()).display === 'granted'; } catch { return false; } }
     return 'Notification' in window && Notification.permission === 'granted';
   }
-  async function atualizarSino() { $('#btnSino').classList.toggle('is-on', await temPermissao()); }
+  // Sino ligado = o usuário quer avisos E o celular permite.
+  const avisosLigados = () => state.ajustes.notificacoes !== false;
+  async function atualizarSino() {
+    const on = avisosLigados() && await temPermissao();
+    const b = $('#btnSino');
+    b.classList.toggle('is-on', on);
+    b.setAttribute('aria-pressed', String(on));
+    b.setAttribute('aria-label', on ? 'Desativar notificações' : 'Ativar notificações');
+    return on;
+  }
+  // Desligar: tira todos os avisos já agendados no celular.
+  function cancelarTudo() {
+    if (!NATIVE || !LN) return;
+    LN.getPending().then((r) => {
+      const ids = (r && r.notifications || []).map((n) => ({ id: n.id }));
+      if (ids.length) return LN.cancel({ notifications: ids });
+    }).catch(() => {});
+  }
 
   function agendarLembrete(c) {
-    if (!NATIVE || !LN) return;
+    if (!NATIVE || !LN || !avisosLigados()) return;
     const id = idNotif(c);
     const horas = Number(state.ajustes.lembreteHoras) || 0;
     LN.cancel({ notifications: [{ id }] }).catch(() => {}).finally(() => {
@@ -576,7 +593,7 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
   }
   function cancelarLembrete(c) { if (NATIVE && LN) LN.cancel({ notifications: [{ id: idNotif(c) }] }).catch(() => {}); }
   function agendarResumo() {
-    if (!NATIVE || !LN) return;
+    if (!NATIVE || !LN || !avisosLigados()) return;
     LN.cancel({ notifications: [{ id: RESUMO_ID }] }).catch(() => {}).finally(() => {
       const [h, m] = String(state.ajustes.resumo || '').split(':').map(Number);
       const pend = state.contatos.filter((c) => c.status === 'aguardando').length;
@@ -593,7 +610,7 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
 
   // No navegador não dá para agendar: ao abrir o app, avisa das que já passaram do prazo.
   function avisosWeb() {
-    if (NATIVE || !('Notification' in window) || Notification.permission !== 'granted') return;
+    if (NATIVE || !avisosLigados() || !('Notification' in window) || Notification.permission !== 'granted') return;
     const horas = Number(state.ajustes.lembreteHoras) || 0; if (!horas) return;
     const atrasadas = state.contatos.filter((c) => c.status === 'aguardando' && Date.now() - c.enviadoEm >= horas * 3600e3 && state.ajustes.avisosWeb[c.id] !== c.enviadoEm);
     if (!atrasadas.length) return;
@@ -603,11 +620,22 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
   }
 
   $('#btnSino').addEventListener('click', async () => {
-    if (await pedirPermissao()) { toast('Notificações ativadas 🔔'); reagendarTudo(); }
-    else toast('Notificações bloqueadas. Libere nas configurações do celular.');
-    atualizarSino();
+    const b = $('#btnSino');
+    if (b.classList.contains('is-on')) {
+      state.ajustes.notificacoes = false; salvar(); cancelarTudo();
+      await atualizarSino();
+      toast('Notificações desativadas');
+      return;
+    }
+    if (!(await pedirPermissao())) { toast('Notificações bloqueadas. Libere nas configurações do celular.'); atualizarSino(); return; }
+    state.ajustes.notificacoes = true; salvar(); reagendarTudo();
+    await atualizarSino();
+    b.classList.remove('toca'); void b.offsetWidth; b.classList.add('toca');
+    setTimeout(() => b.classList.remove('toca'), 950);
+    toast('Notificações ativadas 🔔');
   });
   $('#btnTesteNotif').addEventListener('click', async () => {
+    if (!avisosLigados()) { toast('Ligue o sino 🔔 no topo primeiro.'); return; }
     if (!(await pedirPermissao())) { toast('Ative as notificações primeiro.'); return; }
     if (NATIVE && LN) {
       LN.schedule({ notifications: [{ id: 900002, title: 'Confirma Nota', body: 'As notificações estão funcionando ✅', schedule: { at: new Date(Date.now() + 3000), allowWhileIdle: true }, channelId: 'lembretes', smallIcon: 'ic_stat_confirma', iconColor: '#22c55e' }] })

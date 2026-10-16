@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Confirma">
-  <link rel="stylesheet" href="style.css?v=15">
+  <link rel="stylesheet" href="style.css?v=16">
 </head>
 <body>
   <!-- Abertura: a logo se monta (nota, linhas, selo e o ✓) e some. Um toque pula. -->
@@ -62,7 +62,7 @@
       <h1>Confirma Nota</h1>
       <small id="resumo">—</small>
     </div>
-    <button id="btnSino" class="icone" type="button" aria-label="Ativar notificações">🔔</button>
+    <button id="btnSino" class="icone sino" type="button" aria-label="Ativar notificações" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="sino__corpo" d="M12 3.2a5.6 5.6 0 0 0-5.6 5.6v3.1c0 .9-.3 1.8-.9 2.5l-1 1.3c-.5.6-.1 1.5.7 1.5h13.6c.8 0 1.2-.9.7-1.5l-1-1.3c-.6-.7-.9-1.6-.9-2.5V8.8A5.6 5.6 0 0 0 12 3.2z"/><path class="sino__badalo" d="M9.6 19.6a2.5 2.5 0 0 0 4.8 0"/></svg></button>
   </header>
 
   <nav class="abas" role="tablist">
@@ -280,6 +280,6 @@
 
   <div id="toast" class="toast" role="status" hidden></div>
 
-  <script src="app.js?v=11"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>
