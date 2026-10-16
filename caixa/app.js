@@ -1,6 +1,6 @@
 /* Fechamento de Caixa — faz as contas da folha de caixa e lê notas/folhas pela foto (IA Claude). */
 import Anthropic from './vendor/anthropic.js';
-import { desenharCaixa } from './folha.js?v=11';
+import { desenharCaixa } from './folha.js?v=12';
 import { lerNotaGratis, lerFolhaGratis, lerPepinoGratis, semanaDe, ultimaLeitura } from './leitor.js?v=21';
 
 const KEY_ATUAL = 'caixa.atual';
