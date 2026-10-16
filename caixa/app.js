@@ -369,6 +369,22 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
       ? `<p class="item__dica">O valor que você acrescentar entra no relatório de hoje (${fmtDia(hoje())}).</p>` : '') +
     (item.nota ? `<p class="item__nota">⚠ ${esc(item.nota)}</p>` : '');
 
+  // Antecipado: só aparece quando a bolinha "Antecipado" é marcada (ou se a nota já tem antecipado).
+  const labAntec = row.querySelector('.item__antecipado');
+  if (labAntec) {
+    if (!edita) { if (!numero(item.antecipado)) labAntec.remove(); } else {
+      const tem = !!numero(item.antecipado);
+      const tog = document.createElement('label');
+      tog.className = 'item__antecTog';
+      tog.innerHTML = `<input type="checkbox" ${tem ? 'checked' : ''}><span>Antecipado</span>`;
+      labAntec.before(tog);
+      labAntec.hidden = !tem;
+      tog.querySelector('input').addEventListener('change', (e) => {
+        labAntec.hidden = !e.target.checked;
+        if (!e.target.checked) { rasc.antecipado = 0; labAntec.querySelector('input').value = ''; }
+      });
+    }
+  }
   const sair = () => pintarLista(nome);
   if (modo === 'travada') {
     row.querySelector('.item__editar').addEventListener('click', () => {
