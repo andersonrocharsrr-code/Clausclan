@@ -1605,14 +1605,15 @@ function notasEmBranco(ate = () => true) {
     - parc.reduce((t, x) => t + valorDaParcial(x), 0)));
   return { qt, valor };
 }
-// Pepinos da folha: o digitado + os pepinos parciais (quantidade e o que ficou devendo) + as notas em branco.
+// Pepinos da folha: o digitado + os pepinos parciais (quantidade e o que ficou devendo) + as notas em branco
+// (no valor, a nota em branco entra sem os 25%: valor da nota × 0,75).
 function pepinosDaSemana() {
   const b = notasEmBranco();
   const parcQt = st.parciais.reduce((t, x) => t + qtdParcial(x), 0);
   const parcDevendo = st.parciais.reduce((t, x) => t + numero(x.devendo), 0);
   return {
     pinos: (parseInt(soDigitos(st.pinos), 10) || 0) + parcQt + b.qt,
-    valor: arred(numero(st.valorPepinos) + parcDevendo + b.valor),
+    valor: arred(numero(st.valorPepinos) + parcDevendo + b.valor * 0.75),
   };
 }
 
