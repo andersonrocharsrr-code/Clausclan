@@ -1848,7 +1848,8 @@ function dadosCaixa() {
   const comValor = (desc, v) => `${desc} (${brl(v)})`.trim();
   const outros = [
     ...(st.salario ? [comValor('Salário', st.salario)] : []),
-    ...st.pila.filter((o) => o.valor).map((o) => comValor('Pila ' + (o.tipo || 'despesa').toLowerCase(), o.valor)),
+    // Pila (almoço, hotel…) vai somada numa linha só; o salário fica separado.
+    ...(soma(st.pila) ? [comValor('Pila', soma(st.pila))] : []),
     ...st.outros.filter((o) => o.valor).map((o) => comValor(o.desc || 'Outros', o.valor)),
   ];
   // Na folha o OBS é escrito "4.000,00 (Fernando)".
