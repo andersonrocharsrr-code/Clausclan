@@ -638,6 +638,20 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { renderLista(); avisosWeb(); atualizarSino(); } });
   if (!NATIVE && 'serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 
+  // Data: tocar em qualquer ponto do campo abre o calendário (em vez de só marcar o dia/mês/ano).
+  $$('input[type="date"]').forEach((el) => {
+    el.addEventListener('click', (e) => {
+      if (typeof el.showPicker !== 'function') return;
+      e.preventDefault();
+      try { el.showPicker(); } catch { /* sem calendário: fica a digitação normal */ }
+    });
+  });
+
+  // Ao rolar, as abas grudam no topo: uma faixa da cor do fundo cobre a barra de status do Android.
+  const marcarRolagem = () => document.documentElement.classList.toggle('rolou', window.scrollY > 8);
+  window.addEventListener('scroll', marcarRolagem, { passive: true });
+  marcarRolagem();
+
   /* ---------------- Início ---------------- */
   Object.keys(TIPOS).forEach((tipo) => {
     const r = state.rascunhos[tipo] || {};
