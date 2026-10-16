@@ -352,11 +352,48 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
 
   /* ---------------- Contatos (gestão) ---------------- */
   const filtro = { tipo: 'todos', status: 'aguardando' };
+
+  /* Busca que perdoa erro de digitação: sem acento/maiúscula e, se não achar igual,
+     aceita 1 letra trocada, faltando ou sobrando (2 em palavras de 7+ letras). */
+  const semAcento = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  function distancia(a, b) {
+    if (Math.abs(a.length - b.length) > 2) return 3;
+    let ant = Array.from({ length: b.length + 1 }, (_, j) => j);
+    for (let i = 1; i <= a.length; i++) {
+      const cur = [i];
+      for (let j = 1; j <= b.length; j++) cur[j] = Math.min(ant[j] + 1, cur[j - 1] + 1, ant[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      ant = cur;
+    }
+    return ant[b.length];
+  }
+  function parecido(q, palavra) {
+    if (palavra.includes(q)) return true;
+    const tol = q.length >= 7 ? 2 : q.length >= 4 ? 1 : 0;
+    if (!tol) return false;
+    // Compara com a palavra inteira e com o começo dela (a pessoa pode estar no meio da digitação).
+    return [palavra, palavra.slice(0, q.length), palavra.slice(0, q.length + 1)].some((p) => distancia(q, p) <= tol);
+  }
+  function casaBusca(c, busca, aproximada) {
+    const texto = semAcento(`${c.cliente} ${c.vendedor} ${c.fone || ''}`);
+    const q = semAcento(busca);
+    if (texto.includes(q)) return true;
+    const dig = busca.replace(/\D/g, '');
+    if (dig.length >= 4 && String(c.fone || '').replace(/\D/g, '').includes(dig)) return true;
+    if (!aproximada) return false;
+    const palavras = texto.split(/\s+/).filter(Boolean);
+    return q.split(/\s+/).filter(Boolean).every((w) => palavras.some((p) => parecido(w, p)));
+  }
+
   function renderLista() {
-    const busca = $('#busca').value.trim().toLowerCase();
-    const itens = state.contatos.filter((c) => (filtro.tipo === 'todos' || tipoDe(c) === filtro.tipo)
-      && (filtro.status === 'todas' || c.status === filtro.status)
-      && (!busca || `${c.cliente} ${c.vendedor}`.toLowerCase().includes(busca)));
+    const busca = $('#busca').value.trim();
+    const noFiltro = (c) => (filtro.tipo === 'todos' || tipoDe(c) === filtro.tipo) && (filtro.status === 'todas' || c.status === filtro.status);
+    let itens = state.contatos.filter((c) => noFiltro(c) && (!busca || casaBusca(c, busca, false)));
+    // Nada igual ao que foi digitado: mostra os parecidos como sugestão.
+    let sugestao = false;
+    if (busca && !itens.length) {
+      itens = state.contatos.filter((c) => noFiltro(c) && casaBusca(c, busca, true));
+      sugestao = itens.length > 0;
+    }
     const pendConf = state.contatos.filter((c) => c.status === 'aguardando' && tipoDe(c) === 'confirmacao').length;
     const pendCob = state.contatos.filter((c) => c.status === 'aguardando' && tipoDe(c) === 'cobranca');
     const emAberto = pendCob.reduce((s, c) => s + (c.valor || 0), 0);
@@ -365,12 +402,13 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     $('#contaPend').hidden = !pend; $('#contaPend').textContent = pend;
 
     if (!itens.length) {
-      $('#lista').innerHTML = `<p class="vazia">${filtro.status === 'aguardando' ? 'Nada pendente por aqui. 🎉' : 'Nada por aqui ainda.'}</p>`;
+      $('#lista').innerHTML = `<p class="vazia">${busca ? `Ninguém encontrado com “${esc(busca)}”.` : filtro.status === 'aguardando' ? 'Nada pendente por aqui. 🎉' : 'Nada por aqui ainda.'}</p>`;
       return;
     }
     // Cada tipo vira um bloco; com mais de 3, os outros ficam recolhidos ("Ver todas… (N)"), como no Caixa.
     const grupos = Object.keys(TIPOS).map((tipo) => [tipo, itens.filter((c) => tipoDe(c) === tipo)]).filter(([, l]) => l.length);
-    $('#lista').innerHTML = grupos.map(([tipo, lista]) => {
+    const aviso = sugestao ? `<p class="sugestao">Não achei “${esc(busca)}”. Talvez seja:</p>` : '';
+    $('#lista').innerHTML = aviso + grupos.map(([tipo, lista]) => {
       const aberto = abertos[tipo] || !!busca;
       const nome = GRUPO[tipo];
       const ver = lista.length > LIMITE && !busca

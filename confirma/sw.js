@@ -1,6 +1,6 @@
 /* Service worker: abre o app sem internet. */
-const CACHE = 'confirma-v15';
-const FILES = ['./', 'index.html', 'style.css?v=14', 'app.js?v=10', 'icon.svg', 'dtx.png', 'manifest.webmanifest'];
+const CACHE = 'confirma-v16';
+const FILES = ['./', 'index.html', 'style.css?v=15', 'app.js?v=11', 'icon.svg', 'dtx.png', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
