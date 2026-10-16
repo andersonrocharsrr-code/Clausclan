@@ -26,7 +26,16 @@ code{background:var(--accent-soft);padding:1px 5px;border-radius:6px;font-size:1
 .top__title{flex:1;min-width:0}
 .top__title small{opacity:.85;font-size:13px}
 .icone{background:rgba(255,255,255,.16);border:0;color:#fff;font-size:20px;width:42px;height:42px;border-radius:12px;cursor:pointer}
-.icone.is-on{background:rgba(255,255,255,.32)}
+/* Sino: desligado = só o contorno, quase transparente; ligado = cheio e claro (e balança ao ligar). */
+.sino{display:grid;place-items:center;background:transparent;border:1.5px solid rgba(255,255,255,.35);transition:background-color .25s,border-color .25s,transform .1s}
+.sino:active{transform:scale(.92)}
+.sino svg{width:24px;height:24px;overflow:visible;opacity:.5;transition:opacity .25s}
+.sino path{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:fill .25s}
+.sino.is-on{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.55)}
+.sino.is-on svg{opacity:1}
+.sino.is-on .sino__corpo{fill:currentColor}
+.sino.toca svg{animation:tocaSino .9s ease-in-out;transform-origin:50% 12%}
+@keyframes tocaSino{0%,100%{transform:rotate(0)}15%{transform:rotate(18deg)}30%{transform:rotate(-15deg)}45%{transform:rotate(11deg)}60%{transform:rotate(-7deg)}75%{transform:rotate(3deg)}}
 
 .abas{display:flex;gap:6px;padding:10px 16px;position:sticky;top:env(safe-area-inset-top);background:var(--bg);z-index:5;border-bottom:1px solid var(--line)}
 /* Faixa atrás da barra de status do celular, só depois de rolar (no topo fica o cabeçalho verde). */
