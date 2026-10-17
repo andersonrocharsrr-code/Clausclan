@@ -58,6 +58,7 @@ input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
 .btn--sec{background:var(--accent-soft);color:var(--accent)}
 .btn--whats{background:var(--whats);color:#06210f;width:100%}
 .btn--neg{background:var(--neg-soft);color:var(--neg)}
+.btn--peq{flex:none;min-width:0;padding:8px 18px;font-size:14px;border-radius:12px}
 .btn[disabled]{opacity:.5;cursor:default}
 .link{background:none;border:0;color:var(--accent);font:inherit;font-weight:600;padding:8px 0;cursor:pointer}
 .link--neg{color:var(--neg);margin-top:8px}

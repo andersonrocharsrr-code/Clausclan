@@ -364,7 +364,7 @@ Abra `relatorios/index.html` por um servidor (GitHub Pages, ou `python3 -m http.
   mudou desde o dia anterior. Opção de usar o último relatório da semana de quem não mandou.
 - **Conferir com um relatório da equipe já pronto**: cole o relatório feito à mão e o app compara linha por linha.
 - **Relatórios**: todos os salvos, por dia; abrir, corrigir o texto ou excluir. Em "Texto do relatório", **Limpar** apaga o
-  texto para colar o relatório corrigido (ou **Colar corrigido** da área de transferência) e **Salvar** troca o antigo.
+  texto para colar o relatório corrigido e **Salvar** troca o antigo.
 - **Ajustes**: nome da equipe, produto, vendedores da equipe e backup `.json`. Os dados ficam só neste aparelho.
 
 ## App Android (APK) — pasta `relatorios-android/`

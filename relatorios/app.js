@@ -315,10 +315,6 @@
     $('#dlgTexto').value = '';
     $('#dlgTexto').focus();
   });
-  $('#dlgColar').addEventListener('click', async () => {
-    try { $('#dlgTexto').value = await navigator.clipboard.readText(); }
-    catch (e) { toast('Não deu para ler a área de transferência. Cole no campo.'); $('#dlgTexto').focus(); }
-  });
 
   $('#dlgSalvar').addEventListener('click', () => {
     if (!aberto) return;
