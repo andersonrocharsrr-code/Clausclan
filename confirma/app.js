@@ -236,17 +236,15 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
   }
   const QUANTAS = { dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5, '2': 2, '3': 3, '4': 4, '5': 5 };
   const DUPLO = { duplo: 2, dupla: 2, triplo: 3, tripla: 3 };
-  // Ex.: "três nove" → 9 três vezes. No singular só "três" repete ("dois nove" pode ser 2 e 9 ditados um a um);
-  // no plural ("dois noves"), com "vezes" ou com duplo/triplo, qualquer quantidade de 2 a 5.
+  // Só os 9 do começo do número (logo no início ou depois do DDD): "quatro nove" = 9999,
+  // "três noves" = 999, "três vezes nove", "triplo nove". Em outros pontos, "quatro nove" é 4 e 9.
   function repeticao(p, i) {
     const w = p[i];
-    if (w in DUPLO) { const d = digitoPalavra(p[i + 1]); return d ? { digito: d.d, vezes: DUPLO[w], fim: i + 1 } : null; }
+    const nove = (t) => { const d = digitoPalavra(t); return !!d && d.d === 9; };
+    if (w in DUPLO) return nove(p[i + 1]) ? { digito: 9, vezes: DUPLO[w], fim: i + 1 } : null;
     if (!(w in QUANTAS)) return null;
-    if (p[i + 1] === 'vezes') { const d = digitoPalavra(p[i + 2]) || (/^\d$/.test(p[i + 2] || '') && { d: Number(p[i + 2]) }); return d ? { digito: d.d, vezes: QUANTAS[w], fim: i + 2 } : null; }
-    const d = digitoPalavra(p[i + 1]);
-    if (!d) return null;
-    if (d.plural || w === 'tres' || w === '3') return { digito: d.d, vezes: QUANTAS[w], fim: i + 1 };
-    return null;
+    if (p[i + 1] === 'vezes') return (nove(p[i + 2]) || p[i + 2] === '9') ? { digito: 9, vezes: QUANTAS[w], fim: i + 2 } : null;
+    return nove(p[i + 1]) ? { digito: 9, vezes: QUANTAS[w], fim: i + 1 } : null;
   }
   function digitosFalados(texto) {
     const p = String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -254,11 +252,12 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     let out = '';
     for (let i = 0; i < p.length; i++) {
       const w = p[i];
-      // Repetição: "três nove" = 999; "dois oitos", "3 noves", "três vezes nove", "triplo nove".
-      const rep = repeticao(p, i);
+      // Repetição dos 9 do começo: "quatro nove" = 9999 (só no início ou logo depois do DDD).
+      const rep = out.length <= 2 ? repeticao(p, i) : null;
       if (rep) { out += String(rep.digito).repeat(rep.vezes); i = rep.fim; continue; }
       if (/^\d$/.test(w)) out += w;
       else if (w in UNID) out += UNID[w];
+      else if (digitoPalavra(w)) out += digitoPalavra(w).d; // plural solto ("oitos") vale um algarismo
       else if (w in DEZ_A_DEZENOVE) out += DEZ_A_DEZENOVE[w];
       else if (w in DEZENAS) {
         // "sessenta e oito" = 68; "sessenta" sozinho = 60.
