@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Relatórios da Equipe</title>
+  <meta name="description" content="Junta os relatórios diários dos vendedores e monta o relatório da equipe, conferindo as contas.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#1d4ed8">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Relatórios">
+  <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+  <header class="top">
+    <div class="top__title">
+      <small id="topoEquipe">Equipe</small>
+      <h1>Relatórios da Equipe</h1>
+    </div>
+  </header>
+
+  <nav class="abas" role="tablist">
+    <button type="button" role="tab" data-aba="colar" class="is-on"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4V3h6v1M9 10h6M9 14h6"/></svg>Colar</button>
+    <button type="button" role="tab" data-aba="equipe"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Equipe</button>
+    <button type="button" role="tab" data-aba="lista"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7h12M8 12h12M8 17h12"/><circle cx="4" cy="7" r=".9"/><circle cx="4" cy="12" r=".9"/><circle cx="4" cy="17" r=".9"/></svg>Relatórios</button>
+    <button type="button" role="tab" data-aba="ajustes"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>Ajustes</button>
+  </nav>
+
+  <main>
+    <!-- ============ Colar os relatórios dos vendedores ============ -->
+    <section id="aba-colar" class="aba">
+      <div class="card">
+        <h2>Cole os relatórios do WhatsApp</h2>
+        <p class="dica">Pode colar um ou vários de uma vez (cada <b>Nome:</b> começa um relatório novo). Mandou de novo no mesmo dia? O novo substitui o antigo.</p>
+        <textarea id="txtColar" rows="10" placeholder="Nome: Anderson&#10;Placa: …&#10;Data : 16/10/2026&#10;Valor a cobrar: 20.318,00&#10;…"></textarea>
+        <label class="linha-campo">Data, se não vier no texto
+          <input id="dataPadrao" type="date">
+        </label>
+        <div class="botoes">
+          <button type="button" class="btn" id="btnLer">Ler relatórios</button>
+          <button type="button" class="btn btn--sec" id="btnColarArea">Colar da área de transferência</button>
+        </div>
+      </div>
+      <div id="previa"></div>
+    </section>
+
+    <!-- ============ Relatório da equipe (consolidado) ============ -->
+    <section id="aba-equipe" class="aba" hidden>
+      <div class="card card--fino dia">
+        <button type="button" class="icone-sec" id="diaAntes" aria-label="Dia anterior">‹</button>
+        <input id="dataEquipe" type="date">
+        <button type="button" class="icone-sec" id="diaDepois" aria-label="Próximo dia">›</button>
+      </div>
+
+      <div class="card">
+        <label class="linha-campo">Semana
+          <input id="semanaTexto" placeholder="1ª semana Outubro">
+        </label>
+        <div class="tiles" id="tiles"></div>
+      </div>
+
+      <div class="card" id="cardFaltam" hidden>
+        <h2>Ainda não mandaram</h2>
+        <p id="faltam" class="faltam"></p>
+        <label class="check"><input type="checkbox" id="usarUltimo"> Usar o último relatório da semana de quem não mandou</label>
+      </div>
+
+      <div class="card">
+        <div class="card__cab"><h2>Vendedores <span id="qtVend" class="muted"></span></h2></div>
+        <div class="tabela-rola"><table class="tabela" id="tabela"></table></div>
+        <p class="dica">Toque num vendedor para ver o relatório, corrigir ou lançar o repasse.</p>
+      </div>
+
+      <div class="card" id="cardConf">
+        <h2>Conferência</h2>
+        <div id="conferencia"></div>
+      </div>
+
+      <div class="card msg">
+        <h2>Relatório da equipe</h2>
+        <pre id="textoEquipe" class="previa"></pre>
+      </div>
+      <div class="envio">
+        <button type="button" class="btn btn--whats" id="btnWhats">Enviar no WhatsApp</button>
+        <div class="botoes">
+          <button type="button" class="btn btn--sec" id="btnCopiar">Copiar</button>
+          <button type="button" class="btn btn--sec" id="btnCompart">Compartilhar</button>
+        </div>
+      </div>
+
+      <details class="card">
+        <summary><b>Conferir com um relatório da equipe já pronto</b></summary>
+        <p class="dica">Cole o relatório da equipe feito à mão: o app compara linha por linha com o que ele somou.</p>
+        <textarea id="txtConferir" rows="8" placeholder="Vlr.  Cobrar : 175.812,00&#10;Recebido : 81.923,25&#10;…"></textarea>
+        <div id="resultadoConferir"></div>
+      </details>
+    </section>
+
+    <!-- ============ Lista de relatórios salvos ============ -->
+    <section id="aba-lista" class="aba" hidden>
+      <div class="card card--fino">
+        <input id="busca" type="search" placeholder="Buscar vendedor…">
+      </div>
+      <div id="lista"></div>
+    </section>
+
+    <!-- ============ Ajustes ============ -->
+    <section id="aba-ajustes" class="aba" hidden>
+      <div class="card">
+        <h2>Equipe</h2>
+        <label class="linha-campo">Nome da equipe (supervisor)
+          <input id="cfgEquipe" placeholder="francivaldo">
+        </label>
+        <label class="linha-campo">Produto
+          <input id="cfgProduto" placeholder="ENXOVAL">
+        </label>
+        <label class="linha-campo">Vendedores da equipe (um por linha)
+          <textarea id="cfgVendedores" rows="7" placeholder="Anderson&#10;…"></textarea>
+        </label>
+        <p class="dica">Com a lista preenchida, o app avisa quem ainda não mandou o relatório do dia. Quem manda relatório entra na lista sozinho.</p>
+      </div>
+      <div class="card">
+        <h2>Backup</h2>
+        <div class="botoes">
+          <button type="button" class="btn btn--sec" id="btnExportar">Salvar backup (.json)</button>
+          <button type="button" class="btn btn--sec" id="btnImportar">Restaurar backup</button>
+        </div>
+        <input type="file" id="arqImportar" accept="application/json,.json" hidden>
+        <p class="dica">Os relatórios ficam salvos só neste aparelho. Faça backup de vez em quando.</p>
+        <button type="button" class="link link--neg" id="btnApagarTudo">Apagar todos os relatórios</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Relatório de um vendedor -->
+  <dialog id="dlg">
+    <form method="dialog" class="dlg">
+      <div class="card__cab">
+        <h2 id="dlgTitulo">Relatório</h2>
+        <button class="icone-sec" value="fechar" aria-label="Fechar">✕</button>
+      </div>
+      <div id="dlgAvisos"></div>
+      <div class="grade2">
+        <label class="linha-campo">Repasse (qtd.)
+          <input id="dlgRepQ" inputmode="numeric" placeholder="0">
+        </label>
+        <label class="linha-campo">Valor repasse
+          <input id="dlgRepV" inputmode="decimal" placeholder="0,00">
+        </label>
+      </div>
+      <div id="dlgResumo"></div>
+      <details>
+        <summary>Texto do relatório (corrigir aqui e salvar)</summary>
+        <textarea id="dlgTexto" rows="14"></textarea>
+      </details>
+      <div class="botoes">
+        <button type="button" class="btn" id="dlgSalvar">Salvar</button>
+        <button type="button" class="btn btn--neg" id="dlgExcluir">Excluir</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="parser.js?v=1"></script>
+  <script src="app.js?v=1"></script>
+</body>
+</html>
