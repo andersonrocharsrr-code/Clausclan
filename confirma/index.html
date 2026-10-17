@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Confirma">
-  <link rel="stylesheet" href="style.css?v=23">
+  <link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
   <!-- Abertura: a logo se monta (nota, linhas, selo e o ✓) e some. Um toque pula. -->
@@ -214,6 +214,7 @@
           <span>Lembrar de cobrar a resposta depois de</span>
           <select id="aLembrete">
             <option value="0">Não lembrar</option>
+            <option value="0.5">30 minutos</option>
             <option value="1">1 hora</option>
             <option value="2">2 horas</option>
             <option value="4">4 horas</option>
@@ -221,16 +222,15 @@
             <option value="48">2 dias</option>
           </select>
         </label>
-        <label class="campo">
+        <div class="campo">
           <span>Resumo diário das pendentes</span>
-          <select id="aResumo">
-            <option value="">Desligado</option>
-            <option value="09:00">09:00</option>
-            <option value="12:00">12:00</option>
-            <option value="17:00">17:00</option>
-            <option value="18:00">18:00</option>
-          </select>
-        </label>
+          <p class="dica" style="margin:0 0 8px">Escolha os horários do aviso (todo dia).</p>
+          <div id="horarios" class="horarios"></div>
+          <label class="hora-add">
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Adicionar horário
+            <input id="aNovoHorario" type="time" aria-label="Novo horário">
+          </label>
+        </div>
         <button id="btnTesteNotif" type="button" class="btn btn--sec">Testar notificação</button>
       </div>
       <div class="card">
@@ -284,6 +284,6 @@
 
   <div id="toast" class="toast" role="status" hidden></div>
 
-  <script src="app.js?v=25"></script>
+  <script src="app.js?v=26"></script>
 </body>
 </html>

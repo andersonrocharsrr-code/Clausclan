@@ -42,8 +42,10 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     try { s = JSON.parse(localStorage.getItem(CHAVE)); } catch { s = null; }
     s = s && typeof s === 'object' ? s : {};
     s.contatos = Array.isArray(s.contatos) ? s.contatos : [];
-    s.ajustes = Object.assign({ atendente: 'Mary', empresa: 'FC ENXOVAIS', modelo: MODELO_CONFIRMACAO, modeloCobranca: MODELO_COBRANCA, lembreteHoras: 4, resumo: '17:00', avisosWeb: {}, vendedores: [], notificacoes: true }, s.ajustes || {});
+    s.ajustes = Object.assign({ atendente: 'Mary', empresa: 'FC ENXOVAIS', modelo: MODELO_CONFIRMACAO, modeloCobranca: MODELO_COBRANCA, lembreteHoras: 4, resumo: '17:00', resumos: null, avisosWeb: {}, vendedores: [], notificacoes: true }, s.ajustes || {});
     if (!Array.isArray(s.ajustes.vendedores)) s.ajustes.vendedores = [];
+    // Horários do resumo diário (antes era um só, em "resumo").
+    if (!Array.isArray(s.ajustes.resumos)) s.ajustes.resumos = s.ajustes.resumo ? [s.ajustes.resumo] : [];
     // Primeira vez: aproveita os vendedores que já foram usados nas mensagens.
     if (!s.ajustes.vendedores.length) s.ajustes.vendedores = [...new Set(s.contatos.map((c) => c.vendedor).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
     // Rascunho de cada aba (a versão anterior só tinha o da confirmação).
@@ -703,18 +705,26 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     });
   }
   function cancelarLembrete(c) { if (NATIVE && LN) LN.cancel({ notifications: [{ id: idNotif(c) }] }).catch(() => {}); }
+  // Resumo diário: um aviso por horário escolhido (até 6), ids RESUMO_ID … RESUMO_ID+5.
+  const MAX_HORARIOS = 6;
   function agendarResumo() {
-    if (!NATIVE || !LN || !avisosLigados()) return;
-    LN.cancel({ notifications: [{ id: RESUMO_ID }] }).catch(() => {}).finally(() => {
-      const [h, m] = String(state.ajustes.resumo || '').split(':').map(Number);
+    if (!NATIVE || !LN) return;
+    const ids = Array.from({ length: MAX_HORARIOS }, (_, i) => ({ id: RESUMO_ID + 10 + i })).concat({ id: RESUMO_ID });
+    LN.cancel({ notifications: ids }).catch(() => {}).finally(() => {
+      if (!avisosLigados()) return;
       const pend = state.contatos.filter((c) => c.status === 'aguardando').length;
-      if (isNaN(h) || !pend) return;
-      LN.schedule({ notifications: [{
-        id: RESUMO_ID, title: `${pend} cliente${pend === 1 ? '' : 's'} sem responder`,
-        body: 'Confirmações e cobranças pendentes. Abra o Confirma Nota para cobrar as respostas.',
-        schedule: { on: { hour: h, minute: m || 0 }, allowWhileIdle: true }, channelId: 'lembretes', smallIcon: 'ic_stat_confirma', iconColor: '#22c55e', autoCancel: true,
-        isExactNotification: false,
-      }] }).catch(() => {});
+      if (!pend) return;
+      const notifs = state.ajustes.resumos.slice(0, MAX_HORARIOS).map((hm, i) => {
+        const [h, m] = String(hm).split(':').map(Number);
+        if (isNaN(h)) return null;
+        return {
+          id: RESUMO_ID + 10 + i, title: `${pend} cliente${pend === 1 ? '' : 's'} sem responder`,
+          body: 'Confirmações e cobranças pendentes. Abra o Confirma Nota para cobrar as respostas.',
+          schedule: { on: { hour: h, minute: m || 0 }, allowWhileIdle: true }, channelId: 'lembretes', smallIcon: 'ic_stat_confirma', iconColor: '#22c55e', autoCancel: true,
+          isExactNotification: false,
+        };
+      }).filter(Boolean);
+      if (notifs.length) LN.schedule({ notifications: notifs }).catch(() => {});
     });
   }
   function reagendarTudo() { state.contatos.forEach(agendarLembrete); agendarResumo(); }
@@ -761,7 +771,6 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
   $('#aAtendente').value = state.ajustes.atendente;
   $('#aEmpresa').value = state.ajustes.empresa;
   $('#aLembrete').value = String(state.ajustes.lembreteHoras);
-  $('#aResumo').value = state.ajustes.resumo;
   $('#aAtendente').addEventListener('input', (e) => { state.ajustes.atendente = e.target.value.trim(); salvar(); atualizarPrevia(); atualizarTopo(); });
   $('#aEmpresa').addEventListener('input', (e) => { state.ajustes.empresa = e.target.value.trim(); salvar(); atualizarPrevia(); });
   Object.entries(TIPOS).forEach(([tipo, T]) => {
@@ -771,7 +780,34 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     $(`[data-modelo-padrao="${tipo}"]`).addEventListener('click', () => { state.ajustes[T.chaveModelo] = T.padrao; area.value = T.padrao; salvar(); atualizarPrevia(tipo); toast('Modelo original de volta.'); });
   });
   $('#aLembrete').addEventListener('change', (e) => { state.ajustes.lembreteHoras = Number(e.target.value); salvar(); reagendarTudo(); });
-  $('#aResumo').addEventListener('change', (e) => { state.ajustes.resumo = e.target.value; salvar(); agendarResumo(); });
+  // Horários do resumo diário: lista com ✕ e "Adicionar horário" (abre o relógio do celular).
+  const IC_X = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  function renderHorarios() {
+    const l = state.ajustes.resumos;
+    $('#horarios').innerHTML = l.length
+      ? l.map((hm, i) => `<span class="hora">${esc(hm)}<button type="button" data-tirar="${i}" aria-label="Tirar ${esc(hm)}">${IC_X}</button></span>`).join('')
+      : '<span class="dica" style="margin:0">Nenhum horário: resumo desligado.</span>';
+    $('.hora-add').hidden = l.length >= MAX_HORARIOS;
+  }
+  $('#horarios').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-tirar]'); if (!b) return;
+    state.ajustes.resumos.splice(Number(b.dataset.tirar), 1);
+    salvar(); renderHorarios(); agendarResumo();
+  });
+  $('#aNovoHorario').addEventListener('click', (e) => {
+    if (typeof e.target.showPicker !== 'function') return;
+    e.preventDefault(); try { e.target.showPicker(); } catch { /* digita */ }
+  });
+  $('#aNovoHorario').addEventListener('change', (e) => {
+    const hm = e.target.value; e.target.value = ''; e.target.blur();
+    if (!/^\d{2}:\d{2}$/.test(hm)) return;
+    if (state.ajustes.resumos.includes(hm)) { toast(`${hm} já está na lista.`); return; }
+    state.ajustes.resumos.push(hm);
+    state.ajustes.resumos.sort();
+    salvar(); renderHorarios(); agendarResumo();
+    toast(`Resumo diário às ${hm} 🔔`);
+  });
+  renderHorarios();
 
   $('#btnExportar').addEventListener('click', async () => {
     const json = JSON.stringify({ app: 'confirma', versao: 2, contatos: state.contatos, ajustes: { ...state.ajustes, avisosWeb: undefined } }, null, 2);
