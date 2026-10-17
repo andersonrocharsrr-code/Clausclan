@@ -26,7 +26,11 @@ h2{font-size:16px;margin:0 0 10px}
 .top__title{flex:1;min-width:0}
 .top__title small{opacity:.85;font-size:13px}
 
-.abas{display:flex;gap:6px;padding:10px 16px;position:sticky;top:0;background:var(--bg);z-index:5;border-bottom:1px solid var(--line)}
+.abas{display:flex;gap:6px;padding:10px 16px;position:sticky;top:env(safe-area-inset-top);background:var(--bg);z-index:5;border-bottom:1px solid var(--line)}
+/* Faixa atrás da barra de status do celular, só depois de rolar (no topo fica o cabeçalho azul). */
+html.rolou body::before{content:"";position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);background:var(--bg);z-index:6}
+/* Ao focar um campo, ele para abaixo das abas grudadas no topo (e acima do teclado). */
+input,textarea,select{scroll-margin-top:calc(96px + env(safe-area-inset-top));scroll-margin-bottom:24px}
 .abas button{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:transparent;color:var(--muted);font:inherit;font-size:12.5px;font-weight:600;padding:7px 2px;border-radius:12px;cursor:pointer}
 .abas button.is-on{background:var(--accent-soft);color:var(--accent)}
 .ic{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -108,7 +112,7 @@ input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
 .comp .ok{color:var(--ok);font-weight:700}
 .comp .erro{color:var(--neg);font-weight:700}
 
-dialog{border:0;border-radius:var(--radius);padding:0;width:min(560px,calc(100% - 24px));max-height:calc(100% - 24px);background:var(--card);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog{border:0;border-radius:var(--radius);padding:0;width:min(560px,calc(100% - 24px));max-height:calc(100% - 24px);max-height:calc(100dvh - 24px);background:var(--card);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
 dialog::backdrop{background:rgba(10,15,30,.55)}
 .dlg{padding:16px}
 

@@ -413,6 +413,24 @@
   function topo() { $('#topoEquipe').textContent = db.cfg.equipe ? `Equipe ${db.cfg.equipe}` : 'Equipe'; }
   topo();
 
+  // Teclado aberto: o campo em que se digita vai para o meio da parte visível (nunca atrás das abas
+  // nem do teclado). O texto grande (colar relatórios) fica com o topo logo abaixo das abas.
+  const campoTexto = (el) => !!el && el.matches('input:not([type="date"]):not([type="file"]):not([type="checkbox"]), textarea');
+  function mostrarCampo() {
+    const el = document.activeElement;
+    if (!campoTexto(el)) return;
+    const visivel = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const alto = el.getBoundingClientRect().height > visivel * 0.45;
+    el.scrollIntoView({ block: alto ? 'start' : 'center', behavior: 'smooth' });
+  }
+  document.addEventListener('focusin', () => setTimeout(mostrarCampo, 350));
+  (window.visualViewport || window).addEventListener('resize', () => setTimeout(mostrarCampo, 50));
+
+  // Ao rolar, as abas grudam no topo: uma faixa da cor do fundo cobre a barra de status do Android.
+  const marcarRolagem = () => document.documentElement.classList.toggle('rolou', window.scrollY > 8);
+  window.addEventListener('scroll', marcarRolagem, { passive: true });
+  marcarRolagem();
+
   // Botão voltar do Android: fecha a janela aberta, depois volta para Colar, depois minimiza.
   const App = plugin('App');
   if (App) App.addListener('backButton', () => {
