@@ -430,6 +430,10 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     const pendCob = state.contatos.filter((c) => c.status === 'aguardando' && tipoDe(c) === 'cobranca');
     const emAberto = pendCob.reduce((s, c) => s + (c.valor || 0), 0);
     $('#resumo').textContent = `${pendConf} p/ confirmar · ${pendCob.length} cobrança${pendCob.length === 1 ? '' : 's'} em aberto${emAberto ? ` (${dinheiro(emAberto)})` : ''}`;
+    // Quadros do topo de Contatos (Aguardando · Em aberto · Resolvidas).
+    $('#stPend').textContent = pendConf + pendCob.length;
+    $('#stAberto').textContent = emAberto >= 10000 ? `R$ ${Math.round(emAberto / 1000)} mil` : `R$ ${Math.round(emAberto).toLocaleString('pt-BR')}`;
+    $('#stOk').textContent = state.contatos.filter((c) => c.status !== 'aguardando').length;
     const pend = pendConf + pendCob.length;
     $('#contaPend').hidden = !pend; $('#contaPend').textContent = pend;
 
@@ -457,27 +461,40 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
   const LIMITE = 3;
   const GRUPO = { confirmacao: 'Confirmações', cobranca: 'Cobranças' };
   const abertos = { confirmacao: false, cobranca: false };
+  // Bolinha com as iniciais, cor fixa por nome.
+  const CORES_AV = ['#f97316', '#8b5cf6', '#0ea5e9', '#16a34a', '#e11d48', '#0d9488', '#ca8a04', '#6366f1'];
+  function avatar(nome) {
+    const p = String(nome || '?').trim().split(/\s+/).filter((w) => w.length > 2 || /^[A-ZÀ-Ú]/.test(w));
+    const ini = ((p[0] || '?')[0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
+    let h = 0; for (const ch of String(nome)) h = (h * 31 + ch.charCodeAt(0)) % 997;
+    return `<span class="av" style="background:${CORES_AV[h % CORES_AV.length]}">${esc(ini)}</span>`;
+  }
+  const IC_CHECK = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"/></svg>';
+  const IC_CHAT = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.1L4 20z"/></svg>';
+  const IC_LIXO = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l1 12.2h9L17.5 7M10.3 10.5v5.5M13.7 10.5v5.5"/></svg>';
   function cartoes(itens) {
     return itens.map((c) => {
       const tipo = tipoDe(c); const T = TIPOS[tipo]; const cob = tipo === 'cobranca';
       const valorOk = cob ? c.valorPago : c.valor;
-      const selo = c.status === 'aguardando' ? T.pendente : `${T.resolvida}${valorOk != null ? ` · ${dinheiro(valorOk)}` : ''}`;
-      const info = cob ? `Vendedor ${esc(c.vendedor)} · ${dinheiro(c.valor)} · venceu ${dataBR(c.vencimento, '/')}` : `Vendedor ${esc(c.vendedor)} · nota de ${dataBR(c.data)}`;
+      const pend = c.status === 'aguardando';
+      const selo = pend ? (cob ? dinheiro(c.valor) : T.pendente) : `${T.resolvida}${valorOk != null ? ` · ${dinheiro(valorOk)}` : ''}`;
+      const info = cob ? `${esc(c.vendedor)} · venceu ${dataBR(c.vencimento, '/')}` : `${esc(c.vendedor)} · nota ${dataBR(c.data)}`;
+      const quandoTxt = pend ? `Enviada ${quando(c.enviadoEm)}${c.envios > 1 ? ` (${c.envios}×)` : ''}` : `${T.resolvida} ${quando(c.confirmadoEm)}${c.obs ? ` · ${esc(c.obs)}` : ''}`;
       return `
       <div class="item" data-id="${c.id}">
         <div class="item__topo">
-          <span class="item__nome">${esc(c.cliente)}</span>
-          <span class="selo selo--${c.status}">${selo}</span>
+          ${avatar(c.cliente)}
+          <span class="item__txt"><span class="item__nome">${esc(c.cliente)}</span><span class="item__info">${info}</span></span>
+          <span class="selo selo--${pend ? (cob ? 'aberto' : 'aguardando') : 'confirmada'}">${selo}</span>
         </div>
-        <div class="item__info">${info}${c.fone ? ` · ${esc(c.fone)}` : ''}</div>
-        <div class="item__info">${c.status === 'aguardando' ? `Enviada ${quando(c.enviadoEm)}${c.envios > 1 ? ` (${c.envios}×)` : ''}` : `${T.resolvida} ${quando(c.confirmadoEm)}${c.obs ? ` · ${esc(c.obs)}` : ''}`}</div>
+        <div class="item__info item__quando">${quandoTxt}${c.fone ? ` · ${esc(c.fone)}` : ''}</div>
         <div class="item__acoes">
-          ${c.status === 'aguardando'
-            ? `<button type="button" data-acao="confirmar">${T.botaoOk}</button>
-               <a class="is-whats" data-acao="reenviar" href="${linkWhats(c)}" target="_blank" rel="noopener">Cobrar de novo</a>`
-            : `<button type="button" data-acao="editar">Editar valor</button>
-               <button type="button" data-acao="reabrir">Voltar p/ ${T.pendente.toLowerCase()}</button>`}
-          <button type="button" class="is-del" data-acao="excluir" aria-label="Excluir">🗑️</button>
+          ${pend
+            ? `<button type="button" class="ac-ok" data-acao="confirmar">${IC_CHECK}${T.botaoOk.replace(/^\S+\s/, '')}</button>
+               <a class="ac-whats" data-acao="reenviar" href="${linkWhats(c)}" target="_blank" rel="noopener">${IC_CHAT}Cobrar de novo</a>`
+            : `${cob ? '<button type="button" class="ac-ok" data-acao="editar">Editar valor</button>' : ''}
+               <button type="button" class="ac-ok" data-acao="reabrir">Voltar p/ ${T.pendente.toLowerCase()}</button>`}
+          <button type="button" class="ac-del" data-acao="excluir" aria-label="Excluir">${IC_LIXO}</button>
         </div>
       </div>`;
     }).join('');
@@ -683,7 +700,7 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
   $('#aEmpresa').value = state.ajustes.empresa;
   $('#aLembrete').value = String(state.ajustes.lembreteHoras);
   $('#aResumo').value = state.ajustes.resumo;
-  $('#aAtendente').addEventListener('input', (e) => { state.ajustes.atendente = e.target.value.trim(); salvar(); atualizarPrevia(); });
+  $('#aAtendente').addEventListener('input', (e) => { state.ajustes.atendente = e.target.value.trim(); salvar(); atualizarPrevia(); atualizarTopo(); });
   $('#aEmpresa').addEventListener('input', (e) => { state.ajustes.empresa = e.target.value.trim(); salvar(); atualizarPrevia(); });
   Object.entries(TIPOS).forEach(([tipo, T]) => {
     const area = $(`[data-modelo="${tipo}"]`);
@@ -724,7 +741,14 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
   });
 
   /* ---------------- Abas ---------------- */
+  const TITULOS = { nova: 'Nova confirmação', cobranca: 'Nova cobrança', lista: 'Seus contatos', ajustes: 'Ajustes' };
+  function atualizarTopo() {
+    $('#saudacaoTopo').textContent = `${saudacao()}, ${state.ajustes.atendente || 'Mary'}`;
+  }
   function abrirAba(nome) {
+    $('#tituloTopo').textContent = TITULOS[nome] || 'Confirma Nota';
+    atualizarTopo();
+    window.scrollTo(0, 0);
     $$('.abas button').forEach((b) => b.classList.toggle('is-on', b.dataset.aba === nome));
     $$('.aba').forEach((s) => { s.hidden = s.id !== `aba-${nome}`; });
     if (nome === 'lista') renderLista();
@@ -739,7 +763,7 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
       if (!$('#aba-nova').hidden) App.minimizeApp(); else abrirAba('nova');
     });
   }
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) { renderLista(); avisosWeb(); atualizarSino(); } });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { atualizarTopo(); renderLista(); avisosWeb(); atualizarSino(); } });
   if (!NATIVE && 'serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 
   // Data: tocar em qualquer ponto do campo abre o calendário (em vez de só marcar o dia/mês/ano).
@@ -773,6 +797,19 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     el.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }
   document.addEventListener('focusin', () => setTimeout(mostrarCampo, 350));
+  // Teclado aberto: a barra de abas de baixo sai da frente. O teclado é percebido pela tela que encolhe
+  // (o Android redimensiona o app), não só pelo foco, para a barra não sumir com o teclado fechado.
+  let alturaCheia = window.innerHeight;
+  const campoTexto = () => { const el = document.activeElement; return !!el && el.matches('input:not([type="date"]):not([type="file"]), textarea'); };
+  function verTeclado() {
+    const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    if (!campoTexto()) alturaCheia = Math.max(h, window.innerHeight);
+    document.documentElement.classList.toggle('digitando', campoTexto() && h < alturaCheia * 0.8);
+  }
+  window.addEventListener('orientationchange', () => setTimeout(() => { alturaCheia = window.innerHeight; verTeclado(); }, 400));
+  (window.visualViewport || window).addEventListener('resize', verTeclado);
+  document.addEventListener('focusin', () => setTimeout(verTeclado, 300));
+  document.addEventListener('focusout', () => setTimeout(verTeclado, 0));
   if (window.visualViewport) window.visualViewport.addEventListener('resize', () => setTimeout(mostrarCampo, 50));
   else window.addEventListener('resize', () => setTimeout(mostrarCampo, 50));
 
@@ -789,6 +826,7 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
   if (!campo('confirmacao', 'data').value) campo('confirmacao', 'data').value = hojeISO();
   renderVendedores();
   atualizarPrevia();
+  atualizarTopo();
   renderLista();
   atualizarSino();
   avisosWeb();
