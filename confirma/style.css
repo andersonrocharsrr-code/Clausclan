@@ -307,3 +307,8 @@ html.rolou body::before{background:var(--bg)}
 .campo--ic>.campo__ic{display:grid;color:var(--ic-ink)}
 .campo--ic:focus-within>.campo__ic{color:#fff}
 .campo--ic>.campo__corpo{display:flex}
+
+/* Sem o quadrado azul do Android ao tocar (fica só o verde do próprio botão). */
+*{-webkit-tap-highlight-color:transparent}
+button:focus,a:focus,label:focus,.item:focus{outline:none}
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
