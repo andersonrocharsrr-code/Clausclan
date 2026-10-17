@@ -320,3 +320,8 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
 ::selection{background:rgba(22,163,74,.25)}
 .dlg,.dlg *{-webkit-tap-highlight-color:transparent}
 .dlg:focus,.dlg :focus:not(:focus-visible){outline:none}
+
+/* Filtros de Contatos numa linha só (um "Todos"). */
+.filtros--chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.filtros--chips button{flex:0 0 auto;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;padding:8px 14px;border-radius:999px;cursor:pointer}
+.filtros--chips button.is-on{background:var(--accent);border-color:var(--accent);color:#fff}

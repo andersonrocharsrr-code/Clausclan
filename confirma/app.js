@@ -514,11 +514,25 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     }).join('');
   }
   $('#busca').addEventListener('input', renderLista);
-  $$('.filtros').forEach((g) => $$('button', g).forEach((b) => b.addEventListener('click', () => {
-    filtro[g.dataset.grupo] = b.dataset.filtro;
-    $$('button', g).forEach((x) => x.classList.toggle('is-on', x === b));
+  // Uma linha de filtros só: "Todos" mostra tudo; Pendentes/Resolvidas escolhem a situação e
+  // Confirmações/Cobranças o tipo (dá para combinar; tocar de novo desmarca).
+  const STATUS_F = ['aguardando', 'confirmada'];
+  function marcarFiltros() {
+    $$('.filtros--chips button').forEach((b) => {
+      const f = b.dataset.f;
+      const on = f === 'todos' ? filtro.tipo === 'todos' && filtro.status === 'todas'
+        : STATUS_F.includes(f) ? filtro.status === f : filtro.tipo === f;
+      b.classList.toggle('is-on', on);
+    });
+  }
+  $$('.filtros--chips button').forEach((b) => b.addEventListener('click', () => {
+    const f = b.dataset.f;
+    if (f === 'todos') { filtro.tipo = 'todos'; filtro.status = 'todas'; }
+    else if (STATUS_F.includes(f)) filtro.status = filtro.status === f ? 'todas' : f;
+    else filtro.tipo = filtro.tipo === f ? 'todos' : f;
+    marcarFiltros();
     renderLista();
-  })));
+  }));
   $('#lista').addEventListener('click', (e) => {
     // Toque no cartão (fora dos botões): abre o resumo do que foi enviado.
     if (!e.target.closest('[data-acao],[data-ver]') && e.target.closest('.item')) {
