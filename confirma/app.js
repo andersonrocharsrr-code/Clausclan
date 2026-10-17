@@ -809,6 +809,82 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
   });
   renderHorarios();
 
+  /* ---------------- Salvamentos (igual ao Fechamento de Caixa) ---------------- */
+  // "Salvar agora" guarda uma cópia; depois disso o app se salva sozinho a cada 30 min quando algo muda.
+  const KEY_SALVOS = 'confirma.salvos';
+  const KEY_AUTO = 'confirma.autoSalvar';
+  const AUTO_MIN = 30;
+  const MAX_SALVOS = 30;
+  const lsLer = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch { return d; } };
+  const lsGravar = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { toast('Sem espaço para salvar neste aparelho.'); return false; } };
+  const fotoAtual = () => JSON.stringify({ contatos: state.contatos, ajustes: { ...state.ajustes, avisosWeb: {} } });
+  function avisoSalvo() {
+    const el = $('#salvoAviso');
+    (document.querySelector('dialog[open]') || document.body).appendChild(el);
+    el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+  }
+  function guardarSalvamento(auto) {
+    const copia = fotoAtual();
+    const salvos = lsLer(KEY_SALVOS, []);
+    const pend = state.contatos.filter((c) => c.status === 'aguardando').length;
+    salvos.unshift({ id: Date.now().toString(36), em: Date.now(), auto: !!auto, qtd: state.contatos.length, pend, dados: copia });
+    if (!lsGravar(KEY_SALVOS, salvos.slice(0, MAX_SALVOS))) return false;
+    lsGravar(KEY_AUTO, { em: Date.now(), copia });
+    return true;
+  }
+  function pintarSalvos() {
+    const a = lsLer(KEY_AUTO, null);
+    $('#autoSalvo').hidden = !a;
+    if (a) $('#autoSalvo').textContent = `Salvamento automático a cada ${AUTO_MIN} min quando houver mudança · último ${quando(a.em)}`;
+    const salvos = lsLer(KEY_SALVOS, []);
+    $('#listaSalvos').innerHTML = salvos.length
+      ? salvos.map((s) => `<div class="salvo"><button type="button" class="salvo__abrir" data-carregar="${s.id}">
+          <b>${quando(s.em)}${s.auto ? ' · automático' : ''}</b>
+          <span>${s.qtd} contato${s.qtd === 1 ? '' : 's'} · ${s.pend} pendente${s.pend === 1 ? '' : 's'}</span></button>
+          <button type="button" class="salvo__del" data-apagar="${s.id}" aria-label="Apagar salvamento">${IC_LIXO}</button></div>`).join('')
+      : '<p class="dica" style="margin:6px 0 0">Nenhum salvamento ainda.</p>';
+  }
+  $('#btnSalvarTudo').addEventListener('click', () => {
+    if (!guardarSalvamento(false)) return;
+    pintarSalvos(); avisoSalvo();
+    toast(`Salvo. Agora ele se salva sozinho a cada ${AUTO_MIN} minutos se houver mudança.`);
+  });
+  function autoSalvar() {
+    const a = lsLer(KEY_AUTO, null);
+    if (!a || Date.now() - a.em < AUTO_MIN * 60000) return;
+    if (fotoAtual() === a.copia) return; // nada mudou desde o último salvamento
+    if (guardarSalvamento(true)) { pintarSalvos(); toast('Salvo automaticamente.'); }
+  }
+  setInterval(autoSalvar, 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) autoSalvar(); });
+  $('#listaSalvos').addEventListener('click', (e) => {
+    const apagar = e.target.closest('[data-apagar]');
+    if (apagar) {
+      if (!confirm('Apagar este salvamento?')) return;
+      lsGravar(KEY_SALVOS, lsLer(KEY_SALVOS, []).filter((s) => s.id !== apagar.dataset.apagar));
+      pintarSalvos(); return;
+    }
+    const abrir = e.target.closest('[data-carregar]'); if (!abrir) return;
+    const s = lsLer(KEY_SALVOS, []).find((x) => x.id === abrir.dataset.carregar); if (!s) return;
+    const dlg = $('#dlgCarregar');
+    $('#carregarTxt').textContent = `${quando(s.em)} · ${s.qtd} contato${s.qtd === 1 ? '' : 's'}. O que está no app agora será trocado por este salvamento.`;
+    dlg.returnValue = '';
+    dlg.onclose = () => {
+      if (dlg.returnValue !== 'sim') return;
+      try {
+        const d = JSON.parse(s.dados);
+        cancelarTudo();
+        state.contatos = Array.isArray(d.contatos) ? d.contatos : [];
+        Object.assign(state.ajustes, d.ajustes || {}, { avisosWeb: state.ajustes.avisosWeb });
+        salvar();
+        // Recarrega a tela com os dados do salvamento.
+        location.reload();
+      } catch { toast('Não deu para carregar este salvamento.'); }
+    };
+    dlg.showModal();
+  });
+  pintarSalvos();
+
   $('#btnExportar').addEventListener('click', async () => {
     const json = JSON.stringify({ app: 'confirma', versao: 2, contatos: state.contatos, ajustes: { ...state.ajustes, avisosWeb: undefined } }, null, 2);
     const nome = `confirma-nota-${hojeISO()}.json`;
@@ -859,6 +935,7 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
       if ($('#dlgValor').open) { $('#dlgValor').close(); return; }
       if ($('#dlgDetalhe').open) { $('#dlgDetalhe').close(); return; }
       if ($('#dlgVend').open) { $('#dlgVend').close(); return; }
+      if ($('#dlgCarregar').open) { $('#dlgCarregar').close(); return; }
       if (!$('#aba-nova').hidden) App.minimizeApp(); else abrirAba('nova');
     });
   }

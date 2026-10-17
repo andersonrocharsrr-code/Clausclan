@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Confirma">
-  <link rel="stylesheet" href="style.css?v=25">
+  <link rel="stylesheet" href="style.css?v=26">
 </head>
 <body>
   <!-- Abertura: a logo se monta (nota, linhas, selo e o ✓) e some. Um toque pula. -->
@@ -234,7 +234,14 @@
         <button id="btnTesteNotif" type="button" class="btn btn--sec">Testar notificação</button>
       </div>
       <div class="card">
-        <h2>Backup</h2>
+        <h2>Salvamentos</h2>
+        <p class="dica" style="margin:0 0 10px">Guarda uma cópia de todos os contatos, vendedores e ajustes. Toque num salvamento para carregar.</p>
+        <button id="btnSalvarTudo" type="button" class="btn btn--salvar"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg>Salvar agora</button>
+        <p id="autoSalvo" class="dica auto-salvo" hidden></p>
+        <div id="listaSalvos" class="salvos"></div>
+      </div>
+      <div class="card">
+        <h2>Backup em arquivo</h2>
         <div class="acoes">
           <button id="btnExportar" type="button" class="btn btn--sec">Exportar contatos</button>
           <label class="btn btn--sec">Importar<input id="fImportar" type="file" accept="application/json,.json" hidden></label>
@@ -282,8 +289,21 @@
     <div id="vendOps" class="fb__lista"></div>
   </dialog>
 
+  <!-- Carregar um salvamento -->
+  <dialog id="dlgCarregar" class="dlg">
+    <form method="dialog">
+      <h2>Carregar este salvamento?</h2>
+      <p id="carregarTxt" class="dica"></p>
+      <div class="acoes">
+        <button value="cancel" class="btn btn--sec">Cancelar</button>
+        <button value="sim" class="btn">Carregar</button>
+      </div>
+    </form>
+  </dialog>
+  <div id="salvoAviso" class="aviso-salvo" role="status" aria-live="polite">✓ Salvo</div>
+
   <div id="toast" class="toast" role="status" hidden></div>
 
-  <script src="app.js?v=26"></script>
+  <script src="app.js?v=27"></script>
 </body>
 </html>

@@ -325,7 +325,7 @@ App para mandar duas mensagens automáticas pelo WhatsApp e acompanhar as respos
   "Em aberto" até **💵 Pagou** (anota o valor pago). Separados em blocos (Confirmações e Cobranças) com a quantidade; com mais de 3, os outros ficam recolhidos em
   "▾ Ver todas as … (N)". Filtros por tipo e por situação; "Cobrar de novo" reabre o WhatsApp.
   Tocar no cartão abre o resumo: nome completo, dados, datas e o texto exato da mensagem enviada (com "Copiar mensagem").
-- **⚙️ Ajustes**: nome da atendente, empresa, lista de vendedores, os dois modelos de mensagem
+- **⚙️ Ajustes**: salvamentos (Salvar agora + automático a cada 30 min, carregar/apagar), nome da atendente, empresa, lista de vendedores, os dois modelos de mensagem
   (`{saudacao}`, `{cliente}`, `{atendente}`, `{empresa}`, `{vendedor}`, `{data}`, `{valor}`, `{vencimento}`),
   lembrete para cobrar a resposta (1 h a 2 dias), resumo diário das pendentes e backup em `.json`.
 - **App Android** (`confirma-android/`, Capacitor): ditado por voz nativo do Android e **notificações** agendadas
