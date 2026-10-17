@@ -59,7 +59,8 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
   const dataBR = (iso, sep = '.') => (iso && /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso.split('-').reverse().join(sep) : '');
   const dinheiro = (n) => (n == null || isNaN(n) ? '' : n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
   const numeroBR = (n) => (n == null || isNaN(n) ? '' : n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-  const quando = (ts) => new Date(ts).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  // "16/10 22:33" (sem vírgula entre a data e a hora).
+  const quando = (ts) => { const d = new Date(ts); const z = (n) => String(n).padStart(2, '0'); return `${z(d.getDate())}/${z(d.getMonth() + 1)} ${z(d.getHours())}:${z(d.getMinutes())}`; };
   function lerValor(t) {
     let s = String(t || '').replace(/[^\d,.-]/g, '');
     if (!s) return null;
