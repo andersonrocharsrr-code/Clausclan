@@ -320,3 +320,18 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
 ::selection{background:rgba(22,163,74,.25)}
 .dlg,.dlg *{-webkit-tap-highlight-color:transparent}
 .dlg:focus,.dlg :focus:not(:focus-visible){outline:none}
+
+/* Filtros em duas linhas alinhadas em colunas: "Todos" (tipo) logo acima de "Todas" (situação). */
+.filtros--abas,.filtros--pilulas{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-left:0;margin-right:0}
+.filtros--abas button{text-align:center;padding:6px 0}
+.filtros--abas button.is-on::after{left:22%;right:22%}
+.filtros--pilulas{margin-top:14px}
+.filtros--pilulas button{min-width:0}
+
+/* Campo de data: o texto do Android (que fica azul ao tocar) some; a data aparece escrita por cima. */
+.data-caixa{position:relative;display:block}
+.data-caixa input[type="date"]{color:transparent;caret-color:transparent}
+.data-caixa input[type="date"]::-webkit-datetime-edit{opacity:0}
+.data-caixa input[type="date"]::-webkit-calendar-picker-indicator{opacity:.75}
+.data-texto{position:absolute;left:0;top:50%;transform:translateY(-50%);pointer-events:none;font-size:16px;font-weight:600;color:var(--ink)}
+.data-texto.is-vazio{color:var(--muted);font-weight:500;opacity:.7}

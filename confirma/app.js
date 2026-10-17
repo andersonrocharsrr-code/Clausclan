@@ -115,8 +115,18 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     $$('[data-campo]', secao(tipo)).forEach((el) => { c[el.dataset.campo] = el.value.trim(); });
     return c;
   }
+  // Data escrita por cima do campo de data (o texto do próprio Android fica invisível e não marca em azul).
+  function mostrarDatas() {
+    $$('.data-caixa').forEach((cx) => {
+      const v = $('input', cx).value;
+      const t = $('.data-texto', cx);
+      t.textContent = v ? dataBR(v, '/') : 'dd/mm/aaaa';
+      t.classList.toggle('is-vazio', !v);
+    });
+  }
   function atualizarPrevia(tipo) {
     if (!tipo) { Object.keys(TIPOS).forEach(atualizarPrevia); return; }
+    mostrarDatas();
     const c = lerForm(tipo);
     $('.previa', secao(tipo)).innerHTML = previaHTML(c);
     state.rascunhos[tipo] = c; salvar();

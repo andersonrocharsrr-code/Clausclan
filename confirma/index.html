@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Confirma">
-  <link rel="stylesheet" href="style.css?v=19">
+  <link rel="stylesheet" href="style.css?v=22">
 </head>
 <body>
   <!-- Abertura: a logo se monta (nota, linhas, selo e o ✓) e some. Um toque pula. -->
@@ -88,7 +88,7 @@
         </label>
         <label class="campo campo--ic">
           <span class="campo__ic"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span>
-          <span class="campo__corpo"><span class="campo__rot">Data da nota</span><input data-campo="data" type="date"></span>
+          <span class="campo__corpo"><span class="campo__rot">Data da nota</span><span class="data-caixa"><input data-campo="data" type="date"><span class="data-texto" aria-hidden="true">dd/mm/aaaa</span></span></span>
         </label>
         <label class="campo campo--ic">
           <span class="campo__ic"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 3.5h2.6l1.4 4-2 1.3a11 11 0 0 0 6.6 6.6l1.3-2 4 1.4v2.6a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2z"/></svg></span>
@@ -131,7 +131,7 @@
         </label>
         <label class="campo campo--ic">
           <span class="campo__ic"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span>
-          <span class="campo__corpo"><span class="campo__rot">Venceu no dia</span><input data-campo="vencimento" type="date"></span>
+          <span class="campo__corpo"><span class="campo__rot">Venceu no dia</span><span class="data-caixa"><input data-campo="vencimento" type="date"><span class="data-texto" aria-hidden="true">dd/mm/aaaa</span></span></span>
         </label>
         <label class="campo campo--ic">
           <span class="campo__ic"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 3.5h2.6l1.4 4-2 1.3a11 11 0 0 0 6.6 6.6l1.3-2 4 1.4v2.6a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2z"/></svg></span>
@@ -172,9 +172,9 @@
           <button type="button" data-filtro="cobranca">Cobranças</button>
         </div>
         <div class="filtros filtros--pilulas" role="group" data-grupo="status">
+          <button type="button" data-filtro="todas">Todas</button>
           <button type="button" data-filtro="aguardando" class="is-on">Pendentes</button>
           <button type="button" data-filtro="confirmada">Resolvidas</button>
-          <button type="button" data-filtro="todas">Todas</button>
         </div>
       </div>
       <div id="lista"></div>
@@ -277,6 +277,6 @@
 
   <div id="toast" class="toast" role="status" hidden></div>
 
-  <script src="app.js?v=18"></script>
+  <script src="app.js?v=21"></script>
 </body>
 </html>
