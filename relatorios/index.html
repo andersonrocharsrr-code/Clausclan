@@ -110,10 +110,10 @@
 
       <div class="card">
         <h2>Caixas dos vendedores</h2>
-        <p class="dica">Leia a foto da folha CAIXA de cada vendedor (pode escolher várias de uma vez) ou cole o "Mandar resumo" do app Caixa. O mesmo vendedor na mesma semana troca o anterior.</p>
+        <p class="dica">Leia a foto da folha CAIXA de cada vendedor (pode escolher várias de uma vez), preencha os números à mão ou cole o "Mandar resumo" do app Caixa. O app faz as contas. O mesmo vendedor na mesma semana troca o anterior.</p>
         <div class="botoes">
           <button type="button" class="btn" id="cxFotoBtn">Ler fotos dos caixas</button>
-          <button type="button" class="btn btn--sec" id="cxManual">Lançar à mão</button>
+          <button type="button" class="btn btn--sec" id="cxManual">Preencher à mão</button>
         </div>
         <input type="file" id="cxFoto" accept="image/*" multiple hidden>
         <p id="cxStatus" class="aviso" hidden></p>
@@ -191,8 +191,8 @@
         </label>
         <label class="linha-campo">Qual IA
           <select id="cfgModoIA">
-            <option value="precisa">IA mais precisa (Claude Opus)</option>
-            <option value="economica">IA econômica (Claude Haiku, centavos)</option>
+            <option value="economica">IA econômica (Claude Haiku, menos de 1 centavo por foto)</option>
+            <option value="precisa">IA mais precisa (Claude Opus, uns 30 centavos por foto)</option>
           </select>
         </label>
         <p class="dica">A chave (console.anthropic.com) fica salva só neste aparelho. Cada foto lida é cobrada na sua conta da Anthropic.</p>
@@ -242,6 +242,8 @@
       </div>
       <div id="dlgCxAvisos"></div>
       <div id="cxCampos" class="grade2"></div>
+      <p id="dlgCxConta" class="aviso aviso--ok"></p>
+      <p class="dica">Deixe o Recebimento em branco para o app somar notas 25% + 40/50% + antecipados + pepino parcial + pepino extra.</p>
       <div class="botoes">
         <button type="button" class="btn" id="dlgCxSalvar">Salvar</button>
         <button type="button" class="btn btn--neg" id="dlgCxExcluir">Excluir</button>
@@ -251,7 +253,7 @@
 
   <div id="toast" class="toast" hidden></div>
 
-  <script src="parser.js?v=3"></script>
-  <script src="app.js?v=7"></script>
+  <script src="parser.js?v=4"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>

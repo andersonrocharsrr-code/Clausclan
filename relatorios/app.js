@@ -482,12 +482,13 @@
   const KEY_API = 'relatorios.apiKey';
   const KEY_MODO = 'relatorios.modoIA';
   const MODOS = {
-    precisa: { nome: 'IA mais precisa', modelo: 'claude-opus-5-5' },
     economica: { nome: 'IA econômica', modelo: 'claude-haiku-5-5' },
+    precisa: { nome: 'IA mais precisa', modelo: 'claude-opus-5-5' },
   };
   const lsGet = (k, d) => { try { return localStorage.getItem(k) || d; } catch (e) { return d; } };
   const lsSet = (k, val) => { try { localStorage.setItem(k, val); } catch (e) { /* sem armazenamento */ } };
-  const modoIA = () => (MODOS[lsGet(KEY_MODO, 'precisa')] ? lsGet(KEY_MODO, 'precisa') : 'precisa');
+  // Padrão: IA econômica (Haiku, menos de 1 centavo por foto).
+  const modoIA = () => (MODOS[lsGet(KEY_MODO, 'economica')] ? lsGet(KEY_MODO, 'economica') : 'economica');
 
   let SDK = null;
   async function clienteIA() {
@@ -634,17 +635,31 @@ Em "duvidas" diga, em poucas palavras, o que ficou difícil de ler; se leu tudo 
       el.value = tipo === 'm' ? (v(val) ? brl(val) : '') : tipo === 'i' ? (v(val) ? String(val) : '') : (val || '');
     });
     $('#dlgCxExcluir').hidden = !!novo;
+    contaCx();
     dlgCx.showModal();
   }
 
-  $('#dlgCxSalvar').addEventListener('click', () => {
-    const c = cxAberto;
+  // Lê o formulário num caixa (sem guardar).
+  function formCx(c) {
     CAMPOS_CX.forEach(([k, , tipo]) => {
       const val = $(`[data-cx="${k}"]`).value.trim();
       if (tipo === 'm') c[k] = R.numero(val) || 0;
       else if (tipo === 'i') c[k] = val ? Math.round(R.numero(val) || 0) : (k === 'semana' ? null : 0);
       else c[k] = val || (k === 'data' ? null : '');
     });
+    return c;
+  }
+  // Conta na hora, enquanto digita: o recebimento em branco é a soma das partes.
+  function contaCx() {
+    const c = formCx(R.caixaVazio());
+    const partes = v(c.notas25) + v(c.notas4050) + v(c.antecipados) + v(c.pepinoParcial) + v(c.pepinoExtra);
+    $('#dlgCxConta').innerHTML = `Recebimento ${v(c.recebimento) ? '' : '(soma das partes) '}<b>${brl(v(c.recebimento) || partes)}</b>` +
+      ` · Recebido sem o pepino extra <b>${brl(R.recebidoCaixa(c))}</b>`;
+  }
+  $('#cxCampos').addEventListener('input', contaCx);
+
+  $('#dlgCxSalvar').addEventListener('click', () => {
+    const c = formCx(cxAberto);
     if (!c.nome) { toast('Coloque o nome do vendedor.'); return; }
     c.duvidas = '';
     guardarCaixa(c);

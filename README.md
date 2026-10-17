@@ -373,8 +373,8 @@ Abra `relatorios/index.html` por um servidor (GitHub Pages, ou `python3 -m http.
   - **Pipino** = soma dos "Valor dos pepinos"; **Inadimplência** = Pipino ÷ Total
   - **Vlr deixado** = soma dos "Valor deixado"
   Os caixas entram pela **foto da folha** (lida pela IA Claude, várias fotos de uma vez; chave da API em Ajustes, cobrada
-  na conta da Anthropic; IA mais precisa = Opus, econômica = Haiku), colando o **"Mandar resumo" do app Caixa** ou
-  **lançando à mão**. Tocar num caixa abre os valores para conferir e corrigir. Avisa quem ainda não tem caixa, caixa em
+  na conta da Anthropic; padrão = IA econômica, Haiku, menos de 1 centavo por foto; a mais precisa é o Opus), colando o
+  **"Mandar resumo" do app Caixa** ou **preenchendo os números à mão** (o recebimento em branco vira a soma das partes). Tocar num caixa abre os valores para conferir e corrigir. Avisa quem ainda não tem caixa, caixa em
   outra semana e recebimento que não bate com as partes. O mesmo vendedor na mesma semana troca o caixa anterior.
 - **Ajustes**: nome da equipe, produto, vendedores da equipe, chave da IA e backup `.json`. Os dados ficam só neste aparelho.
 
