@@ -215,6 +215,20 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
   const SR_NATIVO = plugin('SpeechRecognition');
   const SR_WEB = window.SpeechRecognition || window.webkitSpeechRecognition || null;
 
+  // Fundo da janela do Android = cor da tela (é o que aparece no espaço do teclado antes de ele surgir).
+  // Durante a abertura fica o verde-escuro dela; depois troca, e acompanha o tema claro/escuro.
+  const TELA = plugin('Tela');
+  function fundoJanela() {
+    if (!TELA || document.documentElement.classList.contains('com-intro')) return;
+    const cor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+    if (/^#[0-9a-f]{6}$/i.test(cor)) TELA.fundo({ cor }).catch(() => {});
+  }
+  if (TELA) {
+    new MutationObserver(fundoJanela).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', fundoJanela);
+    fundoJanela();
+  }
+
   let ouvindo = null; // { botao, parar() }
   function fimOuvir() {
     if (!ouvindo) return;
