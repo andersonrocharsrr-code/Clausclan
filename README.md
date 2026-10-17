@@ -365,3 +365,13 @@ Abra `relatorios/index.html` por um servidor (GitHub Pages, ou `python3 -m http.
 - **Conferir com um relatório da equipe já pronto**: cole o relatório feito à mão e o app compara linha por linha.
 - **Relatórios**: todos os salvos, por dia; abrir, corrigir o texto ou excluir.
 - **Ajustes**: nome da equipe, produto, vendedores da equipe e backup `.json`. Os dados ficam só neste aparelho.
+
+## App Android (APK) — pasta `relatorios-android/`
+O mesmo app empacotado com **Capacitor**, igual aos outros: os arquivos vão dentro do APK, então funciona
+**sem internet** (o site também funciona offline pelo service worker). No Android, **Compartilhar** e **Salvar backup**
+abrem o compartilhar do celular (Drive, WhatsApp, Arquivos…), e o botão voltar fecha a janela aberta e volta para **Colar**.
+
+O APK é gerado pelo GitHub Actions (`.github/workflows/relatorios-apk.yml`) a cada mudança em `relatorios/` ou
+`relatorios-android/`. No `main`, com o segredo `NEXA_SIGNING_SEED`, ele fica no link fixo:
+https://github.com/andersonrocharsrr-code/Clausclan/releases/download/relatorios/relatorios.apk
+Sem o segredo (ou fora do `main`) sai um APK de teste em "Artifacts" na execução.

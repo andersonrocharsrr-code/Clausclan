@@ -1,6 +1,6 @@
 /* Service worker: abre o app sem internet. */
-const CACHE = 'relatorios-v2';
-const FILES = ['./', 'index.html', 'style.css?v=1', 'parser.js?v=2', 'app.js?v=2', 'icon.svg', 'manifest.webmanifest'];
+const CACHE = 'relatorios-v3';
+const FILES = ['./', 'index.html', 'style.css?v=1', 'parser.js?v=2', 'app.js?v=3', 'icon.svg', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));

@@ -13,6 +13,12 @@
   const dataCurta = (iso) => (iso ? iso.split('-').reverse().slice(0, 2).join('/') : '—');
   const somaDias = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
   const difDias = (a, b) => Math.round((new Date(a + 'T12:00:00') - new Date(b + 'T12:00:00')) / 864e5);
+  // No APK (Capacitor) usa os recursos do Android: compartilhar, salvar arquivo e botão voltar.
+  const Cap = window.Capacitor;
+  const NATIVE = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
+  const plugin = (n) => (NATIVE ? (Cap.Plugins && Cap.Plugins[n]) || (Cap.registerPlugin && Cap.registerPlugin(n)) || null : null);
+  const SHARE = plugin('Share');
+  const FS = plugin('Filesystem');
   const diaSemana = (iso) => new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
 
   // ---------- Dados ----------
@@ -260,8 +266,11 @@
     try { await navigator.clipboard.writeText(textoAtual()); toast('Copiado.'); } catch (e) { toast('Não consegui copiar.'); }
   });
   $('#btnCompart').addEventListener('click', async () => {
-    if (navigator.share) { try { await navigator.share({ text: textoAtual() }); } catch (e) { /* cancelou */ } }
-    else toast('Este navegador não compartilha. Use Copiar.');
+    try {
+      if (SHARE) await SHARE.share({ text: textoAtual(), dialogTitle: 'Mandar relatório da equipe' });
+      else if (navigator.share) await navigator.share({ text: textoAtual() });
+      else toast('Este navegador não compartilha. Use Copiar.');
+    } catch (e) { /* cancelou */ }
   });
 
   // Compara um relatório da equipe feito à mão com o que o app somou.
@@ -364,11 +373,22 @@
     salvar(); desenharAjustes();
   });
 
-  $('#btnExportar').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+  $('#btnExportar').addEventListener('click', async () => {
+    const nome = `relatorios-equipe-${hojeISO()}.json`;
+    const json = JSON.stringify(db, null, 2);
+    if (NATIVE && FS && SHARE) {
+      // No APK: grava o arquivo e abre o compartilhar (Google Drive, WhatsApp, Arquivos…).
+      try {
+        const { uri } = await FS.writeFile({ path: nome, data: json, directory: 'CACHE', encoding: 'utf8' });
+        await SHARE.share({ title: nome, files: [uri], dialogTitle: 'Guardar o backup' });
+      } catch (e) {
+        if (!/cancel|abort/i.test(String(e && (e.message || e.name)))) toast('Não deu para gerar o backup.');
+      }
+      return;
+    }
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `relatorios-equipe-${hojeISO()}.json`;
+    a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+    a.download = nome;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   });
@@ -393,5 +413,13 @@
   function topo() { $('#topoEquipe').textContent = db.cfg.equipe ? `Equipe ${db.cfg.equipe}` : 'Equipe'; }
   topo();
 
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  // Botão voltar do Android: fecha a janela aberta, depois volta para Colar, depois minimiza.
+  const App = plugin('App');
+  if (App) App.addListener('backButton', () => {
+    if (dlg.open) { dlg.close(); return; }
+    if ($('#aba-colar').hidden) abrirAba('colar'); else App.minimizeApp();
+  });
+
+  // Funciona sem internet: no site pelo service worker; no APK os arquivos já vêm dentro dele.
+  if (!NATIVE && 'serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
