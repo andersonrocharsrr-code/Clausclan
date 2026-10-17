@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Confirma">
-  <link rel="stylesheet" href="style.css?v=20">
+  <link rel="stylesheet" href="style.css?v=21">
 </head>
 <body>
   <!-- Abertura: a logo se monta (nota, linhas, selo e o ✓) e some. Um toque pula. -->
@@ -166,12 +166,15 @@
       </div>
       <div class="card card--fino">
         <label class="busca"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg><input id="busca" type="search" placeholder="Buscar cliente ou vendedor"></label>
-        <div class="filtros filtros--chips" role="group" aria-label="Filtrar contatos">
-          <button type="button" data-f="todos">Todos</button>
-          <button type="button" data-f="aguardando" class="is-on">Pendentes</button>
-          <button type="button" data-f="confirmada">Resolvidas</button>
-          <button type="button" data-f="confirmacao">Confirmações</button>
-          <button type="button" data-f="cobranca">Cobranças</button>
+        <div class="filtros filtros--abas" role="group" data-grupo="tipo">
+          <button type="button" data-filtro="todos" class="is-on">Todos</button>
+          <button type="button" data-filtro="confirmacao">Confirmações</button>
+          <button type="button" data-filtro="cobranca">Cobranças</button>
+        </div>
+        <div class="filtros filtros--pilulas" role="group" data-grupo="status">
+          <button type="button" data-filtro="todas">Todas</button>
+          <button type="button" data-filtro="aguardando" class="is-on">Pendentes</button>
+          <button type="button" data-filtro="confirmada">Resolvidas</button>
         </div>
       </div>
       <div id="lista"></div>
@@ -274,6 +277,6 @@
 
   <div id="toast" class="toast" role="status" hidden></div>
 
-  <script src="app.js?v=19"></script>
+  <script src="app.js?v=20"></script>
 </body>
 </html>

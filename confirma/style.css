@@ -321,7 +321,9 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
 .dlg,.dlg *{-webkit-tap-highlight-color:transparent}
 .dlg:focus,.dlg :focus:not(:focus-visible){outline:none}
 
-/* Filtros de Contatos numa linha só (um "Todos"). */
-.filtros--chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
-.filtros--chips button{flex:0 0 auto;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;padding:8px 14px;border-radius:999px;cursor:pointer}
-.filtros--chips button.is-on{background:var(--accent);border-color:var(--accent);color:#fff}
+/* Filtros em duas linhas alinhadas em colunas: "Todos" (tipo) logo acima de "Todas" (situação). */
+.filtros--abas,.filtros--pilulas{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-left:0;margin-right:0}
+.filtros--abas button{text-align:center;padding:6px 0}
+.filtros--abas button.is-on::after{left:22%;right:22%}
+.filtros--pilulas{margin-top:14px}
+.filtros--pilulas button{min-width:0}
