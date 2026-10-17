@@ -563,6 +563,8 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     // Contatos antigos não guardaram o texto: remonta com o modelo atual.
     $('#detMsg').innerHTML = esc(c.mensagem || montar(c)).replace(/\*([^*\n]+)\*/g, '<b>$1</b>');
     $('#dlgDetalhe').showModal();
+    // Sem contorno de foco no primeiro botão ao abrir pelo toque.
+    if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
   }
   $('#detCopiar').addEventListener('click', async () => {
     if (detalhe && await copiar(detalhe.mensagem || montar(detalhe))) toast('Mensagem copiada.');
