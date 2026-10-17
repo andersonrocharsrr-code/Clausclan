@@ -699,8 +699,8 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
           ? `Cobrança de ${dinheiro(c.valor)} (vendedor ${c.vendedor}). Toque para cobrar de novo.`
           : `Nota com ${c.vendedor} de ${dataBR(c.data)}. Toque para cobrar de novo.`,
         schedule: { at, allowWhileIdle: true }, channelId: 'lembretes', smallIcon: 'ic_stat_confirma', iconColor: '#22c55e', autoCancel: true,
-        // Lembrete não precisa ser no minuto exato: assim o Android 12+ nunca abre a tela "Alarmes e lembretes".
-        isExactNotification: false,
+        // Na hora certa; sem a permissão de alarme exato o Android só atrasa um pouco (não é obrigatório).
+        isExactNotification: true, isExactMandatory: false,
       }] }).catch(() => {});
     });
   }
@@ -712,16 +712,19 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     const ids = Array.from({ length: MAX_HORARIOS }, (_, i) => ({ id: RESUMO_ID + 10 + i })).concat({ id: RESUMO_ID });
     LN.cancel({ notifications: ids }).catch(() => {}).finally(() => {
       if (!avisosLigados()) return;
+      // O resumo chega sempre no horário: com pendentes diz quantas; sem pendentes, "tudo em dia".
+      // (O texto é refeito a cada mudança nos contatos, então o número fica certo.)
       const pend = state.contatos.filter((c) => c.status === 'aguardando').length;
-      if (!pend) return;
+      const titulo = pend ? `${pend} cliente${pend === 1 ? '' : 's'} sem responder` : 'Tudo em dia ✅';
+      const corpo = pend ? 'Confirmações e cobranças pendentes. Abra o Confirma Nota para cobrar as respostas.' : 'Nenhuma confirmação ou cobrança pendente agora.';
       const notifs = state.ajustes.resumos.slice(0, MAX_HORARIOS).map((hm, i) => {
         const [h, m] = String(hm).split(':').map(Number);
         if (isNaN(h)) return null;
         return {
-          id: RESUMO_ID + 10 + i, title: `${pend} cliente${pend === 1 ? '' : 's'} sem responder`,
-          body: 'Confirmações e cobranças pendentes. Abra o Confirma Nota para cobrar as respostas.',
+          id: RESUMO_ID + 10 + i, title: titulo, body: corpo,
           schedule: { on: { hour: h, minute: m || 0 }, allowWhileIdle: true }, channelId: 'lembretes', smallIcon: 'ic_stat_confirma', iconColor: '#22c55e', autoCancel: true,
-          isExactNotification: false,
+          // Na hora exata (o app tem a permissão de alarme exato; sem ela, o Android só atrasa um pouco).
+          isExactNotification: true, isExactMandatory: false,
         };
       }).filter(Boolean);
       if (notifs.length) LN.schedule({ notifications: notifs }).catch(() => {});
