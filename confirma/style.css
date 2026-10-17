@@ -397,3 +397,11 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
 .aviso-salvo{position:fixed;left:50%;top:50%;z-index:70;transform:translate(-50%,-50%) scale(.9);padding:14px 26px;border-radius:16px;background:rgba(13,26,18,.75);color:#fff;font-size:20px;font-weight:700;opacity:0;pointer-events:none;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
 .aviso-salvo.show{animation:avisoSalvo 1.4s ease forwards}
 @keyframes avisoSalvo{0%{opacity:0;transform:translate(-50%,-50%) scale(.9)}15%,70%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+
+/* Cópia no Google Drive */
+.drive{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}
+.drive__tit{font-size:15px;margin:0 0 4px;color:var(--ink);text-transform:none;letter-spacing:0}
+.btn--drive,.btn--drive2{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border-radius:16px;padding:13px}
+.btn--drive{margin-bottom:8px}
+.drive__status{margin:10px 0 0}
+.drive__status.is-alerta{color:var(--warn);font-weight:600}

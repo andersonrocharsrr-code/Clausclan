@@ -814,7 +814,6 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
   const KEY_SALVOS = 'confirma.salvos';
   const KEY_AUTO = 'confirma.autoSalvar';
   const AUTO_MIN = 30;
-  const MAX_SALVOS = 30;
   const lsLer = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch { return d; } };
   const lsGravar = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { toast('Sem espaço para salvar neste aparelho.'); return false; } };
   const fotoAtual = () => JSON.stringify({ contatos: state.contatos, ajustes: { ...state.ajustes, avisosWeb: {} } });
@@ -825,10 +824,9 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
   }
   function guardarSalvamento(auto) {
     const copia = fotoAtual();
-    const salvos = lsLer(KEY_SALVOS, []);
     const pend = state.contatos.filter((c) => c.status === 'aguardando').length;
-    salvos.unshift({ id: Date.now().toString(36), em: Date.now(), auto: !!auto, qtd: state.contatos.length, pend, dados: copia });
-    if (!lsGravar(KEY_SALVOS, salvos.slice(0, MAX_SALVOS))) return false;
+    // Um salvamento só: o novo fica no lugar do anterior.
+    if (!lsGravar(KEY_SALVOS, [{ id: Date.now().toString(36), em: Date.now(), auto: !!auto, qtd: state.contatos.length, pend, dados: copia }])) return false;
     lsGravar(KEY_AUTO, { em: Date.now(), copia });
     return true;
   }
@@ -836,7 +834,7 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     const a = lsLer(KEY_AUTO, null);
     $('#autoSalvo').hidden = !a;
     if (a) $('#autoSalvo').textContent = `Salvamento automático a cada ${AUTO_MIN} min quando houver mudança · último ${quando(a.em)}`;
-    const salvos = lsLer(KEY_SALVOS, []);
+    const salvos = lsLer(KEY_SALVOS, []).slice(0, 1);
     $('#listaSalvos').innerHTML = salvos.length
       ? salvos.map((s) => `<div class="salvo"><button type="button" class="salvo__abrir" data-carregar="${s.id}">
           <b>${quando(s.em)}${s.auto ? ' · automático' : ''}</b>
@@ -885,34 +883,67 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
   });
   pintarSalvos();
 
-  $('#btnExportar').addEventListener('click', async () => {
-    const json = JSON.stringify({ app: 'confirma', versao: 2, contatos: state.contatos, ajustes: { ...state.ajustes, avisosWeb: undefined } }, null, 2);
-    const nome = `confirma-nota-${hojeISO()}.json`;
-    if (SHARE) {
-      // No APK o arquivo vai pelo "Compartilhar" (Drive, WhatsApp, e-mail…).
-      try { await SHARE.share({ title: nome, text: json, dialogTitle: 'Salvar backup' }); } catch { /* cancelado */ }
-      return;
+  /* ---------------- Cópia no Google Drive (sobrevive a formatar o celular) ---------------- */
+  // "Salvar no Google Drive": gera o arquivo de cópia e abre o compartilhar do Android (escolher Drive).
+  // "Recuperar do Google Drive": escolher o arquivo (o seletor do Android mostra o Drive) e tudo volta.
+  const FS = plugin('Filesystem');
+  const KEY_DRIVE = 'confirma.ultimaCopiaDrive';
+  const DIAS_LEMBRAR = 7;
+  function pintarDrive() {
+    const ult = lsLer(KEY_DRIVE, 0);
+    const el = $('#driveStatus');
+    const velho = !ult || Date.now() - ult > DIAS_LEMBRAR * 864e5;
+    el.textContent = ult ? `Última cópia enviada: ${quando(ult)}${velho ? ' · faz tempo, salve de novo' : ''}` : 'Nenhuma cópia enviada ainda.';
+    el.classList.toggle('is-alerta', velho && state.contatos.length > 0);
+  }
+  $('#btnDriveSalvar').addEventListener('click', async () => {
+    const d = new Date(); const z = (n) => String(n).padStart(2, '0');
+    const nome = `confirma-nota-copia-${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}.json`;
+    const json = JSON.stringify({ app: 'confirma', versao: 3, salvoEm: Date.now(), contatos: state.contatos, ajustes: { ...state.ajustes, avisosWeb: {} } }, null, 1);
+    try {
+      if (NATIVE && FS && SHARE) {
+        const { uri } = await FS.writeFile({ path: nome, data: json, directory: 'CACHE', encoding: 'utf8' });
+        await SHARE.share({ title: nome, files: [uri], dialogTitle: 'Salvar cópia no Google Drive' });
+      } else {
+        const arq = new File([json], nome, { type: 'application/json' });
+        if (navigator.canShare && navigator.canShare({ files: [arq] })) await navigator.share({ files: [arq], title: nome });
+        else { const a = document.createElement('a'); a.href = URL.createObjectURL(arq); a.download = nome; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 3000); }
+      }
+      lsGravar(KEY_DRIVE, Date.now());
+      pintarDrive();
+      toast('Escolha o Google Drive para guardar a cópia.');
+    } catch (err) {
+      if (!/cancel|abort/i.test(String(err && (err.message || err.name)))) toast('Não deu para gerar a cópia.');
     }
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
-    a.download = nome; a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   });
-  $('#fImportar').addEventListener('change', async (e) => {
+  $('#fRecuperar').addEventListener('change', async (e) => {
     const f = e.target.files[0]; e.target.value = '';
     if (!f) return;
-    try {
-      const d = JSON.parse(await f.text());
-      if (!Array.isArray(d.contatos)) throw new Error('formato');
-      const ids = new Set(state.contatos.map((c) => c.id));
-      const novos = d.contatos.filter((c) => c && c.id && !ids.has(c.id));
-      state.contatos = [...novos, ...state.contatos].sort((a, b) => (b.enviadoEm || 0) - (a.enviadoEm || 0));
-      if (d.ajustes && Array.isArray(d.ajustes.vendedores)) d.ajustes.vendedores.forEach((v) => { if (v && !state.ajustes.vendedores.includes(v)) state.ajustes.vendedores.push(v); });
-      state.ajustes.vendedores.sort((x, y) => x.localeCompare(y, 'pt-BR'));
-      salvar(); reagendarTudo(); renderLista(); renderVendedores();
-      toast(`${novos.length} contato${novos.length === 1 ? '' : 's'} importado${novos.length === 1 ? '' : 's'}.`);
-    } catch { toast('Arquivo inválido.'); }
+    let d;
+    try { d = JSON.parse(await f.text()); if (!d || !Array.isArray(d.contatos)) throw new Error('formato'); } catch { toast('Esse arquivo não é uma cópia do Confirma Nota.'); return; }
+    const dlg = $('#dlgCarregar');
+    $('#carregarTxt').textContent = `Cópia de ${d.salvoEm ? quando(d.salvoEm) : 'arquivo'} · ${d.contatos.length} contato${d.contatos.length === 1 ? '' : 's'}. O que está no app agora será trocado por esta cópia.`;
+    dlg.returnValue = '';
+    dlg.onclose = () => {
+      if (dlg.returnValue !== 'sim') return;
+      cancelarTudo();
+      state.contatos = d.contatos;
+      Object.assign(state.ajustes, d.ajustes || {}, { avisosWeb: state.ajustes.avisosWeb });
+      salvar();
+      location.reload();
+    };
+    dlg.showModal();
   });
+  pintarDrive();
+  // Lembrete discreto ao abrir: mais de 7 dias sem cópia no Drive (uma vez por dia).
+  (() => {
+    const ult = lsLer(KEY_DRIVE, 0);
+    const hoje = new Date().toDateString();
+    if (state.contatos.length && (!ult || Date.now() - ult > DIAS_LEMBRAR * 864e5) && lsLer('confirma.lembrouDrive', '') !== hoje) {
+      lsGravar('confirma.lembrouDrive', hoje);
+      setTimeout(() => toast('Faz tempo sem cópia no Google Drive: Ajustes → Salvar no Google Drive.'), 4000);
+    }
+  })();
 
   /* ---------------- Abas ---------------- */
   const TITULOS = { nova: 'Nova confirmação', cobranca: 'Nova cobrança', lista: 'Seus contatos', ajustes: 'Ajustes' };
