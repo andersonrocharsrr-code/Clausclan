@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Confirma">
-  <link rel="stylesheet" href="style.css?v=26">
+  <link rel="stylesheet" href="style.css?v=27">
 </head>
 <body>
   <!-- Abertura: a logo se monta (nota, linhas, selo e o ✓) e some. Um toque pula. -->
@@ -235,16 +235,16 @@
       </div>
       <div class="card">
         <h2>Salvamentos</h2>
-        <p class="dica" style="margin:0 0 10px">Guarda uma cópia de todos os contatos, vendedores e ajustes. Toque num salvamento para carregar.</p>
+        <p class="dica" style="margin:0 0 10px">Guarda uma cópia de todos os contatos, vendedores e ajustes. Cada vez que salva, o salvamento anterior é substituído. Toque nele para carregar.</p>
         <button id="btnSalvarTudo" type="button" class="btn btn--salvar"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg>Salvar agora</button>
         <p id="autoSalvo" class="dica auto-salvo" hidden></p>
         <div id="listaSalvos" class="salvos"></div>
-      </div>
-      <div class="card">
-        <h2>Backup em arquivo</h2>
-        <div class="acoes">
-          <button id="btnExportar" type="button" class="btn btn--sec">Exportar contatos</button>
-          <label class="btn btn--sec">Importar<input id="fImportar" type="file" accept="application/json,.json" hidden></label>
+        <div class="drive">
+          <h3 class="drive__tit">Cópia no Google Drive</h3>
+          <p class="dica" style="margin:0 0 10px">Fica fora do celular: se ele for formatado ou trocado, é só instalar o app e recuperar daqui.</p>
+          <button id="btnDriveSalvar" type="button" class="btn btn--drive"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 9.5 4.3 4.3 0 0 0 7 18z"/><path d="M12 15V10M9.5 12.5L12 10l2.5 2.5"/></svg>Salvar no Google Drive</button>
+          <label class="btn btn--sec btn--drive2"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 9.5 4.3 4.3 0 0 0 7 18z"/><path d="M12 10v5M9.5 12.5L12 15l2.5-2.5"/></svg>Recuperar do Google Drive<input id="fRecuperar" type="file" hidden></label>
+          <p id="driveStatus" class="dica drive__status"></p>
         </div>
       </div>
     </section>
@@ -304,6 +304,6 @@
 
   <div id="toast" class="toast" role="status" hidden></div>
 
-  <script src="app.js?v=27"></script>
+  <script src="app.js?v=29"></script>
 </body>
 </html>
