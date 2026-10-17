@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fundo da abertura do Android e do app enquanto carrega (claro; no tema escuro, values-night). -->
+    <color name="relatorios_bg">#F1F4F9</color>
+</resources>

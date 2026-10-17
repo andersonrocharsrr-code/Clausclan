@@ -1,0 +1,93 @@
+# Gera o APK do Relatórios da Equipe (consolidado dos relatórios diários, pasta relatorios-android/, feito com Capacitor) a partir do site em relatorios/.
+# No main, com o segredo NEXA_SIGNING_SEED configurado, publica o APK na Release "relatorios" (link fixo):
+#   https://github.com/andersonrocharsrr-code/Clausclan/releases/download/relatorios/relatorios.apk
+# Sem o segredo, gera só um APK de teste (debug), disponível em "Artifacts" na execução.
+name: Gerar APK dos Relatórios da Equipe
+
+on:
+  push:
+    branches: [main, 'claude/**', 'ccr-**']
+    paths: ['relatorios/**', 'relatorios-android/**', 'android-app/scripts/make-keystore.py', '.github/workflows/relatorios-apk.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: relatorios-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      RELATORIOS_BUILD: ${{ github.run_number }}
+    defaults:
+      run:
+        working-directory: relatorios-android
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: relatorios-android/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Copiar o app para dentro do projeto Android
+        run: npm run www && npx cap sync android
+
+      # Mesma chave do Nexa Money (gerada pelo mesmo script e segredo); o Relatórios da Equipe tem seu próprio applicationId.
+      - name: Criar a chave de assinatura
+        env:
+          NEXA_SIGNING_SEED: ${{ secrets.NEXA_SIGNING_SEED }}
+        run: |
+          if [ -z "$NEXA_SIGNING_SEED" ]; then
+            echo "::warning::Segredo NEXA_SIGNING_SEED não configurado: gerando APK de teste (debug), que não pode ser atualizado depois."
+            exit 0
+          fi
+          pip install --quiet cryptography==49.0.0
+          pass=$(python3 ../android-app/scripts/make-keystore.py "$RUNNER_TEMP/relatorios.p12")
+          echo "::add-mask::$pass"
+          echo "RELATORIOS_KEYSTORE=$RUNNER_TEMP/relatorios.p12" >> "$GITHUB_ENV"
+          echo "RELATORIOS_KEYSTORE_PASSWORD=$pass" >> "$GITHUB_ENV"
+
+      - name: Gerar o APK
+        working-directory: relatorios-android/android
+        run: |
+          chmod +x gradlew
+          if [ -n "$RELATORIOS_KEYSTORE" ]; then
+            ./gradlew assembleRelease --no-daemon --stacktrace
+            cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/relatorios.apk"
+          else
+            ./gradlew assembleDebug --no-daemon --stacktrace
+            cp app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/relatorios.apk"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: relatorios-apk
+          path: ${{ runner.temp }}/relatorios.apk
+
+      # Release própria (não marcada como "latest"), para não trocar o link de download do Nexa Money.
+      - name: Publicar a versão nova
+        if: github.ref == 'refs/heads/main' && env.RELATORIOS_KEYSTORE != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view relatorios --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create relatorios --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest=false \
+              --title "Relatórios da Equipe — consolidado dos relatórios" \
+              --notes "Baixe o arquivo relatorios.apk no celular e toque nele para instalar. Os dados continuam no celular ao atualizar."
+          fi
+          gh release upload relatorios "$RUNNER_TEMP/relatorios.apk" --repo "$GITHUB_REPOSITORY" --clobber
+          gh release edit relatorios --repo "$GITHUB_REPOSITORY" --latest=false --title "Relatórios da Equipe — consolidado dos relatórios (versão $RELATORIOS_BUILD)"

@@ -332,3 +332,46 @@ App para mandar duas mensagens automáticas pelo WhatsApp e acompanhar as respos
   no celular (funcionam com o app fechado). Funciona do Android 7 em diante (inclusive Android 12). O APK é gerado pelo GitHub Actions (`.github/workflows/confirma-apk.yml`);
   no `main`, com o segredo `NEXA_SIGNING_SEED`, sai no link fixo
   `https://github.com/andersonrocharsrr-code/Clausclan/releases/download/confirma/confirma.apk`.
+
+---
+
+# Relatórios da Equipe — consolidado dos relatórios diários (`relatorios/`)
+
+App web instalável (PWA, sem build) para o supervisor juntar os **relatórios diários dos vendedores** (do jeito que
+chegam no WhatsApp) e montar o **relatório da equipe**, conferindo as contas.
+
+Abra `relatorios/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server` na raiz e acesse
+`http://localhost:8000/relatorios/`). No celular, use o menu do navegador → "Adicionar à tela inicial".
+
+## O que faz
+- **Colar**: cole um ou vários relatórios de uma vez (cada `Nome:` começa um novo). O app lê nome, placa, semana,
+  data, valor a cobrar, notas, pagas, recebido, parciais, notas em branco, notas feitas (Ab/Rp), pepino extra
+  resolvido, devolução, depósitos e valor em mãos. As linhas `Valor:` ficam com o campo de cima. Mostra uma prévia
+  antes de salvar; o mesmo vendedor no mesmo dia substitui o anterior. Leitor em `relatorios/parser.js`.
+- **Equipe**: escolhe o dia e soma todos os relatórios dele:
+  - **Vlr. Cobrar** = soma dos "Valor a cobrar"
+  - **Recebido** = soma dos "Recebido total"
+  - **Repasse** / **Valor repasse** = soma dos "Nt parcial total" e do valor deles (repasse = notas parciais)
+  - **Nts branco** = soma das "Notas em branco"
+  - **Pipino extra** = soma do valor do "Total resolvido" (pepino extra resolvido)
+  - **Valor deixado** = soma do valor das "Notas feitas total"
+  - **(07) carros** = quantidade de relatórios do dia; a semana vem dos relatórios ("2ª semana Outubro", dá para mudar).
+  Gera o texto no modelo do grupo para **Enviar no WhatsApp**, **Copiar** ou **Compartilhar**.
+- **Conferência** de cada relatório: pagas + parciais + em branco = notas; 25% + 40% = pagas do dia; Ab + Rp = feitas
+  do dia; e contra o relatório anterior do mesmo vendedor na semana: recebido total = anterior + recebido do dia (o
+  mesmo para pagas, notas feitas e pepino extra), e o valor a cobrar e as notas não podem mudar na semana. Na equipe:
+  quem ainda não mandou (lista em Ajustes), relatório repetido, vendedor em outra semana, Vlr. cobrar da equipe que
+  mudou desde o dia anterior. Opção de usar o último relatório da semana de quem não mandou.
+- **Conferir com um relatório da equipe já pronto**: cole o relatório feito à mão e o app compara linha por linha.
+- **Relatórios**: todos os salvos, por dia; abrir, corrigir o texto ou excluir.
+- **Ajustes**: nome da equipe, produto, vendedores da equipe e backup `.json`. Os dados ficam só neste aparelho.
+
+## App Android (APK) — pasta `relatorios-android/`
+O mesmo app empacotado com **Capacitor**, igual aos outros: os arquivos vão dentro do APK, então funciona
+**sem internet** (o site também funciona offline pelo service worker). No Android, **Compartilhar** e **Salvar backup**
+abrem o compartilhar do celular (Drive, WhatsApp, Arquivos…), e o botão voltar fecha a janela aberta e volta para **Colar**.
+
+O APK é gerado pelo GitHub Actions (`.github/workflows/relatorios-apk.yml`) a cada mudança em `relatorios/` ou
+`relatorios-android/`. No `main`, com o segredo `NEXA_SIGNING_SEED`, ele fica no link fixo:
+https://github.com/andersonrocharsrr-code/Clausclan/releases/download/relatorios/relatorios.apk
+Sem o segredo (ou fora do `main`) sai um APK de teste em "Artifacts" na execução.

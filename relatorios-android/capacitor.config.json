@@ -1,0 +1,8 @@
+{
+  "appId": "io.github.andersonrocharsrr_code.relatorios",
+  "appName": "Relatórios da Equipe",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#f1f4f9"
+  }
+}
