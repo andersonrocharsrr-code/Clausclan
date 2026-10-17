@@ -306,13 +306,25 @@
     $('#dlgAvisos').innerHTML = avisosHTML(R.conferir(r, anteriorDe(r)));
     $('#dlgResumo').innerHTML = resumoHTML(r);
     $('#dlgTexto').value = r.raw || '';
+    $('#dlgDetalhe').open = false;
     dlg.showModal();
   }
+
+  // Limpar: apaga o texto para colar o relatório corrigido no lugar (só troca ao tocar em Salvar).
+  $('#dlgLimpar').addEventListener('click', () => {
+    $('#dlgTexto').value = '';
+    $('#dlgTexto').focus();
+  });
+  $('#dlgColar').addEventListener('click', async () => {
+    try { $('#dlgTexto').value = await navigator.clipboard.readText(); }
+    catch (e) { toast('Não deu para ler a área de transferência. Cole no campo.'); $('#dlgTexto').focus(); }
+  });
 
   $('#dlgSalvar').addEventListener('click', () => {
     if (!aberto) return;
     const i = db.reports.indexOf(aberto);
     let r = aberto;
+    if (!$('#dlgTexto').value.trim()) { toast('Cole o relatório corrigido antes de salvar.'); return; }
     if ($('#dlgTexto').value.trim() !== (aberto.raw || '')) {
       r = novoRelatorio($('#dlgTexto').value, aberto.data);
       if (!r.nome) { toast('O texto ficou sem "Nome:".'); return; }

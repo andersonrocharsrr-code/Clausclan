@@ -52,6 +52,7 @@ input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
 .dica{font-size:13px;color:var(--muted);margin:8px 0 0}
 
 .botoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.botoes--topo{margin:0 0 10px}
 .btn{flex:1;min-width:140px;border:0;border-radius:14px;padding:12px 14px;font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);cursor:pointer}
 .btn:active{transform:scale(.98)}
 .btn--sec{background:var(--accent-soft);color:var(--accent)}
