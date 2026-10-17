@@ -384,12 +384,11 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     const lista = state.ajustes.vendedores;
     $('#vendOps').innerHTML = lista.length
       ? lista.map((v) => `<button type="button" class="vend-op${v === atual ? ' is-on' : ''}" data-v="${esc(v)}">${avatar(v)}<span>${esc(v)}</span>${v === atual ? IC_OK : ''}</button>`).join('')
-      : '<p class="vazia">Nenhum vendedor ainda. Cadastre abaixo.</p>';
+      : '<p class="vazia">Nenhum vendedor ainda. Cadastre em Ajustes.</p>';
   }
   function abrirVendedores(tipo) {
     vendTipo = tipo;
     listarVendedores();
-    $('#vendNovoNome').value = '';
     $('#dlgVend').showModal();
     if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
   }
@@ -400,12 +399,6 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     $('#dlgVend').close();
   }
   $('#vendOps').addEventListener('click', (e) => { const b = e.target.closest('[data-v]'); if (b) escolherVendedor(b.dataset.v); });
-  $('#vendNovo').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const nome = nomeBonito($('#vendNovoNome').value);
-    if (!nome) { $('#vendNovoNome').focus(); return; }
-    if (addVendedor(nome) || state.ajustes.vendedores.includes(nome)) escolherVendedor(nome);
-  });
   $('#dlgVend .fb__fechar').addEventListener('click', () => $('#dlgVend').close());
   // Tocar fora da folha fecha.
   $('#dlgVend').addEventListener('click', (e) => { if (e.target === $('#dlgVend')) $('#dlgVend').close(); });
@@ -416,8 +409,7 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
       const sel = campo(tipo, 'vendedor');
       const atual = sel.value && sel.value !== NOVO ? sel.value : (state.rascunhos[tipo].vendedor || '');
       sel.innerHTML = `<option value="">${lista.length ? 'Toque para escolher o vendedor' : 'Nenhum vendedor cadastrado'}</option>`
-        + lista.map((v) => `<option value="${esc(v)}">${esc(v)}</option>`).join('')
-        + `<option value="${NOVO}">➕ Cadastrar novo vendedor…</option>`;
+        + lista.map((v) => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
       sel.value = lista.includes(atual) ? atual : '';
       sel.classList.toggle('is-vazio', !sel.value);
       mostrarVendedor(tipo);
