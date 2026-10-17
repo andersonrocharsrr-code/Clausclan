@@ -365,3 +365,13 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
 .fb__novo input{flex:1;min-width:0}
 .fb__novo .btn{flex:none;min-width:0;padding:12px 16px}
 .fb__lista .vazia{padding:18px 0}
+
+/* Lista de vendedores mais sóbria: iniciais num círculo verde-claro igual para todos;
+   só o escolhido fica em verde forte. Linhas finas entre os nomes. */
+.vend-op{border-radius:0;padding:12px 6px;font-weight:600}
+.vend-op+.vend-op{margin-top:0;border-top:1px solid var(--line)}
+.vend-op .av{background:var(--ic-bg)!important;color:var(--ic-ink);width:40px;height:40px;border-radius:50%;font-size:14px;font-weight:700}
+.vend-op.is-on{background:transparent;color:var(--ink)}
+.vend-op.is-on .av{background:var(--accent)!important;color:#fff}
+.vend-op.is-on span:not(.av){color:var(--accent);font-weight:700}
+.vend-op:active{background:var(--accent-soft);border-radius:14px}
