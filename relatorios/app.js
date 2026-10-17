@@ -513,7 +513,7 @@
     },
   };
   const SISTEMA = 'Você lê fotos da folha "CAIXA" (fechamento semanal de um vendedor de enxoval) e devolve os campos pedidos. ' +
-    'Os valores em reais vêm no formato brasileiro (8.189,00 = 8189.00); devolva como número. Campo vazio = 0 (ou texto vazio).';
+    'Os valores em reais vêm no formato brasileiro (8.189,00 = 8189.00); devolva como número. Campo em branco, com dois traços (//), traço ou riscado é vazio: 0 (ou texto vazio).';
   const PEDIDO = `Leia esta folha CAIXA. Pode ser foto da folha de papel preenchida à mão (de lado, torta ou com sombra)
 ou a imagem gerada pelo app Caixa. O impresso está em preto e o preenchido à mão em azul.
 Campos: NOME (nome), CIDADE (cidade), DATA (data, dd/mm/aaaa), SEMANA (semana, só o número), FOI COBRAR (foiCobrar),
@@ -521,7 +521,8 @@ QT. DE NOTAS (qtNotas), ANTECIPADOS (antecipados), VALOR DOS PEPINOS (valorPepin
 PEPINO PARCIAL (pepinoParcial), NOTAS 25% (notas25), NOTAS 40% e 50% (notas4050), PEPINO EXTRA (pepinoExtra: o total ao lado
 do título; se não houver, a soma dos VALOR dos blocos "VENDEDORA"), RECEBIMENTO (recebimento), QT.NOTAS DEIXADAS
 (qtNotasDeixadas), VALOR DEIXADO (valorDeixado). Ignore depósitos e despesas.
-Em "duvidas" diga, em poucas palavras, o que ficou difícil de ler; se leu tudo bem, deixe vazio.`;
+Campo em branco ou com "//" (dois traços), "-" ou riscado: é vazio, devolva 0 e NÃO coloque em "duvidas".
+Em "duvidas" diga, em poucas palavras, só o que ficou difícil de ler; se leu tudo bem, deixe vazio.`;
 
   // Diminui a foto (celular tira fotos enormes) e devolve base64 JPEG.
   async function prepararFoto(file) {
@@ -558,6 +559,9 @@ Em "duvidas" diga, em poucas palavras, o que ficou difícil de ler; se leu tudo 
     c.data = R.dataISO(lido.data) || null;
     c.semana = lido.semana || null;
     c.fonte = 'foto';
+    // Campo em branco ou com "//" não é dúvida: tira esses pedaços do aviso.
+    c.duvidas = String(c.duvidas || '').split(/[;.]\s*/)
+      .filter((p) => p.trim() && !/\/\/|em branco|vazio|traço|traco|riscad/i.test(p)).join('. ');
     return c;
   }
 
