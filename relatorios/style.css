@@ -45,7 +45,6 @@ input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
 .linha-campo input,.linha-campo textarea{margin-top:4px;font-weight:400;color:var(--ink)}
 .check{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px}
 .check input{width:auto}
-.grade2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .dica{font-size:13px;color:var(--muted);margin:8px 0 0}
 
 .botoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}

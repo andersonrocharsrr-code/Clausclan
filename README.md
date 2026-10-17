@@ -351,7 +351,7 @@ Abra `relatorios/index.html` por um servidor (GitHub Pages, ou `python3 -m http.
 - **Equipe**: escolhe o dia e soma todos os relatórios dele:
   - **Vlr. Cobrar** = soma dos "Valor a cobrar"
   - **Recebido** = soma dos "Recebido total"
-  - **Repasse** / **Valor repasse** = soma do repasse lançado em cada vendedor (toque no vendedor; regra a definir)
+  - **Repasse** / **Valor repasse** = soma dos "Nt parcial total" e do valor deles (repasse = notas parciais)
   - **Nts branco** = soma das "Notas em branco"
   - **Pipino extra** = soma do valor do "Total resolvido" (pepino extra resolvido)
   - **Valor deixado** = soma do valor das "Notas feitas total"
@@ -363,5 +363,5 @@ Abra `relatorios/index.html` por um servidor (GitHub Pages, ou `python3 -m http.
   quem ainda não mandou (lista em Ajustes), relatório repetido, vendedor em outra semana, Vlr. cobrar da equipe que
   mudou desde o dia anterior. Opção de usar o último relatório da semana de quem não mandou.
 - **Conferir com um relatório da equipe já pronto**: cole o relatório feito à mão e o app compara linha por linha.
-- **Relatórios**: todos os salvos, por dia; abrir, corrigir o texto, lançar repasse ou excluir.
+- **Relatórios**: todos os salvos, por dia; abrir, corrigir o texto ou excluir.
 - **Ajustes**: nome da equipe, produto, vendedores da equipe e backup `.json`. Os dados ficam só neste aparelho.

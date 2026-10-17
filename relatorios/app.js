@@ -23,13 +23,12 @@
   } catch (e) { /* começa vazio */ }
   const salvar = () => { try { localStorage.setItem(CHAVE, JSON.stringify(db)); } catch (e) { toast('Não consegui salvar neste aparelho.'); } };
 
-  // Junta o resultado do leitor com o que só existe no app (id, texto original, repasse).
+  // Junta o resultado do leitor com o texto original.
   function novoRelatorio(texto, dataPadrao) {
     const r = R.lerRelatorio(texto);
     delete r.lidos;
     if (!r.data) r.data = dataPadrao;
     r.raw = texto.trim();
-    r.repasse = { q: 0, v: 0 };
     return r;
   }
 
@@ -108,7 +107,7 @@
     if (semNome) { toast('Tem relatório sem nome. Corrija o texto ou tire.'); return; }
     lidos.forEach((r) => {
       const i = db.reports.findIndex((x) => mesmo(x, r));
-      if (i >= 0) { r.repasse = db.reports[i].repasse || r.repasse; db.reports[i] = r; } else db.reports.push(r);
+      if (i >= 0) db.reports[i] = r; else db.reports.push(r);
       lembrarVendedor(r.nome);
       if (!db.cfg.equipe && r.supervisor) db.cfg.equipe = r.supervisor.toLowerCase();
     });
@@ -125,12 +124,12 @@
       ['Valor a cobrar', brl(r.cobrar)], ['Notas', v(r.notas)],
       ['Recebido do dia', brl(r.recebidoDia)], ['Recebido total', brl(r.recebidoTotal)],
       ['Notas pagas (dia / total)', `${v(r.pgDia)} / ${v(r.pgTotal)}`],
+      ['Repasse (parciais)', `${v(r.parcialTotal.q)} · ${brl(r.parcialTotal.v)}`],
       ['Notas em branco', `${v(r.branco.q)} · ${brl(r.branco.v)}`],
       ['Pepino extra resolvido', `${v(r.extraTotal.q)} · ${brl(r.extraTotal.v)}`],
       ['Notas feitas (valor deixado)', `${v(r.feitaTotal.q)} · ${brl(r.feitaTotal.v)}`],
       ['Depósito total', brl(r.depositoTotal)], ['Valor em mãos', brl(r.emMaos)],
     ];
-    if (r.repasse && (r.repasse.q || r.repasse.v)) linhas.push(['Repasse', `${v(r.repasse.q)} · ${brl(r.repasse.v)}`]);
     return `<div class="resumo">${linhas.map(([a, b]) => `<span>${a}</span><span>${b}</span>`).join('')}</div>`;
   }
 
@@ -215,7 +214,7 @@
           const n = avisosPorId.get(r).length;
           const tag = r.data !== d ? `<span class="tag tag--velho">${dataCurta(r.data)}</span>` : n ? `<span class="tag tag--warn">⚠ ${n}</span>` : '<span class="tag tag--ok">✓</span>';
           return `<tr data-i="${i}"><td>${esc(r.nome)}${tag}</td><td>${brl(r.cobrar)}</td><td>${brl(r.recebidoTotal)}</td>
-            <td>${v(r.repasse && r.repasse.q)} · ${brl(r.repasse && r.repasse.v)}</td><td>${v(r.branco.q)}</td><td>${brl(r.extraTotal.v)}</td><td>${brl(r.feitaTotal.v)}</td></tr>`;
+            <td>${v(r.parcialTotal.q)} · ${brl(r.parcialTotal.v)}</td><td>${v(r.branco.q)}</td><td>${brl(r.extraTotal.v)}</td><td>${brl(r.feitaTotal.v)}</td></tr>`;
         }).join('')}</tbody>
         <tfoot><tr><td>Total</td><td>${brl(t.cobrar)}</td><td>${brl(t.recebido)}</td><td>${R.dois(t.repasseQ)} · ${brl(t.repasseV)}</td><td>${R.dois(t.brancoQ)}</td><td>${brl(t.extra)}</td><td>${brl(t.deixado)}</td></tr></tfoot>`;
       $$('#tabela tbody tr[data-i]').forEach((tr) => tr.addEventListener('click', () => abrirRelatorio(dados.lista[+tr.dataset.i])));
@@ -291,14 +290,11 @@
   // ---------- Relatório de um vendedor ----------
   let aberto = null;
   const dlg = $('#dlg');
-  const lerNum = (s) => R.numero(s) || 0;
 
   function abrirRelatorio(r) {
     aberto = r;
     $('#dlgTitulo').textContent = `${r.nome} · ${dataCurta(r.data)}`;
     $('#dlgAvisos').innerHTML = avisosHTML(R.conferir(r, anteriorDe(r)));
-    $('#dlgRepQ').value = v(r.repasse && r.repasse.q) || '';
-    $('#dlgRepV').value = r.repasse && r.repasse.v ? brl(r.repasse.v) : '';
     $('#dlgResumo').innerHTML = resumoHTML(r);
     $('#dlgTexto').value = r.raw || '';
     dlg.showModal();
@@ -312,7 +308,6 @@
       r = novoRelatorio($('#dlgTexto').value, aberto.data);
       if (!r.nome) { toast('O texto ficou sem "Nome:".'); return; }
     }
-    r.repasse = { q: Math.round(lerNum($('#dlgRepQ').value)), v: lerNum($('#dlgRepV').value) };
     if (i >= 0) db.reports[i] = r; else db.reports.push(r);
     // Mudou nome/data no texto e já existia outro igual: fica o editado.
     db.reports = db.reports.filter((x) => x === r || !mesmo(x, r));

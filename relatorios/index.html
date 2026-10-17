@@ -71,7 +71,7 @@
       <div class="card">
         <div class="card__cab"><h2>Vendedores <span id="qtVend" class="muted"></span></h2></div>
         <div class="tabela-rola"><table class="tabela" id="tabela"></table></div>
-        <p class="dica">Toque num vendedor para ver o relatório, corrigir ou lançar o repasse.</p>
+        <p class="dica">Toque num vendedor para ver o relatório, ou corrigir. Repasse = notas parciais.</p>
       </div>
 
       <div class="card" id="cardConf">
@@ -143,14 +143,6 @@
         <button class="icone-sec" value="fechar" aria-label="Fechar">✕</button>
       </div>
       <div id="dlgAvisos"></div>
-      <div class="grade2">
-        <label class="linha-campo">Repasse (qtd.)
-          <input id="dlgRepQ" inputmode="numeric" placeholder="0">
-        </label>
-        <label class="linha-campo">Valor repasse
-          <input id="dlgRepV" inputmode="decimal" placeholder="0,00">
-        </label>
-      </div>
       <div id="dlgResumo"></div>
       <details>
         <summary>Texto do relatório (corrigir aqui e salvar)</summary>
@@ -165,7 +157,7 @@
 
   <div id="toast" class="toast" hidden></div>
 
-  <script src="parser.js?v=1"></script>
-  <script src="app.js?v=1"></script>
+  <script src="parser.js?v=2"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

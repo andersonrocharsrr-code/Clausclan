@@ -174,15 +174,15 @@
     return av;
   }
 
-  /* Soma os relatórios da equipe. "rep" (repasse) vem de cada relatório: { q, v }, lançado no app. */
+  /* Soma os relatórios da equipe. Repasse = notas parciais ("Nt parcial total" e o valor). */
   function consolidar(lista) {
     const t = { carros: lista.length, cobrar: 0, recebido: 0, repasseQ: 0, repasseV: 0, brancoQ: 0, brancoV: 0,
       extra: 0, deixado: 0, feitas: 0, recebidoDia: 0, pgTotal: 0, notas: 0, emMaos: 0, depositoTotal: 0 };
     lista.forEach((r) => {
       t.cobrar += v(r.cobrar);
       t.recebido += v(r.recebidoTotal);
-      t.repasseQ += v(r.repasse && r.repasse.q);
-      t.repasseV += v(r.repasse && r.repasse.v);
+      t.repasseQ += v(r.parcialTotal.q);
+      t.repasseV += v(r.parcialTotal.v);
       t.brancoQ += v(r.branco.q);
       t.brancoV += v(r.branco.v);
       t.extra += v(r.extraTotal.v);
