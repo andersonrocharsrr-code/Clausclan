@@ -335,3 +335,33 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
 .data-caixa input[type="date"]::-webkit-calendar-picker-indicator{opacity:.75}
 .data-texto{position:absolute;left:0;top:50%;transform:translateY(-50%);pointer-events:none;font-size:16px;font-weight:600;color:var(--ink)}
 .data-texto.is-vazio{color:var(--muted);font-weight:500;opacity:.7}
+
+/* Campo Vendedor: botão que abre a lista (a caixa nativa do Android fica escondida). */
+.campo--ic select[data-campo="vendedor"]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.vend-btn{display:block;width:100%;text-align:left;border:0;background:transparent;padding:2px 0;min-height:28px;font:inherit;font-size:16px;font-weight:600;color:var(--ink);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vend-btn.is-vazio{color:var(--muted);font-weight:500;opacity:.8}
+.vend-seta{color:var(--muted);display:grid;place-items:center;flex:none}
+.campo--ic>.vend-seta{margin:0}
+
+/* Folha que sobe de baixo (escolher vendedor) */
+.folha-baixo{margin:auto 0 0;width:100%;max-width:640px;max-height:82vh;border-radius:26px 26px 0 0;padding:8px 18px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;inset:auto 0 0 0;position:fixed;margin-left:auto;margin-right:auto}
+.folha-baixo:not([open]){display:none}
+.folha-baixo[open]{animation:sobeFolha .28s cubic-bezier(.2,.8,.3,1)}
+@keyframes sobeFolha{from{transform:translateY(100%)}to{transform:none}}
+.folha-baixo::backdrop{background:rgba(5,15,10,.45);backdrop-filter:blur(2px)}
+.fb__puxador{width:42px;height:5px;border-radius:5px;background:var(--line);margin:4px auto 10px}
+.fb__cab{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.fb__cab h2{font-size:18px;margin:0}
+.fb__fechar{width:36px;height:36px;border-radius:50%;border:0;background:var(--input-bg);color:var(--muted);display:grid;place-items:center;cursor:pointer}
+.fb__lista{overflow:auto;margin:0 -6px;padding:0 6px}
+.vend-op{display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;padding:10px;border-radius:16px;font:inherit;font-size:16px;font-weight:600;color:var(--ink);cursor:pointer;text-align:left}
+.vend-op+.vend-op{margin-top:2px}
+.vend-op span:not(.av){flex:1}
+.vend-op .av{width:38px;height:38px;border-radius:13px;font-size:13.5px}
+.vend-op.is-on{background:var(--accent-soft);color:var(--ok-ink)}
+.vend-op svg.ic{color:var(--accent);width:22px;height:22px}
+.vend-op:active{background:var(--accent-soft)}
+.fb__novo{display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+.fb__novo input{flex:1;min-width:0}
+.fb__novo .btn{flex:none;min-width:0;padding:12px 16px}
+.fb__lista .vazia{padding:18px 0}
