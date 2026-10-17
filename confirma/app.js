@@ -244,7 +244,10 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     if (w in DUPLO) return nove(p[i + 1]) ? { digito: 9, vezes: DUPLO[w], fim: i + 1 } : null;
     if (!(w in QUANTAS)) return null;
     if (p[i + 1] === 'vezes') return (nove(p[i + 2]) || p[i + 2] === '9') ? { digito: 9, vezes: QUANTAS[w], fim: i + 2 } : null;
-    return nove(p[i + 1]) ? { digito: 9, vezes: QUANTAS[w], fim: i + 1 } : null;
+    if (nove(p[i + 1])) return { digito: 9, vezes: QUANTAS[w], fim: i + 1 };
+    // O reconhecimento costuma escrever "três nove" como "3 9" (ou "39"): também vale como 999 no começo.
+    if (/^\d$/.test(w) && p[i + 1] === '9') return { digito: 9, vezes: QUANTAS[w], fim: i + 1, algarismos: true };
+    return null;
   }
   function digitosFalados(texto) {
     const p = String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -253,7 +256,10 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     for (let i = 0; i < p.length; i++) {
       const w = p[i];
       // Repetição dos 9 do começo: "quatro nove" = 9999 (só no início ou logo depois do DDD).
-      const rep = out.length <= 2 ? repeticao(p, i) : null;
+      let rep = out.length <= 2 ? repeticao(p, i) : null;
+      // "4 9" logo no início pode ser o DDD 49: só repete se depois não vier um celular inteiro (9 dígitos).
+      if (rep && rep.algarismos && out.length === 1) rep = null;
+      if (rep && rep.algarismos && out.length === 0 && p.slice(rep.fim + 1).filter((t) => /^\d$/.test(t)).length >= 9) rep = null;
       if (rep) { out += String(rep.digito).repeat(rep.vezes); i = rep.fim; continue; }
       if (/^\d$/.test(w)) out += w;
       else if (w in UNID) out += UNID[w];
@@ -273,6 +279,8 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     if (d.length > 11 && d.startsWith('55')) d = d.slice(2);
     if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
     if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+    if (d.length === 9) return `${d.slice(0, 5)}-${d.slice(5)}`;
+    if (d.length === 8) return `${d.slice(0, 4)}-${d.slice(4)}`;
     return d;
   }
   function preencher(id, texto) {
