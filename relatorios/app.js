@@ -513,7 +513,8 @@
   };
   const SISTEMA = 'Você lê fotos da folha "CAIXA" (fechamento semanal de um vendedor de enxoval) e devolve os campos pedidos. ' +
     'Os valores em reais vêm no formato brasileiro (8.189,00 = 8189.00); devolva como número. Campo vazio = 0 (ou texto vazio).';
-  const PEDIDO = `Leia esta folha CAIXA. O impresso está em preto e o preenchido à mão em azul.
+  const PEDIDO = `Leia esta folha CAIXA. Pode ser foto da folha de papel preenchida à mão (de lado, torta ou com sombra)
+ou a imagem gerada pelo app Caixa. O impresso está em preto e o preenchido à mão em azul.
 Campos: NOME (nome), CIDADE (cidade), DATA (data, dd/mm/aaaa), SEMANA (semana, só o número), FOI COBRAR (foiCobrar),
 QT. DE NOTAS (qtNotas), ANTECIPADOS (antecipados), VALOR DOS PEPINOS (valorPepinos), Nº DE PINOS (pinos),
 PEPINO PARCIAL (pepinoParcial), NOTAS 25% (notas25), NOTAS 40% e 50% (notas4050), PEPINO EXTRA (pepinoExtra: o total ao lado

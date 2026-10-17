@@ -326,7 +326,8 @@
     if (!v(c.valorDeixado)) falta.push('valor deixado');
     if (falta.length) av.push(`Sem ${falta.join(', ')}.`);
     const partes = v(c.notas25) + v(c.notas4050) + v(c.antecipados) + v(c.pepinoParcial) + v(c.pepinoExtra);
-    if (v(c.recebimento) && partes && !centavos(partes, c.recebimento))
+    // Folha feita à mão muitas vezes deixa as notas 25% em branco: só confere quando elas foram preenchidas.
+    if (v(c.recebimento) && v(c.notas25) && !centavos(partes, c.recebimento))
       av.push(`Recebimento (${brl(c.recebimento)}) ≠ notas 25% + 40/50% + antecipados + parcial + pepino extra (${brl(partes)}).`);
     if (c.duvidas) av.push(`A leitura ficou em dúvida: ${c.duvidas}`);
     return av;
