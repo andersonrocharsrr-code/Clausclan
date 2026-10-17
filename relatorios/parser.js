@@ -252,7 +252,135 @@
     return r;
   }
 
-  const api = { lerRelatorio, separar, conferir, consolidar, textoEquipe, textoSemana, lerEquipe, numero, dataISO, brl, dois, MESES };
+  /* ================= Caixas da semana (folha CAIXA de cada vendedor) ================= */
+  // Campos que o fechamento da semana usa. Os de dinheiro e de contagem começam em 0.
+  const CAIXA_NUM = ['foiCobrar', 'qtNotas', 'antecipados', 'valorPepinos', 'pinos', 'pepinoParcial', 'notas25',
+    'notas4050', 'pepinoExtra', 'recebimento', 'qtNotasDeixadas', 'valorDeixado'];
+
+  function caixaVazio() {
+    const c = { nome: '', cidade: '', data: null, semana: null, duvidas: '' };
+    CAIXA_NUM.forEach((k) => (c[k] = 0));
+    return c;
+  }
+
+  // Lê o "Mandar resumo" do app Fechamento de Caixa (o texto que vai pelo WhatsApp).
+  function lerCaixaTexto(texto) {
+    const c = caixaVazio();
+    const linhas = limpa(texto).split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    linhas.forEach((linha) => {
+      const cab = linha.match(/^caixa\s*[—–-]\s*(.+)$/i);
+      if (cab) { c.nome = cab[1].trim(); return; }
+      // "RIO BRANCO · 17/10/2026 · Semana 2"
+      if (/·/.test(linha) && /semana/i.test(linha)) {
+        const p = linha.split('·').map((x) => x.trim());
+        if (p[0] && !/\d/.test(p[0])) c.cidade = p[0];
+        const d = linha.match(/\d{1,2}\/\d{1,2}\/\d{2,4}/); if (d) c.data = dataISO(d[0]);
+        const sm = linha.match(/semana\s*(\d+)/i); if (sm) c.semana = parseInt(sm[1], 10);
+        return;
+      }
+      const i = linha.indexOf(':');
+      if (i < 0) return;
+      const k = chave(linha.slice(0, i));
+      const resto = linha.slice(i + 1);
+      const n = numero(resto) || 0;
+      if (/^foi cobrar/.test(k)) {
+        c.foiCobrar = n;
+        const q = resto.match(/\((\d+)\s*notas?\)/i); if (q) c.qtNotas = parseInt(q[1], 10);
+      } else if (/^notas deixadas/.test(k)) {
+        c.qtNotasDeixadas = n;
+        const p = linha.match(/pinos\s*:\s*(\d+)/i); if (p) c.pinos = parseInt(p[1], 10);
+      } else if (/^antecipados/.test(k)) c.antecipados = n;
+      else if (/^valor dos pepinos/.test(k)) c.valorPepinos = n;
+      else if (/^pepino parcial/.test(k)) c.pepinoParcial = n;
+      else if (/^notas 25/.test(k)) c.notas25 = n;
+      else if (/^notas 40/.test(k)) c.notas4050 = n;
+      else if (/^pepino extra/.test(k)) c.pepinoExtra = n;
+      else if (/^recebimento/.test(k)) c.recebimento = n;
+      else if (/^valor deixado/.test(k)) c.valorDeixado = n;
+    });
+    return c;
+  }
+
+  // Vários resumos colados juntos: cada "CAIXA — Nome" começa um novo.
+  function separarCaixas(texto) {
+    const partes = [];
+    let atual = [];
+    limpa(texto).split(/\r?\n/).forEach((l) => {
+      if (/^\s*caixa\s*[—–-]/i.test(l) && atual.join('').trim()) { partes.push(atual.join('\n')); atual = []; }
+      atual.push(l);
+    });
+    if (atual.join('').trim()) partes.push(atual.join('\n'));
+    return partes.filter((p) => /foi cobrar|recebimento/i.test(p));
+  }
+
+  // Recebido sem o pepino extra: notas 25% + 40/50% + antecipados + pepino parcial.
+  const recebidoCaixa = (c) => (v(c.recebimento) ? v(c.recebimento) - v(c.pepinoExtra)
+    : v(c.notas25) + v(c.notas4050) + v(c.antecipados) + v(c.pepinoParcial));
+
+  function conferirCaixa(c) {
+    const av = [];
+    const falta = [];
+    if (!c.nome) falta.push('nome');
+    if (!v(c.foiCobrar)) falta.push('foi cobrar');
+    if (!v(c.recebimento) && !v(c.notas25) && !v(c.notas4050)) falta.push('recebimento');
+    if (!v(c.valorDeixado)) falta.push('valor deixado');
+    if (falta.length) av.push(`Sem ${falta.join(', ')}.`);
+    const partes = v(c.notas25) + v(c.notas4050) + v(c.antecipados) + v(c.pepinoParcial) + v(c.pepinoExtra);
+    if (v(c.recebimento) && partes && !centavos(partes, c.recebimento))
+      av.push(`Recebimento (${brl(c.recebimento)}) ≠ notas 25% + 40/50% + antecipados + parcial + pepino extra (${brl(partes)}).`);
+    if (c.duvidas) av.push(`A leitura ficou em dúvida: ${c.duvidas}`);
+    return av;
+  }
+
+  /* Fechamento da semana da equipe. */
+  function fechamento(lista) {
+    const t = { carros: lista.length, cobrado: 0, recebido: 0, extra: 0, pepino: 0, deixado: 0 };
+    lista.forEach((c) => {
+      t.cobrado += v(c.foiCobrar);
+      t.recebido += recebidoCaixa(c);
+      t.extra += v(c.pepinoExtra);
+      t.pepino += v(c.valorPepinos);
+      t.deixado += v(c.valorDeixado);
+    });
+    ['cobrado', 'recebido', 'extra', 'pepino', 'deixado'].forEach((k) => (t[k] = Math.round(t[k] * 100) / 100));
+    t.total = Math.round((t.recebido + t.extra) * 100) / 100;
+    t.percentual = t.cobrado ? (t.total / t.cobrado) * 100 : 0;
+    t.inadimplencia = t.total ? (t.pepino / t.total) * 100 : 0;
+    return t;
+  }
+
+  const pct = (n) => v(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+
+  // O fechamento no mesmo modelo que vai para o grupo.
+  function textoFechamento(t, o) {
+    const [a, m, d] = (o.data || '').split('-');
+    return [
+      `${o.cidade || ''} ${d || ''}.${m || ''}.${a || ''}`.trim(),
+      '',
+      o.semanaTexto || '',
+      '',
+      `*${(o.produto || 'ENXOVAL').toUpperCase()}* (${t.carros}carros)${o.equipe ? `(${o.equipe})` : ''}`,
+      '',
+      `Cobrado - (${brl(t.cobrado)})`,
+      '',
+      `Recebido - (${brl(t.recebido)})`,
+      '',
+      `Pipino Extra - (${brl(t.extra)})`,
+      '',
+      `Total - (${brl(t.total)})`,
+      '',
+      `Percentual - (${pct(t.percentual)})`,
+      '',
+      `Pipino - (${brl(t.pepino)})`,
+      '',
+      `Inadimplência - (${pct(t.inadimplencia)})`,
+      '',
+      `*Vlr deixado* - (${brl(t.deixado)})`,
+    ].join('\n');
+  }
+
+  const api = { lerRelatorio, separar, conferir, consolidar, textoEquipe, textoSemana, lerEquipe, numero, dataISO, brl, dois, MESES,
+    CAIXA_NUM, caixaVazio, lerCaixaTexto, separarCaixas, recebidoCaixa, conferirCaixa, fechamento, textoFechamento, pct };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else raiz.Relat = api;
 })(typeof window !== 'undefined' ? window : globalThis);

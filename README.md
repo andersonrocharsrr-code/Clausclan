@@ -365,7 +365,18 @@ Abra `relatorios/index.html` por um servidor (GitHub Pages, ou `python3 -m http.
 - **Conferir com um relatório da equipe já pronto**: cole o relatório feito à mão e o app compara linha por linha.
 - **Relatórios**: todos os salvos, por dia; abrir, corrigir o texto ou excluir. Em "Texto do relatório", **Limpar** apaga o
   texto para colar o relatório corrigido e **Salvar** troca o antigo.
-- **Ajustes**: nome da equipe, produto, vendedores da equipe e backup `.json`. Os dados ficam só neste aparelho.
+- **Caixas** (fechamento da semana): junta a folha **CAIXA** de cada vendedor da semana (segunda a domingo, pela data da folha)
+  e monta o fechamento no modelo do grupo (cidade e data, semana, `*ENXOVAL* (N carros)(equipe)`):
+  - **Cobrado** = soma dos "Foi cobrar"
+  - **Recebido** = soma do recebimento sem o pepino extra (notas 25% + 40/50% + antecipados + pepino parcial)
+  - **Pipino Extra** = soma dos pepinos extras; **Total** = Recebido + Pipino Extra; **Percentual** = Total ÷ Cobrado
+  - **Pipino** = soma dos "Valor dos pepinos"; **Inadimplência** = Pipino ÷ Total
+  - **Vlr deixado** = soma dos "Valor deixado"
+  Os caixas entram pela **foto da folha** (lida pela IA Claude, várias fotos de uma vez; chave da API em Ajustes, cobrada
+  na conta da Anthropic; IA mais precisa = Opus, econômica = Haiku), colando o **"Mandar resumo" do app Caixa** ou
+  **lançando à mão**. Tocar num caixa abre os valores para conferir e corrigir. Avisa quem ainda não tem caixa, caixa em
+  outra semana e recebimento que não bate com as partes. O mesmo vendedor na mesma semana troca o caixa anterior.
+- **Ajustes**: nome da equipe, produto, vendedores da equipe, chave da IA e backup `.json`. Os dados ficam só neste aparelho.
 
 ## App Android (APK) — pasta `relatorios-android/`
 O mesmo app empacotado com **Capacitor**, igual aos outros: os arquivos vão dentro do APK, então funciona

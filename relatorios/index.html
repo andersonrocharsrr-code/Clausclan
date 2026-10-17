@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Relatórios">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
   <header class="top">
@@ -25,6 +25,7 @@
   <nav class="abas" role="tablist">
     <button type="button" role="tab" data-aba="colar" class="is-on"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4V3h6v1M9 10h6M9 14h6"/></svg>Colar</button>
     <button type="button" role="tab" data-aba="equipe"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Equipe</button>
+    <button type="button" role="tab" data-aba="caixas"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Caixas</button>
     <button type="button" role="tab" data-aba="lista"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7h12M8 12h12M8 17h12"/><circle cx="4" cy="7" r=".9"/><circle cx="4" cy="12" r=".9"/><circle cx="4" cy="17" r=".9"/></svg>Relatórios</button>
     <button type="button" role="tab" data-aba="ajustes"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>Ajustes</button>
   </nav>
@@ -99,6 +100,67 @@
       </details>
     </section>
 
+    <!-- ============ Caixas da semana (fechamento) ============ -->
+    <section id="aba-caixas" class="aba" hidden>
+      <div class="card card--fino dia">
+        <button type="button" class="icone-sec" id="cxAntes" aria-label="Semana anterior">‹</button>
+        <b id="cxSemana" class="dia__texto">Semana</b>
+        <button type="button" class="icone-sec" id="cxDepois" aria-label="Próxima semana">›</button>
+      </div>
+
+      <div class="card">
+        <h2>Caixas dos vendedores</h2>
+        <p class="dica">Leia a foto da folha CAIXA de cada vendedor (pode escolher várias de uma vez) ou cole o "Mandar resumo" do app Caixa. O mesmo vendedor na mesma semana troca o anterior.</p>
+        <div class="botoes">
+          <button type="button" class="btn" id="cxFotoBtn">Ler fotos dos caixas</button>
+          <button type="button" class="btn btn--sec" id="cxManual">Lançar à mão</button>
+        </div>
+        <input type="file" id="cxFoto" accept="image/*" multiple hidden>
+        <p id="cxStatus" class="aviso" hidden></p>
+        <div id="cxErros" class="aviso aviso--neg" hidden></div>
+        <details>
+          <summary>Colar o resumo do app Caixa</summary>
+          <textarea id="cxTxt" rows="8" placeholder="*CAIXA — …*&#10;RIO BRANCO · 17/10/2026 · Semana 2&#10;Foi cobrar: R$ …&#10;…"></textarea>
+          <div class="botoes"><button type="button" class="btn btn--sec" id="cxLerTexto">Ler resumo</button></div>
+        </details>
+      </div>
+
+      <div class="card" id="cxCardFaltam" hidden>
+        <h2>Ainda sem caixa</h2>
+        <p id="cxFaltam" class="faltam"></p>
+      </div>
+
+      <div class="card">
+        <h2>Caixas <span id="cxQt" class="muted"></span></h2>
+        <div class="tabela-rola"><table class="tabela" id="cxTabela"></table></div>
+        <p class="dica">Toque num caixa para conferir ou corrigir os valores.</p>
+      </div>
+
+      <div class="card">
+        <h2>Conferência</h2>
+        <div id="cxConferencia"></div>
+      </div>
+
+      <div class="card">
+        <label class="linha-campo">Semana
+          <input id="cxSemanaTexto" placeholder="1ª semana Agosto">
+        </label>
+        <div class="tiles" id="cxTiles"></div>
+      </div>
+
+      <div class="card msg">
+        <h2>Fechamento da semana</h2>
+        <pre id="cxTexto" class="previa"></pre>
+      </div>
+      <div class="envio">
+        <button type="button" class="btn btn--whats" id="cxWhats">Enviar no WhatsApp</button>
+        <div class="botoes">
+          <button type="button" class="btn btn--sec" id="cxCopiar">Copiar</button>
+          <button type="button" class="btn btn--sec" id="cxCompart">Compartilhar</button>
+        </div>
+      </div>
+    </section>
+
     <!-- ============ Lista de relatórios salvos ============ -->
     <section id="aba-lista" class="aba" hidden>
       <div class="card card--fino">
@@ -121,6 +183,19 @@
           <textarea id="cfgVendedores" rows="7" placeholder="Um nome por linha"></textarea>
         </label>
         <p class="dica">Com a lista preenchida, o app avisa quem ainda não mandou o relatório do dia. Quem manda relatório entra na lista sozinho.</p>
+      </div>
+      <div class="card">
+        <h2>Leitura das fotos dos caixas (IA)</h2>
+        <label class="linha-campo">Chave da API da Anthropic
+          <input id="cfgApiKey" type="password" autocomplete="off" placeholder="sk-ant-…">
+        </label>
+        <label class="linha-campo">Qual IA
+          <select id="cfgModoIA">
+            <option value="precisa">IA mais precisa (Claude Opus)</option>
+            <option value="economica">IA econômica (Claude Haiku, centavos)</option>
+          </select>
+        </label>
+        <p class="dica">A chave (console.anthropic.com) fica salva só neste aparelho. Cada foto lida é cobrada na sua conta da Anthropic.</p>
       </div>
       <div class="card">
         <h2>Backup</h2>
@@ -158,9 +233,25 @@
     </form>
   </dialog>
 
+  <!-- Conferir / corrigir um caixa -->
+  <dialog id="dlgCaixa">
+    <form method="dialog" class="dlg">
+      <div class="card__cab">
+        <h2 id="dlgCxTitulo">Caixa</h2>
+        <button class="icone-sec" value="fechar" aria-label="Fechar">✕</button>
+      </div>
+      <div id="dlgCxAvisos"></div>
+      <div id="cxCampos" class="grade2"></div>
+      <div class="botoes">
+        <button type="button" class="btn" id="dlgCxSalvar">Salvar</button>
+        <button type="button" class="btn btn--neg" id="dlgCxExcluir">Excluir</button>
+      </div>
+    </form>
+  </dialog>
+
   <div id="toast" class="toast" hidden></div>
 
-  <script src="parser.js?v=2"></script>
-  <script src="app.js?v=6"></script>
+  <script src="parser.js?v=3"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>

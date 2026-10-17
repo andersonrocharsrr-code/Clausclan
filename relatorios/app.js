@@ -22,10 +22,13 @@
   const diaSemana = (iso) => new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
 
   // ---------- Dados ----------
-  let db = { reports: [], cfg: { equipe: '', produto: 'ENXOVAL', vendedores: [], semanas: {}, usarUltimo: false } };
+  const CFG_PADRAO = () => ({ equipe: '', produto: 'ENXOVAL', vendedores: [], semanas: {}, semanasCaixa: {}, usarUltimo: false });
+  // reports: relatórios diários; caixas: folhas CAIXA (fechamento da semana) de cada vendedor.
+  const montarDb = (d) => ({ reports: d.reports || [], caixas: d.caixas || [], cfg: Object.assign(CFG_PADRAO(), d.cfg) });
+  let db = montarDb({});
   try {
     const salvo = JSON.parse(localStorage.getItem(CHAVE));
-    if (salvo && Array.isArray(salvo.reports)) db = { reports: salvo.reports, cfg: Object.assign(db.cfg, salvo.cfg) };
+    if (salvo && Array.isArray(salvo.reports)) db = montarDb(salvo);
   } catch (e) { /* começa vazio */ }
   const salvar = () => { try { localStorage.setItem(CHAVE, JSON.stringify(db)); } catch (e) { toast('Não consegui salvar neste aparelho.'); } };
 
@@ -59,6 +62,7 @@
     $$('.aba').forEach((s) => (s.hidden = s.id !== 'aba-' + nome));
     if (nome === 'equipe') desenharEquipe();
     if (nome === 'lista') desenharLista();
+    if (nome === 'caixas') desenharCaixas();
     if (nome === 'ajustes') desenharAjustes();
     window.scrollTo(0, 0);
   }
@@ -261,17 +265,20 @@
   }
   function desenharTexto() { $('#textoEquipe').textContent = textoAtual(); }
 
-  $('#btnWhats').addEventListener('click', () => window.open('https://wa.me/?text=' + encodeURIComponent(textoAtual()), '_blank'));
-  $('#btnCopiar').addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(textoAtual()); toast('Copiado.'); } catch (e) { toast('Não consegui copiar.'); }
-  });
-  $('#btnCompart').addEventListener('click', async () => {
+  const mandarWhats = (txt) => window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
+  async function copiar(txt) {
+    try { await navigator.clipboard.writeText(txt); toast('Copiado.'); } catch (e) { toast('Não consegui copiar.'); }
+  }
+  async function compartilhar(txt, tituloDlg) {
     try {
-      if (SHARE) await SHARE.share({ text: textoAtual(), dialogTitle: 'Mandar relatório da equipe' });
-      else if (navigator.share) await navigator.share({ text: textoAtual() });
+      if (SHARE) await SHARE.share({ text: txt, dialogTitle: tituloDlg });
+      else if (navigator.share) await navigator.share({ text: txt });
       else toast('Este navegador não compartilha. Use Copiar.');
     } catch (e) { /* cancelou */ }
-  });
+  }
+  $('#btnWhats').addEventListener('click', () => mandarWhats(textoAtual()));
+  $('#btnCopiar').addEventListener('click', () => copiar(textoAtual()));
+  $('#btnCompart').addEventListener('click', () => compartilhar(textoAtual(), 'Mandar relatório da equipe'));
 
   // Compara um relatório da equipe feito à mão com o que o app somou.
   $('#txtConferir').addEventListener('input', conferirPronto);
@@ -367,13 +374,300 @@
     $$('#lista .item').forEach((b) => b.addEventListener('click', () => abrirRelatorio(db.reports[+b.dataset.id])));
   }
 
+
+  // ---------- Caixas da semana (fechamento) ----------
+  // Cada caixa é a folha CAIXA de um vendedor. A semana vai de segunda a domingo, pela data da folha.
+  const segundaDe = (iso) => somaDias(iso, -((new Date(iso + 'T12:00:00').getDay() + 6) % 7));
+  const titulo = (s) => String(s || '').toLowerCase().replace(/(^|\s)\S/g, (l) => l.toUpperCase());
+  const ultimaCaixa = () => db.caixas.reduce((m, c) => (c.data && c.data > m ? c.data : m), '');
+  let semanaCx = segundaDe(ultimaCaixa() || hojeISO());
+  // Folha sem data entra na semana aberta na tela (hoje, se for a semana de hoje; senão o sábado dela).
+  const dataPadraoCx = () => (segundaDe(hojeISO()) === semanaCx ? hojeISO() : somaDias(semanaCx, 5));
+  const caixasDaSemana = () => db.caixas.filter((c) => c.data && segundaDe(c.data) === semanaCx)
+    .sort((a, b) => norm(a.nome).localeCompare(norm(b.nome)));
+
+  // Guarda um caixa: o mesmo vendedor na mesma semana troca o anterior.
+  function guardarCaixa(c) {
+    if (!c.data) c.data = dataPadraoCx();
+    const i = db.caixas.findIndex((x) => x !== c && norm(x.nome) === norm(c.nome) && segundaDe(x.data) === segundaDe(c.data));
+    if (i >= 0) db.caixas.splice(i, 1);
+    if (!db.caixas.includes(c)) db.caixas.push(c);
+    lembrarVendedor(c.nome);
+    semanaCx = segundaDe(c.data);
+  }
+
+  $('#cxAntes').addEventListener('click', () => { semanaCx = somaDias(semanaCx, -7); desenharCaixas(); });
+  $('#cxDepois').addEventListener('click', () => { semanaCx = somaDias(semanaCx, 7); desenharCaixas(); });
+  $('#cxSemanaTexto').addEventListener('input', (e) => {
+    if (e.target.value.trim()) db.cfg.semanasCaixa[semanaCx] = e.target.value; else delete db.cfg.semanasCaixa[semanaCx];
+    salvar(); desenharTextoCx();
+  });
+
+  let cxAtual = null;
+  function desenharCaixas() {
+    const lista = caixasDaSemana();
+    const t = R.fechamento(lista);
+    const data = lista.reduce((m, c) => (c.data > m ? c.data : m), '') || somaDias(semanaCx, 5);
+    const semana = (() => { const c = {}; lista.forEach((x) => { if (x.semana) c[x.semana] = (c[x.semana] || 0) + 1; }); return Object.keys(c).sort((a, b) => c[b] - c[a])[0]; })();
+    const cidades = {}; lista.forEach((x) => { const k = titulo(x.cidade); if (k) cidades[k] = (cidades[k] || 0) + 1; });
+    const cidade = Object.keys(cidades).sort((a, b) => cidades[b] - cidades[a])[0] || '';
+    const semanaAuto = R.textoSemana(semana ? +semana : null, data);
+    cxAtual = { t, data, cidade, semanaAuto };
+
+    $('#cxSemana').textContent = `Semana de ${dataCurta(semanaCx)} a ${dataCurta(somaDias(semanaCx, 6))}`;
+    $('#cxSemanaTexto').placeholder = semanaAuto;
+    $('#cxSemanaTexto').value = db.cfg.semanasCaixa[semanaCx] || '';
+
+    const tiles = [
+      ['Cobrado', brl(t.cobrado)], ['Recebido', brl(t.recebido)], ['Pipino extra', brl(t.extra)], ['Total', brl(t.total)],
+      ['Percentual', R.pct(t.percentual)], ['Pipino', brl(t.pepino)], ['Inadimplência', R.pct(t.inadimplencia)], ['Vlr deixado', brl(t.deixado)],
+    ];
+    $('#cxTiles').innerHTML = tiles.map(([a, b]) => `<div class="tile"><small>${a}</small><b>${b}</b></div>`).join('');
+
+    const faltam = db.cfg.vendedores.filter((n) => !lista.some((c) => norm(c.nome) === norm(n)));
+    $('#cxCardFaltam').hidden = !faltam.length;
+    $('#cxFaltam').textContent = faltam.join(', ');
+
+    $('#cxQt').textContent = `(${lista.length})`;
+    if (!lista.length) {
+      $('#cxTabela').innerHTML = '<tbody><tr><td class="muted">Nenhum caixa nesta semana. Leia as fotos ou cole o resumo.</td></tr></tbody>';
+    } else {
+      $('#cxTabela').innerHTML = `<thead><tr><th>Vendedor</th><th>Cobrado</th><th>Recebido</th><th>Pep. extra</th><th>Pipino</th><th>Deixado</th></tr></thead>
+        <tbody>${lista.map((c, i) => {
+          const n = R.conferirCaixa(c).length;
+          return `<tr data-i="${i}"><td>${esc(c.nome || 'Sem nome')}${n ? `<span class="tag tag--warn">⚠ ${n}</span>` : '<span class="tag tag--ok">✓</span>'}</td>
+            <td>${brl(c.foiCobrar)}</td><td>${brl(R.recebidoCaixa(c))}</td><td>${brl(c.pepinoExtra)}</td><td>${brl(c.valorPepinos)}</td><td>${brl(c.valorDeixado)}</td></tr>`;
+        }).join('')}</tbody>
+        <tfoot><tr><td>Total</td><td>${brl(t.cobrado)}</td><td>${brl(t.recebido)}</td><td>${brl(t.extra)}</td><td>${brl(t.pepino)}</td><td>${brl(t.deixado)}</td></tr></tfoot>`;
+      $$('#cxTabela tbody tr[data-i]').forEach((tr) => tr.addEventListener('click', () => abrirCaixa(lista[+tr.dataset.i])));
+    }
+
+    const blocos = [];
+    lista.forEach((c) => {
+      const av = R.conferirCaixa(c);
+      if (semana && c.semana && String(c.semana) !== String(semana)) av.unshift(`Está na semana ${c.semana}; os outros caixas estão na ${semana}.`);
+      if (av.length) blocos.push(`<div class="aviso"><b>${esc(c.nome || 'Sem nome')}</b><ul>${av.map((a) => `<li>${esc(a)}</li>`).join('')}</ul></div>`);
+    });
+    if (faltam.length) blocos.push(`<div class="aviso aviso--neg">Faltam ${faltam.length} caixa${faltam.length > 1 ? 's' : ''}: ${faltam.map(esc).join(', ')}. O fechamento ainda não está completo.</div>`);
+    $('#cxConferencia').innerHTML = blocos.length ? blocos.join('') : (lista.length ? '<div class="aviso aviso--ok">✓ Tudo confere: as contas de todos os caixas fecham.</div>' : '<p class="dica">Sem caixas para conferir.</p>');
+    desenharTextoCx();
+  }
+
+  function textoCx() {
+    if (!cxAtual) return '';
+    return R.textoFechamento(cxAtual.t, {
+      cidade: cxAtual.cidade, data: cxAtual.data, equipe: db.cfg.equipe, produto: db.cfg.produto,
+      semanaTexto: db.cfg.semanasCaixa[semanaCx] || cxAtual.semanaAuto,
+    });
+  }
+  function desenharTextoCx() { $('#cxTexto').textContent = textoCx(); }
+  $('#cxWhats').addEventListener('click', () => mandarWhats(textoCx()));
+  $('#cxCopiar').addEventListener('click', () => copiar(textoCx()));
+  $('#cxCompart').addEventListener('click', () => compartilhar(textoCx(), 'Mandar fechamento da semana'));
+
+  // Colar o "Mandar resumo" do app Fechamento de Caixa (um ou vários).
+  $('#cxLerTexto').addEventListener('click', () => {
+    const partes = R.separarCaixas($('#cxTxt').value);
+    if (!partes.length) { toast('Não achei nenhum resumo de caixa no texto.'); return; }
+    const novos = partes.map(R.lerCaixaTexto);
+    if (novos.some((c) => !c.nome)) { toast('Tem resumo sem o nome (linha "CAIXA — Nome").'); return; }
+    novos.forEach((c) => { c.fonte = 'texto'; guardarCaixa(c); });
+    salvar(); $('#cxTxt').value = '';
+    toast(`${novos.length} caixa${novos.length > 1 ? 's lidos' : ' lido'}.`);
+    desenharCaixas();
+  });
+  $('#cxManual').addEventListener('click', () => abrirCaixa(Object.assign(R.caixaVazio(), { data: dataPadraoCx() }), true));
+
+  // ---------- Foto do caixa lida pela IA (Claude) ----------
+  const KEY_API = 'relatorios.apiKey';
+  const KEY_MODO = 'relatorios.modoIA';
+  const MODOS = {
+    precisa: { nome: 'IA mais precisa', modelo: 'claude-opus-5-5' },
+    economica: { nome: 'IA econômica', modelo: 'claude-haiku-5-5' },
+  };
+  const lsGet = (k, d) => { try { return localStorage.getItem(k) || d; } catch (e) { return d; } };
+  const lsSet = (k, val) => { try { localStorage.setItem(k, val); } catch (e) { /* sem armazenamento */ } };
+  const modoIA = () => (MODOS[lsGet(KEY_MODO, 'precisa')] ? lsGet(KEY_MODO, 'precisa') : 'precisa');
+
+  let SDK = null;
+  async function clienteIA() {
+    const key = lsGet(KEY_API, '').trim();
+    if (!key) return null;
+    // O SDK só é carregado quando a IA é usada. O app roda no aparelho do dono, com a chave dele.
+    if (!SDK) SDK = (await import('./vendor/anthropic.js')).default;
+    return new SDK({ apiKey: key, dangerouslyAllowBrowser: true });
+  }
+
+  const n = { type: 'number' };
+  const inteiro = { type: 'integer' };
+  const SCHEMA_CAIXA = {
+    type: 'object', additionalProperties: false,
+    required: ['nome', 'cidade', 'data', 'semana', ...R.CAIXA_NUM, 'duvidas'],
+    properties: {
+      nome: { type: 'string' }, cidade: { type: 'string' },
+      data: { type: 'string', description: 'dd/mm/aaaa, ou vazio' }, semana: inteiro,
+      foiCobrar: n, qtNotas: inteiro, antecipados: n, valorPepinos: n, pinos: inteiro, pepinoParcial: n,
+      notas25: n, notas4050: n, pepinoExtra: n, recebimento: n, qtNotasDeixadas: inteiro, valorDeixado: n,
+      duvidas: { type: 'string' },
+    },
+  };
+  const SISTEMA = 'Você lê fotos da folha "CAIXA" (fechamento semanal de um vendedor de enxoval) e devolve os campos pedidos. ' +
+    'Os valores em reais vêm no formato brasileiro (8.189,00 = 8189.00); devolva como número. Campo vazio = 0 (ou texto vazio).';
+  const PEDIDO = `Leia esta folha CAIXA. O impresso está em preto e o preenchido à mão em azul.
+Campos: NOME (nome), CIDADE (cidade), DATA (data, dd/mm/aaaa), SEMANA (semana, só o número), FOI COBRAR (foiCobrar),
+QT. DE NOTAS (qtNotas), ANTECIPADOS (antecipados), VALOR DOS PEPINOS (valorPepinos), Nº DE PINOS (pinos),
+PEPINO PARCIAL (pepinoParcial), NOTAS 25% (notas25), NOTAS 40% e 50% (notas4050), PEPINO EXTRA (pepinoExtra: o total ao lado
+do título; se não houver, a soma dos VALOR dos blocos "VENDEDORA"), RECEBIMENTO (recebimento), QT.NOTAS DEIXADAS
+(qtNotasDeixadas), VALOR DEIXADO (valorDeixado). Ignore depósitos e despesas.
+Em "duvidas" diga, em poucas palavras, o que ficou difícil de ler; se leu tudo bem, deixe vazio.`;
+
+  // Diminui a foto (celular tira fotos enormes) e devolve base64 JPEG.
+  async function prepararFoto(file) {
+    const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    const k = Math.min(1, 1800 / Math.max(bmp.width, bmp.height));
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(bmp.width * k); cv.height = Math.round(bmp.height * k);
+    cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height);
+    return cv.toDataURL('image/jpeg', 0.85).split(',')[1];
+  }
+
+  async function lerFotoIA(api, file) {
+    const modo = modoIA();
+    const pedido = {
+      model: MODOS[modo].modelo,
+      max_tokens: 16000,
+      output_config: { effort: 'medium', format: { type: 'json_schema', schema: SCHEMA_CAIXA } },
+      system: SISTEMA,
+      messages: [{ role: 'user', content: [
+        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: await prepararFoto(file) } },
+        { type: 'text', text: PEDIDO },
+      ] }],
+    };
+    // Na IA mais precisa, se ela recusar por engano, a própria Anthropic refaz com outro modelo.
+    const resp = modo === 'precisa'
+      ? await api.beta.messages.create({ ...pedido, betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' })
+      : await api.messages.create(pedido);
+    if (resp.stop_reason === 'refusal') throw new Error('A IA não quis ler esta foto. Tente outra foto.');
+    if (resp.stop_reason === 'max_tokens') throw new Error('A leitura ficou grande demais. Tente de novo.');
+    const txt = (resp.content.find((b) => b.type === 'text') || {}).text;
+    if (!txt) throw new Error('A IA não devolveu nada. Tente de novo.');
+    const lido = JSON.parse(txt);
+    const c = Object.assign(R.caixaVazio(), lido);
+    c.data = R.dataISO(lido.data) || null;
+    c.semana = lido.semana || null;
+    c.fonte = 'foto';
+    return c;
+  }
+
+  function erroIA(e) {
+    if (SDK && e instanceof SDK.AuthenticationError) return 'Chave da API inválida. Confira em Ajustes.';
+    if (SDK && e instanceof SDK.PermissionDeniedError) return 'Essa chave não tem permissão. Confira em Ajustes.';
+    if (SDK && e instanceof SDK.RateLimitError) return 'Muitas leituras seguidas. Espere um pouco e tente de novo.';
+    if (SDK && e instanceof SDK.APIConnectionError) return 'Sem internet para a IA. Tente de novo com internet.';
+    if (SDK && e instanceof SDK.APIError) return 'A IA deu erro. Tente de novo daqui a pouco.';
+    return e && e.message ? e.message : 'Não deu para ler a foto.';
+  }
+
+  $('#cxFotoBtn').addEventListener('click', async () => {
+    if (!lsGet(KEY_API, '').trim()) { toast('Para ler fotos, cole a chave da API em Ajustes.'); abrirAba('ajustes'); return; }
+    $('#cxFoto').click();
+  });
+  $('#cxFoto').addEventListener('change', async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!files.length) return;
+    const status = $('#cxStatus');
+    let ok = 0;
+    const erros = [];
+    try {
+      const api = await clienteIA();
+      for (let i = 0; i < files.length; i++) {
+        status.hidden = false;
+        status.textContent = files.length > 1 ? `A IA está lendo a foto ${i + 1} de ${files.length}…` : 'A IA está lendo a foto…';
+        try {
+          const c = await lerFotoIA(api, files[i]);
+          if (!c.nome) c.nome = `Sem nome ${i + 1}`;
+          guardarCaixa(c); ok++;
+          salvar(); desenharCaixas();
+        } catch (err) {
+          console.error(err);
+          erros.push(`Foto ${i + 1}: ${erroIA(err)}`);
+          if (SDK && (err instanceof SDK.AuthenticationError || err instanceof SDK.APIConnectionError)) break;
+        }
+      }
+    } catch (err) {
+      erros.push(erroIA(err));
+    }
+    status.hidden = true;
+    if (erros.length) {
+      $('#cxErros').hidden = false;
+      $('#cxErros').innerHTML = `<b>Não deu para ler:</b><ul>${erros.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`;
+    } else $('#cxErros').hidden = true;
+    if (ok) toast(`${ok} caixa${ok > 1 ? 's lidos' : ' lido'}. Confira os valores.`);
+  });
+
+  // ---------- Conferir / corrigir um caixa ----------
+  const CAMPOS_CX = [
+    ['nome', 'Nome', 't'], ['cidade', 'Cidade', 't'], ['data', 'Data', 'd'], ['semana', 'Semana', 'i'],
+    ['foiCobrar', 'Foi cobrar', 'm'], ['qtNotas', 'Qt. de notas', 'i'], ['notas25', 'Notas 25%', 'm'], ['notas4050', 'Notas 40% e 50%', 'm'],
+    ['antecipados', 'Antecipados', 'm'], ['pepinoParcial', 'Pepino parcial', 'm'], ['pepinoExtra', 'Pepino extra', 'm'],
+    ['recebimento', 'Recebimento', 'm'], ['valorPepinos', 'Valor dos pepinos', 'm'], ['pinos', 'Nº de pinos', 'i'],
+    ['qtNotasDeixadas', 'Qt. notas deixadas', 'i'], ['valorDeixado', 'Valor deixado', 'm'],
+  ];
+  $('#cxCampos').innerHTML = CAMPOS_CX.map(([k, rot, tipo]) => `<label class="linha-campo">${rot}
+    <input data-cx="${k}" ${tipo === 'd' ? 'type="date"' : tipo === 'm' ? 'inputmode="decimal" placeholder="0,00"' : tipo === 'i' ? 'inputmode="numeric" placeholder="0"' : ''}></label>`).join('');
+  let cxAberto = null;
+  let cxNovo = false;
+  const dlgCx = $('#dlgCaixa');
+
+  function abrirCaixa(c, novo) {
+    cxAberto = c; cxNovo = !!novo;
+    $('#dlgCxTitulo').textContent = novo ? 'Caixa novo' : `${c.nome || 'Sem nome'} · ${dataCurta(c.data)}`;
+    $('#dlgCxAvisos').innerHTML = novo ? '' : (() => {
+      const av = R.conferirCaixa(c);
+      return av.length ? `<div class="aviso"><b>Conferir:</b><ul>${av.map((a) => `<li>${esc(a)}</li>`).join('')}</ul></div>` : '<div class="aviso aviso--ok">✓ As contas do caixa fecham.</div>';
+    })();
+    CAMPOS_CX.forEach(([k, , tipo]) => {
+      const el = $(`[data-cx="${k}"]`);
+      const val = c[k];
+      el.value = tipo === 'm' ? (v(val) ? brl(val) : '') : tipo === 'i' ? (v(val) ? String(val) : '') : (val || '');
+    });
+    $('#dlgCxExcluir').hidden = !!novo;
+    dlgCx.showModal();
+  }
+
+  $('#dlgCxSalvar').addEventListener('click', () => {
+    const c = cxAberto;
+    CAMPOS_CX.forEach(([k, , tipo]) => {
+      const val = $(`[data-cx="${k}"]`).value.trim();
+      if (tipo === 'm') c[k] = R.numero(val) || 0;
+      else if (tipo === 'i') c[k] = val ? Math.round(R.numero(val) || 0) : (k === 'semana' ? null : 0);
+      else c[k] = val || (k === 'data' ? null : '');
+    });
+    if (!c.nome) { toast('Coloque o nome do vendedor.'); return; }
+    c.duvidas = '';
+    guardarCaixa(c);
+    salvar(); dlgCx.close(); toast('Caixa salvo.');
+    desenharCaixas();
+  });
+  $('#dlgCxExcluir').addEventListener('click', () => {
+    if (!cxAberto || !confirm(`Excluir o caixa de ${cxAberto.nome || 'sem nome'}?`)) return;
+    db.caixas = db.caixas.filter((x) => x !== cxAberto);
+    salvar(); dlgCx.close(); toast('Excluído.');
+    desenharCaixas();
+  });
+
   // ---------- Ajustes ----------
   function desenharAjustes() {
+    $('#cfgApiKey').value = lsGet(KEY_API, '');
+    $('#cfgModoIA').value = modoIA();
     $('#cfgEquipe').value = db.cfg.equipe || '';
     $('#cfgProduto').value = db.cfg.produto || '';
     $('#cfgVendedores').value = db.cfg.vendedores.join('\n');
   }
   $('#cfgEquipe').addEventListener('input', (e) => { db.cfg.equipe = e.target.value.trim(); salvar(); topo(); });
+  $('#cfgApiKey').addEventListener('change', (e) => { lsSet(KEY_API, e.target.value.trim()); toast(e.target.value.trim() ? 'Chave salva.' : 'Chave apagada.'); });
+  $('#cfgModoIA').addEventListener('change', (e) => lsSet(KEY_MODO, e.target.value));
   $('#cfgProduto').addEventListener('input', (e) => { db.cfg.produto = e.target.value.trim(); salvar(); });
   $('#cfgVendedores').addEventListener('change', (e) => {
     db.cfg.vendedores = e.target.value.split('\n').map((s) => s.trim()).filter(Boolean)
@@ -407,8 +701,8 @@
     try {
       const dados = JSON.parse(await arq.text());
       if (!Array.isArray(dados.reports)) throw new Error('formato');
-      if (!confirm(`Restaurar ${dados.reports.length} relatórios? Os de agora serão trocados.`)) return;
-      db = { reports: dados.reports, cfg: Object.assign({ equipe: '', produto: 'ENXOVAL', vendedores: [], semanas: {}, usarUltimo: false }, dados.cfg) };
+      if (!confirm(`Restaurar ${dados.reports.length} relatórios e ${(dados.caixas || []).length} caixas? Os de agora serão trocados.`)) return;
+      db = montarDb(dados);
       salvar(); desenharAjustes(); topo(); toast('Backup restaurado.');
     } catch (err) { toast('Arquivo de backup inválido.'); }
     e.target.value = '';
@@ -443,6 +737,7 @@
   const App = plugin('App');
   if (App) App.addListener('backButton', () => {
     if (dlg.open) { dlg.close(); return; }
+    if (dlgCx.open) { dlgCx.close(); return; }
     if ($('#aba-colar').hidden) abrirAba('colar'); else App.minimizeApp();
   });
 
