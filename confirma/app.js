@@ -59,8 +59,8 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
   const dataBR = (iso, sep = '.') => (iso && /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso.split('-').reverse().join(sep) : '');
   const dinheiro = (n) => (n == null || isNaN(n) ? '' : n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
   const numeroBR = (n) => (n == null || isNaN(n) ? '' : n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-  // "16/10 22:33" (sem vírgula entre a data e a hora).
-  const quando = (ts) => { const d = new Date(ts); const z = (n) => String(n).padStart(2, '0'); return `${z(d.getDate())}/${z(d.getMonth() + 1)} ${z(d.getHours())}:${z(d.getMinutes())}`; };
+  // "16/10/2026 22:33" (sem vírgula entre a data e a hora).
+  const quando = (ts) => { const d = new Date(ts); const z = (n) => String(n).padStart(2, '0'); return `${z(d.getDate())}/${z(d.getMonth() + 1)}/${d.getFullYear()} ${z(d.getHours())}:${z(d.getMinutes())}`; };
   function lerValor(t) {
     let s = String(t || '').replace(/[^\d,.-]/g, '');
     if (!s) return null;
@@ -211,8 +211,10 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
         e.target.value = nome && state.ajustes.vendedores.includes(nome) ? nome : '';
       }
       e.target.classList.toggle('is-vazio', !e.target.value);
+      mostrarVendedor(tipo);
       atualizarPrevia(tipo);
     });
+    $('.vend-btn', sec).addEventListener('click', () => abrirVendedores(tipo));
     $('[data-limpar]', sec).addEventListener('click', () => limparForm(tipo));
     $$('[data-enviar]', sec).forEach((b) => b.addEventListener('click', () => enviar(tipo, b.dataset.enviar)));
   });
@@ -368,16 +370,49 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
   /* ---------------- Vendedores ---------------- */
   const NOVO = '__novo';
   // Campo "Nome do vendedor": ao tocar, mostra todos os vendedores cadastrados para escolher.
+  // Botão do campo Vendedor mostra o escolhido; a lista abre numa folha de baixo para cima.
+  function mostrarVendedor(tipo) {
+    const sel = campo(tipo, 'vendedor'); const b = $('.vend-btn', secao(tipo));
+    if (!b) return;
+    b.textContent = sel.value || (state.ajustes.vendedores.length ? 'Toque para escolher' : 'Nenhum vendedor cadastrado');
+    b.classList.toggle('is-vazio', !sel.value);
+  }
+  let vendTipo = null;
+  const IC_OK = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"/></svg>';
+  function listarVendedores() {
+    const atual = campo(vendTipo, 'vendedor').value;
+    const lista = state.ajustes.vendedores;
+    $('#vendOps').innerHTML = lista.length
+      ? lista.map((v) => `<button type="button" class="vend-op${v === atual ? ' is-on' : ''}" data-v="${esc(v)}">${avatar(v)}<span>${esc(v)}</span>${v === atual ? IC_OK : ''}</button>`).join('')
+      : '<p class="vazia">Nenhum vendedor ainda. Cadastre em Ajustes.</p>';
+  }
+  function abrirVendedores(tipo) {
+    vendTipo = tipo;
+    listarVendedores();
+    $('#dlgVend').showModal();
+    if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+  }
+  function escolherVendedor(v) {
+    const sel = campo(vendTipo, 'vendedor');
+    sel.value = v;
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+    $('#dlgVend').close();
+  }
+  $('#vendOps').addEventListener('click', (e) => { const b = e.target.closest('[data-v]'); if (b) escolherVendedor(b.dataset.v); });
+  $('#dlgVend .fb__fechar').addEventListener('click', () => $('#dlgVend').close());
+  // Tocar fora da folha fecha.
+  $('#dlgVend').addEventListener('click', (e) => { if (e.target === $('#dlgVend')) $('#dlgVend').close(); });
+
   function renderVendedores() {
     const lista = state.ajustes.vendedores;
     Object.keys(TIPOS).forEach((tipo) => {
       const sel = campo(tipo, 'vendedor');
       const atual = sel.value && sel.value !== NOVO ? sel.value : (state.rascunhos[tipo].vendedor || '');
       sel.innerHTML = `<option value="">${lista.length ? 'Toque para escolher o vendedor' : 'Nenhum vendedor cadastrado'}</option>`
-        + lista.map((v) => `<option value="${esc(v)}">${esc(v)}</option>`).join('')
-        + `<option value="${NOVO}">➕ Cadastrar novo vendedor…</option>`;
+        + lista.map((v) => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
       sel.value = lista.includes(atual) ? atual : '';
       sel.classList.toggle('is-vazio', !sel.value);
+      mostrarVendedor(tipo);
     });
     $('#listaVend').innerHTML = lista.length
       ? lista.map((v, i) => `<li><span>${esc(v)}</span><button type="button" data-del="${i}" aria-label="Remover ${esc(v)}">🗑️</button></li>`).join('')
@@ -787,6 +822,7 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
     if (App) App.addListener('backButton', () => {
       if ($('#dlgValor').open) { $('#dlgValor').close(); return; }
       if ($('#dlgDetalhe').open) { $('#dlgDetalhe').close(); return; }
+      if ($('#dlgVend').open) { $('#dlgVend').close(); return; }
       if (!$('#aba-nova').hidden) App.minimizeApp(); else abrirAba('nova');
     });
   }
