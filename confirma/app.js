@@ -226,12 +226,37 @@ Me chamo {atendente}, Trabalho na empresa {empresa} com o vendedor de enxoval {v
   const UNID = { zero: 0, um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5, seis: 6, meia: 6, sete: 7, oito: 8, nove: 9 };
   const DEZ_A_DEZENOVE = { dez: 10, onze: 11, doze: 12, treze: 13, catorze: 14, quatorze: 14, quinze: 15, dezesseis: 16, dezasseis: 16, dezessete: 17, dezoito: 18, dezenove: 19 };
   const DEZENAS = { vinte: 20, trinta: 30, quarenta: 40, cinquenta: 50, sessenta: 60, setenta: 70, oitenta: 80, noventa: 90 };
+  // Algarismo falado por extenso, no singular ou no plural ("nove"/"noves", "zero"/"zeros", "uns").
+  function digitoPalavra(w) {
+    if (!w || /^\d$/.test(w)) return null;
+    if (w in UNID) return { d: UNID[w], plural: false };
+    if (w === 'uns') return { d: 1, plural: true };
+    if (w.endsWith('s') && w.slice(0, -1) in UNID) return { d: UNID[w.slice(0, -1)], plural: true };
+    return null;
+  }
+  const QUANTAS = { dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5, '2': 2, '3': 3, '4': 4, '5': 5 };
+  const DUPLO = { duplo: 2, dupla: 2, triplo: 3, tripla: 3 };
+  // Ex.: "três nove" → 9 três vezes. No singular só "três" repete ("dois nove" pode ser 2 e 9 ditados um a um);
+  // no plural ("dois noves"), com "vezes" ou com duplo/triplo, qualquer quantidade de 2 a 5.
+  function repeticao(p, i) {
+    const w = p[i];
+    if (w in DUPLO) { const d = digitoPalavra(p[i + 1]); return d ? { digito: d.d, vezes: DUPLO[w], fim: i + 1 } : null; }
+    if (!(w in QUANTAS)) return null;
+    if (p[i + 1] === 'vezes') { const d = digitoPalavra(p[i + 2]) || (/^\d$/.test(p[i + 2] || '') && { d: Number(p[i + 2]) }); return d ? { digito: d.d, vezes: QUANTAS[w], fim: i + 2 } : null; }
+    const d = digitoPalavra(p[i + 1]);
+    if (!d) return null;
+    if (d.plural || w === 'tres' || w === '3') return { digito: d.d, vezes: QUANTAS[w], fim: i + 1 };
+    return null;
+  }
   function digitosFalados(texto) {
     const p = String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/(\d)/g, ' $1 ').split(/[^a-z0-9]+/).filter(Boolean);
     let out = '';
     for (let i = 0; i < p.length; i++) {
       const w = p[i];
+      // Repetição: "três nove" = 999; "dois oitos", "3 noves", "três vezes nove", "triplo nove".
+      const rep = repeticao(p, i);
+      if (rep) { out += String(rep.digito).repeat(rep.vezes); i = rep.fim; continue; }
       if (/^\d$/.test(w)) out += w;
       else if (w in UNID) out += UNID[w];
       else if (w in DEZ_A_DEZENOVE) out += DEZ_A_DEZENOVE[w];
