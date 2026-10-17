@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Confirma">
-  <link rel="stylesheet" href="style.css?v=16">
+  <link rel="stylesheet" href="style.css?v=17">
 </head>
 <body>
   <!-- Abertura: a logo se monta (nota, linhas, selo e o ✓) e some. Um toque pula. -->
@@ -59,58 +59,56 @@
   </script>
   <header class="top">
     <div class="top__title">
-      <h1>Confirma Nota</h1>
-      <small id="resumo">—</small>
+      <small id="saudacaoTopo">Olá</small>
+      <h1 id="tituloTopo">Nova confirmação</h1>
+      <small id="resumo" hidden>—</small>
     </div>
     <button id="btnSino" class="icone sino" type="button" aria-label="Ativar notificações" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="sino__corpo" d="M12 3.2a5.6 5.6 0 0 0-5.6 5.6v3.1c0 .9-.3 1.8-.9 2.5l-1 1.3c-.5.6-.1 1.5.7 1.5h13.6c.8 0 1.2-.9.7-1.5l-1-1.3c-.6-.7-.9-1.6-.9-2.5V8.8A5.6 5.6 0 0 0 12 3.2z"/><path class="sino__badalo" d="M9.6 19.6a2.5 2.5 0 0 0 4.8 0"/></svg></button>
   </header>
 
+  <!-- Barra de abas embaixo -->
   <nav class="abas" role="tablist">
-    <button type="button" role="tab" data-aba="nova" class="is-on"><i>✅</i>Confirmação</button>
-    <button type="button" role="tab" data-aba="cobranca"><i>💰</i>Cobrança</button>
-    <button type="button" role="tab" data-aba="lista"><i>📋</i>Contatos <span id="contaPend" class="bolha" hidden></span></button>
-    <button type="button" role="tab" data-aba="ajustes"><i>⚙️</i>Ajustes</button>
+    <button type="button" role="tab" data-aba="nova" class="is-on"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"/></svg>Confirmar</button>
+    <button type="button" role="tab" data-aba="cobranca"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="3"/><circle cx="12" cy="12" r="2.6"/></svg>Cobrar</button>
+    <button type="button" role="tab" data-aba="lista"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7h12M8 12h12M8 17h12"/><circle cx="4" cy="7" r=".9"/><circle cx="4" cy="12" r=".9"/><circle cx="4" cy="17" r=".9"/></svg>Contatos <span id="contaPend" class="bolha" hidden></span></button>
+    <button type="button" role="tab" data-aba="ajustes"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Ajustes</button>
   </nav>
 
   <main>
     <!-- ============ Confirmação da compra ============ -->
     <section id="aba-nova" class="aba" data-tipo="confirmacao">
-      <form class="card" autocomplete="off">
-        <label class="campo">
-          <span>Nome da cliente</span>
-          <div class="campo__linha">
-            <input data-campo="cliente" id="confirmacao-cliente" placeholder="Ex.: Maria da Silva">
-            <button type="button" class="mic" data-mic="confirmacao-cliente" aria-label="Falar o nome da cliente"><svg class="mic__ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg><svg class="mic__parar" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/></svg></button>
-          </div>
+      <form class="card folha" autocomplete="off">
+        <label class="campo campo--ic">
+          <span class="campo__ic"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5"/></svg></span>
+          <span class="campo__corpo"><span class="campo__rot">Cliente</span><input data-campo="cliente" id="confirmacao-cliente" placeholder="Ex.: Maria da Silva"></span><button type="button" class="mic" data-mic="confirmacao-cliente" aria-label="Falar o nome da cliente"><svg class="mic__ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg><svg class="mic__parar" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/></svg></button>
         </label>
-        <label class="campo">
-          <span>Nome do vendedor</span>
-          <select data-campo="vendedor"></select>
+        <label class="campo campo--ic">
+          <span class="campo__ic"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7l8.3 8.3-8.7 8.7-8.3-8.3z"/><circle cx="8" cy="8" r="1.4"/></svg></span>
+          <span class="campo__corpo"><span class="campo__rot">Vendedor</span><select data-campo="vendedor"></select></span>
         </label>
-        <label class="campo">
-          <span>Data da nota</span>
-          <input data-campo="data" type="date">
+        <label class="campo campo--ic">
+          <span class="campo__ic"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span>
+          <span class="campo__corpo"><span class="campo__rot">Data da nota</span><input data-campo="data" type="date"></span>
         </label>
-        <label class="campo">
-          <span>Telefone</span>
-          <div class="campo__linha">
-            <input data-campo="fone" id="confirmacao-fone" type="tel" inputmode="tel" placeholder="(11) 99999-9999">
-            <button type="button" class="mic" data-mic="confirmacao-fone" aria-label="Falar o número do telefone"><svg class="mic__ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg><svg class="mic__parar" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/></svg></button>
-          </div>
+        <label class="campo campo--ic">
+          <span class="campo__ic"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 3.5h2.6l1.4 4-2 1.3a11 11 0 0 0 6.6 6.6l1.3-2 4 1.4v2.6a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2z"/></svg></span>
+          <span class="campo__corpo"><span class="campo__rot">Telefone</span><input data-campo="fone" id="confirmacao-fone" type="tel" inputmode="tel" placeholder="(11) 99999-9999"></span><button type="button" class="mic" data-mic="confirmacao-fone" aria-label="Falar o número do telefone"><svg class="mic__ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg><svg class="mic__parar" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/></svg></button>
         </label>
         <p class="ouvindo" hidden>🎙️ Ouvindo… pode falar</p>
       </form>
 
-      <div class="card">
+      <div class="card msg">
         <div class="card__cab">
-          <h2>Mensagem</h2>
+          <h2>Prévia da mensagem</h2>
           <button type="button" class="link" data-limpar>Limpar</button>
         </div>
         <div class="previa"></div>
-        <div class="acoes">
-          <button type="button" class="btn btn--whats" data-enviar="whats">Enviar no WhatsApp</button>
-          <button type="button" class="btn btn--sec" data-enviar="copiar">Copiar</button>
-          <button type="button" class="btn btn--sec" data-enviar="compartilhar">Compartilhar</button>
+      </div>
+      <div class="envio">
+        <button type="button" class="btn btn--whats" data-enviar="whats"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l16-8-6 16-2.5-6.5L4 12z"/></svg>Enviar no WhatsApp</button>
+        <div class="envio__sec">
+          <button type="button" class="btn btn--sec" data-enviar="copiar"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>Copiar</button>
+          <button type="button" class="btn btn--sec" data-enviar="compartilhar"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1"/></svg>Compartilhar</button>
         </div>
         <p class="dica">Ao enviar, a cliente entra em <b>Contatos</b> como “Aguardando” e o app te lembra de cobrar a resposta.</p>
       </div>
@@ -118,48 +116,42 @@
 
     <!-- ============ Cobrança ============ -->
     <section id="aba-cobranca" class="aba" hidden data-tipo="cobranca">
-      <form class="card" autocomplete="off">
-        <label class="campo">
-          <span>Nome da cliente</span>
-          <div class="campo__linha">
-            <input data-campo="cliente" id="cobranca-cliente" placeholder="Ex.: Maria da Silva">
-            <button type="button" class="mic" data-mic="cobranca-cliente" aria-label="Falar o nome da cliente"><svg class="mic__ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg><svg class="mic__parar" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/></svg></button>
-          </div>
+      <form class="card folha" autocomplete="off">
+        <label class="campo campo--ic">
+          <span class="campo__ic"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5"/></svg></span>
+          <span class="campo__corpo"><span class="campo__rot">Cliente</span><input data-campo="cliente" id="cobranca-cliente" placeholder="Ex.: Maria da Silva"></span><button type="button" class="mic" data-mic="cobranca-cliente" aria-label="Falar o nome da cliente"><svg class="mic__ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg><svg class="mic__parar" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/></svg></button>
         </label>
-        <label class="campo">
-          <span>Nome do vendedor</span>
-          <select data-campo="vendedor"></select>
+        <label class="campo campo--ic">
+          <span class="campo__ic"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7l8.3 8.3-8.7 8.7-8.3-8.3z"/><circle cx="8" cy="8" r="1.4"/></svg></span>
+          <span class="campo__corpo"><span class="campo__rot">Vendedor</span><select data-campo="vendedor"></select></span>
         </label>
-        <div class="dupla">
-          <label class="campo">
-            <span>Valor da nota</span>
-            <input data-campo="valor" data-mascara="dinheiro" inputmode="numeric" placeholder="0,00" autocomplete="off">
-          </label>
-          <label class="campo">
-            <span>Venceu no dia</span>
-            <input data-campo="vencimento" type="date">
-          </label>
-        </div>
-        <label class="campo">
-          <span>Telefone</span>
-          <div class="campo__linha">
-            <input data-campo="fone" id="cobranca-fone" type="tel" inputmode="tel" placeholder="(11) 99999-9999">
-            <button type="button" class="mic" data-mic="cobranca-fone" aria-label="Falar o número do telefone"><svg class="mic__ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg><svg class="mic__parar" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/></svg></button>
-          </div>
+        <label class="campo campo--ic">
+          <span class="campo__ic"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="3"/><circle cx="12" cy="12" r="2.6"/></svg></span>
+          <span class="campo__corpo"><span class="campo__rot">Valor da nota</span><input data-campo="valor" data-mascara="dinheiro" inputmode="numeric" placeholder="0,00" autocomplete="off"></span>
+        </label>
+        <label class="campo campo--ic">
+          <span class="campo__ic"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span>
+          <span class="campo__corpo"><span class="campo__rot">Venceu no dia</span><input data-campo="vencimento" type="date"></span>
+        </label>
+        <label class="campo campo--ic">
+          <span class="campo__ic"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 3.5h2.6l1.4 4-2 1.3a11 11 0 0 0 6.6 6.6l1.3-2 4 1.4v2.6a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2z"/></svg></span>
+          <span class="campo__corpo"><span class="campo__rot">Telefone</span><input data-campo="fone" id="cobranca-fone" type="tel" inputmode="tel" placeholder="(11) 99999-9999"></span><button type="button" class="mic" data-mic="cobranca-fone" aria-label="Falar o número do telefone"><svg class="mic__ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg><svg class="mic__parar" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/></svg></button>
         </label>
         <p class="ouvindo" hidden>🎙️ Ouvindo… pode falar</p>
       </form>
 
-      <div class="card">
+      <div class="card msg">
         <div class="card__cab">
-          <h2>Mensagem</h2>
+          <h2>Prévia da mensagem</h2>
           <button type="button" class="link" data-limpar>Limpar</button>
         </div>
         <div class="previa"></div>
-        <div class="acoes">
-          <button type="button" class="btn btn--whats" data-enviar="whats">Enviar no WhatsApp</button>
-          <button type="button" class="btn btn--sec" data-enviar="copiar">Copiar</button>
-          <button type="button" class="btn btn--sec" data-enviar="compartilhar">Compartilhar</button>
+      </div>
+      <div class="envio">
+        <button type="button" class="btn btn--whats" data-enviar="whats"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l16-8-6 16-2.5-6.5L4 12z"/></svg>Enviar no WhatsApp</button>
+        <div class="envio__sec">
+          <button type="button" class="btn btn--sec" data-enviar="copiar"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>Copiar</button>
+          <button type="button" class="btn btn--sec" data-enviar="compartilhar"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1"/></svg>Compartilhar</button>
         </div>
         <p class="dica">Ao enviar, a cobrança entra em <b>Contatos</b> como “Em aberto” até você marcar que a cliente pagou.</p>
       </div>
@@ -167,14 +159,19 @@
 
     <!-- ============ Contatos (gestão) ============ -->
     <section id="aba-lista" class="aba" hidden>
+      <div class="stats">
+        <div><span class="stats__ic st-pend"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span><b id="stPend">0</b><small>Aguardando</small></div>
+        <div><span class="stats__ic st-aberto"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="3"/><circle cx="12" cy="12" r="2.6"/></svg></span><b id="stAberto">R$ 0</b><small>Em aberto</small></div>
+        <div><span class="stats__ic st-ok"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"/></svg></span><b id="stOk">0</b><small>Resolvidas</small></div>
+      </div>
       <div class="card card--fino">
-        <input id="busca" type="search" placeholder="Buscar cliente ou vendedor">
-        <div class="filtros" role="group" data-grupo="tipo">
+        <label class="busca"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg><input id="busca" type="search" placeholder="Buscar cliente ou vendedor"></label>
+        <div class="filtros filtros--abas" role="group" data-grupo="tipo">
           <button type="button" data-filtro="todos" class="is-on">Todos</button>
           <button type="button" data-filtro="confirmacao">Confirmações</button>
           <button type="button" data-filtro="cobranca">Cobranças</button>
         </div>
-        <div class="filtros" role="group" data-grupo="status">
+        <div class="filtros filtros--pilulas" role="group" data-grupo="status">
           <button type="button" data-filtro="aguardando" class="is-on">Pendentes</button>
           <button type="button" data-filtro="confirmada">Resolvidas</button>
           <button type="button" data-filtro="todas">Todas</button>
@@ -280,6 +277,6 @@
 
   <div id="toast" class="toast" role="status" hidden></div>
 
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>
