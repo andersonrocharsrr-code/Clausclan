@@ -45,6 +45,11 @@ details[open]>summary{margin-bottom:10px}
 input,textarea,select{width:100%;font:inherit;color:inherit;background:var(--input-bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 textarea{resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px}
 input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+/* Data: o campo todo abre o calendário e não fica a marca azul no dia/mês/ano. */
+input[type="date"]{cursor:pointer}
+input[type="date"]::-webkit-datetime-edit-day-field:focus,
+input[type="date"]::-webkit-datetime-edit-month-field:focus,
+input[type="date"]::-webkit-datetime-edit-year-field:focus{background:transparent;color:inherit}
 .linha-campo{display:block;font-size:13px;color:var(--muted);font-weight:600;margin-top:12px}
 .linha-campo input,.linha-campo textarea{margin-top:4px;font-weight:400;color:var(--ink)}
 .check{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px}

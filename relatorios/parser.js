@@ -325,11 +325,22 @@
     if (!v(c.recebimento) && !v(c.notas25) && !v(c.notas4050)) falta.push('recebimento');
     if (!v(c.valorDeixado)) falta.push('valor deixado');
     if (falta.length) av.push(`Sem ${falta.join(', ')}.`);
+    av.push(...contasCaixa(c));
+    if (c.duvidas) av.push(`A leitura ficou em dúvida: ${c.duvidas}`);
+    return av;
+  }
+
+  // As contas que a própria folha tem de fechar. Lista vazia = tudo bate.
+  function contasCaixa(c) {
+    const av = [];
     const partes = v(c.notas25) + v(c.notas4050) + v(c.antecipados) + v(c.pepinoParcial) + v(c.pepinoExtra);
     // Folha feita à mão muitas vezes deixa as notas 25% em branco: só confere quando elas foram preenchidas.
     if (v(c.recebimento) && v(c.notas25) && !centavos(partes, c.recebimento))
       av.push(`Recebimento (${brl(c.recebimento)}) ≠ notas 25% + 40/50% + antecipados + parcial + pepino extra (${brl(partes)}).`);
-    if (c.duvidas) av.push(`A leitura ficou em dúvida: ${c.duvidas}`);
+    const blocos = (c.extrasValores || []).filter((x) => v(x));
+    const somaBlocos = blocos.reduce((s, x) => s + v(x), 0);
+    if (blocos.length && v(c.pepinoExtra) && !centavos(somaBlocos, c.pepinoExtra))
+      av.push(`Pepino extra (${brl(c.pepinoExtra)}) ≠ soma dos blocos VENDEDORA (${blocos.map(brl).join(' + ')} = ${brl(somaBlocos)}).`);
     return av;
   }
 
@@ -381,7 +392,7 @@
   }
 
   const api = { lerRelatorio, separar, conferir, consolidar, textoEquipe, textoSemana, lerEquipe, numero, dataISO, brl, dois, MESES,
-    CAIXA_NUM, caixaVazio, lerCaixaTexto, separarCaixas, recebidoCaixa, conferirCaixa, fechamento, textoFechamento, pct };
+    CAIXA_NUM, caixaVazio, lerCaixaTexto, separarCaixas, recebidoCaixa, conferirCaixa, contasCaixa, fechamento, textoFechamento, pct };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else raiz.Relat = api;
 })(typeof window !== 'undefined' ? window : globalThis);
