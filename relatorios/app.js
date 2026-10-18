@@ -386,14 +386,31 @@
   const caixasDaSemana = () => db.caixas.filter((c) => c.data && segundaDe(c.data) === semanaCx)
     .sort((a, b) => norm(a.nome).localeCompare(norm(b.nome)));
 
-  // Guarda um caixa: o mesmo vendedor na mesma semana troca o anterior.
+  // Guarda um caixa: o mesmo vendedor na mesma semana troca o anterior (os outros vendedores ficam).
+  // A tela continua na semana aberta; só vai para a semana do caixa se a aberta estiver vazia.
+  // Caixa de outra semana fica guardado lá e entra no aviso "foi para outra semana".
+  let foraDaSemana = [];
   function guardarCaixa(c) {
     if (!c.data) c.data = dataPadraoCx();
     const i = db.caixas.findIndex((x) => x !== c && norm(x.nome) === norm(c.nome) && segundaDe(x.data) === segundaDe(c.data));
     if (i >= 0) db.caixas.splice(i, 1);
     if (!db.caixas.includes(c)) db.caixas.push(c);
     lembrarVendedor(c.nome);
-    semanaCx = segundaDe(c.data);
+    if (!caixasDaSemana().some((x) => x !== c)) semanaCx = segundaDe(c.data);
+    if (segundaDe(c.data) !== semanaCx) foraDaSemana.push(c);
+  }
+  // Aviso dos caixas que entraram em outra semana, com botão para ir até ela.
+  function avisarForaDaSemana() {
+    const el = $('#cxOutra');
+    foraDaSemana = foraDaSemana.filter((c) => db.caixas.includes(c) && segundaDe(c.data) !== semanaCx);
+    if (!foraDaSemana.length) { el.hidden = true; return; }
+    const semanas = [...new Set(foraDaSemana.map((c) => segundaDe(c.data)))].sort();
+    el.hidden = false;
+    el.innerHTML = `<b>Foi para outra semana (pela data da folha):</b><ul>${foraDaSemana.map((c) =>
+      `<li>${esc(c.nome || 'Sem nome')} · ${dataCurta(c.data)}</li>`).join('')}</ul>` +
+      `<p class="dica">Os caixas desta semana continuam aqui. Se a data da folha está errada, abra o caixa naquela semana e corrija a data.</p>` +
+      `<div class="botoes">${semanas.map((s) => `<button type="button" class="btn btn--sec btn--peq" data-ir="${s}">Ver semana de ${dataCurta(s)}</button>`).join('')}</div>`;
+    $$('[data-ir]', el).forEach((b) => b.addEventListener('click', () => { semanaCx = b.dataset.ir; desenharCaixas(); window.scrollTo(0, 0); }));
   }
 
   $('#cxAntes').addEventListener('click', () => { semanaCx = somaDias(semanaCx, -7); desenharCaixas(); });
@@ -428,6 +445,7 @@
     $('#cxCardFaltam').hidden = !faltam.length;
     $('#cxFaltam').textContent = faltam.join(', ');
 
+    avisarForaDaSemana();
     $('#cxQt').textContent = `(${lista.length})`;
     if (!lista.length) {
       $('#cxTabela').innerHTML = '<tbody><tr><td class="muted">Nenhum caixa nesta semana. Leia as fotos ou cole o resumo.</td></tr></tbody>';
