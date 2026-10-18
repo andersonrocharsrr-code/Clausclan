@@ -1,5 +1,5 @@
 /* Service worker: abre o app sem internet. */
-const CACHE = 'relatorios-v14';
+const CACHE = 'relatorios-v15';
 const FILES = ['./', 'index.html', 'style.css?v=7', 'parser.js?v=5', 'app.js?v=12', 'icon.svg', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
