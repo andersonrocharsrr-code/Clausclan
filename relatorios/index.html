@@ -196,7 +196,8 @@
             <option value="precisa">IA mais precisa (Claude Opus, uns 30 centavos por foto)</option>
           </select>
         </label>
-        <p class="dica">A chave (console.anthropic.com) fica salva só neste aparelho. Cada foto lida é cobrada na sua conta da Anthropic.</p>
+        <label class="check"><input type="checkbox" id="cfgConferir" checked> Se as contas da folha não fecharem, conferir de novo com a IA mais precisa (só nessa foto, uns 30 centavos)</label>
+        <p class="dica">A chave (console.anthropic.com) fica salva só neste aparelho. Cada foto lida é cobrada na sua conta da Anthropic. A foto vai inteira e em 4 zooms, para a IA ler cada número com certeza.</p>
       </div>
       <div class="card">
         <h2>Backup</h2>
@@ -254,7 +255,7 @@
 
   <div id="toast" class="toast" hidden></div>
 
-  <script src="parser.js?v=4"></script>
-  <script src="app.js?v=10"></script>
+  <script src="parser.js?v=5"></script>
+  <script src="app.js?v=11"></script>
 </body>
 </html>

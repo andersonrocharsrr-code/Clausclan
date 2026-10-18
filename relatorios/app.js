@@ -506,6 +506,9 @@
   const lsGet = (k, d) => { try { return localStorage.getItem(k) || d; } catch (e) { return d; } };
   const lsSet = (k, val) => { try { localStorage.setItem(k, val); } catch (e) { /* sem armazenamento */ } };
   // Padrão: IA econômica (Haiku, menos de 1 centavo por foto).
+  // Quando as contas da folha não fecham na IA econômica, confere com a mais precisa (só nessas fotos).
+  const KEY_CONFERIR = 'relatorios.conferirPrecisa';
+  const conferirPrecisa = () => lsGet(KEY_CONFERIR, 'sim') === 'sim';
   const modoIA = () => (MODOS[lsGet(KEY_MODO, 'economica')] ? lsGet(KEY_MODO, 'economica') : 'economica');
 
   let SDK = null;
@@ -521,12 +524,13 @@
   const inteiro = { type: 'integer' };
   const SCHEMA_CAIXA = {
     type: 'object', additionalProperties: false,
-    required: ['nome', 'cidade', 'data', 'semana', ...R.CAIXA_NUM, 'duvidas'],
+    required: ['nome', 'cidade', 'data', 'semana', ...R.CAIXA_NUM, 'extrasValores', 'duvidas'],
     properties: {
       nome: { type: 'string' }, cidade: { type: 'string' },
       data: { type: 'string', description: 'dd/mm/aaaa, ou vazio' }, semana: inteiro,
       foiCobrar: n, qtNotas: inteiro, antecipados: n, valorPepinos: n, pinos: inteiro, pepinoParcial: n,
       notas25: n, notas4050: n, pepinoExtra: n, recebimento: n, qtNotasDeixadas: inteiro, valorDeixado: n,
+      extrasValores: { type: 'array', items: n, description: 'VALOR de cada bloco VENDEDORA preenchido' },
       duvidas: { type: 'string' },
     },
   };
@@ -539,28 +543,54 @@ QT. DE NOTAS (qtNotas), ANTECIPADOS (antecipados), VALOR DOS PEPINOS (valorPepin
 PEPINO PARCIAL (pepinoParcial), NOTAS 25% (notas25), NOTAS 40% e 50% (notas4050), PEPINO EXTRA (pepinoExtra: o total ao lado
 do título; se não houver, a soma dos VALOR dos blocos "VENDEDORA"), RECEBIMENTO (recebimento), QT.NOTAS DEIXADAS
 (qtNotasDeixadas), VALOR DEIXADO (valorDeixado). Ignore depósitos e despesas.
+Em extrasValores, o VALOR de cada bloco "VENDEDORA" preenchido (Nº | CIDADE | VALOR), na ordem; nenhum = lista vazia.
 Campo em branco ou com "//" (dois traços), "-" ou riscado: é vazio, devolva 0 e NÃO coloque em "duvidas".
-Em "duvidas" diga, em poucas palavras, só o que ficou difícil de ler; se leu tudo bem, deixe vazio.`;
+A 1ª imagem é a folha inteira; as outras são ZOOMS (pedaços ampliados) da mesma folha: use os zooms para ler cada dígito com
+certeza e a folha inteira para saber de que campo é cada número.
+CONFIRA ANTES DE RESPONDER, a folha fecha assim:
+- RECEBIMENTO = NOTAS 25% + NOTAS 40% e 50% + ANTECIPADOS + PEPINO PARCIAL + PEPINO EXTRA
+- PEPINO EXTRA = soma dos VALOR dos blocos VENDEDORA
+- V. PEP. 5% = 5% do FOI COBRAR
+Se uma conta não bater, olhe de novo os dígitos nos zooms (na letra de mão confunde-se 1 e 7, 3 e 8, 4 e 9, 0 e 6, 5 e 6, 1 e 4)
+e escolha a leitura que faz a conta fechar, desde que ela combine com o que está escrito. Nunca invente número.
+Em "duvidas" diga, em poucas palavras, só o que ficou difícil de ler ou a conta que não fechou; se leu tudo bem, deixe vazio.`;
 
-  // Diminui a foto (celular tira fotos enormes) e devolve base64 JPEG.
-  async function prepararFoto(file) {
+  // A foto vai inteira e em 4 zooms (quadrantes com sobra nas bordas), cada um com até 1568 px no lado maior
+  // (o tamanho que a IA enxerga sem diminuir). Um pouco mais de contraste e cor deixa a tinta azul mais nítida.
+  const LADO_IA = 1568;
+  async function prepararFotos(file) {
     const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
-    const k = Math.min(1, 1800 / Math.max(bmp.width, bmp.height));
-    const cv = document.createElement('canvas');
-    cv.width = Math.round(bmp.width * k); cv.height = Math.round(bmp.height * k);
-    cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height);
-    return cv.toDataURL('image/jpeg', 0.85).split(',')[1];
+    const recorte = (sx, sy, sw, sh) => {
+      const k = Math.min(2.5, LADO_IA / Math.max(sw, sh));
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(sw * k); cv.height = Math.round(sh * k);
+      const g = cv.getContext('2d');
+      g.filter = 'contrast(1.25) saturate(1.3)';
+      g.imageSmoothingQuality = 'high';
+      g.drawImage(bmp, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
+      return cv.toDataURL('image/jpeg', 0.9).split(',')[1];
+    };
+    const W = bmp.width, H = bmp.height, sobra = 0.12;
+    const fotos = [{ rot: 'Folha inteira', data: recorte(0, 0, W, H) }];
+    const nomes = [['canto de cima à esquerda', 'canto de cima à direita'], ['canto de baixo à esquerda', 'canto de baixo à direita']];
+    for (let lin = 0; lin < 2; lin++) {
+      for (let col = 0; col < 2; col++) {
+        const x0 = Math.max(0, (col * 0.5 - sobra) * W), y0 = Math.max(0, (lin * 0.5 - sobra) * H);
+        const x1 = Math.min(W, ((col + 1) * 0.5 + sobra) * W), y1 = Math.min(H, ((lin + 1) * 0.5 + sobra) * H);
+        fotos.push({ rot: `Zoom: ${nomes[lin][col]} da foto`, data: recorte(x0, y0, x1 - x0, y1 - y0) });
+      }
+    }
+    return fotos;
   }
 
-  async function lerFotoIA(api, file) {
-    const modo = modoIA();
+  async function lerFotoIA(api, fotos, modo) {
     const pedido = {
       model: MODOS[modo].modelo,
       max_tokens: 16000,
       output_config: { effort: 'medium', format: { type: 'json_schema', schema: SCHEMA_CAIXA } },
       system: SISTEMA,
       messages: [{ role: 'user', content: [
-        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: await prepararFoto(file) } },
+        ...fotos.flatMap((f) => [{ type: 'text', text: f.rot + ':' }, { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: f.data } }]),
         { type: 'text', text: PEDIDO },
       ] }],
     };
@@ -577,6 +607,7 @@ Em "duvidas" diga, em poucas palavras, só o que ficou difícil de ler; se leu t
     c.data = R.dataISO(lido.data) || null;
     c.semana = lido.semana || null;
     c.fonte = 'foto';
+    c.extrasValores = Array.isArray(lido.extrasValores) ? lido.extrasValores.filter((x) => typeof x === 'number') : [];
     // Campo em branco ou com "//" não é dúvida: tira esses pedaços do aviso.
     c.duvidas = String(c.duvidas || '').split(/[;.]\s*/)
       .filter((p) => p.trim() && !/\/\/|em branco|vazio|traço|traco|riscad/i.test(p)).join('. ');
@@ -609,7 +640,14 @@ Em "duvidas" diga, em poucas palavras, só o que ficou difícil de ler; se leu t
         status.hidden = false;
         status.textContent = files.length > 1 ? `A IA está lendo a foto ${i + 1} de ${files.length}…` : 'A IA está lendo a foto…';
         try {
-          const c = await lerFotoIA(api, files[i]);
+          const fotos = await prepararFotos(files[i]);
+          let c = await lerFotoIA(api, fotos, modoIA());
+          // Conta da folha não fechou na IA econômica: lê de novo com a IA mais precisa e fica com a leitura que fecha.
+          if (R.contasCaixa(c).length && modoIA() === 'economica' && conferirPrecisa()) {
+            status.textContent = `As contas não fecharam: conferindo a foto ${files.length > 1 ? i + 1 + ' ' : ''}com a IA mais precisa…`;
+            const c2 = await lerFotoIA(api, fotos, 'precisa');
+            if (!R.contasCaixa(c2).length || R.contasCaixa(c2).length <= R.contasCaixa(c).length) c = c2;
+          }
           if (!c.nome) c.nome = `Sem nome ${i + 1}`;
           guardarCaixa(c); ok++;
           salvar(); desenharCaixas();
@@ -683,7 +721,9 @@ Em "duvidas" diga, em poucas palavras, só o que ficou difícil de ler; se leu t
   $('#dlgCxSalvar').addEventListener('click', () => {
     const c = formCx(cxAberto);
     if (!c.nome) { toast('Coloque o nome do vendedor.'); return; }
+    // Salvo à mão = valores conferidos por quem salvou: limpa as dúvidas e os blocos lidos da foto.
     c.duvidas = '';
+    c.extrasValores = [];
     guardarCaixa(c);
     salvar(); dlgCx.close(); toast('Caixa salvo.');
     desenharCaixas();
@@ -699,6 +739,7 @@ Em "duvidas" diga, em poucas palavras, só o que ficou difícil de ler; se leu t
   function desenharAjustes() {
     $('#cfgApiKey').value = lsGet(KEY_API, '');
     $('#cfgModoIA').value = modoIA();
+    $('#cfgConferir').checked = conferirPrecisa();
     $('#cfgEquipe').value = db.cfg.equipe || '';
     $('#cfgProduto').value = db.cfg.produto || '';
     $('#cfgVendedores').value = db.cfg.vendedores.join('\n');
@@ -706,6 +747,7 @@ Em "duvidas" diga, em poucas palavras, só o que ficou difícil de ler; se leu t
   $('#cfgEquipe').addEventListener('input', (e) => { db.cfg.equipe = e.target.value.trim(); salvar(); topo(); });
   $('#cfgApiKey').addEventListener('change', (e) => { lsSet(KEY_API, e.target.value.trim()); toast(e.target.value.trim() ? 'Chave salva.' : 'Chave apagada.'); });
   $('#cfgModoIA').addEventListener('change', (e) => lsSet(KEY_MODO, e.target.value));
+  $('#cfgConferir').addEventListener('change', (e) => lsSet(KEY_CONFERIR, e.target.checked ? 'sim' : 'nao'));
   $('#cfgProduto').addEventListener('input', (e) => { db.cfg.produto = e.target.value.trim(); salvar(); });
   $('#cfgVendedores').addEventListener('change', (e) => {
     db.cfg.vendedores = e.target.value.split('\n').map((s) => s.trim()).filter(Boolean)
