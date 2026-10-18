@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Relatórios">
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
   <header class="top">
@@ -190,14 +190,7 @@
         <label class="linha-campo">Chave da API da Anthropic
           <input id="cfgApiKey" type="password" autocomplete="off" placeholder="sk-ant-…">
         </label>
-        <label class="linha-campo">Qual IA
-          <select id="cfgModoIA">
-            <option value="economica">IA econômica (Claude Haiku, menos de 1 centavo por foto)</option>
-            <option value="precisa">IA mais precisa (Claude Opus, uns 30 centavos por foto)</option>
-          </select>
-        </label>
-        <label class="check"><input type="checkbox" id="cfgConferir" checked> Se as contas da folha não fecharem, conferir de novo com a IA mais precisa (só nessa foto, uns 30 centavos)</label>
-        <p class="dica">A chave (console.anthropic.com) fica salva só neste aparelho. Cada foto lida é cobrada na sua conta da Anthropic. A foto vai inteira e em 4 zooms, para a IA ler cada número com certeza.</p>
+        <p class="dica">A leitura usa o Claude Haiku: menos de 1 centavo por foto, cobrado na sua conta da Anthropic. A chave (console.anthropic.com) fica salva só neste aparelho. A foto vai inteira e em 4 zooms; se as contas da folha não fecharem, a IA confere a foto de novo.</p>
       </div>
       <div class="card">
         <h2>Backup</h2>
@@ -256,6 +249,6 @@
   <div id="toast" class="toast" hidden></div>
 
   <script src="parser.js?v=5"></script>
-  <script src="app.js?v=11"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>

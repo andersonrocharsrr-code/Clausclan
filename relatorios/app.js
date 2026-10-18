@@ -498,18 +498,10 @@
 
   // ---------- Foto do caixa lida pela IA (Claude) ----------
   const KEY_API = 'relatorios.apiKey';
-  const KEY_MODO = 'relatorios.modoIA';
-  const MODOS = {
-    economica: { nome: 'IA econômica', modelo: 'claude-haiku-5-5' },
-    precisa: { nome: 'IA mais precisa', modelo: 'claude-opus-5-5' },
-  };
+  // A leitura usa só o Claude Haiku (menos de 1 centavo por foto).
+  const MODELO_IA = 'claude-haiku-5-5';
   const lsGet = (k, d) => { try { return localStorage.getItem(k) || d; } catch (e) { return d; } };
   const lsSet = (k, val) => { try { localStorage.setItem(k, val); } catch (e) { /* sem armazenamento */ } };
-  // Padrão: IA econômica (Haiku, menos de 1 centavo por foto).
-  // Quando as contas da folha não fecham na IA econômica, confere com a mais precisa (só nessas fotos).
-  const KEY_CONFERIR = 'relatorios.conferirPrecisa';
-  const conferirPrecisa = () => lsGet(KEY_CONFERIR, 'sim') === 'sim';
-  const modoIA = () => (MODOS[lsGet(KEY_MODO, 'economica')] ? lsGet(KEY_MODO, 'economica') : 'economica');
 
   let SDK = null;
   async function clienteIA() {
@@ -583,21 +575,19 @@ Em "duvidas" diga, em poucas palavras, só o que ficou difícil de ler ou a cont
     return fotos;
   }
 
-  async function lerFotoIA(api, fotos, modo) {
+  // esforco: 'medium' na 1ª leitura; 'high' quando relê porque as contas não fecharam (o Haiku pensa mais).
+  async function lerFotoIA(api, fotos, esforco) {
     const pedido = {
-      model: MODOS[modo].modelo,
+      model: MODELO_IA,
       max_tokens: 16000,
-      output_config: { effort: 'medium', format: { type: 'json_schema', schema: SCHEMA_CAIXA } },
+      output_config: { effort: esforco, format: { type: 'json_schema', schema: SCHEMA_CAIXA } },
       system: SISTEMA,
       messages: [{ role: 'user', content: [
         ...fotos.flatMap((f) => [{ type: 'text', text: f.rot + ':' }, { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: f.data } }]),
         { type: 'text', text: PEDIDO },
       ] }],
     };
-    // Na IA mais precisa, se ela recusar por engano, a própria Anthropic refaz com outro modelo.
-    const resp = modo === 'precisa'
-      ? await api.beta.messages.create({ ...pedido, betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' })
-      : await api.messages.create(pedido);
+    const resp = await api.messages.create(pedido);
     if (resp.stop_reason === 'refusal') throw new Error('A IA não quis ler esta foto. Tente outra foto.');
     if (resp.stop_reason === 'max_tokens') throw new Error('A leitura ficou grande demais. Tente de novo.');
     const txt = (resp.content.find((b) => b.type === 'text') || {}).text;
@@ -641,12 +631,12 @@ Em "duvidas" diga, em poucas palavras, só o que ficou difícil de ler ou a cont
         status.textContent = files.length > 1 ? `A IA está lendo a foto ${i + 1} de ${files.length}…` : 'A IA está lendo a foto…';
         try {
           const fotos = await prepararFotos(files[i]);
-          let c = await lerFotoIA(api, fotos, modoIA());
-          // Conta da folha não fechou na IA econômica: lê de novo com a IA mais precisa e fica com a leitura que fecha.
-          if (R.contasCaixa(c).length && modoIA() === 'economica' && conferirPrecisa()) {
-            status.textContent = `As contas não fecharam: conferindo a foto ${files.length > 1 ? i + 1 + ' ' : ''}com a IA mais precisa…`;
-            const c2 = await lerFotoIA(api, fotos, 'precisa');
-            if (!R.contasCaixa(c2).length || R.contasCaixa(c2).length <= R.contasCaixa(c).length) c = c2;
+          let c = await lerFotoIA(api, fotos, 'medium');
+          // Conta da folha não fechou: o Haiku lê de novo com mais atenção e fica a leitura que fecha.
+          if (R.contasCaixa(c).length) {
+            status.textContent = `As contas não fecharam: conferindo a foto ${files.length > 1 ? i + 1 + ' ' : ''}de novo…`;
+            const c2 = await lerFotoIA(api, fotos, 'high');
+            if (R.contasCaixa(c2).length <= R.contasCaixa(c).length) c = c2;
           }
           if (!c.nome) c.nome = `Sem nome ${i + 1}`;
           guardarCaixa(c); ok++;
@@ -738,16 +728,12 @@ Em "duvidas" diga, em poucas palavras, só o que ficou difícil de ler ou a cont
   // ---------- Ajustes ----------
   function desenharAjustes() {
     $('#cfgApiKey').value = lsGet(KEY_API, '');
-    $('#cfgModoIA').value = modoIA();
-    $('#cfgConferir').checked = conferirPrecisa();
     $('#cfgEquipe').value = db.cfg.equipe || '';
     $('#cfgProduto').value = db.cfg.produto || '';
     $('#cfgVendedores').value = db.cfg.vendedores.join('\n');
   }
   $('#cfgEquipe').addEventListener('input', (e) => { db.cfg.equipe = e.target.value.trim(); salvar(); topo(); });
   $('#cfgApiKey').addEventListener('change', (e) => { lsSet(KEY_API, e.target.value.trim()); toast(e.target.value.trim() ? 'Chave salva.' : 'Chave apagada.'); });
-  $('#cfgModoIA').addEventListener('change', (e) => lsSet(KEY_MODO, e.target.value));
-  $('#cfgConferir').addEventListener('change', (e) => lsSet(KEY_CONFERIR, e.target.checked ? 'sim' : 'nao'));
   $('#cfgProduto').addEventListener('input', (e) => { db.cfg.produto = e.target.value.trim(); salvar(); });
   $('#cfgVendedores').addEventListener('change', (e) => {
     db.cfg.vendedores = e.target.value.split('\n').map((s) => s.trim()).filter(Boolean)
@@ -812,6 +798,14 @@ Em "duvidas" diga, em poucas palavras, só o que ficou difícil de ler ou a cont
   const marcarRolagem = () => document.documentElement.classList.toggle('rolou', window.scrollY > 8);
   window.addEventListener('scroll', marcarRolagem, { passive: true });
   marcarRolagem();
+
+  // Data: tocar em qualquer ponto do campo abre o calendário (em vez de marcar só o dia, o mês ou o ano).
+  document.addEventListener('click', (e) => {
+    const el = e.target;
+    if (!el.matches || !el.matches('input[type="date"]') || typeof el.showPicker !== 'function') return;
+    e.preventDefault();
+    try { el.showPicker(); } catch (err) { /* sem calendário: fica a digitação normal */ }
+  });
 
   // Botão voltar do Android: fecha a janela aberta, depois volta para Colar, depois minimiza.
   const App = plugin('App');
