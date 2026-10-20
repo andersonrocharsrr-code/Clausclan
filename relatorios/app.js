@@ -112,9 +112,36 @@
     $('#btnSalvarLidos').addEventListener('click', salvarLidos);
   }
 
-  function salvarLidos() {
+  // Relatório com data diferente de hoje (vendedor esqueceu de trocar a data?): pergunta em qual dia lançar.
+  const dlgData = $('#dlgData');
+  function perguntarDia(r) {
+    const hoje = hojeISO();
+    const jaTem = db.reports.some((x) => mesmo(x, r));
+    $('#dlgDataTexto').innerHTML = `O relatório de <b>${esc(r.nome)}</b> está com a data <b>${dataCurta(r.data)}</b>, mas hoje é <b>${dataCurta(hoje)}</b>.` +
+      (jaTem ? `<br>Já tem um relatório de ${esc(r.nome)} no dia ${dataCurta(r.data)}: lançar nele troca o que está lá.` : '') +
+      '<br><br>Em qual dia lançar?';
+    $('#dlgDataHoje').textContent = `Lançar no dia ${dataCurta(hoje)} (hoje)`;
+    $('#dlgDataManter').textContent = `Lançar no dia ${dataCurta(r.data)}`;
+    dlgData.returnValue = '';
+    dlgData.showModal();
+    return new Promise((ok) => dlgData.addEventListener('close', () => ok(dlgData.returnValue), { once: true }));
+  }
+  // Troca a data também no texto do relatório (assim ele continua certo se for corrigido e salvo de novo).
+  function mudarData(r, iso) {
+    const [a, m, d] = iso.split('-');
+    r.data = iso;
+    r.raw = String(r.raw || '').replace(/(data\s*:?\s*)\d{1,2}\s*[/.-]\s*\d{1,2}(\s*[/.-]\s*\d{2,4})?/i, `$1${d}/${m}/${a}`);
+  }
+
+  async function salvarLidos() {
     const semNome = lidos.filter((r) => !r.nome).length;
     if (semNome) { toast('Tem relatório sem nome. Corrija o texto ou tire.'); return; }
+    for (const r of lidos) {
+      if (!r.data || r.data === hojeISO()) continue;
+      const escolha = await perguntarDia(r);
+      if (!escolha) { toast('Nada foi salvo. Confira a data e salve de novo.'); return; }
+      if (escolha === 'hoje') mudarData(r, hojeISO());
+    }
     lidos.forEach((r) => {
       const i = db.reports.findIndex((x) => mesmo(x, r));
       if (i >= 0) db.reports[i] = r; else db.reports.push(r);
@@ -820,6 +847,7 @@ Em "duvidas" diga, em poucas palavras, só o que ficou difícil de ler ou a cont
     } catch (e) { /* sem informação da versão */ }
   })();
   if (App) App.addListener('backButton', () => {
+    if (dlgData.open) { dlgData.close(); return; }
     if (dlg.open) { dlg.close(); return; }
     if (dlgCx.open) { dlgCx.close(); return; }
     if ($('#aba-colar').hidden) abrirAba('colar'); else App.minimizeApp();
