@@ -394,3 +394,54 @@ O APK é gerado pelo GitHub Actions (`.github/workflows/relatorios-apk.yml`) a c
 `relatorios-android/`. No `main`, com o segredo `NEXA_SIGNING_SEED`, ele fica no link fixo:
 https://github.com/andersonrocharsrr-code/Clausclan/releases/download/relatorios/relatorios.apk
 Sem o segredo (ou fora do `main`) sai um APK de teste em "Artifacts" na execução.
+
+---
+
+# Imersa — livros com imagens e sons (`livros/`)
+
+App web instalável (PWA, sem build) para **escrever livros imersivos**: no meio do texto você coloca imagens,
+ambientes sonoros, músicas e efeitos. Na leitura, a ilustração vira o cenário atrás do texto e os sons tocam
+conforme o leitor avança.
+
+Abra `livros/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server` na raiz e acesse
+`http://localhost:8000/livros/`). No celular, use "Adicionar à tela inicial" para instalar.
+Já vem com um livro de exemplo, **A Floresta dos Sussurros**, para ver tudo funcionando.
+
+## O que faz
+- **Estante**: livros com capa (6 ilustrações prontas ou uma foto sua), título, autor, gênero e
+  "continuar escrevendo".
+- **Editor** em folha de papel: capítulos (criar, renomear, reordenar, excluir), negrito, itálico, subtítulo e citação,
+  contagem de palavras e salvamento automático.
+- Digite **/** no texto (ou use a barra) para inserir:
+  - **Som no momento**: efeito que toca uma vez quando o leitor chega naquela frase (trovão, passos, porta, coruja,
+    lobo, sino, magia…), com volume e direção (esquerda, centro, direita).
+  - **Ambiente da cena**: até 4 sons em loop juntos (chuva, tempestade, mar, floresta à noite, fogueira, caverna…),
+    cada um com seu volume. Também dá para marcar **silêncio**.
+  - **Música**: 5 trilhas (calma, aurora, melancolia, mistério, tensão) que entram suaves, ou "parar música".
+  - **Imagem**: foto do aparelho, uma imagem já usada ou uma ilustração pronta, com legenda, **zoom lento** e
+    **fundo da leitura**.
+  - **Mudança de cena**: os sons param e a próxima cena começa em silêncio.
+- **Leitura imersiva**: a imagem da cena fica atrás do texto, ambiente e música trocam com suavidade e os efeitos
+  tocam no momento certo. Tem barra de progresso com os pontos de som e imagem, tamanho da letra, volume e pausa.
+- **Biblioteca de sons**: 31 sons prontos, **gravação pelo microfone** e envio de arquivos de áudio seus.
+- **Exportar** um livro (`.imersa.json`, com imagens e sons) para mandar a alguém, **abrir** livros recebidos e
+  **backup** de tudo.
+
+## Observações
+- Os sons prontos são gerados no próprio app (Web Audio), sem arquivos de áudio, então funcionam offline.
+- Os livros, imagens e gravações ficam salvos **somente neste navegador/aparelho** (IndexedDB). Faça backup de vez em quando.
+- O navegador só libera o som depois de um toque, por isso a leitura começa com o botão **Ler com som**.
+- Ícone: desenhado em `livros/ferramentas/icone.js`. `node livros/ferramentas/gerar-icones.js` gera os PNGs do site e de
+  `livros-android/assets`; depois rode `npx capacitor-assets generate --android` em `livros-android/`. Conceito visual: `livros/conceito/`.
+
+## App Android (`livros-android/`)
+O mesmo app empacotado com **Capacitor**. O workflow `Gerar APK do Imersa` monta o APK a cada push que mexe em
+`livros/` ou `livros-android/`. No `main`, com o segredo `NEXA_SIGNING_SEED`, ele publica o APK assinado na Release
+**imersa**, com link fixo: `https://github.com/andersonrocharsrr-code/Clausclan/releases/download/imersa/imersa.apk`.
+Sem o segredo, sai só um APK de teste em "Artifacts".
+- Funciona sem internet: o app, os sons e as fontes vão dentro do APK.
+- Pede o **microfone** só na hora de gravar um som.
+- Backup e "Exportar livro" abrem o **compartilhar do Android** (Drive, WhatsApp, Arquivos…).
+- O **botão voltar** fecha a janela aberta, depois volta uma tela e, na estante, minimiza o app.
+- Para gerar localmente: `cd livros-android && npm ci && npm run www && npx cap sync android` e abra `android/`
+  no Android Studio.

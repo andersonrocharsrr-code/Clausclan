@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Imersa — conceito de telas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0a12; --panel:#15121d; --panel2:#1c1827; --panel3:#241f31;
+  --line:rgba(255,255,255,.07); --line2:rgba(255,255,255,.12);
+  --text:#efe9f7; --muted:#9d95b0; --dim:#6d6680;
+  --amber:#f2b563; --amber2:#e8944a; --teal:#5fd3c1; --rose:#ec8fae; --violet:#a58bff; --sky:#7cb7ff;
+  --paper:#f7efe0; --paper2:#efe3cd; --ink:#2b2231; --ink2:#6b5d64;
+  --serif:'Cormorant Garamond',Georgia,serif; --display:'Fraunces',Georgia,serif; --ui:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#05040a;font-family:var(--ui);color:var(--text);-webkit-font-smoothing:antialiased}
+.screen{width:1600px;height:1000px;position:relative;overflow:hidden;margin:0 0 40px}
+.backdrop{background:
+  radial-gradient(900px 600px at 15% 0%,rgba(165,139,255,.22),transparent 60%),
+  radial-gradient(800px 600px at 100% 100%,rgba(242,181,99,.16),transparent 60%),
+  linear-gradient(160deg,#1a1426,#0a0810 60%)}
+.win{position:absolute;inset:24px;border-radius:18px;overflow:hidden;background:var(--bg);
+  box-shadow:0 40px 80px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.08) inset;display:flex;flex-direction:column}
+svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.row{display:flex;align-items:center}
+.muted{color:var(--muted)}
+
+/* ---------- barra superior ---------- */
+.top{height:60px;flex:none;display:flex;align-items:center;gap:18px;padding:0 18px;border-bottom:1px solid var(--line);background:linear-gradient(#17131f,#131019)}
+.dots{display:flex;gap:8px;margin-right:6px}.dots i{width:12px;height:12px;border-radius:50%;background:#ff5f57}.dots i:nth-child(2){background:#febc2e}.dots i:nth-child(3){background:#28c840}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:600;font-size:21px;letter-spacing:.2px}
+.logo .mk{width:30px;height:30px}
+.crumb{white-space:nowrap;font-size:13.5px;color:var(--muted);display:flex;gap:8px;align-items:center}.crumb b{color:var(--text);font-weight:500}
+.tools{display:flex;gap:4px;padding:5px;border-radius:12px;background:var(--panel2);border:1px solid var(--line)}
+.tools span{height:32px;min-width:34px;padding:0 9px;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:7px;color:#cfc7de;font-size:13px}
+.tools span.on{background:var(--panel3);color:#fff}
+.tools .sep{min-width:1px;width:1px;padding:0;background:var(--line2);margin:6px 3px;height:20px}
+.tools .snd{color:var(--teal)}.tools .img{color:var(--amber)}
+.btn{white-space:nowrap;height:36px;padding:0 15px;border-radius:10px;display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;border:1px solid var(--line2);color:var(--text);background:var(--panel2)}
+.btn.pri{background:linear-gradient(135deg,var(--amber),var(--amber2));color:#2a1606;border:0;box-shadow:0 8px 24px rgba(242,181,99,.25)}
+.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#a58bff,#ec8fae);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#1a1024}
+.saved{white-space:nowrap;font-size:12.5px;color:var(--muted);display:flex;gap:6px;align-items:center}.saved i{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px var(--teal)}
+.grow{flex:1}
+
+/* ---------- barra lateral ---------- */
+.side{background:var(--panel);border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:6px;overflow:hidden}
+.bookcard{display:flex;gap:12px;padding:6px 6px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.bookcard .cv{width:62px;height:88px;border-radius:5px;overflow:hidden;flex:none;box-shadow:0 8px 18px rgba(0,0,0,.5);position:relative}
+.bookcard h3{font-family:var(--display);font-weight:600;font-size:16px;line-height:1.2;margin-bottom:6px}
+.prog{height:5px;border-radius:9px;background:var(--panel3);overflow:hidden;margin:8px 0 5px}.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--amber),var(--rose));border-radius:9px}
+.lbl{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--dim);font-weight:600;padding:8px 8px 4px}
+.ch{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;font-size:13.5px;color:#cfc7de}
+.ch .n{font-family:var(--display);color:var(--dim);width:18px;font-size:13px}
+.ch .meta{margin-left:auto;display:flex;gap:7px;font-size:11.5px;color:var(--dim)}
+.ch .meta span{display:flex;gap:3px;align-items:center}.ch .meta svg{width:12px;height:12px}
+.ch.on{background:linear-gradient(90deg,rgba(242,181,99,.16),rgba(242,181,99,.04));color:#fff;box-shadow:inset 2px 0 0 var(--amber)}
+.ch.on .n{color:var(--amber)}
+.navi{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;font-size:13.5px;color:#cfc7de}
+.navi .c{margin-left:auto;font-size:11.5px;color:var(--dim)}
+
+/* ---------- papel / manuscrito ---------- */
+.desk{position:relative;overflow:hidden;background:
+  radial-gradient(700px 400px at 50% 0%,rgba(242,181,99,.06),transparent 70%),#100d16}
+.deskbar{display:flex;justify-content:space-between;align-items:center;width:720px;margin:20px auto 14px;font-size:12.5px;color:var(--muted)}
+.seg{display:flex;padding:3px;border-radius:10px;background:var(--panel2);border:1px solid var(--line)}
+.seg span{padding:6px 13px;border-radius:7px;font-size:12.5px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.seg span.on{background:var(--panel3);color:#fff}
+.paper{width:720px;margin:0 auto;background:linear-gradient(180deg,var(--paper),#f3e9d6);color:var(--ink);border-radius:6px 6px 0 0;
+  padding:34px 66px 40px;box-shadow:0 30px 60px rgba(0,0,0,.5),0 0 0 1px rgba(0,0,0,.2);position:relative;min-height:900px}
+.paper p{font-family:var(--serif);font-size:20.5px;line-height:1.55;margin:0 0 14px;text-align:justify;hyphens:auto;color:#2e2532}
+.chapno{font-family:var(--ui);font-size:11px;letter-spacing:3.5px;color:#a28b74;text-align:center;font-weight:600;margin-top:14px}
+.chaptitle{font-family:var(--serif);font-style:italic;font-weight:500;font-size:44px;text-align:center;line-height:1.1;margin:6px 0 18px;color:#2a1f2c}
+.orn{text-align:center;color:#c09a6b;font-size:18px;margin-bottom:16px;letter-spacing:8px}
+.drop::first-letter{font-family:var(--display);float:left;font-size:66px;line-height:.86;padding:6px 10px 0 0;color:#9b5a3c;font-weight:600}
+.cue{display:inline-flex;align-items:center;gap:5px;font-family:var(--ui);font-size:12px;font-weight:600;color:#17796c;background:rgba(95,211,193,.18);border:1px solid rgba(23,121,108,.25);padding:2px 8px 2px 6px;border-radius:20px;vertical-align:3px;margin:0 2px}
+.cue svg{width:13px;height:13px}
+.cue.fx{color:#8a4f12;background:rgba(242,181,99,.22);border-color:rgba(138,79,18,.22)}
+.amb{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:12px;background:linear-gradient(90deg,rgba(95,211,193,.16),rgba(95,211,193,.05));border:1px dashed rgba(23,121,108,.35)}
+.amb .ic{width:38px;height:38px;border-radius:10px;background:#17796c;color:#eafff9;display:flex;align-items:center;justify-content:center}
+.amb small{display:block;font-size:10.5px;letter-spacing:1.4px;text-transform:uppercase;color:#4c8b80;font-weight:600}
+.amb b{font-size:14px;color:#1f3b37;font-weight:600}
+.amb .wf{flex:1;height:30px}
+.amb .tag{font-size:11.5px;color:#4c8b80;display:flex;gap:5px;align-items:center}
+.fig{position:relative;margin:18px -20px 6px;border-radius:6px;outline:2px solid var(--amber2);outline-offset:4px}
+.fig .art{height:200px;border-radius:6px;overflow:hidden;box-shadow:0 14px 30px rgba(43,34,49,.35)}
+.fig .h{position:absolute;width:10px;height:10px;background:#fff;border:2px solid var(--amber2);border-radius:3px}
+.figbar{position:absolute;top:12px;right:12px;display:flex;gap:3px;padding:4px;background:rgba(18,14,24,.86);backdrop-filter:blur(6px);border-radius:10px;border:1px solid rgba(255,255,255,.1)}
+.figbar span{display:flex;gap:6px;align-items:center;font-size:12px;color:#e8e2f2;padding:6px 9px;border-radius:7px;font-family:var(--ui)}
+.figbar span.on{background:rgba(242,181,99,.2);color:var(--amber)}
+.figbar svg{width:14px;height:14px}
+.cap{font-family:var(--serif);font-style:italic;text-align:center;font-size:15.5px;color:#8a7a74;margin:12px 0 16px}
+.caret{display:inline-block;width:2px;height:22px;background:#9b5a3c;vertical-align:-4px;margin-left:1px;box-shadow:0 0 6px rgba(155,90,60,.5)}
+.slash{position:absolute;width:300px;background:#1a1623;border-radius:14px;border:1px solid rgba(255,255,255,.1);box-shadow:0 30px 60px rgba(0,0,0,.5);padding:8px;color:var(--text);font-family:var(--ui)}
+.slash .hd{font-size:11px;letter-spacing:1.3px;text-transform:uppercase;color:var(--dim);padding:6px 8px 8px;font-weight:600}
+.slash .it{display:flex;gap:11px;align-items:center;padding:8px;border-radius:9px}
+.slash .it.on{background:var(--panel3)}
+.slash .it .b{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.slash .it b{font-size:13.5px;font-weight:600;display:block}.slash .it small{font-size:11.5px;color:var(--muted)}
+.slash kbd{margin-left:auto;font-family:var(--ui);font-size:11px;color:var(--dim);border:1px solid var(--line2);border-radius:5px;padding:1px 6px}
+
+/* ---------- painel de som ---------- */
+.rp{background:var(--panel);border-left:1px solid var(--line);padding:18px 16px;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+.rp h4{font-family:var(--display);font-weight:600;font-size:16px;display:flex;align-items:center;gap:8px}
+.rp h4 .x{margin-left:auto;font-family:var(--ui);font-size:12px;color:var(--muted);font-weight:500}
+.layer{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:11px 12px}
+.layer .t{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600}
+.layer .t .ic{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.layer .t small{display:block;font-size:11px;color:var(--muted);font-weight:500;margin-top:1px}
+.layer .t .m{margin-left:auto;color:var(--muted)}
+.layer .wf{height:26px;margin:9px 0 6px}
+.vol{display:flex;align-items:center;gap:9px;font-size:11px;color:var(--muted)}
+.vol .bar{flex:1;height:4px;border-radius:9px;background:var(--panel3);position:relative}
+.vol .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:9px}
+.vol .bar b{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:#fff;transform:translate(-50%,-50%);box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.mom{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line);font-size:13px}
+.mom .p{font-family:var(--display);font-size:12px;color:var(--dim);width:26px}
+.mom .d{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center}
+.mom small{margin-left:auto;font-size:11.5px;color:var(--dim)}
+.thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.thumbs > div{height:62px;border-radius:8px;overflow:hidden;position:relative}
+.thumbs .add{border:1px dashed var(--line2);display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.player{margin-top:auto;display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:linear-gradient(135deg,rgba(95,211,193,.16),rgba(165,139,255,.14));border:1px solid rgba(95,211,193,.25)}
+.player .pb{width:42px;height:42px;border-radius:50%;background:var(--teal);color:#06231f;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 6px rgba(95,211,193,.15)}
+.player .pb svg{fill:currentColor;stroke:none;width:16px;height:16px;margin-left:2px}
+.player b{font-size:13.5px;display:block}.player small{font-size:11.5px;color:var(--muted)}
+
+/* ---------- leitura imersiva ---------- */
+.reader{position:absolute;inset:0}
+.reader .bgart{position:absolute;inset:0}
+.reader .shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(5,8,12,0) 30%,rgba(5,8,12,.55) 52%,rgba(5,8,12,.92) 70%),linear-gradient(0deg,rgba(5,8,12,.85),transparent 25%),linear-gradient(180deg,rgba(5,8,12,.6),transparent 16%)}
+.rtop{position:absolute;top:0;left:0;right:0;height:78px;display:flex;align-items:center;padding:0 34px;gap:16px}
+.ghost{width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.08);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;color:#e9eef2}
+.ghost.on{background:rgba(95,211,193,.2);color:var(--teal);border-color:rgba(95,211,193,.4)}
+.rtitle{font-size:13px;color:rgba(233,238,242,.7);letter-spacing:.3px}.rtitle b{display:block;color:#fff;font-family:var(--display);font-weight:600;font-size:17px;letter-spacing:0;margin-bottom:2px}
+.rtext{position:absolute;top:118px;right:110px;width:560px}
+.rtext .chapno{color:rgba(242,181,99,.85);text-align:left}
+.rtext h2{font-family:var(--serif);font-style:italic;font-weight:500;font-size:54px;line-height:1.05;margin:10px 0 22px;color:#fff}
+.rtext p{font-family:var(--serif);font-size:23px;line-height:1.6;color:rgba(234,238,240,.42);margin-bottom:18px}
+.rtext p.now{color:#f4f1ea}
+.rtext p .hl{color:#fff;background:linear-gradient(transparent 62%,rgba(242,181,99,.35) 62%);}
+.rtext p .read{color:rgba(244,241,234,.95)}
+.burst{position:absolute;display:flex;align-items:center;gap:10px;padding:9px 15px 9px 10px;border-radius:30px;background:rgba(15,20,26,.7);backdrop-filter:blur(12px);border:1px solid rgba(242,181,99,.45);color:#fff;font-size:13px;font-weight:600;box-shadow:0 0 0 8px rgba(242,181,99,.07),0 0 40px rgba(242,181,99,.25)}
+.burst .d{width:28px;height:28px;border-radius:50%;background:var(--amber);color:#2a1606;display:flex;align-items:center;justify-content:center}
+.burst small{display:block;font-weight:500;color:rgba(255,255,255,.6);font-size:11px}
+.rbottom{position:absolute;left:34px;right:34px;bottom:28px;display:flex;align-items:flex-end;gap:22px}
+.now-pl{display:flex;align-items:center;gap:14px;padding:12px 18px 12px 12px;border-radius:18px;background:rgba(12,16,22,.6);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.12);width:420px}
+.eq{display:flex;align-items:flex-end;gap:3px;height:22px}.eq i{width:4px;border-radius:2px;background:var(--teal)}
+.now-pl b{font-size:14px;display:block}.now-pl small{font-size:12px;color:rgba(233,238,242,.6)}
+.chips{display:flex;gap:6px;margin-top:7px}.chips span{font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.08);color:#dfe7ea;display:flex;gap:5px;align-items:center}
+.chips svg{width:12px;height:12px}
+.track{flex:1;padding-bottom:6px}
+.track .ln{position:relative;height:4px;border-radius:9px;background:rgba(255,255,255,.14)}
+.track .ln i{position:absolute;left:0;top:0;bottom:0;width:41%;border-radius:9px;background:linear-gradient(90deg,var(--amber),#fff)}
+.track .mk{position:absolute;top:-12px;width:8px;height:8px;border-radius:50%;transform:translateX(-50%)}
+.track .knob{position:absolute;top:50%;left:41%;width:14px;height:14px;border-radius:50%;background:#fff;transform:translate(-50%,-50%);box-shadow:0 0 0 5px rgba(255,255,255,.15)}
+.track .lg{display:flex;justify-content:space-between;font-size:12px;color:rgba(233,238,242,.6);margin-top:12px}
+.track .lg span{display:flex;gap:6px;align-items:center}.track .lg i{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+/* ---------- estúdio de trilha ---------- */
+.studio{display:grid;grid-template-columns:1fr 360px;flex:1;min-height:0}
+.tl{display:flex;flex-direction:column;min-width:0;background:#100d16}
+.tlhead{display:flex;align-items:center;gap:14px;padding:16px 22px;border-bottom:1px solid var(--line)}
+.tlhead h2{font-family:var(--display);font-weight:600;font-size:20px}
+.tlhead h2 small{display:block;font-family:var(--ui);font-weight:500;font-size:12.5px;color:var(--muted);margin-top:3px}
+.transport{display:flex;align-items:center;gap:8px;margin-left:auto}
+.transport .pb{width:40px;height:40px;border-radius:50%;background:var(--teal);color:#06231f;display:flex;align-items:center;justify-content:center}
+.transport .pb svg{fill:currentColor;stroke:none;width:15px;height:15px;margin-left:2px}
+.time{font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted);padding:0 10px}.time b{color:#fff;font-weight:600}
+.grid{position:relative;flex:1;display:grid;grid-template-columns:200px 1fr;min-height:0}
+.ruler{height:116px;border-bottom:1px solid var(--line);position:relative;background:var(--panel)}
+.para{position:absolute;top:12px;bottom:10px;padding:0 10px;border-left:1px solid var(--line)}
+.para b{font-family:var(--display);font-size:12px;color:var(--amber);font-weight:600}
+.para p{font-family:var(--serif);font-size:14.5px;line-height:1.3;color:#cfc7de;margin-top:5px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.para.cur{background:rgba(242,181,99,.06)}
+.para p mark{background:rgba(242,181,99,.28);color:#fff;border-radius:3px;padding:0 2px}
+.th{border-right:1px solid var(--line);background:var(--panel)}
+.th .rh{height:116px;border-bottom:1px solid var(--line);padding:16px;font-size:11px;letter-spacing:1.3px;text-transform:uppercase;color:var(--dim);font-weight:600;display:flex;align-items:flex-end}
+.th .tr{height:104px;border-bottom:1px solid var(--line);padding:14px 14px;display:flex;flex-direction:column;gap:9px}
+.th .tr b{font-size:13.5px;display:flex;gap:8px;align-items:center}
+.th .tr .ms{display:flex;gap:5px}.th .tr .ms span{font-size:10.5px;font-weight:700;width:22px;height:20px;border-radius:5px;background:var(--panel3);color:var(--muted);display:flex;align-items:center;justify-content:center}
+.th .tr .ms span.s{background:rgba(242,181,99,.2);color:var(--amber)}
+.lane{position:relative;height:104px;border-bottom:1px solid var(--line)}
+.clip{position:absolute;top:14px;height:76px;border-radius:10px;overflow:hidden;padding:7px 10px;font-size:12px;font-weight:600}
+.clip small{display:block;font-weight:500;font-size:10.5px;opacity:.75;margin-top:1px}
+.clip svg.w{position:absolute;left:0;right:0;bottom:4px;width:100%;height:36px}
+.clip.sel{box-shadow:0 0 0 2px #fff,0 10px 30px rgba(0,0,0,.5)}
+.clip .fade{position:absolute;top:0;bottom:0;width:60px}
+.imgclip{position:absolute;top:12px;height:80px;border-radius:10px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.12)}
+.imgclip span{position:absolute;left:8px;bottom:6px;font-size:11px;font-weight:600;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.8)}
+.playhead{position:absolute;top:0;bottom:0;width:2px;background:var(--amber);box-shadow:0 0 12px var(--amber);z-index:5}
+.playhead:before{content:"";position:absolute;top:-1px;left:-7px;border:8px solid transparent;border-top:10px solid var(--amber)}
+.inspector{border-top:1px solid var(--line);background:var(--panel);padding:16px 22px;display:flex;gap:26px;align-items:center}
+.inspector .f{display:flex;flex-direction:column;gap:6px}
+.inspector .f label{font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--dim);font-weight:600}
+.inspector .f > div{font-size:13.5px;padding:8px 12px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);display:flex;gap:8px;align-items:center}
+.lib{background:var(--panel);border-left:1px solid var(--line);padding:18px 16px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.search{display:flex;align-items:center;gap:9px;height:40px;padding:0 12px;border-radius:11px;background:var(--panel2);border:1px solid var(--line2);font-size:13.5px}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tags span{font-size:12px;padding:5px 11px;border-radius:20px;background:var(--panel2);border:1px solid var(--line);color:#cfc7de}
+.tags span.on{background:rgba(95,211,193,.16);color:var(--teal);border-color:rgba(95,211,193,.35)}
+.sitem{display:flex;align-items:center;gap:11px;padding:9px;border-radius:12px;background:var(--panel2);border:1px solid var(--line)}
+.sitem .pp{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none}
+.sitem .pp svg{fill:currentColor;stroke:none;width:12px;height:12px;margin-left:2px}
+.sitem b{font-size:13px;display:block;white-space:nowrap}.sitem small{font-size:11px;color:var(--muted)}
+.sitem .wf{width:84px;height:24px;margin-left:auto;flex:none}
+.sitem.playing{border-color:rgba(95,211,193,.4);background:linear-gradient(90deg,rgba(95,211,193,.12),var(--panel2))}
+.rec{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:auto}
+.rec div{display:flex;gap:9px;align-items:center;justify-content:center;height:44px;border-radius:12px;font-size:13px;font-weight:600}
+
+/* ---------- celular ---------- */
+.phones{position:absolute;inset:0;display:flex;justify-content:center;align-items:center;gap:70px;padding-top:30px}
+.phone{width:360px;height:760px;border-radius:52px;background:#0b0a10;padding:11px;box-shadow:0 0 0 2px #2c2838,0 0 0 9px #14121b,0 50px 90px rgba(0,0,0,.6);position:relative}
+.phone .scr{width:100%;height:100%;border-radius:42px;overflow:hidden;position:relative;background:var(--bg)}
+.phone .isl{position:absolute;top:21px;left:50%;transform:translateX(-50%);width:104px;height:30px;border-radius:20px;background:#000;z-index:20}
+.sb{height:52px;display:flex;align-items:center;justify-content:space-between;padding:6px 30px 0;font-size:14px;font-weight:600;position:relative;z-index:10}
+.ptag{position:absolute;bottom:-62px;left:0;right:0;text-align:center;font-family:var(--display);font-weight:600;font-size:19px}
+.ptag small{display:block;font-family:var(--ui);font-weight:500;font-size:13px;color:var(--muted);margin-top:4px}
+.tabbar{position:absolute;left:0;right:0;bottom:0;height:84px;padding:12px 26px 0;display:flex;justify-content:space-between;background:linear-gradient(transparent,rgba(12,10,18,.95) 30%);border-top:1px solid var(--line)}
+.tabbar span{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:10.5px;color:var(--dim)}
+.tabbar span.on{color:var(--amber)}
+.tabbar .fab{width:52px;height:52px;border-radius:17px;background:linear-gradient(135deg,var(--amber),var(--amber2));color:#2a1606;display:flex;align-items:center;justify-content:center;margin-top:-22px;box-shadow:0 10px 24px rgba(242,181,99,.35)}
+.cover{position:relative;border-radius:6px 10px 10px 6px;overflow:hidden;box-shadow:0 14px 26px rgba(0,0,0,.55)}
+.cover:after{content:"";position:absolute;left:0;top:0;bottom:0;width:8px;background:linear-gradient(90deg,rgba(0,0,0,.35),rgba(255,255,255,.12),transparent)}
+.cover .ct{position:absolute;left:10px;right:8px;bottom:10px;font-family:var(--serif);font-weight:600;color:#fff;line-height:1.05;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+.cover .ct small{display:block;font-family:var(--ui);font-weight:500;font-size:8.5px;letter-spacing:1.2px;text-transform:uppercase;opacity:.8;margin-top:4px}
+.cover .badges{position:absolute;top:7px;right:7px;display:flex;gap:4px}
+.cover .badges span{width:20px;height:20px;border-radius:6px;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;color:#fff}
+.cover .badges svg{width:11px;height:11px}
+.sheet{position:absolute;left:0;right:0;bottom:0;border-radius:28px 28px 0 0;background:#1a1623;border-top:1px solid var(--line2);padding:10px 18px 30px;box-shadow:0 -30px 60px rgba(0,0,0,.6)}
+.grab{width:40px;height:5px;border-radius:5px;background:var(--line2);margin:0 auto 14px}
+.stabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;border-radius:12px;background:var(--panel2);margin-bottom:14px}
+.stabs span{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;padding:8px 0;border-radius:9px;color:var(--muted)}
+.stabs span.on{background:var(--panel3);color:var(--teal)}
+.sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sgrid div{border-radius:14px;padding:10px 8px;background:var(--panel2);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11.5px;text-align:center}
+.sgrid div .e{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center}
+.sgrid div.on{border-color:rgba(95,211,193,.5);background:rgba(95,211,193,.1)}
+</style>
+</head>
+<body>
+<div id="out"></div>
+<script>
+/* ---------- utilitários ---------- */
+const rng=s=>()=>((s=Math.imul(s^(s>>>15),2246822507)+0x6D2B79F5|0)>>>0)/4294967296;
+const IC={
+ play:'<polygon points="7 4 20 12 7 20 7 4"/>',pause:'<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
+ image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
+ music:'<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+ vol:'<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/>',
+ wind:'<path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',search:'<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+ mic:'<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/>',
+ upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/>',
+ book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
+ down:'<path d="m6 9 6 6 6-6"/>',left:'<path d="m15 18-6-6 6-6"/>',right:'<path d="m9 18 6-6-6-6"/>',
+ eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+ loop:'<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
+ spark:'<path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z"/><path d="M19 17l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/>',
+ users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>',
+ map:'<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
+ note:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/>',
+ bookmark:'<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>',
+ type:'<path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>',
+ more:'<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>',
+ layers:'<path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/>',
+ head:'<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>',
+ rain:'<path d="M20 16.6A5 5 0 0 0 18 7h-1.3A8 8 0 1 0 4 15.3"/><path d="M8 19v2M8 13v2M16 19v2M16 13v2M12 21v2M12 15v2"/>',
+ flame:'<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3.3A2.5 2.5 0 0 0 8.5 14.5z"/>',
+ moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+ home:'<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+ pen:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+ sliders:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+ max:'<path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/>',
+ quote:'<path d="M3 21c3 0 7-1 7-8V5H3v7h4c0 3-1 5-4 5zM14 21c3 0 7-1 7-8V5h-7v7h4c0 3-1 5-4 5z"/>',
+ waves:'<path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>',
+ zap:'<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
+ steps:'<path d="M4 16v-2.4C4 11.5 3 10.5 3 8c0-2.7 1.5-6 4.5-6C9.4 2 10 3.8 10 5.5c0 3.1-2 5.7-2 8.7V16a2 2 0 1 1-4 0zM20 20v-2.4c0-2.1 1-3.1 1-5.6 0-2.7-1.5-6-4.5-6C14.6 6 14 7.8 14 9.5c0 3.1 2 5.7 2 8.7V20a2 2 0 1 0 4 0z"/>',
+ door:'<path d="M18 20V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14"/><path d="M2 20h20"/><path d="M14 12v.01"/>',
+ film:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 9h20M7 4v5M12 4v5M17 4v5"/>',
+ hour:'<path d="M5 22h14M5 2h14M17 22v-4.2a2 2 0 0 0-.6-1.4L12 12l-4.4 4.4a2 2 0 0 0-.6 1.4V22M7 2v4.2a2 2 0 0 0 .6 1.4L12 12l4.4-4.4a2 2 0 0 0 .6-1.4V2"/>',
+ bird:'<path d="M16 7h.01"/><path d="M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.3-2.3L2 20"/><path d="m20 7 2 .5-2 .5"/><path d="M10 18v3M14 17.8V21M7 18a6 6 0 0 0 3.8-10.6"/>',
+ branch:'<path d="M4 20 20 4"/><path d="m9 15-3-6M14 10l5 1"/>',
+ heart:'<path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7z"/>',
+ cloud:'<path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4.5 4.5 0 1 1 0 9z"/>',
+ check:'<path d="M20 6 9 17l-5-5"/>',
+ wand:'<path d="m15 4-1 1M19 8l-1 1M18 3v2M21 6h-2M3 21l11-11"/><path d="m12.5 7.5 4 4"/>',
+ bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/>',
+};
+const I=(n,s='')=>`<svg class="i" viewBox="0 0 24 24" ${s?`style="${s}"`:''}>${IC[n]}</svg>`;
+
+// forma de onda (barras espelhadas)
+function wave(seed,n,color,opt={}){const r=rng(seed);let b='';const W=n*4;
+ for(let k=0;k<n;k++){const env=opt.env?opt.env(k/n):1;const h=Math.max(.06,(.25+.75*Math.abs(Math.sin(k*.33+seed)) *r())*env);
+  b+=`<rect x="${k*4}" y="${(1-h)*20}" width="2.2" height="${h*40}" rx="1.1" fill="${typeof color==='function'?color(k/n):color}"/>`;}
+ return `<svg class="${opt.cls||'wf'}" viewBox="0 0 ${W} 40" preserveAspectRatio="none">${b}</svg>`;}
+
+/* ---------- ilustrações (SVG gerado) ---------- */
+function pine(x,y,h,c){const w=h*.42;let d='';for(let k=0;k<4;k++){const t=y-h+k*h*.2, bt=t+h*.36, ww=w*(.32+k*.24);d+=`M${x},${t} L${x+ww/2},${bt} L${x-ww/2},${bt}Z`;}
+ return `<path d="${d}M${x-h*.025},${y-h*.25}h${h*.05}V${y}h-${h*.05}Z" fill="${c}"/>`;}
+function ridge(r,y,amp,step,c,W=1200,H=700){let d=`M0,${H} L0,${y}`;let v=y;for(let x=0;x<=W;x+=step){v=y-amp*(.4+.6*r())*Math.abs(Math.sin(x*.004+r()));d+=` L${x},${v.toFixed(1)}`;}return `<path d="${d} L${W},${H}Z" fill="${c}"/>`;}
+
+function forest(id,o={}){const r=rng(11);let s='';
+ for(let k=0;k<160;k++){const y=r()*380;s+=`<circle cx="${r()*1200}" cy="${y}" r="${(r()*1.4+.3).toFixed(2)}" fill="#fff" opacity="${(r()*.8+.2)*(1-y/450)}"/>`;}
+ let trees3='',trees2='',trees1='';
+ for(let x=-20;x<1240;x+=26+r()*22)trees3+=pine(x,500+r()*20,90+r()*70,'#1c2550');
+ for(let x=-30;x<1240;x+=40+r()*40){if(x>420&&x<800&&r()<.8)continue;trees2+=pine(x,610+r()*20,150+r()*110,'#111735');}
+ [[-10,760,520],[90,760,430],[180,760,330],[1040,760,470],[1150,760,560],[960,760,300]].forEach(([x,y,h])=>trees1+=pine(x,y,h,'#070a18'));
+ let ff='';for(let k=0;k<30;k++)ff+=`<circle cx="${300+r()*650}" cy="${430+r()*230}" r="${(1.5+r()*2.5).toFixed(1)}" fill="#ffd98a" filter="url(#${id}g)" opacity="${.5+r()*.5}"/>`;
+ return `<svg viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;display:block">
+ <defs>
+  <linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#070d24"/><stop offset=".45" stop-color="#1a2752"/><stop offset=".75" stop-color="#46467a"/><stop offset="1" stop-color="#8b6e90"/></linearGradient>
+  <radialGradient id="${id}m"><stop offset="0" stop-color="#fff6d8" stop-opacity=".75"/><stop offset=".25" stop-color="#cdd6ff" stop-opacity=".25"/><stop offset="1" stop-color="#cdd6ff" stop-opacity="0"/></radialGradient>
+  <radialGradient id="${id}l"><stop offset="0" stop-color="#ffc56b" stop-opacity=".9"/><stop offset="1" stop-color="#ff9b3d" stop-opacity="0"/></radialGradient>
+  <linearGradient id="${id}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8ecff" stop-opacity=".22"/><stop offset="1" stop-color="#e8ecff" stop-opacity="0"/></linearGradient>
+  <radialGradient id="${id}c" cx=".5" cy=".3"><stop offset="0" stop-color="#5b6aa6"/><stop offset="1" stop-color="#151b3a"/></radialGradient>
+  <filter id="${id}f" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>
+  <filter id="${id}g" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="2.5"/></filter>
+ </defs>
+ <rect width="1200" height="700" fill="url(#${id}s)"/>${s}
+ <circle cx="830" cy="150" r="260" fill="url(#${id}m)"/>
+ <circle cx="830" cy="150" r="54" fill="#f6efd6"/><circle cx="812" cy="138" r="11" fill="#e3d8b6" opacity=".6"/><circle cx="846" cy="168" r="7" fill="#e3d8b6" opacity=".5"/><circle cx="851" cy="131" r="5" fill="#e3d8b6" opacity=".45"/>
+ ${ridge(rng(3),420,90,30,'#2f3566')}${ridge(rng(5),470,60,24,'#252a55')}
+ <ellipse cx="600" cy="480" rx="700" ry="40" fill="#b8bfe6" opacity=".25" filter="url(#${id}f)"/>
+ ${trees3}
+ <path d="M300,700 L560,600 Q620,585 680,600 L960,700Z" fill="url(#${id}c)"/>
+ <polygon points="780,180 880,180 760,700 470,700" fill="url(#${id}b)"/>
+ ${trees2}
+ <ellipse cx="600" cy="600" rx="520" ry="34" fill="#c7cdf2" opacity=".22" filter="url(#${id}f)"/>
+ <circle cx="612" cy="598" r="70" fill="url(#${id}l)"/>
+ <g fill="#06081a"><circle cx="600" cy="560" r="9"/><path d="M600,566 C588,568 584,590 580,624 L620,624 C616,590 612,568 600,566Z"/><path d="M608,582 l6,14" stroke="#06081a" stroke-width="4"/></g>
+ <circle cx="614" cy="600" r="5" fill="#ffe0a0"/>
+ ${trees1}${ff}
+ </svg>`;}
+
+function lighthouse(id){const r=rng(7);let rain='',clouds='',waves='';
+ for(let k=0;k<26;k++)clouds+=`<ellipse cx="${r()*1300-50}" cy="${r()*260}" rx="${120+r()*200}" ry="${30+r()*50}" fill="${r()<.5?'#0b161d':'#3e5864'}" opacity="${.35+r()*.4}" filter="url(#${id}f)"/>`;
+ for(let k=0;k<9;k++){const y=440+k*30+k*k*2;let d=`M-20,${y}`;for(let x=0;x<=1240;x+=40)d+=` Q${x+20},${y-8-r()*10} ${x+40},${y}`;waves+=`<path d="${d}" fill="none" stroke="#a9dbe2" stroke-opacity="${.08+k*.025}" stroke-width="${1+k*.35}"/>`;}
+ for(let k=0;k<260;k++){const x=r()*1260,y=r()*700,l=14+r()*22;rain+=`<line x1="${x}" y1="${y}" x2="${x-l*.35}" y2="${y+l}" stroke="#cfe3ea" stroke-opacity="${.12+r()*.25}" stroke-width="1"/>`;}
+ return `<svg viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;display:block">
+ <defs>
+  <linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#08131a"/><stop offset=".5" stop-color="#1c3540"/><stop offset="1" stop-color="#3f6068"/></linearGradient>
+  <linearGradient id="${id}w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1d3d46"/><stop offset="1" stop-color="#050d11"/></linearGradient>
+  <linearGradient id="${id}b" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#ffefc2" stop-opacity=".75"/><stop offset="1" stop-color="#ffefc2" stop-opacity="0"/></linearGradient>
+  <radialGradient id="${id}l"><stop offset="0" stop-color="#fff3cc"/><stop offset=".3" stop-color="#ffd27a" stop-opacity=".6"/><stop offset="1" stop-color="#ffb347" stop-opacity="0"/></radialGradient>
+  <linearGradient id="${id}t" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e9e1cf"/><stop offset="1" stop-color="#9c9483"/></linearGradient>
+  <filter id="${id}f" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  <filter id="${id}g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+ </defs>
+ <rect width="1200" height="700" fill="url(#${id}s)"/>${clouds}
+ <polyline points="250,40 225,120 262,128 214,250 240,256 205,350" fill="none" stroke="#e8f6ff" stroke-width="7" opacity=".35" filter="url(#${id}g)"/>
+ <polyline points="250,40 225,120 262,128 214,250 240,256 205,350" fill="none" stroke="#f4fbff" stroke-width="2"/>
+ <rect y="430" width="1200" height="270" fill="url(#${id}w)"/>${waves}
+ <polygon points="760,150 0,40 0,330" fill="url(#${id}b)" opacity=".8"/>
+ <polygon points="760,150 -40,180 -40,300" fill="url(#${id}b)" opacity=".35"/>
+ <path d="M700,700 L720,520 L760,470 L790,380 L830,345 L900,330 L990,338 L1060,320 L1200,300 L1200,700Z" fill="#060c10"/>
+ <path d="M720,520 L760,470 L790,380 L830,345 L870,340" fill="none" stroke="#21363e" stroke-width="3"/>
+ <ellipse cx="720" cy="560" rx="120" ry="34" fill="#e8f4f6" opacity=".35" filter="url(#${id}f)"/>
+ <ellipse cx="690" cy="600" rx="60" ry="14" fill="#fff" opacity=".35" filter="url(#${id}g)"/>
+ <g transform="translate(900,0)">
+  <path d="M-34,340 L-24,170 L24,170 L34,340Z" fill="url(#${id}t)"/>
+  <path d="M-31,290 L31,290 L32.5,315 L-32.5,315Z M-27.5,230 L27.5,230 L29,255 L-29,255Z M-25,180 L25,180 L25.5,195 L-25.5,195Z" fill="#8c3a37"/>
+  <rect x="-32" y="164" width="64" height="8" fill="#2a2a2a"/>
+  <rect x="-20" y="128" width="40" height="36" fill="#ffe7a8"/>
+  <path d="M-20,128 h40 M-7,128 v36 M7,128 v36" stroke="#2a2a2a" stroke-width="3"/>
+  <path d="M-26,128 L0,100 L26,128Z" fill="#2a2a2a"/><rect x="-1.5" y="88" width="3" height="14" fill="#2a2a2a"/>
+  <rect x="-6" y="250" width="12" height="20" rx="6" fill="#ffd27a" opacity=".85"/>
+ </g>
+ <circle cx="900" cy="148" r="120" fill="url(#${id}l)"/>
+ ${rain}
+ </svg>`;}
+
+function castle(id){const r=rng(19);let birds='',streaks='';
+ for(let k=0;k<7;k++){const x=260+r()*300,y=150+r()*120,s=6+r()*8;birds+=`<path d="M${x-s},${y-s*.4} Q${x-s*.4},${y-s*.5} ${x},${y} Q${x+s*.4},${y-s*.5} ${x+s},${y-s*.4}" fill="none" stroke="#3a2340" stroke-width="2.2" stroke-linecap="round"/>`;}
+ for(let k=0;k<8;k++)streaks+=`<ellipse cx="${r()*1200}" cy="${120+r()*260}" rx="${160+r()*260}" ry="${6+r()*10}" fill="${r()<.5?'#ffb3a1':'#f7d0b5'}" opacity="${.25+r()*.3}"/>`;
+ const tw=(x,w,h,top)=>`<rect x="${x}" y="${top}" width="${w}" height="${h}"/><path d="M${x-4},${top} L${x+w/2},${top-w*1.4} L${x+w+4},${top}Z"/>`;
+ return `<svg viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;display:block">
+ <defs>
+  <linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a2152"/><stop offset=".35" stop-color="#6e4579"/><stop offset=".62" stop-color="#d9806f"/><stop offset=".8" stop-color="#f6c48c"/></linearGradient>
+  <radialGradient id="${id}u"><stop offset="0" stop-color="#fff2c9"/><stop offset=".2" stop-color="#ffd590" stop-opacity=".8"/><stop offset="1" stop-color="#ff9f6e" stop-opacity="0"/></radialGradient>
+  <filter id="${id}f" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="18"/></filter>
+ </defs>
+ <rect width="1200" height="700" fill="url(#${id}s)"/>
+ <circle cx="420" cy="470" r="330" fill="url(#${id}u)"/><circle cx="420" cy="470" r="62" fill="#fff4d4"/>
+ ${streaks}
+ ${ridge(rng(23),440,110,28,'#8c5a86')}
+ <ellipse cx="500" cy="470" rx="600" ry="40" fill="#ffd2c0" opacity=".45" filter="url(#${id}f)"/>
+ ${ridge(rng(29),510,90,26,'#5c3d6e')}
+ ${ridge(rng(31),590,60,22,'#3a2a52')}
+ <path d="M600,700 C700,520 780,430 900,410 C1010,395 1100,430 1200,470 L1200,700Z" fill="#221838"/>
+ <g fill="#1a1230">${tw(830,34,90,330)}${tw(880,60,100,320)}${tw(950,28,150,260)}${tw(990,70,90,330)}${tw(1070,30,110,310)}
+  <rect x="860" y="360" width="230" height="70"/><path d="M860,360 h230 v-8 h-10 v-6 h-10 v6 h-10 v-6 h-10 v6 h-10 v-6 h-10 v6 h-10 v-6 h-10 v6 h-10 v-6 h-10 v6 h-10 v-6 h-10 v6 h-10 v-6 h-10 v6 h-10 v-6 h-10 v6 h-10 v-6 h-10 v6 h-10 v-6 h-10 v6 h-10 v-6 h-10 v6 h-10 v-6 h-10 v6 h-10v8z"/></g>
+ <g fill="#ffcf7a"><rect x="962" y="300" width="5" height="9" rx="2"/><rect x="905" y="345" width="5" height="8" rx="2"/><rect x="1015" y="355" width="5" height="8" rx="2"/><rect x="845" y="365" width="4" height="7" rx="2"/><rect x="1082" y="340" width="4" height="7" rx="2"/><rect x="925" y="390" width="5" height="8" rx="2"/></g>
+ <ellipse cx="380" cy="640" rx="560" ry="40" fill="#f2c2c8" opacity=".35" filter="url(#${id}f)"/>
+ ${birds}
+ </svg>`;}
+
+function seaCover(id){const r=rng(41);let p='';for(let k=0;k<40;k++)p+=`<circle cx="${r()*400}" cy="${r()*600}" r="${r()*3+1}" fill="#bff3ff" opacity="${r()*.5}"/>`;
+ return `<svg viewBox="0 0 400 600" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;display:block"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b7c92"/><stop offset=".5" stop-color="#0d3d5c"/><stop offset="1" stop-color="#061629"/></linearGradient><radialGradient id="${id}r" cx=".5" cy="0" r="1"><stop offset="0" stop-color="#d6fbff" stop-opacity=".5"/><stop offset=".6" stop-color="#d6fbff" stop-opacity="0"/></radialGradient></defs>
+ <rect width="400" height="600" fill="url(#${id})"/><rect width="400" height="600" fill="url(#${id}r)"/>${p}
+ <g fill="#05101e" opacity=".9"><path d="M120,330 c40,-30 110,-30 150,0 c-40,30 -110,30 -150,0z M270,330 l40,-25 v50z"/><circle cx="150" cy="326" r="4" fill="#bff3ff"/></g>
+ <path d="M0,600 C60,520 80,470 60,420 C110,470 120,540 140,600Z M400,600 C350,540 330,480 350,430 C300,480 290,550 280,600Z" fill="#04121c"/></svg>`;}
+function glassCover(id){const r=rng(53);let b='';for(let k=0;k<14;k++){const x=20+k*27,h=120+r()*260;b+=`<rect x="${x}" y="${600-h-90}" width="22" height="${h}" fill="#c7f0ff" opacity="${.1+r()*.3}" stroke="#e6faff" stroke-opacity=".5"/>`;}
+ return `<svg viewBox="0 0 400 600" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;display:block"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2d1e5c"/><stop offset=".55" stop-color="#7a3f8f"/><stop offset="1" stop-color="#ec8fae"/></linearGradient></defs>
+ <rect width="400" height="600" fill="url(#${id})"/><circle cx="300" cy="140" r="60" fill="#ffe5f0" opacity=".85"/>${b}<rect y="510" width="400" height="90" fill="#1d1238"/></svg>`;}
+function emberCover(id){const r=rng(61);let e='';for(let k=0;k<50;k++)e+=`<circle cx="${r()*400}" cy="${r()*600}" r="${r()*2.5+.5}" fill="#ffb35c" opacity="${r()}"/>`;
+ return `<svg viewBox="0 0 400 600" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;display:block"><defs><radialGradient id="${id}" cx=".5" cy=".75" r=".8"><stop offset="0" stop-color="#f08a3c"/><stop offset=".35" stop-color="#7a2b1f"/><stop offset="1" stop-color="#1a0b0d"/></radialGradient></defs>
+ <rect width="400" height="600" fill="url(#${id})"/>${e}<path d="M200,300 C240,360 250,400 230,450 C220,420 205,410 200,400 C195,420 175,430 170,450 C150,400 160,360 200,300Z" fill="#ffd27a" opacity=".9"/></svg>`;}
+
+/* ---------- logo ---------- */
+const LOGO=`<svg class="mk" viewBox="0 0 40 40"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2b563"/><stop offset="1" stop-color="#ec8fae"/></linearGradient></defs>
+<rect width="40" height="40" rx="11" fill="url(#lg)"/><path d="M11 12.5c3-1.4 6-1 9 1v15c-3-2-6-2.4-9-1z" fill="#2a1606"/><path d="M20 13.5c3-2 6-2.4 9-1v15c-3-1.4-6-1-9 1z" fill="#2a1606" opacity=".55"/><path d="M31.5 17c1.4 1.6 1.4 4.4 0 6M33.8 15c2.4 2.8 2.4 7.2 0 10" stroke="#2a1606" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>`;
+const topbar=(mid,right)=>`<div class="top"><div class="dots"><i></i><i></i><i></i></div><div class="logo">${LOGO}Imersa</div>${mid}<div class="grow"></div>${right}</div>`;
+
+/* =============== TELA 1 — ESTÚDIO DE ESCRITA =============== */
+const sideHTML=`<aside class="side">
+ <div class="bookcard"><div class="cv">${forest('cv1')}</div><div><h3>A Floresta dos Sussurros</h3><div class="muted" style="font-size:12px">Romance · Fantasia</div><div class="prog"><i style="width:62%"></i></div><div class="muted" style="font-size:11.5px">18.420 palavras · 62%</div></div></div>
+ <div class="lbl">Capítulos</div>
+ ${[['I','O chamado da névoa',4,9],['II','Rio de pedra',2,6],['III','Sob a lua de prata',3,7,1],['IV','O farol esquecido',2,11],['V','A cidade de vidro',1,3],['VI','Cartas ao mar',0,0]].map(([n,t,im,sd,on])=>
+  `<div class="ch ${on?'on':''}"><span class="n">${n}</span>${t}<span class="meta">${im?`<span>${I('image')}${im}</span>`:''}${sd?`<span>${I('vol')}${sd}</span>`:''}</span></div>`).join('')}
+ <div class="ch" style="color:var(--dim)"><span class="n">+</span>Novo capítulo</div>
+ <div class="lbl" style="margin-top:10px">Mundo do livro</div>
+ <div class="navi">${I('users')}Personagens<span class="c">8</span></div>
+ <div class="navi">${I('map')}Lugares<span class="c">5</span></div>
+ <div class="navi">${I('note')}Notas e ideias<span class="c">23</span></div>
+ <div class="navi">${I('head')}Biblioteca de sons<span class="c">146</span></div>
+ <div class="navi">${I('image')}Galeria de imagens<span class="c">31</span></div>
+</aside>`;
+
+const layer=(ic,col,bg,name,sub,vol,seed,loop=true)=>`<div class="layer"><div class="t"><span class="ic" style="background:${bg};color:${col}">${I(ic,'width:15px;height:15px')}</span><div>${name}<small>${sub}</small></div><span class="m">${I(loop?'loop':'zap','width:15px;height:15px')}</span></div>
+ ${wave(seed,64,col)}<div class="vol">${I('vol','width:13px;height:13px')}<div class="bar"><i style="width:${vol}%;background:${col}"></i><b style="left:${vol}%"></b></div><span style="width:28px;text-align:right">${vol}%</span></div></div>`;
+
+const editor=`<section class="screen backdrop" id="editor"><div class="win">
+ ${topbar(`<div class="crumb" style="margin-left:18px"><b>Cap. III — Sob a lua de prata</b></div>
+   <div class="tools" style="margin-left:26px"><span class="on">${I('type')}</span><span><b>B</b></span><span><i style="font-family:var(--serif);font-size:16px">I</i></span><span>${I('quote')}</span><span class="sep"></span>
+   <span class="img">${I('image')}Imagem</span><span class="snd">${I('vol')}Som</span><span class="snd">${I('waves')}Ambiente</span><span style="color:var(--violet)">${I('music')}Música</span><span class="sep"></span><span>${I('wand')}</span></div>`,
+  `<span class="saved"><i></i>Salvo agora</span><span class="btn">${I('users')}Compartilhar</span><span class="btn pri">${I('eye')}Ler</span><div class="avatar">AR</div>`)}
+ <div style="flex:1;display:grid;grid-template-columns:270px 1fr 350px;min-height:0">
+  ${sideHTML}
+  <main class="desk">
+   <div class="deskbar"><span>Capítulo III · 2.341 palavras · 3 imagens · 7 sons</span><div class="seg"><span class="on">${I('pen','width:14px;height:14px')}Escrever</span><span>${I('book','width:14px;height:14px')}Ler</span><span>${I('layers','width:14px;height:14px')}Trilha</span></div></div>
+   <div class="paper">
+    <div class="amb"><span class="ic">${I('waves')}</span><div><small>Ambiente da cena</small><b>Floresta à noite + grilos</b></div>${wave(4,70,'#2a9a8a',{cls:'wf'})}<span class="tag">${I('loop','width:13px;height:13px')}loop · entra suave</span></div>
+    <div class="chapno">CAPÍTULO III</div>
+    <div class="chaptitle">Sob a lua de prata</div>
+    <p class="drop">A névoa havia recuado para a beira do rio quando Lia finalmente alcançou a clareira. As árvores, antes cerradas como muralhas, abriam-se agora num círculo perfeito, e no centro dele a lua derramava uma luz tão fria que parecia possível segurá-la nas mãos.</p>
+    <p>Foi então que ouviu <span class="cue">${I('bird')}coruja ao longe</span> um piado longo, vindo de muito acima, como se a própria noite tivesse resolvido falar.</p>
+    <div class="fig"><div class="art">${forest('ed')}</div>
+      <span class="h" style="left:-9px;top:-9px"></span><span class="h" style="right:-9px;top:-9px"></span><span class="h" style="left:-9px;bottom:-9px"></span><span class="h" style="right:-9px;bottom:-9px"></span>
+      <div class="figbar"><span>${I('max')}Tela cheia</span><span class="on">${I('spark')}Zoom lento</span><span>${I('sliders')}Ajustar</span><span>${I('more')}</span></div></div>
+    <div class="cap">A clareira ao luar — aparece ao chegar neste trecho, com zoom lento</div>
+    <p>Lia deu um passo à frente. Sob suas botas, um galho estalou <span class="cue fx">${I('branch')}galho quebrando</span> e o som correu entre os troncos como um aviso.</p>
+    <p>— Quem está aí? — perguntou, e a própria voz lhe pareceu pequena demais. /<span class="caret"></span></p>
+    </div>
+   <div class="slash" style="left:150px;bottom:62px">
+     <div class="hd">Inserir no texto</div>
+     <div class="it on"><span class="b" style="background:rgba(95,211,193,.16);color:var(--teal)">${I('vol')}</span><div><b>Som no momento</b><small>toca quando o leitor chegar aqui</small></div><kbd>S</kbd></div>
+     <div class="it"><span class="b" style="background:rgba(242,181,99,.16);color:var(--amber)">${I('image')}</span><div><b>Imagem</b><small>ilustração, foto ou mapa</small></div><kbd>I</kbd></div>
+     <div class="it"><span class="b" style="background:rgba(95,211,193,.12);color:var(--teal)">${I('waves')}</span><div><b>Mudar ambiente</b><small>chuva, mar, cidade, taverna…</small></div><kbd>A</kbd></div>
+     <div class="it"><span class="b" style="background:rgba(165,139,255,.16);color:var(--violet)">${I('music')}</span><div><b>Música da cena</b><small>trilha com entrada suave</small></div><kbd>M</kbd></div>
+     <div class="it"><span class="b" style="background:rgba(236,143,174,.14);color:var(--rose)">${I('hour')}</span><div><b>Pausa dramática</b><small>silêncio de 2 s antes de seguir</small></div><kbd>P</kbd></div>
+    </div>
+  </main>
+  <aside class="rp">
+   <h4>${I('head','color:var(--teal)')}Paisagem sonora<span class="x">Cena 2 de 4</span></h4>
+   ${layer('moon','#5fd3c1','rgba(95,211,193,.15)','Floresta à noite','ambiente · loop',72,8)}
+   ${layer('spark','#7cb7ff','rgba(124,183,255,.15)','Grilos e vaga-lumes','ambiente · loop',40,13)}
+   ${layer('wind','#c9c1db','rgba(255,255,255,.08)','Vento entre os pinheiros','ambiente · loop',25,21)}
+   ${layer('music','#a58bff','rgba(165,139,255,.16)','Noturno de prata','música · fade-in 4 s',34,30)}
+   <h4 style="margin-top:4px">${I('zap','color:var(--amber)')}Sons no texto<span class="x">7</span></h4>
+   <div>
+    <div class="mom"><span class="p">¶2</span><span class="d" style="background:rgba(95,211,193,.15);color:var(--teal)">${I('bird','width:14px;height:14px')}</span>Coruja ao longe<small>"ouviu…"</small></div>
+    <div class="mom"><span class="p">¶3</span><span class="d" style="background:rgba(242,181,99,.15);color:var(--amber)">${I('branch','width:14px;height:14px')}</span>Galho quebrando<small>"estalou"</small></div>
+    <div class="mom"><span class="p">¶5</span><span class="d" style="background:rgba(242,181,99,.15);color:var(--amber)">${I('steps','width:14px;height:14px')}</span>Passos na folhagem<small>"atrás dela"</small></div>
+   </div>
+   <div class="player"><span class="pb">${I('play')}</span><div><b>Ouvir esta cena</b><small>como o leitor vai sentir · 3:12</small></div><span style="margin-left:auto;color:var(--muted)">${I('head')}</span></div>
+  </aside>
+ </div>
+</div></section>`;
+
+/* =============== TELA 2 — LEITURA IMERSIVA =============== */
+const eq=(n,seed)=>{const r=rng(seed);return `<div class="eq">${Array.from({length:n},()=>`<i style="height:${6+r()*16}px"></i>`).join('')}</div>`;};
+const reader=`<section class="screen" id="leitura"><div class="reader">
+ <div class="bgart" style="transform:scaleX(-1)">${lighthouse('rd')}</div><div class="shade"></div>
+ <div class="rtop"><span class="ghost">${I('left')}</span><div class="rtitle"><b>A Floresta dos Sussurros</b>Capítulo IV · O farol esquecido</div><div class="grow"></div>
+  <span class="ghost">${I('type')}</span><span class="ghost on">${I('head')}</span><span class="ghost">${I('bookmark')}</span><span class="ghost">${I('more')}</span></div>
+ <div class="rtext">
+  <div class="chapno">CAPÍTULO IV</div>
+  <h2>O farol esquecido</h2>
+  <p>A tempestade chegou sem pedir licença. Primeiro o vento, que dobrou as gramas do penhasco como quem penteia um bicho assustado; depois a chuva, grossa e fria, batendo nas pedras.</p>
+  <p class="now"><span class="read">Lia ergueu os olhos para a torre. Lá no alto, onde ninguém subia havia quarenta anos, uma luz acabava de se acender.</span> E, no exato instante em que <span class="hl">o céu se partiu ao meio</span>, ela entendeu que não estava sozinha.</p>
+  <p>As ondas se lançavam contra o rochedo com a fúria de quem guarda um segredo. A porta do farol, que deveria estar trancada, rangia aberta…</p>
+ </div>
+ <div class="burst" style="left:560px;top:520px"><span class="d">${I('zap','width:15px;height:15px')}</span><div>Trovão<small>tocou agora · som espacial</small></div></div>
+ <div class="rbottom">
+  <div class="now-pl"><div class="ghost on" style="width:46px;height:46px;border-radius:14px">${I('pause','fill:currentColor;stroke:none')}</div><div style="flex:1"><div class="row" style="gap:10px"><b>Tempestade no penhasco</b>${eq(7,3)}</div>
+   <div class="chips"><span>${I('rain')}Chuva</span><span>${I('waves')}Ondas</span><span>${I('wind')}Vento</span><span>${I('music')}Maré alta</span></div></div></div>
+  <div class="track"><div class="ln"><i></i>
+   ${[[6,'var(--teal)'],[14,'var(--amber)'],[22,'var(--teal)'],[33,'var(--violet)'],[39,'var(--amber)'],[52,'var(--teal)'],[61,'var(--amber)'],[70,'var(--rose)'],[84,'var(--teal)'],[92,'var(--amber)']].map(([p,c])=>`<span class="mk" style="left:${p}%;background:${c};box-shadow:0 0 8px ${c}"></span>`).join('')}
+   <span class="knob"></span></div>
+   <div class="lg"><span>Página 87 de 214 · faltam 9 min neste capítulo</span><span><i style="background:var(--amber)"></i>imagens <i style="background:var(--teal);margin-left:10px"></i>sons <i style="background:var(--violet);margin-left:10px"></i>música</span></div></div>
+ </div>
+</div></section>`;
+
+/* =============== TELA 3 — ESTÚDIO DE TRILHA =============== */
+const paras=[['¶1','A tempestade chegou sem pedir licença. Primeiro o vento…'],['¶2','…depois a chuva, grossa e fria, batendo nas pedras.'],['¶3','Lia ergueu os olhos para a torre. Lá no alto…'],['¶4','E, no exato instante em que <mark>o céu se partiu</mark>, ela entendeu…'],['¶5','As ondas se lançavam contra o rochedo…'],['¶6','A porta do farol rangia aberta. Lia subiu…']];
+const PW=180, X0=0;
+const clip=(l,w,c,bg,name,sub,seed,extra='')=>`<div class="clip ${extra}" style="left:${l}px;width:${w}px;background:${bg};color:${c};border:1px solid ${c}55">${name}<small>${sub}</small>${wave(seed,Math.round(w/4),c+'cc',{cls:'w'})}</div>`;
+const studio=`<section class="screen backdrop" id="trilha"><div class="win">
+ ${topbar(`<div class="crumb" style="margin-left:18px">A Floresta dos Sussurros ${I('right','width:14px;height:14px')} <b>Trilha do capítulo IV</b></div>
+  <div class="seg" style="margin-left:26px"><span>${I('pen','width:14px;height:14px')}Escrever</span><span>${I('book','width:14px;height:14px')}Ler</span><span class="on">${I('layers','width:14px;height:14px')}Trilha</span></div>`,
+  `<span class="saved"><i></i>Salvo agora</span><span class="btn pri">${I('eye')}Ler como leitor</span><div class="avatar">AR</div>`)}
+ <div class="studio">
+  <div class="tl">
+   <div class="tlhead"><h2>O farol esquecido<small>A trilha segue o texto: cada som começa quando o leitor chega na frase.</small></h2>
+    <div class="transport"><span class="ghost" style="width:36px;height:36px">${I('left')}</span><span class="pb">${I('play')}</span><span class="ghost" style="width:36px;height:36px">${I('right')}</span><span class="time"><b>¶4</b> · 1:48 de leitura</span><span class="btn">${I('wand','color:var(--amber)')}Sugerir sons pelo texto</span></div></div>
+   <div class="grid">
+    <div class="th">
+     <div class="rh">Texto do capítulo</div>
+     <div class="tr"><b>${I('image','color:var(--amber)')}Imagens</b><div class="ms"><span>M</span><span>S</span></div></div>
+     <div class="tr"><b>${I('waves','color:var(--teal)')}Ambiente</b><div class="ms"><span>M</span><span>S</span></div></div>
+     <div class="tr"><b>${I('rain','color:var(--sky)')}Clima</b><div class="ms"><span>M</span><span>S</span></div></div>
+     <div class="tr"><b>${I('zap','color:var(--amber)')}Efeitos</b><div class="ms"><span>M</span><span class="s">S</span></div></div>
+     <div class="tr"><b>${I('music','color:var(--violet)')}Música</b><div class="ms"><span>M</span><span>S</span></div></div>
+    </div>
+    <div style="position:relative;overflow:hidden">
+     <div class="ruler">${paras.map(([n,t],k)=>`<div class="para ${k==3?'cur':''}" style="left:${k*PW}px;width:${PW}px"><b>${n}</b><p>${t}</p></div>`).join('')}</div>
+     <div class="lane">
+      <div class="imgclip" style="left:4px;width:350px">${lighthouse('t1')}<span>Farol na tempestade · zoom lento</span></div>
+      <div class="imgclip" style="left:902px;width:180px">${castle('t2')}<span>Memória: o castelo</span></div>
+     </div>
+     <div class="lane">
+      ${clip(4,330,'#5fd3c1','linear-gradient(90deg,rgba(95,211,193,.08),rgba(95,211,193,.2))','Mar agitado','loop · entra suave',5)}
+      ${clip(340,740,'#5fd3c1','rgba(95,211,193,.18)','Ondas no rochedo','loop · volume 70%',9)}
+     </div>
+     <div class="lane">
+      ${clip(4,170,'#7cb7ff','rgba(124,183,255,.14)','Vento forte','¶1',12)}
+      ${clip(150,930,'#7cb7ff','rgba(124,183,255,.18)','Chuva pesada','começa em "depois a chuva" · loop',15)}
+     </div>
+     <div class="lane">
+      ${clip(560,140,'#f2b563','rgba(242,181,99,.24)','Trovão','"o céu se partiu"',18,'sel')}
+      ${clip(910,160,'#f2b563','rgba(242,181,99,.16)','Porta rangendo','"rangia aberta"',22)}
+     </div>
+     <div class="lane">
+      ${clip(380,700,'#a58bff','linear-gradient(90deg,rgba(165,139,255,.06),rgba(165,139,255,.24) 30%)','Maré alta — tema de Lia','fade-in 6 s · 40%',27)}
+     </div>
+     <div class="playhead" style="left:590px"></div>
+    </div>
+   </div>
+   <div class="inspector">
+    <div style="display:flex;gap:12px;align-items:center"><span class="d" style="width:44px;height:44px;border-radius:12px;background:rgba(242,181,99,.2);color:var(--amber);display:flex;align-items:center;justify-content:center">${I('zap')}</span><div><b style="font-size:15px">Trovão distante</b><div class="muted" style="font-size:12px;margin-top:2px">efeito · 4,2 s</div></div></div>
+    <div class="f"><label>Toca quando ler</label><div>${I('quote','width:14px;height:14px;color:var(--amber)')}“o céu se partiu ao meio”</div></div>
+    <div class="f"><label>Atraso</label><div>0,4 s</div></div>
+    <div class="f"><label>Volume</label><div style="width:150px"><div class="vol" style="flex:1"><div class="bar"><i style="width:80%;background:var(--amber)"></i><b style="left:80%"></b></div></div>80%</div></div>
+    <div class="f"><label>Direção</label><div>${I('head','width:14px;height:14px')}Esquerda → centro</div></div>
+    <div class="f"><label>Vibrar no celular</label><div style="color:var(--teal)">${I('check','width:14px;height:14px')}Sim</div></div>
+   </div>
+  </div>
+  <aside class="lib">
+   <h4 style="font-family:var(--display);font-weight:600;font-size:17px">Biblioteca de sons</h4>
+   <div class="search">${I('search','color:var(--muted)')}chuva<span class="muted" style="margin-left:auto;font-size:12px">48 sons</span></div>
+   <div class="tags"><span class="on">Natureza</span><span>Mar</span><span>Cidade</span><span>Fantasia</span><span>Suspense</span><span>Taverna</span><span>Batalha</span><span>Músicas</span></div>
+   ${[['Chuva no telhado de zinco','ambiente · 2:40',33,'#5fd3c1',1],['Chuva pesada com trovoada','ambiente · 4:05',35,'#5fd3c1'],['Garoa na janela','ambiente · 3:10',37,'#5fd3c1'],['Trovão distante','efeito · 0:04',39,'#f2b563'],['Gotas na caverna','ambiente · 1:58',43,'#5fd3c1'],['Guarda-chuva abrindo','efeito · 0:02',45,'#f2b563'],['Lamento sob a chuva','música · 3:30',47,'#a58bff']].map(([n,s,sd,c,on])=>
+    `<div class="sitem ${on?'playing':''}"><span class="pp" style="background:${c}22;color:${c}">${I(on?'pause':'play')}</span><div><b>${n}</b><small>${s}</small></div>${wave(sd,21,c)}</div>`).join('')}
+   <div class="rec"><div style="background:rgba(236,143,174,.14);color:var(--rose);border:1px solid rgba(236,143,174,.3)">${I('mic')}Gravar som</div><div style="background:var(--panel2);border:1px solid var(--line2)">${I('upload')}Enviar arquivo</div></div>
+  </aside>
+ </div>
+</div></section>`;
+
+/* =============== TELA 4 — CELULAR =============== */
+const sb=(c='#fff')=>`<div class="sb" style="color:${c}"><span>21:47</span><span style="display:flex;gap:6px;align-items:center"><svg width="18" height="11" viewBox="0 0 18 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="${c}"/><rect x="5" y="5" width="3" height="6" rx="1" fill="${c}"/><rect x="10" y="2.5" width="3" height="8.5" rx="1" fill="${c}"/><rect x="15" y="0" width="3" height="11" rx="1" fill="${c}"/></svg><svg width="26" height="12" viewBox="0 0 26 12"><rect x=".5" y=".5" width="22" height="11" rx="3" fill="none" stroke="${c}" opacity=".5"/><rect x="2" y="2" width="16" height="8" rx="2" fill="${c}"/><rect x="23.5" y="4" width="2" height="4" rx="1" fill="${c}" opacity=".5"/></svg></span></div>`;
+const cov=(art,t,sub,w,h,fs,b=['image','vol'])=>`<div class="cover" style="width:${w}px;height:${h}px">${art}<div class="badges">${b.map(x=>`<span>${I(x)}</span>`).join('')}</div><div class="ct" style="font-size:${fs}px">${t}<small>${sub}</small></div></div>`;
+const tabbar=`<div class="tabbar"><span class="on">${I('home')}Estante</span><span>${I('search')}Explorar</span><span class="fab">${I('plus','width:24px;height:24px;stroke-width:2.2')}</span><span>${I('head')}Sons</span><span>${I('users')}Perfil</span></div>`;
+
+const ph1=`<div class="phone"><div class="isl"></div><div class="scr" style="background:radial-gradient(400px 300px at 80% 0%,rgba(165,139,255,.25),transparent),var(--bg)">${sb()}
+ <div style="padding:8px 20px 0">
+  <div class="muted" style="font-size:13px">Boa noite ✦</div>
+  <div style="font-family:var(--display);font-weight:600;font-size:27px;line-height:1.15;margin:4px 0 16px">Sua estante</div>
+  <div style="display:flex;gap:14px;padding:12px;border-radius:20px;background:var(--panel2);border:1px solid var(--line)">
+   ${cov(forest('m1'),'A Floresta dos Sussurros','',84,124,13,[])}
+   <div style="flex:1;display:flex;flex-direction:column"><span style="font-size:10.5px;letter-spacing:1.3px;color:var(--amber);font-weight:700">CONTINUAR ESCREVENDO</span><b style="font-size:15px;margin:6px 0 2px;font-family:var(--display);font-weight:600">Cap. III — Sob a lua de prata</b><span class="muted" style="font-size:12px">ontem, 23:10 · 2.341 palavras</span>
+    <div class="prog"><i style="width:62%"></i></div>
+    <div style="display:flex;gap:6px;margin-top:auto"><span style="font-size:11px;padding:4px 8px;border-radius:8px;background:rgba(242,181,99,.14);color:var(--amber);display:flex;gap:4px;align-items:center">${I('image','width:12px;height:12px')}12</span><span style="font-size:11px;padding:4px 8px;border-radius:8px;background:rgba(95,211,193,.14);color:var(--teal);display:flex;gap:4px;align-items:center">${I('vol','width:12px;height:12px')}36</span></div></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin:22px 0 12px"><b style="font-size:16px">Meus livros</b><span class="muted" style="font-size:12.5px">Ver todos</span></div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+   ${cov(lighthouse('m2'),'O Farol Esquecido','conto',96,140,14)}${cov(glassCover('m3'),'A Cidade de Vidro','rascunho',96,140,14)}${cov(seaCover('m4'),'Cartas ao Mar','poesia',96,140,14)}
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px">
+   ${cov(castle('m5'),'Reino da Aurora','infantil',96,140,14)}${cov(emberCover('m6'),'Noites de Âmbar','romance',96,140,14)}
+   <div style="width:96px;height:140px;border-radius:10px;border:1.5px dashed var(--line2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:12px">${I('plus','width:22px;height:22px')}Novo livro</div>
+  </div>
+ </div>${tabbar}</div><div class="ptag">Sua estante<small>livros com capa, progresso, imagens e sons</small></div></div>`;
+
+const ph2=`<div class="phone"><div class="isl"></div><div class="scr" style="background:#0d0a14">
+ <div style="position:absolute;top:0;left:0;right:0;height:370px">${castle('m7')}<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(13,10,20,.35),transparent 30%,transparent 55%,#0d0a14)"></div></div>
+ <div style="position:relative">${sb()}
+  <div style="display:flex;justify-content:space-between;padding:4px 18px"><span class="ghost" style="width:38px;height:38px">${I('left')}</span><span style="display:flex;gap:8px"><span class="ghost on" style="width:38px;height:38px">${I('head')}</span><span class="ghost" style="width:38px;height:38px">${I('type')}</span></span></div>
+ </div>
+ <div style="position:absolute;top:300px;left:0;right:0;padding:0 24px">
+  <div class="chapno" style="text-align:left;color:var(--amber)">CAPÍTULO V</div>
+  <div style="font-family:var(--serif);font-style:italic;font-size:34px;font-weight:500;margin:4px 0 12px">Reino da Aurora</div>
+  <p style="font-family:var(--serif);font-size:18.5px;line-height:1.55;color:#f1ebe2">O sol nasceu atrás das montanhas como uma brasa soprada devagar. Do alto da muralha, <span style="background:linear-gradient(transparent 62%,rgba(242,181,99,.35) 62%)">os sinos do castelo</span> começaram a tocar, um a um, acordando o vale inteiro.</p>
+  <p style="font-family:var(--serif);font-size:18.5px;line-height:1.55;color:rgba(241,235,226,.45);margin-top:10px">Lia contou sete badaladas. Na sétima, as andorinhas levantaram voo…</p>
+ </div>
+ <div class="burst" style="left:120px;top:262px;padding:7px 13px 7px 8px;font-size:12px"><span class="d" style="width:24px;height:24px">${I('bell','width:13px;height:13px')}</span><div>Sinos do castelo<small>tocando</small></div></div>
+ <div style="position:absolute;left:14px;right:14px;bottom:18px;padding:12px;border-radius:20px;background:rgba(28,24,39,.85);backdrop-filter:blur(12px);border:1px solid var(--line2)">
+  <div style="display:flex;align-items:center;gap:12px"><span class="ghost on" style="width:40px;height:40px">${I('pause','fill:currentColor;stroke:none;width:15px;height:15px')}</span><div style="flex:1"><b style="font-size:13.5px">Amanhecer no vale</b><div class="muted" style="font-size:11.5px">pássaros · vento leve · sinos</div></div>${eq(6,9)}</div>
+  <div style="height:3px;border-radius:3px;background:rgba(255,255,255,.12);margin-top:12px"><div style="width:58%;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--amber),#fff)"></div></div>
+  <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-top:6px"><span>pág. 132</span><span>vire a página com um toque</span></div>
+ </div>
+</div><div class="ptag">Leitura imersiva<small>a imagem e os sons mudam conforme a leitura</small></div></div>`;
+
+const ph3=`<div class="phone"><div class="isl"></div><div class="scr" style="background:#120f19">${sb()}
+ <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 18px 10px"><span class="muted">${I('left')}</span><b style="font-size:14px">Cap. III</b><span style="color:var(--amber);font-size:13px;font-weight:600">Pronto</span></div>
+ <div style="margin:0 12px;padding:18px 18px 30px;border-radius:16px;background:linear-gradient(180deg,var(--paper),#f2e7d3);color:var(--ink);height:600px">
+  <p style="font-family:var(--serif);font-size:17px;line-height:1.5;color:#2e2532">Lia deu um passo à frente. Sob suas botas, um galho estalou <span class="cue fx" style="font-size:10.5px">${I('branch')}galho</span> e o som correu entre os troncos como um aviso.</p>
+  <p style="font-family:var(--serif);font-size:17px;line-height:1.5;color:#2e2532;margin-top:8px">— Quem está aí?<span class="caret" style="height:18px"></span></p>
+ </div>
+ <div class="sheet" style="height:510px"><div class="grab"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b style="font-family:var(--display);font-weight:600;font-size:18px">Adicionar à página</b><span class="muted" style="font-size:12px">neste ponto do texto</span></div>
+  <div class="stabs"><span>${I('image')}Imagem</span><span class="on">${I('vol')}Som</span><span>${I('waves')}Ambiente</span><span>${I('music')}Música</span></div>
+  <div class="search" style="height:38px;margin-bottom:12px">${I('search','color:var(--muted)')}<span class="muted">Buscar: passos, porta, lobo…</span></div>
+  <div class="sgrid">
+   ${[['steps','Passos','#f2b563',1],['door','Porta','#f2b563'],['bird','Coruja','#5fd3c1'],['zap','Trovão','#7cb7ff'],['flame','Fogueira','#ec8fae'],['heart','Coração','#ec8fae'],['wind','Sussurro','#c9c1db'],['bell','Sino','#f2b563'],['waves','Água','#5fd3c1']].map(([ic,n,c,on])=>
+    `<div class="${on?'on':''}"><span class="e" style="background:${c}22;color:${c}">${I(ic)}</span>${n}</div>`).join('')}
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px"><div style="display:flex;gap:8px;align-items:center;justify-content:center;height:44px;border-radius:13px;background:rgba(236,143,174,.14);color:var(--rose);font-size:13px;font-weight:600">${I('mic')}Gravar agora</div><div style="display:flex;gap:8px;align-items:center;justify-content:center;height:44px;border-radius:13px;background:linear-gradient(135deg,var(--amber),var(--amber2));color:#2a1606;font-size:13px;font-weight:700">${I('check')}Inserir</div></div>
+ </div>
+</div><div class="ptag">Escrever no celular<small>um toque para pôr sons e imagens no texto</small></div></div>`;
+
+const mobile=`<section class="screen backdrop" id="celular">
+ <div style="position:absolute;top:44px;left:0;right:0;text-align:center"><div class="logo" style="justify-content:center;font-size:24px">${LOGO}Imersa</div><div class="muted" style="font-size:14px;margin-top:6px">escreva livros que se veem e se ouvem</div></div>
+ <div class="phones" style="padding-top:40px;transform:scale(.92);transform-origin:50% 45%">${ph1}${ph2}${ph3}</div>
+</section>`;
+
+document.getElementById('out').innerHTML=editor+reader+studio+mobile;
+</script>
+</body>
+</html>
