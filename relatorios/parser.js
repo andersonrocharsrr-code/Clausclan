@@ -37,16 +37,31 @@
   const limpa = (s) => String(s).replace(/[*_~]/g, '').replace(/ /g, ' ');
 
   // "1.015,90" → 1015.9 · "00" → 0 · "R$ 9.001,75" → 9001.75 · "210.75" → 210.75
+  // O que vem depois do ÚLTIMO ponto ou vírgula decide (vale para qualquer mistura de . e ,):
+  //   3 dígitos  → é milhar:   "4.700" / "4,700" / "65.380" / "1.234.567"
+  //   1–2 dígitos → centavos:  "4.700,00" / "4,700,00" / "4,700.00" / "1.015,90" / "210.75" / "0,5"
+  //   sem separador → número inteiro: "4700" / "02"
   function numero(txt) {
     if (txt == null) return null;
-    let s = String(txt).replace(/r\$/i, '').replace(/\s/g, '');
-    const m = s.match(/-?[\d.,]+/);
+    const s = String(txt).replace(/r\$/i, '').replace(/\s/g, '');
+    const m = s.match(/-?\d[\d.,]*/);
     if (!m) return null;
-    s = m[0];
-    if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
-    else if (/\.\d{3}(\.|$)/.test(s)) s = s.replace(/\./g, ''); // "65.380" é milhar
-    const n = parseFloat(s);
+    const t = m[0].replace(/[.,]+$/, '');
+    const i = Math.max(t.lastIndexOf('.'), t.lastIndexOf(','));
+    if (i < 0) return parseFloat(t);
+    const depois = t.slice(i + 1);
+    const antes = t.slice(0, i).replace(/[.,]/g, '');
+    const n = depois.length === 3 ? parseFloat(antes + depois) : parseFloat(antes + '.' + depois);
     return isNaN(n) ? null : n;
+  }
+
+  // Dinheiro: como numero(), e um valor sem vírgula nem ponto com 6 dígitos ou mais tem os centavos colados
+  // ("470000" = 4.700,00). Nenhum valor de vendedor chega a 100 mil reais.
+  function dinheiro(txt) {
+    const n = numero(txt);
+    if (n == null) return null;
+    const so = String(txt).replace(/r\$/i, '').trim();
+    return /^-?\d{6,}$/.test(so) ? n / 100 : n;
   }
 
   // "16/10/2026" ou "16/10/26" → "2026-10-16"
@@ -75,6 +90,7 @@
     else if (campo === 'semana') r.semana = numero(valor);
     else if (TEXTO.includes(campo)) r[campo] = valor.trim();
     else if (QV.includes(campo)) r[campo].q = numero(valor);
+    else if (DINHEIRO.includes(campo)) r[campo] = dinheiro(valor);
     else r[campo] = numero(valor);
     r.lidos.push(campo);
   }
@@ -95,7 +111,7 @@
       const v = linha.slice(i + 1).trim();
       // "Valor:", "Valor total:", "Vlr total:" ou só "Total:" = o valor do campo de cima.
       if (/^(valor|vlr|vl|total)( total| do dia| dia)?$/.test(k)) {
-        if (ultimo && QV.includes(ultimo)) { r[ultimo].v = numero(v); r.lidos.push(ultimo + '.v'); }
+        if (ultimo && QV.includes(ultimo)) { r[ultimo].v = dinheiro(v); r.lidos.push(ultimo + '.v'); }
         return;
       }
       const regra = REGRAS.find(([re]) => re.test(k));
@@ -130,6 +146,14 @@
   const brl = (n) => v(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const dois = (n) => String(Math.round(v(n))).padStart(2, '0');
 
+  // Bom senso: uma nota de enxoval não sai por menos de R$ 50. Valor muito baixo para a quantidade de notas
+  // quase sempre é número digitado errado (ex.: "4,700,00" lido como 4,70 para 6 notas).
+  const MIN_POR_NOTA = 50;
+  function valoresEstranhos(itens) {
+    return itens.filter(([, q, val]) => v(q) > 0 && v(val) > 0 && v(val) / v(q) < MIN_POR_NOTA)
+      .map(([nome, q, val]) => `${nome}: ${brl(val)} para ${v(q)} nota${v(q) > 1 ? 's' : ''} parece errado. Confira o valor.`);
+  }
+
   /* Conferência de um relatório: as contas de dentro dele e, se houver, contra o relatório anterior
      do mesmo vendedor na mesma semana (total de hoje = total de ontem + o do dia). */
   function conferir(r, anterior) {
@@ -150,6 +174,13 @@
       if (soma !== v(r.notas))
         av.push(`Notas não fecham: pagas (${v(r.pgTotal)}) + parciais (${v(r.parcialTotal.q)}) + em branco (${v(r.branco.q)}) = ${soma}, mas são ${v(r.notas)} notas.`);
     }
+    av.push(...valoresEstranhos([
+      ['Valor a cobrar', r.notas, r.cobrar], ['Notas em branco', r.branco.q, r.branco.v],
+      ['Notas feitas do dia', r.feitaDia.q, r.feitaDia.v], ['Notas feitas total', r.feitaTotal.q, r.feitaTotal.v],
+    ]));
+    [['feitaDia', 'feitaTotal', 'Valor das notas feitas'], ['extraDia', 'extraTotal', 'Pepino extra resolvido'], ['parcialDia', 'parcialTotal', 'Parcial']].forEach(([d, t, nome]) => {
+      if (r[d].v != null && r[t].v != null && v(r[d].v) > v(r[t].v) + 0.005) av.push(`${nome} do dia (${brl(r[d].v)}) é maior que o total (${brl(r[t].v)}).`);
+    });
     [['recebidoDia', 'recebidoTotal', 'Recebido'], ['pgDia', 'pgTotal', 'Notas pagas']].forEach(([d, t, nome]) => {
       if (r[d] != null && r[t] != null && v(r[d]) > v(r[t]) + 0.005) av.push(`${nome} do dia é maior que o total.`);
     });
@@ -241,12 +272,13 @@
       if (carros) r.carros = parseInt(carros[1], 10);
       if (i < 0) return;
       const k = chave(linha.slice(0, i));
-      const n = numero(linha.slice(i + 1));
+      const n = dinheiro(linha.slice(i + 1));
+      const q = numero(linha.slice(i + 1));
       if (/cobrar/.test(k)) r.cobrar = n;
       else if (/^receb/.test(k)) r.recebido = n;
       else if (/valor.*repasse/.test(k)) r.repasseV = n;
-      else if (/repasse/.test(k)) r.repasseQ = n;
-      else if (/branc/.test(k)) r.brancoQ = n;
+      else if (/repasse/.test(k)) r.repasseQ = q;
+      else if (/branc/.test(k)) r.brancoQ = q;
       else if (/pepino|pipino|extra/.test(k)) r.extra = n;
       else if (/deixado/.test(k)) r.deixado = n;
     });
@@ -283,12 +315,12 @@
       if (i < 0) return;
       const k = chave(linha.slice(0, i));
       const resto = linha.slice(i + 1);
-      const n = numero(resto) || 0;
+      const n = dinheiro(resto) || 0;
       if (/^foi cobrar/.test(k)) {
         c.foiCobrar = n;
         const q = resto.match(/\((\d+)\s*notas?\)/i); if (q) c.qtNotas = parseInt(q[1], 10);
       } else if (/^notas deixadas/.test(k)) {
-        c.qtNotasDeixadas = n;
+        c.qtNotasDeixadas = numero(resto) || 0;
         const p = linha.match(/pinos\s*:\s*(\d+)/i); if (p) c.pinos = parseInt(p[1], 10);
       } else if (/^antecipados/.test(k)) c.antecipados = n;
       else if (/^valor dos pepinos/.test(k)) c.valorPepinos = n;
@@ -327,6 +359,7 @@
     if (!v(c.valorDeixado)) falta.push('valor deixado');
     if (falta.length) av.push(`Sem ${falta.join(', ')}.`);
     av.push(...contasCaixa(c));
+    av.push(...valoresEstranhos([['Foi cobrar', c.qtNotas, c.foiCobrar], ['Valor deixado', c.qtNotasDeixadas, c.valorDeixado]]));
     if (c.duvidas) av.push(`A leitura ficou em dúvida: ${c.duvidas}`);
     return av;
   }
@@ -392,7 +425,7 @@
     ].join('\n');
   }
 
-  const api = { lerRelatorio, separar, conferir, consolidar, textoEquipe, textoSemana, lerEquipe, numero, dataISO, brl, dois, MESES,
+  const api = { lerRelatorio, separar, conferir, consolidar, textoEquipe, textoSemana, lerEquipe, numero, dinheiro, dataISO, brl, dois, MESES,
     CAIXA_NUM, caixaVazio, lerCaixaTexto, separarCaixas, recebidoCaixa, conferirCaixa, contasCaixa, fechamento, textoFechamento, pct };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else raiz.Relat = api;
