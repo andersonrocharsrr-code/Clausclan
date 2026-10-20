@@ -809,6 +809,16 @@ Em "duvidas" diga, em poucas palavras, só o que ficou difícil de ler ou a cont
 
   // Botão voltar do Android: fecha a janela aberta, depois volta para Colar, depois minimiza.
   const App = plugin('App');
+
+  // Versão em Ajustes: no APK é o número da versão publicada (o mesmo da página de download); no site, avisa que atualiza sozinho.
+  (async () => {
+    const el = $('#versaoApp');
+    if (!App || !App.getInfo) { el.textContent = 'Relatórios da Equipe · versão do site (atualiza sozinha)'; return; }
+    try {
+      const info = await App.getInfo();
+      el.textContent = `Relatórios da Equipe · versão ${info.build} (${info.version})`;
+    } catch (e) { /* sem informação da versão */ }
+  })();
   if (App) App.addListener('backButton', () => {
     if (dlg.open) { dlg.close(); return; }
     if (dlgCx.open) { dlgCx.close(); return; }
