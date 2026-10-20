@@ -55,6 +55,7 @@ input[type="date"]::-webkit-datetime-edit-year-field:focus{background:transparen
 .check{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px}
 .check input{width:auto}
 .dica{font-size:13px;color:var(--muted);margin:8px 0 0}
+.versao{text-align:center;font-size:13px;color:var(--muted);margin:4px 0 16px}
 
 .botoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .botoes--topo{margin:0 0 10px}
