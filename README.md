@@ -348,6 +348,8 @@ Abra `relatorios/index.html` por um servidor (GitHub Pages, ou `python3 -m http.
   data, valor a cobrar, notas, pagas, recebido, parciais, notas em branco, notas feitas (Ab/Rp), pepino extra
   resolvido, devolução, depósitos e valor em mãos. As linhas `Valor:` ficam com o campo de cima. Mostra uma prévia
   antes de salvar; o mesmo vendedor no mesmo dia substitui o anterior. Leitor em `relatorios/parser.js`.
+  Relatório com data diferente de hoje (vendedor esqueceu de trocar a data) abre a janela **Confira a data**: lançar no
+  dia de hoje (a data do texto também é trocada) ou na data do relatório; avisa se já tem relatório dele naquele dia.
 - **Equipe**: escolhe o dia e soma todos os relatórios dele:
   - **Vlr. Cobrar** = soma dos "Valor a cobrar"
   - **Recebido** = soma dos "Recebido total"

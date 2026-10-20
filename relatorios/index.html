@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Relatórios">
-  <link rel="stylesheet" href="style.css?v=8">
+  <link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
   <header class="top">
@@ -206,6 +206,21 @@
     </section>
   </main>
 
+  <!-- Data do relatório diferente de hoje: em qual dia lançar? -->
+  <dialog id="dlgData">
+    <form method="dialog" class="dlg">
+      <div class="card__cab">
+        <h2>Confira a data</h2>
+        <button class="icone-sec" value="" aria-label="Fechar">✕</button>
+      </div>
+      <p id="dlgDataTexto" class="dlg-data__texto"></p>
+      <div class="dlg-data__botoes">
+        <button class="btn" id="dlgDataHoje" value="hoje">Lançar no dia de hoje</button>
+        <button class="btn btn--sec" id="dlgDataManter" value="manter">Lançar na data do relatório</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- Relatório de um vendedor -->
   <dialog id="dlg">
     <form method="dialog" class="dlg">
@@ -250,6 +265,6 @@
   <div id="toast" class="toast" hidden></div>
 
   <script src="parser.js?v=7"></script>
-  <script src="app.js?v=14"></script>
+  <script src="app.js?v=15"></script>
 </body>
 </html>
