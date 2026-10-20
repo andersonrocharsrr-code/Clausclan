@@ -693,7 +693,7 @@ Em "duvidas" diga, em poucas palavras, só o que ficou difícil de ler ou a cont
   function formCx(c) {
     CAMPOS_CX.forEach(([k, , tipo]) => {
       const val = $(`[data-cx="${k}"]`).value.trim();
-      if (tipo === 'm') c[k] = R.numero(val) || 0;
+      if (tipo === 'm') c[k] = R.dinheiro(val) || 0;
       else if (tipo === 'i') c[k] = val ? Math.round(R.numero(val) || 0) : (k === 'semana' ? null : 0);
       else c[k] = val || (k === 'data' ? null : '');
     });
