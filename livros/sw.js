@@ -1,7 +1,7 @@
 /* Service worker: o app abre mesmo sem internet. */
-const CACHE = 'imersa-v2';
+const CACHE = 'imersa-v3';
 // Os arquivos levam "?v=" no index.html: ao mudar a versão, o celular nunca mistura CSS/JS antigo com HTML novo.
-const FILES = ['./', 'index.html', 'style.css?v=2', 'art.js?v=2', 'audio.js?v=2', 'app.js?v=2', 'icon.svg', 'fonts/cormorant.woff2', 'fonts/cormorant-italic.woff2', 'fonts/fraunces.woff2', 'fonts/inter.woff2', 'icon-192.png', 'icon-512.png', 'manifest.webmanifest'];
+const FILES = ['./', 'index.html', 'style.css?v=3', 'art.js?v=3', 'audio.js?v=3', 'app.js?v=3', 'icon.svg', 'fonts/cormorant.woff2', 'fonts/cormorant-italic.woff2', 'fonts/fraunces.woff2', 'fonts/inter.woff2', 'icon-192.png', 'icon-512.png', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));

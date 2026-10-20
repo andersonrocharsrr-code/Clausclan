@@ -431,7 +431,8 @@ Já vem com um livro de exemplo, **A Floresta dos Sussurros**, para ver tudo fun
 - Os sons prontos são gerados no próprio app (Web Audio), sem arquivos de áudio, então funcionam offline.
 - Os livros, imagens e gravações ficam salvos **somente neste navegador/aparelho** (IndexedDB). Faça backup de vez em quando.
 - O navegador só libera o som depois de um toque, por isso a leitura começa com o botão **Ler com som**.
-- Ícones: `node livros/ferramentas/gerar-icones.js`. Conceito visual: `livros/conceito/`.
+- Ícone: desenhado em `livros/ferramentas/icone.js`. `node livros/ferramentas/gerar-icones.js` gera os PNGs do site e de
+  `livros-android/assets`; depois rode `npx capacitor-assets generate --android` em `livros-android/`. Conceito visual: `livros/conceito/`.
 
 ## App Android (`livros-android/`)
 O mesmo app empacotado com **Capacitor**. O workflow `Gerar APK do Imersa` monta o APK a cada push que mexe em
