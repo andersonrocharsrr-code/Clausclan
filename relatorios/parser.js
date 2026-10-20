@@ -93,7 +93,8 @@
       if (i < 0) return;
       const k = chave(linha.slice(0, i));
       const v = linha.slice(i + 1).trim();
-      if (/^(valor|vlr|vl)$/.test(k)) {
+      // "Valor:", "Valor total:", "Vlr total:" ou só "Total:" = o valor do campo de cima.
+      if (/^(valor|vlr|vl|total)( total| do dia| dia)?$/.test(k)) {
         if (ultimo && QV.includes(ultimo)) { r[ultimo].v = numero(v); r.lidos.push(ultimo + '.v'); }
         return;
       }
