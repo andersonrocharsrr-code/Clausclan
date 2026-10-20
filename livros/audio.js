@@ -473,6 +473,11 @@ const Som = (() => {
     return preview;
   }
   function info_(id) { return byId[id] || { id, kind: 'user', name: 'Meu som', icon: 'mic' }; }
+  // Sai do app (outra tela, celular bloqueado): os sons pausam e voltam junto com a leitura.
+  document.addEventListener('visibilitychange', () => {
+    if (!ctx) return;
+    if (document.hidden) ctx.suspend(); else ctx.resume();
+  });
   function setMaster(v) { masterVol = v; if (master && !muted) master.gain.setTargetAtTime(v, now(), 0.05); }
   function setMuted(m) { muted = m; if (master) master.gain.setTargetAtTime(m ? 0 : masterVol, now(), 0.08); }
 

@@ -432,3 +432,15 @@ Já vem com um livro de exemplo, **A Floresta dos Sussurros**, para ver tudo fun
 - Os livros, imagens e gravações ficam salvos **somente neste navegador/aparelho** (IndexedDB). Faça backup de vez em quando.
 - O navegador só libera o som depois de um toque, por isso a leitura começa com o botão **Ler com som**.
 - Ícones: `node livros/ferramentas/gerar-icones.js`. Conceito visual: `livros/conceito/`.
+
+## App Android (`livros-android/`)
+O mesmo app empacotado com **Capacitor**. O workflow `Gerar APK do Imersa` monta o APK a cada push que mexe em
+`livros/` ou `livros-android/`. No `main`, com o segredo `NEXA_SIGNING_SEED`, ele publica o APK assinado na Release
+**imersa**, com link fixo: `https://github.com/andersonrocharsrr-code/Clausclan/releases/download/imersa/imersa.apk`.
+Sem o segredo, sai só um APK de teste em "Artifacts".
+- Funciona sem internet: o app, os sons e as fontes vão dentro do APK.
+- Pede o **microfone** só na hora de gravar um som.
+- Backup e "Exportar livro" abrem o **compartilhar do Android** (Drive, WhatsApp, Arquivos…).
+- O **botão voltar** fecha a janela aberta, depois volta uma tela e, na estante, minimiza o app.
+- Para gerar localmente: `cd livros-android && npm ci && npm run www && npx cap sync android` e abra `android/`
+  no Android Studio.

@@ -9,6 +9,10 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'];
 const roman = (i) => ROMAN[i] || String(i + 1);
+// No APK (Capacitor) usa os recursos do Android: salvar/compartilhar arquivos e o botão voltar.
+const Cap = window.Capacitor;
+const NATIVE = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
+const plugin = (n) => (NATIVE ? (Cap.Plugins && Cap.Plugins[n]) || (Cap.registerPlugin && Cap.registerPlugin(n)) || null : null);
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* sem espaço */ } } };
 
 const IC = {
@@ -122,10 +126,13 @@ async function resizeImage(file, max = 1800) {
     return out || file;
   } catch (e) { return file; }
 }
-function pickFile(accept, capture) {
+function pickFile(accept) {
   return new Promise((res) => {
-    const i = document.createElement('input'); i.type = 'file'; i.accept = accept; if (capture) i.capture = capture;
-    i.onchange = () => res(i.files[0] || null); i.click();
+    // O campo fica na página enquanto o seletor está aberto (o WebView do Android precisa disso).
+    const i = document.createElement('input'); i.type = 'file'; i.accept = accept; i.hidden = true;
+    const done = (f) => { i.remove(); res(f); };
+    i.onchange = () => done(i.files[0] || null); i.addEventListener('cancel', () => done(null));
+    document.body.appendChild(i); i.click();
   });
 }
 
@@ -1023,7 +1030,18 @@ function viewSounds() {
 
 /* ================= backup ================= */
 const blobToData = (b) => new Promise((r) => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(b); });
-function download(name, obj) {
+async function download(name, obj) {
+  const FS = plugin('Filesystem'), SHARE = plugin('Share');
+  if (FS && SHARE) {
+    // No APK: grava o arquivo e abre o compartilhar (Google Drive, WhatsApp, Arquivos…).
+    try {
+      const { uri } = await FS.writeFile({ path: name, data: JSON.stringify(obj), directory: 'CACHE', encoding: 'utf8' });
+      await SHARE.share({ title: name, files: [uri], dialogTitle: 'Guardar ou enviar o arquivo' });
+    } catch (e) {
+      if (!/cancel|abort/i.test(String(e && (e.message || e.name)))) toast('Não deu para gerar o arquivo.');
+    }
+    return;
+  }
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(obj)], { type: 'application/json' }));
   a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
@@ -1043,12 +1061,12 @@ function mediaIdsOf(b) {
 }
 async function exportBook(b) {
   toast('Preparando o arquivo…');
-  download(`${slug(b.title)}.imersa.json`, { app: 'imersa', v: 1, books: [b], media: await packMedia(mediaIdsOf(b)) });
+  await download(`${slug(b.title)}.imersa.json`, { app: 'imersa', v: 1, books: [b], media: await packMedia(mediaIdsOf(b)) });
 }
 async function exportAll() {
   toast('Preparando o backup…');
   const media = await DB.all('media');
-  download(`imersa-backup-${new Date().toISOString().slice(0, 10)}.json`, { app: 'imersa', v: 1, books, media: await packMedia(media.map((m) => m.id)) });
+  await download(`imersa-backup-${new Date().toISOString().slice(0, 10)}.json`, { app: 'imersa', v: 1, books, media: await packMedia(media.map((m) => m.id)) });
 }
 async function importFile() {
   const f = await pickFile('application/json,.json'); if (!f) return;
@@ -1121,6 +1139,19 @@ function sampleBook() {
   }
   addEventListener('hashchange', route);
   route();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  // Funciona sem internet: no site pelo service worker; no APK os arquivos já vêm dentro dele.
+  if (!NATIVE && 'serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  // Botão voltar do Android: fecha o que estiver aberto, depois volta uma tela, e na estante minimiza.
+  const AppP = plugin('App');
+  if (AppP) AppP.addListener('backButton', () => {
+    if (slashState) { closeSlash(); return; }
+    if ($('.menu')) { closeMenus(); return; }
+    if (modalStack.length) { modalStack[modalStack.length - 1](); return; }
+    if ($('.side.open')) { $('.side-bd') && $('.side-bd').click(); return; }
+    const [, a, b, c] = (location.hash.slice(1) || '/').split('/');
+    if (a === 'ler') go(`#/livro/${b}/${c || 0}`);
+    else if (a === 'livro' || a === 'sons') go('#/');
+    else AppP.minimizeApp();
+  });
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 })();
