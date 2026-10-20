@@ -1,6 +1,6 @@
 # Imersa — conceito visual do app de livros imersivos
 
-Estas telas mostram como o app pode ficar. O app ainda não foi construído: aqui só existem as imagens.
+Estas telas foram o ponto de partida do app, que já funciona em `livros/` (veja o README principal).
 Nele você escreve seus livros e coloca **imagens** e **sons** dentro do texto. A leitura vira uma
 experiência: as imagens aparecem e os sons tocam conforme o leitor avança.
 
