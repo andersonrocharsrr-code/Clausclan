@@ -405,7 +405,9 @@ conforme o leitor avança.
 
 Abra `livros/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server` na raiz e acesse
 `http://localhost:8000/livros/`). No celular, use "Adicionar à tela inicial" para instalar.
-Já vem com um livro de exemplo, **A Floresta dos Sussurros**, para ver tudo funcionando.
+Já vem com dois livros de exemplo: **A Floresta dos Sussurros** (com as ilustrações e os sons do app) e
+**O Silêncio da Mata** (com uma foto e um som de mata gravado, em `livros/exemplos/`). Os exemplos ficam em
+`livros/exemplos.js` e entram na estante uma única vez, também para quem já tinha o app instalado.
 
 ## O que faz
 - **Estante**: livros com capa (6 ilustrações prontas ou uma foto sua), título, autor, gênero e

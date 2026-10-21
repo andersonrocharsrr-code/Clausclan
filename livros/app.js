@@ -1127,12 +1127,33 @@ function sampleBook() {
   return newBook({ title: 'A Floresta dos Sussurros', author: 'Imersa', genre: 'Exemplo · fantasia', theme: 'floresta', chapters: [{ id: uid(), title: 'Sob a lua de prata', html: c1 }, { id: uid(), title: 'O farol esquecido', html: c2 }] });
 }
 
+/* Livros de exemplo (exemplos.js): entram na estante uma única vez, com a imagem e o som guardados no aparelho. */
+async function seedExamples() {
+  if (typeof EXEMPLOS === 'undefined') return;
+  const done = LS.get('imersa-exemplos', []);
+  for (const ex of EXEMPLOS) {
+    if (done.includes(ex.id)) continue;
+    if (!getBook(ex.id)) {
+      try {
+        const get = async (f) => { const r = await fetch(f); if (!r.ok) throw new Error(f); return r.blob(); };
+        const img = await saveMedia('image', await get(ex.imagem.arquivo), ex.imagem.nome);
+        const som = await saveMedia('audio', await get(ex.som.arquivo), ex.som.nome);
+        const fill = (h) => h.replaceAll('__IMG__', img.id).replaceAll('__SOM__', som.id);
+        const b = newBook({ id: ex.id, title: ex.titulo, genre: ex.genero, coverMedia: img.id, chapters: ex.capitulos.map((c) => ({ id: uid(), title: c.titulo, html: fill(c.html) })) });
+        await DB.put('books', b); books.unshift(b);
+      } catch (e) { continue; } // sem os arquivos agora: tenta de novo na próxima abertura
+    }
+    done.push(ex.id); LS.set('imersa-exemplos', done);
+  }
+}
+
 /* ================= início ================= */
 (async () => {
   try {
     await loadBooks(); await loadUserSounds();
     if (!LS.get('imersa-seeded', false) && !books.length) { const b = sampleBook(); await DB.put('books', b); books = [b]; }
     LS.set('imersa-seeded', true);
+    await seedExamples();
   } catch (e) {
     app.innerHTML = '<div class="empty">Não foi possível abrir o armazenamento do navegador. Saia do modo anônimo ou libere espaço e tente de novo.</div>';
     return;

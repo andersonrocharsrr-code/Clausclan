@@ -357,5 +357,6 @@ svg.i.fill { fill: currentColor; stroke: none; }
   .nowpl { max-width: none; }
   .r-vol { display: none; }
   .r-img { margin: 1.6em -10px; }
+  .r-shade { background: linear-gradient(rgba(7,6,11,.74), rgba(7,6,11,.8) 50%, rgba(7,6,11,.9)); }
   .r-text { font-size: var(--rfs, 20.5px); }
 }
