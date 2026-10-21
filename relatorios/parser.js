@@ -25,7 +25,7 @@
     [/branc/, 'branco'],
     [/feita.*dia/, 'feitaDia'], [/feita.*total/, 'feitaTotal'],
     [/extra.*dia|resolvido.*dia/, 'extraDia'], [/total.*resolvido|resolvido.*total|extra.*total/, 'extraTotal'],
-    [/devol/, 'devolucao'],
+    [/devol|(^| )dev( |$)/, 'devolucao'], // "Devolução total", "Nts dev total"
     [/transf/, 'transferencia'], [/deposito.*dia|dep.*dia/, 'depositoDia'], [/deposito.*total|dep.*total/, 'depositoTotal'],
     [/maos/, 'emMaos'],
     [/^ab$/, 'ab'], [/^rp$/, 'rp'],
@@ -102,16 +102,20 @@
     limpa(texto).split(/\r?\n/).forEach((linha) => {
       linha = linha.trim();
       if (!linha) return;
-      // "Ab: 01 Rp: 01" (duas coisas na mesma linha)
-      const abrp = linha.match(/^ab\s*:?\s*(\d+)\s*[,;/-]?\s*rp\s*:?\s*(\d+)/i);
+      // "Ab: 01 Rp: 01" (duas coisas na mesma linha; uma delas pode vir vazia)
+      const abrp = linha.match(/^ab\s*:?\s*(\d*)\s*[,;/-]?\s*rp\s*:?\s*(\d*)/i);
       if (abrp) { atribui(r, 'ab', abrp[1]); atribui(r, 'rp', abrp[2]); return; }
+      // "25%: 03  40%: 00" ou "25%:3  40/50% :" (as duas na mesma linha)
+      const p2540 = linha.match(/^25\s*%?\s*:?\s*(\d*)\s*[,;/-]?\s*(?:40|50)(?:\s*\/\s*50)?\s*%?\s*:?\s*(\d*)/i);
+      if (p2540) { atribui(r, 'p25', p2540[1]); atribui(r, 'p40', p2540[2]); return; }
       const i = linha.indexOf(':');
       if (i < 0) return;
       const k = chave(linha.slice(0, i));
       const v = linha.slice(i + 1).trim();
       // "Valor:", "Valor total:", "Vlr total:" ou só "Total:" = o valor do campo de cima.
       if (/^(valor|vlr|vl|total)( total| do dia| dia)?$/.test(k)) {
-        if (ultimo && QV.includes(ultimo)) { r[ultimo].v = dinheiro(v); r.lidos.push(ultimo + '.v'); }
+        // "Valor:" em branco não apaga nada (às vezes o campo de cima não tem valor).
+        if (v && ultimo && QV.includes(ultimo)) { r[ultimo].v = dinheiro(v); r.lidos.push(ultimo + '.v'); }
         return;
       }
       const regra = REGRAS.find(([re]) => re.test(k));
