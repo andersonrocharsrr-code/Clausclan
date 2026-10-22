@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Imersa</string>
-    <string name="title_activity_main">Imersa</string>
+    <string name="app_name">Calhamaço</string>
+    <string name="title_activity_main">Calhamaço</string>
     <string name="package_name">io.github.andersonrocharsrr_code.imersa</string>
     <string name="custom_url_scheme">io.github.andersonrocharsrr_code.imersa</string>
 </resources>

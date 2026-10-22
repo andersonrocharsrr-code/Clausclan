@@ -1,5 +1,5 @@
 'use strict';
-/* Imersa — escreva livros com imagens e sons. Tudo fica salvo no aparelho (IndexedDB). */
+/* Calhamaço — escreva seus livros, com imagens e as fontes que quiser. Tudo fica salvo no aparelho (IndexedDB). */
 
 /* ================= utilitários ================= */
 const $ = (s, el = document) => el.querySelector(s);
@@ -7,68 +7,93 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'];
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI', 'XXII', 'XXIII', 'XXIV', 'XXV'];
 const roman = (i) => ROMAN[i] || String(i + 1);
+const fmt = (n) => n.toLocaleString('pt-BR');
+const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* sem espaço */ } } };
 // No APK (Capacitor) usa os recursos do Android: salvar/compartilhar arquivos e o botão voltar.
 const Cap = window.Capacitor;
 const NATIVE = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
 const plugin = (n) => (NATIVE ? (Cap.Plugins && Cap.Plugins[n]) || (Cap.registerPlugin && Cap.registerPlugin(n)) || null : null);
-const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* sem espaço */ } } };
 
 const IC = {
-  play: '<polygon points="7 4 20 12 7 20 7 4"/>', pause: '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
-  stop: '<rect x="5" y="5" width="14" height="14" rx="2"/>',
-  image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
-  music: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
-  vol: '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/>',
-  mute: '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="m22 9-6 6M16 9l6 6"/>',
-  wind: '<path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>',
-  plus: '<path d="M12 5v14M5 12h14"/>', search: '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
-  mic: '<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/>',
-  upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/>',
-  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
   book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
-  left: '<path d="m15 18-6-6 6-6"/>', right: '<path d="m9 18 6-6-6-6"/>', up: '<path d="m18 15-6-6-6 6"/>', down: '<path d="m6 9 6 6 6-6"/>',
-  eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
-  spark: '<path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z"/><path d="M19 17l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/>',
-  type: '<path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>',
-  more: '<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>',
-  head: '<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>',
-  rain: '<path d="M20 16.6A5 5 0 0 0 18 7h-1.3A8 8 0 1 0 4 15.3"/><path d="M8 19v2M8 13v2M16 19v2M16 13v2M12 21v2M12 15v2"/>',
-  flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3.3A2.5 2.5 0 0 0 8.5 14.5z"/>',
-  moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
   pen: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>', left: '<path d="m15 18-6-6 6-6"/>', right: '<path d="m9 18 6-6-6-6"/>', up: '<path d="m18 15-6-6-6 6"/>', down: '<path d="m6 9 6 6 6-6"/>',
+  star: '<path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/>',
+  eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   quote: '<path d="M3 21c3 0 7-1 7-8V5H3v7h4c0 3-1 5-4 5zM14 21c3 0 7-1 7-8V5h-7v7h4c0 3-1 5-4 5z"/>',
-  waves: '<path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>',
-  zap: '<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
-  steps: '<path d="M4 16v-2.4C4 11.5 3 10.5 3 8c0-2.7 1.5-6 4.5-6C9.4 2 10 3.8 10 5.5c0 3.1-2 5.7-2 8.7V16a2 2 0 1 1-4 0zM20 20v-2.4c0-2.1 1-3.1 1-5.6 0-2.7-1.5-6-4.5-6C14.6 6 14 7.8 14 9.5c0 3.1 2 5.7 2 8.7V20a2 2 0 1 0 4 0z"/>',
-  door: '<path d="M18 20V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14"/><path d="M2 20h20"/><path d="M14 12v.01"/>',
-  bird: '<path d="M16 7h.01"/><path d="M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.3-2.3L2 20"/><path d="m20 7 2 .5-2 .5"/><path d="M10 18v3M14 17.8V21M7 18a6 6 0 0 0 3.8-10.6"/>',
-  branch: '<path d="M4 20 20 4"/><path d="m9 15-3-6M14 10l5 1"/>',
-  heart: '<path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7z"/>',
+  list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+  menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+  focus: '<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
+  upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
   check: '<path d="M20 6 9 17l-5-5"/>', x: '<path d="M18 6 6 18M6 6l12 12"/>',
-  bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/>',
-  droplet: '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5S5 13 5 15a7 7 0 0 0 7 7z"/>',
-  mountain: '<path d="m8 3 4 8 5-5 5 15H2L8 3z"/>',
-  glass: '<path d="M8 22h8M7 10h10M12 15v7M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5z"/>',
-  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
-  sword: '<path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="m13 19 6-6M16 16l4 4M19 21l2-2"/>',
+  more: '<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>',
+  flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3.3A2.5 2.5 0 0 0 8.5 14.5z"/>',
   trash: '<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',
   edit: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/>',
-  menu: '<path d="M4 6h16M4 12h16M4 18h16"/>', list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
-  hour: '<path d="M5 22h14M5 2h14M17 22v-4.2a2 2 0 0 0-.6-1.4L12 12l-4.4 4.4a2 2 0 0 0-.6 1.4V22M7 2v4.2a2 2 0 0 0 .6 1.4L12 12l4.4-4.4a2 2 0 0 0 .6-1.4V2"/>',
-  layers: '<path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/>',
-  sliders: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+  aa: '<path d="M3 18 8 6l5 12M4.6 14h6.8"/><path d="M15 12.5a3 3 0 1 1 0 4.5V10M21 18v-6"/>',
+  sep: '<path d="M4 12h3M10.5 12h3M17 12h3"/>',
+  h: '<path d="M6 4v16M18 4v16M6 12h12"/>',
 };
-const I = (n, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${IC[n] || IC.spark}</svg>`;
-const LOGO = `<svg aria-hidden="true" viewBox="0 0 100 100"><defs> <radialGradient id="lgobg" cx="28%" cy="18%" r="95%"><stop offset="0" stop-color="#7b5cf0"/><stop offset=".45" stop-color="#3b2483"/><stop offset="1" stop-color="#140c2e"/></radialGradient> <radialGradient id="lgoglow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffc56b" stop-opacity=".55"/><stop offset="1" stop-color="#ffc56b" stop-opacity="0"/></radialGradient> <linearGradient id="lgopl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff3d6"/><stop offset="1" stop-color="#f6c477"/></linearGradient> <linearGradient id="lgopr" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe4ad"/><stop offset="1" stop-color="#ee9d52"/></linearGradient> <linearGradient id="lgocv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ec8fae"/><stop offset="1" stop-color="#b9507a"/></linearGradient> <linearGradient id="lgowv" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8af0df"/><stop offset="1" stop-color="#3fb8d6"/></linearGradient> <filter id="lgosoft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.6"/></filter><clipPath id="lgoc"><rect width="100" height="100" rx="22"/></clipPath></defs><g clip-path="url(#lgoc)"><rect width="100" height="100" fill="url(#lgobg)"/><circle cx="16" cy="18" r="1.17" fill="#fff" opacity="0.9"/><circle cx="80" cy="14" r="0.91" fill="#fff" opacity="0.7"/><circle cx="88" cy="30" r="0.65" fill="#fff" opacity="0.5"/><circle cx="12" cy="44" r="0.65" fill="#fff" opacity="0.5"/><circle cx="70" cy="24" r="0.59" fill="#fff" opacity="0.45"/><circle cx="24" cy="84" r="0.52" fill="#fff" opacity="0.4"/><circle cx="86" cy="82" r="0.45" fill="#fff" opacity="0.35"/><circle cx="60" cy="10" r="0.65" fill="#fff" opacity="0.5"/><g transform="translate(-3 0)"> <circle cx="45" cy="56" r="34" fill="url(#lgoglow)"/>  <path d="M14 38 C26 33 38 34 45 40 C52 34 64 33 76 38 L76 76 C64 72 52 73 45 79 C38 73 26 72 14 76 Z" fill="url(#lgocv)"/>  <path d="M17 35 C28 31 39 32 45 38 L45 75 C39 70 28 69 17 72 Z" fill="url(#lgopl)"/> <path d="M73 35 C62 31 51 32 45 38 L45 75 C51 70 62 69 73 72 Z" fill="url(#lgopr)"/> <path d="M45 38 L45 75" stroke="#c9763a" stroke-width="1.2" opacity=".55"/> <g stroke="#c98a4a" stroke-width="1.6" stroke-linecap="round" opacity=".45" fill="none"> <path d="M23 45 C29 43.5 34 43.5 39 45"/><path d="M23 51 C29 49.5 34 49.5 39 51"/><path d="M23 57 C29 55.5 34 55.5 39 57"/><path d="M23 63 C28 61.7 32 61.7 35 62.6"/> <path d="M51 45 C56 43.5 61 43.5 67 45"/><path d="M51 51 C56 49.5 61 49.5 67 51"/> </g>  <g fill="none" stroke-linecap="round"> <path d="M80 47 C84 51 84 59 80 63" stroke="#7ff0dc" stroke-width="5" opacity=".5" filter="url(#lgosoft)"/> <path d="M86 41 C93 49 93 61 86 69" stroke="#7ff0dc" stroke-width="5" opacity=".4" filter="url(#lgosoft)"/> <path d="M80 47 C84 51 84 59 80 63" stroke="url(#lgowv)" stroke-width="4.2"/> <path d="M86 41 C93 49 93 61 86 69" stroke="url(#lgowv)" stroke-width="4.2"/> </g>  <path d="M58 15 L60.2 21.8 L67 24 L60.2 26.2 L58 33 L55.8 26.2 L49 24 L55.8 21.8 Z" fill="#ffd98a"/> <circle cx="58" cy="24" r="7" fill="#ffd98a" opacity=".35" filter="url(#lgosoft)"/></g></g></svg>`;
+const I = (n, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${IC[n] || ''}</svg>`;
+const LOGO = `<svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="lgt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d07a4b"/><stop offset="1" stop-color="#9c4024"/></linearGradient><linearGradient id="lgp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#ead6b8"/></linearGradient></defs><rect width="40" height="40" rx="11" fill="url(#lgt)"/><ellipse cx="20.5" cy="31.5" rx="12" ry="2.2" fill="#5e2414" opacity=".35"/><path d="M7 15.5 L22.5 9.5 L33.5 13.5 L18 19.5Z" fill="#2a231d"/><path d="M11.5 15.4 L22.5 11.2 L28.5 13.4 L17.5 17.6Z" fill="none" stroke="#e8b04a" stroke-width=".7"/><path d="M18 19.5 L33.5 13.5 L33.5 23.5 L18 29.5Z" fill="url(#lgp)"/><g stroke="#cfae84" stroke-width=".55"><path d="M18 21.6 L33.5 15.6M18 23.6 L33.5 17.6M18 25.6 L33.5 19.6M18 27.6 L33.5 21.6"/></g><path d="M7 15.5 L18 19.5 L18 29.5 L7 25.5Z" fill="#3b2c22"/><path d="M7 18 L18 22M7 23 L18 27" stroke="#e8b04a" stroke-width=".9"/><path d="M33.5 13.5 L33.5 23.5 L18 29.5" stroke="#2a231d" stroke-width="1.1" fill="none" stroke-linejoin="round"/><path d="M27 25.3 L27 31.5 L28.4 30.4 L29.8 31.1 L29.8 24.2Z" fill="#e8b04a"/></svg>`;
 
 function toast(msg, ms = 2600) {
   const t = $('#toast'); t.textContent = msg; t.classList.add('on');
   clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('on'), ms);
 }
 
+/* ================= fontes e aparência ================= */
+const FONTES = [
+  { f: 'Lora', c: 'Clássica · equilibrada', g: 'classica' },
+  { f: 'EB Garamond', c: 'Clássica · elegante', g: 'classica' },
+  { f: 'Merriweather', c: 'Clássica · ótima na tela', g: 'classica' },
+  { f: 'Crimson Pro', c: 'Clássica · leve', g: 'classica' },
+  { f: 'Libre Baskerville', c: 'Clássica · tradicional', g: 'classica' },
+  { f: 'Literata', c: 'Moderna · de e-book', g: 'moderna' },
+  { f: 'Spectral', c: 'Moderna · fina', g: 'moderna' },
+  { f: 'Cormorant Garamond', c: 'Romântica · delicada', g: 'classica' },
+  { f: 'Playfair Display', c: 'Títulos · dramática', g: 'titulo' },
+  { f: 'Cinzel', c: 'Títulos · fantasia épica', g: 'titulo' },
+  { f: 'Nunito', c: 'Moderna · infantil', g: 'moderna' },
+  { f: 'Courier Prime', c: 'Máquina de escrever', g: 'maquina' },
+  { f: 'Special Elite', c: 'Máquina antiga · suspense', g: 'maquina' },
+  { f: 'Caveat', c: 'Manuscrita · diário', g: 'manuscrita' },
+  { f: 'DM Serif Display', c: 'Títulos · marcante', g: 'titulo' },
+  { f: 'Fraunces', c: 'Moderna · com charme', g: 'moderna' },
+];
+const FONT_FALLBACK = { classica: 'Georgia, serif', moderna: 'Georgia, serif', titulo: 'Georgia, serif', maquina: "'Courier New', monospace", manuscrita: 'cursive' };
+const fontStack = (name) => { const x = FONTES.find((o) => o.f === name) || FONTES[0]; return `'${x.f}', ${FONT_FALLBACK[x.g]}`; };
+const COMBOS = [
+  { n: 'Romance clássico', t: 'Playfair Display', b: 'Lora' }, { n: 'Fantasia épica', t: 'Cinzel', b: 'EB Garamond' },
+  { n: 'Suspense', t: 'Special Elite', b: 'Crimson Pro' }, { n: 'Diário', t: 'Caveat', b: 'Literata' },
+  { n: 'Moderno', t: 'DM Serif Display', b: 'Spectral' }, { n: 'Infantil', t: 'Fraunces', b: 'Nunito' },
+];
+const PAPERS = {
+  branco: { n: 'Branco', bg: '#ffffff', ink: '#2a231d', mut: '#8c7f72' },
+  creme: { n: 'Creme', bg: '#fffdf8', ink: '#3a312a', mut: '#8c7f72' },
+  sepia: { n: 'Sépia', bg: '#f4e8cf', ink: '#4a3a2a', mut: '#8d7556' },
+  noite: { n: 'Noite', bg: '#1f1b17', ink: '#e4d8c6', mut: '#a3957f' },
+};
+const MARGENS = { estreita: { n: 'Estreita', px: 44, k: 0.09 }, media: { n: 'Média', px: 76, k: 0.12 }, larga: { n: 'Larga', px: 110, k: 0.15 } };
+const DEF_STYLE = { font: 'Lora', titleFont: 'Playfair Display', size: 18, lh: 1.75, margin: 'media', paper: 'creme' };
+const styleOf = (b) => ({ ...DEF_STYLE, ...(b.style || {}) });
+function applyStyle(el, st, paper) {
+  const p = PAPERS[paper || st.paper] || PAPERS.creme;
+  el.style.setProperty('--bf', fontStack(st.font)); el.style.setProperty('--tf', fontStack(st.titleFont));
+  el.style.setProperty('--fs', st.size + 'px'); el.style.setProperty('--lh', st.lh);
+  el.style.setProperty('--pad', (MARGENS[st.margin] || MARGENS.media).px + 'px');
+  el.style.setProperty('--pbg', p.bg); el.style.setProperty('--pink', p.ink); el.style.setProperty('--pmut', p.mut);
+}
+
 /* ================= banco de dados ================= */
+// O nome do banco continua "imersa": é o mesmo dos livros escritos antes da mudança de nome.
 const DB = (() => {
   let dbp;
   const open = () => dbp || (dbp = new Promise((res, rej) => {
@@ -99,21 +124,9 @@ async function mediaURL(id) {
   if (!m) return null;
   const u = URL.createObjectURL(m.blob); urlCache.set(id, u); return u;
 }
-Som.userLoader.get = async (id) => { const m = await DB.get('media', id); return m && m.blob; };
-let userSounds = []; // [{id, name, ...}] sem o blob
-async function loadUserSounds() {
-  const all = await DB.all('media');
-  userSounds = all.filter((m) => m.kind === 'audio').map(({ blob, ...m }) => m).sort((a, b) => b.createdAt - a.createdAt);
-  return userSounds;
-}
-function soundInfo(id) {
-  if (id && id.startsWith('u:')) { const u = userSounds.find((s) => s.id === id.slice(2)); return { id, kind: 'user', name: u ? u.name : 'Som removido', icon: 'mic' }; }
-  return Som.info(id);
-}
 async function saveMedia(kind, blob, name) {
-  const m = { id: uid(), kind, name: name || (kind === 'image' ? 'Imagem' : 'Som'), type: blob.type, blob, createdAt: Date.now() };
+  const m = { id: uid(), kind, name: name || 'Imagem', type: blob.type, blob, createdAt: Date.now() };
   await DB.put('media', m);
-  if (kind === 'audio') await loadUserSounds();
   return m;
 }
 async function resizeImage(file, max = 1800) {
@@ -135,11 +148,28 @@ function pickFile(accept) {
     document.body.appendChild(i); i.click();
   });
 }
+async function fillMedia(root) {
+  for (const img of $$('img[data-media]', root)) { const u = await mediaURL(img.dataset.media); if (u) img.src = u; }
+}
 
 /* ================= livros ================= */
 let books = [];
-async function loadBooks() { books = (await DB.all('books')).sort((a, b) => b.updatedAt - a.updatedAt); }
 const getBook = (id) => books.find((b) => b.id === id);
+function newBook(data = {}) {
+  return { id: uid(), title: 'Livro sem título', author: '', genre: '', theme: 'floresta', coverMedia: null, cloth: null, status: 'escrevendo', fav: false, meta: 0,
+    style: { ...DEF_STYLE }, createdAt: Date.now(), updatedAt: Date.now(), chapters: [{ id: uid(), title: 'Capítulo 1', html: '<p><br></p>', notes: '' }], ...data };
+}
+async function loadBooks() {
+  books = (await DB.all('books')).sort((a, b) => b.updatedAt - a.updatedAt);
+  // Livros de antes da mudança: ganham aparência e status, e perdem as marcações de som.
+  for (const b of books) {
+    let mudou = false;
+    if (!b.style) { b.style = { ...DEF_STYLE }; mudou = true; }
+    if (!b.status) { b.status = 'escrevendo'; mudou = true; }
+    for (const c of b.chapters) if (/m-(fx|amb|mus)/.test(c.html || '')) { c.html = sanitize(c.html); mudou = true; }
+    if (mudou) await DB.put('books', b);
+  }
+}
 const saveTimers = {};
 function saveBook(book, now = false) {
   book.updatedAt = Date.now();
@@ -153,103 +183,111 @@ function setSaving(busy) {
   const d = $('#saveDot'), t = $('#saveTxt'); if (!d) return;
   d.classList.toggle('busy', busy); t.textContent = busy ? 'Salvando…' : 'Salvo';
 }
-function newBook(data = {}) {
-  return { id: uid(), title: 'Livro sem título', author: '', genre: '', theme: 'floresta', coverMedia: null, createdAt: Date.now(), updatedAt: Date.now(), chapters: [{ id: uid(), title: 'Capítulo 1', html: '<p><br></p>' }], ...data };
-}
-function chapterStats(html) {
+function textStats(html) {
   const t = document.createElement('template'); t.innerHTML = html || '';
-  const words = (t.content.textContent || '').trim().split(/\s+/).filter(Boolean).length;
-  return { words, imgs: t.content.querySelectorAll('.m-img').length, snds: t.content.querySelectorAll('.m-fx,.m-amb,.m-mus').length };
+  const txt = (t.content.textContent || '').trim();
+  return { words: txt.split(/\s+/).filter(Boolean).length, chars: txt.length, imgs: t.content.querySelectorAll('.m-img').length };
 }
-function bookStats(b) {
-  return b.chapters.reduce((a, c) => { const s = chapterStats(c.html); a.words += s.words; a.imgs += s.imgs; a.snds += s.snds; return a; }, { words: 0, imgs: 0, snds: 0 });
-}
-const fmt = (n) => n.toLocaleString('pt-BR');
+function bookStats(b) { return b.chapters.reduce((a, c) => { const s = textStats(c.html); a.words += s.words; a.imgs += s.imgs; return a; }, { words: 0, imgs: 0 }); }
+const minutes = (w) => Math.max(1, Math.round(w / 200));
+const lastCh = (b) => clamp(LS.get('imersa-lastch-' + b.id, 0), 0, b.chapters.length - 1);
 
-function coverHTML(b, opts = {}) {
-  const art = b.coverMedia ? `<img data-media="${esc(b.coverMedia)}" alt="">` : Arte.svg(b.theme);
-  return `<div class="cover" ${opts.style ? `style="${opts.style}"` : ''}>${art}<div class="shade"></div>${opts.noTitle ? '' : `<div class="ct">${esc(b.title)}${b.genre ? `<small>${esc(b.genre)}</small>` : ''}</div>`}</div>`;
+/* meta de palavras do dia e dias seguidos escrevendo */
+const today = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const metaDia = () => LS.get('calh-meta', 500);
+function addWords(n) { if (n <= 0) return; const d = LS.get('calh-dias', {}); d[today()] = (d[today()] || 0) + n; LS.set('calh-dias', d); }
+function wordsOn(day) { return LS.get('calh-dias', {})[day] || 0; }
+function streak() {
+  const d = new Date(); let n = 0;
+  if (!wordsOn(today(d))) d.setDate(d.getDate() - 1);
+  while (wordsOn(today(d)) > 0) { n++; d.setDate(d.getDate() - 1); }
+  return n;
 }
-async function fillMedia(root) {
-  for (const img of $$('img[data-media]', root)) { const u = await mediaURL(img.dataset.media); if (u) img.src = u; }
+function goalHTML(cls = '') {
+  const w = wordsOn(today()), g = metaDia(), s = streak(), days = [];
+  for (let k = 6; k >= 0; k--) { const d = new Date(); d.setDate(d.getDate() - k); days.push([d, wordsOn(today(d))]); }
+  return `<button class="goal ${cls}" data-goal title="Mudar a meta do dia">
+    <div class="row" style="gap:8px;color:var(--terra)">${I('flame')}<span style="font-size:11.5px;font-weight:700;letter-spacing:1px">${s ? `${s} ${s === 1 ? 'DIA' : 'DIAS'} SEGUIDOS` : 'ESCREVA HOJE'}</span></div>
+    <div style="margin-top:10px"><b>${fmt(w)} de ${fmt(g)}</b> <span class="muted" style="font-size:13px">palavras hoje</span></div>
+    <div class="bar"><i style="width:${clamp(w / g * 100, 0, 100)}%"></i></div>
+    <div class="week">${days.map(([, n]) => `<span class="${n >= g ? 'w2' : n > 0 ? 'w1' : ''}"></span>`).join('')}${days.map(([d]) => `<small>${'DSTQQSS'[d.getDay()]}</small>`).join('')}</div></button>`;
+}
+async function editGoal() {
+  const v = await askText('Meta de palavras por dia', String(metaDia()), 'Palavras', 'Salvar', 'number');
+  const n = parseInt(v, 10); if (n > 0) { LS.set('calh-meta', n); route(); }
+}
+
+/* ================= capas ================= */
+const CLOTHS = { azul: '#24324a', vinho: '#5e2a26', verde: '#3e4f36', mostarda: '#7d5a17', ameixa: '#4a2d48', grafite: '#2c2a28' };
+function coverHTML(b, opts = {}) {
+  const st = styleOf(b);
+  if (!b.coverMedia && b.cloth) {
+    return `<div class="cover cloth" style="background-color:${CLOTHS[b.cloth] || CLOTHS.azul};${opts.style || ''}"><div class="frame"></div>${b.author ? `<div class="au">${esc(b.author)}</div>` : ''}<div class="orn">❦</div><div class="tt" style="font-family:${fontStack(st.titleFont)}">${esc(b.title)}</div><div class="orn">✦</div></div>`;
+  }
+  const art = b.coverMedia ? `<img data-media="${esc(b.coverMedia)}" alt="">` : Arte.svg(b.theme);
+  return `<div class="cover" style="${opts.style || ''}">${art}<div class="shade"></div>${opts.noTitle ? '' : `<div class="ct" style="font-family:${fontStack(st.titleFont)}">${esc(b.title)}${b.genre ? `<small>${esc(b.genre)}</small>` : ''}</div>`}</div>`;
 }
 
 /* ================= conteúdo: limpeza e montagem ================= */
-const BLOCK_CLASSES = { FIGURE: ['m-img'], DIV: ['m-amb', 'm-mus', 'm-scene'], SPAN: ['m-fx'] };
-const OK_TAGS = new Set(['P', 'H2', 'H3', 'BLOCKQUOTE', 'B', 'STRONG', 'I', 'EM', 'U', 'BR']);
+const OK_TAGS = new Set(['P', 'H2', 'H3', 'BLOCKQUOTE', 'B', 'STRONG', 'I', 'EM', 'U', 'BR', 'UL', 'OL', 'LI']);
 function sanitize(html) {
   const t = document.createElement('template'); t.innerHTML = html || '';
   const walk = (node) => {
     for (const el of [...node.children]) {
-      const cls = BLOCK_CLASSES[el.tagName] && BLOCK_CLASSES[el.tagName].find((c) => el.classList.contains(c));
-      if (cls) {
-        const keep = {}; for (const a of el.attributes) if (a.name.startsWith('data-')) keep[a.name] = a.value;
-        const n = document.createElement(el.tagName); n.className = cls;
-        for (const [k, v] of Object.entries(keep)) n.setAttribute(k, v);
+      // marcações de som da versão antiga: somem
+      if (el.matches('span.m-fx, div.m-amb, div.m-mus')) { el.remove(); continue; }
+      const blk = (el.tagName === 'FIGURE' && el.classList.contains('m-img')) ? 'm-img' : (el.tagName === 'DIV' && el.classList.contains('m-scene')) ? 'm-scene' : null;
+      if (blk) {
+        const n = document.createElement(el.tagName); n.className = blk;
+        for (const k of ['data-media', 'data-art', 'data-caption', 'data-size']) if (el.hasAttribute(k)) n.setAttribute(k, el.getAttribute(k));
         el.replaceWith(n); continue;
       }
       if (OK_TAGS.has(el.tagName)) { for (const a of [...el.attributes]) el.removeAttribute(a.name); walk(el); continue; }
       if (el.tagName === 'DIV') { const p = document.createElement('p'); p.append(...el.childNodes); el.replaceWith(p); walk(p); continue; }
-      if (['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'svg', 'SVG', 'IMG', 'VIDEO', 'AUDIO', 'LINK', 'META'].includes(el.tagName)) { el.remove(); continue; }
+      if (['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'svg', 'SVG', 'IMG', 'VIDEO', 'AUDIO', 'LINK', 'META', 'FIGURE'].includes(el.tagName)) { el.remove(); continue; }
       walk(el); el.replaceWith(...el.childNodes);
     }
   };
   walk(t.content);
   return t.innerHTML;
 }
-const parseLayers = (s) => (s || '').split('|').filter(Boolean).map((x) => { const i = x.lastIndexOf(':'); return { id: x.slice(0, i), vol: clamp(parseFloat(x.slice(i + 1)) || 0.6, 0, 1) }; });
-const layersAttr = (ls) => ls.map((l) => `${l.id}:${l.vol.toFixed(2)}`).join('|');
-const kindCls = (k) => ({ amb: 'k-amb', mus: 'k-mus', fx: 'k-fx', user: 'k-user' }[k] || 'k-user');
-
-// Desenha o conteúdo visível de um elemento de mídia no editor
+function imgInner(d) { return d.media ? `<img data-media="${esc(d.media)}" alt="">` : Arte.svg(d.art || 'floresta'); }
 function hydrate(el) {
   el.contentEditable = 'false';
-  const d = el.dataset;
-  if (el.classList.contains('m-fx')) {
-    const s = soundInfo(d.sound);
-    el.classList.toggle('user', s.kind === 'user');
-    el.innerHTML = `${I(s.icon)}${esc(d.label || s.name)}`;
-    el.title = `Som: ${s.name} — toque para editar`;
-  } else if (el.classList.contains('m-amb')) {
-    const ls = parseLayers(d.layers);
-    const names = ls.length ? ls.map((l) => soundInfo(l.id).name).join(' + ') : 'Silêncio (o ambiente para aqui)';
-    el.classList.add('m-blk');
-    el.innerHTML = `<span class="ic">${I(ls.length ? 'waves' : 'mute')}</span><span class="tx"><small>Ambiente da cena</small><b>${esc(names)}</b></span>${ls.length ? `<span class="play" data-act="play">${I('play', 'fill')}</span>` : ''}`;
-  } else if (el.classList.contains('m-mus')) {
-    const s = d.sound ? soundInfo(d.sound) : null;
-    el.classList.add('m-blk');
-    el.innerHTML = `<span class="ic">${I(s ? 'music' : 'mute')}</span><span class="tx"><small>Música</small><b>${s ? esc(s.name) + ` · ${Math.round((+d.vol || 0.5) * 100)}%` : 'Parar a música aqui'}</b></span>${s ? `<span class="play" data-act="play">${I('play', 'fill')}</span>` : ''}`;
-  } else if (el.classList.contains('m-scene')) {
-    el.innerHTML = '<span class="orn">✦ ❦ ✦</span><small>Mudança de cena · os sons da cena anterior param</small>';
-  } else if (el.classList.contains('m-img')) {
-    const art = d.media ? `<img data-media="${esc(d.media)}" alt="">` : Arte.svg(d.art || 'floresta');
-    const badges = [d.fx === 'zoom' ? `<span>${I('spark')}Zoom lento</span>` : '', d.bg === '1' ? `<span>${I('layers')}Fundo da leitura</span>` : ''].join('');
-    el.innerHTML = `<div class="frame">${art}<div class="badges">${badges}</div></div>${d.caption ? `<figcaption>${esc(d.caption)}</figcaption>` : ''}`;
+  if (el.classList.contains('m-img')) {
+    const d = el.dataset;
+    el.innerHTML = `<div class="frame">${imgInner(d)}</div>${d.caption ? `<figcaption>${esc(d.caption)}</figcaption>` : ''}`;
+    el.title = 'Toque para mudar a imagem';
     fillMedia(el);
-  }
+  } else if (el.classList.contains('m-scene')) { el.innerHTML = ''; el.title = 'Separador de cena — toque para tirar'; }
   return el;
 }
 function serialize(root) {
   const c = root.cloneNode(true);
-  for (const el of $$('.m-fx,.m-amb,.m-mus,.m-scene,.m-img', c)) { el.innerHTML = ''; el.removeAttribute('contenteditable'); el.removeAttribute('title'); el.classList.remove('m-blk', 'user'); }
+  for (const el of $$('.m-img,.m-scene', c)) { el.innerHTML = ''; el.removeAttribute('contenteditable'); el.removeAttribute('title'); }
   return c.innerHTML;
 }
 
 /* ================= janelas ================= */
 let modalStack = [];
-function modal(html, { wide = false, onClose } = {}) {
+function modal(html, { size = '', onClose } = {}) {
   const m = document.createElement('div'); m.className = 'modal';
-  m.innerHTML = `<div class="sheet ${wide ? 'wide' : ''}" role="dialog" aria-modal="true">${html}</div>`;
+  m.innerHTML = `<div class="sheet ${size}" role="dialog" aria-modal="true">${html}</div>`;
   document.body.appendChild(m);
   const close = () => { if (!m.isConnected) return; m.remove(); modalStack = modalStack.filter((x) => x !== close); if (onClose) onClose(); };
   m.addEventListener('mousedown', (e) => { if (e.target === m) close(); });
   $$('[data-close]', m).forEach((b) => b.addEventListener('click', close));
   modalStack.push(close);
-  const f = $('input:not([type=range]):not([type=checkbox]),textarea', m); if (f && matchMedia('(pointer:fine)').matches) setTimeout(() => f.focus(), 50);
+  const f = $('input.input,textarea', m); if (f && matchMedia('(pointer:fine)').matches) setTimeout(() => f.focus(), 50);
   return { el: m, close };
 }
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modalStack.length && !slashState) modalStack[modalStack.length - 1](); });
-const sheetHead = (title) => `<div class="sheet-h"><h3>${title}</h3><button class="icon-btn" data-close aria-label="Fechar">${I('x')}</button></div>`;
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (slashState) return;
+  if (modalStack.length) modalStack[modalStack.length - 1]();
+  else if (document.body.classList.contains('focus')) { document.body.classList.remove('focus'); const x = $('#exitFocus'); if (x) x.hidden = true; }
+});
+const sheetHead = (title) => `<div class="sheet-h"><h3>${title}</h3><button class="ib" data-close aria-label="Fechar">${I('x')}</button></div>`;
 function ask(title, msg, ok = 'Confirmar', danger = false) {
   return new Promise((res) => {
     let done = false;
@@ -257,10 +295,10 @@ function ask(title, msg, ok = 'Confirmar', danger = false) {
     $('#okb', m.el).onclick = () => { done = true; m.close(); res(true); };
   });
 }
-function askText(title, value = '', label = 'Nome', ok = 'Salvar') {
+function askText(title, value = '', label = 'Nome', ok = 'Salvar', type = 'text') {
   return new Promise((res) => {
     let done = false;
-    const m = modal(`${sheetHead(esc(title))}<div class="sheet-b"><div class="field"><label>${esc(label)}</label><input class="input" id="tx" value="${esc(value)}" maxlength="80"></div></div><div class="sheet-f"><span class="grow"></span><button class="btn" data-close>Cancelar</button><button class="btn pri" id="okb">${esc(ok)}</button></div>`, { onClose: () => { if (!done) res(null); } });
+    const m = modal(`${sheetHead(esc(title))}<div class="sheet-b"><div class="field"><label>${esc(label)}</label><input class="input" id="tx" type="${type}" value="${esc(value)}" maxlength="80"></div></div><div class="sheet-f"><span class="grow"></span><button class="btn" data-close>Cancelar</button><button class="btn pri" id="okb">${esc(ok)}</button></div>`, { onClose: () => { if (!done) res(null); } });
     const go = () => { done = true; const v = $('#tx', m.el).value.trim(); m.close(); res(v || value); };
     $('#okb', m.el).onclick = go; $('#tx', m.el).onkeydown = (e) => { if (e.key === 'Enter') go(); };
   });
@@ -282,87 +320,138 @@ function closeMenus() { $$('.menu').forEach((m) => m.remove()); document.removeE
 /* ================= roteamento ================= */
 const app = $('#app');
 let teardown = [];
-function onLeave(fn) { teardown.push(fn); }
+const onLeave = (fn) => teardown.push(fn);
 function route() {
   teardown.forEach((f) => { try { f(); } catch (e) { console.error(e); } }); teardown = [];
   closeMenus(); modalStack.slice().forEach((c) => c()); closeSlash();
-  Som.stopPreview();
+  document.body.classList.remove('focus');
   const [, a, b, c] = (location.hash.slice(1) || '/').split('/');
   window.scrollTo(0, 0);
   if (a === 'livro' && getBook(b)) viewEditor(getBook(b), +c || 0);
-  else if (a === 'ler' && getBook(b)) viewReader(getBook(b), +c || 0);
-  else if (a === 'sons') viewSounds();
-  else viewShelf();
+  else if (a === 'ler' && getBook(b)) viewBook(getBook(b), +c || 0);
+  else viewShelf(a === 'favoritos' ? 'fav' : 'all');
 }
 const go = (h) => { if (location.hash === h) route(); else location.hash = h; };
 
 /* ================= ESTANTE ================= */
-function viewShelf() {
-  document.title = 'Imersa — sua estante';
-  const hour = new Date().getHours();
-  const hello = hour < 5 ? 'Boa madrugada' : hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+let shelfFilter = 'todos', shelfSearch = '';
+function viewShelf(nav) {
+  document.title = 'Calhamaço — sua estante';
+  const h = new Date().getHours();
+  const hello = h < 5 ? 'Boa madrugada.' : h < 12 ? 'Bom dia.' : h < 18 ? 'Boa tarde.' : 'Boa noite.';
+  const dateTxt = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
   const last = books[0];
   let cont = '';
   if (last) {
-    const st = bookStats(last), ci = clamp(LS.get('imersa-lastch-' + last.id, 0), 0, last.chapters.length - 1), ch = last.chapters[ci];
-    cont = `<div class="continue">${coverHTML(last, { style: 'width:110px', noTitle: false })}
-      <div class="info"><span class="kicker">Continuar escrevendo</span><h3>${esc(last.title)}</h3>
-      <span class="muted" style="font-size:13px">Cap. ${roman(ci)} — ${esc(ch.title)} · ${fmt(st.words)} palavras</span>
-      <div class="pills" style="margin-top:10px"><span class="pill amber">${I('image')}${st.imgs}</span><span class="pill teal">${I('vol')}${st.snds}</span><span class="pill">${I('book')}${last.chapters.length} cap.</span></div>
-      <div class="acts"><button class="btn pri sm" data-go="#/livro/${last.id}/${ci}">${I('pen')}Escrever</button><button class="btn sm" data-go="#/ler/${last.id}/${ci}">${I('eye')}Ler</button></div></div></div>`;
+    const ci = lastCh(last), ch = last.chapters[ci], st = textStats(ch.html), bs = bookStats(last);
+    const t = document.createElement('template'); t.innerHTML = ch.html;
+    const ps = [...t.content.querySelectorAll('p')].map((p) => p.textContent.trim()).filter((x) => x.length > 20);
+    const snip = ps.length ? ps[ps.length - 1] : '';
+    const quando = new Date(last.updatedAt).toLocaleString('pt-BR', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
+    cont = `<div class="card continue">${coverHTML(last, { style: 'width:140px' })}
+      <div class="info"><span class="kicker">Continuar de onde parou</span><h3>${esc(last.title)}</h3>
+      <span class="muted" style="font-size:13.5px">Capítulo ${roman(ci)} — ${esc(ch.title)} · ${fmt(st.words)} palavras · ${esc(quando)}</span>
+      ${snip ? `<blockquote style="font-family:${fontStack(styleOf(last).font)}">“${esc(snip.length > 240 ? '…' + snip.slice(-240) : snip)}”</blockquote>` : '<div style="height:16px"></div>'}
+      <div class="acts"><button class="btn pri" data-go="#/livro/${last.id}/${ci}">${I('pen')}Continuar escrevendo</button><button class="btn hide-m" data-go="#/ler/${last.id}/${ci}">${I('eye')}Ver como livro</button>
+      ${last.meta ? `<span class="grow hide-m"></span><span class="muted hide-m" style="font-size:12.5px">${Math.round(Math.min(1, bs.words / last.meta) * 100)}% da meta do livro</span><div class="bar hide-m" style="width:140px"><i style="width:${Math.min(100, bs.words / last.meta * 100)}%"></i></div>` : ''}</div></div></div>`;
   }
-  app.innerHTML = `<div class="shelf-bg">
-    <header class="topbar"><div class="logo">${LOGO}Imersa</div><span class="grow"></span>
-      <button class="btn sm" data-go="#/sons">${I('head')}<span class="hide-m">Sons</span></button>
-      <button class="icon-btn" id="mainMenu" aria-label="Mais opções">${I('more')}</button></header>
-    <div class="shelf"><div class="hello">${hello} ✦</div><h1 class="h1">Sua estante</h1>${cont}
-      <div class="sec-h"><h2>Meus livros</h2><span class="muted" style="font-size:13px">${books.length} ${books.length === 1 ? 'livro' : 'livros'}</span></div>
-      <div class="books">${books.map((b) => { const st = bookStats(b); return `<button class="book" data-go="#/livro/${b.id}/${clamp(LS.get('imersa-lastch-' + b.id, 0), 0, b.chapters.length - 1)}">${coverHTML(b)}<span class="meta"><b>${esc(b.title)}</b><small>${b.chapters.length} cap. · ${fmt(st.words)} palavras</small></span></button>`; }).join('')}
-        <button class="newbook" id="newBook">${I('plus')}Novo livro</button></div>
-    </div></div>`;
+  const favs = books.filter((b) => b.fav).length;
+  app.innerHTML = `
+  <header class="topbar"><div class="logo">${LOGO}<span>Calhamaço</span></div>
+    <label class="input hide-m" style="display:flex;align-items:center;gap:9px;width:320px;height:40px;margin-left:30px;color:var(--muted)">${I('search')}<input id="q" placeholder="Buscar nos seus livros…" value="${esc(shelfSearch)}" style="border:0;outline:0;background:none;flex:1;color:var(--ink)"></label>
+    <span class="grow"></span>
+    <button class="btn hide-m" id="impBtn">${I('download')}Importar</button>
+    <button class="btn terra" id="newTop">${I('plus')}<span class="hide-m">Novo livro</span></button>
+    <button class="ib" id="mainMenu" aria-label="Mais opções">${I('more')}</button></header>
+  <div class="shelf-wrap">
+    <aside class="side">
+      <button class="nav ${nav === 'all' ? 'on' : ''}" data-go="#/">${I('book')}Estante<span class="c">${books.length}</span></button>
+      <button class="nav ${nav === 'fav' ? 'on' : ''}" data-go="#/favoritos">${I('star')}Favoritos<span class="c">${favs}</span></button>
+      ${goalHTML()}
+    </aside>
+    <main class="shelf">
+      <div class="date">${esc(dateTxt.charAt(0).toUpperCase() + dateTxt.slice(1))}</div>
+      <h1 class="hello">${hello} <em>Vamos escrever?</em></h1>
+      ${nav === 'all' ? cont : ''}
+      <div class="sec-h"><h2>${nav === 'fav' ? 'Favoritos' : 'Sua estante'}</h2>
+        <div class="chips" id="flt">${[['todos', 'Todos'], ['escrevendo', 'Escrevendo'], ['terminado', 'Terminados'], ['rascunho', 'Rascunhos']].map(([k, n]) => `<button class="chip ${shelfFilter === k ? 'on' : ''}" data-f="${k}">${n}</button>`).join('')}</div></div>
+      <div class="books" id="bookGrid"></div>
+      ${goalHTML('m only-m')}
+    </main>
+  </div>`;
+  const grid = $('#bookGrid');
+  const drawBooks = () => {
+    const q = shelfSearch.toLowerCase();
+    const list = books.filter((b) => (nav !== 'fav' || b.fav) && (shelfFilter === 'todos' || b.status === shelfFilter) && (!q || (b.title + ' ' + b.author + ' ' + b.genre).toLowerCase().includes(q)));
+    grid.innerHTML = list.map((b) => {
+      const st = bookStats(b);
+      return `<button class="book" data-go="#/livro/${b.id}/${lastCh(b)}">${b.fav ? `<span class="fav">${I('star')}</span>` : ''}${coverHTML(b)}<span class="meta"><b>${esc(b.title)}</b><small>${b.status === 'rascunho' ? 'rascunho · ' : b.status === 'terminado' ? 'terminado · ' : `${b.chapters.length} cap. · `}${fmt(st.words)} palavras</small>${b.meta ? `<div class="bar"><i style="width:${Math.min(100, st.words / b.meta * 100)}%"></i></div>` : ''}</span></button>`;
+    }).join('') + (nav === 'fav' ? '' : `<button class="newbook" id="newBook">${I('plus')}Novo livro</button>`);
+    if (!list.length && nav === 'fav') grid.innerHTML = '<p class="empty" style="grid-column:1/-1">Marque um livro como favorito nos dados do livro.</p>';
+    fillMedia(grid);
+    $$('[data-go]', grid).forEach((b) => b.onclick = () => go(b.dataset.go));
+    if ($('#newBook')) $('#newBook').onclick = () => bookDialog(null);
+  };
+  drawBooks();
   fillMedia(app);
-  $$('[data-go]', app).forEach((b) => b.onclick = () => go(b.dataset.go));
-  $('#newBook').onclick = () => bookDialog(null);
+  $$('[data-go]', app).forEach((b) => { if (!grid.contains(b)) b.onclick = () => go(b.dataset.go); });
+  $$('[data-goal]', app).forEach((b) => b.onclick = editGoal);
+  $('#flt').onclick = (e) => { const b = e.target.closest('[data-f]'); if (!b) return; shelfFilter = b.dataset.f; $$('#flt .chip').forEach((x) => x.classList.toggle('on', x === b)); drawBooks(); };
+  if ($('#q')) $('#q').oninput = (e) => { shelfSearch = e.target.value; drawBooks(); };
+  $('#newTop').onclick = () => bookDialog(null);
+  $('#impBtn').onclick = importFile;
   $('#mainMenu').onclick = (e) => popMenu(e.currentTarget, [
     { icon: 'upload', label: 'Abrir livro ou backup (.json)', run: importFile },
     { icon: 'download', label: 'Fazer backup de tudo', run: exportAll },
     '-',
-    { icon: 'head', label: 'Biblioteca de sons', run: () => go('#/sons') },
+    { icon: 'flame', label: 'Mudar a meta do dia', run: editGoal },
   ]);
 }
 
 function bookDialog(book) {
   const isNew = !book;
-  const b = book ? { ...book } : newBook({ title: '' });
+  const b = book ? { ...book, style: styleOf(book) } : newBook({ title: '' });
+  let tab = b.coverMedia ? 'foto' : b.cloth ? 'tecido' : 'arte';
   const m = modal(`${sheetHead(isNew ? 'Novo livro' : 'Dados do livro')}<div class="sheet-b">
-    <div class="field"><label>Título</label><input class="input" id="bt" value="${esc(b.title)}" placeholder="Ex.: A Floresta dos Sussurros" maxlength="90"></div>
+    <div class="field"><label>Título</label><input class="input" id="bt" value="${esc(b.title)}" placeholder="Ex.: O Silêncio da Mata" maxlength="90"></div>
     <div class="row"><div class="field"><label>Autor(a)</label><input class="input" id="ba" value="${esc(b.author)}" placeholder="Seu nome" maxlength="60"></div>
-    <div class="field"><label>Gênero</label><input class="input" id="bg" value="${esc(b.genre)}" placeholder="Fantasia, romance…" maxlength="40"></div></div>
-    <div class="field"><label>Capa</label><div class="themes" id="th"></div></div>
-  </div><div class="sheet-f">${isNew ? '' : `<button class="btn danger" id="del">${I('trash')}Excluir</button>`}<span class="grow"></span><button class="btn" data-close>Cancelar</button><button class="btn pri" id="ok">${isNew ? 'Criar livro' : 'Salvar'}</button></div>`);
-  const th = $('#th', m.el);
+    <div class="field"><label>Gênero</label><input class="input" id="bg" value="${esc(b.genre)}" placeholder="Romance, fantasia…" maxlength="40"></div></div>
+    <div class="row"><div class="field"><label>Situação</label><select class="input" id="bs">${[['escrevendo', 'Escrevendo'], ['rascunho', 'Rascunho'], ['terminado', 'Terminado']].map(([k, n]) => `<option value="${k}" ${b.status === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+    <div class="field"><label>Meta de palavras do livro</label><input class="input" id="bm" type="number" min="0" step="1000" value="${b.meta || ''}" placeholder="opcional"></div></div>
+    <div class="field"><label>Capa</label><div class="seg" id="ctab" style="margin-bottom:12px"><button data-t="arte">Ilustração</button><button data-t="tecido">Tecido e ouro</button><button data-t="foto">Foto</button></div><div id="cpick"></div></div>
+    <label class="row" style="gap:10px;font-size:14px;cursor:pointer"><input type="checkbox" id="bf" ${b.fav ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--terra)">Favorito</label>
+  </div><div class="sheet-f">${isNew ? '' : `<button class="btn danger" id="del">${I('trash')}Excluir</button>`}<span class="grow"></span><button class="btn" data-close>Cancelar</button><button class="btn pri" id="ok">${isNew ? 'Criar livro' : 'Salvar'}</button></div>`, { size: 'wide' });
+  const cp = $('#cpick', m.el);
+  const cur = () => ({ ...b, title: $('#bt', m.el).value || 'Título', author: $('#ba', m.el).value, genre: $('#bg', m.el).value });
   const draw = () => {
-    th.innerHTML = Arte.temas.map((t) => `<button data-t="${t.id}" class="${!b.coverMedia && b.theme === t.id ? 'on' : ''}" title="${esc(t.name)}">${coverHTML({ ...b, coverMedia: null, theme: t.id, title: $('#bt', m.el).value || 'Título', genre: '' })}</button>`).join('')
-      + (b.coverMedia ? `<button class="on" data-t="img">${coverHTML({ ...b, title: $('#bt', m.el).value || 'Título', genre: '' })}</button>` : '')
-      + `<button class="up" data-t="up">${I('upload')}Usar uma foto</button>`;
-    fillMedia(th);
+    $$('#ctab button', m.el).forEach((x) => x.classList.toggle('on', x.dataset.t === tab));
+    const c = cur();
+    if (tab === 'arte') cp.innerHTML = `<div class="covers">${Arte.temas.map((t) => `<button data-th="${t.id}" class="${!b.coverMedia && !b.cloth && b.theme === t.id ? 'on' : ''}" title="${esc(t.name)}">${coverHTML({ ...c, coverMedia: null, cloth: null, theme: t.id })}</button>`).join('')}</div>`;
+    else if (tab === 'tecido') cp.innerHTML = `<div class="swatches" style="margin-bottom:12px">${Object.entries(CLOTHS).map(([k, v]) => `<button data-cl="${k}" class="${b.cloth === k ? 'on' : ''}" style="background:${v}" title="${k}"></button>`).join('')}</div><div style="width:120px">${coverHTML({ ...c, coverMedia: null, cloth: b.cloth || 'azul' })}</div>`;
+    else cp.innerHTML = `<div class="covers">${b.coverMedia ? `<button class="on">${coverHTML({ ...c, cloth: null })}</button>` : ''}<button class="up" data-up>${I('upload')}${b.coverMedia ? 'Trocar a foto' : 'Escolher uma foto'}</button></div>`;
+    fillMedia(cp);
   };
   draw();
+  $('#ctab', m.el).onclick = (e) => { const x = e.target.closest('button'); if (!x) return; tab = x.dataset.t; if (tab === 'tecido' && !b.cloth) { b.cloth = 'azul'; b.coverMedia = null; } draw(); };
   $('#bt', m.el).addEventListener('change', draw);
-  th.onclick = async (e) => {
-    const t = e.target.closest('button'); if (!t) return;
-    if (t.dataset.t === 'up') {
+  cp.onclick = async (e) => {
+    const x = e.target.closest('button'); if (!x) return;
+    if (x.dataset.th) { b.theme = x.dataset.th; b.coverMedia = null; b.cloth = null; }
+    else if (x.dataset.cl) { b.cloth = x.dataset.cl; b.coverMedia = null; }
+    else if (x.hasAttribute('data-up')) {
       const f = await pickFile('image/*'); if (!f) return;
-      const md = await saveMedia('image', await resizeImage(f, 1400), 'Capa'); b.coverMedia = md.id;
-    } else if (t.dataset.t !== 'img') { b.theme = t.dataset.t; b.coverMedia = null; }
+      const md = await saveMedia('image', await resizeImage(f, 1400), 'Capa'); b.coverMedia = md.id; b.cloth = null;
+    }
     draw();
   };
   $('#ok', m.el).onclick = async () => {
     b.title = $('#bt', m.el).value.trim() || 'Livro sem título'; b.author = $('#ba', m.el).value.trim(); b.genre = $('#bg', m.el).value.trim();
+    b.status = $('#bs', m.el).value; b.meta = parseInt($('#bm', m.el).value, 10) || 0; b.fav = $('#bf', m.el).checked;
+    if (tab === 'arte') b.cloth = null;
     if (isNew) { books.unshift(b); await saveBook(b, true); m.close(); go(`#/livro/${b.id}/0`); }
     else { Object.assign(book, b); await saveBook(book, true); m.close(); route(); }
   };
-  if (!isNew) $('#del', m.el).onclick = async () => { m.close(); deleteBook(book); };
+  if (!isNew) $('#del', m.el).onclick = () => { m.close(); deleteBook(book); };
 }
 async function deleteBook(book) {
   if (!(await ask('Excluir livro?', `"${book.title}" e todos os capítulos serão apagados deste aparelho. Isso não pode ser desfeito.`, 'Excluir', true))) return;
@@ -371,67 +460,81 @@ async function deleteBook(book) {
 
 /* ================= EDITOR ================= */
 let slashState = null;
+let slashInsert = () => {};
 function viewEditor(book, ci) {
   ci = clamp(ci, 0, book.chapters.length - 1);
   LS.set('imersa-lastch-' + book.id, ci);
   const ch = book.chapters[ci];
+  const st = () => styleOf(book);
   document.title = `${ch.title} — ${book.title}`;
   app.innerHTML = `
-  <header class="topbar ed-top">
-    <button class="icon-btn" data-go="#/" aria-label="Estante">${I('left')}</button>
-    <button class="icon-btn only-m" id="openSide" aria-label="Capítulos">${I('list')}</button>
-    <div class="crumb"><b>${esc(book.title)}</b><small><span class="dot" id="saveDot"></span><span id="saveTxt">Salvo</span> · <span id="wc"></span></small></div>
+  <header class="topbar">
+    <button class="ib keep" id="backBtn" aria-label="Estante">${I('left')}</button>
+    <button class="ib only-m" id="openSide" aria-label="Capítulos">${I('menu')}</button>
+    <div class="crumb"><b>${esc(book.title)}</b><small><span class="dot" id="saveDot"></span><span id="saveTxt">Salvo</span><span class="hide-m">· Capítulo ${roman(ci)} — ${esc(ch.title)}</span></small></div>
     <span class="grow"></span>
-    <button class="btn sm hide-m" data-go="#/sons">${I('head')}Sons</button>
-    <button class="btn pri sm" id="readBtn">${I('eye')}Ler</button>
-    <button class="icon-btn" id="bookMenu" aria-label="Mais opções">${I('more')}</button>
+    <button class="btn hide-m" id="focusBtn">${I('focus')}Modo foco</button>
+    <button class="btn keep" id="exitFocus" hidden>${I('x')}Sair do foco</button>
+    <button class="btn" id="readBtn">${I('eye')}<span class="hide-m">Ver como livro</span></button>
+    <button class="btn pri hide-m" id="expBtn">${I('download')}Exportar</button>
+    <button class="ib" id="bookMenu" aria-label="Mais opções">${I('more')}</button>
   </header>
-  <div class="ed-wrap">
-    <aside class="side" id="side"></aside>
+  <div class="toolbar"><div class="tools" id="tools">
+    <button class="sel" id="fontSel" title="Fonte do texto"><span id="fontName"></span>${I('down')}</button>
+    <select class="sel" id="sizeSel" title="Tamanho da letra" style="gap:0;font-family:var(--ui)">${[14, 15, 16, 17, 18, 19, 20, 22, 24, 26].map((n) => `<option value="${n}">${n}</option>`).join('')}</select>
+    <span class="sep"></span>
+    <button class="tb" data-cmd="bold" title="Negrito"><b>B</b></button>
+    <button class="tb" data-cmd="italic" title="Itálico"><i style="font-family:Lora">I</i></button>
+    <button class="tb" data-cmd="underline" title="Sublinhado"><u>U</u></button>
+    <button class="tb" data-cmd="h2" title="Subtítulo">${I('h')}</button>
+    <button class="tb" data-cmd="quote" title="Citação">${I('quote')}</button>
+    <button class="tb" data-cmd="list" title="Lista">${I('list')}</button>
+    <span class="sep"></span>
+    <button class="tb img" data-ins="img">${I('image')}Imagem</button>
+    <button class="tb" data-ins="scene" title="Separador de cena">✦ <span class="hide-m">Separador</span></button>
+    <button class="tb" id="aaBtn" title="Aparência do livro">${I('aa')}<span class="hide-m">Aparência</span></button>
+  </div></div>
+  <div class="ed-wrap" id="edWrap">
+    <aside class="side ed" id="side"></aside>
     <main class="desk">
-      <div class="toolbar"><div class="tools" id="tools">
-        <button data-cmd="bold" title="Negrito (Ctrl+B)"><b>B</b></button>
-        <button data-cmd="italic" title="Itálico (Ctrl+I)"><i style="font-family:var(--serif);font-size:17px">I</i></button>
-        <button data-cmd="h2" title="Subtítulo">${I('type')}</button>
-        <button data-cmd="quote" title="Citação">${I('quote')}</button>
-        <span class="sep"></span>
-        <button data-ins="img" class="c-img">${I('image')}Imagem</button>
-        <button data-ins="fx" class="c-snd">${I('vol')}Som</button>
-        <button data-ins="amb" class="c-snd">${I('waves')}Ambiente</button>
-        <button data-ins="mus" class="c-mus">${I('music')}Música</button>
-        <button data-ins="scene" class="c-scn">${I('hour')}Cena</button>
-      </div></div>
-      <div class="paper">
+      <div class="paper" id="paper">
         <div class="chapno">Capítulo ${roman(ci)}</div>
         <input class="ch-title" id="chTitle" value="${esc(ch.title)}" placeholder="Título do capítulo" maxlength="90">
-        <div class="editor" id="ed" contenteditable="true" spellcheck="true" data-ph="Comece a escrever… digite / para pôr sons e imagens"></div>
+        <div class="orn">✦ ❦ ✦</div>
+        <div class="editor" id="ed" contenteditable="true" spellcheck="true" data-ph="Comece a escrever… digite / para pôr uma imagem ou um separador"></div>
       </div>
     </main>
-  </div>`;
-  $$('[data-go]', app).forEach((b) => b.onclick = () => go(b.dataset.go));
-  const ed = $('#ed');
+    <aside class="panel" id="panel"></aside>
+  </div>
+  <div class="status"><span id="stW"></span><span class="hide-m" id="stC"></span><span id="stM"></span><span class="grow"></span><span class="hide-m" id="stB"></span></div>`;
+  const ed = $('#ed'), paper = $('#paper'), side = $('#side'), panel = $('#panel');
   try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch (e) { /* navegador antigo */ }
   ed.innerHTML = sanitize(ch.html) || '<p><br></p>';
-  $$('.m-fx,.m-amb,.m-mus,.m-scene,.m-img', ed).forEach(hydrate);
+  $$('.m-img,.m-scene', ed).forEach(hydrate);
   normalize(ed);
+  const restyle = () => { applyStyle(paper, st()); $('#fontName').textContent = st().font; $('#fontName').style.fontFamily = fontStack(st().font); $('#sizeSel').value = st().size; };
+  restyle();
+  if (LS.get('calh-panel', true) === false) $('#edWrap').classList.add('no-panel');
 
-  const side = $('#side');
+  // lateral: capítulos, nota e palavras do capítulo
   const drawSide = () => {
-    const st = bookStats(book);
-    side.innerHTML = `<div class="bookcard">${coverHTML(book, { noTitle: true })}<div><h3>${esc(book.title)}</h3><div class="muted" style="font-size:12px;margin-top:3px">${esc(book.genre || 'Sem gênero')}</div><div class="muted" style="font-size:11.5px;margin-top:6px">${fmt(st.words)} palavras · ${book.chapters.length} cap.</div></div></div>
-      <div class="lbl">Capítulos</div>
-      ${book.chapters.map((c, i) => { const s = chapterStats(i === ci ? serialize(ed) : c.html); return `<button class="ch ${i === ci ? 'on' : ''}" data-ch="${i}"><span class="n">${roman(i)}</span><span class="t">${esc(c.title || 'Sem título')}</span><span class="meta">${s.imgs ? `<span>${I('image')}${s.imgs}</span>` : ''}${s.snds ? `<span>${I('vol')}${s.snds}</span>` : ''}</span></button>
-        ${i === ci ? `<div class="ch-tools">${i > 0 ? `<button data-mv="-1" title="Subir">${I('up')}</button>` : ''}${i < book.chapters.length - 1 ? `<button data-mv="1" title="Descer">${I('down')}</button>` : ''}${book.chapters.length > 1 ? `<button data-delch title="Excluir capítulo">${I('trash')}Excluir</button>` : ''}</div>` : ''}`; }).join('')}
-      <button class="ch addch" id="addCh"><span class="n">+</span>Novo capítulo</button>
-      <div class="tip">Digite <kbd>/</kbd> no texto para pôr <b>sons</b>, <b>ambientes</b>, <b>músicas</b> e <b>imagens</b>. Toque num deles para mudar. Depois aperte <b>Ler</b> para sentir como o leitor vai viver a história.</div>`;
-    fillMedia(side);
+    const cs = textStats(serialize(ed));
+    side.innerHTML = `<div class="lbl" style="padding:2px 10px 8px">Capítulos</div>
+      ${book.chapters.map((c, i) => `<button class="ch ${i === ci ? 'on' : ''}" data-ch="${i}"><span class="n">${roman(i)}</span><span class="t">${esc(c.title || 'Sem título')}</span><span class="w">${(() => { const w = i === ci ? cs.words : textStats(c.html).words; return w ? fmt(w) : '—'; })()}</span></button>
+        ${i === ci ? `<div class="ch-tools">${i > 0 ? `<button data-mv="-1" title="Subir">${I('up')}</button>` : ''}${i < book.chapters.length - 1 ? `<button data-mv="1" title="Descer">${I('down')}</button>` : ''}${book.chapters.length > 1 ? `<button data-delch title="Excluir capítulo">${I('trash')}Excluir</button>` : ''}</div>` : ''}`).join('')}
+      <button class="ch" id="addCh" style="color:var(--muted)"><span class="n">+</span>Novo capítulo</button>
+      <div class="lbl" style="padding:16px 10px 8px">Notas do capítulo</div>
+      <textarea class="note" id="note" placeholder="Ideias, lembretes, o que acontece depois…">${esc(ch.notes || '')}</textarea>
+      <div class="goal" style="cursor:default"><div class="muted" style="font-size:12px">Este capítulo</div><b>${fmt(cs.words)} palavras</b>
+        <div class="muted" style="font-size:11.5px;margin-top:4px">${minutes(cs.words)} min de leitura · ${cs.imgs} ${cs.imgs === 1 ? 'imagem' : 'imagens'}</div></div>`;
+    $('#note').oninput = (e) => { ch.notes = e.target.value; saveBook(book); };
   };
   drawSide();
   side.onclick = async (e) => {
     const b = e.target.closest('button'); if (!b) return;
     flush();
     if (b.dataset.ch != null) { closeSide(); go(`#/livro/${book.id}/${b.dataset.ch}`); }
-    else if (b.id === 'addCh') { book.chapters.push({ id: uid(), title: `Capítulo ${book.chapters.length + 1}`, html: '<p><br></p>' }); await saveBook(book, true); go(`#/livro/${book.id}/${book.chapters.length - 1}`); }
+    else if (b.id === 'addCh') { book.chapters.push({ id: uid(), title: `Capítulo ${book.chapters.length + 1}`, html: '<p><br></p>', notes: '' }); await saveBook(book, true); go(`#/livro/${book.id}/${book.chapters.length - 1}`); }
     else if (b.dataset.mv) { const j = ci + +b.dataset.mv; [book.chapters[ci], book.chapters[j]] = [book.chapters[j], book.chapters[ci]]; await saveBook(book, true); go(`#/livro/${book.id}/${j}`); }
     else if (b.hasAttribute('data-delch')) {
       if (!(await ask('Excluir capítulo?', `"${ch.title}" será apagado. Isso não pode ser desfeito.`, 'Excluir', true))) return;
@@ -443,15 +546,65 @@ function viewEditor(book, ci) {
   $('#openSide').onclick = () => { side.classList.add('open'); bd = document.createElement('div'); bd.className = 'side-bd'; bd.onclick = closeSide; document.body.appendChild(bd); };
   onLeave(closeSide);
 
-  // salvar
-  const wc = $('#wc');
-  const updWC = () => { wc.textContent = fmt(chapterStats(ch.html).words) + ' palavras'; };
+  // painel de aparência (fica à direita no computador; no celular abre numa janela)
+  const drawPanel = (box) => {
+    const s = st(), top4 = [s.font, ...['Lora', 'EB Garamond', 'Merriweather', 'Courier Prime'].filter((f) => f !== s.font)].slice(0, 4);
+    box.innerHTML = `<h4 class="ph">Aparência do livro</h4>
+      <div><div class="lbl" style="margin-bottom:8px">Fonte do texto</div>
+        ${top4.map((f) => `<button class="fopt ${f === s.font ? 'on' : ''}" data-font="${esc(f)}" style="font-family:${fontStack(f)}">${esc(f)}${f === s.font ? `<span class="ck">${I('check')}</span>` : '<span class="muted" style="font-size:12px;font-family:var(--ui)">Aa</span>'}</button>`).join('')}
+        <button class="link" data-all="font">Ver todas as ${FONTES.length} fontes →</button></div>
+      <div><div class="lbl" style="margin-bottom:8px">Fonte dos títulos</div>
+        <button class="fopt on" data-all="titleFont" style="font-family:${fontStack(s.titleFont)};font-style:italic;font-size:18px;border-color:var(--line2)">${esc(s.titleFont)}${I('down')}</button></div>
+      <div><div class="lbl" style="margin-bottom:10px">Tamanho e espaço</div>
+        <div class="slider"><div class="row"><span>Tamanho</span><b id="vSize">${s.size}</b></div><input type="range" class="range" data-k="size" min="14" max="26" step="1" value="${s.size}"></div>
+        <div class="slider"><div class="row"><span>Entre linhas</span><b id="vLh">${String(s.lh).replace('.', ',')}</b></div><input type="range" class="range" data-k="lh" min="1.3" max="2.2" step="0.05" value="${s.lh}"></div>
+        <div class="row" style="justify-content:space-between;font-size:12.5px;color:var(--ink2);margin:4px 0 6px"><span>Margens</span></div>
+        <div class="seg" id="mg">${Object.entries(MARGENS).map(([k, v]) => `<button data-mg="${k}" class="${s.margin === k ? 'on' : ''}">${v.n}</button>`).join('')}</div></div>
+      <div><div class="lbl" style="margin-bottom:8px">Papel</div><div class="papers">${Object.entries(PAPERS).map(([k, v]) => `<button data-pp="${k}" class="${s.paper === k ? 'on' : ''}"><i style="background:${v.bg}"></i>${v.n}</button>`).join('')}</div></div>`;
+  };
+  const setStyle = (patch) => { book.style = { ...st(), ...patch }; restyle(); saveBook(book); };
+  const panelEvents = (box) => {
+    box.addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.font) setStyle({ font: b.dataset.font });
+      else if (b.dataset.all) { fontPicker(book, b.dataset.all, (patch) => { setStyle(patch); drawPanel(box); }); return; }
+      else if (b.dataset.mg) setStyle({ margin: b.dataset.mg });
+      else if (b.dataset.pp) setStyle({ paper: b.dataset.pp });
+      else return;
+      drawPanel(box);
+    });
+    box.addEventListener('input', (e) => {
+      const k = e.target.dataset.k; if (!k) return;
+      const v = +e.target.value; setStyle({ [k]: v });
+      if (k === 'size') $('#vSize', box).textContent = v; else $('#vLh', box).textContent = String(v).replace('.', ',');
+    });
+  };
+  drawPanel(panel); panelEvents(panel);
+  $('#aaBtn').onclick = () => {
+    if (innerWidth > 1220) { const w = $('#edWrap'); w.classList.toggle('no-panel'); LS.set('calh-panel', !w.classList.contains('no-panel')); return; }
+    const m = modal(`${sheetHead('Aparência do livro')}<div class="sheet-b" id="pbox" style="display:flex;flex-direction:column;gap:18px"></div>`);
+    const box = $('#pbox', m.el); drawPanel(box); $('.ph', box).remove(); panelEvents(box);
+  };
+  $('#fontSel').onclick = () => fontPicker(book, 'font', (patch) => { setStyle(patch); drawPanel(panel); });
+  $('#sizeSel').onchange = (e) => { setStyle({ size: +e.target.value }); drawPanel(panel); };
+
+  // salvar e contar palavras
+  let lastWords = textStats(ch.html).words;
+  const updStatus = () => {
+    const s = textStats(ch.html), b = bookStats(book);
+    $('#stW').textContent = `${fmt(s.words)} palavras`; $('#stC').textContent = `${fmt(s.chars)} caracteres`;
+    $('#stM').textContent = `${minutes(s.words)} min de leitura`; $('#stB').textContent = `Livro: ${fmt(b.words)} palavras · ${book.chapters.length} ${book.chapters.length === 1 ? 'capítulo' : 'capítulos'}`;
+  };
+  const markEmpty = () => ed.classList.toggle('is-empty', !ed.textContent.trim() && !ed.querySelector('.m-img,.m-scene'));
   const flush = () => { ch.html = serialize(ed); saveBook(book); };
   let sideT;
-  const markEmpty = () => ed.classList.toggle('is-empty', !ed.textContent.trim() && !ed.querySelector('.m-fx,.m-amb,.m-mus,.m-scene,.m-img'));
-  const changed = () => { ch.html = serialize(ed); updWC(); markEmpty(); saveBook(book); clearTimeout(sideT); sideT = setTimeout(drawSide, 1200); };
-  updWC(); markEmpty();
-  ed.addEventListener('input', () => { normalize(ed); changed(); checkSlash(ed); });
+  const changed = () => {
+    ch.html = serialize(ed); markEmpty();
+    const w = textStats(ch.html).words; addWords(w - lastWords); lastWords = w;
+    updStatus(); saveBook(book); clearTimeout(sideT); sideT = setTimeout(drawSide, 1200);
+  };
+  updStatus(); markEmpty();
+  ed.addEventListener('input', () => { normalize(ed); changed(); checkSlash(); });
   $('#chTitle').addEventListener('input', (e) => { ch.title = e.target.value; saveBook(book); clearTimeout(sideT); sideT = setTimeout(drawSide, 600); });
   $('#chTitle').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); ed.focus(); placeCaret(ed.firstElementChild || ed, true); } });
   onLeave(() => { ch.html = serialize(ed); clearTimeout(saveTimers[book.id]); DB.put('books', book); });
@@ -475,307 +628,169 @@ function viewEditor(book, ci) {
 
   // barra de ferramentas
   const tools = $('#tools');
-  tools.addEventListener('mousedown', (e) => { if (e.target.closest('button')) e.preventDefault(); });
+  tools.addEventListener('mousedown', (e) => { if (e.target.closest('button.tb')) e.preventDefault(); });
   tools.addEventListener('click', (e) => {
-    const b = e.target.closest('button'); if (!b) return;
+    const b = e.target.closest('button.tb'); if (!b) return;
     if (b.dataset.cmd) {
       ed.focus(); restore();
-      const blk = topBlock(ed, getSelection().anchorNode);
-      if (b.dataset.cmd === 'bold' || b.dataset.cmd === 'italic') document.execCommand(b.dataset.cmd);
-      else if (b.dataset.cmd === 'h2') document.execCommand('formatBlock', false, blk && blk.tagName === 'H2' ? 'p' : 'h2');
-      else document.execCommand('formatBlock', false, blk && blk.tagName === 'BLOCKQUOTE' ? 'p' : 'blockquote');
-      changed();
+      const blk = topBlock(ed, getSelection().anchorNode), c = b.dataset.cmd;
+      if (c === 'bold' || c === 'italic' || c === 'underline') document.execCommand(c);
+      else if (c === 'h2') document.execCommand('formatBlock', false, blk && blk.tagName === 'H2' ? 'p' : 'h2');
+      else if (c === 'quote') document.execCommand('formatBlock', false, blk && blk.tagName === 'BLOCKQUOTE' ? 'p' : 'blockquote');
+      else if (c === 'list') document.execCommand('insertUnorderedList');
+      normalize(ed); changed();
     } else if (b.dataset.ins) insert(b.dataset.ins);
   });
 
-  // inserir / editar mídia
+  // imagens e separadores
   const insert = (type, existing) => {
     const range = existing ? null : (restore() || endRange(ed));
     const put = (el) => {
-      if (existing) { existing.replaceWith(el); }
-      else if (el.tagName === 'SPAN') insertInline(ed, range, el);
-      else insertBlock(ed, range, el);
+      if (existing) existing.replaceWith(el); else insertBlock(ed, range, el);
       hydrate(el); normalize(ed); changed();
     };
     const remove = existing ? () => { existing.remove(); normalize(ed); changed(); } : null;
     if (type === 'img') imageDialog(existing, put, remove);
-    else if (type === 'fx') fxDialog(existing, put, remove);
-    else if (type === 'amb') ambDialog(existing, put, remove);
-    else if (type === 'mus') musDialog(existing, put, remove);
-    else if (type === 'scene') { if (existing) { ask('Mudança de cena', 'Aqui os sons da cena anterior param e a próxima cena começa em silêncio.', 'Remover', true).then((ok) => ok && remove()); } else { const d = document.createElement('div'); d.className = 'm-scene'; put(d); } }
+    else if (type === 'scene') {
+      if (existing) ask('Separador de cena', 'Este separador marca a passagem de uma cena para outra.', 'Tirar o separador', true).then((ok) => ok && remove());
+      else { const d = document.createElement('div'); d.className = 'm-scene'; put(d); }
+    }
   };
   ed.addEventListener('click', (e) => {
-    const el = e.target.closest('.m-fx,.m-amb,.m-mus,.m-scene,.m-img'); if (!el) return;
-    e.preventDefault();
-    if (e.target.closest('[data-act=play]')) {
-      if (el.classList.contains('m-amb')) { const ls = parseLayers(el.dataset.layers); Som.init(); Som.stopPreview(); Som.setAmbience(ls, 0.6); toast('Ouvindo o ambiente por 8 segundos'); clearTimeout(ed.amb); ed.amb = setTimeout(() => Som.setAmbience([], 1.5), 8000); }
-      else Som.previewSound(el.dataset.sound, +el.dataset.vol || 0.6);
-      return;
-    }
-    const type = el.classList.contains('m-fx') ? 'fx' : el.classList.contains('m-amb') ? 'amb' : el.classList.contains('m-mus') ? 'mus' : el.classList.contains('m-img') ? 'img' : 'scene';
-    insert(type, el);
+    const el = e.target.closest('.m-img,.m-scene'); if (!el) return;
+    e.preventDefault(); insert(el.classList.contains('m-img') ? 'img' : 'scene', el);
   });
-  onLeave(() => { clearTimeout(ed.amb); Som.stopAll(0.5); });
 
   // menu "/"
   ed.addEventListener('keydown', (e) => {
-    if (slashState) {
-      const items = $$('.it', slashState.el);
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); slashState.i = (slashState.i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length; items.forEach((x, i) => x.classList.toggle('on', i === slashState.i)); return; }
-      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); items[slashState.i].click(); return; }
-      if (e.key === 'Escape') { e.preventDefault(); closeSlash(); return; }
-    }
+    if (!slashState) return;
+    const items = $$('.it', slashState.el);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); slashState.i = (slashState.i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length; items.forEach((x, i) => x.classList.toggle('on', i === slashState.i)); }
+    else if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); items[slashState.i].click(); }
+    else if (e.key === 'Escape') { e.preventDefault(); closeSlash(); }
   });
-  slashInsert = (type) => {
+  slashInsert = (t) => {
     const s = getSelection();
-    if (s.rangeCount) { const r = s.getRangeAt(0); const n = r.startContainer; if (n.nodeType === 3 && r.startOffset > 0 && n.data[r.startOffset - 1] === '/') { n.deleteData(r.startOffset - 1, 1); } saved = s.getRangeAt(0).cloneRange(); }
-    closeSlash(); insert(type);
+    if (s.rangeCount) { const r = s.getRangeAt(0), n = r.startContainer; if (n.nodeType === 3 && r.startOffset > 0 && n.data[r.startOffset - 1] === '/') n.deleteData(r.startOffset - 1, 1); saved = s.getRangeAt(0).cloneRange(); }
+    closeSlash();
+    if (t === 'img' || t === 'scene') insert(t);
+    else { ed.focus(); restore(); document.execCommand('formatBlock', false, t === 'h2' ? 'h2' : 'blockquote'); changed(); }
   };
   ed.addEventListener('blur', () => setTimeout(() => { if (slashState && !slashState.el.matches(':hover')) closeSlash(); }, 150));
 
+  // modo foco, ler, exportar e menu
+  const setFocus = (on) => { document.body.classList.toggle('focus', on); $('#exitFocus').hidden = !on; };
+  $('#focusBtn').onclick = () => { setFocus(true); ed.focus(); toast('Modo foco: aperte Esc para sair', 1800); };
+  $('#exitFocus').onclick = () => setFocus(false);
+  onLeave(() => setFocus(false));
+  $('#backBtn').onclick = () => go('#/');
   $('#readBtn').onclick = () => { flush(); go(`#/ler/${book.id}/${ci}`); };
+  $('#expBtn').onclick = (e) => { flush(); exportMenu(e.currentTarget, book); };
   $('#bookMenu').onclick = (e) => popMenu(e.currentTarget, [
     { icon: 'edit', label: 'Título, autor e capa', run: () => { flush(); bookDialog(book); } },
-    { icon: 'eye', label: 'Ler desde o começo', run: () => { flush(); go(`#/ler/${book.id}/0`); } },
-    { icon: 'download', label: 'Exportar este livro', run: () => { flush(); exportBook(book); } },
+    { icon: 'aa', label: 'Aparência do livro', run: () => { if (innerWidth > 1220) { $('#edWrap').classList.remove('no-panel'); LS.set('calh-panel', true); } else $('#aaBtn').click(); } },
+    { icon: 'focus', label: 'Modo foco', run: () => setFocus(true) },
+    { icon: 'download', label: 'Exportar o livro', run: () => { flush(); exportMenu($('#bookMenu'), book); } },
     '-',
     { icon: 'trash', label: 'Excluir livro', danger: true, run: () => deleteBook(book) },
   ]);
-  if (!chapterStats(ch.html).words) setTimeout(() => { ed.focus(); placeCaret(ed.firstElementChild || ed, false); }, 60);
+  if (!textStats(ch.html).words) setTimeout(() => { ed.focus(); placeCaret(ed.firstElementChild || ed, false); }, 60);
 }
 
 /* ---- ajudas do editor ---- */
-function topBlock(ed, node) {
-  while (node && node.parentNode !== ed) node = node.parentNode;
-  return node && node.nodeType === 1 ? node : null;
-}
+function topBlock(ed, node) { while (node && node.parentNode !== ed) node = node.parentNode; return node && node.nodeType === 1 ? node : null; }
 function normalize(ed) {
-  // texto solto vira parágrafo; garante um parágrafo no fim para continuar escrevendo
+  // texto solto vira parágrafo; sempre sobra um parágrafo no fim para continuar escrevendo
   for (const n of [...ed.childNodes]) {
     if (n.nodeType === 3 && n.data.trim()) { const p = document.createElement('p'); n.replaceWith(p); p.appendChild(n); }
-    else if (n.nodeType === 1 && n.tagName === 'DIV' && !n.matches('.m-amb,.m-mus,.m-scene')) { const p = document.createElement('p'); p.append(...n.childNodes); n.replaceWith(p); }
-    else if (n.nodeType === 1 && n.tagName === 'SPAN' && n.classList.contains('m-fx')) { const p = document.createElement('p'); n.replaceWith(p); p.appendChild(n); }
+    else if (n.nodeType === 1 && n.tagName === 'DIV' && !n.classList.contains('m-scene')) { const p = document.createElement('p'); p.append(...n.childNodes); n.replaceWith(p); }
   }
   const last = ed.lastElementChild;
-  if (!last || last.matches('.m-amb,.m-mus,.m-scene,.m-img')) { const p = document.createElement('p'); p.innerHTML = '<br>'; ed.appendChild(p); }
+  if (!last || last.matches('.m-scene,.m-img')) { const p = document.createElement('p'); p.innerHTML = '<br>'; ed.appendChild(p); }
 }
-function endRange(ed) {
-  normalize(ed);
-  const r = document.createRange(); const last = ed.lastElementChild; r.selectNodeContents(last); r.collapse(false); return r;
-}
-function placeCaret(el, start) {
-  const r = document.createRange(); r.selectNodeContents(el); r.collapse(!!start);
-  const s = getSelection(); s.removeAllRanges(); s.addRange(r);
-}
-function insertInline(ed, range, el) {
-  let blk = topBlock(ed, range.startContainer);
-  if (!blk || blk.matches('.m-amb,.m-mus,.m-scene,.m-img')) { const p = document.createElement('p'); (blk ? blk.after(p) : ed.appendChild(p)); blk = p; range = document.createRange(); range.selectNodeContents(p); range.collapse(false); }
-  range.deleteContents();
-  const space = document.createTextNode(' ');
-  range.insertNode(space); range.insertNode(el);
-  const prev = el.previousSibling;
-  if (prev && prev.nodeType === 3 && prev.data && !/\s$/.test(prev.data)) prev.data += ' ';
-  const s = getSelection(), r = document.createRange(); r.setStartAfter(space); r.collapse(true); s.removeAllRanges(); s.addRange(r);
-}
+function endRange(ed) { normalize(ed); const r = document.createRange(); r.selectNodeContents(ed.lastElementChild); r.collapse(false); return r; }
+function placeCaret(el, start) { const r = document.createRange(); r.selectNodeContents(el); r.collapse(!!start); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
 function insertBlock(ed, range, el) {
   const blk = topBlock(ed, range.startContainer);
   if (!blk) { ed.appendChild(el); return; }
-  if (blk.matches('.m-amb,.m-mus,.m-scene,.m-img')) { blk.after(el); return; }
+  if (blk.matches('.m-scene,.m-img')) { blk.after(el); return; }
   const tail = document.createRange(); tail.setStart(range.endContainer, range.endOffset); tail.setEnd(blk, blk.childNodes.length);
   const frag = tail.extractContents();
-  const p = document.createElement(blk.tagName === 'H2' ? 'p' : blk.tagName.toLowerCase()); p.appendChild(frag);
-  const empty = !blk.textContent.trim() && !blk.querySelector('.m-fx');
-  if (empty) blk.replaceWith(el); else blk.after(el);
-  if (p.textContent.trim() || p.querySelector('.m-fx')) el.after(p);
-  else { const np = document.createElement('p'); np.innerHTML = '<br>'; el.after(np); }
+  const p = document.createElement(['H2', 'UL', 'OL'].includes(blk.tagName) ? 'p' : blk.tagName.toLowerCase()); p.appendChild(frag);
+  if (!blk.textContent.trim()) blk.replaceWith(el); else blk.after(el);
+  if (p.textContent.trim()) el.after(p); else { const np = document.createElement('p'); np.innerHTML = '<br>'; el.after(np); }
   placeCaret(el.nextElementSibling, true);
 }
-
-let slashInsert = () => {};
 const SLASH = [
-  { t: 'fx', icon: 'vol', name: 'Som no momento', sub: 'toca quando o leitor chegar aqui', cls: 'k-fx' },
-  { t: 'img', icon: 'image', name: 'Imagem', sub: 'foto, desenho ou ilustração pronta', cls: 'k-fx' },
-  { t: 'amb', icon: 'waves', name: 'Ambiente da cena', sub: 'chuva, mar, floresta, fogueira…', cls: 'k-amb' },
-  { t: 'mus', icon: 'music', name: 'Música', sub: 'trilha que entra suave', cls: 'k-mus' },
-  { t: 'scene', icon: 'hour', name: 'Mudança de cena', sub: 'para os sons e respira', cls: 'k-user' },
+  { t: 'img', icon: 'image', name: 'Imagem', sub: 'foto, desenho ou ilustração pronta' },
+  { t: 'scene', icon: 'sep', name: 'Separador de cena', sub: '✦ ❦ ✦ entre uma cena e outra' },
+  { t: 'h2', icon: 'h', name: 'Subtítulo', sub: 'um título dentro do capítulo' },
+  { t: 'quote', icon: 'quote', name: 'Citação', sub: 'carta, poema ou epígrafe' },
 ];
-function checkSlash(ed) {
+function checkSlash() {
   const s = getSelection(); if (!s.rangeCount) return closeSlash();
   const r = s.getRangeAt(0), n = r.startContainer;
-  if (n.nodeType !== 3 || !r.collapsed) return closeSlash();
-  const before = n.data.slice(0, r.startOffset);
-  if (!/(^|\s)\/$/.test(before)) return closeSlash();
+  if (n.nodeType !== 3 || !r.collapsed || !/(^|\s)\/$/.test(n.data.slice(0, r.startOffset))) return closeSlash();
   const rect = r.getBoundingClientRect();
   if (!slashState) {
     const el = document.createElement('div'); el.className = 'slash';
-    el.innerHTML = `<div class="hd">Inserir no texto</div>${SLASH.map((x, i) => `<button class="it ${i ? '' : 'on'}" data-t="${x.t}"><span class="b ${x.cls}">${I(x.icon)}</span><span><b>${x.name}</b><small>${x.sub}</small></span></button>`).join('')}`;
+    el.innerHTML = `<div class="hd">Inserir no texto</div>${SLASH.map((x, i) => `<button class="it ${i ? '' : 'on'}" data-t="${x.t}"><span class="b">${I(x.icon)}</span><span><b>${x.name}</b><small>${x.sub}</small></span></button>`).join('')}`;
     el.addEventListener('mousedown', (e) => e.preventDefault());
     el.addEventListener('click', (e) => { const b = e.target.closest('.it'); if (b) slashInsert(b.dataset.t); });
     document.body.appendChild(el); slashState = { el, i: 0 };
   }
   const el = slashState.el, h = el.offsetHeight;
-  el.style.left = clamp(rect.left, 10, innerWidth - 310) + 'px';
+  el.style.left = clamp(rect.left, 10, innerWidth - 280) + 'px';
   el.style.top = (rect.bottom + h + 12 > innerHeight ? Math.max(10, rect.top - h - 8) : rect.bottom + 8) + 'px';
 }
 function closeSlash() { if (slashState) { slashState.el.remove(); slashState = null; } }
 
-/* ================= seletor de sons ================= */
-// mode: 'single' | 'multi'; kinds: ['fx'] etc. Devolve controle com .value
-function soundPicker(root, { kinds, mode = 'single', value = [], onChange }) {
-  let sel = [...value], q = '', tab = 'all', playing = null, rec = null;
-  const listFor = () => {
-    const builtin = Som.catalog.filter((s) => kinds.includes(s.kind));
-    const mine = userSounds.map((u) => ({ id: 'u:' + u.id, name: u.name, kind: 'user', icon: 'mic', tags: 'meu som gravado' }));
-    let all = tab === 'mine' ? mine : tab === 'all' ? [...builtin, ...mine] : builtin;
-    if (q) { const k = q.toLowerCase(); all = all.filter((s) => (s.name + ' ' + (s.tags || '')).toLowerCase().includes(k)); }
-    return all;
-  };
-  const kindLabel = { amb: 'ambiente · repete', mus: 'música', fx: 'efeito', user: 'meu som' };
+/* ---- escolha de fontes ---- */
+function fontPicker(book, which, onDone) {
+  const s = styleOf(book);
+  let pick = { font: s.font, titleFont: s.titleFont }, cat = 'todas';
+  const isTitle = which === 'titleFont';
+  const m = modal(`${sheetHead(isTitle ? 'Fonte dos títulos' : 'Escolha a voz do seu livro')}<div class="sheet-b">
+    <div class="fpick"><div>
+      <div class="chips" id="fc" style="margin-bottom:14px">${[['todas', 'Todas'], ['classica', 'Clássicas'], ['moderna', 'Modernas'], ['titulo', 'Títulos'], ['manuscrita', 'Manuscritas'], ['maquina', 'Máquina de escrever']].map(([k, n]) => `<button class="chip ${k === cat ? 'on' : ''}" data-c="${k}">${n}</button>`).join('')}</div>
+      <div class="fgrid" id="fg"></div></div>
+      <div class="fprev-wrap"><div class="lbl" style="margin-bottom:8px">Combinações prontas</div><div class="combos" id="cb"></div>
+        <div class="lbl" style="margin-bottom:8px">Prévia</div><div class="fprev" id="pv"></div></div></div>
+  </div><div class="sheet-f"><span class="grow"></span><button class="btn" data-close>Cancelar</button><button class="btn terra" id="ok">${I('check')}Usar ${isTitle ? 'esta fonte' : 'estas fontes'}</button></div>`, { size: 'xl' });
+  const ch = book.chapters[lastCh(book)];
+  const t = document.createElement('template'); t.innerHTML = ch.html;
+  const sample = [...t.content.querySelectorAll('p')].map((p) => p.textContent.trim()).filter(Boolean).slice(0, 2);
+  const frase = (sample[0] || 'Era uma vez uma história que ainda não tinha sido escrita.').split(/(?<=[.!?])\s/)[0];
   const draw = () => {
-    const list = listFor();
-    root.innerHTML = `<div class="picker-tools"><label class="search">${I('search', 'muted')}<input placeholder="Buscar: chuva, porta, medo…" value="${esc(q)}" id="pq"></label></div>
-      <div class="seg" style="margin-bottom:10px"><button data-tab="all" class="${tab === 'all' ? 'on' : ''}">Todos</button><button data-tab="mine" class="${tab === 'mine' ? 'on' : ''}">${I('mic')}Meus sons (${userSounds.length})</button></div>
-      ${rec ? `<div class="rec-box"><span class="rec-dot"></span><b id="recT">Gravando… 0:00</b><span class="grow"></span><button class="btn sm danger" data-rec="stop">${I('stop')}Parar</button></div>` : `<div class="row" style="margin-bottom:10px"><button class="btn sm" data-rec="start" style="flex:1">${I('mic')}Gravar um som</button><button class="btn sm" data-up style="flex:1">${I('upload')}Enviar arquivo</button></div>`}
-      <div class="slist">${list.length ? list.map((s) => `<div class="sitem ${sel.includes(s.id) ? 'on' : ''}" data-id="${esc(s.id)}" role="button" tabindex="0">
-        <span class="ic ${kindCls(s.kind)}">${I(s.icon)}</span><span class="tx"><b>${esc(s.name)}</b><small>${kindLabel[s.kind]}</small></span>
-        <button class="pp" data-pp="${esc(s.id)}" aria-label="Ouvir">${I(playing === s.id ? 'stop' : 'play', 'fill')}</button>
-        ${mode === 'multi' ? `<span class="tick">${I('check')}</span>` : ''}</div>`).join('') : `<div class="empty">${tab === 'mine' ? 'Você ainda não tem sons seus. Grave ou envie um arquivo.' : 'Nada encontrado.'}</div>`}</div>`;
-    const qi = $('#pq', root); qi.oninput = () => { q = qi.value; const pos = qi.selectionStart; draw(); const n = $('#pq', root); n.focus(); n.setSelectionRange(pos, pos); };
+    const cur = isTitle ? pick.titleFont : pick.font;
+    $('#fg', m.el).innerHTML = FONTES.filter((f) => cat === 'todas' || f.g === cat).map((f) => `<button class="fcard ${f.f === cur ? 'on' : ''}" data-f="${esc(f.f)}">${f.f === cur ? `<span class="ok">${I('check')}</span>` : ''}
+      <div class="row" style="gap:12px;align-items:baseline"><span class="aa" style="font-family:${fontStack(f.f)}">Aa</span><span><b>${esc(f.f)}</b><small>${f.c}</small></span></div>
+      <p style="font-family:${fontStack(f.f)}">${esc(frase)}</p></button>`).join('');
+    $('#cb', m.el).innerHTML = COMBOS.map((c, i) => `<button data-cb="${i}" class="${pick.font === c.b && pick.titleFont === c.t ? 'on' : ''}"><b style="font-family:${fontStack(c.t)}">${c.n}</b><small>${c.t} + ${c.b}</small></button>`).join('');
+    const pv = $('#pv', m.el); applyStyle(pv, { ...s, ...pick });
+    pv.style.background = 'var(--pbg)'; pv.style.color = 'var(--pink)'; pv.style.boxShadow = '0 14px 34px rgba(60,40,20,.14)';
+    pv.innerHTML = `<div class="chapno">Capítulo ${roman(lastCh(book))}</div><div style="text-align:center;font-family:var(--tf);font-style:italic;font-weight:500;font-size:32px;margin:6px 0 4px">${esc(ch.title)}</div><div class="orn" style="margin-bottom:16px">✦ ❦ ✦</div>${(sample.length ? sample : ['Era uma vez uma história que ainda não tinha sido escrita.']).map((p) => `<p style="text-indent:1.4em">${esc(p.slice(0, 420))}</p>`).join('')}`;
   };
-  root.addEventListener('click', async (e) => {
-    const t = e.target;
-    const tb = t.closest('[data-tab]'); if (tb) { tab = tb.dataset.tab; draw(); return; }
-    const pp = t.closest('[data-pp]');
-    if (pp) {
-      e.stopPropagation();
-      if (playing === pp.dataset.pp) { Som.stopPreview(); playing = null; } else { await Som.previewSound(pp.dataset.pp, 0.8); playing = pp.dataset.pp; clearTimeout(root.pt); root.pt = setTimeout(() => { playing = null; draw(); }, 7000); }
-      draw(); return;
-    }
-    if (t.closest('[data-up]')) {
-      const f = await pickFile('audio/*'); if (!f) return;
-      if (f.size > 25 * 1024 * 1024) { toast('Arquivo muito grande (máx. 25 MB)'); return; }
-      const m = await saveMedia('audio', f, f.name.replace(/\.[^.]+$/, '').slice(0, 60));
-      pick('u:' + m.id); tab = 'mine'; draw(); toast('Som adicionado aos seus sons'); return;
-    }
-    const rb = t.closest('[data-rec]');
-    if (rb) { if (rb.dataset.rec === 'start') startRec(); else rec && rec.stop(); return; }
-    const it = t.closest('.sitem'); if (it) { pick(it.dataset.id); draw(); }
-  });
-  const pick = (id) => {
-    if (mode === 'single') sel = [id];
-    else sel = sel.includes(id) ? sel.filter((x) => x !== id) : [...sel, id].slice(-4);
-    onChange && onChange(sel);
-  };
-  async function startRec() {
-    if (!navigator.mediaDevices || !window.MediaRecorder) { toast('Este navegador não grava áudio'); return; }
-    let stream;
-    try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { toast('Permita o uso do microfone para gravar'); return; }
-    const mr = new MediaRecorder(stream), chunks = [], t0 = Date.now();
-    mr.ondataavailable = (ev) => ev.data.size && chunks.push(ev.data);
-    mr.onstop = async () => {
-      stream.getTracks().forEach((tr) => tr.stop()); clearInterval(timer); rec = null;
-      const blob = new Blob(chunks, { type: mr.mimeType || 'audio/webm' });
-      if (blob.size < 1000) { draw(); return; }
-      const name = await askText('Nome do som', `Gravação ${userSounds.length + 1}`);
-      const m = await saveMedia('audio', blob, name || 'Gravação');
-      pick('u:' + m.id); tab = 'mine'; draw(); toast('Gravação salva nos seus sons');
-    };
-    const timer = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); const el = $('#recT', root); if (el) el.textContent = `Gravando… ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; if (s >= 120) mr.stop(); }, 250);
-    mr.start(); rec = mr; draw();
-  }
   draw();
-  return { get value() { return sel; }, set value(v) { sel = v; draw(); }, stop() { Som.stopPreview(); if (rec) rec.stop(); }, redraw: draw };
+  $('#fc', m.el).onclick = (e) => { const b = e.target.closest('[data-c]'); if (!b) return; cat = b.dataset.c; $$('#fc .chip', m.el).forEach((x) => x.classList.toggle('on', x === b)); draw(); };
+  $('#fg', m.el).onclick = (e) => { const b = e.target.closest('[data-f]'); if (!b) return; pick[isTitle ? 'titleFont' : 'font'] = b.dataset.f; draw(); };
+  $('#cb', m.el).onclick = (e) => { const b = e.target.closest('[data-cb]'); if (!b) return; const c = COMBOS[+b.dataset.cb]; pick = { font: c.b, titleFont: c.t }; draw(); };
+  $('#ok', m.el).onclick = () => { m.close(); onDone(pick); };
 }
 
-const panOpts = [[-0.7, 'Esquerda'], [0, 'Centro'], [0.7, 'Direita']];
-function fxDialog(existing, put, remove) {
-  const d = existing ? existing.dataset : {};
-  let vol = +d.vol || 0.85, pan = +d.pan || 0, label = d.label || '';
-  const m = modal(`${sheetHead(existing ? 'Som no texto' : 'Inserir som')}<div class="sheet-b">
-    <p class="muted" style="font-size:13px;margin-bottom:12px">O som toca uma vez quando o leitor chegar neste ponto do texto.</p>
-    <div id="pk"></div>
-    <div class="field" style="margin-top:14px"><label>Texto que aparece no editor</label><input class="input" id="lb" value="${esc(label)}" placeholder="Ex.: trovão ao longe" maxlength="40"></div>
-    <div class="field"><label>Volume</label><div class="vol"><input type="range" class="range" id="vl" min="0.1" max="1" step="0.05" value="${vol}"><span id="vlt">${Math.round(vol * 100)}%</span></div></div>
-    <div class="field"><label>De onde vem o som</label><div class="seg" id="pn">${panOpts.map(([v, n]) => `<button data-v="${v}" class="${Math.abs(v - pan) < 0.1 ? 'on' : ''}">${n}</button>`).join('')}</div></div>
-  </div><div class="sheet-f">${remove ? `<button class="btn danger" id="rm">${I('trash')}</button>` : ''}<button class="btn" id="hear">${I('play', 'fill')}Ouvir</button><span class="grow"></span><button class="btn" data-close>Cancelar</button><button class="btn pri" id="ok">${existing ? 'Salvar' : 'Inserir'}</button></div>`, { onClose: () => pk.stop() });
-  const lb = $('#lb', m.el);
-  const pk = soundPicker($('#pk', m.el), { kinds: ['fx'], value: d.sound ? [d.sound] : [], onChange: (s) => { if (!lb.dataset.touched) lb.value = soundInfo(s[0]).name.toLowerCase(); } });
-  lb.oninput = () => { lb.dataset.touched = 1; };
-  if (label) lb.dataset.touched = 1;
-  $('#vl', m.el).oninput = (e) => { vol = +e.target.value; $('#vlt', m.el).textContent = Math.round(vol * 100) + '%'; };
-  $('#pn', m.el).onclick = (e) => { const b = e.target.closest('button'); if (!b) return; pan = +b.dataset.v; $$('button', $('#pn', m.el)).forEach((x) => x.classList.toggle('on', x === b)); };
-  $('#hear', m.el).onclick = () => { if (pk.value[0]) Som.previewSound(pk.value[0], vol, pan); else toast('Escolha um som'); };
-  if (remove) $('#rm', m.el).onclick = () => { m.close(); remove(); };
-  $('#ok', m.el).onclick = () => {
-    const id = pk.value[0]; if (!id) { toast('Escolha um som'); return; }
-    const el = document.createElement('span'); el.className = 'm-fx';
-    Object.assign(el.dataset, { sound: id, vol: vol.toFixed(2), pan: String(pan), label: lb.value.trim() || soundInfo(id).name.toLowerCase() });
-    m.close(); put(el);
-  };
-}
-function ambDialog(existing, put, remove) {
-  let layers = existing ? parseLayers(existing.dataset.layers) : [];
-  let silence = !!existing && !layers.length;
-  const m = modal(`${sheetHead('Ambiente da cena')}<div class="sheet-b">
-    <p class="muted" style="font-size:13px;margin-bottom:12px">O ambiente fica tocando em volta da leitura a partir daqui, até o próximo ambiente ou mudança de cena. Junte até 4 sons.</p>
-    <label class="check"><input type="checkbox" id="sil" ${silence ? 'checked' : ''}><span>Silêncio<small>para o ambiente neste ponto</small></span></label>
-    <div class="layers" id="ly"></div><div id="pk"></div>
-  </div><div class="sheet-f">${remove ? `<button class="btn danger" id="rm">${I('trash')}</button>` : ''}<button class="btn" id="hear">${I('play', 'fill')}Ouvir juntos</button><span class="grow"></span><button class="btn" data-close>Cancelar</button><button class="btn pri" id="ok">${existing ? 'Salvar' : 'Inserir'}</button></div>`, { onClose: () => { pk.stop(); Som.setAmbience([], 0.8); } });
-  const ly = $('#ly', m.el);
-  const drawLayers = () => {
-    ly.innerHTML = layers.map((l, i) => `<div class="layer"><div class="top">${I(soundInfo(l.id).icon)}${esc(soundInfo(l.id).name)}<button data-x="${i}" aria-label="Tirar">${I('x')}</button></div><div class="vol">${I('vol')}<input type="range" class="range" data-v="${i}" min="0.05" max="1" step="0.05" value="${l.vol}"><span>${Math.round(l.vol * 100)}%</span></div></div>`).join('');
-    ly.hidden = silence || !layers.length; $('#pk', m.el).hidden = silence;
-  };
-  const pk = soundPicker($('#pk', m.el), { kinds: ['amb'], mode: 'multi', value: layers.map((l) => l.id), onChange: (ids) => { layers = ids.map((id) => layers.find((l) => l.id === id) || { id, vol: 0.6 }); drawLayers(); } });
-  drawLayers();
-  ly.oninput = (e) => { const i = e.target.dataset.v; if (i == null) return; layers[i].vol = +e.target.value; e.target.nextElementSibling.textContent = Math.round(layers[i].vol * 100) + '%'; if (m.el.hearing) Som.setAmbience(layers, 0.3); };
-  ly.onclick = (e) => { const b = e.target.closest('[data-x]'); if (!b) return; layers.splice(+b.dataset.x, 1); pk.value = layers.map((l) => l.id); drawLayers(); };
-  $('#sil', m.el).onchange = (e) => { silence = e.target.checked; drawLayers(); };
-  $('#hear', m.el).onclick = () => {
-    if (m.el.hearing) { Som.setAmbience([], 0.8); m.el.hearing = false; $('#hear', m.el).innerHTML = `${I('play', 'fill')}Ouvir juntos`; return; }
-    if (!layers.length) { toast('Escolha pelo menos um som'); return; }
-    Som.stopPreview(); Som.setAmbience(layers, 0.6); m.el.hearing = true; $('#hear', m.el).innerHTML = `${I('stop', 'fill')}Parar`;
-  };
-  if (remove) $('#rm', m.el).onclick = () => { m.close(); remove(); };
-  $('#ok', m.el).onclick = () => {
-    if (!silence && !layers.length) { toast('Escolha um som ou marque Silêncio'); return; }
-    const el = document.createElement('div'); el.className = 'm-amb'; el.dataset.layers = silence ? '' : layersAttr(layers);
-    m.close(); put(el);
-  };
-}
-function musDialog(existing, put, remove) {
-  const d = existing ? existing.dataset : {};
-  let vol = +d.vol || 0.45, stop = !!existing && !d.sound;
-  const m = modal(`${sheetHead('Música')}<div class="sheet-b">
-    <p class="muted" style="font-size:13px;margin-bottom:12px">A música entra suave a partir daqui e continua até outra música, "parar música" ou mudança de cena.</p>
-    <label class="check"><input type="checkbox" id="st" ${stop ? 'checked' : ''}><span>Parar a música aqui<small>a música anterior some devagar</small></span></label>
-    <div id="opts"><div class="field"><label>Volume</label><div class="vol"><input type="range" class="range" id="vl" min="0.1" max="1" step="0.05" value="${vol}"><span id="vlt">${Math.round(vol * 100)}%</span></div></div><div id="pk"></div></div>
-  </div><div class="sheet-f">${remove ? `<button class="btn danger" id="rm">${I('trash')}</button>` : ''}<span class="grow"></span><button class="btn" data-close>Cancelar</button><button class="btn pri" id="ok">${existing ? 'Salvar' : 'Inserir'}</button></div>`, { onClose: () => pk.stop() });
-  const pk = soundPicker($('#pk', m.el), { kinds: ['mus'], value: d.sound ? [d.sound] : [] });
-  $('#opts', m.el).hidden = stop;
-  $('#st', m.el).onchange = (e) => { stop = e.target.checked; $('#opts', m.el).hidden = stop; };
-  $('#vl', m.el).oninput = (e) => { vol = +e.target.value; $('#vlt', m.el).textContent = Math.round(vol * 100) + '%'; };
-  if (remove) $('#rm', m.el).onclick = () => { m.close(); remove(); };
-  $('#ok', m.el).onclick = () => {
-    if (!stop && !pk.value[0]) { toast('Escolha uma música'); return; }
-    const el = document.createElement('div'); el.className = 'm-mus';
-    el.dataset.sound = stop ? '' : pk.value[0]; el.dataset.vol = vol.toFixed(2);
-    m.close(); put(el);
-  };
-}
+/* ---- imagem ---- */
 async function imageDialog(existing, put, remove) {
   const d = existing ? existing.dataset : {};
   let src = d.media ? { media: d.media } : d.art ? { art: d.art } : null;
-  let tab = d.media ? 'mine' : d.art ? 'art' : 'up';
+  let tab = d.media ? 'mine' : d.art ? 'art' : 'up', size = d.size || 'inteira';
   const imgs = (await DB.all('media')).filter((x) => x.kind === 'image').sort((a, b) => b.createdAt - a.createdAt);
   const m = modal(`${sheetHead(existing ? 'Imagem' : 'Inserir imagem')}<div class="sheet-b">
     <div class="ipreview" id="pv" ${src ? '' : 'hidden'}></div>
-    <div class="seg" id="tb" style="margin-bottom:12px"><button data-t="up">${I('upload')}Do aparelho</button><button data-t="art">${I('spark')}Ilustrações</button><button data-t="mine">${I('image')}Já usadas (${imgs.length})</button></div>
+    <div class="seg" id="tb" style="margin-bottom:12px"><button data-t="up">${I('upload')}Do aparelho</button><button data-t="art">Ilustrações</button><button data-t="mine">${I('image')}Já usadas (${imgs.length})</button></div>
     <div id="tc" style="margin-bottom:14px"></div>
-    <div class="field"><label>Legenda (opcional)</label><input class="input" id="cp" value="${esc(d.caption || '')}" placeholder="Ex.: A clareira ao luar" maxlength="120"></div>
-    <label class="check"><input type="checkbox" id="zm" ${d.fx === 'zoom' || !existing ? 'checked' : ''}><span>Zoom lento<small>a imagem se aproxima devagar, como no cinema</small></span></label>
-    <label class="check"><input type="checkbox" id="bgk" ${d.bg === '1' || !existing ? 'checked' : ''}><span>Fundo da leitura<small>vira o cenário atrás do texto a partir daqui</small></span></label>
-  </div><div class="sheet-f">${remove ? `<button class="btn danger" id="rm">${I('trash')}</button>` : ''}<span class="grow"></span><button class="btn" data-close>Cancelar</button><button class="btn pri" id="ok">${existing ? 'Salvar' : 'Inserir'}</button></div>`, { wide: true });
+    <div class="field"><label>Legenda (opcional)</label><input class="input" id="cp" value="${esc(d.caption || '')}" placeholder="Ex.: A clareira ao luar" maxlength="140"></div>
+    <div class="field"><label>Como aparece no texto</label><div class="seg" id="sz">${[['inteira', 'Inteira'], ['lado', 'Ao lado do texto'], ['moldura', 'Com moldura']].map(([k, n]) => `<button data-s="${k}" class="${size === k ? 'on' : ''}">${n}</button>`).join('')}</div></div>
+  </div><div class="sheet-f">${remove ? `<button class="btn danger" id="rm">${I('trash')}Tirar</button>` : ''}<span class="grow"></span><button class="btn" data-close>Cancelar</button><button class="btn pri" id="ok">${existing ? 'Salvar' : 'Inserir'}</button></div>`, { size: 'wide' });
   const pv = $('#pv', m.el), tc = $('#tc', m.el);
   const drawPv = async () => { pv.hidden = !src; if (!src) return; pv.innerHTML = src.media ? `<img src="${await mediaURL(src.media)}" alt="">` : Arte.svg(src.art); };
   const drawTab = () => {
@@ -786,13 +801,13 @@ async function imageDialog(existing, put, remove) {
   };
   drawTab(); drawPv();
   $('#tb', m.el).onclick = (e) => { const b = e.target.closest('button'); if (b) { tab = b.dataset.t; drawTab(); } };
+  $('#sz', m.el).onclick = (e) => { const b = e.target.closest('button'); if (!b) return; size = b.dataset.s; $$('#sz button', m.el).forEach((x) => x.classList.toggle('on', x === b)); };
   tc.onclick = async (e) => {
     const b = e.target.closest('button'); if (!b) return;
     if (b.id === 'dp') {
       const f = await pickFile('image/*'); if (!f) return;
       b.innerHTML = 'Preparando a imagem…';
       const md = await saveMedia('image', await resizeImage(f), f.name); imgs.unshift(md); src = { media: md.id };
-      if (!$('#cp', m.el).value) $('#cp', m.el).placeholder = 'Escreva uma legenda (opcional)';
       tab = 'mine'; drawTab(); drawPv(); return;
     }
     src = b.dataset.art ? { art: b.dataset.art } : { media: b.dataset.media }; drawTab(); drawPv();
@@ -802,482 +817,305 @@ async function imageDialog(existing, put, remove) {
     if (!src) { toast('Escolha uma imagem'); return; }
     const el = document.createElement('figure'); el.className = 'm-img';
     if (src.media) el.dataset.media = src.media; else el.dataset.art = src.art;
-    el.dataset.caption = $('#cp', m.el).value.trim(); el.dataset.fx = $('#zm', m.el).checked ? 'zoom' : ''; el.dataset.bg = $('#bgk', m.el).checked ? '1' : '';
+    el.dataset.caption = $('#cp', m.el).value.trim(); el.dataset.size = size;
     m.close(); put(el);
   };
 }
 
-/* ================= LEITURA ================= */
-function viewReader(book, ci) {
-  ci = clamp(ci, 0, book.chapters.length - 1);
-  const ch = book.chapters[ci];
-  document.title = `${ch.title} — ${book.title}`;
-  const t = document.createElement('template'); t.innerHTML = sanitize(ch.html);
-  for (const el of [...t.content.querySelectorAll('.m-fx')]) {
-    const s = soundInfo(el.dataset.sound), n = document.createElement('span');
-    n.className = 'r-fx'; n.dataset.trigger = 'fx'; n.dataset.sound = el.dataset.sound; n.dataset.vol = el.dataset.vol || '0.85'; n.dataset.pan = el.dataset.pan || '0'; n.dataset.name = el.dataset.label || s.name; n.dataset.icon = s.icon;
-    n.innerHTML = I(s.icon); n.title = el.dataset.label || s.name; el.replaceWith(n);
-  }
-  for (const el of [...t.content.querySelectorAll('.m-amb')]) {
-    const ls = parseLayers(el.dataset.layers), n = document.createElement('div');
-    n.className = 'r-mark'; n.dataset.trigger = 'amb'; n.dataset.layers = el.dataset.layers || '';
-    n.innerHTML = ls.length ? ls.map((l) => `<span>${I(soundInfo(l.id).icon)}${esc(soundInfo(l.id).name)}</span>`).join('') : `<span>${I('mute')}silêncio</span>`;
-    el.replaceWith(n);
-  }
-  for (const el of [...t.content.querySelectorAll('.m-mus')]) {
-    const n = document.createElement('div'); n.className = 'r-mark mus'; n.dataset.trigger = 'mus'; n.dataset.sound = el.dataset.sound || ''; n.dataset.vol = el.dataset.vol || '0.45';
-    n.innerHTML = `<span>${I(el.dataset.sound ? 'music' : 'mute')}${el.dataset.sound ? esc(soundInfo(el.dataset.sound).name) : 'a música para'}</span>`;
-    el.replaceWith(n);
-  }
-  for (const el of [...t.content.querySelectorAll('.m-scene')]) { const n = document.createElement('div'); n.className = 'r-scene'; n.dataset.trigger = 'scene'; n.textContent = '✦ ✦ ✦'; el.replaceWith(n); }
-  for (const el of [...t.content.querySelectorAll('.m-img')]) {
-    const d = el.dataset, n = document.createElement('figure'); n.className = 'r-img'; n.dataset.trigger = 'img';
-    if (d.media) n.dataset.media = d.media; else n.dataset.art = d.art || 'floresta';
-    n.dataset.fx = d.fx || ''; n.dataset.bg = d.bg || '';
-    n.innerHTML = `<div class="frame">${d.media ? `<img data-media="${esc(d.media)}" alt="">` : Arte.svg(d.art)}</div>${d.caption ? `<figcaption>${esc(d.caption)}</figcaption>` : ''}`;
-    el.replaceWith(n);
-  }
-  const holder = document.createElement('div'); holder.appendChild(t.content);
-  // Cada palavra vira um <span class="w">: é assim que o app acompanha a leitura em voz alta.
-  const walker = document.createTreeWalker(holder, NodeFilter.SHOW_TEXT, { acceptNode: (n) => n.parentElement.closest('.r-mark,.r-scene,.r-img,.r-fx') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
-  const texts = []; while (walker.nextNode()) texts.push(walker.currentNode);
-  for (const n of texts) {
-    if (!n.data.trim()) continue;
-    const f = document.createDocumentFragment();
-    for (const part of n.data.split(/(\s+)/)) {
-      if (!part) continue;
-      if (/^\s+$/.test(part)) { f.appendChild(document.createTextNode(part)); continue; }
-      const w = document.createElement('span'); w.className = 'w'; w.textContent = part; f.appendChild(w);
+/* ================= VER COMO LIVRO ================= */
+// Monta o livro inteiro (folha de rosto + capítulos) no formato usado na tela e no PDF.
+function bookBody(book, { titlePage = true } = {}) {
+  const parts = [];
+  if (titlePage) parts.push(`<section class="bk-title"><h1>${esc(book.title)}</h1><div class="bk-orn" style="margin:1.2em 0">✦ ❦ ✦</div>${book.author ? `<div class="au">${esc(book.author)}</div>` : ''}</section>`);
+  book.chapters.forEach((c, i) => {
+    const t = document.createElement('template'); t.innerHTML = sanitize(c.html);
+    for (const el of [...t.content.querySelectorAll('.m-img')]) {
+      const f = document.createElement('figure'); f.dataset.size = el.dataset.size || 'inteira';
+      f.innerHTML = imgInner(el.dataset) + (el.dataset.caption ? `<figcaption>${esc(el.dataset.caption)}</figcaption>` : '');
+      el.replaceWith(f);
     }
-    n.replaceWith(f);
-  }
-  const next = book.chapters[ci + 1];
-  const fs = LS.get('imersa-fs', 1), FS = [19, 21, 23, 26, 29];
-  app.innerHTML = `<div class="reader" id="rd">
-    <div class="r-bg"><div class="r-layer" id="bgA"></div><div class="r-layer" id="bgB"></div><div class="r-shade"></div></div>
-    <header class="r-top"><button class="icon-btn ghost" id="back" aria-label="Voltar">${I('left')}</button>
-      <div class="t"><b>${esc(book.title)}</b><small>Capítulo ${roman(ci)} · ${esc(ch.title)}</small></div><span class="grow"></span>
-      ${VOZ_OK ? `<button class="icon-btn ghost vbtn" id="vcBtn" aria-label="Seguir minha leitura em voz alta" title="Seguir minha leitura em voz alta">${I('mic')}</button>` : ''}
-      <button class="icon-btn ghost" id="fsBtn" aria-label="Tamanho da letra">${I('type')}</button>
-      <button class="icon-btn ghost on" id="sndBtn" aria-label="Som ligado">${I('head')}</button>
-      <button class="icon-btn ghost" id="edBtn" aria-label="Editar">${I('pen')}</button></header>
-    <article class="r-col"><div class="chapno">Capítulo ${roman(ci)}</div><h1>${esc(ch.title)}</h1>
-      <div class="r-text" id="rt" style="--rfs:${FS[fs]}px">${holder.innerHTML}</div>
-      <div class="r-end"><div class="orn">✦ ❦ ✦</div><div class="acts">
-        ${next ? `<button class="btn pri" data-go="#/ler/${book.id}/${ci + 1}">Próximo: ${esc(next.title)}${I('right')}</button>` : '<p class="muted" style="font-family:var(--serif);font-size:22px;font-style:italic">Fim.</p>'}
-      </div><div class="acts"><button class="btn sm" data-go="#/livro/${book.id}/${ci}">${I('pen')}Editar capítulo</button><button class="btn sm" data-go="#/">${I('book')}Estante</button></div></div>
-    </article>
-    <footer class="r-bar"><div class="nowpl"><button class="icon-btn ghost" id="mtBtn" aria-label="Pausar sons">${I('pause', 'fill')}</button><span class="tx"><b id="npT">Silêncio</b><small id="npS">os sons começam com a leitura</small></span><span class="eq" id="eq"><i></i><i></i><i></i><i></i><i></i></span></div>
-      <div class="track"><div class="ln" id="ln"><i id="lnI" style="width:0"></i></div><div class="lg"><span id="pgT"></span><span class="hide-m">capítulo ${ci + 1} de ${book.chapters.length}</span></div></div>
-      <input type="range" class="range r-vol" id="vol" min="0" max="1" step="0.05" value="${LS.get('imersa-vol', 0.9)}" aria-label="Volume"></footer>
-    <div class="toast-fx" id="fxT"><span class="d"></span><span></span></div>
+    for (const el of [...t.content.querySelectorAll('.m-scene')]) { const d = document.createElement('div'); d.className = 'bk-scene'; d.textContent = '✦ ✦ ✦'; el.replaceWith(d); }
+    for (const p of [...t.content.querySelectorAll('p')]) if (!p.textContent.trim() && !p.querySelector('img')) p.remove();
+    const first = t.content.querySelector('p'); if (first) first.classList.add('first');
+    const box = document.createElement('div'); box.appendChild(t.content);
+    parts.push(`<section class="bk-ch" data-ch="${i}"><div class="bk-chno">CAPÍTULO ${roman(i)}</div><div class="bk-tt">${esc(c.title)}</div><div class="bk-orn">✦ ❦ ✦</div>${box.innerHTML}</section>`);
+  });
+  return parts.join('');
+}
+function viewBook(book, ci) {
+  const st = styleOf(book);
+  let paper = st.paper, scale = 1;
+  document.title = `${book.title} — ver como livro`;
+  app.innerHTML = `<div class="bk" id="bk">
+    <div class="bk-top"><button class="ib" id="back" aria-label="Voltar">${I('left')}</button>
+      <div class="t"><b>${esc(book.title)}</b><small id="pgInfo">Ver como livro</small></div><span class="grow"></span>
+      <button class="ib" id="aBtn" aria-label="Tamanho da letra">${I('aa')}</button>
+      <button class="ib" id="nBtn" aria-label="Papel claro ou escuro">${I(paper === 'noite' ? 'sun' : 'moon')}</button>
+      <button class="btn light" id="xBtn">${I('download')}<span class="hide-m">Exportar</span></button></div>
+    <div class="bk-stage" id="stage"><div class="bk-book" id="bkBook"></div></div>
+    <div class="bk-bot"><button class="ib" id="prev" aria-label="Página anterior">${I('left')}</button><div class="track"><i id="trk"></i></div><button class="ib" id="next" aria-label="Próxima página">${I('right')}</button></div>
   </div>`;
-  fillMedia(app);
-  $$('[data-go]', app).forEach((b) => b.onclick = () => go(b.dataset.go));
-  $('#back').onclick = () => go(`#/livro/${book.id}/${ci}`);
-  $('#edBtn').onclick = () => go(`#/livro/${book.id}/${ci}`);
-  const rt = $('#rt');
-  $('#fsBtn').onclick = () => { const v = (LS.get('imersa-fs', 1) + 1) % FS.length; LS.set('imersa-fs', v); rt.style.setProperty('--rfs', FS[v] + 'px'); toast(['Letra pequena', 'Letra normal', 'Letra média', 'Letra grande', 'Letra bem grande'][v], 1200); };
-  Som.setMaster(LS.get('imersa-vol', 0.9));
-  $('#vol').oninput = (e) => { Som.setMaster(+e.target.value); LS.set('imersa-vol', +e.target.value); };
-
-  const triggers = $$('[data-trigger]', rt), fxs = triggers.filter((x) => x.dataset.trigger === 'fx');
-  let soundOn = false, paused = false, curAmb = null, curMus = null, curBg = null, first = true, voz = null;
-
-  // marcadores na barra de progresso
-  const ln = $('#ln');
-  const placeMarks = () => {
-    $$('.mk', ln).forEach((x) => x.remove());
-    const H = document.documentElement.scrollHeight - innerHeight;
-    triggers.forEach((el) => {
-      const y = el.getBoundingClientRect().top + scrollY - innerHeight * 0.6, c = { fx: 'var(--amber)', img: 'var(--rose)', amb: 'var(--teal)', mus: 'var(--violet)', scene: '#fff' }[el.dataset.trigger];
-      const s = document.createElement('span'); s.className = 'mk'; s.style.left = clamp(y / H * 100, 0, 100) + '%'; s.style.background = c; s.style.boxShadow = `0 0 8px ${c}`; ln.appendChild(s);
-    });
+  const bk = $('#bk'), stage = $('#stage'), bb = $('#bkBook');
+  const body = bookBody(book);
+  let L = null, cur = 0;
+  const layout = (keepRatio) => {
+    const ratio = L ? cur / Math.max(1, L.pages) : null;
+    applyStyle(bk, st, paper);
+    const W = stage.clientWidth - 40, H = stage.clientHeight - 20, two = W >= 900;
+    let ph = H, pw = ph * 0.68;
+    if (two && pw * 2 + 2 > W) { pw = (W - 2) / 2; ph = pw / 0.68; }
+    if (!two && pw > W) { pw = W; ph = Math.min(H, pw / 0.62); }
+    pw = Math.floor(pw); ph = Math.floor(ph);
+    const gut = two ? 2 : 0, m = Math.round(pw * (MARGENS[st.margin] || MARGENS.media).k), mt = Math.round(ph * 0.1), mb = Math.round(ph * 0.1);
+    const colW = pw - 2 * m, step = pw + gut;
+    bk.style.setProperty('--bfs', clamp(st.size * scale * pw / 560 * 0.95, 11, 30) + 'px');
+    bk.style.setProperty('--imgmax', Math.round((ph - mt - mb) * 0.62) + 'px');
+    bb.innerHTML = `${two ? '<div class="bk-page l"><div class="hd" id="h0"></div><div class="pn" id="n0"></div></div><div class="bk-gut"></div><div class="bk-page r"><div class="hd" id="h1"></div><div class="pn" id="n1"></div></div>' : '<div class="bk-page solo"><div class="hd" id="h0"></div><div class="pn" id="n0"></div></div>'}
+      <div class="bk-clip" style="left:${m}px;top:${mt}px;width:${(two ? 2 * pw + gut : pw) - 2 * m}px;height:${ph - mt - mb}px"><div class="bk-flow" id="flow" style="width:${colW}px;column-width:${colW}px;column-gap:${2 * m + gut}px">${body}<span id="endMark"></span></div></div>`;
+    $$('.bk-page', bb).forEach((p) => { p.style.width = pw + 'px'; p.style.height = ph + 'px'; });
+    fillMedia(bb);
+    const flow = $('#flow'), fx = flow.getBoundingClientRect().left;
+    const pageOf = (el) => Math.max(0, Math.round((el.getBoundingClientRect().left - fx) / step));
+    const chStarts = $$('.bk-ch', flow).map((s) => pageOf(s));
+    L = { two, per: two ? 2 : 1, step, pages: pageOf($('#endMark')) + 1, chStarts, flow };
+    if (keepRatio && ratio != null) cur = Math.round(ratio * L.pages); else cur = chStarts[ci] != null ? chStarts[ci] : 0;
+    show();
   };
-
-  // fundo
-  const bgs = [$('#bgA'), $('#bgB')]; let bgI = 0;
-  const setBg = async (key, html, zoom) => {
-    if (key === curBg) return; curBg = key;
-    bgI = 1 - bgI; const L = bgs[bgI], O = bgs[1 - bgI];
-    L.innerHTML = typeof html === 'function' ? html() : html; L.classList.toggle('zoom', !!zoom); await fillMedia(L);
-    requestAnimationFrame(() => { L.classList.add('on'); O.classList.remove('on'); });
-  };
-  const defBg = book.coverMedia ? `<img data-media="${esc(book.coverMedia)}" alt="">` : Arte.svg(book.theme);
-  setBg('def', defBg, true);
-
-  const fxToast = $('#fxT');
-  const showFx = (el) => {
-    fxToast.firstElementChild.innerHTML = I(el.dataset.icon); fxToast.lastElementChild.textContent = el.dataset.name;
-    fxToast.classList.add('on'); clearTimeout(fxToast.h); fxToast.h = setTimeout(() => fxToast.classList.remove('on'), 2200);
-  };
-  const updNow = () => {
-    const names = [...(curAmb || []).map((l) => soundInfo(l.id).name), ...(curMus ? [soundInfo(curMus.id).name] : [])];
-    $('#npT').textContent = !soundOn ? 'Som desligado' : paused ? 'Sons pausados' : names.length ? names.slice(0, 2).join(' · ') + (names.length > 2 ? ` +${names.length - 2}` : '') : 'Silêncio';
-    $('#npS').textContent = voz ? 'seguindo sua voz' : !soundOn ? 'toque no fone para ligar' : names.length ? (curMus ? 'ambiente e música' : 'ambiente da cena') : 'os sons seguem a leitura';
-    $('#eq').classList.toggle('on', soundOn && !paused && names.length > 0);
-    $('#mtBtn').innerHTML = I(paused || !soundOn ? 'play' : 'pause', 'fill');
-  };
-  const applyAudio = () => {
-    if (!soundOn || paused) { Som.setAmbience([], 1.2); Som.setMusic(null, 0.5, 1.5); return; }
-    Som.setAmbience(curAmb || [], 3);
-    if (curMus) Som.setMusic(curMus.id, curMus.vol, 4); else Som.setMusic(null, 0.5, 3);
-  };
-  let calmT;
-  // Estado da cena (ambiente, música e fundo) com os marcadores que "já passaram": reached(el) diz se passou.
-  const applyScene = (reached) => {
-    let amb = [], mus = null, bg = null;
-    for (const el of triggers) {
-      if (!reached(el)) break;
-      const k = el.dataset.trigger;
-      if (k === 'amb') amb = parseLayers(el.dataset.layers);
-      else if (k === 'mus') mus = el.dataset.sound ? { id: el.dataset.sound, vol: +el.dataset.vol || 0.45 } : null;
-      else if (k === 'scene') { amb = []; mus = null; }
-      else if (k === 'img' && el.dataset.bg === '1') bg = el;
+  const chapterAt = (pg) => { let c = -1; L.chStarts.forEach((s, i) => { if (s <= pg) c = i; }); return c; };
+  const show = () => {
+    cur = clamp(cur - (cur % L.per), 0, Math.max(0, L.pages - 1));
+    L.flow.style.transform = `translateX(${-cur * L.step}px)`;
+    for (let k = 0; k < L.per; k++) {
+      const pg = cur + k, c = chapterAt(pg), isStart = L.chStarts.includes(pg);
+      const h = $('#h' + k), n = $('#n' + k); if (!h) continue;
+      const inside = pg < L.pages && pg > 0;
+      h.textContent = inside && !isStart ? (k === 0 && L.two ? book.title : (c >= 0 ? `Capítulo ${roman(c)} · ${book.chapters[c].title}` : book.title)) : '';
+      n.textContent = inside ? pg + 1 : '';
     }
-    const ak = JSON.stringify(amb), mk = mus ? mus.id + mus.vol : '';
-    if (ak !== JSON.stringify(curAmb) || mk !== (curMus ? curMus.id + curMus.vol : '')) { curAmb = amb; curMus = mus; applyAudio(); updNow(); }
-    if (bg) setBg(bg.dataset.media || bg.dataset.art, () => bg.dataset.media ? `<img data-media="${esc(bg.dataset.media)}" alt="">` : Arte.svg(bg.dataset.art), bg.dataset.fx === 'zoom');
-    else setBg('def', defBg, true);
+    $('#pgInfo').textContent = L.per === 2 ? `páginas ${cur + 1} e ${Math.min(cur + 2, L.pages)} de ${L.pages}` : `página ${cur + 1} de ${L.pages}`;
+    $('#trk').style.width = clamp((cur + L.per) / L.pages * 100, 0, 100) + '%';
+    const c = chapterAt(cur); if (c >= 0) LS.set('imersa-lastch-' + book.id, c);
   };
-  const playFxEl = (el) => { Som.playFx(el.dataset.sound, +el.dataset.vol, +el.dataset.pan); showFx(el); if (navigator.vibrate && el.dataset.sound === 'b:thunder') navigator.vibrate(60); };
-  const update = () => {
-    progress();
-    if (voz) return; // seguindo a voz: quem manda nos sons é a leitura, não a rolagem
-    const line = innerHeight * 0.6;
-    applyScene((el) => el.getBoundingClientRect().top <= line);
-    for (const el of fxs) {
-      const top = el.getBoundingClientRect().top;
-      if (top < line && !el.fired) {
-        el.fired = true; el.classList.add('fired');
-        if (!first && soundOn && !paused) playFxEl(el);
-      } else if (top > line + 80 && el.fired) { el.fired = false; el.classList.remove('fired'); }
-    }
-    first = false;
-  };
-  const progress = () => {
-    const H = document.documentElement.scrollHeight - innerHeight, p = H > 0 ? clamp(scrollY / H, 0, 1) : 0;
-    $('#lnI').style.width = p * 100 + '%';
-    const left = Math.max(0, Math.round(((1 - p) * chapterStats(ch.html).words) / 200));
-    $('#pgT').textContent = p > 0.98 ? 'fim do capítulo' : left > 1 ? `faltam uns ${left} min neste capítulo` : 'falta menos de 2 min neste capítulo';
-  };
-  let raf = 0;
-  const onScroll = () => {
-    if (!raf) raf = requestAnimationFrame(() => { raf = 0; update(); });
-    $('#rd').classList.remove('calm'); clearTimeout(calmT); calmT = setTimeout(() => $('#rd') && !voz && scrollY > 120 && $('#rd').classList.add('calm'), 2500);
-  };
-  addEventListener('scroll', onScroll, { passive: true });
-  const onResize = () => { placeMarks(); update(); };
+  const turn = (d) => { const nx = cur + d * L.per; if (nx < 0 || nx >= L.pages) return; cur = nx; show(); };
+  requestAnimationFrame(() => layout(false));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (L && $('#flow')) layout(true); });
+  $('#prev').onclick = () => turn(-1); $('#next').onclick = () => turn(1);
+  $('#back').onclick = () => go(`#/livro/${book.id}/${Math.max(0, L ? chapterAt(cur) : ci)}`);
+  $('#nBtn').onclick = () => { paper = paper === 'noite' ? (st.paper === 'noite' ? 'creme' : st.paper) : 'noite'; $('#nBtn').innerHTML = I(paper === 'noite' ? 'sun' : 'moon'); layout(true); };
+  $('#aBtn').onclick = () => { scale = scale >= 1.2 ? 0.88 : +(scale + 0.12).toFixed(2); layout(true); toast(scale < 1 ? 'Letra menor' : scale > 1.05 ? 'Letra maior' : 'Letra normal', 1000); };
+  $('#xBtn').onclick = (e) => exportMenu(e.currentTarget, book);
+  const onKey = (e) => { if (modalStack.length) return; if (['ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); turn(1); } else if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); turn(-1); } };
+  document.addEventListener('keydown', onKey);
+  let rT; const onResize = () => { clearTimeout(rT); rT = setTimeout(() => layout(true), 150); };
   addEventListener('resize', onResize);
-  onLeave(() => { stopVoz(); removeEventListener('scroll', onScroll); removeEventListener('resize', onResize); clearTimeout(calmT); Som.stopAll(1.2); });
-
-  $('#sndBtn').onclick = () => {
-    soundOn = !soundOn; $('#sndBtn').classList.toggle('on', soundOn);
-    if (soundOn) { Som.init(); paused = false; } applyAudio(); updNow();
-  };
-  $('#mtBtn').onclick = () => {
-    if (!soundOn) { $('#sndBtn').click(); return; }
-    paused = !paused; applyAudio(); updNow();
-  };
-
-  /* ---- Seguir a leitura em voz alta ----
-     O app escuta a pessoa lendo, acha em que palavra ela está e, uns 2 segundos antes de chegar num marcador,
-     já começa o som (ambiente e música sobem devagar; o efeito é agendado para cair na palavra). */
-  const LEAD = 2; // segundos de antecedência
-  const W = $$('.w', rt), T = []; // T: palavras "faláveis" (sem pontuação solta) → índice em W
-  W.forEach((w, i) => { const n = normWord(w.textContent); if (n) T.push({ n, i }); });
-  { let c = 0; for (const el of $$('.w,[data-trigger]', rt)) { if (el.classList.contains('w')) { if (normWord(el.textContent)) c++; } else el.widx = c; } }
-  function stopVoz() {
-    if (!voz) return;
-    const v = voz; voz = null; v.stop();
-    fxs.forEach((el) => clearTimeout(el.timer));
-    rt.classList.remove('voice'); $$('.w.cur', rt).forEach((w) => w.classList.remove('cur'));
-    const b = $('#vcBtn'); if (b) b.classList.remove('on');
-    updNow(); update();
-  }
-  const markRead = (from, to) => { // marca como lidas as palavras entre from e to (índices de T)
-    if (to > from) for (let k = from; k < to; k++) W[T[k].i].classList.add('said');
-    else for (let k = to; k < from; k++) W[T[k].i].classList.remove('said');
-  };
-  const vozScene = () => {
-    if (!voz) return;
-    const ahead = voz.pos + voz.speed * LEAD;
-    applyScene((el) => el.widx <= ahead);
-    for (const el of fxs) {
-      if (el.widx <= ahead && !el.fired) {
-        el.fired = true;
-        const wait = Math.max(0, (el.widx - voz.pos) / voz.speed);
-        el.timer = setTimeout(() => { el.classList.add('fired'); if (voz && soundOn && !paused) playFxEl(el); }, wait * 1000);
-      } else if (el.widx > ahead + 6 && el.fired) { el.fired = false; clearTimeout(el.timer); el.classList.remove('fired'); }
-    }
-  };
-  const feed = (text) => { // texto reconhecido até agora → posição na leitura
-    if (!voz) return;
-    const hyp = String(text).split(/\s+/).map(normWord).filter(Boolean).slice(-6);
-    const j = alignVoz(T, hyp, voz.pos);
-    if (j < 0) return;
-    const np = j + 1;
-    if (np < voz.pos - 3) return; // não volta muito por engano
-    markRead(voz.pos, np); voz.pos = np;
-    const now = performance.now(); voz.samples.push([now, np]);
-    while (voz.samples.length > 2 && now - voz.samples[0][0] > 9000) voz.samples.shift();
-    const [t0, p0] = voz.samples[0];
-    if (now - t0 > 1800 && np > p0) voz.speed = clamp((np - p0) / ((now - t0) / 1000), 1, 4.5);
-    $$('.w.cur', rt).forEach((w) => w.classList.remove('cur'));
-    const cur = W[T[Math.min(np, T.length) - 1].i]; cur.classList.add('cur');
-    const r = cur.getBoundingClientRect();
-    if (r.top > innerHeight * 0.58 || r.top < innerHeight * 0.18) window.scrollTo({ top: scrollY + r.top - innerHeight * 0.4, behavior: 'smooth' });
-    vozScene();
-  };
-  const startVoz = async () => {
-    if (!soundOn) { soundOn = true; paused = false; $('#sndBtn').classList.add('on'); }
-    Som.init();
-    // começa da primeira palavra visível na tela
-    let k = T.findIndex((x) => W[x.i].getBoundingClientRect().top > innerHeight * 0.18);
-    if (k < 0) k = 0;
-    $$('.w.said', rt).forEach((w) => w.classList.remove('said'));
-    fxs.forEach((el) => { clearTimeout(el.timer); el.fired = el.widx < k; el.classList.toggle('fired', el.fired); });
-    markRead(0, k);
-    const ouvinte = ouvirVoz(feed, (msg) => { toast(msg); stopVoz(); });
-    if (!ouvinte) return;
-    voz = { pos: k, speed: 2.4, samples: [[performance.now(), k]], stop: ouvinte.stop };
-    rt.classList.add('voice'); $('#vcBtn').classList.add('on'); $('#rd').classList.remove('calm');
-    curAmb = null; curMus = null; vozScene(); updNow();
-    toast('Pode ler em voz alta: os sons vão acompanhar você', 3200);
-  };
-  if ($('#vcBtn')) $('#vcBtn').onclick = () => (voz ? stopVoz() : startVoz());
-  app.vozFeed = feed; // usado nos testes
-
-  // tela de início: o navegador só deixa tocar som depois de um toque
-  const start = document.createElement('div'); start.className = 'r-start';
-  start.innerHTML = `<div class="card">${coverHTML(book)}<div class="chapno" style="color:var(--amber)">Capítulo ${roman(ci)}</div><h2>${esc(ch.title)}</h2>
-    <p>Use fones de ouvido para sentir os sons em volta de você.</p>
-    <button class="btn pri" id="go1">${I('head')}Ler com som</button><button class="btn" id="go2">Ler sem som</button></div>`;
-  app.appendChild(start); fillMedia(start);
-  const begin = (withSound) => {
-    soundOn = withSound; $('#sndBtn').classList.toggle('on', soundOn);
-    if (soundOn) Som.init();
-    start.remove(); curAmb = null; curMus = null; update(); applyAudio(); updNow();
-  };
-  $('#go1').onclick = () => begin(true); $('#go2').onclick = () => begin(false);
-  requestAnimationFrame(() => { placeMarks(); update(); updNow(); });
-  setTimeout(placeMarks, 800);
+  let sx = null;
+  bb.addEventListener('pointerdown', (e) => { sx = e.clientX; });
+  bb.addEventListener('pointerup', (e) => {
+    if (sx == null) return; const dx = e.clientX - sx; sx = null;
+    if (Math.abs(dx) > 40) turn(dx < 0 ? 1 : -1);
+    else { const r = bb.getBoundingClientRect(), x = e.clientX - r.left; if (x < r.width * 0.25) turn(-1); else if (x > r.width * 0.75) turn(1); }
+  });
+  onLeave(() => { document.removeEventListener('keydown', onKey); removeEventListener('resize', onResize); clearTimeout(rT); });
 }
 
-/* ---- reconhecimento de voz (Android: plugin nativo; navegador: Web Speech) ---- */
-const SR_NATIVO = plugin('SpeechRecognition');
-const SR_WEB = window.SpeechRecognition || window.webkitSpeechRecognition || null;
-const VOZ_OK = !!(SR_NATIVO || SR_WEB);
-const normWord = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
-function parecido(a, b) {
-  if (a === b) return true;
-  if (a.length < 3 || b.length < 3) return false;
-  if (a.length >= 5 && b.length >= 5 && a.slice(0, 5) === b.slice(0, 5)) return true; // "pássaros" ~ "passarinhos"
-  if (Math.abs(a.length - b.length) > 1) return false;
-  let i = 0, j = 0, d = 0; // no máximo uma letra diferente
-  while (i < a.length && j < b.length) { if (a[i] === b[j]) { i++; j++; continue; } if (++d > 1) return false; if (a.length > b.length) i++; else if (b.length > a.length) j++; else { i++; j++; } }
-  return d + (a.length - i) + (b.length - j) <= 1;
+/* ================= exportar ================= */
+function exportMenu(anchor, book) {
+  popMenu(anchor, [
+    ...(NATIVE ? [] : [{ icon: 'book', label: 'PDF (para imprimir ou enviar)', run: () => exportPDF(book) }]),
+    { icon: 'book', label: 'EPUB (leitores de e-book)', run: () => exportEPUB(book) },
+    { icon: 'edit', label: 'Word (.doc)', run: () => exportWord(book) },
+    '-',
+    { icon: 'download', label: 'Arquivo do Calhamaço (.json)', run: () => exportBook(book) },
+  ]);
 }
-// Acha em que palavra do texto (índice em T) termina o trecho falado (hyp), perto da posição atual.
-function alignVoz(T, hyp, pos) {
-  if (!hyp.length) return -1;
-  let best = -1, bestScore = 0;
-  const from = Math.max(0, pos - 4), to = Math.min(T.length - 1, pos + 40);
-  for (let j = from; j <= to; j++) {
-    let s = 0, k = j;
-    for (let h = hyp.length - 1; h >= 0 && k >= 0 && j - k <= hyp.length + 3; h--) {
-      for (let d = 0; d < 3 && k - d >= 0; d++) if (parecido(T[k - d].n, hyp[h])) { s += d ? 0.7 : 1; k -= d + 1; break; }
-    }
-    if (!parecido(T[j].n, hyp[hyp.length - 1]) && !(hyp.length > 1 && parecido(T[j].n, hyp[hyp.length - 2]))) s -= 1;
-    s -= Math.max(0, j - pos) * 0.015 + Math.max(0, pos - 1 - j) * 0.1;
-    if (s > bestScore) { bestScore = s; best = j; }
-  }
-  return bestScore >= Math.min(2, hyp.length) - 0.01 ? best : -1;
-}
-// Escuta sem parar até stop(): o reconhecedor encerra depois de cada pausa, então ele é religado sozinho.
-function ouvirVoz(onText, onFail) {
-  let ativo = true;
-  if (SR_NATIVO) {
-    const subs = []; let ultimo = Date.now(), vigia;
-    const ligar = async () => { if (!ativo) return; ultimo = Date.now(); try { const r = await SR_NATIVO.start({ language: 'pt-BR', maxResults: 1, partialResults: true, popup: false }); if (r && r.matches && r.matches[0]) onText(r.matches[0]); } catch (e) { if (ativo) setTimeout(ligar, 700); } };
-    (async () => {
-      try {
-        let p = await SR_NATIVO.checkPermissions();
-        if (p.speechRecognition !== 'granted') p = await SR_NATIVO.requestPermissions();
-        if (p.speechRecognition !== 'granted') { onFail('Permita o microfone para o app ouvir sua leitura'); return; }
-        subs.push(await SR_NATIVO.addListener('partialResults', (d) => { ultimo = Date.now(); const t = d && d.matches && d.matches[0]; if (t) onText(t); }));
-        subs.push(await SR_NATIVO.addListener('listeningState', (d) => { ultimo = Date.now(); if (d && d.status === 'stopped' && ativo) setTimeout(ligar, 250); }));
-        vigia = setInterval(() => { if (ativo && Date.now() - ultimo > 9000) { SR_NATIVO.stop().catch(() => {}); setTimeout(ligar, 300); } }, 3000);
-        ligar();
-      } catch (e) { onFail('Não consegui usar o microfone'); }
-    })();
-    return { stop() { ativo = false; clearInterval(vigia); SR_NATIVO.stop().catch(() => {}); subs.forEach((s) => s.remove()); } };
-  }
-  if (!SR_WEB) { onFail('Este navegador não reconhece voz'); return null; }
-  const rec = new SR_WEB();
-  rec.lang = 'pt-BR'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1;
-  rec.onresult = (e) => { let t = ''; for (let i = Math.max(0, e.results.length - 3); i < e.results.length; i++) t += e.results[i][0].transcript + ' '; onText(t); };
-  rec.onerror = (e) => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { ativo = false; onFail('Permita o microfone para o app ouvir sua leitura'); } };
-  rec.onend = () => { if (ativo) setTimeout(() => { try { rec.start(); } catch (e) { /* já ligado */ } }, 250); };
-  try { rec.start(); } catch (e) { onFail('Não consegui usar o microfone'); return null; }
-  return { stop() { ativo = false; try { rec.stop(); } catch (e) { /* já parado */ } } };
-}
-
-/* ================= SONS ================= */
-function viewSounds() {
-  document.title = 'Imersa — sons';
-  let playing = null, rec = null;
-  const groups = [['amb', 'Ambientes', 'tocam em loop durante a cena'], ['mus', 'Músicas', 'trilhas que entram suaves'], ['fx', 'Efeitos', 'tocam uma vez, no momento certo do texto']];
-  const draw = () => {
-    app.innerHTML = `<header class="topbar"><button class="icon-btn" id="bk" aria-label="Voltar">${I('left')}</button><div class="logo" style="font-size:19px">Biblioteca de sons</div><span class="grow"></span></header>
-    <div class="sounds">
-      <div class="sec-h"><h2>Meus sons</h2></div>
-      ${rec ? `<div class="rec-box"><span class="rec-dot"></span><b id="recT">Gravando…</b><span class="grow"></span><button class="btn sm danger" id="recStop">${I('stop')}Parar</button></div>` : `<div class="row" style="margin-bottom:12px;flex-wrap:wrap"><button class="btn teal" id="recGo">${I('mic')}Gravar um som</button><button class="btn" id="upGo">${I('upload')}Enviar arquivo de áudio</button></div>`}
-      <div class="sgrid">${userSounds.length ? userSounds.map((s) => card({ id: 'u:' + s.id, name: s.name, kind: 'user', icon: 'mic' }, true)).join('') : '<p class="muted" style="grid-column:1/-1;font-size:14px">Grave sua voz, um barulho de casa ou envie músicas e efeitos. Eles aparecem aqui e na hora de inserir sons no livro.</p>'}</div>
-      ${groups.map(([k, t, sub]) => `<div class="sec-h"><h2>${t} <span class="muted" style="font-weight:400;font-size:13px">· ${sub}</span></h2></div><div class="sgrid">${Som.catalog.filter((s) => s.kind === k).map((s) => card(s)).join('')}</div>`).join('')}
-    </div>`;
-    $('#bk').onclick = () => history.length > 1 ? history.back() : go('#/');
-  };
-  const card = (s, mine) => `<div class="scard ${playing === s.id ? 'playing' : ''}" data-id="${esc(s.id)}"><span class="ic ${kindCls(s.kind)}">${I(s.icon)}</span><span><b>${esc(s.name)}</b><small>${{ amb: 'ambiente', mus: 'música', fx: 'efeito', user: 'meu som' }[s.kind]}</small></span>
-    <span class="acts"><button data-play aria-label="Ouvir">${I(playing === s.id ? 'stop' : 'play', 'fill')}</button>${mine ? `<button data-ren aria-label="Renomear">${I('edit')}</button><button data-del aria-label="Excluir">${I('trash')}</button>` : ''}</span></div>`;
-  draw();
-  app.onclick = async (e) => {
-    const t = e.target;
-    if (t.closest('#recGo')) return startRec();
-    if (t.closest('#recStop')) return rec && rec.stop();
-    if (t.closest('#upGo')) {
-      const f = await pickFile('audio/*'); if (!f) return;
-      if (f.size > 25 * 1024 * 1024) return toast('Arquivo muito grande (máx. 25 MB)');
-      await saveMedia('audio', f, f.name.replace(/\.[^.]+$/, '').slice(0, 60)); draw(); toast('Som adicionado'); return;
-    }
-    const c = t.closest('.scard'); if (!c) return;
-    const id = c.dataset.id;
-    if (t.closest('[data-ren]')) { const u = userSounds.find((x) => 'u:' + x.id === id); const n = await askText('Renomear som', u.name); if (n) { const m = await DB.get('media', u.id); m.name = n; await DB.put('media', m); await loadUserSounds(); draw(); } return; }
-    if (t.closest('[data-del]')) {
-      const u = userSounds.find((x) => 'u:' + x.id === id);
-      if (!(await ask('Excluir som?', `"${u.name}" será apagado. Nos livros em que ele foi usado, o lugar fica sem som.`, 'Excluir', true))) return;
-      await DB.del('media', u.id); Som.forget(id); await loadUserSounds(); draw(); return;
-    }
-    if (playing === id) { Som.stopPreview(); playing = null; } else { await Som.previewSound(id, 0.85); playing = id; clearTimeout(app.pt); app.pt = setTimeout(() => { playing = null; if (location.hash === '#/sons') draw(); }, 7000); }
-    draw();
-  };
-  onLeave(() => { app.onclick = null; Som.stopPreview(); if (rec) rec.stop(); });
-  async function startRec() {
-    if (!navigator.mediaDevices || !window.MediaRecorder) return toast('Este navegador não grava áudio');
-    let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { return toast('Permita o uso do microfone para gravar'); }
-    const mr = new MediaRecorder(stream), chunks = [], t0 = Date.now();
-    mr.ondataavailable = (ev) => ev.data.size && chunks.push(ev.data);
-    const timer = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); const el = $('#recT'); if (el) el.textContent = `Gravando… ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; if (s >= 120) mr.stop(); }, 250);
-    mr.onstop = async () => {
-      stream.getTracks().forEach((tr) => tr.stop()); clearInterval(timer); rec = null;
-      const blob = new Blob(chunks, { type: mr.mimeType || 'audio/webm' });
-      if (blob.size > 1000 && location.hash === '#/sons') { const n = await askText('Nome do som', `Gravação ${userSounds.length + 1}`); await saveMedia('audio', blob, n || 'Gravação'); toast('Gravação salva'); }
-      if (location.hash === '#/sons') draw();
-    };
-    mr.start(); rec = mr; draw();
-  }
-}
-
-/* ================= backup ================= */
 const blobToData = (b) => new Promise((r) => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(b); });
-async function download(name, obj) {
+async function downloadBlob(name, blob) {
   const FS = plugin('Filesystem'), SHARE = plugin('Share');
   if (FS && SHARE) {
     // No APK: grava o arquivo e abre o compartilhar (Google Drive, WhatsApp, Arquivos…).
     try {
-      const { uri } = await FS.writeFile({ path: name, data: JSON.stringify(obj), directory: 'CACHE', encoding: 'utf8' });
+      const data = (await blobToData(blob)).split(',')[1];
+      const { uri } = await FS.writeFile({ path: name, data, directory: 'CACHE' });
       await SHARE.share({ title: name, files: [uri], dialogTitle: 'Guardar ou enviar o arquivo' });
-    } catch (e) {
-      if (!/cancel|abort/i.test(String(e && (e.message || e.name)))) toast('Não deu para gerar o arquivo.');
-    }
+    } catch (e) { if (!/cancel|abort/i.test(String(e && (e.message || e.name)))) toast('Não deu para gerar o arquivo.'); }
     return;
   }
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(obj)], { type: 'application/json' }));
-  a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
 const slug = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'livro';
+async function exportPDF(book) {
+  let area = $('#printArea'); if (!area) { area = document.createElement('div'); area.id = 'printArea'; document.body.appendChild(area); }
+  applyStyle(area, styleOf(book), 'branco');
+  area.innerHTML = bookBody(book);
+  await fillMedia(area);
+  await Promise.all($$('img', area).map((im) => (im.complete ? 0 : new Promise((r) => { im.onload = im.onerror = r; }))));
+  if (document.fonts) await document.fonts.ready;
+  const old = document.title; document.title = book.title;
+  setTimeout(() => { window.print(); document.title = old; }, 50);
+}
+// imagens do livro, para virarem arquivos (EPUB) ou dados embutidos (Word)
+async function bookImages(book) {
+  const out = new Map(); // "m:id" ou "a:tema" → { name, type, blob }
+  const add = async (key) => {
+    if (out.has(key)) return;
+    if (key.startsWith('m:')) {
+      const m = await DB.get('media', key.slice(2)); if (!m) return;
+      const t = m.blob.type || 'image/jpeg', ext = /png/.test(t) ? 'png' : /webp/.test(t) ? 'webp' : /gif/.test(t) ? 'gif' : 'jpg';
+      out.set(key, { name: `img/${key.slice(2)}.${ext}`, type: t, blob: m.blob });
+    } else {
+      const svg = Arte.svg(key.slice(2)).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ').replace(/style="[^"]*"/, 'width="1200" height="700"');
+      out.set(key, { name: `img/${key.slice(2)}.svg`, type: 'image/svg+xml', blob: new Blob([svg], { type: 'image/svg+xml' }) });
+    }
+  };
+  if (book.coverMedia) await add('m:' + book.coverMedia);
+  for (const c of book.chapters) {
+    const t = document.createElement('template'); t.innerHTML = c.html || '';
+    for (const f of t.content.querySelectorAll('.m-img')) await add(f.dataset.media ? 'm:' + f.dataset.media : 'a:' + (f.dataset.art || 'floresta'));
+  }
+  return out;
+}
+async function svgToJpg(blob) {
+  const url = URL.createObjectURL(blob), im = new Image();
+  await new Promise((r) => { im.onload = im.onerror = r; im.src = url; });
+  const c = document.createElement('canvas'); c.width = 1200; c.height = 700; c.getContext('2d').drawImage(im, 0, 0, 1200, 700); URL.revokeObjectURL(url);
+  return new Promise((r) => c.toBlob(r, 'image/jpeg', 0.88));
+}
+const exportDoc = document.implementation.createHTMLDocument('');
+// capítulo para EPUB (xhtml = true) ou Word, com as imagens apontando para src
+function chapterExport(book, i, srcOf, xhtml) {
+  const c = book.chapters[i];
+  const t = document.createElement('template'); t.innerHTML = sanitize(c.html);
+  for (const el of [...t.content.querySelectorAll('.m-img')]) {
+    const src = srcOf(el.dataset.media ? 'm:' + el.dataset.media : 'a:' + (el.dataset.art || 'floresta'));
+    const f = t.content.ownerDocument.createElement('figure');
+    f.innerHTML = (src ? `<img src="${src}" alt="${esc(el.dataset.caption || '')}">` : '') + (el.dataset.caption ? `<figcaption>${esc(el.dataset.caption)}</figcaption>` : '');
+    el.replaceWith(f);
+  }
+  for (const el of [...t.content.querySelectorAll('.m-scene')]) { const d = t.content.ownerDocument.createElement('p'); d.className = 'cena'; d.textContent = '✦ ✦ ✦'; el.replaceWith(d); }
+  for (const p of [...t.content.querySelectorAll('p')]) if (!p.textContent.trim() && !p.querySelector('img')) p.remove();
+  const first = t.content.querySelector('p:not(.cena)'); if (first) first.className = 'primeiro';
+  const box = exportDoc.createElement('div'); box.appendChild(exportDoc.importNode(t.content, true));
+  const inner = xhtml ? [...box.childNodes].map((n) => new XMLSerializer().serializeToString(n)).join('') : box.innerHTML;
+  return `<p class="chno">CAPÍTULO ${roman(i)}</p><h1>${esc(c.title)}</h1><p class="orn">✦ ❦ ✦</p>${inner}`;
+}
+async function exportWord(book) {
+  toast('Preparando o arquivo do Word…');
+  const st = styleOf(book), imgs = await bookImages(book), data = new Map();
+  for (const [k, v] of imgs) data.set(k, await blobToData(v.type === 'image/svg+xml' ? await svgToJpg(v.blob) : v.blob));
+  const html = book.chapters.map((c, i) => `<div style="page-break-before:always">${chapterExport(book, i, (k) => data.get(k), false)}</div>`).join('');
+  const doc = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>${esc(book.title)}</title>
+<style>@page Section1{size:14.8cm 21cm;margin:2cm 1.8cm 2.2cm}div.Section1{page:Section1}body{font-family:'${st.font}',Georgia,serif;font-size:12pt;line-height:1.5}p{margin:0;text-indent:1.2cm;text-align:justify}p.primeiro,p.chno,p.orn,p.cena{text-indent:0}p.chno{text-align:center;font-size:9pt;letter-spacing:3pt;color:#777;margin-top:3cm}h1{text-align:center;font-family:'${st.titleFont}',Georgia,serif;font-style:italic;font-weight:normal;font-size:24pt;margin:6pt 0}p.orn,p.cena{text-align:center;color:#a07a35;margin:8pt 0 18pt}figure{margin:12pt 0;text-align:center}img{width:12cm}figcaption{font-style:italic;font-size:10pt;color:#666;text-align:center}.capa{text-align:center;margin-top:6cm}.capa h1{font-size:30pt;font-style:normal}</style></head>
+<body><div class="Section1"><div class="capa"><h1>${esc(book.title)}</h1>${book.author ? `<p style="text-align:center;text-indent:0;font-style:italic">${esc(book.author)}</p>` : ''}</div>${html}</div></body></html>`;
+  await downloadBlob(`${slug(book.title)}.doc`, new Blob(['﻿' + doc], { type: 'application/msword' }));
+}
+/* zip simples (sem compressão), suficiente para o EPUB */
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = (u8) => { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+function zip(files, type) {
+  const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+  for (const f of files) {
+    const nm = enc.encode(f.name), d = f.data, crc = crc32(d);
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(12, 0x21, true);
+    h.setUint32(14, crc, true); h.setUint32(18, d.length, true); h.setUint32(22, d.length, true); h.setUint16(26, nm.length, true);
+    parts.push(new Uint8Array(h.buffer), nm, d);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(14, 0x21, true);
+    c.setUint32(16, crc, true); c.setUint32(20, d.length, true); c.setUint32(24, d.length, true); c.setUint16(28, nm.length, true); c.setUint32(42, off, true);
+    central.push(new Uint8Array(c.buffer), nm);
+    off += 30 + nm.length + d.length;
+  }
+  const size = central.reduce((a, b) => a + b.length, 0), e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, size, true); e.setUint32(16, off, true);
+  return new Blob([...parts, ...central, new Uint8Array(e.buffer)], { type });
+}
+async function exportEPUB(book) {
+  toast('Preparando o EPUB…');
+  const st = styleOf(book), imgs = await bookImages(book), enc = new TextEncoder(), files = [];
+  const txt = (name, s) => files.push({ name, data: enc.encode(s) });
+  const page = (title, body) => `<?xml version="1.0" encoding="utf-8"?>\n<!DOCTYPE html>\n<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="pt-BR" xml:lang="pt-BR"><head><meta charset="utf-8"/><title>${esc(title)}</title><link rel="stylesheet" type="text/css" href="estilo.css"/></head><body>${body}</body></html>`;
+  txt('mimetype', 'application/epub+zip');
+  txt('META-INF/container.xml', '<?xml version="1.0" encoding="utf-8"?>\n<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>');
+  txt('OEBPS/estilo.css', `body{font-family:"${st.font}",Georgia,serif;line-height:1.55}p{margin:0;text-indent:1.4em;text-align:justify}p.primeiro,p.chno,p.orn,p.cena{text-indent:0}p.chno{text-align:center;font-size:.75em;letter-spacing:.3em;color:#777;margin-top:3em}h1{text-align:center;font-family:"${st.titleFont}",Georgia,serif;font-style:italic;font-weight:normal;font-size:1.9em;margin:.3em 0}p.orn,p.cena{text-align:center;color:#a07a35;margin:.6em 0 1.4em}figure{margin:1em 0;text-align:center}img{max-width:100%}figcaption{font-style:italic;font-size:.85em;color:#666}.rosto{text-align:center;margin-top:30%}.rosto h1{font-style:normal;font-size:2.2em}.capa{text-align:center}.capa img{max-height:95vh}`);
+  const items = [], spine = [];
+  const cover = book.coverMedia && imgs.get('m:' + book.coverMedia);
+  if (cover) { txt('OEBPS/capa.xhtml', page(book.title, `<div class="capa"><img src="${cover.name}" alt="Capa"/></div>`)); items.push('<item id="capa" href="capa.xhtml" media-type="application/xhtml+xml"/>'); spine.push('<itemref idref="capa"/>'); }
+  txt('OEBPS/rosto.xhtml', page(book.title, `<div class="rosto"><h1>${esc(book.title)}</h1><p class="orn">✦ ❦ ✦</p>${book.author ? `<p class="orn" style="font-style:italic;color:#555">${esc(book.author)}</p>` : ''}</div>`));
+  items.push('<item id="rosto" href="rosto.xhtml" media-type="application/xhtml+xml"/>'); spine.push('<itemref idref="rosto"/>');
+  book.chapters.forEach((c, i) => {
+    txt(`OEBPS/cap${i + 1}.xhtml`, page(c.title, `<section epub:type="chapter">${chapterExport(book, i, (k) => imgs.get(k) && imgs.get(k).name, true)}</section>`));
+    items.push(`<item id="cap${i + 1}" href="cap${i + 1}.xhtml" media-type="application/xhtml+xml"/>`); spine.push(`<itemref idref="cap${i + 1}"/>`);
+  });
+  txt('OEBPS/nav.xhtml', page('Sumário', `<nav epub:type="toc" id="toc"><h1>Sumário</h1><ol>${book.chapters.map((c, i) => `<li><a href="cap${i + 1}.xhtml">${roman(i)}. ${esc(c.title)}</a></li>`).join('')}</ol></nav>`));
+  let n = 0;
+  for (const [k, v] of imgs) { files.push({ name: 'OEBPS/' + v.name, data: new Uint8Array(await v.blob.arrayBuffer()) }); items.push(`<item id="im${++n}" href="${v.name}" media-type="${v.type}"${cover && k === 'm:' + book.coverMedia ? ' properties="cover-image"' : ''}/>`); }
+  txt('OEBPS/content.opf', `<?xml version="1.0" encoding="utf-8"?>\n<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid" xml:lang="pt-BR"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="uid">urn:calhamaco:${esc(book.id)}</dc:identifier><dc:title>${esc(book.title)}</dc:title>${book.author ? `<dc:creator>${esc(book.author)}</dc:creator>` : ''}<dc:language>pt-BR</dc:language><meta property="dcterms:modified">${new Date().toISOString().slice(0, 19)}Z</meta></metadata><manifest><item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/><item id="css" href="estilo.css" media-type="text/css"/>${items.join('')}</manifest><spine>${spine.join('')}</spine></package>`);
+  await downloadBlob(`${slug(book.title)}.epub`, zip(files, 'application/epub+zip'));
+}
+
+/* ================= backup ================= */
+const json = (o) => new Blob([JSON.stringify(o)], { type: 'application/json' });
 async function packMedia(ids) {
   const out = [];
-  for (const id of ids) { const m = await DB.get('media', id); if (m) { const { blob, ...rest } = m; out.push({ ...rest, data: await blobToData(blob) }); } }
+  for (const id of ids) { const m = await DB.get('media', id); if (m && m.kind === 'image') { const { blob, ...rest } = m; out.push({ ...rest, data: await blobToData(blob) }); } }
   return out;
 }
 function mediaIdsOf(b) {
   const ids = new Set(); if (b.coverMedia) ids.add(b.coverMedia);
-  for (const c of b.chapters) {
-    for (const m of (c.html || '').matchAll(/data-media="([^"]+)"/g)) ids.add(m[1]);
-    for (const m of (c.html || '').matchAll(/u:([a-z0-9]+)/g)) ids.add(m[1]);
-  }
+  for (const c of b.chapters) for (const m of (c.html || '').matchAll(/data-media="([^"]+)"/g)) ids.add(m[1]);
   return [...ids];
 }
-async function exportBook(b) {
-  toast('Preparando o arquivo…');
-  await download(`${slug(b.title)}.imersa.json`, { app: 'imersa', v: 1, books: [b], media: await packMedia(mediaIdsOf(b)) });
-}
+// "app: imersa" continua no arquivo para os backups antigos e novos abrirem nas duas versões.
+async function exportBook(b) { toast('Preparando o arquivo…'); await downloadBlob(`${slug(b.title)}.calhamaco.json`, json({ app: 'imersa', v: 2, books: [b], media: await packMedia(mediaIdsOf(b)) })); }
 async function exportAll() {
   toast('Preparando o backup…');
   const media = await DB.all('media');
-  await download(`imersa-backup-${new Date().toISOString().slice(0, 10)}.json`, { app: 'imersa', v: 1, books, media: await packMedia(media.map((m) => m.id)) });
+  await downloadBlob(`calhamaco-backup-${today()}.json`, json({ app: 'imersa', v: 2, books, media: await packMedia(media.map((m) => m.id)) }));
 }
 async function importFile() {
   const f = await pickFile('application/json,.json'); if (!f) return;
   let data; try { data = JSON.parse(await f.text()); } catch (e) { return toast('Arquivo inválido'); }
-  if (!data || data.app !== 'imersa' || !Array.isArray(data.books)) return toast('Este arquivo não é do Imersa');
+  if (!data || data.app !== 'imersa' || !Array.isArray(data.books)) return toast('Este arquivo não é do Calhamaço');
   for (const m of data.media || []) {
-    if (!m.id || !m.data) continue;
+    if (!m.id || !m.data || m.kind !== 'image') continue;
     const blob = await (await fetch(m.data)).blob(); const { data: _, ...rest } = m;
     await DB.put('media', { ...rest, blob });
   }
   let n = 0;
   for (const b of data.books) {
     if (!b || !Array.isArray(b.chapters)) continue;
-    const nb = { ...newBook(), ...b, chapters: b.chapters.map((c) => ({ id: c.id || uid(), title: String(c.title || ''), html: sanitize(c.html) })) };
+    const nb = { ...newBook(), ...b, chapters: b.chapters.map((c) => ({ id: c.id || uid(), title: String(c.title || ''), html: sanitize(c.html), notes: String(c.notes || '') })) };
     if (getBook(nb.id)) { nb.id = uid(); nb.title += ' (cópia)'; }
     books.unshift(nb); await DB.put('books', nb); n++;
   }
-  await loadUserSounds(); await loadBooks(); route();
+  await loadBooks(); route();
   toast(n === 1 ? 'Livro aberto na estante' : `${n} livros abertos na estante`);
 }
 
-/* ================= livro de exemplo ================= */
+/* ================= livros de exemplo ================= */
 function sampleBook() {
-  const fx = (s, label, vol = 0.85, pan = 0) => `<span class="m-fx" data-sound="${s}" data-vol="${vol}" data-pan="${pan}" data-label="${label}"></span>`;
-  const c1 = `<div class="m-amb" data-layers="b:forest:0.70|b:wind:0.25"></div>
-<p>A névoa havia recuado para a beira do rio quando Lia finalmente alcançou a clareira. As árvores, antes cerradas como muralhas, abriam-se agora num círculo perfeito, e no centro dele a lua derramava uma luz tão fria que parecia possível segurá-la nas mãos.</p>
-<p>Foi então que ouviu ${fx('b:owl', 'coruja ao longe', 0.8, -0.5)} um piado longo, vindo de muito acima, como se a própria noite tivesse resolvido falar.</p>
-<div class="m-mus" data-sound="b:m_calm" data-vol="0.35"></div>
-<figure class="m-img" data-art="floresta" data-fx="zoom" data-bg="1" data-caption="A clareira ao luar"></figure>
-<p>Lia deu um passo à frente. Sob suas botas, um galho estalou ${fx('b:branch', 'galho quebrando', 0.9, 0.3)} e o som correu entre os troncos como um aviso.</p>
+  const c1 = `<p>A névoa havia recuado para a beira do rio quando Lia finalmente alcançou a clareira. As árvores, antes cerradas como muralhas, abriam-se agora num círculo perfeito, e no centro dele a lua derramava uma luz tão fria que parecia possível segurá-la nas mãos.</p>
+<p>Foi então que ouviu um piado longo, vindo de muito acima, como se a própria noite tivesse resolvido falar.</p>
+<figure class="m-img" data-art="floresta" data-size="inteira" data-caption="A clareira ao luar"></figure>
+<p>Lia deu um passo à frente. Sob suas botas, um galho estalou, e o som correu entre os troncos como um aviso.</p>
 <p>— Quem está aí? — perguntou, e a própria voz lhe pareceu pequena demais para tanto silêncio.</p>
 <p>Ninguém respondeu. Só os grilos, que continuavam sua conversa antiga, e o vento, que passava entre os pinheiros como quem procura alguma coisa perdida. Ela apertou a lanterna contra o peito e contou até dez, como a avó ensinara.</p>
-<p>No sete, ouviu passos ${fx('b:steps', 'passos', 0.75, 0.6)} atrás de si. Leves, cuidadosos, quase educados.</p>
+<p>No sete, ouviu passos atrás de si. Leves, cuidadosos, quase educados.</p>
 <p>No dez, virou-se.</p>
-<div class="m-mus" data-sound="b:m_mystery" data-vol="0.4"></div>
 <p>Não havia ninguém. Havia apenas, no chão úmido da clareira, uma trilha de pegadas pequenas que começava exatamente onde ela estava e seguia em direção ao rio — pegadas de alguém que, até um instante atrás, caminhava ao seu lado sem que ela soubesse.</p>
-<p>Ao longe, muito longe, um lobo uivou ${fx('b:wolf', 'lobo uivando', 0.6, -0.6)} para a lua. Lia sentiu o coração bater mais rápido ${fx('b:heartbeat', 'coração', 0.9)} e, pela primeira vez desde que saíra de casa, pensou em voltar.</p>
-<p>Mas não voltou.</p>
 <div class="m-scene"></div>
 <p>Quando o dia nasceu, ela já estava longe da floresta, seguindo as pegadas até a beira do mar.</p>`;
-  const c2 = `<div class="m-amb" data-layers="b:sea:0.70|b:wind:0.45"></div>
-<figure class="m-img" data-art="farol" data-fx="zoom" data-bg="1" data-caption="O farol no penhasco"></figure>
+  const c2 = `<figure class="m-img" data-art="farol" data-size="inteira" data-caption="O farol no penhasco"></figure>
 <p>A tempestade chegou sem pedir licença. Primeiro o vento, que dobrou as gramas do penhasco como quem penteia um bicho assustado; depois a chuva, grossa e fria, batendo nas pedras.</p>
-<div class="m-amb" data-layers="b:storm:0.75|b:sea:0.55"></div>
-<p>Lia ergueu os olhos para a torre. Lá no alto, onde ninguém subia havia quarenta anos, uma luz acabava de se acender.</p>
-<div class="m-mus" data-sound="b:m_tension" data-vol="0.35"></div>
-<p>E, no exato instante em que o céu se partiu ao meio ${fx('b:thunder', 'trovão', 1, -0.3)}, ela entendeu que não estava sozinha.</p>
-<p>As ondas se lançavam contra o rochedo com a fúria de quem guarda um segredo. A porta do farol, que deveria estar trancada, rangia aberta ${fx('b:door', 'porta rangendo', 0.8, 0.4)} no ritmo do vento.</p>
-<p>Ela entrou. A escada subia em espiral, e cada degrau respondia aos seus passos ${fx('b:steps', 'passos na escada', 0.7)} com um gemido de madeira velha. Do alto vinha um tique-taque ${fx('b:clock', 'relógio', 0.6, 0.5)} paciente, como se alguém marcasse o tempo à sua espera.</p>
+<p>Lia ergueu os olhos para a torre. Lá no alto, onde ninguém subia havia quarenta anos, uma luz acabava de se acender. E, no exato instante em que o céu se partiu ao meio, ela entendeu que não estava sozinha.</p>
+<p>A porta do farol, que deveria estar trancada, rangia aberta no ritmo do vento. Ela entrou. A escada subia em espiral, e cada degrau respondia aos seus passos com um gemido de madeira velha.</p>
 <p>Lá em cima, diante da grande lente, havia uma menina de cabelos molhados olhando o mar.</p>
-<p>— Você demorou — disse a menina, sem se virar. — As pegadas eram minhas.</p>
-<div class="m-scene"></div>
-<div class="m-amb" data-layers="b:rain:0.45"></div>
-<div class="m-mus" data-sound="b:m_hope" data-vol="0.35"></div>
-<figure class="m-img" data-art="aurora" data-fx="zoom" data-bg="1" data-caption="O amanhecer depois da tempestade"></figure>
-<p>A chuva foi ficando mais fina até virar só um sussurro na janela. Quando o sol apareceu atrás das montanhas, as duas ainda conversavam, e lá embaixo, no vale, os sinos do castelo começaram a tocar ${fx('b:bell', 'sinos', 0.7, -0.4)}, um a um, acordando o mundo.</p>
-<p>Lia sorriu. Às vezes, para encontrar o caminho de casa, é preciso primeiro se perder.</p>`;
-  return newBook({ title: 'A Floresta dos Sussurros', author: 'Imersa', genre: 'Exemplo · fantasia', theme: 'floresta', chapters: [{ id: uid(), title: 'Sob a lua de prata', html: c1 }, { id: uid(), title: 'O farol esquecido', html: c2 }] });
+<p>— Você demorou — disse a menina, sem se virar. — As pegadas eram minhas.</p>`;
+  return newBook({ title: 'A Floresta dos Sussurros', genre: 'Exemplo · fantasia', theme: 'floresta', style: { ...DEF_STYLE, font: 'EB Garamond', titleFont: 'Cinzel' },
+    chapters: [{ id: uid(), title: 'Sob a lua de prata', html: c1, notes: '' }, { id: uid(), title: 'O farol esquecido', html: c2, notes: '' }] });
 }
-
-/* Livros de exemplo (exemplos.js): entram na estante uma única vez, com a imagem e o som guardados no aparelho. */
+// Livros de exemplo (exemplos.js): entram na estante uma única vez, com a imagem guardada no aparelho.
 async function seedExamples() {
   if (typeof EXEMPLOS === 'undefined') return;
   const done = LS.get('imersa-exemplos', []);
@@ -1285,13 +1123,12 @@ async function seedExamples() {
     if (done.includes(ex.id)) continue;
     if (!getBook(ex.id)) {
       try {
-        const get = async (f) => { const r = await fetch(f); if (!r.ok) throw new Error(f); return r.blob(); };
-        const img = await saveMedia('image', await get(ex.imagem.arquivo), ex.imagem.nome);
-        const som = await saveMedia('audio', await get(ex.som.arquivo), ex.som.nome);
-        const fill = (h) => h.replaceAll('__IMG__', img.id).replaceAll('__SOM__', som.id);
-        const b = newBook({ id: ex.id, title: ex.titulo, genre: ex.genero, coverMedia: img.id, chapters: ex.capitulos.map((c) => ({ id: uid(), title: c.titulo, html: fill(c.html) })) });
+        const r = await fetch(ex.imagem.arquivo); if (!r.ok) throw new Error(ex.imagem.arquivo);
+        const img = await saveMedia('image', await r.blob(), ex.imagem.nome);
+        const b = newBook({ id: ex.id, title: ex.titulo, genre: ex.genero, coverMedia: img.id, style: { ...DEF_STYLE, ...(ex.estilo || {}) },
+          chapters: ex.capitulos.map((c) => ({ id: uid(), title: c.titulo, html: c.html.replaceAll('__IMG__', img.id), notes: '' })) });
         await DB.put('books', b); books.unshift(b);
-      } catch (e) { continue; } // sem os arquivos agora: tenta de novo na próxima abertura
+      } catch (e) { continue; } // sem o arquivo agora: tenta de novo na próxima abertura
     }
     done.push(ex.id); LS.set('imersa-exemplos', done);
   }
@@ -1300,7 +1137,7 @@ async function seedExamples() {
 /* ================= início ================= */
 (async () => {
   try {
-    await loadBooks(); await loadUserSounds();
+    await loadBooks();
     if (!LS.get('imersa-seeded', false) && !books.length) { const b = sampleBook(); await DB.put('books', b); books = [b]; }
     LS.set('imersa-seeded', true);
     await seedExamples();
@@ -1312,17 +1149,18 @@ async function seedExamples() {
   route();
   // Funciona sem internet: no site pelo service worker; no APK os arquivos já vêm dentro dele.
   if (!NATIVE && 'serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
   // Botão voltar do Android: fecha o que estiver aberto, depois volta uma tela, e na estante minimiza.
   const AppP = plugin('App');
   if (AppP) AppP.addListener('backButton', () => {
     if (slashState) { closeSlash(); return; }
     if ($('.menu')) { closeMenus(); return; }
     if (modalStack.length) { modalStack[modalStack.length - 1](); return; }
+    if (document.body.classList.contains('focus')) { document.body.classList.remove('focus'); const x = $('#exitFocus'); if (x) x.hidden = true; return; }
     if ($('.side.open')) { $('.side-bd') && $('.side-bd').click(); return; }
     const [, a, b, c] = (location.hash.slice(1) || '/').split('/');
     if (a === 'ler') go(`#/livro/${b}/${c || 0}`);
-    else if (a === 'livro' || a === 'sons') go('#/');
+    else if (a === 'livro' || a === 'favoritos') go('#/');
     else AppP.minimizeApp();
   });
-  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 })();

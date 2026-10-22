@@ -1,8 +1,8 @@
-# Gera o APK do Imersa (livros com imagens e sons, pasta livros-android/, feito com Capacitor) a partir do site em livros/.
+# Gera o APK do Calhamaço (app de escrever livros, antigo Imersa, pasta livros-android/, feito com Capacitor) a partir do site em livros/.
 # No main, com o segredo NEXA_SIGNING_SEED configurado, publica o APK na Release "imersa" (link fixo):
 #   https://github.com/andersonrocharsrr-code/Clausclan/releases/download/imersa/imersa.apk
 # Sem o segredo, gera só um APK de teste (debug), disponível em "Artifacts" na execução.
-name: Gerar APK do Imersa
+name: Gerar APK do Calhamaço
 
 on:
   push:
@@ -49,7 +49,7 @@ jobs:
       - name: Copiar o app para dentro do projeto Android
         run: npm run www && npx cap sync android
 
-      # Mesma chave do Nexa Money (gerada pelo mesmo script e segredo); o Imersa tem seu próprio applicationId.
+      # Mesma chave do Nexa Money (gerada pelo mesmo script e segredo); o Calhamaço tem seu próprio applicationId.
       - name: Criar a chave de assinatura
         env:
           NEXA_SIGNING_SEED: ${{ secrets.NEXA_SIGNING_SEED }}
@@ -89,8 +89,8 @@ jobs:
         run: |
           if ! gh release view imersa --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release create imersa --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest=false \
-              --title "Imersa — livros com imagens e sons" \
+              --title "Calhamaço — escreva o seu livro" \
               --notes "Baixe o arquivo imersa.apk no celular e toque nele para instalar. Os dados continuam no celular ao atualizar."
           fi
           gh release upload imersa "$RUNNER_TEMP/imersa.apk" --repo "$GITHUB_REPOSITORY" --clobber
-          gh release edit imersa --repo "$GITHUB_REPOSITORY" --latest=false --title "Imersa — livros com imagens e sons (versão $IMERSA_BUILD)"
+          gh release edit imersa --repo "$GITHUB_REPOSITORY" --latest=false --title "Calhamaço — escreva o seu livro (versão $IMERSA_BUILD)"

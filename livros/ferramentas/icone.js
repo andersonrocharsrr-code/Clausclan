@@ -1,45 +1,13 @@
-// Peças do ícone (viewBox 0 0 100 100), reaproveitadas em todos os tamanhos.
-const DEFS = (p) => `
- <radialGradient id="${p}bg" cx="28%" cy="18%" r="95%"><stop offset="0" stop-color="#7b5cf0"/><stop offset=".45" stop-color="#3b2483"/><stop offset="1" stop-color="#140c2e"/></radialGradient>
- <radialGradient id="${p}glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffc56b" stop-opacity=".55"/><stop offset="1" stop-color="#ffc56b" stop-opacity="0"/></radialGradient>
- <linearGradient id="${p}pl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff3d6"/><stop offset="1" stop-color="#f6c477"/></linearGradient>
- <linearGradient id="${p}pr" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe4ad"/><stop offset="1" stop-color="#ee9d52"/></linearGradient>
- <linearGradient id="${p}cv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ec8fae"/><stop offset="1" stop-color="#b9507a"/></linearGradient>
- <linearGradient id="${p}wv" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8af0df"/><stop offset="1" stop-color="#3fb8d6"/></linearGradient>
- <filter id="${p}soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.6"/></filter>`;
-const BG = (p) => {
-  const stars = [[16, 18, .9], [80, 14, .7], [88, 30, .5], [12, 44, .5], [70, 24, .45], [24, 84, .4], [86, 82, .35], [60, 10, .5]]
-    .map(([x, y, o]) => `<circle cx="${x}" cy="${y}" r="${(o * 1.3).toFixed(2)}" fill="#fff" opacity="${o}"/>`).join('');
-  return `<rect width="100" height="100" fill="url(#${p}bg)"/>${stars}`;
+// Ícone do Calhamaço: um livro bem grosso, com fita dourada, sobre fundo terracota (viewBox 0 0 40 40).
+const DEFS = (p) => `<linearGradient id="${p}bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d07a4b"/><stop offset="1" stop-color="#9c4024"/></linearGradient><linearGradient id="${p}pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#ead6b8"/></linearGradient>`;
+const BG = (p, rx = 11) => `<rect width="40" height="40" rx="${rx}" fill="url(#${p}bg)"/>`;
+const FG = (p) => `<ellipse cx="20.5" cy="31.5" rx="12" ry="2.2" fill="#5e2414" opacity=".35"/><path d="M7 15.5 L22.5 9.5 L33.5 13.5 L18 19.5Z" fill="#2a231d"/><path d="M11.5 15.4 L22.5 11.2 L28.5 13.4 L17.5 17.6Z" fill="none" stroke="#e8b04a" stroke-width=".7"/><path d="M18 19.5 L33.5 13.5 L33.5 23.5 L18 29.5Z" fill="url(#${p}pg)"/><g stroke="#cfae84" stroke-width=".55"><path d="M18 21.6 L33.5 15.6M18 23.6 L33.5 17.6M18 25.6 L33.5 19.6M18 27.6 L33.5 21.6"/></g><path d="M7 15.5 L18 19.5 L18 29.5 L7 25.5Z" fill="#3b2c22"/><path d="M7 18 L18 22M7 23 L18 27" stroke="#e8b04a" stroke-width=".9"/><path d="M33.5 13.5 L33.5 23.5 L18 29.5" stroke="#2a231d" stroke-width="1.1" fill="none" stroke-linejoin="round"/><path d="M27 25.3 L27 31.5 L28.4 30.4 L29.8 31.1 L29.8 24.2Z" fill="#e8b04a"/>`;
+const svg = (p, inner) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><defs>${DEFS(p)}</defs>${inner}</svg>`;
+// encolhe o desenho em volta do centro (para caber na área segura dos ícones do Android)
+const shrink = (k, inner) => `<g transform="translate(20 20) scale(${k}) translate(-20 -20)">${inner}</g>`;
+module.exports = {
+  full: (p, rx = 11) => svg(p, BG(p, rx) + FG(p)),
+  maskable: (p) => svg(p, BG(p, 0) + shrink(0.8, FG(p))),
+  back: (p) => svg(p, BG(p, 0)),
+  fore: (p) => svg(p, shrink(0.72, FG(p))),
 };
-const FG = (p) => `<g transform="translate(-3 0)">
- <circle cx="45" cy="56" r="34" fill="url(#${p}glow)"/>
- <!-- capa -->
- <path d="M14 38 C26 33 38 34 45 40 C52 34 64 33 76 38 L76 76 C64 72 52 73 45 79 C38 73 26 72 14 76 Z" fill="url(#${p}cv)"/>
- <!-- páginas -->
- <path d="M17 35 C28 31 39 32 45 38 L45 75 C39 70 28 69 17 72 Z" fill="url(#${p}pl)"/>
- <path d="M73 35 C62 31 51 32 45 38 L45 75 C51 70 62 69 73 72 Z" fill="url(#${p}pr)"/>
- <path d="M45 38 L45 75" stroke="#c9763a" stroke-width="1.2" opacity=".55"/>
- <g stroke="#c98a4a" stroke-width="1.6" stroke-linecap="round" opacity=".45" fill="none">
-  <path d="M23 45 C29 43.5 34 43.5 39 45"/><path d="M23 51 C29 49.5 34 49.5 39 51"/><path d="M23 57 C29 55.5 34 55.5 39 57"/><path d="M23 63 C28 61.7 32 61.7 35 62.6"/>
-  <path d="M51 45 C56 43.5 61 43.5 67 45"/><path d="M51 51 C56 49.5 61 49.5 67 51"/>
- </g>
- <!-- ondas de som -->
- <g fill="none" stroke-linecap="round">
-  <path d="M80 47 C84 51 84 59 80 63" stroke="#7ff0dc" stroke-width="5" opacity=".5" filter="url(#${p}soft)"/>
-  <path d="M86 41 C93 49 93 61 86 69" stroke="#7ff0dc" stroke-width="5" opacity=".4" filter="url(#${p}soft)"/>
-  <path d="M80 47 C84 51 84 59 80 63" stroke="url(#${p}wv)" stroke-width="4.2"/>
-  <path d="M86 41 C93 49 93 61 86 69" stroke="url(#${p}wv)" stroke-width="4.2"/>
- </g>
- <!-- brilho -->
- <path d="M58 15 L60.2 21.8 L67 24 L60.2 26.2 L58 33 L55.8 26.2 L49 24 L55.8 21.8 Z" fill="#ffd98a"/>
- <circle cx="58" cy="24" r="7" fill="#ffd98a" opacity=".35" filter="url(#${p}soft)"/></g>`;
-// ícone completo; rx = canto arredondado (0 para quadrado)
-const full = (p, rx = 22) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs>${DEFS(p)}<clipPath id="${p}c"><rect width="100" height="100" rx="${rx}"/></clipPath></defs><g clip-path="url(#${p}c)">${BG(p)}${FG(p)}</g></svg>`;
-module.exports = { DEFS, BG, FG, full };
-// frente do ícone adaptativo do Android: o desenho encolhido para caber na área segura
-const fore = (p) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs>${DEFS(p)}</defs><g transform="translate(50 50) scale(.66) translate(-50 -50)">${FG(p)}</g></svg>`;
-const back = (p) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs>${DEFS(p)}</defs>${BG(p)}</svg>`;
-// ícone "maskable": fundo inteiro e desenho dentro do círculo seguro
-const maskable = (p) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs>${DEFS(p)}</defs>${BG(p)}<g transform="translate(50 50) scale(.8) translate(-50 -50)">${FG(p)}</g></svg>`;
-module.exports.fore = fore; module.exports.back = back; module.exports.maskable = maskable;
