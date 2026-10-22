@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=58">
+  <link rel="stylesheet" href="style.css?v=59">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -289,6 +289,15 @@
   </div>
 
   <div data-tab="rel" hidden>
+    <section class="card" id="cardKm">
+      <div class="card__head">
+        <h2>🚗 Quilometragem</h2>
+        <strong class="total" id="kmHoje">0,0 km</strong>
+      </div>
+      <p class="muted small" id="kmInfo"></p>
+      <button class="btn btn--primary" id="btnRota" type="button">▶ Iniciar rota</button>
+    </section>
+
     <section class="card card--accent">
       <h2>📝 Relatório do dia</h2>
       <p class="muted">Preenchido sozinho com o que você lança no app: notas pagas (25% e 40%), recebido do dia e total, vendido (valor deixado), pepino extra e depósitos. Só digite abaixo o que o app não tem.</p>
@@ -514,6 +523,6 @@
   </div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=76"></script>
+  <script type="module" src="app.js?v=77"></script>
 </body>
 </html>

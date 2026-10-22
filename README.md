@@ -233,6 +233,9 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   V. pep. 5% impresso; se a folha for de outra semana, o fechamento atual é salvo em ☰ e começa um novo.
 - **Notas feitas (vendas)**: uma linha por dia (dia, Ab, Rp, valor). A soma vira o **Valor deixado**
   e as **Notas deixadas** da folha (não entram nas contas do caixa).
+- **Quilometragem (GPS, funciona sem internet)**: aba Relatório → "Iniciar rota" / "Parar rota". Conta os km com a
+  tela desligada (notificação fixa "Contando os km"; plugin `@capacitor-community/background-geolocation`). Ignora
+  pontos imprecisos (> 50 m), tremidas (< 15 m) e saltos impossíveis (> 200 km/h). No relatório: "Km dia" e "Km total".
 - **Antecipado nas notas 25% e 40/50%**: o que a cliente já tinha pago antes; soma com o recebido para tirar a nota
   inteira das notas em branco (25%: (recebido + antecipado) ÷ 0,75 + devolução; 40/50%: recebido + antecipado + devolução).
 - **Nº de pinos / Valor dos pepinos**: o valor é digitado e só abre depois que o Nº de pinos é preenchido. Na folha

@@ -360,3 +360,7 @@ body{overflow-x:clip}
 .meta-barra__fundo div{height:100%;background:var(--accent);border-radius:4px}
 .meta-rota .tipo-op span{padding:9px 0;line-height:1.2}
 .meta-rota small{display:block;font-weight:500;font-size:12px;opacity:.85}
+/* Quilometragem: bolinha verde piscando enquanto o GPS conta. */
+.km-ponto{display:inline-block;width:9px;height:9px;border-radius:50%;background:#16a34a;margin-right:4px;vertical-align:middle;animation:km-pisca 1.4s ease-in-out infinite}
+@keyframes km-pisca{50%{opacity:.25}}
+#btnRota{width:100%;margin-top:4px}

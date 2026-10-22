@@ -123,6 +123,7 @@ function novo() {
     valorDeixado: 0, assinatura: ultimo?.assinatura || '',
     // Relatório diário: o que só o vendedor sabe (da semana e de cada dia) e os acumulados de cada dia.
     rel: {}, relDia: {},
+    kmDias: {}, // metros rodados por dia, contados pelo GPS
   };
 }
 
@@ -1746,6 +1747,8 @@ function relatorio(dia) {
     `Deposito total: ${vl(depTotal)}`,
     // Em mãos: recebido até o dia, menos as despesas da semana e o que já foi depositado.
     `Valor em mãos: ${vl(arred(recebidoTotal - c.despesas - depTotal))}`,
+    // Km rodados (GPS): do dia e o total da semana até o dia.
+    ...(Object.keys(st.kmDias || {}).length ? ['', `Km dia: ${kmFmt(kmDoDia(dia))}`, `Km total: ${kmFmt(kmAte(dia))}`] : []),
   ].join('\n');
 }
 
@@ -2060,4 +2063,102 @@ addEventListener('touchend', () => {
 });
 try { abrirAba(sessionStorage.getItem('caixa.aba') || 'receb'); } catch { abrirAba('receb'); }
 // No APK os arquivos já estão dentro do app; o service worker é só para o site.
+/* ---------- Quilometragem pelo GPS (funciona sem internet) ---------- */
+// "Iniciar rota" liga o GPS; cada ponto novo soma a distância até o anterior nos km do dia.
+// No celular continua contando com a tela desligada: fica a notificação fixa "Contando os km".
+// O GPS não usa internet; só precisa do sinal dos satélites.
+const KEY_ROTA = 'caixa.rota'; // { ativa, ultimo: { lat, lon, t } }
+let rotaWatch = null;
+const rotaEstado = () => ls.get(KEY_ROTA, { ativa: false, ultimo: null });
+const isoDe = (t) => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+// (funções, não const: o relatório usa antes desta parte do arquivo rodar)
+function kmFmt(m) { return (Number(m || 0) / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
+function kmDoDia(dia) { return Number(st.kmDias?.[dia]) || 0; }
+function kmAte(dia) { return Object.entries(st.kmDias || {}).filter(([d]) => d <= dia).reduce((t, [, m]) => t + (Number(m) || 0), 0); }
+// Distância em metros entre dois pontos (fórmula de haversine).
+function distM(a, b) {
+  const R = 6371000, rad = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * rad, dLon = (b.lon - a.lon) * rad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+function registrarPonto(p) {
+  if (!(p.acc <= 50)) return; // ponto impreciso (GPS ainda procurando sinal)
+  const r = rotaEstado();
+  if (!r.ativa) return;
+  const u = r.ultimo;
+  if (!u || p.t - u.t > 6 * 3600e3) { r.ultimo = p; ls.set(KEY_ROTA, r); return; } // começo (ou parado há horas)
+  const d = distM(u, p);
+  const dt = Math.max(1, (p.t - u.t) / 1000);
+  if (d < 15) return; // tremida do GPS parado: espera andar mais
+  if (d / dt > 55) return; // salto impossível (mais de 200 km/h): ignora o ponto
+  const dia = isoDe(p.t);
+  st.kmDias = st.kmDias || {};
+  st.kmDias[dia] = Math.round(kmDoDia(dia) + d);
+  r.ultimo = p;
+  ls.set(KEY_ROTA, r);
+  salvarAtual(); pintarKm(); pintarRelatorio();
+}
+async function ligarGps() {
+  if (rotaWatch != null) return;
+  rotaWatch = 'ligando';
+  const BG = plugin('BackgroundGeolocation');
+  if (BG) {
+    try { await plugin('LocalNotifications')?.requestPermissions?.(); } catch { /* sem notificação o GPS segue */ }
+    try {
+      rotaWatch = await BG.addWatcher({
+        backgroundTitle: 'Caixa — contando os km', backgroundMessage: 'Toque em "Parar rota" no app quando terminar.',
+        requestPermissions: true, stale: false, distanceFilter: 20,
+      }, (loc, err) => {
+        if (err) {
+          if (err.code === 'NOT_AUTHORIZED') {
+            pararRota();
+            if (confirm('Para contar os km, o app precisa da sua localização. Abrir as configurações agora?')) BG.openSettings();
+          } else toast('GPS: ' + (err.message || 'não respondeu'));
+          return;
+        }
+        if (loc) registrarPonto({ lat: loc.latitude, lon: loc.longitude, acc: loc.accuracy, t: loc.time || Date.now() });
+      });
+    } catch (e) { rotaWatch = null; toast('Não deu para ligar o GPS.'); }
+  } else if (navigator.geolocation) {
+    rotaWatch = navigator.geolocation.watchPosition(
+      (pos) => registrarPonto({ lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy, t: pos.timestamp || Date.now() }),
+      (e) => toast('GPS: ' + (e.code === 1 ? 'permita a localização para contar os km.' : e.message)),
+      { enableHighAccuracy: true, maximumAge: 0 },
+    );
+  } else { rotaWatch = null; toast('Este aparelho não tem GPS.'); }
+}
+async function pararRota() {
+  ls.set(KEY_ROTA, { ativa: false, ultimo: null });
+  const id = rotaWatch;
+  rotaWatch = null;
+  if (id != null && id !== 'ligando') {
+    const BG = plugin('BackgroundGeolocation');
+    try { if (BG) await BG.removeWatcher({ id }); else navigator.geolocation.clearWatch(id); } catch { /* já parado */ }
+  }
+  pintarKm();
+}
+function pintarKm() {
+  const btn = $('#btnRota');
+  if (!btn) return;
+  const ativa = rotaEstado().ativa;
+  const dia = hoje();
+  $('#kmHoje').textContent = `${kmFmt(kmDoDia(dia))} km`;
+  $('#kmInfo').innerHTML = (ativa ? '<span class="km-ponto"></span> Contando pelo GPS (funciona sem internet). ' : 'Toque em <b>Iniciar rota</b> ao sair e em <b>Parar rota</b> ao chegar. ')
+    + `Na semana: <b>${kmFmt(kmAte(dia))} km</b>.`;
+  btn.textContent = ativa ? '■ Parar rota' : '▶ Iniciar rota';
+  btn.classList.toggle('btn--primary', !ativa);
+  btn.classList.toggle('btn--perigo', ativa);
+}
+$('#btnRota')?.addEventListener('click', async () => {
+  if (rotaEstado().ativa) { await pararRota(); toast(`Rota parada · hoje ${kmFmt(kmDoDia(hoje()))} km`); return; }
+  ls.set(KEY_ROTA, { ativa: true, ultimo: null });
+  pintarKm();
+  await ligarGps();
+  if (rotaWatch == null) { ls.set(KEY_ROTA, { ativa: false, ultimo: null }); pintarKm(); }
+});
+// App reaberto com a rota ligada: volta a contar sozinho.
+if (rotaEstado().ativa) ligarGps();
+pintarKm();
+
 if (!NATIVO && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

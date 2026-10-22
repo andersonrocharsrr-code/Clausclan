@@ -3,7 +3,8 @@
   "appName": "Caixa",
   "webDir": "www",
   "android": {
-    "backgroundColor": "#060a18"
+    "backgroundColor": "#060a18",
+    "useLegacyBridge": true
   },
   "plugins": {
     "LocalNotifications": {
