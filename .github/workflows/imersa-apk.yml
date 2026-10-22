@@ -40,8 +40,11 @@ jobs:
           java-version: 21
           cache: gradle
 
+      # --no-audit: a checagem de segurança do npm consulta um serviço externo que às vezes não responde e
+      # deixa o build parado; ela não muda o que é instalado. O timeout evita esperar à toa se travar de novo.
       - name: Instalar dependências
-        run: npm ci
+        timeout-minutes: 5
+        run: npm ci --no-audit --no-fund
 
       - name: Copiar o app para dentro do projeto Android
         run: npm run www && npx cap sync android
