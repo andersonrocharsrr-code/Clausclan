@@ -4,4 +4,8 @@
     <string name="title_activity_main">Caixa</string>
     <string name="package_name">io.github.andersonrocharsrr_code.caixa</string>
     <string name="custom_url_scheme">io.github.andersonrocharsrr_code.caixa</string>
+    <!-- Notificação fixa enquanto o GPS conta os km (plugin background-geolocation) -->
+    <string name="capacitor_background_geolocation_notification_channel_name">Contagem de km</string>
+    <string name="capacitor_background_geolocation_notification_icon">drawable/ic_stat_caixa</string>
+    <string name="capacitor_background_geolocation_notification_color">#5b8cff</string>
 </resources>
