@@ -408,8 +408,8 @@ Já vem com dois livros de exemplo: **A Floresta dos Sussurros** e **O Silêncio
 `livros/exemplos/`). Os exemplos ficam em `livros/exemplos.js` e entram na estante uma única vez.
 
 ## O que faz
-- **Estante**: capas com ilustração, foto sua ou "tecido e ouro"; busca, filtros (escrevendo, revisando, pronto,
-  favoritos) e o cartão "continuar escrevendo" com o último trecho.
+- **Estante**: capas com ilustração, foto sua ou "tecido e ouro"; busca, filtros (escrevendo, terminados, rascunhos), favoritos
+  e o cartão "continuar escrevendo" com o último trecho.
 - **Meta diária** de palavras com sequência de dias, e meta de palavras por livro.
 - **Editor** em folha de papel: capítulos (criar, renomear, reordenar, excluir), notas por capítulo, negrito,
   itálico, sublinhado, subtítulo, citação e lista, contagem de palavras, modo foco e salvamento automático.
