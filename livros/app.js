@@ -838,12 +838,26 @@ function viewReader(book, ci) {
     el.replaceWith(n);
   }
   const holder = document.createElement('div'); holder.appendChild(t.content);
+  // Cada palavra vira um <span class="w">: é assim que o app acompanha a leitura em voz alta.
+  const walker = document.createTreeWalker(holder, NodeFilter.SHOW_TEXT, { acceptNode: (n) => n.parentElement.closest('.r-mark,.r-scene,.r-img,.r-fx') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+  const texts = []; while (walker.nextNode()) texts.push(walker.currentNode);
+  for (const n of texts) {
+    if (!n.data.trim()) continue;
+    const f = document.createDocumentFragment();
+    for (const part of n.data.split(/(\s+)/)) {
+      if (!part) continue;
+      if (/^\s+$/.test(part)) { f.appendChild(document.createTextNode(part)); continue; }
+      const w = document.createElement('span'); w.className = 'w'; w.textContent = part; f.appendChild(w);
+    }
+    n.replaceWith(f);
+  }
   const next = book.chapters[ci + 1];
   const fs = LS.get('imersa-fs', 1), FS = [19, 21, 23, 26, 29];
   app.innerHTML = `<div class="reader" id="rd">
     <div class="r-bg"><div class="r-layer" id="bgA"></div><div class="r-layer" id="bgB"></div><div class="r-shade"></div></div>
     <header class="r-top"><button class="icon-btn ghost" id="back" aria-label="Voltar">${I('left')}</button>
       <div class="t"><b>${esc(book.title)}</b><small>Capítulo ${roman(ci)} · ${esc(ch.title)}</small></div><span class="grow"></span>
+      ${VOZ_OK ? `<button class="icon-btn ghost vbtn" id="vcBtn" aria-label="Seguir minha leitura em voz alta" title="Seguir minha leitura em voz alta">${I('mic')}</button>` : ''}
       <button class="icon-btn ghost" id="fsBtn" aria-label="Tamanho da letra">${I('type')}</button>
       <button class="icon-btn ghost on" id="sndBtn" aria-label="Som ligado">${I('head')}</button>
       <button class="icon-btn ghost" id="edBtn" aria-label="Editar">${I('pen')}</button></header>
@@ -868,7 +882,7 @@ function viewReader(book, ci) {
   $('#vol').oninput = (e) => { Som.setMaster(+e.target.value); LS.set('imersa-vol', +e.target.value); };
 
   const triggers = $$('[data-trigger]', rt), fxs = triggers.filter((x) => x.dataset.trigger === 'fx');
-  let soundOn = false, paused = false, curAmb = null, curMus = null, curBg = null, first = true;
+  let soundOn = false, paused = false, curAmb = null, curMus = null, curBg = null, first = true, voz = null;
 
   // marcadores na barra de progresso
   const ln = $('#ln');
@@ -900,7 +914,7 @@ function viewReader(book, ci) {
   const updNow = () => {
     const names = [...(curAmb || []).map((l) => soundInfo(l.id).name), ...(curMus ? [soundInfo(curMus.id).name] : [])];
     $('#npT').textContent = !soundOn ? 'Som desligado' : paused ? 'Sons pausados' : names.length ? names.slice(0, 2).join(' · ') + (names.length > 2 ? ` +${names.length - 2}` : '') : 'Silêncio';
-    $('#npS').textContent = !soundOn ? 'toque no fone para ligar' : names.length ? (curMus ? 'ambiente e música' : 'ambiente da cena') : 'os sons seguem a leitura';
+    $('#npS').textContent = voz ? 'seguindo sua voz' : !soundOn ? 'toque no fone para ligar' : names.length ? (curMus ? 'ambiente e música' : 'ambiente da cena') : 'os sons seguem a leitura';
     $('#eq').classList.toggle('on', soundOn && !paused && names.length > 0);
     $('#mtBtn').innerHTML = I(paused || !soundOn ? 'play' : 'pause', 'fill');
   };
@@ -910,11 +924,11 @@ function viewReader(book, ci) {
     if (curMus) Som.setMusic(curMus.id, curMus.vol, 4); else Som.setMusic(null, 0.5, 3);
   };
   let calmT;
-  const update = () => {
-    const line = innerHeight * 0.6;
+  // Estado da cena (ambiente, música e fundo) com os marcadores que "já passaram": reached(el) diz se passou.
+  const applyScene = (reached) => {
     let amb = [], mus = null, bg = null;
     for (const el of triggers) {
-      const top = el.getBoundingClientRect().top; if (top > line) break;
+      if (!reached(el)) break;
       const k = el.dataset.trigger;
       if (k === 'amb') amb = parseLayers(el.dataset.layers);
       else if (k === 'mus') mus = el.dataset.sound ? { id: el.dataset.sound, vol: +el.dataset.vol || 0.45 } : null;
@@ -925,14 +939,23 @@ function viewReader(book, ci) {
     if (ak !== JSON.stringify(curAmb) || mk !== (curMus ? curMus.id + curMus.vol : '')) { curAmb = amb; curMus = mus; applyAudio(); updNow(); }
     if (bg) setBg(bg.dataset.media || bg.dataset.art, () => bg.dataset.media ? `<img data-media="${esc(bg.dataset.media)}" alt="">` : Arte.svg(bg.dataset.art), bg.dataset.fx === 'zoom');
     else setBg('def', defBg, true);
+  };
+  const playFxEl = (el) => { Som.playFx(el.dataset.sound, +el.dataset.vol, +el.dataset.pan); showFx(el); if (navigator.vibrate && el.dataset.sound === 'b:thunder') navigator.vibrate(60); };
+  const update = () => {
+    progress();
+    if (voz) return; // seguindo a voz: quem manda nos sons é a leitura, não a rolagem
+    const line = innerHeight * 0.6;
+    applyScene((el) => el.getBoundingClientRect().top <= line);
     for (const el of fxs) {
       const top = el.getBoundingClientRect().top;
       if (top < line && !el.fired) {
         el.fired = true; el.classList.add('fired');
-        if (!first && soundOn && !paused) { Som.playFx(el.dataset.sound, +el.dataset.vol, +el.dataset.pan); showFx(el); if (navigator.vibrate && el.dataset.sound === 'b:thunder') navigator.vibrate(60); }
+        if (!first && soundOn && !paused) playFxEl(el);
       } else if (top > line + 80 && el.fired) { el.fired = false; el.classList.remove('fired'); }
     }
     first = false;
+  };
+  const progress = () => {
     const H = document.documentElement.scrollHeight - innerHeight, p = H > 0 ? clamp(scrollY / H, 0, 1) : 0;
     $('#lnI').style.width = p * 100 + '%';
     const left = Math.max(0, Math.round(((1 - p) * chapterStats(ch.html).words) / 200));
@@ -941,12 +964,12 @@ function viewReader(book, ci) {
   let raf = 0;
   const onScroll = () => {
     if (!raf) raf = requestAnimationFrame(() => { raf = 0; update(); });
-    $('#rd').classList.remove('calm'); clearTimeout(calmT); calmT = setTimeout(() => $('#rd') && scrollY > 120 && $('#rd').classList.add('calm'), 2500);
+    $('#rd').classList.remove('calm'); clearTimeout(calmT); calmT = setTimeout(() => $('#rd') && !voz && scrollY > 120 && $('#rd').classList.add('calm'), 2500);
   };
   addEventListener('scroll', onScroll, { passive: true });
   const onResize = () => { placeMarks(); update(); };
   addEventListener('resize', onResize);
-  onLeave(() => { removeEventListener('scroll', onScroll); removeEventListener('resize', onResize); clearTimeout(calmT); Som.stopAll(1.2); });
+  onLeave(() => { stopVoz(); removeEventListener('scroll', onScroll); removeEventListener('resize', onResize); clearTimeout(calmT); Som.stopAll(1.2); });
 
   $('#sndBtn').onclick = () => {
     soundOn = !soundOn; $('#sndBtn').classList.toggle('on', soundOn);
@@ -956,6 +979,74 @@ function viewReader(book, ci) {
     if (!soundOn) { $('#sndBtn').click(); return; }
     paused = !paused; applyAudio(); updNow();
   };
+
+  /* ---- Seguir a leitura em voz alta ----
+     O app escuta a pessoa lendo, acha em que palavra ela está e, uns 2 segundos antes de chegar num marcador,
+     já começa o som (ambiente e música sobem devagar; o efeito é agendado para cair na palavra). */
+  const LEAD = 2; // segundos de antecedência
+  const W = $$('.w', rt), T = []; // T: palavras "faláveis" (sem pontuação solta) → índice em W
+  W.forEach((w, i) => { const n = normWord(w.textContent); if (n) T.push({ n, i }); });
+  { let c = 0; for (const el of $$('.w,[data-trigger]', rt)) { if (el.classList.contains('w')) { if (normWord(el.textContent)) c++; } else el.widx = c; } }
+  function stopVoz() {
+    if (!voz) return;
+    const v = voz; voz = null; v.stop();
+    fxs.forEach((el) => clearTimeout(el.timer));
+    rt.classList.remove('voice'); $$('.w.cur', rt).forEach((w) => w.classList.remove('cur'));
+    const b = $('#vcBtn'); if (b) b.classList.remove('on');
+    updNow(); update();
+  }
+  const markRead = (from, to) => { // marca como lidas as palavras entre from e to (índices de T)
+    if (to > from) for (let k = from; k < to; k++) W[T[k].i].classList.add('said');
+    else for (let k = to; k < from; k++) W[T[k].i].classList.remove('said');
+  };
+  const vozScene = () => {
+    if (!voz) return;
+    const ahead = voz.pos + voz.speed * LEAD;
+    applyScene((el) => el.widx <= ahead);
+    for (const el of fxs) {
+      if (el.widx <= ahead && !el.fired) {
+        el.fired = true;
+        const wait = Math.max(0, (el.widx - voz.pos) / voz.speed);
+        el.timer = setTimeout(() => { el.classList.add('fired'); if (voz && soundOn && !paused) playFxEl(el); }, wait * 1000);
+      } else if (el.widx > ahead + 6 && el.fired) { el.fired = false; clearTimeout(el.timer); el.classList.remove('fired'); }
+    }
+  };
+  const feed = (text) => { // texto reconhecido até agora → posição na leitura
+    if (!voz) return;
+    const hyp = String(text).split(/\s+/).map(normWord).filter(Boolean).slice(-6);
+    const j = alignVoz(T, hyp, voz.pos);
+    if (j < 0) return;
+    const np = j + 1;
+    if (np < voz.pos - 3) return; // não volta muito por engano
+    markRead(voz.pos, np); voz.pos = np;
+    const now = performance.now(); voz.samples.push([now, np]);
+    while (voz.samples.length > 2 && now - voz.samples[0][0] > 9000) voz.samples.shift();
+    const [t0, p0] = voz.samples[0];
+    if (now - t0 > 1800 && np > p0) voz.speed = clamp((np - p0) / ((now - t0) / 1000), 1, 4.5);
+    $$('.w.cur', rt).forEach((w) => w.classList.remove('cur'));
+    const cur = W[T[Math.min(np, T.length) - 1].i]; cur.classList.add('cur');
+    const r = cur.getBoundingClientRect();
+    if (r.top > innerHeight * 0.58 || r.top < innerHeight * 0.18) window.scrollTo({ top: scrollY + r.top - innerHeight * 0.4, behavior: 'smooth' });
+    vozScene();
+  };
+  const startVoz = async () => {
+    if (!soundOn) { soundOn = true; paused = false; $('#sndBtn').classList.add('on'); }
+    Som.init();
+    // começa da primeira palavra visível na tela
+    let k = T.findIndex((x) => W[x.i].getBoundingClientRect().top > innerHeight * 0.18);
+    if (k < 0) k = 0;
+    $$('.w.said', rt).forEach((w) => w.classList.remove('said'));
+    fxs.forEach((el) => { clearTimeout(el.timer); el.fired = el.widx < k; el.classList.toggle('fired', el.fired); });
+    markRead(0, k);
+    const ouvinte = ouvirVoz(feed, (msg) => { toast(msg); stopVoz(); });
+    if (!ouvinte) return;
+    voz = { pos: k, speed: 2.4, samples: [[performance.now(), k]], stop: ouvinte.stop };
+    rt.classList.add('voice'); $('#vcBtn').classList.add('on'); $('#rd').classList.remove('calm');
+    curAmb = null; curMus = null; vozScene(); updNow();
+    toast('Pode ler em voz alta: os sons vão acompanhar você', 3200);
+  };
+  if ($('#vcBtn')) $('#vcBtn').onclick = () => (voz ? stopVoz() : startVoz());
+  app.vozFeed = feed; // usado nos testes
 
   // tela de início: o navegador só deixa tocar som depois de um toque
   const start = document.createElement('div'); start.className = 'r-start';
@@ -971,6 +1062,65 @@ function viewReader(book, ci) {
   $('#go1').onclick = () => begin(true); $('#go2').onclick = () => begin(false);
   requestAnimationFrame(() => { placeMarks(); update(); updNow(); });
   setTimeout(placeMarks, 800);
+}
+
+/* ---- reconhecimento de voz (Android: plugin nativo; navegador: Web Speech) ---- */
+const SR_NATIVO = plugin('SpeechRecognition');
+const SR_WEB = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+const VOZ_OK = !!(SR_NATIVO || SR_WEB);
+const normWord = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+function parecido(a, b) {
+  if (a === b) return true;
+  if (a.length < 3 || b.length < 3) return false;
+  if (a.length >= 5 && b.length >= 5 && a.slice(0, 5) === b.slice(0, 5)) return true; // "pássaros" ~ "passarinhos"
+  if (Math.abs(a.length - b.length) > 1) return false;
+  let i = 0, j = 0, d = 0; // no máximo uma letra diferente
+  while (i < a.length && j < b.length) { if (a[i] === b[j]) { i++; j++; continue; } if (++d > 1) return false; if (a.length > b.length) i++; else if (b.length > a.length) j++; else { i++; j++; } }
+  return d + (a.length - i) + (b.length - j) <= 1;
+}
+// Acha em que palavra do texto (índice em T) termina o trecho falado (hyp), perto da posição atual.
+function alignVoz(T, hyp, pos) {
+  if (!hyp.length) return -1;
+  let best = -1, bestScore = 0;
+  const from = Math.max(0, pos - 4), to = Math.min(T.length - 1, pos + 40);
+  for (let j = from; j <= to; j++) {
+    let s = 0, k = j;
+    for (let h = hyp.length - 1; h >= 0 && k >= 0 && j - k <= hyp.length + 3; h--) {
+      for (let d = 0; d < 3 && k - d >= 0; d++) if (parecido(T[k - d].n, hyp[h])) { s += d ? 0.7 : 1; k -= d + 1; break; }
+    }
+    if (!parecido(T[j].n, hyp[hyp.length - 1]) && !(hyp.length > 1 && parecido(T[j].n, hyp[hyp.length - 2]))) s -= 1;
+    s -= Math.max(0, j - pos) * 0.015 + Math.max(0, pos - 1 - j) * 0.1;
+    if (s > bestScore) { bestScore = s; best = j; }
+  }
+  return bestScore >= Math.min(2, hyp.length) - 0.01 ? best : -1;
+}
+// Escuta sem parar até stop(): o reconhecedor encerra depois de cada pausa, então ele é religado sozinho.
+function ouvirVoz(onText, onFail) {
+  let ativo = true;
+  if (SR_NATIVO) {
+    const subs = []; let ultimo = Date.now(), vigia;
+    const ligar = async () => { if (!ativo) return; ultimo = Date.now(); try { const r = await SR_NATIVO.start({ language: 'pt-BR', maxResults: 1, partialResults: true, popup: false }); if (r && r.matches && r.matches[0]) onText(r.matches[0]); } catch (e) { if (ativo) setTimeout(ligar, 700); } };
+    (async () => {
+      try {
+        let p = await SR_NATIVO.checkPermissions();
+        if (p.speechRecognition !== 'granted') p = await SR_NATIVO.requestPermissions();
+        if (p.speechRecognition !== 'granted') { onFail('Permita o microfone para o app ouvir sua leitura'); return; }
+        subs.push(await SR_NATIVO.addListener('partialResults', (d) => { ultimo = Date.now(); const t = d && d.matches && d.matches[0]; if (t) onText(t); }));
+        subs.push(await SR_NATIVO.addListener('listeningState', (d) => { ultimo = Date.now(); if (d && d.status === 'stopped' && ativo) setTimeout(ligar, 250); }));
+        vigia = setInterval(() => { if (ativo && Date.now() - ultimo > 9000) { SR_NATIVO.stop().catch(() => {}); setTimeout(ligar, 300); } }, 3000);
+        ligar();
+      } catch (e) { onFail('Não consegui usar o microfone'); }
+    })();
+    return { stop() { ativo = false; clearInterval(vigia); SR_NATIVO.stop().catch(() => {}); subs.forEach((s) => s.remove()); } };
+  }
+  if (!SR_WEB) { onFail('Este navegador não reconhece voz'); return null; }
+  const rec = new SR_WEB();
+  rec.lang = 'pt-BR'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1;
+  rec.onresult = (e) => { let t = ''; for (let i = Math.max(0, e.results.length - 3); i < e.results.length; i++) t += e.results[i][0].transcript + ' '; onText(t); };
+  rec.onerror = (e) => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { ativo = false; onFail('Permita o microfone para o app ouvir sua leitura'); } };
+  rec.onend = () => { if (ativo) setTimeout(() => { try { rec.start(); } catch (e) { /* já ligado */ } }, 250); };
+  try { rec.start(); } catch (e) { onFail('Não consegui usar o microfone'); return null; }
+  return { stop() { ativo = false; try { rec.stop(); } catch (e) { /* já parado */ } } };
 }
 
 /* ================= SONS ================= */

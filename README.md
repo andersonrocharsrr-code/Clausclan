@@ -425,6 +425,10 @@ Já vem com dois livros de exemplo: **A Floresta dos Sussurros** (com as ilustra
   - **Mudança de cena**: os sons param e a próxima cena começa em silêncio.
 - **Leitura imersiva**: a imagem da cena fica atrás do texto, ambiente e música trocam com suavidade e os efeitos
   tocam no momento certo. Tem barra de progresso com os pontos de som e imagem, tamanho da letra, volume e pausa.
+- **Seguir a leitura em voz alta** (botão discreto do microfone na leitura): o app escuta você lendo, acompanha a
+  palavra em que você está, rola o texto sozinho e começa cada som uns **2 segundos antes** do ponto marcado.
+  Ambiente e música entram baixinho e vão subindo; os efeitos são agendados para cair na palavra certa.
+  No Android usa o reconhecimento de voz do sistema; no navegador, o do Chrome/Edge.
 - **Biblioteca de sons**: 31 sons prontos, **gravação pelo microfone** e envio de arquivos de áudio seus.
 - **Exportar** um livro (`.imersa.json`, com imagens e sons) para mandar a alguém, **abrir** livros recebidos e
   **backup** de tudo.
@@ -442,7 +446,7 @@ O mesmo app empacotado com **Capacitor**. O workflow `Gerar APK do Imersa` monta
 **imersa**, com link fixo: `https://github.com/andersonrocharsrr-code/Clausclan/releases/download/imersa/imersa.apk`.
 Sem o segredo, sai só um APK de teste em "Artifacts".
 - Funciona sem internet: o app, os sons e as fontes vão dentro do APK.
-- Pede o **microfone** só na hora de gravar um som.
+- Pede o **microfone** só na hora de gravar um som ou de seguir a leitura em voz alta.
 - Backup e "Exportar livro" abrem o **compartilhar do Android** (Drive, WhatsApp, Arquivos…).
 - O **botão voltar** fecha a janela aberta, depois volta uma tela e, na estante, minimiza o app.
 - Para gerar localmente: `cd livros-android && npm ci && npm run www && npx cap sync android` e abra `android/`
