@@ -280,6 +280,14 @@ svg.i.fill { fill: currentColor; stroke: none; }
 .r-text p { margin: 0 0 1em; }
 .r-text h2 { font-weight: 600; font-size: 1.4em; margin: 1.4em 0 .6em; color: #fff; }
 .r-text blockquote { margin: 1.2em 0; padding-left: 1em; border-left: 2px solid rgba(242,181,99,.6); font-style: italic; color: rgba(240,236,228,.8); }
+/* seguindo a voz: o que falta ler fica mais apagado, a palavra atual ganha um traço dourado */
+.vbtn { width: 34px; height: 34px; border-radius: 10px; opacity: .55; }
+.vbtn svg.i { width: 16px; height: 16px; }
+.vbtn.on { opacity: 1; position: relative; }
+.vbtn.on::after { content: ""; position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%; background: #ff6b7a; animation: pulse 1.2s infinite; }
+.r-text.voice .w { opacity: .5; transition: opacity .5s; }
+.r-text.voice .w.said { opacity: 1; }
+.r-text.voice .w.cur { box-shadow: inset 0 -2px 0 rgba(242,181,99,.85); }
 .r-fx { display: inline-flex; width: 1.15em; height: 1.15em; border-radius: 50%; align-items: center; justify-content: center; vertical-align: -.12em; color: rgba(242,181,99,.7); background: rgba(242,181,99,.1); margin: 0 .15em; transition: all .4s; }
 .r-fx svg.i { width: .62em; height: .62em; }
 .r-fx.fired { color: #2a1606; background: var(--amber); box-shadow: 0 0 0 6px rgba(242,181,99,.16), 0 0 26px rgba(242,181,99,.7); }
