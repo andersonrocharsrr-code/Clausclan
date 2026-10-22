@@ -408,6 +408,8 @@ Já vem com dois livros de exemplo: **A Floresta dos Sussurros** e **O Silêncio
 `livros/exemplos/`). Os exemplos ficam em `livros/exemplos.js` e entram na estante uma única vez.
 
 ## O que faz
+- **Introdução** ao abrir: o calhamaço abre, as folhas viram, as linhas se escrevem e o nome aparece (toque para
+  pular; dá para desligar ou rever no menu ⋯ da estante).
 - **Estante**: capas com ilustração, foto sua ou "tecido e ouro"; busca, filtros (escrevendo, terminados, rascunhos), favoritos
   e o cartão "continuar escrevendo" com o último trecho.
 - **Meta diária** de palavras com sequência de dias, e meta de palavras por livro.

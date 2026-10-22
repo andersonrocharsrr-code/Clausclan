@@ -405,6 +405,9 @@ function viewShelf(nav) {
     { icon: 'download', label: 'Fazer backup de tudo', run: exportAll },
     '-',
     { icon: 'flame', label: 'Mudar a meta do dia', run: editGoal },
+    '-',
+    { icon: 'book', label: 'Ver a introdução', run: () => showIntro() },
+    { icon: 'eye', label: introOn() ? 'Abrir sem a introdução' : 'Mostrar a introdução ao abrir', run: toggleIntro },
   ]);
 }
 
@@ -1134,25 +1137,62 @@ async function seedExamples() {
   }
 }
 
+/* ================= introdução ================= */
+// Ao abrir: um calhamaço fecha-se no centro, a capa abre, as folhas viram, as linhas se escrevem e o nome aparece.
+// Toque em qualquer lugar para pular. Dá para desligar (ou rever) no menu da estante.
+const INTRO_MS = 3600;
+const introOn = () => LS.get('calh-intro', true);
+function showIntro(ready = Promise.resolve()) {
+  $$('.intro').forEach((x) => x.remove());
+  const el = document.createElement('div'); el.className = 'intro'; el.setAttribute('role', 'presentation');
+  const nome = 'Calhamaço';
+  el.innerHTML = `<div class="in-wrap">
+    <div class="in-stage"><div class="in-book">
+      <div class="in-page"><i class="in-cap"></i><i class="in-orn">✦ ❦ ✦</i>
+        <p><b class="in-drop"></b>${[92, 84, 96, 70, 100, 88, 94, 60].map((w, i) => `<i class="ln" style="--w:${w}%;--d:${(1.75 + i * .11).toFixed(2)}s"></i>`).join('')}</p>
+        <i class="in-pen"></i><i class="in-ribbon"></i></div>
+      ${[0, 1, 2].map((i) => `<div class="in-leaf" style="--i:${i}"></div>`).join('')}
+      <div class="in-cover"><div class="in-front"><span class="in-frame"><b>C</b><i>✦ ✦ ✦</i></span></div><div class="in-inside"><i>❦</i></div></div>
+    </div><div class="in-shadow"></div></div>
+    <h1 class="in-name" aria-label="${nome}">${[...nome].map((c, i) => `<span style="--d:${(1.45 + i * .05).toFixed(2)}s">${c}</span>`).join('')}</h1>
+    <svg class="in-swash" viewBox="0 0 220 18" aria-hidden="true"><path d="M4 12 C 50 2, 90 18, 130 9 S 196 4, 216 10"/></svg>
+    <p class="in-tag">escreva o seu livro</p>
+  </div><button class="in-skip">Pular</button>`;
+  document.body.appendChild(el);
+  let done = false;
+  const finish = () => { if (done) return; done = true; el.classList.add('out'); setTimeout(() => el.remove(), 650); };
+  el.addEventListener('click', finish);
+  Promise.all([ready, new Promise((r) => setTimeout(r, INTRO_MS))]).then(finish, finish);
+}
+function toggleIntro() {
+  const on = !introOn(); LS.set('calh-intro', on);
+  toast(on ? 'A introdução vai aparecer ao abrir o app' : 'O app vai abrir direto na estante');
+}
+
 /* ================= início ================= */
 (async () => {
+  let ready = () => {}; const readyP = new Promise((r) => { ready = r; });
+  if (introOn() && !matchMedia('(prefers-reduced-motion: reduce)').matches) showIntro(readyP);
   try {
     await loadBooks();
     if (!LS.get('imersa-seeded', false) && !books.length) { const b = sampleBook(); await DB.put('books', b); books = [b]; }
     LS.set('imersa-seeded', true);
     await seedExamples();
   } catch (e) {
+    ready();
     app.innerHTML = '<div class="empty">Não foi possível abrir o armazenamento do navegador. Saia do modo anônimo ou libere espaço e tente de novo.</div>';
     return;
   }
   addEventListener('hashchange', route);
   route();
+  ready();
   // Funciona sem internet: no site pelo service worker; no APK os arquivos já vêm dentro dele.
   if (!NATIVE && 'serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
   // Botão voltar do Android: fecha o que estiver aberto, depois volta uma tela, e na estante minimiza.
   const AppP = plugin('App');
   if (AppP) AppP.addListener('backButton', () => {
+    if ($('.intro')) { $('.intro').click(); return; }
     if (slashState) { closeSlash(); return; }
     if ($('.menu')) { closeMenus(); return; }
     if (modalStack.length) { modalStack[modalStack.length - 1](); return; }
