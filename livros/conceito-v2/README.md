@@ -1,6 +1,6 @@
-# Imersa — conceito 2: app só de escrita
+# Calhamaço — conceito 2: app só de escrita (antes Imersa)
 
-Proposta para transformar o Imersa num app de **escrever livros**, sem sons: as imagens continuam, a arte fica
+Proposta para transformar o Imersa no **Calhamaço**, um app de **escrever livros**, sem sons: as imagens continuam, a arte fica
 mais clara e caprichada e o livro ganha **16 fontes** para escolher. São só imagens; o app ainda não mudou.
 
 | Imagem | O que mostra |
