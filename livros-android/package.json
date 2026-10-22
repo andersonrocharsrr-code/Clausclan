@@ -2,12 +2,11 @@
   "name": "imersa-android",
   "private": true,
   "version": "1.0.0",
-  "description": "Imersa (livros com imagens e sons) como app Android nativo (Capacitor). O APK é gerado pelo GitHub Actions.",
+  "description": "Calhamaço (escrever livros) como app Android nativo (Capacitor). O APK é gerado pelo GitHub Actions.",
   "scripts": {
     "www": "node scripts/prepare-www.mjs"
   },
   "dependencies": {
-    "@capacitor-community/speech-recognition": "^7.0.1",
     "@capacitor/android": "^8.5.2",
     "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.5.2",

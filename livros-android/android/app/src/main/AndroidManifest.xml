@@ -33,15 +33,4 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Microfone: gravar sons para os livros e acompanhar a leitura em voz alta -->
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-    <!-- Vibração leve junto com efeitos como o trovão -->
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <queries>
-        <!-- Reconhecimento de voz do Android, para o app acompanhar a leitura em voz alta -->
-        <intent>
-            <action android:name="android.speech.RecognitionService" />
-        </intent>
-    </queries>
 </manifest>

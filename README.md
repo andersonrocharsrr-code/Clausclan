@@ -397,57 +397,48 @@ Sem o segredo (ou fora do `main`) sai um APK de teste em "Artifacts" na execuç�
 
 ---
 
-# Imersa — livros com imagens e sons (`livros/`)
+# Calhamaço — escreva o seu livro (`livros/`)
 
-App web instalável (PWA, sem build) para **escrever livros imersivos**: no meio do texto você coloca imagens,
-ambientes sonoros, músicas e efeitos. Na leitura, a ilustração vira o cenário atrás do texto e os sons tocam
-conforme o leitor avança.
+App web instalável (PWA, sem build) para **escrever livros**, com imagens no meio do texto, 16 fontes e uma
+visualização de livro de verdade, página por página. (Antes se chamava Imersa e tinha sons; agora é só escrita e imagens.)
 
 Abra `livros/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server` na raiz e acesse
 `http://localhost:8000/livros/`). No celular, use "Adicionar à tela inicial" para instalar.
-Já vem com dois livros de exemplo: **A Floresta dos Sussurros** (com as ilustrações e os sons do app) e
-**O Silêncio da Mata** (com uma foto e um som de mata gravado, em `livros/exemplos/`). Os exemplos ficam em
-`livros/exemplos.js` e entram na estante uma única vez, também para quem já tinha o app instalado.
+Já vem com dois livros de exemplo: **A Floresta dos Sussurros** e **O Silêncio da Mata** (com a foto em
+`livros/exemplos/`). Os exemplos ficam em `livros/exemplos.js` e entram na estante uma única vez.
 
 ## O que faz
-- **Estante**: livros com capa (6 ilustrações prontas ou uma foto sua), título, autor, gênero e
-  "continuar escrevendo".
-- **Editor** em folha de papel: capítulos (criar, renomear, reordenar, excluir), negrito, itálico, subtítulo e citação,
-  contagem de palavras e salvamento automático.
-- Digite **/** no texto (ou use a barra) para inserir:
-  - **Som no momento**: efeito que toca uma vez quando o leitor chega naquela frase (trovão, passos, porta, coruja,
-    lobo, sino, magia…), com volume e direção (esquerda, centro, direita).
-  - **Ambiente da cena**: até 4 sons em loop juntos (chuva, tempestade, mar, floresta à noite, fogueira, caverna…),
-    cada um com seu volume. Também dá para marcar **silêncio**.
-  - **Música**: 5 trilhas (calma, aurora, melancolia, mistério, tensão) que entram suaves, ou "parar música".
-  - **Imagem**: foto do aparelho, uma imagem já usada ou uma ilustração pronta, com legenda, **zoom lento** e
-    **fundo da leitura**.
-  - **Mudança de cena**: os sons param e a próxima cena começa em silêncio.
-- **Leitura imersiva**: a imagem da cena fica atrás do texto, ambiente e música trocam com suavidade e os efeitos
-  tocam no momento certo. Tem barra de progresso com os pontos de som e imagem, tamanho da letra, volume e pausa.
-- **Seguir a leitura em voz alta** (botão discreto do microfone na leitura): o app escuta você lendo, acompanha a
-  palavra em que você está, rola o texto sozinho e começa cada som uns **2 segundos antes** do ponto marcado.
-  Ambiente e música entram baixinho e vão subindo; os efeitos são agendados para cair na palavra certa.
-  No Android usa o reconhecimento de voz do sistema; no navegador, o do Chrome/Edge.
-- **Biblioteca de sons**: 31 sons prontos, **gravação pelo microfone** e envio de arquivos de áudio seus.
-- **Exportar** um livro (`.imersa.json`, com imagens e sons) para mandar a alguém, **abrir** livros recebidos e
-  **backup** de tudo.
+- **Estante**: capas com ilustração, foto sua ou "tecido e ouro"; busca, filtros (escrevendo, revisando, pronto,
+  favoritos) e o cartão "continuar escrevendo" com o último trecho.
+- **Meta diária** de palavras com sequência de dias, e meta de palavras por livro.
+- **Editor** em folha de papel: capítulos (criar, renomear, reordenar, excluir), notas por capítulo, negrito,
+  itálico, sublinhado, subtítulo, citação e lista, contagem de palavras, modo foco e salvamento automático.
+- Digite **/** no texto (ou use a barra) para inserir **imagem** (inteira, ao lado do texto ou com moldura, com
+  legenda) ou **separador** de cena.
+- **Aparência do livro**: 16 fontes (com combinações prontas de título + texto), tamanho, entrelinha, margens e
+  papel (branco, creme, sépia, noite).
+- **Ver como livro**: o texto paginado como um livro impresso, com duas páginas lado a lado na tela grande.
+- **Exportar** em **EPUB**, **Word** (.doc) e **PDF** (este só no navegador), além de **backup** de tudo e abrir
+  backups recebidos (também os do Imersa).
 
 ## Observações
-- Os sons prontos são gerados no próprio app (Web Audio), sem arquivos de áudio, então funcionam offline.
-- Os livros, imagens e gravações ficam salvos **somente neste navegador/aparelho** (IndexedDB). Faça backup de vez em quando.
-- O navegador só libera o som depois de um toque, por isso a leitura começa com o botão **Ler com som**.
+- As fontes (Google Fonts, licença OFL; Special Elite em Apache 2.0) vão dentro do app, em `livros/fonts/`, e
+  funcionam offline. Licenças em `livros/fonts/LICENSE-fontes.txt`.
+- Os livros e imagens ficam salvos **somente neste navegador/aparelho** (IndexedDB). Faça backup de vez em quando.
+- Livros antigos do Imersa continuam lá; as marcações de som são removidas e o texto e as imagens ficam.
 - Ícone: desenhado em `livros/ferramentas/icone.js`. `node livros/ferramentas/gerar-icones.js` gera os PNGs do site e de
-  `livros-android/assets`; depois rode `npx capacitor-assets generate --android` em `livros-android/`. Conceito visual: `livros/conceito/`.
+  `livros-android/assets`; depois rode `npx capacitor-assets generate --android` em `livros-android/`.
+  Conceito visual: `livros/conceito-v2/`.
 
 ## App Android (`livros-android/`)
-O mesmo app empacotado com **Capacitor**. O workflow `Gerar APK do Imersa` monta o APK a cada push que mexe em
+O mesmo app empacotado com **Capacitor**. O workflow `Gerar APK do Calhamaço` monta o APK a cada push que mexe em
 `livros/` ou `livros-android/`. No `main`, com o segredo `NEXA_SIGNING_SEED`, ele publica o APK assinado na Release
-**imersa**, com link fixo: `https://github.com/andersonrocharsrr-code/Clausclan/releases/download/imersa/imersa.apk`.
+**imersa** (o nome antigo ficou para o link não mudar):
+`https://github.com/andersonrocharsrr-code/Clausclan/releases/download/imersa/imersa.apk`.
 Sem o segredo, sai só um APK de teste em "Artifacts".
-- Funciona sem internet: o app, os sons e as fontes vão dentro do APK.
-- Pede o **microfone** só na hora de gravar um som ou de seguir a leitura em voz alta.
-- Backup e "Exportar livro" abrem o **compartilhar do Android** (Drive, WhatsApp, Arquivos…).
+- Atualiza por cima do Imersa (mesmo applicationId), sem perder os livros.
+- Funciona sem internet: o app e as fontes vão dentro do APK. Não pede microfone.
+- Backup, EPUB e Word abrem o **compartilhar do Android** (Drive, WhatsApp, Arquivos…).
 - O **botão voltar** fecha a janela aberta, depois volta uma tela e, na estante, minimiza o app.
 - Para gerar localmente: `cd livros-android && npm ci && npm run www && npx cap sync android` e abra `android/`
   no Android Studio.
