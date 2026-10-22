@@ -378,6 +378,9 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
 }
 
 /* ---------- introdução ---------- */
+/* tudo parado no primeiro quadro até a classe .go (ver showIntro) */
+.intro:not(.go) * { animation-play-state: paused !important; }
+.in-stage, .in-book, .in-cover, .in-leaf, .in-name span { will-change: transform; }
 .intro { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer;
   background: radial-gradient(120% 80% at 50% 38%, #fbf6ec 0%, var(--linen) 55%, #e6dac7 100%); transition: opacity .6s ease, visibility .6s; }
 .intro.out { opacity: 0; visibility: hidden; }
@@ -432,7 +435,7 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
 @keyframes in-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes in-write { to { transform: scaleX(1); } }
 @keyframes in-pop { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: none; } }
-@keyframes in-letter { from { opacity: 0; transform: translateY(16px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes in-letter { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @keyframes in-draw { to { stroke-dashoffset: 0; } }
 @keyframes in-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @media (max-width: 380px) { .in-wrap { --sc: .88; } }
