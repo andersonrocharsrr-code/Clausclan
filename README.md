@@ -235,7 +235,8 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   e as **Notas deixadas** da folha (não entram nas contas do caixa).
 - **Quilometragem (GPS, funciona sem internet)**: aba Relatório → "Iniciar rota" / "Parar rota". Conta os km com a
   tela desligada (notificação fixa "Contando os km"; plugin `@capacitor-community/background-geolocation`). Ignora
-  pontos imprecisos (> 50 m), tremidas (< 15 m) e saltos impossíveis (> 200 km/h). No relatório: "Km dia" e "Km total".
+  pontos imprecisos (> 50 m), tremidas (< 15 m) e saltos impossíveis (> 200 km/h). O **Km** do carro (Carro e
+  supervisor) vai subindo sozinho a cada km rodado, e é ele que sai no relatório.
 - **Antecipado nas notas 25% e 40/50%**: o que a cliente já tinha pago antes; soma com o recebido para tirar a nota
   inteira das notas em branco (25%: (recebido + antecipado) ÷ 0,75 + devolução; 40/50%: recebido + antecipado + devolução).
 - **Nº de pinos / Valor dos pepinos**: o valor é digitado e só abre depois que o Nº de pinos é preenchido. Na folha

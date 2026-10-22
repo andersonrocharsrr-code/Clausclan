@@ -1747,8 +1747,6 @@ function relatorio(dia) {
     `Deposito total: ${vl(depTotal)}`,
     // Em mãos: recebido até o dia, menos as despesas da semana e o que já foi depositado.
     `Valor em mãos: ${vl(arred(recebidoTotal - c.despesas - depTotal))}`,
-    // Km rodados (GPS): do dia e o total da semana até o dia.
-    ...(Object.keys(st.kmDias || {}).length ? ['', `Km dia: ${kmFmt(kmDoDia(dia))}`, `Km total: ${kmFmt(kmAte(dia))}`] : []),
   ].join('\n');
 }
 
@@ -1770,6 +1768,7 @@ $('#relData').addEventListener('change', () => { pintarCamposRel(); pintarRelato
 $$('[data-rg]').forEach((el) => el.addEventListener('input', () => {
   const g = ls.get(KEY_REL, {});
   g[el.dataset.rg] = el.value;
+  if (el.dataset.rg === 'km') { g.kmResto = 0; pintarKm(); } // Km digitado à mão: o GPS continua a partir dele
   ls.set(KEY_REL, g);
   pintarRelatorio();
 }));
@@ -2097,7 +2096,23 @@ function registrarPonto(p) {
   st.kmDias[dia] = Math.round(kmDoDia(dia) + d);
   r.ultimo = p;
   ls.set(KEY_ROTA, r);
+  somarNoHodometro(d);
   salvarAtual(); pintarKm(); pintarRelatorio();
+}
+// O Km do carro (Carro e supervisor) vai subindo junto: guarda os metros que ainda não fecharam 1 km.
+function somarNoHodometro(m) {
+  const g = ls.get(KEY_REL, {});
+  const atual = parseInt(soDigitos(g.km), 10);
+  if (!atual) return; // sem Km do carro digitado, não tem de onde partir
+  const resto = (Number(g.kmResto) || 0) + m;
+  const mais = Math.floor(resto / 1000);
+  g.kmResto = Math.round(resto - mais * 1000);
+  if (mais) {
+    g.km = String(atual + mais);
+    const el = $('[data-rg="km"]');
+    if (el && document.activeElement !== el) el.value = g.km;
+  }
+  ls.set(KEY_REL, g);
 }
 async function ligarGps() {
   if (rotaWatch != null) return;
@@ -2145,7 +2160,9 @@ function pintarKm() {
   const dia = hoje();
   $('#kmHoje').textContent = `${kmFmt(kmDoDia(dia))} km`;
   $('#kmInfo').innerHTML = (ativa ? '<span class="km-ponto"></span> Contando pelo GPS (funciona sem internet). ' : 'Toque em <b>Iniciar rota</b> ao sair e em <b>Parar rota</b> ao chegar. ')
-    + `Na semana: <b>${kmFmt(kmAte(dia))} km</b>.`;
+    + `Na semana: <b>${kmFmt(kmAte(dia))} km</b>.`
+    + (parseInt(soDigitos(ls.get(KEY_REL, {}).km), 10) ? ` Km do carro: <b>${Number(soDigitos(ls.get(KEY_REL, {}).km)).toLocaleString('pt-BR')}</b>.`
+      : ' Preencha o <b>Km</b> do carro (lá embaixo, em Carro e supervisor) para ele ir subindo sozinho.');
   btn.textContent = ativa ? '■ Parar rota' : '▶ Iniciar rota';
   btn.classList.toggle('btn--primary', !ativa);
   btn.classList.toggle('btn--perigo', ativa);
