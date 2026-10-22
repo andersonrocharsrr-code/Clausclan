@@ -1138,39 +1138,8 @@ async function seedExamples() {
 }
 
 /* ================= introdução ================= */
-// Ao abrir: um calhamaço fecha-se no centro, a capa abre, as folhas viram, as linhas se escrevem e o nome aparece.
-// Toque em qualquer lugar para pular. Dá para desligar (ou rever) no menu da estante.
-const INTRO_MS = 3600;
+// A animação fica em intro.js, que roda antes de tudo para o livro aparecer já no primeiro quadro.
 const introOn = () => LS.get('calh-intro', true);
-function showIntro(ready = Promise.resolve()) {
-  $$('.intro').forEach((x) => x.remove());
-  const el = document.createElement('div'); el.className = 'intro'; el.setAttribute('role', 'presentation');
-  const nome = 'Calhamaço';
-  el.innerHTML = `<div class="in-wrap">
-    <div class="in-stage"><div class="in-book">
-      <div class="in-page"><i class="in-cap"></i><i class="in-orn">✦ ❦ ✦</i>
-        <p><b class="in-drop"></b>${[92, 84, 96, 70, 100, 88, 94, 60].map((w, i) => `<i class="ln" style="--w:${w}%;--d:${(1.75 + i * .11).toFixed(2)}s"></i>`).join('')}</p>
-        <i class="in-pen"></i><i class="in-ribbon"></i></div>
-      ${[0, 1, 2].map((i) => `<div class="in-leaf" style="--i:${i}"></div>`).join('')}
-      <div class="in-cover"><div class="in-front"><span class="in-frame"><b>C</b><i>✦ ✦ ✦</i></span></div><div class="in-inside"><i>❦</i></div></div>
-    </div><div class="in-shadow"></div></div>
-    <h1 class="in-name" aria-label="${nome}">${[...nome].map((c, i) => `<span style="--d:${(1.45 + i * .05).toFixed(2)}s">${c}</span>`).join('')}</h1>
-    <svg class="in-swash" viewBox="0 0 220 18" aria-hidden="true"><path d="M4 12 C 50 2, 90 18, 130 9 S 196 4, 216 10"/></svg>
-    <p class="in-tag">escreva o seu livro</p>
-  </div><button class="in-skip">Pular</button>`;
-  document.body.appendChild(el);
-  let done = false;
-  const finish = () => { if (done) return; done = true; el.classList.add('out'); setTimeout(() => el.remove(), 650); };
-  el.addEventListener('click', finish);
-  // A animação só começa com a estante já montada por trás e a fonte do nome carregada; senão o celular,
-  // ocupado montando a tela, pula os primeiros quadros e o livro "engasga" ao aparecer.
-  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-  const fontes = document.fonts ? document.fonts.load('600 44px Fraunces').catch(() => {}) : null;
-  Promise.race([Promise.all([ready, fontes]), wait(1500)])
-    .then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
-    .then(() => { if (done) return; el.classList.add('go'); return wait(INTRO_MS); })
-    .then(() => ready).then(finish, finish);
-}
 function toggleIntro() {
   const on = !introOn(); LS.set('calh-intro', on);
   toast(on ? 'A introdução vai aparecer ao abrir o app' : 'O app vai abrir direto na estante');
@@ -1178,8 +1147,7 @@ function toggleIntro() {
 
 /* ================= início ================= */
 (async () => {
-  let ready = () => {}; const readyP = new Promise((r) => { ready = r; });
-  if (introOn() && !matchMedia('(prefers-reduced-motion: reduce)').matches) showIntro(readyP);
+  const ready = () => window.introPronta && window.introPronta();
   try {
     await loadBooks();
     if (!LS.get('imersa-seeded', false) && !books.length) { const b = sampleBook(); await DB.put('books', b); books = [b]; }
