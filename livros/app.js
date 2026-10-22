@@ -1162,7 +1162,14 @@ function showIntro(ready = Promise.resolve()) {
   let done = false;
   const finish = () => { if (done) return; done = true; el.classList.add('out'); setTimeout(() => el.remove(), 650); };
   el.addEventListener('click', finish);
-  Promise.all([ready, new Promise((r) => setTimeout(r, INTRO_MS))]).then(finish, finish);
+  // A animação só começa com a estante já montada por trás e a fonte do nome carregada; senão o celular,
+  // ocupado montando a tela, pula os primeiros quadros e o livro "engasga" ao aparecer.
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const fontes = document.fonts ? document.fonts.load('600 44px Fraunces').catch(() => {}) : null;
+  Promise.race([Promise.all([ready, fontes]), wait(1500)])
+    .then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
+    .then(() => { if (done) return; el.classList.add('go'); return wait(INTRO_MS); })
+    .then(() => ready).then(finish, finish);
 }
 function toggleIntro() {
   const on = !introOn(); LS.set('calh-intro', on);
