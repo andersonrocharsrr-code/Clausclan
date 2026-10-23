@@ -23,7 +23,7 @@
   --sky: #3f7fc4;
   --ground: #8a5a32;
   --tunnel: #e6ecee;
-  --display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif-condensed, sans-serif;
   --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
@@ -51,6 +51,8 @@ body::before {
   content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
   z-index: 10; background: var(--paper);
 }
+/* No APK o app ocupa a tela toda: o conteúdo começa abaixo da barra de status e termina acima da barra de navegação. */
+html.native body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
 .wrap {
   max-width: 1180px; margin: 0 auto;
   padding-left: max(16px, env(safe-area-inset-left, 0px));

@@ -1045,6 +1045,21 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', r
 new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
 
+// No APK (Capacitor): margens da barra de status e botão voltar do Android.
+const Cap = window.Capacitor;
+const NATIVE = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
+if (NATIVE) {
+  document.documentElement.classList.add('native');
+  const AppPlugin = (Cap.Plugins && Cap.Plugins.App) || (Cap.registerPlugin && Cap.registerPlugin('App'));
+  // Voltar: fecha a ficha aberta, depois volta para a vista de cima, depois para a primeira aba, depois minimiza.
+  AppPlugin?.addListener('backButton', () => {
+    if (sheetOpen()) { closeSheet(); return; }
+    if (current === 'pecas' && planeView !== 'top') { setPlaneView('top'); return; }
+    if (current !== 'pecas') { showTab('pecas', true); return; }
+    AppPlugin.minimizeApp();
+  });
+}
+
 selPart = 'aileron'; setCraft('c172');
 renderProgress(); renderModules(); renderLesson();
 syncControls(); updateLab(); renderGloss();
