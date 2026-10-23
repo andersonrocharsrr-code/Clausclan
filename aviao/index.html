@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=22">
+  <link rel="stylesheet" href="style.css?v=23">
 </head>
 <body>
   <header class="top">
@@ -302,17 +302,14 @@
       <div class="view__head">
         <p class="eyebrow">Seção C · Comandos na prática</p>
         <h1>Cockpit interativo</h1>
-        <p class="lede">Mexa no manche, nos pedais, na manete e nos flaps. Veja as superfícies de comando se moverem e os seis instrumentos básicos reagirem.</p>
+        <p class="lede" id="ckLede">Mexa no manche, nos pedais, na manete e nos flaps. Veja as superfícies de comando se moverem e os seis instrumentos básicos reagirem.</p>
       </div>
+      <div class="crafts" id="ckList" role="group" aria-label="Escolha o cockpit"></div>
       <div class="cockpit">
         <div class="card controls">
           <div class="scenarios">
             <span class="label">Cenários</span>
-            <div class="seg">
-              <button type="button" data-scn="cruzeiro">Cruzeiro</button>
-              <button type="button" data-scn="pouso">Aproximação</button>
-              <button type="button" data-scn="estol">Estol</button>
-            </div>
+            <div class="seg seg--chips" id="scnSeg"></div>
           </div>
           <div class="ctl">
             <label for="cElev">Manche: frente ↔ trás <output id="oElev">0</output></label>
@@ -330,17 +327,30 @@
             <div class="ctl__ends"><span>Pedal esquerdo</span><span>Pedal direito</span></div>
           </div>
           <div class="ctl">
-            <label for="cThr">Manete de potência <output id="oThr">60%</output></label>
+            <label for="cThr"><span id="lThr">Manete de potência</span> <output id="oThr">60%</output></label>
             <input type="range" id="cThr" min="0" max="100" value="60">
-            <div class="ctl__ends"><span>Marcha lenta</span><span>Potência máxima</span></div>
+            <div class="ctl__ends"><span id="eThr0">Marcha lenta</span><span id="eThr1">Potência máxima</span></div>
           </div>
           <div class="ctl">
             <span class="label">Flaps</span>
-            <div class="seg" id="flapSeg">
-              <button type="button" data-flap="0" aria-pressed="true">0°</button>
-              <button type="button" data-flap="10">10°</button>
-              <button type="button" data-flap="20">20°</button>
-              <button type="button" data-flap="30">30°</button>
+            <div class="seg" id="flapSeg"></div>
+          </div>
+          <div class="ctl-jet" id="ctlJet" hidden>
+            <div class="ctl">
+              <label for="cSb">Freio aerodinâmico (speedbrake) <output id="oSb">0%</output></label>
+              <input type="range" id="cSb" min="0" max="100" value="0">
+              <div class="ctl__ends"><span>Recolhido</span><span>Todo aberto</span></div>
+            </div>
+            <div class="ctl">
+              <span class="label">Trem de pouso</span>
+              <div class="seg" id="gearSeg">
+                <button type="button" data-gear="0">Recolher (UP)</button>
+                <button type="button" data-gear="1">Baixar (DOWN)</button>
+              </div>
+            </div>
+            <div class="ctl trim-row">
+              <button type="button" class="btn-ghost" id="trimBtn">Compensar (trim)</button>
+              <span class="small">Nariz compensado em <output id="oTrim">+0,0°</output>. Solta o manche e mantém a atitude atual.</span>
             </div>
           </div>
           <button type="button" class="btn-ghost" id="centerBtn">Soltar o manche e os pedais</button>
@@ -350,7 +360,8 @@
             <div class="stall" id="stallWarn" hidden>ESTOL · ALARME SONORO</div>
             <canvas id="gauges" aria-label="Painel com os seis instrumentos básicos"></canvas>
           </div>
-          <div class="views">
+          <div class="views" id="viewsJet" hidden></div>
+          <div class="views" id="viewsC172">
             <figure class="card mini">
               <figcaption class="mono small">VISTA LATERAL · arfagem e profundor</figcaption>
               <svg viewBox="0 0 300 130" class="mini__svg" aria-label="Avião visto de lado">
@@ -537,9 +548,10 @@
   </main>
 
   <footer class="wrap foot small">Conteúdo educativo. Para voar de verdade, siga o manual da aeronave (POH) e um instrutor habilitado.</footer>
-  <script src="avioes.js?v=22"></script>
-  <script src="catalogo747.js?v=22"></script>
-  <script src="app.js?v=22"></script>
+  <script src="avioes.js?v=23"></script>
+  <script src="catalogo747.js?v=23"></script>
+  <script src="cockpit747.js?v=23"></script>
+  <script src="app.js?v=23"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());

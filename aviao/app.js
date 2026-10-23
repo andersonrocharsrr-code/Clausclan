@@ -302,6 +302,7 @@ document.addEventListener('click', (e) => {
   const a = e.target.closest('[data-tab]');
   if (!a) return;
   e.preventDefault();
+  if (a.dataset.ck && CK[a.dataset.ck] && a.dataset.ck !== ck) setCockpit(a.dataset.ck);
   showTab(a.dataset.tab, true);
 });
 
@@ -376,7 +377,7 @@ function selectPart(id, open) {
     </dl>
     <p class="tip"><b>Curiosidade.</b> ${p.curio}</p>
     ${subs.length ? `<div class="subparts"><span class="label">Partes no desenho</span><div class="chips">${subs.map(([k, v]) => `<button type="button" class="chip" data-sub="${k}"><b>${v.num}</b> ${v.nome}</button>`).join('')}</div></div>` : ''}
-    ${p.ver ? `<button type="button" class="link-btn" data-tab="${p.ver}">${p.ver === 'lab' ? 'Ver a asa no túnel de vento' : 'Ver em ação no cockpit'} →</button>` : ''}`;
+    ${p.ver ? `<button type="button" class="link-btn" data-tab="${p.ver}" data-ck="${craft}">${p.ver === 'lab' ? 'Ver a asa no túnel de vento' : 'Ver em ação no cockpit'} →</button>` : ''}`;
   if (open) showHint();
 }
 
@@ -498,7 +499,7 @@ $('#lesson').addEventListener('click', (e) => {
 
 /* ---------------- C · Cockpit ---------------- */
 const sim = { pitch: 2, bank: 0, hdg: 90, alt: 3000, spd: 100, fpm: 0, turn: 0, ball: 0, stalled: false };
-const ctl = { elev: 0, ail: 0, rud: 0, thr: 0.6, flaps: 0 };
+const ctl = { elev: 0, ail: 0, rud: 0, thr: 0.6, flaps: 0, sb: 0, gearDown: 1 };
 const SCN = {
   cruzeiro: { s: { pitch: 2, bank: 0, alt: 4500, spd: 110 }, c: { elev: 0, ail: 0, rud: 0, thr: 0.65, flaps: 0 } },
   pouso: { s: { pitch: 0, bank: 0, alt: 1000, spd: 68 }, c: { elev: 0, ail: 0, rud: 0, thr: 0.25, flaps: 30 } },
@@ -509,7 +510,9 @@ function syncControls() {
   $('#cAil').value = Math.round(ctl.ail * 100);
   $('#cRud').value = Math.round(ctl.rud * 100);
   $('#cThr').value = Math.round(ctl.thr * 100);
+  $('#cSb').value = Math.round(ctl.sb * 100);
   $$('#flapSeg button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.flap === ctl.flaps)));
+  $$('#gearSeg button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.gear === ctl.gearDown)));
   readControls();
 }
 function readControls() {
@@ -517,23 +520,33 @@ function readControls() {
   ctl.ail = $('#cAil').value / 100;
   ctl.rud = $('#cRud').value / 100;
   ctl.thr = $('#cThr').value / 100;
+  ctl.sb = $('#cSb').value / 100;
   $('#oElev').textContent = signed($('#cElev').value);
   $('#oAil').textContent = signed($('#cAil').value);
   $('#oRud').textContent = signed($('#cRud').value);
-  $('#oThr').textContent = $('#cThr').value + '%';
+  $('#oThr').textContent = C().n1 ? `N1 ${fmt(C().n1(), 0)}%` : $('#cThr').value + '%';
+  $('#oSb').textContent = $('#cSb').value + '%';
+  if (C().trimText) $('#oTrim').textContent = C().trimText();
 }
 const signed = (v) => (v > 0 ? '+' : '') + v;
-['#cElev', '#cAil', '#cRud', '#cThr'].forEach((s) => $(s).addEventListener('input', readControls));
+['#cElev', '#cAil', '#cRud', '#cThr', '#cSb'].forEach((s) => $(s).addEventListener('input', readControls));
 $('#flapSeg').addEventListener('click', (e) => {
   const b = e.target.closest('[data-flap]');
   if (!b) return;
   ctl.flaps = +b.dataset.flap; syncControls();
 });
+$('#gearSeg').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-gear]');
+  if (!b) return;
+  ctl.gearDown = +b.dataset.gear; syncControls();
+});
+$('#trimBtn').addEventListener('click', () => { if (C().trim) { C().trim(); syncControls(); } });
 $('#centerBtn').addEventListener('click', () => { ctl.elev = 0; ctl.ail = 0; ctl.rud = 0; syncControls(); });
-$$('[data-scn]').forEach((b) => b.addEventListener('click', () => {
-  const sc = SCN[b.dataset.scn];
-  Object.assign(sim, sc.s, { stalled: false }); Object.assign(ctl, sc.c); syncControls();
-}));
+$('#scnSeg').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-scn]');
+  if (!b) return;
+  C().start(b.dataset.scn); syncControls(); explain();
+});
 
 const stallSpeed = () => (48 - ctl.flaps * 0.27) / Math.sqrt(Math.max(0.3, Math.cos(sim.bank * Math.PI / 180)));
 function step(dt) {
@@ -557,13 +570,12 @@ function step(dt) {
 }
 
 let gctx, gW = 0, gH = 0, gCols = 3;
+function sizeC172(w) { gCols = w < 460 ? 2 : 3; return Math.round(w / gCols * (6 / gCols) * 1.02); }
 function sizeGauges() {
   const cv = $('#gauges');
   const w = cv.clientWidth || 600;
-  gCols = w < 460 ? 2 : 3;
-  const rows = 6 / gCols;
   const dpr = window.devicePixelRatio || 1;
-  gW = w; gH = Math.round(w / gCols * rows * 1.02);
+  gW = w; gH = C().size(w);
   cv.width = w * dpr; cv.height = gH * dpr; cv.style.height = gH + 'px';
   gctx = cv.getContext('2d');
   gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -712,7 +724,7 @@ function drawMinis() {
 }
 let propAng = 0;
 let lastExplain = '';
-function explain() {
+function explainC172() {
   const L = [];
   const vs = Math.round(stallSpeed());
   if (sim.stalled) L.push(['warn', `ESTOL. O ângulo de ataque passou do limite e a asa perdeu sustentação. Recupere: empurre o manche, aplique potência e nivele as asas.`]);
@@ -730,15 +742,70 @@ function explain() {
   if (ctl.thr > 0.85) L.push(['', 'Potência alta: mais tração. Com o nariz na mesma posição, o avião sobe.']);
   else if (ctl.thr < 0.2) L.push(['', 'Potência reduzida: menos tração. Para manter a velocidade, o avião precisa descer.']);
   if (!L.length) L.push(['', 'Comandos neutros: o avião está compensado e voa reto. Mexa num comando para ver o efeito.']);
-  const html = L.map(([c, t]) => `<li class="${c}">${t}</li>`).join('');
-  if (html !== lastExplain) { $('#explainList').innerHTML = html; lastExplain = html; }
-  $('#stallWarn').hidden = !sim.stalled;
+  return L;
 }
+function explain() {
+  const html = C().explain().map(([c, t]) => `<li class="${c}">${t}</li>`).join('');
+  if (html !== lastExplain) { $('#explainList').innerHTML = html; lastExplain = html; }
+  const w = C().warn();
+  $('#stallWarn').hidden = !w;
+  if (w) $('#stallWarn').textContent = w;
+  if (C().trimText) $('#oTrim').textContent = C().trimText();
+  if (C().n1) $('#oThr').textContent = `N1 ${fmt(C().n1(), 0)}%`;
+}
+
+/* Cockpit de cada avião: o Cessna usa as funções acima; o 747-8 vem de cockpit747.js. */
+const CK = {
+  c172: {
+    id: 'c172', nome: 'Cessna 172', sub: 'Seis instrumentos analógicos', jet: false,
+    lede: 'Mexa no manche, nos pedais, na manete e nos flaps. Veja as superfícies de comando se moverem e os seis instrumentos básicos reagirem.',
+    flaps: [0, 10, 20, 30], flapLabel: (f) => f + '°', scenarios: [['cruzeiro', 'Cruzeiro'], ['pouso', 'Aproximação'], ['estol', 'Estol']], defaultScenario: 'cruzeiro',
+    thr: ['Manete de potência', 'Marcha lenta', 'Potência máxima'], panelLabel: 'Painel com os seis instrumentos básicos',
+    start(id) { const sc = SCN[id]; Object.assign(sim, sc.s, { stalled: false }); Object.assign(ctl, sc.c); },
+    step, size: sizeC172, draw: () => drawPanel(), minis: () => drawMinis(), explain: explainC172,
+    warn: () => (sim.stalled ? 'ESTOL · ALARME SONORO' : ''),
+  },
+};
+if (window.Cockpit747) {
+  CK.b747 = Object.assign(Cockpit747.create(ctl), {
+    nome: 'Boeing 747-8', sub: 'Telas de voo (glass cockpit)', jet: true,
+    lede: 'Telas de voo de verdade: PFD com a atitude e as fitas de velocidade e altitude, ND com a rota e EICAS com os quatro motores. Decole, cruze, faça a aproximação na rampa de 3° e pouse.',
+    thr: ['Manetes (4 motores)', 'Marcha lenta (IDLE)', 'Decolagem (TOGA)'], panelLabel: 'Telas PFD, ND e EICAS do 747-8',
+  });
+}
+let ck = 'c172';
+function C() { return CK[ck]; }
+function setCockpit(id) {
+  if (!CK[id]) return;
+  ck = id;
+  const c = C();
+  $$('#ckList [data-ck]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.ck === id)));
+  $('#ckLede').textContent = c.lede;
+  $('#scnSeg').innerHTML = c.scenarios.map(([k, t]) => `<button type="button" data-scn="${k}">${t}</button>`).join('');
+  $('#flapSeg').innerHTML = c.flaps.map((f) => `<button type="button" data-flap="${f}">${c.flapLabel(f)}</button>`).join('');
+  $('#lThr').textContent = c.thr[0]; $('#eThr0').textContent = c.thr[1]; $('#eThr1').textContent = c.thr[2];
+  $('#ctlJet').hidden = !c.jet;
+  $('#viewsC172').hidden = id !== 'c172';
+  $('#viewsJet').hidden = id === 'c172';
+  if (c.jet) $('#viewsJet').innerHTML = c.minisHTML;
+  $('#gauges').setAttribute('aria-label', c.panelLabel);
+  c.start(c.defaultScenario);
+  lastExplain = '';
+  syncControls(); sizeGauges(); explain();
+}
+$('#ckList').innerHTML = Object.values(CK).map((c) => `<button type="button" class="craft" data-ck="${c.id}" aria-pressed="false"><b>${c.nome}</b><span>${c.sub}</span></button>`).join('');
+$('#ckList').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-ck]');
+  if (b) setCockpit(b.dataset.ck);
+});
 let simRaf = 0, simLast = 0, simTick = 0;
 function simLoop(t) {
   if (current !== 'cockpit') { simRaf = 0; return; }
   const dt = Math.min(0.05, (t - (simLast || t)) / 1000); simLast = t;
-  step(dt); drawPanel(); drawMinis();
+  const c = C();
+  c.step(dt);
+  if (gctx) { gctx.clearRect(0, 0, gW, gH); c.draw(gctx, gW, gH); }
+  c.minis($('#viewsJet'));
   if ((simTick += dt) > 0.25) { simTick = 0; explain(); }
   simRaf = requestAnimationFrame(simLoop);
 }
@@ -1033,6 +1100,6 @@ if (NATIVE) {
 
 selPart = 'aileron'; setCraft('c172');
 renderProgress(); renderModules(); renderLesson();
-syncControls(); updateLab(); renderGloss();
+setCockpit('c172'); updateLab(); renderGloss();
 showTab(location.hash.slice(1) || 'pecas');
 })();

@@ -408,6 +408,21 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 .m-beacon { fill: var(--bad); }
 .m-nav-red { fill: var(--bad); }
 .m-nav-green { fill: var(--ok); }
+.ctl-jet { display: grid; gap: 18px; }
+.trim-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.trim-row output { font-family: var(--mono); color: var(--magenta); }
+.seg--chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 6px; border: 0; overflow: visible; }
+.seg--chips button { border: 1px solid var(--line) !important; border-radius: 8px; }
+#ckList { margin-top: -4px; }
+/* 747-8 nas vistas pequenas do cockpit */
+.j7-skin { fill: url(#j7GradS); stroke: var(--ink); stroke-width: 1; stroke-linejoin: round; }
+.j7-wing { fill: var(--shade); stroke: var(--ink); stroke-width: .9; stroke-linejoin: round; }
+.j7-intake { fill: var(--ink); }
+.j7-wingr, .j7-fus { fill: url(#j7GradR); stroke: var(--ink); stroke-width: 1; stroke-linejoin: round; }
+.j7-eng { fill: var(--shade); stroke: var(--ink); stroke-width: 1; }
+.j7-hub { fill: var(--ink); }
+.j7-spoiler { fill: var(--blue); stroke: var(--ink); stroke-width: .7; }
+.j7-pylon { fill: var(--shade); stroke: var(--ink); stroke-width: .7; }
 .explain ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 6px; }
 .explain li.warn { color: var(--bad); font-weight: 600; }
 
