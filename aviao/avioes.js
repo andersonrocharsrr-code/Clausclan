@@ -300,6 +300,95 @@ function parts(a) {
       curio: 'A parte de trás do pilone, logo acima do jato quente, tem painéis de proteção térmica.',
       spec: [['Carrega', 'Peso e empuxo'], ['Por dentro', 'Combustível, ar e fios'], ['Fixação', 'Pinos-fusíveis']],
     });
+    const tr = (num, nome, d) => ({ pai: 'trem', num, nome, sistema: 'Trem de pouso', ...d });
+    p['trem-amortecedor'] = tr(1, 'Amortecedor oleopneumático', {
+      onde: 'É a própria perna do trem: um cilindro externo preso à estrutura do avião e um pistão cromado que desliza dentro dele.',
+      funcao: 'Sustentar o peso do avião no solo e absorver o impacto do pouso.',
+      como: 'Por dentro há óleo hidráulico e nitrogênio. No toque, o pistão sobe: o nitrogênio é comprimido e funciona como mola, e o óleo é forçado a passar por orifícios pequenos. Essa passagem transforma a energia do impacto em calor e impede que o avião quique.',
+      manut: 'Com o avião parado, medir quanto da parte cromada fica exposta, procurar vazamentos de óleo e conferir a pressão do nitrogênio. Um risco na parte cromada estraga as vedações.',
+      curio: 'O 747-8 pode decolar com até 447 toneladas. Quase todo esse peso fica sobre os quatro amortecedores principais.',
+      spec: [['Fluidos', 'Óleo + nitrogênio'], ['Função', 'Mola e amortecedor'], ['Pernas principais', '4']],
+    });
+    p['trem-torcao'] = tr(2, 'Braço de torção (tesoura)', {
+      onde: 'As duas hastes articuladas que ligam o cilindro ao pistão, formando um V.',
+      funcao: 'Impedir que o pistão gire dentro do cilindro, mantendo as rodas alinhadas, sem atrapalhar o sobe e desce do amortecedor.',
+      como: 'As duas hastes abrem e fecham como uma tesoura conforme o amortecedor comprime e estica. Como estão presas uma ao cilindro e a outra ao pistão, as duas peças não conseguem girar uma em relação à outra.',
+      manut: 'Verificar folgas nas articulações e o estado das buchas. Folga demais deixa as rodas vibrarem de um lado para o outro (shimmy).',
+      curio: 'Em inglês o nome é torque link ou scissor link, "haste de tesoura".',
+      spec: [['Forma', 'Dois braços em V'], ['Impede', 'Giro do pistão'], ['Problema comum', 'Folga (shimmy)']],
+    });
+    p['trem-arrasto'] = tr(3, 'Escora de arrasto', {
+      onde: 'A barra diagonal que liga a perna do trem à estrutura do avião, do lado da frente.',
+      funcao: 'Segurar a perna contra as forças que a empurram para trás: o toque na pista, a frenagem e o táxi.',
+      como: 'É dobrável: tem uma articulação no meio, o "joelho". Com o trem baixado ela fica reta e travada. Para recolher, a trava solta e a escora dobra no joelho, acompanhando a perna.',
+      manut: 'Inspecionar trincas nas articulações e lubrificar os pinos e as buchas.',
+      curio: 'No toque, as rodas estão paradas e em menos de um segundo passam a girar a mais de 250 km/h. Esse tranco para trás é absorvido em boa parte pela escora de arrasto.',
+      spec: [['Posição', 'Frente da perna'], ['Tipo', 'Dobrável'], ['Recebe', 'Forças para trás']],
+    });
+    p['trem-trava'] = tr(4, 'Trava do trem baixado', {
+      onde: 'As hastes curtas e a mola junto ao joelho da escora de arrasto.',
+      funcao: 'Manter a escora reta e travada com o trem baixado, para o trem não dobrar no solo.',
+      como: 'As hastes passam um pouco do ponto morto (posição "over-center") e uma mola as segura ali. Para recolher, um pequeno atuador hidráulico destrava primeiro. Sensores informam ao cockpit quando o trem está baixado e travado: são as luzes verdes do painel.',
+      manut: 'Testar molas, sensores de posição e a extensão de emergência por gravidade.',
+      curio: 'Na extensão de emergência, as travas de cima são liberadas e o trem desce pelo próprio peso e pela força do vento. Embaixo, ele trava sozinho pela mola.',
+      spec: [['Tipo', 'Over-center'], ['Segura com', 'Mola'], ['No cockpit', 'Luz verde']],
+    });
+    p['trem-atuador'] = tr(5, 'Atuador de recolhimento', {
+      onde: 'O cilindro hidráulico entre a estrutura do avião e a perna do trem.',
+      funcao: 'Recolher o trem depois da decolagem e ajudar a baixá-lo antes do pouso.',
+      como: 'A pressão hidráulica empurra o pistão do atuador e gira a perna para dentro do alojamento. Lá em cima, outra trava (uplock) prende o trem recolhido.',
+      manut: 'Procurar vazamentos, conferir fixações e o estado das mangueiras hidráulicas.',
+      curio: 'Na decolagem, o trem é recolhido assim que os pilotos confirmam que o avião está subindo ("razão positiva, trem em cima").',
+      spec: [['Energia', 'Hidráulica'], ['Trava em cima', 'Uplock'], ['Emergência', 'Desce por gravidade']],
+    });
+    p['trem-porta'] = tr(6, 'Portas do trem', {
+      onde: 'Painéis na barriga do avião que fecham o alojamento do trem.',
+      funcao: 'Cobrir o alojamento com o trem recolhido, para o ar passar liso pela barriga e o arrasto diminuir.',
+      como: 'Abrem para o trem passar e fecham depois. Algumas são presas à perna e se movem junto com ela.',
+      manut: 'Verificar dobradiças, vedação e os mecanismos de abertura. Uma porta mal fechada aumenta o arrasto e o ruído.',
+      curio: 'Com o trem baixado, o arrasto aumenta muito. Por isso, na aproximação, o trem baixado também ajuda o avião a descer sem ganhar velocidade.',
+      spec: [['Função', 'Fechar o alojamento'], ['Ganho', 'Menos arrasto'], ['Acionamento', 'Hidráulico']],
+    });
+    p['trem-truque'] = tr(7, 'Truque (bogie)', {
+      onde: 'A viga embaixo do amortecedor, com quatro rodas em dois eixos.',
+      funcao: 'Repartir o peso em quatro rodas e deixar as rodas da frente e de trás acompanharem os desníveis da pista.',
+      como: 'A viga é articulada no pistão e balança como uma gangorra. O 747-8 tem quatro truques principais de quatro rodas: dois sob as asas e dois sob a fuselagem. Os da fuselagem também viram nas curvas fechadas no solo, para os pneus não arrastarem de lado.',
+      manut: 'Inspecionar o pino da articulação, os eixos e as buchas.',
+      curio: 'Com 16 rodas principais, o peso do avião fica tão repartido que ele pode usar pistas e pátios comuns.',
+      spec: [['Rodas', '4 por truque'], ['Truques principais', '4'], ['Esterçam', 'Os da fuselagem']],
+    });
+    p['trem-inclinacao'] = tr(8, 'Atuador de inclinação do truque', {
+      onde: 'O cilindro pequeno entre a perna do trem e o truque.',
+      funcao: 'Deixar o truque na inclinação certa.',
+      como: 'Em voo, ele mantém o truque inclinado na posição exata para caber no alojamento quando o trem recolhe. No solo, deixa o truque acompanhar a pista.',
+      manut: 'Verificar vazamentos, fixações e o curso do atuador.',
+      curio: 'Na decolagem, o truque fica inclinado assim que as rodas saem do chão, antes do trem recolher.',
+      spec: [['Tipo', 'Hidráulico'], ['Liga', 'Perna e truque'], ['Função', 'Posicionar o truque']],
+    });
+    p['trem-rodas'] = tr(9, 'Rodas e pneus', {
+      onde: 'Quatro rodas em cada truque principal e duas no nariz: 18 no total.',
+      funcao: 'Apoiar o avião no solo e fazer o contato com a pista.',
+      como: 'Os pneus são radiais, cheios de nitrogênio e com pressão muito alta. Cada roda é de alumínio forjado, em duas metades unidas por parafusos.',
+      manut: 'A pressão é conferida todo dia, com o pneu frio, além dos sulcos e de cortes. Trocar pneu é rotina, e cada pneu é recapado várias vezes.',
+      curio: 'Cada roda tem plugues fusíveis: se o freio esquentar demais, eles derretem e esvaziam o pneu devagar, para ele não estourar.',
+      spec: [['Total', '18 rodas'], ['Pneu principal', '52 x 21.0R22'], ['Enchimento', 'Nitrogênio']],
+    });
+    p['trem-freios'] = tr(10, 'Freios de carbono', {
+      onde: 'Dentro de cada roda principal: são 16 freios.',
+      funcao: 'Parar o avião no solo.',
+      como: 'Cada freio é uma pilha de discos de carbono. Uns giram com a roda e outros ficam presos ao eixo. Pistões hidráulicos apertam a pilha, e o atrito transforma a velocidade em calor. O sistema antiderrapante alivia cada roda que começa a travar, e o autobrake freia sozinho no nível escolhido pelos pilotos.',
+      manut: 'Cada freio tem um pino indicador que encurta conforme os discos gastam: quando fica rente, o freio é trocado. Depois de uma frenagem forte, os freios precisam esfriar antes da próxima decolagem.',
+      curio: 'O carbono é mais leve que o aço e aguenta muito mais calor. No teste de decolagem abortada com o peso máximo, os freios ficam em brasa.',
+      spec: [['Material', 'Carbono'], ['Acionamento', 'Hidráulico'], ['Proteção', 'Antiderrapante']],
+    });
+    p['trem-sensor'] = tr(11, 'Sensor ar/solo', {
+      onde: 'Sensores de proximidade no trem, que percebem se o amortecedor está comprimido.',
+      funcao: 'Avisar os computadores se o avião está no ar ou no solo.',
+      como: 'Quando o peso do avião comprime o amortecedor, o sensor detecta e os sistemas passam para o modo "no solo". Isso libera ou bloqueia funções como os spoilers de solo, os reversores, o autobrake e a pressurização.',
+      manut: 'Testar o sensor e ajustar a distância entre ele e a peça que ele detecta.',
+      curio: 'É por causa desse sensor que os reversores só abrem com o avião no chão.',
+      spec: [['Tipo', 'Proximidade'], ['Mede', 'Peso nas rodas'], ['Libera', 'Reversores e spoilers']],
+    });
     p.slat = {
       nome: 'Slats (flaps Krueger)', sistema: 'Hipersustentação',
       onde: 'No bordo de ataque, a frente da asa, de ponta a ponta. Na vista frontal, é a borda da asa que fica de frente para você.',
@@ -495,9 +584,8 @@ const ENG747 = [
   ['motor-cone', [1440, 478], [1600, 485], 'start'],
   ['motor-bocal', [1104, 600], [1600, 640], 'start'],
 ];
-function engine747(a) {
-  const P = parts(a);
-  const pts = ENG747.map(([id, [tx, ty], [lx, ly]]) => {
+function callouts(P, list) {
+  return list.map(([id, [tx, ty], [lx, ly]]) => {
     const p = P[id], w = p.nome.length * 14.5;
     // a linha sai do lado do rótulo que fica de frente para o alvo
     const lead = tx > lx ? `M${lx - 4} ${ly + 10} L${lx + w + 14} ${ly + 10} L${tx} ${ty}` : `M${lx + w + 4} ${ly + 10} L${lx - 14} ${ly + 10} L${tx} ${ty}`;
@@ -509,6 +597,9 @@ function engine747(a) {
       <text class="eng-num" x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="central">${p.num}</text>
     </g>`;
   }).join('');
+}
+function engine747(a) {
+  const pts = callouts(parts(a), ENG747);
   return `
 <figure class="eng-view" data-pv="engine" hidden>
   <svg class="plane plane--eng" viewBox="33.2 41.1 1935.1 1260.3" role="group" aria-label="Motor GEnx-2B do ${a.nome} visto de trás">
@@ -517,6 +608,103 @@ function engine747(a) {
     ${pts}
   </svg>
   <figcaption class="small">Saída do motor vista de trás e de baixo, com o pilone em cima. Toque num número para ver a peça.</figcaption>
+</figure>`;
+}
+
+/* ---------- 747-8: trem de pouso principal (desenho técnico, vista lateral, nariz à esquerda) ---------- */
+const GEAR747 = [
+  ['trem-arrasto', [712, 330], [60, 300], 'start'],
+  ['trem-trava', [872, 466], [60, 470], 'start'],
+  ['trem-torcao', [905, 806], [60, 720], 'start'],
+  ['trem-rodas', [700, 912], [60, 1000], 'start'],
+  ['trem-atuador', [1205, 300], [1560, 205], 'start'],
+  ['trem-porta', [1426, 470], [1560, 380], 'start'],
+  ['trem-amortecedor', [1045, 600], [1560, 540], 'start'],
+  ['trem-inclinacao', [1090, 745], [1560, 680], 'start'],
+  ['trem-sensor', [1066, 884], [1560, 830], 'start'],
+  ['trem-freios', [1255, 962], [1560, 960], 'start'],
+  ['trem-truque', [1000, 990], [1180, 1250], 'start'],
+];
+function gear747(a) {
+  const f = (n) => Math.round(n * 10) / 10;
+  // barra com contorno: traço claro largo e o fundo por dentro
+  const bar = (x1, y1, x2, y2, w, cls = '') => `<path class="ld-bar-o" d="M${x1} ${y1} L${x2} ${y2}" style="stroke-width:${w + 6}"/><path class="ld-bar-i ${cls}" d="M${x1} ${y1} L${x2} ${y2}" style="stroke-width:${w}"/>`;
+  const pin = (x, y, r = 11) => `<circle class="ld-pin" cx="${x}" cy="${y}" r="${r}"/><circle class="ld-pin-c" cx="${x}" cy="${y}" r="${f(r * 0.38)}"/>`;
+  const wheel = (cx, cy, id) => {
+    const R = 175;
+    let bolts = '';
+    for (let i = 0; i < 12; i++) { const t = i * Math.PI / 6; bolts += `<circle class="ld-bolt" cx="${f(cx + Math.cos(t) * 72)}" cy="${f(cy + Math.sin(t) * 72)}" r="5"/>`; }
+    return `<circle class="ld-tire" cx="${cx}" cy="${cy}" r="${R}"/>
+      <circle class="ld-thin" cx="${cx}" cy="${cy}" r="${R - 9}"/>
+      <path id="${id}" class="ld-none" d="M${cx - 146} ${cy} A146 146 0 0 1 ${cx + 146} ${cy}"/>
+      <text class="ld-side"><textPath href="#${id}" startOffset="50%" text-anchor="middle">52 x 21.0R22 · RADIAL · NITROGÊNIO</textPath></text>
+      <circle class="ld-line" cx="${cx}" cy="${cy}" r="124"/>
+      <circle class="ld-rim" cx="${cx}" cy="${cy}" r="112"/>
+      <circle class="ld-thin" cx="${cx}" cy="${cy}" r="100"/>
+      <circle class="ld-hidden" cx="${cx}" cy="${cy}" r="88"/>
+      ${bolts}
+      <circle class="ld-line" cx="${cx}" cy="${cy}" r="44"/>
+      <circle class="ld-pin" cx="${cx}" cy="${cy}" r="24"/>
+      <circle class="ld-pin-c" cx="${cx}" cy="${cy}" r="9"/>`;
+  };
+  let frames = '';
+  for (let x = 420; x <= 1660; x += 80) frames += `M${x} 122 L${x} 258 `;
+  let hatch = '';
+  for (let x = 320; x <= 1690; x += 26) hatch += `M${x} 1192 L${x - 18} 1214 `;
+  let spring = 'M826 434';
+  for (let i = 1; i <= 8; i++) spring += ` L${f(826 + i * 15.5)} ${f(434 + i * 7.5 + (i % 2 ? -9 : 9))}`;
+  const art = `
+    <defs><pattern id="ldGrid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" class="ld-grid"/></pattern></defs>
+    <rect x="0" y="0" width="2000" height="1300" fill="url(#ldGrid)"/>
+    <g class="ld-art" aria-hidden="true">
+      <path class="ld-struct" d="M380 120 L1700 120 L1700 262 L380 262 Z"/>
+      <path class="ld-thin" d="${frames}"/>
+      <path class="ld-line" d="M380 248 L1700 248"/>
+      <text class="ld-note" x="400" y="108">ESTRUTURA DA FUSELAGEM · ALOJAMENTO DO TREM</text>
+      <path class="ld-line" d="M1370 262 L1410 262 L1452 600 L1414 606 Z"/>
+      <path class="ld-thin" d="M1386 300 L1424 590 M1398 300 L1436 588"/>
+      ${pin(1390, 262, 10)}
+      ${bar(640, 262, 800, 420, 26)}${bar(800, 420, 955, 560, 26)}
+      ${bar(800, 420, 878, 470, 14)}${bar(878, 470, 955, 470, 14)}
+      <path class="ld-spring" d="${spring}"/>
+      ${pin(640, 262)}${pin(800, 420, 15)}${pin(878, 470, 8)}${pin(955, 470, 8)}${pin(955, 560)}
+      <path class="ld-hose" d="M1250 262 C1290 230 1340 236 1400 228 M1160 330 C1190 300 1230 290 1262 286"/>
+      ${bar(1250, 262, 1135, 344, 38)}${bar(1135, 344, 1045, 410, 15, 'ld-chrome')}
+      <path class="ld-line" d="M1143 334 L1158 356"/>
+      ${pin(1250, 262)}${pin(1045, 410, 9)}
+      ${bar(1045, 715, 1100, 815, 22)}${bar(1100, 815, 1138, 975, 10, 'ld-chrome')}
+      ${pin(1045, 715, 8)}
+      <path class="ld-fit" d="M930 262 L1070 262 L1052 334 L948 334 Z"/>
+      ${pin(1000, 298, 20)}
+      <rect class="ld-cyl" x="955" y="330" width="90" height="430" rx="8"/>
+      <path class="ld-thin" d="M955 372 L1045 372 M955 700 L1045 700 M972 340 L972 750"/>
+      <rect class="ld-chrome-r" x="969" y="760" width="62" height="205"/>
+      <path class="ld-shine" d="M984 770 L984 955"/>
+      <rect class="ld-cyl" x="948" y="738" width="104" height="30" rx="5"/>
+      ${bar(955, 752, 884, 834, 22)}${bar(884, 834, 968, 920, 22)}
+      ${pin(955, 752, 9)}${pin(884, 834, 12)}${pin(968, 920, 9)}
+      <rect class="ld-fit" x="1036" y="873" width="30" height="22" rx="3"/>
+      <path class="ld-hose" d="M1066 880 C1092 862 1086 800 1058 768"/>
+      <path class="ld-fit" d="M955 960 L1045 960 L1036 1012 L964 1012 Z"/>
+      <rect class="ld-beam" x="796" y="976" width="408" height="48" rx="20"/>
+      ${wheel(800, 1015, 'ldTxtA')}
+      ${wheel(1200, 1015, 'ldTxtB')}
+      <path class="ld-hidden" d="M975 980 L1025 980 M975 1020 L1025 1020"/>
+      ${pin(1000, 992, 18)}
+      <path class="ld-ground" d="M300 1190 L1700 1190"/><path class="ld-thin" d="${hatch}"/>
+      <path class="ld-dim" d="M1420 840 L1420 1190 M1406 840 L1434 840 M1406 1190 L1434 1190 M1200 840 L1428 840"/>
+      <text class="ld-note" x="0" y="0" transform="translate(1448 1015) rotate(-90)" text-anchor="middle">Ø 1,32 m</text>
+      <text class="ld-note" x="300" y="1240">SOLO</text>
+      <text class="ld-note" x="60" y="1240">← PROA</text>
+    </g>`;
+  return `
+<figure class="eng-view" data-pv="gear" hidden>
+  <svg class="plane plane--eng" viewBox="0 30 2000 1240" role="group" aria-label="Trem de pouso principal do ${a.nome} visto de lado">
+    ${art}
+    <text class="eng-title" x="60" y="80">TREM PRINCIPAL DA FUSELAGEM · VISTA LATERAL</text>
+    ${callouts(parts(a), GEAR747)}
+  </svg>
+  <figcaption class="small">Uma das quatro pernas principais do 747-8, vista de lado, com o nariz do avião à esquerda. Toque num número para ver a peça.</figcaption>
 </figure>`;
 }
 
@@ -662,5 +850,6 @@ window.HangarJets = {
   top, side,
   front: (a) => (a.id === 'b747' ? front747(a) : ''),
   engine: (a) => (a.id === 'b747' ? engine747(a) : ''),
+  gear: (a) => (a.id === 'b747' ? gear747(a) : ''),
 };
 })();

@@ -341,11 +341,12 @@ function setCraft(id) {
   const c = cur();
   $('#c172Views').hidden = id !== 'c172';
   $('#jetViews').hidden = id === 'c172';
-  if (id !== 'c172') $('#jetViews').innerHTML = HangarJets.top(c) + HangarJets.side(c) + HangarJets.front(c) + HangarJets.engine(c);
+  if (id !== 'c172') $('#jetViews').innerHTML = HangarJets.top(c) + HangarJets.side(c) + HangarJets.front(c) + HangarJets.engine(c) + HangarJets.gear(c);
   $('#craftLede').textContent = c.lede;
   $('#frontBtn').hidden = id !== 'b747';
   $('#engineBtn').hidden = id !== 'b747';
-  if (id !== 'b747' && (planeView === 'front' || planeView === 'engine')) planeView = 'top';
+  $('#gearBtn').hidden = id !== 'b747';
+  if (id !== 'b747' && ['front', 'engine', 'gear'].includes(planeView)) planeView = 'top';
   renderCrafts(); renderChips();
   applyXray(); setPlaneView(planeView);
   selectPart(c.parts[selPart] ? selPart : 'asa');
@@ -354,9 +355,10 @@ function selectPart(id, open) {
   const p = cur().parts[id];
   if (!p) return;
   selPart = id;
-  // No 747, os slats abrem a vista frontal e o motor abre a vista do motor. Peça que não aparece na vista atual: volta para a de cima.
+  // No 747, os slats abrem a vista frontal; motor e trem abrem as vistas detalhadas. Peça que não aparece na vista atual: volta para a de cima.
+  const detail = craft === 'b747' && { motor: 'engine', trem: 'gear' }[p.pai || id];
   if (craft === 'b747' && id === 'slat') setPlaneView('front');
-  else if (craft === 'b747' && (id === 'motor' || p.pai === 'motor')) setPlaneView('engine');
+  else if (detail) setPlaneView(detail);
   else if (planeView !== 'top' && !holder().querySelector(`[data-pv="${planeView}"] [data-part="${id}"]`)) setPlaneView('top');
   $$('.part', holder()).forEach((g) => g.classList.toggle('is-sel', g.dataset.part === id));
   $$('.chip', $('#partChips')).forEach((ch) => ch.setAttribute('aria-pressed', String(ch.dataset.chip === (p.pai || id))));
@@ -374,7 +376,7 @@ function selectPart(id, open) {
       <div><dt>Manutenção</dt><dd>${p.manut}</dd></div>
     </dl>
     <p class="tip"><b>Curiosidade.</b> ${p.curio}</p>
-    ${subs.length ? `<div class="subparts"><span class="label">Partes do motor no desenho</span><div class="chips">${subs.map(([k, v]) => `<button type="button" class="chip" data-sub="${k}"><b>${v.num}</b> ${v.nome}</button>`).join('')}</div></div>` : ''}
+    ${subs.length ? `<div class="subparts"><span class="label">Partes no desenho</span><div class="chips">${subs.map(([k, v]) => `<button type="button" class="chip" data-sub="${k}"><b>${v.num}</b> ${v.nome}</button>`).join('')}</div></div>` : ''}
     ${p.ver ? `<button type="button" class="link-btn" data-tab="${p.ver}">${p.ver === 'lab' ? 'Ver a asa no túnel de vento' : 'Ver em ação no cockpit'} →</button>` : ''}`;
   if (open) openSheet(); else if (sheetOpen()) $('#partInfo').scrollTop = 0;
 }
