@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=10">
+  <link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
   <header class="top">
@@ -58,6 +58,7 @@
             <div class="seg seg--sm" id="viewSeg">
               <button type="button" data-pview="top" aria-pressed="true">Vista superior</button>
               <button type="button" data-pview="side" aria-pressed="false">Vista lateral</button>
+              <button type="button" data-pview="real" aria-pressed="false" id="realBtn" hidden>Vista realista</button>
             </div>
             <label class="switch" id="xrayLabel"><input type="checkbox" id="xrayToggle"><span class="switch__ui" aria-hidden="true"></span>Raio‑X</label>
           </div>
@@ -267,6 +268,10 @@
           </svg>
           </div>
           <div id="jetViews" hidden></div>
+          <figure class="real-view" id="realView" hidden>
+            <img src="assets/747-realista.jpg" alt="Boeing 747-8 em vista superior, em estilo de desenho técnico realista. Imagem de referência, sem logotipos." loading="lazy">
+            <figcaption class="small">Modelo de referência, em vista superior e com as cores reais. As peças são clicáveis nas vistas superior e lateral.</figcaption>
+          </figure>
           <div class="chips" id="partChips" aria-label="Lista de peças"></div>
         </div>
         <article class="card part-info" id="partInfo" aria-live="polite"></article>
@@ -532,10 +537,10 @@
 
   <footer class="wrap foot small">Conteúdo educativo. Para voar de verdade, siga o manual da aeronave (POH) e um instrutor habilitado.</footer>
 
-  <script src="trace747.js?v=10"></script>
-  <script src="avioes.js?v=10"></script>
-  <script src="catalogo747.js?v=10"></script>
-  <script src="app.js?v=10"></script>
+  <script src="trace747.js?v=11"></script>
+  <script src="avioes.js?v=11"></script>
+  <script src="catalogo747.js?v=11"></script>
+  <script src="app.js?v=11"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       navigator.serviceWorker.register('sw.js').catch(() => {});

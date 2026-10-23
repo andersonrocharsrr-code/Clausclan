@@ -342,6 +342,8 @@ function setCraft(id) {
   $('#jetViews').hidden = id === 'c172';
   if (id !== 'c172') $('#jetViews').innerHTML = HangarJets.top(c) + HangarJets.side(c);
   $('#craftLede').textContent = c.lede;
+  $('#realBtn').hidden = id !== 'b747';
+  if (id !== 'b747' && planeView === 'real') planeView = 'top';
   renderCrafts(); renderChips();
   applyXray(); setPlaneView(planeView);
   selectPart(c.parts[selPart] ? selPart : 'asa');
@@ -369,6 +371,7 @@ function selectPart(id) {
 }
 function setPlaneView(v) {
   planeView = v;
+  $('#realView').toggleAttribute('hidden', v !== 'real');
   $$('[data-pv]', holder()).forEach((svg) => svg.toggleAttribute('hidden', svg.dataset.pv !== v));
   $('#xrayLabel').hidden = v !== 'top';
   $$('#viewSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pview === v)));
