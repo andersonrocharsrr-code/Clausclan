@@ -13,6 +13,7 @@
   --bad: #b3261e;
   --plane: #fbfcfb;
   --shade: #d9e0e2;
+  --tire: #232b31;
   --sel: #f6d9e8;
   --dial: #1a2229;
   --dial-ink: #eef2f3;
@@ -27,13 +28,13 @@
   :root:not([data-theme="light"]) {
     --paper: #0e151b; --panel: #151f28; --ink: #e5ebee; --muted: #93a2ae; --line: #2a3742; --grid: #18232c;
     --magenta: #f06aae; --blue: #86acf2; --ok: #5fc48a; --warn: #e3a64a; --bad: #f2776e;
-    --plane: #1d2a35; --shade: #121b23; --sel: #4a1d36; --tunnel: #0b1117; color-scheme: dark;
+    --plane: #1d2a35; --shade: #121b23; --tire: #05080b; --sel: #4a1d36; --tunnel: #0b1117; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --paper: #0e151b; --panel: #151f28; --ink: #e5ebee; --muted: #93a2ae; --line: #2a3742; --grid: #18232c;
   --magenta: #f06aae; --blue: #86acf2; --ok: #5fc48a; --warn: #e3a64a; --bad: #f2776e;
-  --plane: #1d2a35; --shade: #121b23; --sel: #4a1d36; --tunnel: #0b1117; color-scheme: dark;
+  --plane: #1d2a35; --shade: #121b23; --tire: #05080b; --sel: #4a1d36; --tunnel: #0b1117; color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -220,12 +221,27 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 .views { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .mini { margin: 0; display: grid; gap: 6px; padding: 12px; }
 .mini__svg { width: 100%; height: auto; display: block; overflow: visible; }
-.horizon { stroke: var(--line); stroke-width: 2; }
-.m-body { fill: var(--plane); stroke: var(--ink); stroke-width: 1.4; stroke-linejoin: round; }
-.m-wing { fill: var(--ink); }
-.m-surf { fill: var(--magenta); }
-.m-prop { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
-.m-wheel { fill: var(--ink); }
+.m-ground { fill: var(--grid); }
+.m-skin { fill: url(#sideSkin); stroke: var(--ink); stroke-width: 1.1; stroke-linejoin: round; }
+.m-skin-r { fill: url(#rearSkin); stroke: var(--ink); stroke-width: 1.1; stroke-linejoin: round; }
+.m-wing { fill: url(#sideSkin); stroke: var(--ink); stroke-width: 1.1; }
+.m-wing-r { fill: url(#rearWing); stroke: var(--ink); stroke-width: 1.1; stroke-linejoin: round; }
+.m-glass { fill: url(#sideGlass); stroke: var(--ink); stroke-width: .8; }
+.m-glass-r { fill: var(--sky); fill-opacity: .7; stroke: var(--ink); stroke-width: .8; }
+.m-line, .m-hinge { fill: none; stroke: var(--ink); stroke-opacity: .3; stroke-width: .8; }
+.m-stripe { fill: var(--magenta); fill-opacity: .55; }
+.m-reg { font: 600 7px var(--mono); fill: var(--ink); fill-opacity: .55; letter-spacing: .06em; }
+.m-strut { fill: none; stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; }
+.m-surf { fill: var(--magenta); stroke: var(--ink); stroke-width: .8; stroke-linejoin: round; }
+.m-spinner { fill: var(--shade); stroke: var(--ink); stroke-width: 1.1; }
+.m-disc ellipse { fill: var(--muted); fill-opacity: .18; stroke: var(--muted); stroke-opacity: .4; stroke-width: .6; }
+.m-blade { stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; }
+.m-pant { fill: url(#sideSkin); stroke: var(--ink); stroke-width: 1; }
+.m-tire { fill: var(--tire); stroke: var(--ink); stroke-width: .8; }
+.m-hub { fill: var(--shade); }
+.m-beacon { fill: var(--bad); }
+.m-nav-red { fill: var(--bad); }
+.m-nav-green { fill: var(--ok); }
 .explain ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 6px; }
 .explain li.warn { color: var(--bad); font-weight: 600; }
 

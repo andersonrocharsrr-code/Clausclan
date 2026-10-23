@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <header class="top">
@@ -240,32 +240,85 @@
           <div class="views">
             <figure class="card mini">
               <figcaption class="mono small">VISTA LATERAL · arfagem e profundor</figcaption>
-              <svg viewBox="0 0 300 130" class="mini__svg">
-                <line x1="0" y1="118" x2="300" y2="118" class="horizon"/>
+              <svg viewBox="0 0 300 130" class="mini__svg" aria-label="Avião visto de lado">
+                <defs>
+                  <linearGradient id="sideSkin" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0" style="stop-color:var(--plane)"/>
+                    <stop offset=".55" style="stop-color:var(--plane)"/>
+                    <stop offset="1" style="stop-color:var(--shade)"/>
+                  </linearGradient>
+                  <linearGradient id="sideGlass" x1="0" x2="1" y1="0" y2="1">
+                    <stop offset="0" style="stop-color:var(--sky)" stop-opacity=".95"/>
+                    <stop offset="1" style="stop-color:var(--sky)" stop-opacity=".55"/>
+                  </linearGradient>
+                </defs>
+                <rect class="m-ground" x="0" y="118" width="300" height="12"/>
                 <g id="sideGroup">
-                  <path class="m-body" d="M44 64 L70 55 L160 51 L172 36 L222 36 L246 52 L272 56 Q286 60 286 66 L270 74 L64 70 Z"/>
-                  <path class="m-body" d="M46 64 L34 22 L54 22 L82 56 Z"/>
-                  <rect class="m-wing" x="150" y="32" width="84" height="6" rx="3"/>
-                  <rect class="m-body" x="30" y="61" width="36" height="5" rx="2"/>
-                  <g id="sideElev"><rect class="m-surf" x="12" y="61" width="20" height="5" rx="2"/></g>
-                  <line class="m-prop" x1="289" y1="44" x2="289" y2="88"/>
-                  <circle class="m-wheel" cx="200" cy="84" r="6"/>
-                  <circle class="m-wheel" cx="262" cy="80" r="5"/>
+                  <path class="m-skin" d="M98 54 L56 15 Q54 13 50 13 L44 13 L46 61 Z"/>
+                  <g id="sideRud"><path class="m-surf" d="M44 13 L46 61 L36 64 L31 19 Q32 13 38 13 Z"/></g>
+                  <circle class="m-beacon" cx="47" cy="12" r="2.2"/>
+                  <path class="m-strut" d="M206 85 L181 39"/>
+                  <path class="m-strut" d="M201 86 L196 108"/>
+                  <path class="m-strut" d="M262 82 L263 106"/>
+                  <path class="m-skin" d="M36 62 L150 46 Q156 41 166 40 L222 40 L242 58 L268 61 Q276 63 280 69 L282 70 L280 72 Q276 78 268 80 L240 86 Q205 90 160 86 L40 67 Z"/>
+                  <path class="m-stripe" d="M41 64.5 L160 80 L240 82.5 L266 77 L267 79.5 L240 85 L160 83 L40 67 Z"/>
+                  <path class="m-glass" d="M159 45 Q162 43 168 43 L186 43 L188 57 L162 56 Z"/>
+                  <path class="m-glass" d="M191 43 L220 43 L234 57 L193 57 Z"/>
+                  <path class="m-glass" d="M223 42 L240 58 L236 58 L222 44 Z"/>
+                  <path class="m-line" d="M190 42 L192 84 M235 58 L238 86 M150 47 L152 84 M242 58 L240 86"/>
+                  <text class="m-reg" x="92" y="63" transform="rotate(-7.5 92 63)">PT-APR</text>
+                  <path class="m-skin" d="M76 62 Q76 59.5 71 59.5 L43 60.5 L43 64.5 L71 64.5 Q76 64.5 76 62 Z"/>
+                  <g id="sideElev"><path class="m-surf" d="M43 60.5 L23 62 Q21 62.6 23 63.2 L43 64.5 Z"/></g>
+                  <path class="m-wing" d="M226 40 Q226 33.5 215 32.5 L178 33.5 L160 38.5 L162 40.5 Z"/>
+                  <path class="m-spinner" d="M268 61 Q284 63 287 70 Q284 77 268 80 Z"/>
+                  <g class="m-disc"><ellipse cx="288" cy="70" rx="2.6" ry="31"/></g>
+                  <path id="sideBlade" class="m-blade" d="M287.5 70 L287.5 40"/>
+                  <path class="m-pant" d="M182 106 Q186 101 197 101 L206 102 Q209 106 206 113 L196 116 Q184 116 182 110 Z"/>
+                  <circle class="m-tire" cx="195" cy="110" r="8"/>
+                  <circle class="m-hub" cx="195" cy="110" r="2.5"/>
+                  <path class="m-pant" d="M254 107 Q257 103 265 103 L271 104 Q273 107 271 112 L264 115 Q256 115 254 111 Z"/>
+                  <circle class="m-tire" cx="264" cy="112" r="6"/>
+                  <circle class="m-hub" cx="264" cy="112" r="2"/>
                 </g>
               </svg>
             </figure>
             <figure class="card mini">
               <figcaption class="mono small">VISTA DE TRÁS · rolagem e ailerons</figcaption>
-              <svg viewBox="0 0 300 130" class="mini__svg">
-                <line x1="0" y1="118" x2="300" y2="118" class="horizon"/>
+              <svg viewBox="0 0 300 130" class="mini__svg" aria-label="Avião visto de trás">
+                <defs>
+                  <linearGradient id="rearSkin" x1="0" x2="1" y1="0" y2="0">
+                    <stop offset="0" style="stop-color:var(--shade)"/>
+                    <stop offset=".4" style="stop-color:var(--plane)"/>
+                    <stop offset=".6" style="stop-color:var(--plane)"/>
+                    <stop offset="1" style="stop-color:var(--shade)"/>
+                  </linearGradient>
+                  <linearGradient id="rearWing" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0" style="stop-color:var(--plane)"/>
+                    <stop offset="1" style="stop-color:var(--shade)"/>
+                  </linearGradient>
+                </defs>
+                <rect class="m-ground" x="0" y="118" width="300" height="12"/>
                 <g id="rearGroup">
-                  <rect class="m-wing" x="22" y="44" width="256" height="6" rx="3"/>
-                  <rect class="m-surf" id="ailL" x="22" y="44" width="46" height="6" rx="3"/>
-                  <rect class="m-surf" id="ailR" x="232" y="44" width="46" height="6" rx="3"/>
-                  <circle class="m-body" cx="150" cy="62" r="16"/>
-                  <rect class="m-body" x="146" y="18" width="8" height="34" rx="3"/>
-                  <rect class="m-surf" id="rudR" x="146" y="18" width="8" height="18" rx="3"/>
-                  <rect class="m-body" x="106" y="58" width="88" height="4" rx="2"/>
+                  <path class="m-strut" d="M131 80 L84 45 M169 80 L216 45"/>
+                  <path class="m-strut" d="M134 84 L107 104 M166 84 L193 104"/>
+                  <path class="m-strut" d="M150 86 L150 104"/>
+                  <rect class="m-tire" x="146.5" y="102" width="7" height="14" rx="3"/>
+                  <path class="m-pant" d="M100 99 Q100 96 106 96 Q112 96 112 99 L112 114 Q112 117 106 117 Q100 117 100 114 Z"/>
+                  <path class="m-pant" d="M188 99 Q188 96 194 96 Q200 96 200 99 L200 114 Q200 117 194 117 Q188 117 188 114 Z"/>
+                  <rect class="m-tire" x="102.5" y="108" width="7" height="10" rx="2.5"/>
+                  <rect class="m-tire" x="190.5" y="108" width="7" height="10" rx="2.5"/>
+                  <path class="m-skin-r" d="M136 44 L164 44 Q170 44 171 52 L172 76 Q172 86 160 88 L140 88 Q128 86 128 76 L129 52 Q130 44 136 44 Z"/>
+                  <path class="m-glass-r" d="M139 47 L161 47 L163 56 L137 56 Z"/>
+                  <path class="m-skin-r" d="M104 57.5 L196 57.5 Q199 59 196 60.5 L104 60.5 Q101 59 104 57.5 Z"/>
+                  <path class="m-skin-r" d="M147.5 12 L152.5 12 L154 58 L146 58 Z"/>
+                  <g id="rudR"><path class="m-surf" d="M148.5 14 L151.5 14 L152 56 L148 56 Z"/></g>
+                  <circle class="m-beacon" cx="150" cy="11" r="2.2"/>
+                  <path class="m-wing-r" d="M20 36.5 L150 41.5 L280 36.5 Q284 37.5 282 40.5 L150 46.5 L18 40.5 Q16 37.5 20 36.5 Z"/>
+                  <path class="m-hinge" d="M22 40.6 L72 42.9 M228 42.9 L278 40.6"/>
+                  <path id="ailL" class="m-surf" d="M22 40.6 L72 42.9 L72 42.9 L22 40.6 Z"/>
+                  <path id="ailR" class="m-surf" d="M228 42.9 L278 40.6 L278 40.6 L228 42.9 Z"/>
+                  <circle class="m-nav-red" cx="18.5" cy="38.5" r="2.6"/>
+                  <circle class="m-nav-green" cx="281.5" cy="38.5" r="2.6"/>
                 </g>
               </svg>
             </figure>
@@ -349,7 +402,7 @@
 
   <footer class="wrap foot small">Conteúdo educativo. Para voar de verdade, siga o manual da aeronave (POH) e um instrutor habilitado.</footer>
 
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       navigator.serviceWorker.register('sw.js').catch(() => {});

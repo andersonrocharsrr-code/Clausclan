@@ -599,13 +599,19 @@ function drawPanel() {
   });
 }
 function drawMinis() {
-  $('#sideGroup').setAttribute('transform', `rotate(${(-sim.pitch).toFixed(2)} 160 62)`);
-  $('#sideElev').setAttribute('transform', `rotate(${(ctl.elev * 25).toFixed(1)} 32 63)`);
-  $('#rearGroup').setAttribute('transform', `rotate(${sim.bank.toFixed(2)} 150 62)`);
-  $('#ailL').setAttribute('y', 44 + ctl.ail * 7);
-  $('#ailR').setAttribute('y', 44 - ctl.ail * 7);
-  $('#rudR').setAttribute('x', 146 + ctl.rud * 6);
+  $('#sideGroup').setAttribute('transform', `rotate(${(-sim.pitch).toFixed(2)} 180 64)`);
+  $('#sideElev').setAttribute('transform', `rotate(${(ctl.elev * 25).toFixed(1)} 43 62.5)`);
+  // Hélice: a pá gira (encurta e alonga) dentro do disco, mais rápido com mais potência.
+  propAng = (propAng + 20 + ctl.thr * 40) % 360;
+  const len = 30 * Math.cos(propAng * D2R);
+  $('#sideBlade').setAttribute('d', `M287.5 ${(70 - len).toFixed(1)} L287.5 ${(70 + len).toFixed(1)}`);
+  $('#rearGroup').setAttribute('transform', `rotate(${sim.bank.toFixed(2)} 150 64)`);
+  const dl = -ctl.ail * 8, dr = ctl.ail * 8;
+  $('#ailL').setAttribute('d', `M22 40.6 L72 42.9 L72 ${(42.9 - dl).toFixed(1)} L22 ${(40.6 - dl).toFixed(1)} Z`);
+  $('#ailR').setAttribute('d', `M228 42.9 L278 40.6 L278 ${(40.6 - dr).toFixed(1)} L228 ${(42.9 - dr).toFixed(1)} Z`);
+  $('#rudR').setAttribute('transform', `translate(${(ctl.rud * 5).toFixed(1)} 0)`);
 }
+let propAng = 0;
 let lastExplain = '';
 function explain() {
   const L = [];
