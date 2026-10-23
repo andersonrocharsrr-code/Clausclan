@@ -340,10 +340,11 @@ function setCraft(id) {
   const c = cur();
   $('#c172Views').hidden = id !== 'c172';
   $('#jetViews').hidden = id === 'c172';
-  if (id !== 'c172') $('#jetViews').innerHTML = HangarJets.top(c) + HangarJets.side(c) + HangarJets.front(c);
+  if (id !== 'c172') $('#jetViews').innerHTML = HangarJets.top(c) + HangarJets.side(c) + HangarJets.front(c) + HangarJets.engine(c);
   $('#craftLede').textContent = c.lede;
   $('#frontBtn').hidden = id !== 'b747';
-  if (id !== 'b747' && planeView === 'front') planeView = 'top';
+  $('#engineBtn').hidden = id !== 'b747';
+  if (id !== 'b747' && (planeView === 'front' || planeView === 'engine')) planeView = 'top';
   renderCrafts(); renderChips();
   applyXray(); setPlaneView(planeView);
   selectPart(c.parts[selPart] ? selPart : 'asa');
@@ -352,12 +353,15 @@ function selectPart(id) {
   const p = cur().parts[id];
   if (!p) return;
   selPart = id;
-  // No 747, os slats abrem a vista frontal. Peça que não aparece na vista atual: volta para a de cima.
+  // No 747, os slats abrem a vista frontal e o motor abre a vista do motor. Peça que não aparece na vista atual: volta para a de cima.
   if (craft === 'b747' && id === 'slat') setPlaneView('front');
+  else if (craft === 'b747' && (id === 'motor' || p.pai === 'motor')) setPlaneView('engine');
   else if (planeView !== 'top' && !holder().querySelector(`[data-pv="${planeView}"] [data-part="${id}"]`)) setPlaneView('top');
   $$('.part', holder()).forEach((g) => g.classList.toggle('is-sel', g.dataset.part === id));
-  $$('.chip').forEach((ch) => ch.setAttribute('aria-pressed', String(ch.dataset.chip === id)));
+  $$('.chip', $('#partChips')).forEach((ch) => ch.setAttribute('aria-pressed', String(ch.dataset.chip === (p.pai || id))));
+  const subs = Object.entries(cur().parts).filter(([, v]) => v.pai === id);
   $('#partInfo').innerHTML = `
+    ${p.pai ? `<button type="button" class="link-btn" data-sub="${p.pai}">← ${cur().parts[p.pai].nome}</button>` : ''}
     <div><span class="part-info__tag">${p.sistema}</span> <span class="small">${cur().nome}</span></div>
     <h2>${p.nome}</h2>
     <div class="spec">${p.spec.map(([k, v]) => `<div><span class="label">${k}</span><b>${v}</b></div>`).join('')}</div>
@@ -368,6 +372,7 @@ function selectPart(id) {
       <div><dt>Manutenção</dt><dd>${p.manut}</dd></div>
     </dl>
     <p class="tip"><b>Curiosidade.</b> ${p.curio}</p>
+    ${subs.length ? `<div class="subparts"><span class="label">Partes do motor no desenho</span><div class="chips">${subs.map(([k, v]) => `<button type="button" class="chip" data-sub="${k}"><b>${v.num}</b> ${v.nome}</button>`).join('')}</div></div>` : ''}
     ${p.ver ? `<button type="button" class="link-btn" data-tab="${p.ver}">${p.ver === 'lab' ? 'Ver a asa no túnel de vento' : 'Ver em ação no cockpit'} →</button>` : ''}`;
 }
 function setPlaneView(v) {
@@ -397,6 +402,10 @@ planeCard.addEventListener('click', (e) => {
 planeCard.addEventListener('keydown', (e) => {
   const g = e.target.closest('svg [data-part]');
   if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); selectPart(g.dataset.part); }
+});
+$('#partInfo').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-sub]');
+  if (b) selectPart(b.dataset.sub);
 });
 $('#partChips').addEventListener('click', (e) => {
   const c = e.target.closest('[data-chip]');

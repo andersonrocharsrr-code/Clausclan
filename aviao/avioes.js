@@ -243,6 +243,63 @@ function parts(a) {
     };
   }
   if (a.id === 'b747') {
+    const sub = (num, nome, d) => ({ pai: 'motor', num, nome, sistema: 'Motor GEnx-2B', ...d });
+    p['motor-nacele'] = sub(1, 'Nacele (capô do fan)', {
+      onde: 'É a carenagem grande que envolve o motor inteiro, da entrada de ar até a saída do fan.',
+      funcao: 'Dá a forma aerodinâmica ao motor, protege os componentes e forma a parede externa do duto por onde passa o ar do fan.',
+      como: 'O fan empurra uma grande quantidade de ar, que passa entre a nacele e a carenagem do núcleo e sai pela traseira. No GEnx-2B, cerca de 8 partes de ar passam por fora para cada parte que entra no núcleo, e é esse ar de fora que gera a maior parte do empuxo.',
+      manut: 'Os capôs abrem para dar acesso ao motor. No pré-voo e depois de cada manutenção, as travas dos capôs são conferidas: um capô mal travado pode se abrir em voo.',
+      curio: 'Por dentro, a nacele tem painéis acústicos com uma estrutura de colmeia que absorve parte do barulho do fan.',
+      spec: [['Fan', '2,67 m de diâmetro'], ['Bypass', '8 : 1'], ['Material', 'Compósito e alumínio']],
+    });
+    p['motor-chevron'] = sub(2, 'Bocal do fan com chevrons', {
+      onde: 'Na borda traseira da nacele, por onde sai o ar do fan. São os "dentes" serrilhados.',
+      funcao: 'Reduzir o ruído do jato.',
+      como: 'O jato que sai do motor é muito mais rápido que o ar em volta, e o atrito entre os dois cria turbulência forte, que faz barulho. Os dentes (chevrons) criam pequenos redemoinhos que misturam os dois fluxos aos poucos, e a turbulência fica mais fraca.',
+      manut: 'Inspecionar as pontas dos chevrons procurando trincas, deformações e danos por calor ou impacto.',
+      curio: 'A Boeing usou chevrons no 787 e no 747-8. Eles reduzem alguns decibéis com uma perda de empuxo muito pequena.',
+      spec: [['Função', 'Menos ruído'], ['Posição', 'Saída do fan'], ['Perda de empuxo', 'Mínima']],
+    });
+    p['motor-reversor'] = sub(3, 'Reversor de empuxo', {
+      onde: 'Na parte traseira da nacele. Por dentro dela ficam as grades (cascatas), que só aparecem quando o reversor abre.',
+      funcao: 'Ajudar a frear o avião depois do toque na pista.',
+      como: 'A parte de trás da nacele desliza para trás, portas internas fecham o duto do fan e o ar do fan sai pelas grades, inclinadas para a frente. Só o ar do fan é desviado: o jato do núcleo continua saindo para trás.',
+      manut: 'Inspecionar atuadores, travas e grades. O reversor tem várias travas independentes para não abrir em voo.',
+      curio: 'O pouso é calculado e certificado sem contar com os reversores. Eles servem principalmente para poupar os freios e encurtar a frenagem em pista molhada.',
+      spec: [['Tipo', 'Cascatas'], ['Uso', 'Depois do toque'], ['Ar desviado', 'Só o do fan']],
+    });
+    p['motor-carenagem'] = sub(4, 'Carenagem do núcleo', {
+      onde: 'Envolve o núcleo do motor (compressores, câmara de combustão e turbinas), dentro do duto do fan.',
+      funcao: 'Forma a parede interna do duto do fan e protege o núcleo. Tem portas de acesso para a manutenção.',
+      como: 'O ar do fan passa por fora dela; por dentro ficam o núcleo quente, as tubulações de combustível e óleo, os sensores e os detectores de incêndio.',
+      manut: 'As portas de acesso abrem para inspecionar tubulações, conexões, sensores e o sistema de detecção de incêndio do motor.',
+      curio: 'O compartimento do núcleo tem detectores de incêndio próprios e é ligado aos extintores comandados do cockpit.',
+      spec: [['Envolve', 'O núcleo'], ['Acesso', 'Portas laterais'], ['Proteção', 'Detecção de incêndio']],
+    });
+    p['motor-bocal'] = sub(5, 'Bocal do núcleo', {
+      onde: 'Na saída do ar quente do núcleo, em volta do cone de escape.',
+      funcao: 'Acelerar e orientar os gases quentes que saem da turbina.',
+      como: 'No GEnx os dois fluxos saem separados: o ar frio do fan por fora e o jato quente do núcleo por dentro. Os gases já deixaram quase toda a energia na turbina, que move o fan e os compressores.',
+      manut: 'Inspeção visual e boroscópica procurando trincas causadas pelo calor e pelos ciclos de aquecimento e resfriamento.',
+      curio: 'Num turbofan como o GEnx, o jato quente do núcleo gera só uma parte pequena do empuxo. A maior parte vem do ar frio empurrado pelo fan.',
+      spec: [['Fluxo', 'Quente (núcleo)'], ['Saída', 'Separada do fan'], ['Material', 'Ligas para alta temperatura']],
+    });
+    p['motor-cone'] = sub(6, 'Cone de escape', {
+      onde: 'No centro da saída do motor, atrás da turbina.',
+      funcao: 'Fechar o centro da turbina e guiar o fluxo dos gases quentes para fora sem turbulência.',
+      como: 'O formato de cone faz os gases saírem acelerando de forma suave, sem formar redemoinhos atrás do eixo da turbina.',
+      manut: 'Inspecionar trincas e o estado do revestimento térmico, que sofre com a temperatura dos gases.',
+      curio: 'Também é chamado de plug ou centerbody. Por dentro é oco, e alguns motores usam esse espaço para reduzir ruído.',
+      spec: [['Posição', 'Centro da saída'], ['Função', 'Guiar o jato'], ['Proteção', 'Revestimento térmico']],
+    });
+    p['motor-pilone'] = sub(7, 'Pilone', {
+      onde: 'A estrutura que prende o motor embaixo da asa.',
+      funcao: 'Levar o peso e o empuxo do motor para a estrutura da asa. Por dentro passam combustível, ar sangrado, fios e tubulações hidráulicas.',
+      como: 'O motor é preso ao pilone por suportes na frente e atrás. No 747, o pilone é ligado à asa por pinos-fusíveis, feitos para se romperem num esforço extremo e soltar o motor sem rasgar o tanque de combustível da asa.',
+      manut: 'Inspeção periódica dos suportes do motor, dos pinos e da estrutura procurando trincas e corrosão.',
+      curio: 'A parte de trás do pilone, logo acima do jato quente, tem painéis de proteção térmica.',
+      spec: [['Carrega', 'Peso e empuxo'], ['Por dentro', 'Combustível, ar e fios'], ['Fixação', 'Pinos-fusíveis']],
+    });
     p.slat = {
       nome: 'Slats (flaps Krueger)', sistema: 'Hipersustentação',
       onde: 'No bordo de ataque, a frente da asa, de ponta a ponta. Na vista frontal, é a borda da asa que fica de frente para você.',
@@ -427,6 +484,42 @@ function front747(a) {
 </svg>`;
 }
 
+/* ---------- 747-8: motor GEnx-2B visto de trás (prancha de referência, rótulos refeitos em português) ---------- */
+// [peça, alvo no desenho, posição do rótulo, alinhamento]
+const ENG747 = [
+  ['motor-nacele', [470, 330], [60, 160], 'start'],
+  ['motor-chevron', [748, 425], [60, 360], 'start'],
+  ['motor-reversor', [768, 575], [60, 740], 'start'],
+  ['motor-carenagem', [935, 650], [520, 1200], 'start'],
+  ['motor-pilone', [1480, 250], [1600, 345], 'start'],
+  ['motor-cone', [1440, 478], [1600, 485], 'start'],
+  ['motor-bocal', [1104, 600], [1600, 640], 'start'],
+];
+function engine747(a) {
+  const P = parts(a);
+  const pts = ENG747.map(([id, [tx, ty], [lx, ly]]) => {
+    const p = P[id], w = p.nome.length * 14.5;
+    // a linha sai do lado do rótulo que fica de frente para o alvo
+    const lead = tx > lx ? `M${lx - 4} ${ly + 10} L${lx + w + 14} ${ly + 10} L${tx} ${ty}` : `M${lx + w + 4} ${ly + 10} L${lx - 14} ${ly + 10} L${tx} ${ty}`;
+    return `<g class="part eng-pt" data-part="${id}" tabindex="0" role="button" aria-label="${p.num}. ${p.nome}">
+      <path class="eng-lead" d="${lead}"/>
+      <text class="eng-label" x="${lx}" y="${ly}">${p.nome}</text>
+      <rect class="hit" fill="transparent" x="${lx - 8}" y="${ly - 34}" width="${w + 20}" height="50"/>
+      <circle class="eng-dot" cx="${tx}" cy="${ty}" r="26"/>
+      <text class="eng-num" x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="central">${p.num}</text>
+    </g>`;
+  }).join('');
+  return `
+<figure class="eng-view" data-pv="engine" hidden>
+  <svg class="plane plane--eng" viewBox="33.2 41.1 1935.1 1260.3" role="group" aria-label="Motor GEnx-2B do ${a.nome} visto de trás">
+    <image href="assets/747-motor.jpg" x="33.2" y="41.1" width="1935.1" height="1260.3" preserveAspectRatio="none"/>
+    <text class="eng-title" x="60" y="92">MOTOR GEnx-2B · VISTA TRASEIRA</text>
+    ${pts}
+  </svg>
+  <figcaption class="small">Saída do motor vista de trás e de baixo, com o pilone em cima. Toque num número para ver a peça.</figcaption>
+</figure>`;
+}
+
 /* ---------- Vista lateral ---------- */
 function side(a) {
   if (a.id === 'b747') return side747(a);
@@ -568,5 +661,6 @@ window.HangarJets = {
   order: (a) => ORDER.filter((id) => id !== 'winglet' || a.wingletType),
   top, side,
   front: (a) => (a.id === 'b747' ? front747(a) : ''),
+  engine: (a) => (a.id === 'b747' ? engine747(a) : ''),
 };
 })();

@@ -228,6 +228,29 @@ main { padding-block: 24px 40px; }
 .compare td { font-variant-numeric: tabular-nums; }
 .compare .is-cur { background: color-mix(in srgb, var(--magenta) 9%, transparent); }
 
+/* 747: vista do motor com números clicáveis */
+.eng-view { margin: 0; display: grid; gap: 8px; }
+.plane--eng { background: #1d3a63; border-radius: 6px; }
+.plane--eng .eng-title { font-family: var(--display); font-weight: 600; font-size: 40px; fill: #f3f6fb; letter-spacing: .03em; }
+.plane--eng .part { cursor: pointer; }
+.plane--eng .part > .eng-lead { fill: none !important; stroke: #f3f6fb !important; stroke-width: 2.5 !important; stroke-opacity: .85; }
+.plane--eng .part > .eng-label { font-family: var(--display); font-weight: 600; font-size: 30px; fill: #f3f6fb !important; stroke: #1d3a63 !important; stroke-width: 6 !important; paint-order: stroke; }
+.plane--eng .part > .eng-dot { fill: #1d3a63 !important; stroke: #f3f6fb !important; stroke-width: 4 !important; }
+.plane--eng .part > .eng-num { font-family: var(--display); font-weight: 700; font-size: 32px; fill: #f3f6fb !important; stroke: none !important; }
+.plane--eng .part > .hit { fill: transparent !important; stroke: none !important; }
+.plane--eng .part:hover > .eng-dot, .plane--eng .part:focus-visible > .eng-dot { fill: #b33a7e !important; }
+.plane--eng .part.is-sel > .eng-dot { fill: #f06aae !important; stroke: #fff !important; }
+.plane--eng .part.is-sel > .eng-lead { stroke: #f06aae !important; stroke-opacity: 1; stroke-width: 4 !important; }
+.plane--eng .part.is-sel > .eng-label { fill: #ffd3ea !important; }
+.subparts { display: grid; gap: 6px; }
+.subparts .chip b { font-family: var(--mono); color: var(--magenta); margin-right: 2px; }
+@media (max-width: 700px) {
+  .plane--eng .eng-label, .plane--eng .eng-lead, .plane--eng .part > .hit { display: none; }
+  .plane--eng .part > .eng-dot { r: 58px; stroke-width: 7 !important; }
+  .plane--eng .part > .eng-num { font-size: 72px; }
+  .plane--eng .eng-title { font-size: 64px; }
+}
+
 /* F · catálogo */
 .cat-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .cat-bar .search { flex: 1 1 280px; }
