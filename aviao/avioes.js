@@ -426,7 +426,49 @@ function geo(a) {
 const part = (id, label, inner) => `<g class="part" data-part="${id}" tabindex="0" role="button" aria-label="${label}">${inner}</g>`;
 
 /* ---------- Vista superior ---------- */
+/* ---------- 747-8: vista superior com a prancha de referência (só o desenho do avião, fundo refeito) ---------- */
+// Coordenadas na imagem (923 x 1108). As áreas da asa direita são espelhadas no eixo x = 461 para a esquerda.
+function top747(a) {
+  const AX = 922;
+  const mir = (pts) => pts.map(([x, y]) => [AX - x, y]);
+  const path = (pts) => `M${pts.map(([x, y]) => `${x} ${y}`).join(' L')} Z`;
+  const both = (pts) => `<path d="${path(pts)} ${path(mir(pts))}"/>`;
+  // bordo de ataque e bordo de fuga da asa direita
+  const LE = [[507, 338], [530, 362], [560, 394], [600, 433], [650, 482], [700, 531], [750, 578], [800, 627], [850, 681], [885, 730], [906, 765]];
+  const te = (x) => 566 + 0.538 * (x - 507);
+  const band = (x0, x1, d0, d1) => [[x0, te(x0) + d0], [x1, te(x1) + d0], [x1, te(x1) + d1], [x0, te(x0) + d1]].map(([x, y]) => [x, Math.round(y)]);
+  const leBand = LE.slice(1, -1).concat(LE.slice(1, -1).reverse().map(([x, y]) => [x - 3, y + 14]));
+  const wing = LE.concat([[900, 778], [880, 776], [800, 727], [700, 673], [600, 619], [507, 568]]);
+  const eng = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+  return `
+<svg class="plane plane--photo" data-pv="top" viewBox="0 0 923 1108" role="group" aria-label="${a.nome} visto de cima">
+  <image href="assets/747-superior.png" x="0" y="0" width="923" height="1108" preserveAspectRatio="none"/>
+  ${part('fuselagem', 'Fuselagem', `<path d="${path([[461, 8], [486, 34], [500, 80], [506, 140], [507, 330], [507, 860], [496, 960], [480, 1060], [461, 1104], [442, 1060], [426, 960], [415, 860], [415, 330], [416, 140], [422, 80], [436, 34]])}"/>`)}
+  ${part('asa', 'Asa', both(wing))}
+  ${part('slat', 'Slats', both(leBand))}
+  ${part('spoiler', 'Spoilers', both(band(540, 790, -44, -24)))}
+  ${part('flap', 'Flaps', both(band(510, 792, -21, 3)))}
+  ${part('aileron', 'Ailerons', both(band(796, 886, -21, 3)))}
+  ${part('motor', 'Motores', both(eng(618, 392, 663, 498)) + both(eng(711, 488, 760, 590)))}
+  ${part('estabh', 'Estabilizador horizontal', both([[482, 888], [560, 958], [614, 1022], [632, 1042], [638, 1086], [470, 1020]]))}
+  ${part('profundor', 'Profundor', both([[472, 1002], [625, 1066], [638, 1088], [470, 1022]]))}
+  ${part('estabv', 'Estabilizador vertical', `<path d="${path([[453, 880], [469, 880], [469, 1060], [453, 1060]])}"/>`)}
+  ${part('leme', 'Leme de direção', `<path d="${path([[454, 1060], [468, 1060], [466, 1096], [456, 1096]])}"/>`)}
+  ${part('cabine', 'Cabine de comando', `<path d="${path([[461, 14], [478, 30], [492, 84], [430, 84], [444, 30]])}"/>`)}
+  ${part('pitot', 'Tubos de pitot', `<circle cx="414" cy="104" r="9"/><circle cx="508" cy="104" r="9"/>`)}
+  ${part('apu', 'APU', `<circle cx="461" cy="1100" r="9"/>`)}
+  ${part('luzes', 'Luzes externas', `<circle cx="907" cy="764" r="12"/><circle cx="15" cy="768" r="12"/>`)}
+  <g class="photo-label" aria-hidden="true">
+    <text x="24" y="44" style="font-size:26px">VISTA SUPERIOR</text>
+    <text x="24" y="76" style="font-size:19px">ENVERGADURA ${a.specs.env}</text>
+    <text x="24" y="102" style="font-size:19px">COMPRIMENTO ${a.specs.comp}</text>
+    <text x="899" y="44" text-anchor="end" style="font-size:19px">PROA ↑</text>
+  </g>
+</svg>`;
+}
+
 function top(a) {
+  if (a.id === 'b747') return top747(a);
   const g = geo(a);
   const k = Math.min(500 / a.span, 418 / a.L);
   const cx = 300, y0 = 46;
