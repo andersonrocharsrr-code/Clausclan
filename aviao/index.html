@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Hangar Escola</title>
+  <meta name="claude:viewport-fit-sides" content="cover">
+  <meta name="description" content="Aprenda tudo sobre aviões: peças, comandos, aerodinâmica, motor, instrumentos e manutenção.">
+  <meta name="theme-color" content="#eef2ef">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top__row">
+      <a class="brand" href="#pecas" data-tab="pecas">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32"><path d="M16 3 L18 12 L29 16 L29 19 L18 17 L17.5 25 L21 28 L21 29.5 L16 28 L11 29.5 L11 28 L14.5 25 L14 17 L3 19 L3 16 L14 12 Z"/></svg>
+        </span>
+        <span class="brand__name">Hangar Escola</span>
+        <span class="brand__reg">PT-APR</span>
+      </a>
+      <div class="progress-chip" id="progressChip" title="Lições concluídas">
+        <span id="progressTxt">0/8 lições</span>
+        <span class="progress-chip__bar"><span id="progressBar"></span></span>
+      </div>
+    </div>
+    <nav class="tabs" aria-label="Seções">
+      <div class="wrap tabs__row" role="tablist">
+        <a class="tab" role="tab" href="#pecas" data-tab="pecas"><span class="tab__key">A</span>Avião explodido</a>
+        <a class="tab" role="tab" href="#escola" data-tab="escola"><span class="tab__key">B</span>Escola de voo</a>
+        <a class="tab" role="tab" href="#cockpit" data-tab="cockpit"><span class="tab__key">C</span>Cockpit</a>
+        <a class="tab" role="tab" href="#lab" data-tab="lab"><span class="tab__key">D</span>Laboratório</a>
+        <a class="tab" role="tab" href="#glossario" data-tab="glossario"><span class="tab__key">E</span>Glossário</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <!-- A · AVIÃO EXPLODIDO -->
+    <section class="view" id="view-pecas" data-view="pecas">
+      <div class="view__head">
+        <p class="eyebrow">Seção A · Exploração visual</p>
+        <h1>Toque numa peça do avião</h1>
+        <p class="lede">Modelo baseado no Cessna 172, o avião de treinamento mais fabricado da história. Ligue o raio‑X para ver combustível, cabos de comando e fiação.</p>
+      </div>
+      <div class="explorer">
+        <div class="card plane-card">
+          <div class="plane-card__bar">
+            <span class="mono small">VISTA SUPERIOR · ESCALA 1:90</span>
+            <label class="switch"><input type="checkbox" id="xrayToggle"><span class="switch__ui" aria-hidden="true"></span>Raio‑X</label>
+          </div>
+          <svg class="plane" id="planeSvg" viewBox="0 0 600 540" role="group" aria-label="Avião visto de cima">
+            <defs>
+              <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M20 0H0V20" fill="none" class="grid-line"/>
+              </pattern>
+            </defs>
+            <rect width="600" height="540" fill="url(#grid)"/>
+            <g class="airframe" id="airframe">
+              <g class="part" data-part="fuselagem" tabindex="0" role="button" aria-label="Fuselagem">
+                <path d="M271 160 L329 160 L314 420 L306 505 L294 505 L286 420 Z"/>
+              </g>
+              <g class="part" data-part="estabh" tabindex="0" role="button" aria-label="Estabilizador horizontal">
+                <path d="M196 430 L404 430 Q412 430 412 438 L412 455 L188 455 L188 438 Q188 430 196 430 Z"/>
+              </g>
+              <g class="part" data-part="profundor" tabindex="0" role="button" aria-label="Profundor">
+                <path d="M190 457 L410 457 L404 476 L196 476 Z"/>
+              </g>
+              <g class="part" data-part="estabv" tabindex="0" role="button" aria-label="Estabilizador vertical">
+                <rect x="286" y="392" width="28" height="92" fill="transparent" class="hit"/>
+                <rect x="295" y="392" width="10" height="92" rx="3"/>
+              </g>
+              <g class="part" data-part="leme" tabindex="0" role="button" aria-label="Leme de direção">
+                <rect x="286" y="486" width="28" height="30" fill="transparent" class="hit"/>
+                <path d="M295 486 L305 486 L303 514 L297 514 Z"/>
+              </g>
+              <g class="part" data-part="asa" tabindex="0" role="button" aria-label="Asa">
+                <path d="M30 168 Q30 160 42 160 L558 160 Q570 160 570 168 L570 230 Q570 237 562 237 L38 237 Q30 237 30 230 Z"/>
+              </g>
+              <g class="part" data-part="aileron" tabindex="0" role="button" aria-label="Ailerons">
+                <path d="M36 216 L150 216 L150 235 L42 235 Q36 235 36 229 Z"/>
+                <path d="M450 216 L564 216 L564 229 Q564 235 558 235 L450 235 Z"/>
+              </g>
+              <g class="part" data-part="flap" tabindex="0" role="button" aria-label="Flaps">
+                <rect x="158" y="216" width="110" height="19"/>
+                <rect x="332" y="216" width="110" height="19"/>
+              </g>
+              <g class="part" data-part="cabine" tabindex="0" role="button" aria-label="Cabine">
+                <path d="M274 98 L326 98 L330 160 L270 160 Z"/>
+                <path class="glass" d="M280 112 L320 112 L325 156 L275 156 Z"/>
+              </g>
+              <g class="part" data-part="motor" tabindex="0" role="button" aria-label="Motor">
+                <path d="M283 46 Q300 38 317 46 L326 98 L274 98 Z"/>
+              </g>
+              <g class="part" data-part="helice" tabindex="0" role="button" aria-label="Hélice">
+                <rect x="236" y="22" width="128" height="22" fill="transparent" class="hit"/>
+                <rect x="238" y="30" width="124" height="6" rx="3"/>
+                <circle cx="300" cy="38" r="9"/>
+              </g>
+              <g class="part" data-part="trem" tabindex="0" role="button" aria-label="Trem de pouso">
+                <path class="strut" d="M286 240 L236 262 M314 240 L364 262"/>
+                <rect x="226" y="256" width="20" height="12" rx="4"/>
+                <rect x="354" y="256" width="20" height="12" rx="4"/>
+                <rect x="292" y="100" width="16" height="10" rx="3"/>
+              </g>
+              <g class="part" data-part="pitot" tabindex="0" role="button" aria-label="Tubo de pitot">
+                <rect x="108" y="138" width="24" height="26" fill="transparent" class="hit"/>
+                <path class="strut" d="M120 160 L120 144"/>
+                <circle cx="120" cy="143" r="3"/>
+              </g>
+              <g class="part" data-part="luzes" tabindex="0" role="button" aria-label="Luzes de navegação">
+                <rect x="18" y="182" width="24" height="24" fill="transparent" class="hit"/>
+                <rect x="558" y="182" width="24" height="24" fill="transparent" class="hit"/>
+                <circle class="nav-red" cx="30" cy="194" r="6"/>
+                <circle class="nav-green" cx="570" cy="194" r="6"/>
+              </g>
+            </g>
+            <g class="xray" id="xray" hidden>
+              <rect class="x-tank" x="70" y="170" width="170" height="36" rx="6"/>
+              <rect class="x-tank" x="360" y="170" width="170" height="36" rx="6"/>
+              <path class="x-fuel" d="M240 188 L300 188 L300 70 M360 188 L300 188"/>
+              <path class="x-cable" d="M300 140 L300 300 L300 466 M300 140 L190 210 L95 226 M300 140 L410 210 L505 226 M300 300 L300 500"/>
+              <path class="x-elec" d="M300 120 L300 150 L40 194 M300 150 L560 194 M300 150 L300 505"/>
+              <rect class="x-batt" x="288" y="112" width="24" height="12" rx="2"/>
+              <g class="x-legend mono">
+                <rect x="20" y="470" width="150" height="58" rx="6"/>
+                <path class="x-fuel" d="M32 486 H58"/><text x="66" y="490">Combustível</text>
+                <path class="x-cable" d="M32 502 H58"/><text x="66" y="506">Cabos de comando</text>
+                <path class="x-elec" d="M32 518 H58"/><text x="66" y="522">Elétrica</text>
+              </g>
+            </g>
+            <text class="nose-tag mono" x="300" y="16" text-anchor="middle">PROA ↑</text>
+          </svg>
+          <div class="chips" id="partChips" aria-label="Lista de peças"></div>
+        </div>
+        <article class="card part-info" id="partInfo" aria-live="polite"></article>
+      </div>
+    </section>
+
+    <!-- B · ESCOLA DE VOO -->
+    <section class="view" id="view-escola" data-view="escola" hidden>
+      <div class="view__head">
+        <p class="eyebrow">Seção B · Trilha de aprendizado</p>
+        <h1>Escola de voo</h1>
+        <p class="lede">Oito módulos em ordem, do básico ao pouso. Cada lição termina com uma pergunta. Acerte para marcar como concluída.</p>
+      </div>
+      <div class="school">
+        <ol class="modules" id="moduleList"></ol>
+        <article class="card lesson" id="lesson"></article>
+      </div>
+    </section>
+
+    <!-- C · COCKPIT -->
+    <section class="view" id="view-cockpit" data-view="cockpit" hidden>
+      <div class="view__head">
+        <p class="eyebrow">Seção C · Comandos na prática</p>
+        <h1>Cockpit interativo</h1>
+        <p class="lede">Mexa no manche, nos pedais, na manete e nos flaps. Veja as superfícies de comando se moverem e os seis instrumentos básicos reagirem.</p>
+      </div>
+      <div class="cockpit">
+        <div class="card controls">
+          <div class="scenarios">
+            <span class="label">Cenários</span>
+            <div class="seg">
+              <button type="button" data-scn="cruzeiro">Cruzeiro</button>
+              <button type="button" data-scn="pouso">Aproximação</button>
+              <button type="button" data-scn="estol">Estol</button>
+            </div>
+          </div>
+          <div class="ctl">
+            <label for="cElev">Manche: frente ↔ trás <output id="oElev">0</output></label>
+            <input type="range" id="cElev" min="-100" max="100" value="0">
+            <div class="ctl__ends"><span>Empurrar (nariz desce)</span><span>Puxar (nariz sobe)</span></div>
+          </div>
+          <div class="ctl">
+            <label for="cAil">Manche: esquerda ↔ direita <output id="oAil">0</output></label>
+            <input type="range" id="cAil" min="-100" max="100" value="0">
+            <div class="ctl__ends"><span>Esquerda</span><span>Direita</span></div>
+          </div>
+          <div class="ctl">
+            <label for="cRud">Pedais do leme <output id="oRud">0</output></label>
+            <input type="range" id="cRud" min="-100" max="100" value="0">
+            <div class="ctl__ends"><span>Pedal esquerdo</span><span>Pedal direito</span></div>
+          </div>
+          <div class="ctl">
+            <label for="cThr">Manete de potência <output id="oThr">60%</output></label>
+            <input type="range" id="cThr" min="0" max="100" value="60">
+            <div class="ctl__ends"><span>Marcha lenta</span><span>Potência máxima</span></div>
+          </div>
+          <div class="ctl">
+            <span class="label">Flaps</span>
+            <div class="seg" id="flapSeg">
+              <button type="button" data-flap="0" aria-pressed="true">0°</button>
+              <button type="button" data-flap="10">10°</button>
+              <button type="button" data-flap="20">20°</button>
+              <button type="button" data-flap="30">30°</button>
+            </div>
+          </div>
+          <button type="button" class="btn-ghost" id="centerBtn">Soltar o manche e os pedais</button>
+        </div>
+        <div class="cockpit__main">
+          <div class="card panel">
+            <div class="stall" id="stallWarn" hidden>ESTOL · ALARME SONORO</div>
+            <canvas id="gauges" aria-label="Painel com os seis instrumentos básicos"></canvas>
+          </div>
+          <div class="views">
+            <figure class="card mini">
+              <figcaption class="mono small">VISTA LATERAL · arfagem e profundor</figcaption>
+              <svg viewBox="0 0 300 130" class="mini__svg">
+                <line x1="0" y1="118" x2="300" y2="118" class="horizon"/>
+                <g id="sideGroup">
+                  <path class="m-body" d="M44 64 L70 55 L160 51 L172 36 L222 36 L246 52 L272 56 Q286 60 286 66 L270 74 L64 70 Z"/>
+                  <path class="m-body" d="M46 64 L34 22 L54 22 L82 56 Z"/>
+                  <rect class="m-wing" x="150" y="32" width="84" height="6" rx="3"/>
+                  <rect class="m-body" x="30" y="61" width="36" height="5" rx="2"/>
+                  <g id="sideElev"><rect class="m-surf" x="12" y="61" width="20" height="5" rx="2"/></g>
+                  <line class="m-prop" x1="289" y1="44" x2="289" y2="88"/>
+                  <circle class="m-wheel" cx="200" cy="84" r="6"/>
+                  <circle class="m-wheel" cx="262" cy="80" r="5"/>
+                </g>
+              </svg>
+            </figure>
+            <figure class="card mini">
+              <figcaption class="mono small">VISTA DE TRÁS · rolagem e ailerons</figcaption>
+              <svg viewBox="0 0 300 130" class="mini__svg">
+                <line x1="0" y1="118" x2="300" y2="118" class="horizon"/>
+                <g id="rearGroup">
+                  <rect class="m-wing" x="22" y="44" width="256" height="6" rx="3"/>
+                  <rect class="m-surf" id="ailL" x="22" y="44" width="46" height="6" rx="3"/>
+                  <rect class="m-surf" id="ailR" x="232" y="44" width="46" height="6" rx="3"/>
+                  <circle class="m-body" cx="150" cy="62" r="16"/>
+                  <rect class="m-body" x="146" y="18" width="8" height="34" rx="3"/>
+                  <rect class="m-surf" id="rudR" x="146" y="18" width="8" height="18" rx="3"/>
+                  <rect class="m-body" x="106" y="58" width="88" height="4" rx="2"/>
+                </g>
+              </svg>
+            </figure>
+          </div>
+          <div class="card explain">
+            <p class="label">O que está acontecendo</p>
+            <ul id="explainList"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- D · LABORATÓRIO -->
+    <section class="view" id="view-lab" data-view="lab" hidden>
+      <div class="view__head">
+        <p class="eyebrow">Seção D · Aerodinâmica</p>
+        <h1>Túnel de vento</h1>
+        <p class="lede">Um perfil de asa no túnel. As linhas mostram o ar: azul é ar mais lento (pressão maior), magenta é ar mais rápido (pressão menor). Aumente o ângulo de ataque até o estol.</p>
+      </div>
+      <div class="lab">
+        <div class="card tunnel">
+          <canvas id="tunnel" aria-label="Simulação do fluxo de ar em volta de uma asa"></canvas>
+          <div class="tunnel__legend mono small">
+            <span><i class="sw sw--slow"></i>ar lento · pressão alta</span>
+            <span><i class="sw sw--fast"></i>ar rápido · pressão baixa</span>
+            <span><i class="sw sw--lift"></i>sustentação</span>
+          </div>
+        </div>
+        <div class="card lab-side">
+          <div class="ctl">
+            <label for="lAoa">Ângulo de ataque <output id="oAoa">5°</output></label>
+            <input type="range" id="lAoa" min="-5" max="20" value="5" step="0.5">
+          </div>
+          <div class="ctl">
+            <label for="lSpd">Velocidade <output id="oSpd">100 kt</output></label>
+            <input type="range" id="lSpd" min="40" max="160" value="100">
+          </div>
+          <div class="ctl">
+            <label for="lAlt">Altitude <output id="oAlt">0 ft</output></label>
+            <input type="range" id="lAlt" min="0" max="20000" value="0" step="500">
+          </div>
+          <label class="switch"><input type="checkbox" id="lFlap"><span class="switch__ui" aria-hidden="true"></span>Flaps baixados</label>
+          <div class="readout">
+            <div><span class="label">Coef. de sustentação (C<sub>L</sub>)</span><b id="rCl">0,66</b></div>
+            <div><span class="label">Densidade do ar (ρ)</span><b id="rRho">1,225 kg/m³</b></div>
+            <div><span class="label">Sustentação total</span><b id="rLift">0 kgf</b></div>
+          </div>
+          <div class="meter">
+            <div class="meter__bar"><span id="liftBar"></span><i id="mtowMark"></i></div>
+            <p class="small" id="liftMsg"></p>
+          </div>
+          <svg class="clchart" id="clChart" viewBox="0 0 300 170" role="img" aria-label="Curva de coeficiente de sustentação por ângulo de ataque"></svg>
+          <p class="formula mono small">L = ½ · ρ · V² · S · C<sub>L</sub> &nbsp;·&nbsp; S = 16,2 m²</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- E · GLOSSÁRIO -->
+    <section class="view" id="view-glossario" data-view="glossario" hidden>
+      <div class="view__head">
+        <p class="eyebrow">Seção E · Consulta rápida</p>
+        <h1>Glossário aeronáutico</h1>
+        <p class="lede">Os termos que aparecem no manual, no rádio e nas aulas, em português e em inglês.</p>
+      </div>
+      <input class="search" type="search" id="glossSearch" placeholder="Buscar termo, por exemplo: estol, yaw, flap">
+      <dl class="gloss" id="glossList"></dl>
+    </section>
+  </main>
+
+  <footer class="wrap foot small">Conteúdo educativo. Para voar de verdade, siga o manual da aeronave (POH) e um instrutor habilitado.</footer>
+
+  <script src="app.js?v=1"></script>
+  <script>
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>

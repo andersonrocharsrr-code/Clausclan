@@ -1,0 +1,14 @@
+{
+  "name": "Hangar Escola",
+  "short_name": "Hangar",
+  "description": "Aprenda tudo sobre aviões: peças, comandos, aerodinâmica, motor, instrumentos e manutenção.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef2ef",
+  "theme_color": "#eef2ef",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
