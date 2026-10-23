@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=59">
+  <link rel="stylesheet" href="style.css?v=60">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -305,6 +305,7 @@
         <label>Dia do relatório<input id="relData" type="date"></label>
       </div>
       <pre id="relTexto" class="rel-texto"></pre>
+      <p class="rel-aviso">⚠️ Cliente pagou <b>depois</b> que você já mandou o relatório? Lance esse pagamento no <b>dia seguinte</b>, para não mudar o recebimento do dia que já foi enviado.</p>
       <div class="row-actions">
         <button class="btn btn--primary" id="btnRelEnviar">💬 Mandar relatório</button>
         <button class="btn" id="btnRelCopiar">📋 Copiar</button>
