@@ -1010,8 +1010,8 @@ function drawClChart() {
 
 /* ---------------- E · Glossário ---------------- */
 function renderGloss(q = '') {
-  const n = q.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  const list = GLOSS.filter((g) => !n || g.join(' ').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').includes(n));
+  const n = q.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const list = GLOSS.filter((g) => !n || g.join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(n));
   $('#glossList').innerHTML = list.length
     ? list.map(([t, en, d]) => `<div><dt>${t}<span>${en}</span></dt><dd>${d}</dd></div>`).join('')
     : '<p class="small">Nenhum termo encontrado. Tente outra palavra.</p>';
