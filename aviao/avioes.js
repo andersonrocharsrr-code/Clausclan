@@ -383,8 +383,8 @@ function side747(a) {
   <defs><pattern id="bpGrid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" class="grid-line"/></pattern></defs>
   <rect x="120" y="360" width="1860" height="760" fill="url(#bpGrid)"/>
   ${part('motor', 'Motores', engine(860, 930, 26, 34, 960, true) + engine(1330, 918, 24, 30, 1420, true))}
-  ${part('estabv', 'Estabilizador vertical', '<path d="M1428 724 C1470 712 1502 690 1522 660 L1662 412 L1714 411 L1672 706 L1606 718 Z"/>')}
-  ${part('leme', 'Leme de direção', '<path d="M1714 411 L1746 408 L1724 556 L1704 708 L1672 706 Z"/>')}
+  ${part('estabv', 'Estabilizador vertical', '<path d="M1425 722 C1468 716 1500 700 1522 676 L1668 410 L1716 410 L1694 720 L1690 722 Z"/>')}
+  ${part('leme', 'Leme de direção', '<path d="M1716 410 L1742 410 L1696 722 Z"/>')}
   ${part('trem', 'Trem de pouso', `<path class="strut" d="M338 948 L338 984"/>${wheel(326, 1006, 22)}${wheel(358, 1006, 22)}` + bogie([772, 797, 822, 847], 950, 1004) + bogie([928, 953, 978], 940, 1004) + bogie([1030, 1055, 1080, 1105, 1130], 930, 1006))}
   ${part('fuselagem', 'Fuselagem', `<path d="${fus}"/><path d="M690 948 C700 905 760 888 860 880 L960 914 C900 940 800 962 700 962 Z"/>`)}
   <g class="side-deco" aria-hidden="true">
