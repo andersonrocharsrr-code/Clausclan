@@ -360,8 +360,63 @@ function top(a) {
 </svg>`;
 }
 
+/* ---------- 747-8: prancha em leve perspectiva (nariz à esquerda), desenhada à mão ---------- */
+function side747(a) {
+  const ovals = (x1, x2, yy, skip = []) => {
+    let o = '';
+    for (let xx = x1; xx <= x2; xx += 17) if (!skip.some(([s1, s2]) => xx > s1 && xx < s2)) o += `<ellipse class="bp-win" cx="${xx}" cy="${yy}" rx="4.2" ry="6.5"/>`;
+    return o;
+  };
+  const door = (x0, y0, w, h) => `<rect class="bp-door" x="${x0}" y="${y0}" width="${w}" height="${h}" rx="6"/><rect class="bp-door" x="${x0 + w * 0.32}" y="${y0 + 10}" width="${w * 0.36}" height="${h * 0.22}" rx="3"/><path class="bp-door" d="M${x0 + w * 0.3} ${y0 + h * 0.55} h${w * 0.4}"/>`;
+  const wheel = (cx, cy, rr = 21) => `<circle class="tire" cx="${cx}" cy="${cy}" r="${rr}"/><circle class="hub" cx="${cx}" cy="${cy}" r="${rr * 0.42}"/>`;
+  const bogie = (xs, top, cy) => `<path class="strut" d="M${xs[1]} ${top} L${xs[1]} ${cy - 18} M${xs[0]} ${cy - 18} L${xs[xs.length - 1]} ${cy - 18}"/>` + xs.map((cx) => wheel(cx, cy)).join('');
+  const engine = (cx, cy, rx, ry, rear, far) => `
+    <path class="strut${far ? ' bp-far' : ''}" d="M${cx + 30} ${cy - ry + 6} L${cx + 90} ${cy - ry - 22}"/>
+    <path class="${far ? 'bp-far' : ''}" d="M${cx} ${cy - ry} C${cx + 60} ${cy - ry - 4} ${rear - 40} ${cy - ry + 6} ${rear} ${cy - ry * 0.7} L${rear + 18} ${cy - ry * 0.35} L${rear + 18} ${cy + ry * 0.3} L${rear} ${cy + ry * 0.6} C${rear - 40} ${cy + ry} ${cx + 60} ${cy + ry} ${cx} ${cy + ry} Z"/>
+    <path class="seam" d="M${(cx + rear) / 2 + 20} ${cy - ry + 2} L${(cx + rear) / 2 + 20} ${cy + ry - 4}"/>
+    <ellipse class="bp-lip" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}"/>
+    <ellipse class="inlet" cx="${cx + 4}" cy="${cy}" rx="${rx * 0.62}" ry="${ry * 0.68}"/>
+    <circle class="hub" cx="${cx + 6}" cy="${cy}" r="${ry * 0.14}"/>`;
+  const fus = 'M157 840 C157 800 190 756 262 728 C304 712 342 698 402 694 L700 692 C782 694 842 714 902 720 L1420 722 C1500 722 1560 714 1610 704 L1702 734 C1714 750 1714 778 1702 792 C1640 850 1560 878 1480 898 L700 958 C450 960 300 952 232 926 C182 906 157 876 157 840 Z';
+  return `
+<svg class="plane plane--side plane--bp" data-pv="side" viewBox="120 360 1860 760" role="group" aria-label="${a.nome} visto de lado, em leve perspectiva" hidden>
+  <defs><pattern id="bpGrid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" class="grid-line"/></pattern></defs>
+  <rect x="120" y="360" width="1860" height="760" fill="url(#bpGrid)"/>
+  ${part('motor', 'Motores', engine(860, 930, 26, 34, 960, true) + engine(1330, 918, 24, 30, 1420, true))}
+  ${part('estabv', 'Estabilizador vertical', '<path d="M1428 724 C1470 712 1502 690 1522 660 L1662 412 L1714 411 L1672 706 L1606 718 Z"/>')}
+  ${part('leme', 'Leme de direção', '<path d="M1714 411 L1746 408 L1724 556 L1704 708 L1672 706 Z"/>')}
+  ${part('trem', 'Trem de pouso', `<path class="strut" d="M338 948 L338 984"/>${wheel(326, 1006, 22)}${wheel(358, 1006, 22)}` + bogie([772, 797, 822, 847], 950, 1004) + bogie([928, 953, 978], 940, 1004) + bogie([1030, 1055, 1080, 1105, 1130], 930, 1006))}
+  ${part('fuselagem', 'Fuselagem', `<path d="${fus}"/><path d="M690 948 C700 905 760 888 860 880 L960 914 C900 940 800 962 700 962 Z"/>`)}
+  <g class="side-deco" aria-hidden="true">
+    ${ovals(450, 760, 736, [[548, 600]])}
+    ${ovals(232, 412, 832)}${ovals(520, 732, 830)}${ovals(836, 978, 830, [[880, 905]])}${ovals(1042, 1218, 828)}${ovals(1286, 1478, 826)}
+    ${door(440, 800, 30, 66)}${door(746, 800, 28, 64)}${door(998, 797, 26, 62)}${door(1229, 796, 25, 60)}${door(1498, 794, 21, 56)}${door(552, 700, 34, 54)}
+    <path class="ant" d="M562 694 L568 676 L574 676 L572 694 Z M1206 722 L1212 706 L1218 706 L1216 722 Z M600 958 L606 974 L612 974 L610 958 Z"/>
+    <path class="s-line" d="M210 905 C200 880 202 820 216 800"/>
+    <text class="liv-reg" x="1320" y="856" style="font-size:16px">PT-APR</text>
+  </g>
+  ${part('cabine', 'Cabine de comando', '<path class="jglass" d="M262 744 L282 726 L312 723 L306 744 Z"/><path class="jglass" d="M314 744 L320 724 L346 725 L351 744 Z"/>')}
+  ${part('asa', 'Asa', '<path d="M700 940 C720 900 784 880 864 872 L1862 830 L1868 860 L1240 886 L944 916 C864 926 764 944 700 940 Z"/>')}
+  ${part('flap', 'Flaps', '<path d="M1250 886 Q1286 934 1338 930 L1332 882 Z M1420 878 Q1452 918 1494 916 L1490 873 Z M1590 870 Q1614 900 1646 900 L1644 866 Z"/>')}
+  ${part('motor', 'Motores', engine(1086, 940, 42, 56, 1226, false) + engine(1508, 928, 40, 52, 1656, false))}
+  ${part('estabh', 'Estabilizador horizontal', '<path d="M1556 776 C1572 762 1622 754 1702 750 L1950 731 L1946 739 L1704 786 C1640 796 1580 796 1562 790 Z"/>')}
+  ${part('profundor', 'Profundor', '<path d="M1704 786 L1946 739 L1942 747 L1708 798 Z"/>')}
+  ${part('apu', 'APU', '<rect class="hit" fill="transparent" x="1686" y="740" width="40" height="50"/><ellipse class="apu-dot" cx="1704" cy="764" rx="4" ry="9"/>')}
+  ${part('pitot', 'Tubos de pitot', '<rect class="hit" fill="transparent" x="300" y="846" width="50" height="34"/><path class="strut" d="M322 858 l10 3 M326 872 l9 2"/>')}
+  ${part('luzes', 'Luzes externas', '<circle class="beacon" cx="902" cy="718" r="6"/><circle class="beacon" cx="760" cy="960" r="6"/><circle class="nav-red" cx="1864" cy="844" r="7"/><circle class="nav-white" cx="1712" cy="772" r="5"/>')}
+  <g class="dim mono" aria-hidden="true">
+    <path d="M164 1074 L1866 1074 M164 1058 L164 1090 M1866 1058 L1866 1090"/>
+    <text x="1015" y="1112" text-anchor="middle" style="font-size:28px">COMPRIMENTO ${a.specs.comp}</text>
+    <path d="M1904 406 L1904 1022 M1886 406 L1922 406 M1886 1022 L1922 1022"/>
+    <text x="0" y="0" text-anchor="middle" transform="translate(1888 714) rotate(-90)" style="font-size:28px">ALTURA ${a.specs.alt}</text>
+    <text x="170" y="400" style="font-size:24px">← PROA</text>
+  </g>
+</svg>`;
+}
+
 /* ---------- Vista lateral ---------- */
 function side(a) {
+  if (a.id === 'b747') return side747(a);
   const g = geo(a);
   const k = Math.min(500 / a.L, 186 / a.H);
   const G = 246, xN = 40 + a.L * k;

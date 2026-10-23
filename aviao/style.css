@@ -205,6 +205,11 @@ main { padding-block: 24px 40px; }
 .part > path.wing-s { fill: var(--shade); }
 .part > path.seam { fill: none; stroke: var(--ink); stroke-opacity: .35; stroke-width: 1; }
 .side-deco .ant { fill: var(--ink); fill-opacity: .7; }
+.side-deco .bp-win { fill: none; stroke: var(--ink); stroke-width: 1; }
+.side-deco .bp-door { fill: none; stroke: var(--ink); stroke-width: 1.1; }
+.part > path.bp-far { fill: var(--shade); }
+.part > ellipse.bp-lip { fill: var(--plane); stroke: var(--ink); stroke-width: 1.4; }
+.plane--bp .dim text { font-size: 28px; }
 .side-deco .win { fill: var(--sky); fill-opacity: .8; stroke: var(--ink); stroke-opacity: .55; stroke-width: .7; }
 .part > path.livery-fin { fill: var(--liv-orange); }
 .livery { pointer-events: none; }
