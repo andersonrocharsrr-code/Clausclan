@@ -288,6 +288,7 @@ const GLOSS = [
 const TABS = ['pecas', 'escola', 'cockpit', 'lab', 'glossario', 'catalogo'];
 let current = null;
 function showTab(id, push) {
+  if (typeof closeSheet === 'function') closeSheet();
   if (!TABS.includes(id)) id = 'pecas';
   current = id;
   $$('.view').forEach((v) => { v.hidden = v.dataset.view !== id; });
@@ -349,7 +350,7 @@ function setCraft(id) {
   applyXray(); setPlaneView(planeView);
   selectPart(c.parts[selPart] ? selPart : 'asa');
 }
-function selectPart(id) {
+function selectPart(id, open) {
   const p = cur().parts[id];
   if (!p) return;
   selPart = id;
@@ -361,6 +362,7 @@ function selectPart(id) {
   $$('.chip', $('#partChips')).forEach((ch) => ch.setAttribute('aria-pressed', String(ch.dataset.chip === (p.pai || id))));
   const subs = Object.entries(cur().parts).filter(([, v]) => v.pai === id);
   $('#partInfo').innerHTML = `
+    <div class="sheet-bar"><span class="sheet-grip" aria-hidden="true"></span><button type="button" class="sheet-close" data-close-sheet aria-label="Fechar">Fechar ✕</button></div>
     ${p.pai ? `<button type="button" class="link-btn" data-sub="${p.pai}">← ${cur().parts[p.pai].nome}</button>` : ''}
     <div><span class="part-info__tag">${p.sistema}</span> <span class="small">${cur().nome}</span></div>
     <h2>${p.nome}</h2>
@@ -374,7 +376,55 @@ function selectPart(id) {
     <p class="tip"><b>Curiosidade.</b> ${p.curio}</p>
     ${subs.length ? `<div class="subparts"><span class="label">Partes do motor no desenho</span><div class="chips">${subs.map(([k, v]) => `<button type="button" class="chip" data-sub="${k}"><b>${v.num}</b> ${v.nome}</button>`).join('')}</div></div>` : ''}
     ${p.ver ? `<button type="button" class="link-btn" data-tab="${p.ver}">${p.ver === 'lab' ? 'Ver a asa no túnel de vento' : 'Ver em ação no cockpit'} →</button>` : ''}`;
+  if (open) openSheet(); else if (sheetOpen()) $('#partInfo').scrollTop = 0;
 }
+
+/* No celular, a ficha abre numa aba que sobe de baixo; no computador ela fica ao lado do desenho. */
+const sheetMQ = window.matchMedia('(max-width: 900px)');
+let sheetReturn = null;
+const sheetOpen = () => $('#partInfo').classList.contains('is-open');
+function openSheet() {
+  if (!sheetMQ.matches) return;
+  const el = $('#partInfo');
+  if (!sheetOpen()) sheetReturn = document.activeElement;
+  el.classList.add('is-open');
+  el.setAttribute('role', 'dialog');
+  el.setAttribute('aria-modal', 'true');
+  el.setAttribute('aria-label', el.querySelector('h2')?.textContent || 'Peça');
+  el.scrollTop = 0;
+  $('#sheetBackdrop').hidden = false;
+  document.documentElement.classList.add('sheet-lock');
+  el.querySelector('.sheet-close')?.focus({ preventScroll: true });
+}
+function closeSheet() {
+  if (!sheetOpen()) return;
+  const el = $('#partInfo');
+  el.classList.remove('is-open');
+  el.style.transform = '';
+  el.removeAttribute('role'); el.removeAttribute('aria-modal'); el.removeAttribute('aria-label');
+  $('#sheetBackdrop').hidden = true;
+  document.documentElement.classList.remove('sheet-lock');
+  if (sheetReturn && sheetReturn.isConnected) sheetReturn.focus({ preventScroll: true });
+  sheetReturn = null;
+}
+$('#sheetBackdrop').addEventListener('click', closeSheet);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && sheetOpen()) closeSheet(); });
+sheetMQ.addEventListener?.('change', () => { if (!sheetMQ.matches) closeSheet(); });
+// arrastar a barra do topo para baixo fecha a aba
+let dragY = null;
+$('#partInfo').addEventListener('touchstart', (e) => { if (sheetOpen() && e.target.closest('.sheet-bar')) dragY = e.touches[0].clientY; }, { passive: true });
+$('#partInfo').addEventListener('touchmove', (e) => {
+  if (dragY === null) return;
+  const d = Math.max(0, e.touches[0].clientY - dragY);
+  $('#partInfo').style.transform = `translateY(${d}px)`;
+}, { passive: true });
+$('#partInfo').addEventListener('touchend', (e) => {
+  if (dragY === null) return;
+  const d = e.changedTouches[0].clientY - dragY;
+  dragY = null;
+  $('#partInfo').style.transform = '';
+  if (d > 70) closeSheet();
+});
 function setPlaneView(v) {
   planeView = v;
   $$('[data-pv]', holder()).forEach((svg) => svg.toggleAttribute('hidden', svg.dataset.pv !== v));
@@ -397,19 +447,20 @@ $('#craftList').addEventListener('click', (e) => {
 const planeCard = $('.plane-card');
 planeCard.addEventListener('click', (e) => {
   const g = e.target.closest('svg [data-part]');
-  if (g) selectPart(g.dataset.part);
+  if (g) selectPart(g.dataset.part, true);
 });
 planeCard.addEventListener('keydown', (e) => {
   const g = e.target.closest('svg [data-part]');
-  if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); selectPart(g.dataset.part); }
+  if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); selectPart(g.dataset.part, true); }
 });
 $('#partInfo').addEventListener('click', (e) => {
+  if (e.target.closest('[data-close-sheet]')) { closeSheet(); return; }
   const b = e.target.closest('[data-sub]');
-  if (b) selectPart(b.dataset.sub);
+  if (b) selectPart(b.dataset.sub, true);
 });
 $('#partChips').addEventListener('click', (e) => {
   const c = e.target.closest('[data-chip]');
-  if (c) selectPart(c.dataset.chip);
+  if (c) selectPart(c.dataset.chip, true);
 });
 $('#xrayToggle').addEventListener('change', applyXray);
 
@@ -979,7 +1030,7 @@ document.addEventListener('click', (e) => {
   if (!b) return;
   showTab('pecas', true);
   setCraft('b747');
-  selectPart(b.dataset.open747);
+  selectPart(b.dataset.open747, true);
 });
 
 /* ---------------- Início ---------------- */

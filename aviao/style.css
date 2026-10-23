@@ -173,6 +173,7 @@ main { padding-block: 24px 40px; }
 .chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
 .part-info { display: grid; gap: 14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 110px); }
+.sheet-bar, .sheet-backdrop { display: none; }
 .part-info__tag { display: inline-block; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--blue); border: 1px solid var(--blue); border-radius: 3px; padding: 1px 6px; }
 .facts { display: grid; gap: 12px; margin: 0; }
 .facts div { display: grid; gap: 2px; }
@@ -401,7 +402,26 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 
 @media (max-width: 900px) {
   .explorer, .school, .cockpit, .lab { grid-template-columns: minmax(0, 1fr); }
-  .part-info { position: static; }
+  /* ficha da peça vira uma aba que sobe de baixo */
+  .part-info {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; top: auto;
+    max-height: 82vh; max-height: 82dvh; overflow-y: auto; overscroll-behavior: contain;
+    border-radius: 16px 16px 0 0; border-bottom: 0;
+    padding-top: 0; padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    padding-left: max(18px, env(safe-area-inset-left, 0px)); padding-right: max(18px, env(safe-area-inset-right, 0px));
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, .35);
+    transform: translateY(105%); visibility: hidden;
+    transition: transform .28s ease, visibility 0s linear .28s;
+  }
+  .part-info.is-open { transform: none; visibility: visible; transition: transform .28s ease, visibility 0s; }
+  .sheet-bar {
+    display: flex; justify-content: flex-end; align-items: center; position: sticky; top: 0; z-index: 1;
+    margin: 0 -2px; padding: 14px 0 10px; background: var(--panel); border-bottom: 1px solid var(--line);
+  }
+  .sheet-grip { position: absolute; left: 50%; top: 7px; width: 42px; height: 5px; margin-left: -21px; border-radius: 3px; background: var(--line); }
+  .sheet-close { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 6px 14px; font-size: 14px; font-weight: 500; cursor: pointer; }
+  .sheet-backdrop:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 29; background: rgba(5, 10, 16, .5); }
+  html.sheet-lock, html.sheet-lock body { overflow: hidden; }
   .modules { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
 }
 @media (max-width: 560px) {
