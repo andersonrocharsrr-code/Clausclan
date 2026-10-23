@@ -440,9 +440,43 @@ function top747(a) {
   const leBand = LE.slice(1, -1).concat(LE.slice(1, -1).reverse().map(([x, y]) => [x - 3, y + 14]));
   const wing = LE.concat([[900, 778], [880, 776], [800, 727], [700, 673], [600, 619], [507, 568]]);
   const eng = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+  // raio-X: tanques entre as longarinas, tubulações ao longo delas
+  const leAt = (x) => { for (let i = 1; i < LE.length; i++) if (x <= LE[i][0]) { const [x0, y0] = LE[i - 1], [x1, y1] = LE[i]; return y0 + (y1 - y0) * (x - x0) / (x1 - x0); } return LE[LE.length - 1][1]; };
+  const r = (n) => Math.round(n);
+  const tank = (x0, x1) => { const xs = []; for (let x = x0; x <= x1; x += (x1 - x0) / 6) xs.push(x); return xs.map((x) => [r(x), r(leAt(x) + 17)]).concat(xs.slice().reverse().map((x) => [r(x), r(te(x) - 50)])); };
+  const line = (pts) => `M${pts.map(([x, y]) => `${r(x)} ${r(y)}`).join(' L')}`;
+  const lines = (pts) => `${line(pts)} ${line(mir(pts))}`;
+  const spar = (x0, x1, d, base) => { const xs = []; for (let x = x0; x <= x1; x += 20) xs.push(x); xs.push(x1); return xs.map((x) => [x, base(x) + d]); };
+  const ENG_X = [640, 735];
+  const fuel = lines([[461, 470], [507, leAt(512) + 24], ...spar(512, 735, 24, leAt)])
+    + ' ' + ENG_X.map((x) => lines([[x, leAt(x) + 24], [x, x === 640 ? 474 : 566]])).join(' ')
+    + ' M470 556 L470 930 M452 556 L452 930';
+  const hyd = lines([[461, 610], [507, te(507) - 37], ...spar(520, 845, -37, te), [848, te(848) - 8]])
+    + ' M466 610 L466 1006 ' + lines([[466, 1006], [604, 1062]]) + ' M461 1006 L461 1086';
+  const elec = lines([[456, 152], [456, 446], [507, leAt(512) + 36], ...spar(520, 880, 36, leAt), [905, 764]])
+    + ' ' + ENG_X.map((x) => lines([[x + 9, leAt(x + 9) + 36], [x + 9, x === 640 ? 486 : 578]])).join(' ')
+    + ' M456 446 L456 1098';
+  const xray = `
+  <g class="xray" hidden>
+    <path class="x-tank" d="${path(tank(516, 632))} ${path(mir(tank(516, 632)))} ${path(tank(648, 752))} ${path(mir(tank(648, 752)))} ${path(tank(764, 832))} ${path(mir(tank(764, 832)))}"/>
+    <rect class="x-tank" x="424" y="396" width="74" height="158" rx="10"/>
+    <path class="x-tank" d="${path([[478, 914], [538, 966], [552, 994], [478, 984]])} ${path(mir([[478, 914], [538, 966], [552, 994], [478, 984]]))}"/>
+    <path class="x-fuel" d="${fuel}"/>
+    <path class="x-cable" d="${hyd}"/>
+    <path class="x-elec" d="${elec}"/>
+    <rect class="x-batt" x="447" y="126" width="28" height="26" rx="4"/>
+    <g class="x-legend">
+      <rect x="20" y="880" width="252" height="128" rx="8"/>
+      <rect class="x-tank" x="36" y="898" width="28" height="16" rx="3"/><text x="76" y="912">Tanques de combustível</text>
+      <path class="x-fuel" d="M36 936 H64"/><text x="76" y="941">Combustível</text>
+      <path class="x-cable" d="M36 964 H64"/><text x="76" y="969">Hidráulica (comandos)</text>
+      <path class="x-elec" d="M36 992 H64"/><text x="76" y="997">Elétrica</text>
+    </g>
+  </g>`;
   return `
 <svg class="plane plane--photo" data-pv="top" viewBox="0 0 923 1108" role="group" aria-label="${a.nome} visto de cima">
-  <image href="assets/747-superior.png" x="0" y="0" width="923" height="1108" preserveAspectRatio="none"/>
+  <g class="airframe"><image href="assets/747-superior.png" x="0" y="0" width="923" height="1108" preserveAspectRatio="none"/></g>
+  ${xray}
   ${part('fuselagem', 'Fuselagem', `<path d="${path([[461, 8], [486, 34], [500, 80], [506, 140], [507, 330], [507, 860], [496, 960], [480, 1060], [461, 1104], [442, 1060], [426, 960], [415, 860], [415, 330], [416, 140], [422, 80], [436, 34]])}"/>`)}
   ${part('asa', 'Asa', both(wing))}
   ${part('slat', 'Slats', both(leBand))}

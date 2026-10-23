@@ -402,8 +402,7 @@ hintMQ.addEventListener?.('change', () => { if (!hintMQ.matches) hideHint(); });
 function setPlaneView(v) {
   planeView = v;
   $$('[data-pv]', holder()).forEach((svg) => svg.toggleAttribute('hidden', svg.dataset.pv !== v));
-  // o 747 usa a prancha de referência, sem a camada de raio-X
-  $('#xrayLabel').hidden = v !== 'top' || craft === 'b747';
+  $('#xrayLabel').hidden = v !== 'top';
   $$('#viewSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pview === v)));
 }
 function applyXray() {

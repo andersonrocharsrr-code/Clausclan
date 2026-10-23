@@ -167,6 +167,15 @@ main { padding-block: 24px 40px; }
 @keyframes flow { to { stroke-dashoffset: -20; } }
 .x-legend rect { fill: var(--panel); stroke: var(--line); }
 .x-legend text { fill: var(--ink); font-size: 11px; }
+/* raio-X sobre a prancha azul do 747: cores fortes para aparecer no fundo escuro */
+.plane--photo .airframe.is-xray { opacity: 1; filter: brightness(.55) saturate(.85); }
+.plane--photo .x-tank { fill: #3dff8f; fill-opacity: .2; stroke: #3dff8f; stroke-width: 1.6; }
+.plane--photo .x-fuel { stroke: #3dff8f; stroke-width: 3; }
+.plane--photo .x-cable { stroke: #ff5fb8; stroke-width: 3; }
+.plane--photo .x-elec { stroke: #ffd24a; stroke-width: 3; }
+.plane--photo .x-batt { fill: #ffd24a; }
+.plane--photo .x-legend > rect:first-child { fill: rgba(8, 20, 46, .88); stroke: #9fb6d6; }
+.plane--photo .x-legend text { fill: #f3f6fb; font-family: var(--body); font-size: 17px; }
 .nose-tag { fill: var(--muted); font-size: 11px; letter-spacing: .1em; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip {
