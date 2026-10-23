@@ -327,12 +327,17 @@ function atualizarVer(nome) {
 // Lançamentos ficam travados: só mudam com "Editar" → "✓ Lançar". Sair da linha sem lançar desfaz o que foi digitado.
 // Linha nova (+ Digitar) é um rascunho: só entra nas contas quando é lançada.
 const rascunhos = {};
-// Notas feitas editadas em outro dia: o que foi acrescentado vira um acréscimo daquele dia (o antigo não muda de dia).
+// Notas feitas e notas antecipadas editadas em outro dia: o que foi acrescentado vira um acréscimo daquele dia
+// (o antigo não muda de dia). Ex.: antecipado de 100 ontem + 50 hoje na mesma nota → os 50 entram no recebido de hoje.
 const fmtDia = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : '');
 function aplicarEdicao(nome, item, novo) {
   if (nome === 'feitas' && item.data && novo.data === item.data && item.data !== hoje()) {
     const d = { ab: numero(novo.ab) - numero(item.ab), rp: numero(novo.rp) - numero(item.rp), valor: arred(numero(novo.valor) - numero(item.valor)) };
     if (d.ab || d.rp || d.valor) (item.acrescimos ||= []).push({ data: hoje(), ...d });
+  }
+  if (nome === 'antecipadas' && item.dia && novo.dia === item.dia && item.dia !== hoje()) {
+    const valor = arred(numero(novo.valor) - numero(item.valor));
+    if (valor) (item.acrescimos ||= []).push({ data: hoje(), valor });
   }
   Object.assign(item, novo);
 }
@@ -365,8 +370,8 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
     (nome.startsWith('notas') && modo === 'travada' ? `<div class="item__extra">${item.faixa ? `<span class="tag">${esc(item.faixa)}%</span>` : ''}
       <button class="item__mover">↕ Mover para ${nome === 'notas25' ? '40% e 50%' : '25%'}</button></div>` : '') +
     (nome === 'parciais' ? `<span class="item__devendo">ficou devendo ${R$(item.devendo)}</span>` : '') +
-    (acr.length ? `<p class="item__acr">Lançado em ${fmtDia(item.data)} · ${acr.join(' · ')}</p>` : '') +
-    (edita && nome === 'feitas' && modo === 'editando' && item.data !== hoje()
+    (acr.length ? `<p class="item__acr">Lançado em ${fmtDia(item.data || item.dia)} · ${acr.join(' · ')}</p>` : '') +
+    (edita && (nome === 'feitas' || nome === 'antecipadas') && modo === 'editando' && (item.data || item.dia) && (item.data || item.dia) !== hoje()
       ? `<p class="item__dica">O valor que você acrescentar entra no relatório de hoje (${fmtDia(hoje())}).</p>` : '') +
     (item.nota ? `<p class="item__nota">⚠ ${esc(item.nota)}</p>` : '');
 
@@ -1658,8 +1663,14 @@ function relatorio(dia) {
   const pagas25 = st.notas25.filter((n) => ate(n.dia));
   const pagas4050 = st.notas4050.filter((n) => ate(n.dia));
   const pagas = [...pagas25, ...pagas4050];
-  const antecDia = st.antecipadas.filter((a) => a.dia === dia);
+  // Notas antecipadas por dia: o lançamento original no dia dele e cada acréscimo no dia em que foi feito.
+  const antecPartes = st.antecipadas.flatMap((a) => {
+    const ac = a.acrescimos || [];
+    return [{ dia: a.dia, valor: arred(numero(a.valor) - ac.reduce((t, x) => t + numero(x.valor), 0)) }, ...ac.map((x) => ({ dia: x.data, valor: x.valor }))];
+  });
+  const antecDia = antecPartes.filter((a) => a.dia === dia);
   const antecTotal = st.antecipadas.filter((a) => Number(a.valor) > 0 && ate(a.dia));
+  const antecTotalValor = soma(antecPartes.filter((a) => ate(a.dia)));
   // Notas feitas por dia: o lançamento original no dia dele e cada acréscimo no dia em que foi feito.
   const parcelas = st.feitas.flatMap((f) => {
     const ac = f.acrescimos || [];
@@ -1678,7 +1689,7 @@ function relatorio(dia) {
   const parcQtd = (l) => l.reduce((t, x) => t + qtdParcial(x), 0);
   const recebidoDia = arred(soma(n25) + soma(n4050) + pepDia.reduce((t, v) => t + v, 0)
     + soma(antecDia) + soma(parcDia));
-  const recebidoTotal = arred(soma(pagas) + pepTotal.reduce((t, v) => t + v, 0) + soma(antecTotal) + parcPagoTotal);
+  const recebidoTotal = arred(soma(pagas) + pepTotal.reduce((t, v) => t + v, 0) + antecTotalValor + parcPagoTotal);
   const { qt: emBrancoQt, valor: emBrancoValor } = notasEmBranco(ate);
   const depDia = st.depositos.filter((d) => d.data === dia);
   const depAte = st.depositos.filter((d) => ate(d.data));
@@ -1712,7 +1723,7 @@ function relatorio(dia) {
     `Nt pg total: ${qt(pagas.length)}`,
     '',
     `Nt antecipada: ${qt(antecTotal.length)}`,
-    `Valor: ${vl(soma(antecTotal))}`,
+    `Valor: ${vl(antecTotalValor)}`,
     `Nt avista: ${qt(rel.avistaQt)}`,
     `Valor: ${vl(rel.avistaValor)}`,
     '',
