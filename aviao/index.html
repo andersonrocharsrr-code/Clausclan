@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
   <header class="top">
@@ -47,8 +47,10 @@
       <div class="view__head">
         <p class="eyebrow">Seção A · Exploração visual</p>
         <h1>Toque numa peça do avião</h1>
-        <p class="lede">Modelo baseado no Cessna 172, o avião de treinamento mais fabricado da história. Ligue o raio‑X para ver combustível, cabos de comando e fiação.</p>
+        <p class="lede" id="craftLede">Modelo baseado no Cessna 172, o avião de treinamento mais fabricado da história. Ligue o raio‑X para ver combustível, cabos de comando e fiação.</p>
       </div>
+      <div class="crafts" id="craftList" role="group" aria-label="Escolha o avião"></div>
+      <div class="craft-specs" id="craftSpecs"></div>
       <div class="explorer">
         <div class="card plane-card">
           <div class="plane-card__bar">
@@ -58,7 +60,8 @@
             </div>
             <label class="switch" id="xrayLabel"><input type="checkbox" id="xrayToggle"><span class="switch__ui" aria-hidden="true"></span>Raio‑X</label>
           </div>
-          <svg class="plane" id="planeSvg" viewBox="0 0 600 540" role="group" aria-label="Avião visto de cima">
+          <div id="c172Views">
+          <svg class="plane" id="planeSvg" data-pv="top" viewBox="0 0 600 540" role="group" aria-label="Avião visto de cima">
             <defs>
               <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
                 <path d="M20 0H0V20" fill="none" class="grid-line"/>
@@ -168,7 +171,7 @@
             </g>
             <text class="nose-tag mono" x="300" y="18" text-anchor="middle">PROA ↑</text>
           </svg>
-          <svg class="plane plane--side" id="planeSide" viewBox="0 0 600 290" role="group" aria-label="Avião visto de lado" hidden>
+          <svg class="plane plane--side" id="planeSide" data-pv="side" viewBox="0 0 600 290" role="group" aria-label="Avião visto de lado" hidden>
             <defs>
               <linearGradient id="pSideY" x1="0" x2="0" y1="0" y2="1">
                 <stop offset="0" style="stop-color:var(--plane)"/>
@@ -261,9 +264,16 @@
               <text x="560" y="20" text-anchor="end">PROA →</text>
             </g>
           </svg>
+          </div>
+          <div id="jetViews" hidden></div>
           <div class="chips" id="partChips" aria-label="Lista de peças"></div>
         </div>
         <article class="card part-info" id="partInfo" aria-live="polite"></article>
+      </div>
+      <div class="card compare">
+        <h2>Comparar aviões</h2>
+        <p class="small">Valores aproximados das versões mais comuns. A coluna destacada é o avião selecionado.</p>
+        <div class="table-wrap"><table id="compareTable"></table></div>
       </div>
     </section>
 
@@ -498,7 +508,8 @@
 
   <footer class="wrap foot small">Conteúdo educativo. Para voar de verdade, siga o manual da aeronave (POH) e um instrutor habilitado.</footer>
 
-  <script src="app.js?v=5"></script>
+  <script src="avioes.js?v=6"></script>
+  <script src="app.js?v=6"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       navigator.serviceWorker.register('sw.js').catch(() => {});

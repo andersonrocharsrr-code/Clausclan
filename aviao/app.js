@@ -274,6 +274,14 @@ const GLOSS = [
   ['Arredondamento', 'flare', 'Levantar o nariz pouco antes do toque para pousar suave.'],
   ['Pré-voo', 'preflight', 'Inspeção da aeronave seguindo o checklist antes de cada voo.'],
   ['CG', 'center of gravity', 'Centro de gravidade: ponto onde o peso do avião se concentra.'],
+  ['APU', 'auxiliary power unit', 'Pequena turbina na cauda dos jatos que gera energia e ar comprimido com os motores desligados.'],
+  ['Slat', 'slat', 'Superfície no bordo de ataque que desliza para frente e atrasa o estol.'],
+  ['Spoiler', 'spoiler', 'Painel em cima da asa que sobe para frear o avião e reduzir a sustentação.'],
+  ['Winglet', 'winglet', 'Ponta de asa curvada para cima que reduz o arrasto induzido.'],
+  ['Turbofan', 'turbofan', 'Motor a jato com um fan grande na frente; a maior parte do ar passa por fora do núcleo.'],
+  ['Fly-by-wire', 'fly-by-wire', 'Comandos elétricos: o manche manda sinais a computadores, que movem as superfícies.'],
+  ['Sidestick', 'sidestick', 'Manche lateral, pequeno, usado nos aviões fly-by-wire da Airbus e da Embraer.'],
+  ['Enflechamento', 'sweep', 'Inclinação da asa para trás, que permite voar mais perto da velocidade do som.'],
 ];
 
 /* ---------------- Abas ---------------- */
@@ -297,21 +305,57 @@ document.addEventListener('click', (e) => {
 });
 
 /* ---------------- A · Explorador ---------------- */
-let selPart = null;
+// O Cessna é desenhado à mão no HTML; os jatos vêm de avioes.js, gerados a partir das medidas reais.
+const CRAFTS = {
+  c172: {
+    id: 'c172', nome: 'Cessna 172', sub: 'Treinamento · 4 lugares', parts: PARTS, order: PART_ORDER,
+    lede: 'O Cessna 172 é o avião de treinamento mais fabricado da história. Ligue o raio‑X para ver combustível, cabos de comando e fiação.',
+    specs: { fab: 'Cessna (EUA)', voo: '1955', env: '11,00 m', comp: '8,28 m', alt: '2,72 m', pmd: '1.157 kg', mot: '1 × Lycoming IO-360 (180 hp)', pax: '3 + piloto', cru: '124 kt · 230 km/h', alc: '1.180 km', teto: '14.000 ft' },
+  },
+};
+(window.HangarJets ? HangarJets.list : []).forEach((a) => { CRAFTS[a.id] = { ...a, parts: HangarJets.parts(a), order: HangarJets.order(a) }; });
+const SPEC_ROWS = [['fab', 'Fabricante'], ['voo', 'Primeiro voo'], ['env', 'Envergadura'], ['comp', 'Comprimento'], ['alt', 'Altura'], ['pmd', 'Peso máx. de decolagem'], ['mot', 'Motores'], ['pax', 'Passageiros'], ['cru', 'Cruzeiro'], ['alc', 'Alcance'], ['teto', 'Teto']];
+let craft = 'c172', selPart = null, planeView = 'top';
+const cur = () => CRAFTS[craft];
+const holder = () => (craft === 'c172' ? $('#c172Views') : $('#jetViews'));
+
 function renderChips() {
-  $('#partChips').innerHTML = PART_ORDER.map((k) =>
-    `<button type="button" class="chip" data-chip="${k}" aria-pressed="false">${PARTS[k].nome.replace(/ \(.*\)/, '')}</button>`).join('');
+  const c = cur();
+  $('#partChips').innerHTML = c.order.map((k) =>
+    `<button type="button" class="chip" data-chip="${k}" aria-pressed="false">${c.parts[k].nome.replace(/ \(.*\)/, '')}</button>`).join('');
+}
+function renderCrafts() {
+  $('#craftList').innerHTML = Object.values(CRAFTS).map((c) =>
+    `<button type="button" class="craft" data-craft="${c.id}" aria-pressed="${c.id === craft}"><b>${c.nome}</b><span>${c.sub}</span></button>`).join('');
+  const sp = cur().specs;
+  $('#craftSpecs').innerHTML = [['env', 'Envergadura'], ['comp', 'Comprimento'], ['pmd', 'Peso máx.'], ['pax', 'Passageiros'], ['cru', 'Cruzeiro'], ['mot', 'Motores']]
+    .map(([k, t]) => `<div><span class="label">${t}</span><b>${sp[k]}</b></div>`).join('');
+  const list = Object.values(CRAFTS);
+  $('#compareTable').innerHTML = `<thead><tr><th></th>${list.map((c) => `<th class="${c.id === craft ? 'is-cur' : ''}">${c.nome}</th>`).join('')}</tr></thead>
+    <tbody>${SPEC_ROWS.map(([k, t]) => `<tr><th scope="row">${t}</th>${list.map((c) => `<td class="${c.id === craft ? 'is-cur' : ''}">${c.specs[k]}</td>`).join('')}</tr>`).join('')}</tbody>`;
+}
+function setCraft(id) {
+  if (!CRAFTS[id]) return;
+  craft = id;
+  const c = cur();
+  $('#c172Views').hidden = id !== 'c172';
+  $('#jetViews').hidden = id === 'c172';
+  if (id !== 'c172') $('#jetViews').innerHTML = HangarJets.top(c) + HangarJets.side(c);
+  $('#craftLede').textContent = c.lede;
+  renderCrafts(); renderChips();
+  applyXray(); setPlaneView(planeView);
+  selectPart(c.parts[selPart] ? selPart : 'asa');
 }
 function selectPart(id) {
-  const p = PARTS[id];
+  const p = cur().parts[id];
   if (!p) return;
   selPart = id;
-  // Os ailerons não aparecem de lado: volta para a vista de cima.
-  if (planeView === 'side' && !$(`#planeSide [data-part="${id}"]`)) setPlaneView('top');
-  $$('.part').forEach((g) => g.classList.toggle('is-sel', g.dataset.part === id));
-  $$('.chip').forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.chip === id)));
+  // Peças que não aparecem de lado (ailerons, slats, spoilers): volta para a vista de cima.
+  if (planeView === 'side' && !holder().querySelector(`[data-pv="side"] [data-part="${id}"]`)) setPlaneView('top');
+  $$('.part', holder()).forEach((g) => g.classList.toggle('is-sel', g.dataset.part === id));
+  $$('.chip').forEach((ch) => ch.setAttribute('aria-pressed', String(ch.dataset.chip === id)));
   $('#partInfo').innerHTML = `
-    <div><span class="part-info__tag">${p.sistema}</span></div>
+    <div><span class="part-info__tag">${p.sistema}</span> <span class="small">${cur().nome}</span></div>
     <h2>${p.nome}</h2>
     <div class="spec">${p.spec.map(([k, v]) => `<div><span class="label">${k}</span><b>${v}</b></div>`).join('')}</div>
     <dl class="facts">
@@ -323,36 +367,39 @@ function selectPart(id) {
     <p class="tip"><b>Curiosidade.</b> ${p.curio}</p>
     ${p.ver ? `<button type="button" class="link-btn" data-tab="${p.ver}">${p.ver === 'lab' ? 'Ver a asa no túnel de vento' : 'Ver em ação no cockpit'} →</button>` : ''}`;
 }
-let planeView = 'top';
 function setPlaneView(v) {
   planeView = v;
-  $('#planeSvg').toggleAttribute('hidden', v !== 'top');
-  $('#planeSide').toggleAttribute('hidden', v !== 'side');
+  $$('[data-pv]', holder()).forEach((svg) => svg.toggleAttribute('hidden', svg.dataset.pv !== v));
   $('#xrayLabel').hidden = v !== 'top';
   $$('#viewSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pview === v)));
+}
+function applyXray() {
+  const on = $('#xrayToggle').checked;
+  $$('.xray', holder()).forEach((x) => x.toggleAttribute('hidden', !on));
+  $$('.airframe', holder()).forEach((x) => x.classList.toggle('is-xray', on));
 }
 $('#viewSeg').addEventListener('click', (e) => {
   const b = e.target.closest('[data-pview]');
   if (b) setPlaneView(b.dataset.pview);
 });
-$$('.plane').forEach((svg) => {
-  svg.addEventListener('click', (e) => {
-    const g = e.target.closest('[data-part]');
-    if (g) selectPart(g.dataset.part);
-  });
-  svg.addEventListener('keydown', (e) => {
-    const g = e.target.closest('[data-part]');
-    if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); selectPart(g.dataset.part); }
-  });
+$('#craftList').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-craft]');
+  if (b) setCraft(b.dataset.craft);
+});
+const planeCard = $('.plane-card');
+planeCard.addEventListener('click', (e) => {
+  const g = e.target.closest('svg [data-part]');
+  if (g) selectPart(g.dataset.part);
+});
+planeCard.addEventListener('keydown', (e) => {
+  const g = e.target.closest('svg [data-part]');
+  if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); selectPart(g.dataset.part); }
 });
 $('#partChips').addEventListener('click', (e) => {
   const c = e.target.closest('[data-chip]');
   if (c) selectPart(c.dataset.chip);
 });
-$('#xrayToggle').addEventListener('change', (e) => {
-  $('#xray').toggleAttribute('hidden', !e.target.checked);
-  $('#airframe').classList.toggle('is-xray', e.target.checked);
-});
+$('#xrayToggle').addEventListener('change', applyXray);
 
 /* ---------------- B · Escola ---------------- */
 let done = store.get('hangar-done', []);
@@ -878,7 +925,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', r
 new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
 
-renderChips(); selectPart('aileron');
+selPart = 'aileron'; setCraft('c172');
 renderProgress(); renderModules(); renderLesson();
 syncControls(); updateLab(); renderGloss();
 showTab(location.hash.slice(1) || 'pecas');
