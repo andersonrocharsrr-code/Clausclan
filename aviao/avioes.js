@@ -399,8 +399,8 @@ function side747(a) {
   ${part('asa', 'Asa', '<path d="M700 940 C720 900 784 880 864 872 L1862 830 L1868 860 L1240 886 L944 916 C864 926 764 944 700 940 Z"/>')}
   ${part('flap', 'Flaps', '<path d="M1250 886 Q1286 934 1338 930 L1332 882 Z M1420 878 Q1452 918 1494 916 L1490 873 Z M1590 870 Q1614 900 1646 900 L1644 866 Z"/>')}
   ${part('motor', 'Motores', engine(1086, 940, 42, 56, 1226, false) + engine(1508, 928, 40, 52, 1656, false))}
-  ${part('estabh', 'Estabilizador horizontal', '<path d="M1556 776 C1572 762 1622 754 1702 750 L1880 736 L1876 744 L1704 786 C1640 796 1580 796 1562 790 Z"/>')}
-  ${part('profundor', 'Profundor', '<path d="M1704 786 L1876 744 L1872 752 L1708 798 Z"/>')}
+  ${part('estabh', 'Estabilizador horizontal', '<path d="M1556 776 C1572 762 1622 754 1702 750 L1924 733 L1920 741 L1704 786 C1640 796 1580 796 1562 790 Z"/>')}
+  ${part('profundor', 'Profundor', '<path d="M1704 786 L1920 741 L1916 749 L1708 798 Z"/>')}
   ${part('apu', 'APU', '<rect class="hit" fill="transparent" x="1686" y="740" width="40" height="50"/><ellipse class="apu-dot" cx="1704" cy="764" rx="4" ry="9"/>')}
   ${part('pitot', 'Tubos de pitot', '<rect class="hit" fill="transparent" x="300" y="846" width="50" height="34"/><path class="strut" d="M322 858 l10 3 M326 872 l9 2"/>')}
   ${part('luzes', 'Luzes externas', '<circle class="beacon" cx="902" cy="718" r="6"/><circle class="beacon" cx="760" cy="960" r="6"/><circle class="nav-red" cx="1864" cy="844" r="7"/><circle class="nav-white" cx="1712" cy="772" r="5"/>')}
