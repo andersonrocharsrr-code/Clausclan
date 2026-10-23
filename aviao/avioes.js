@@ -242,6 +242,17 @@ function parts(a) {
       spec: [['Altura', f(a.wingletH).replace('.', ',') + ' m'], ['Economia', bl ? '~4%' : '~3,5%'], ['Tipo', bl ? 'Blended' : 'Sharklet']],
     };
   }
+  if (a.id === 'b747') {
+    p.slat = {
+      nome: 'Slats (flaps Krueger)', sistema: 'Hipersustentação',
+      onde: 'No bordo de ataque, a frente da asa, de ponta a ponta. Na vista frontal, é a borda da asa que fica de frente para você.',
+      funcao: 'Deixam a asa voar com ângulo de ataque maior sem estolar, na decolagem e no pouso.',
+      como: 'O 747 usa flaps Krueger no bordo de ataque: painéis que saem de baixo da asa e giram para frente, aumentando a curvatura da frente da asa. Os de fora têm curvatura variável. O efeito é o mesmo de um slat: atrasar o descolamento do ar em cima da asa.',
+      manut: 'Inspecionar atuadores, articulações, vedação e o sistema antigelo do bordo de ataque.',
+      curio: 'Os flaps Krueger ficam escondidos embaixo da asa em cruzeiro. Por isso, de frente, o bordo de ataque parece liso: eles só aparecem na decolagem e no pouso.',
+      spec: [['Tipo', 'Krueger'], ['Posição', 'Bordo de ataque'], ['Uso', 'Pouso e decolagem']],
+    };
+  }
   return p;
 }
 const ORDER = ['asa', 'aileron', 'flap', 'slat', 'spoiler', 'winglet', 'motor', 'profundor', 'estabh', 'leme', 'estabv', 'fuselagem', 'cabine', 'trem', 'apu', 'pitot', 'luzes'];
@@ -389,6 +400,33 @@ function side747(a) {
 </svg>`;
 }
 
+/* ---------- 747-8: vista frontal (prancha de referência, rótulos removidos) ---------- */
+// Coordenadas no espaço da prancha (2000 de largura). O lado esquerdo da imagem é a asa direita do avião.
+function front747(a) {
+  const poly = (pts) => `<path d="M${pts.map(([x, y]) => `${x} ${y}`).join(' L')} Z"/>`;
+  const both = (pts) => poly(pts) + poly(pts.map(([x, y]) => [2000 - x, y]));
+  const ring = (cx, cy, r) => `<circle cx="${cx}" cy="${cy}" r="${r}"/>`;
+  const rect = (x0, y0, x1, y1) => poly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]);
+  return `
+<svg class="plane plane--photo" data-pv="front" viewBox="20 160 1960 700" role="group" aria-label="${a.nome} visto de frente" hidden>
+  <image href="assets/747-frontal.jpg" x="20" y="160" width="1960" height="700" preserveAspectRatio="none"/>
+  ${part('fuselagem', 'Fuselagem', '<ellipse cx="998" cy="572" rx="134" ry="162"/>')}
+  ${part('asa', 'Asa', both([[33, 487], [45, 486], [62, 513], [300, 549], [600, 575], [866, 588], [866, 655], [800, 640], [600, 598], [400, 575], [200, 553], [60, 527], [33, 500]]))}
+  ${part('slat', 'Slats', both([[66, 512], [300, 548], [600, 574], [850, 586], [850, 600], [600, 588], [300, 562], [66, 526]]))}
+  ${part('estabh', 'Estabilizador horizontal', both([[694, 452], [704, 455], [880, 478], [905, 489], [895, 505], [700, 468]]))}
+  ${part('estabv', 'Estabilizador vertical', poly([[985, 410], [993, 172], [1007, 172], [1015, 410]]))}
+  ${part('motor', 'Motores', ring(308, 631, 66) + ring(574, 679, 67) + ring(1427, 679, 67) + ring(1692, 617, 66))}
+  ${part('trem', 'Trem de pouso', rect(783, 648, 852, 792) + rect(898, 706, 967, 792) + rect(960, 712, 1040, 842) + rect(1033, 706, 1102, 792) + rect(1148, 648, 1217, 792))}
+  ${part('cabine', 'Cabine de comando', rect(928, 445, 1068, 480))}
+  ${part('luzes', 'Luzes externas', ring(42, 500, 14) + ring(1958, 500, 14))}
+  <g class="photo-label" aria-hidden="true">
+    <text x="40" y="214" style="font-size:40px">VISTA FRONTAL</text>
+    <text x="48" y="604" style="font-size:30px">ASA DIREITA</text>
+    <text x="1952" y="604" text-anchor="end" style="font-size:30px">ASA ESQUERDA</text>
+  </g>
+</svg>`;
+}
+
 /* ---------- Vista lateral ---------- */
 function side(a) {
   if (a.id === 'b747') return side747(a);
@@ -529,5 +567,6 @@ window.HangarJets = {
   parts,
   order: (a) => ORDER.filter((id) => id !== 'winglet' || a.wingletType),
   top, side,
+  front: (a) => (a.id === 'b747' ? front747(a) : ''),
 };
 })();

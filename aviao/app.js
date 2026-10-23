@@ -340,8 +340,10 @@ function setCraft(id) {
   const c = cur();
   $('#c172Views').hidden = id !== 'c172';
   $('#jetViews').hidden = id === 'c172';
-  if (id !== 'c172') $('#jetViews').innerHTML = HangarJets.top(c) + HangarJets.side(c);
+  if (id !== 'c172') $('#jetViews').innerHTML = HangarJets.top(c) + HangarJets.side(c) + HangarJets.front(c);
   $('#craftLede').textContent = c.lede;
+  $('#frontBtn').hidden = id !== 'b747';
+  if (id !== 'b747' && planeView === 'front') planeView = 'top';
   renderCrafts(); renderChips();
   applyXray(); setPlaneView(planeView);
   selectPart(c.parts[selPart] ? selPart : 'asa');
@@ -350,8 +352,9 @@ function selectPart(id) {
   const p = cur().parts[id];
   if (!p) return;
   selPart = id;
-  // Peças que não aparecem de lado (ailerons, slats, spoilers): volta para a vista de cima.
-  if (planeView === 'side' && !holder().querySelector(`[data-pv="side"] [data-part="${id}"]`)) setPlaneView('top');
+  // No 747, os slats abrem a vista frontal. Peça que não aparece na vista atual: volta para a de cima.
+  if (craft === 'b747' && id === 'slat') setPlaneView('front');
+  else if (planeView !== 'top' && !holder().querySelector(`[data-pv="${planeView}"] [data-part="${id}"]`)) setPlaneView('top');
   $$('.part', holder()).forEach((g) => g.classList.toggle('is-sel', g.dataset.part === id));
   $$('.chip').forEach((ch) => ch.setAttribute('aria-pressed', String(ch.dataset.chip === id)));
   $('#partInfo').innerHTML = `
