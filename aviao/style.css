@@ -210,6 +210,16 @@ main { padding-block: 24px 40px; }
 .part > path.bp-far { fill: var(--shade); }
 .part > ellipse.bp-lip { fill: var(--plane); stroke: var(--ink); stroke-width: 1.4; }
 .plane--bp .dim text { font-size: 28px; }
+/* 747 com o desenho de referência: traços claros sobre fundo azul de prancha; as peças só destacam ao tocar. */
+.plane--trace .trace-bg { fill: #1b2440; }
+.plane--trace .grid-line { stroke: #2b3758; }
+.plane--trace .trace-line { fill: #e6ebf5; }
+.plane--trace .side-deco { display: none; }
+.plane--trace .part > * { fill: transparent !important; stroke: none !important; }
+.plane--trace .part:hover > *, .plane--trace .part:focus-visible > * { fill: #f06aae !important; fill-opacity: .18; }
+.plane--trace .part.is-sel > * { fill: #f06aae !important; fill-opacity: .38; stroke: none !important; }
+.plane--trace .dim path, .plane--trace .dim text { stroke: #9aa6c4; fill: #9aa6c4; }
+.plane--trace .dim path { fill: none; }
 .side-deco .win { fill: var(--sky); fill-opacity: .8; stroke: var(--ink); stroke-opacity: .55; stroke-width: .7; }
 .part > path.livery-fin { fill: var(--liv-orange); }
 .livery { pointer-events: none; }

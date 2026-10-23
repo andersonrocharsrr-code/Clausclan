@@ -379,9 +379,11 @@ function side747(a) {
     <circle class="hub" cx="${cx + 6}" cy="${cy}" r="${ry * 0.14}"/>`;
   const fus = 'M157 840 C157 800 190 756 262 728 C304 712 342 698 402 694 L700 692 C782 694 842 714 902 720 L1420 722 C1500 722 1560 714 1610 704 L1702 734 C1714 750 1714 778 1702 792 C1640 850 1560 878 1480 898 L700 958 C450 960 300 952 232 926 C182 906 157 876 157 840 Z';
   return `
-<svg class="plane plane--side plane--bp" data-pv="side" viewBox="120 360 1860 760" role="group" aria-label="${a.nome} visto de lado, em leve perspectiva" hidden>
+<svg class="plane plane--side plane--bp plane--trace" data-pv="side" viewBox="120 360 1860 760" role="group" aria-label="${a.nome} visto de lado" hidden>
   <defs><pattern id="bpGrid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" class="grid-line"/></pattern></defs>
+  <rect class="trace-bg" x="120" y="360" width="1860" height="760"/>
   <rect x="120" y="360" width="1860" height="760" fill="url(#bpGrid)"/>
+  ${window.TRACE747 ? `<path class="trace-line" fill-rule="evenodd" d="${window.TRACE747}"/>` : ''}
   ${part('motor', 'Motores', engine(860, 930, 26, 34, 960, true) + engine(1330, 918, 24, 30, 1420, true))}
   ${part('estabv', 'Estabilizador vertical', '<path d="M1425 722 C1468 716 1500 700 1522 676 L1668 410 L1716 410 L1694 720 L1690 722 Z"/>')}
   ${part('leme', 'Leme de direção', '<path d="M1716 410 L1742 410 L1696 722 Z"/>')}
