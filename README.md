@@ -460,7 +460,7 @@ na raiz e acesse `http://localhost:8000/aviao/`).
 ## O que faz
 - **Avião explodido**: Cessna 172, Boeing 737-800, Airbus A320neo, Embraer E195-E2 e Boeing 747-8. Toque numa
   peça para ver onde fica, para que serve, como funciona e a manutenção. No 747-8 há vistas superior, lateral,
-  frontal, do motor GEnx-2B e do trem de pouso, com as partes numeradas. No celular, a ficha abre numa aba que sobe de baixo.
+  frontal, do motor GEnx-2B e do trem de pouso, com as partes numeradas. No celular, ao tocar numa peça aparece uma seta no canto para descer até a ficha.
 - **Escola de voo**: 8 lições com pergunta no fim de cada uma; o progresso fica salvo no aparelho.
 - **Cockpit**: manche, pedais, manete e flaps mexem as superfícies e os seis instrumentos básicos.
 - **Laboratório**: túnel de vento com sustentação, arrasto, flaps e estol.
@@ -468,8 +468,8 @@ na raiz e acesse `http://localhost:8000/aviao/`).
 
 ## App Android (APK) — pasta `aviao-android/`
 O mesmo app empacotado com **Capacitor**, igual aos outros: os arquivos vão dentro do APK, então funciona
-**sem internet** (sem internet, os títulos usam a fonte do próprio Android). O botão voltar do Android fecha a
-ficha aberta, volta para a vista de cima, depois para a primeira aba e por fim minimiza o app.
+**sem internet** (sem internet, os títulos usam a fonte do próprio Android). O botão voltar do Android volta para a
+vista de cima, depois para a primeira aba e por fim minimiza o app.
 
 O APK é gerado pelo GitHub Actions (`.github/workflows/hangar-apk.yml`) a cada mudança em `aviao/` ou
 `aviao-android/`. No `main`, com o segredo `NEXA_SIGNING_SEED`, ele fica no link fixo:
