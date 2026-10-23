@@ -12,6 +12,7 @@
   --warn: #b0701a;
   --bad: #b3261e;
   --plane: #fbfcfb;
+  --shade: #d9e0e2;
   --sel: #f6d9e8;
   --dial: #1a2229;
   --dial-ink: #eef2f3;
@@ -26,13 +27,13 @@
   :root:not([data-theme="light"]) {
     --paper: #0e151b; --panel: #151f28; --ink: #e5ebee; --muted: #93a2ae; --line: #2a3742; --grid: #18232c;
     --magenta: #f06aae; --blue: #86acf2; --ok: #5fc48a; --warn: #e3a64a; --bad: #f2776e;
-    --plane: #1d2a35; --sel: #4a1d36; --tunnel: #0b1117; color-scheme: dark;
+    --plane: #1d2a35; --shade: #121b23; --sel: #4a1d36; --tunnel: #0b1117; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --paper: #0e151b; --panel: #151f28; --ink: #e5ebee; --muted: #93a2ae; --line: #2a3742; --grid: #18232c;
   --magenta: #f06aae; --blue: #86acf2; --ok: #5fc48a; --warn: #e3a64a; --bad: #f2776e;
-  --plane: #1d2a35; --sel: #4a1d36; --tunnel: #0b1117; color-scheme: dark;
+  --plane: #1d2a35; --shade: #121b23; --sel: #4a1d36; --tunnel: #0b1117; color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -114,7 +115,19 @@ main { padding-block: 24px 40px; }
 .part > path, .part > rect:not(.hit), .part > circle {
   fill: var(--plane); stroke: var(--ink); stroke-width: 1.6; stroke-linejoin: round; transition: fill .15s;
 }
-.part .glass { fill: var(--sky); opacity: .45; stroke-width: 1; }
+.part.shaded > path { fill: url(#shadeX); }
+.part > path.skin-y { fill: url(#shadeY); }
+.part > path.glass { fill: var(--sky); opacity: .55; stroke-width: 1; }
+.part .blade { fill: var(--ink); }
+.part .inlet { fill: var(--ink); opacity: .8; }
+.part > rect.hidden-part { fill: none; stroke-dasharray: 3 3; stroke: var(--muted); }
+.part .nav-white { fill: var(--panel); stroke: var(--ink); stroke-width: 1; }
+.deco { pointer-events: none; }
+.deco .panel { fill: none; stroke: var(--ink); stroke-opacity: .22; stroke-width: 1; }
+.deco .hidden-line { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 5 4; }
+.deco .cap { fill: none; stroke: var(--ink); stroke-opacity: .5; stroke-width: 1.2; }
+.dim path { fill: none; stroke: var(--muted); stroke-width: 1; }
+.dim text { fill: var(--muted); font-size: 10.5px; letter-spacing: .08em; }
 .part .strut { fill: none; stroke-width: 3; }
 .part .hit { stroke: none; }
 .part .nav-red { fill: var(--bad); }
@@ -225,6 +238,8 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 .sw--slow { background: var(--blue); }
 .sw--fast { background: var(--magenta); }
 .sw--lift { background: var(--ok); }
+.sw--drag { background: var(--warn); }
+.drag-msg { border-left: 3px solid var(--warn); padding-left: 10px; }
 .lab-side { display: grid; gap: 16px; }
 .readout { display: grid; gap: 8px; }
 .readout div { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; border-bottom: 1px dashed var(--line); padding-bottom: 6px; }

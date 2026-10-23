@@ -646,13 +646,25 @@ const BETA = Math.asin(MU[1] / RAD);
 const cmul = (a, b) => [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]];
 const cdiv = (a, b) => { const d = b[0] * b[0] + b[1] * b[1]; return [(a[0] * b[0] + a[1] * b[1]) / d, (a[1] * b[0] - a[0] * b[1]) / d]; };
 const csqrt = (a) => { const r = Math.hypot(a[0], a[1]); let im = Math.sqrt(Math.max(0, (r - a[0]) / 2)); if (a[1] < 0) im = -im; return [Math.sqrt((r + a[0]) / 2), im]; };
-const lab = { aoa: 5, kt: 100, alt: 0, flaps: false };
-function clOf(a, flaps) {
-  const a0 = flaps ? 6 : 2, crit = flaps ? 13 : 15.5, slope = 0.095;
+const lab = { aoa: 5, kt: 100, alt: 0, flaps: 0 };
+// Flaps em graus (0–30): somam curvatura (mais C_L), adiantam o estol e somam arrasto.
+const critOf = (f) => 15.5 - f * 0.08;
+function clOf(a, f) {
+  const a0 = 2 + f * 0.13, crit = critOf(f), slope = 0.095;
   const peak = slope * (crit + a0);
   return a <= crit ? slope * (a + a0) : Math.max(0.6, peak - 0.09 * (a - crit) - 0.012 * (a - crit) ** 2);
 }
-const isStalled = () => lab.aoa > (lab.flaps ? 13 : 15.5);
+const isStalled = () => lab.aoa > critOf(lab.flaps);
+// Arrasto: parasita + induzido (k·C_L²) + flaps + separação no estol.
+function cdOf(a, f) {
+  const cl = clOf(a, f), over = Math.max(0, a - critOf(f));
+  return 0.027 + 0.053 * cl * cl + f * 0.0022 + 0.03 * over + 0.004 * over * over;
+}
+const HINGE = [1.0, 0.12];
+const flapRot = (x, y, deg) => {
+  const r = -deg * D2R, dx = x - HINGE[0], dy = y - HINGE[1];
+  return [HINGE[0] + dx * Math.cos(r) - dy * Math.sin(r), HINGE[1] + dx * Math.sin(r) + dy * Math.cos(r)];
+};
 function flowVel(x, y) {
   const al = lab.aoa * D2R, ca = Math.cos(al), sa = Math.sin(al);
   const z = [x * ca - y * sa, x * sa + y * ca];
@@ -662,7 +674,7 @@ function flowVel(x, y) {
   const zeta = d1 >= d2 ? z1 : z2, dz = Math.max(d1, d2);
   if (dz < RAD * 1.005) return null;
   const zp = [zeta[0] - MU[0], zeta[1] - MU[1]];
-  let gam = 4 * Math.PI * RAD * Math.sin(al + BETA + (lab.flaps ? 4 * D2R : 0));
+  let gam = 4 * Math.PI * RAD * Math.sin(al + BETA + lab.flaps * 0.13 * D2R);
   if (isStalled()) gam *= 0.75;
   const t1 = [Math.cos(al), -Math.sin(al)];
   const t2 = cdiv([RAD * RAD * Math.cos(al), RAD * RAD * Math.sin(al)], cmul(zp, zp));
@@ -682,7 +694,8 @@ function buildFoil() {
     const th = i / 140 * Math.PI * 2;
     const ze = [MU[0] + RAD * Math.cos(th), MU[1] + RAD * Math.sin(th)];
     const inv = cdiv([1, 0], ze);
-    const zx = ze[0] + inv[0], zy = ze[1] + inv[1];
+    let zx = ze[0] + inv[0], zy = ze[1] + inv[1];
+    if (lab.flaps && zx > HINGE[0]) [zx, zy] = flapRot(zx, zy, lab.flaps);
     foil.push([zx * ca + zy * sa, -zx * sa + zy * ca]);
   }
 }
@@ -703,10 +716,10 @@ function spawn(anywhere) {
   return { x: anywhere ? xMin() + Math.random() * (xMax() - xMin()) : xMin(), y: (Math.random() * 2 - 1) * half * 1.05, age: 0 };
 }
 function hexRgb(h) { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map((c) => c + c).join(''); const n = parseInt(h, 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
-let colSlow = [36, 86, 166], colFast = [168, 25, 106], colBg = '#e6ecee', colInk = '#15202a', colLift = '#2c7a4d', colPanel = '#fff';
+let colSlow = [36, 86, 166], colFast = [168, 25, 106], colBg = '#e6ecee', colInk = '#15202a', colLift = '#2c7a4d', colDrag = '#b0701a', colPanel = '#fff';
 function readColors() {
   try { colSlow = hexRgb(css('--blue')); colFast = hexRgb(css('--magenta')); } catch {}
-  colBg = css('--tunnel'); colInk = css('--ink'); colLift = css('--ok'); colPanel = css('--plane');
+  colBg = css('--tunnel'); colInk = css('--ink'); colLift = css('--ok'); colDrag = css('--warn'); colPanel = css('--plane');
   if (tctx) { tctx.fillStyle = colBg; tctx.fillRect(0, 0, tW, tH); }
 }
 const P = (x, y) => [tCx + x * tS, tCy - y * tS];
@@ -723,14 +736,21 @@ function tunnelFrame(t) {
   const c = tctx;
   c.globalAlpha = 0.14; c.fillStyle = colBg; c.fillRect(0, 0, tW, tH); c.globalAlpha = 1;
   const k = (0.5 + lab.kt / 160 * 1.6) * dt;
-  const stall = isStalled();
+  const stall = isStalled(), fl = lab.flaps, al = lab.aoa * D2R;
   c.lineWidth = 1.4; c.lineCap = 'round';
   for (const p of parts) {
     let v = flowVel(p.x, p.y);
     if (!v) { Object.assign(p, spawn(false)); continue; }
+    const lx = p.x * Math.cos(al) - p.y * Math.sin(al), ly = p.x * Math.sin(al) + p.y * Math.cos(al);
+    if (fl && lx > HINGE[0] - 0.05 && lx < 2.4) {
+      const [ox, oy] = flapRot(lx, ly, -fl), d = ox - HINGE[0];
+      if (d > -0.05 && d < 1.05 && Math.abs(oy - 0.12 * (1 - d)) < 0.1 * (1 - d) + 0.04) { Object.assign(p, spawn(false)); continue; }
+    }
+    if (fl && lx > 1.5 && lx < 5 && ly < 0.3 && ly > -0.5 - fl / 30) {
+      const sev = fl / 30;
+      v = [v[0] * (1 - 0.3 * sev) + (Math.random() - 0.5) * 0.9 * sev, v[1] - 0.25 * sev + (Math.random() - 0.5) * 0.9 * sev];
+    }
     if (stall) {
-      const al = lab.aoa * D2R;
-      const lx = p.x * Math.cos(al) - p.y * Math.sin(al), ly = p.x * Math.sin(al) + p.y * Math.cos(al);
       if (lx > -0.6 && ly > 0 && ly < 1.9 && lx < 4.5) {
         const sev = clamp((lab.aoa - 14) / 6, 0.4, 1);
         v = [v[0] * (1 - 0.65 * sev) + (Math.random() - 0.5) * 2.2 * sev, v[1] * 0.4 + (Math.random() - 0.5) * 2.2 * sev];
@@ -752,6 +772,10 @@ function tunnelFrame(t) {
   arrow(c, base[0], base[1], base[0], base[1] - clamp(cl, 0, 2.2) * tS * 0.55, colLift, 3);
   c.fillStyle = colLift; c.font = '600 12px "IBM Plex Mono", monospace'; c.textAlign = 'left';
   c.fillText('SUSTENTAÇÃO', base[0] + 8, base[1] - clamp(cl, 0, 2.2) * tS * 0.55 + 4);
+  const te = P(foil[0][0], foil[0][1]), dl = clamp(cdOf(lab.aoa, lab.flaps), 0, 0.5) * tS * 5;
+  arrow(c, te[0] + 6, te[1], te[0] + 6 + Math.max(14, dl), te[1], colDrag, 3);
+  c.fillStyle = colDrag; c.font = '600 12px "IBM Plex Mono", monospace';
+  c.fillText('ARRASTO', te[0] + 12, te[1] + 18);
   arrow(c, 14, 22, 70, 22, colInk, 2);
   c.fillStyle = colInk; c.font = '500 11px "IBM Plex Mono", monospace'; c.fillText('VENTO RELATIVO', 78, 26);
   if (stall) { c.fillStyle = css('--bad'); c.font = '600 13px "IBM Plex Mono", monospace'; c.fillText('ESTOL: FLUXO DESCOLADO', 14, tH - 16); }
@@ -761,13 +785,19 @@ function startTunnel() { if (!tunRaf) { tunLast = 0; readColors(); updateLab(); 
 
 const MTOW = 1157, AREA = 16.2;
 function updateLab() {
-  lab.aoa = +$('#lAoa').value; lab.kt = +$('#lSpd').value; lab.alt = +$('#lAlt').value; lab.flaps = $('#lFlap').checked;
+  lab.aoa = +$('#lAoa').value; lab.kt = +$('#lSpd').value; lab.alt = +$('#lAlt').value; 
   $('#oAoa').textContent = fmt(lab.aoa, lab.aoa % 1 ? 1 : 0) + '°';
   $('#oSpd').textContent = lab.kt + ' kt';
   $('#oAlt').textContent = fmt(lab.alt) + ' ft';
   const rho = 1.225 * Math.pow(1 - 2.25577e-5 * lab.alt * 0.3048, 4.2559);
   const v = lab.kt * 0.514444, cl = clOf(lab.aoa, lab.flaps);
-  const kgf = 0.5 * rho * v * v * AREA * cl / 9.80665;
+  const q = 0.5 * rho * v * v * AREA / 9.80665;
+  const kgf = q * cl, cd = cdOf(lab.aoa, lab.flaps), drag = q * cd, drag0 = q * cdOf(lab.aoa, 0);
+  $('#rDrag').textContent = fmt(drag) + ' kgf';
+  $('#rLd').textContent = fmt(cl / cd, 1);
+  $('#dragMsg').textContent = lab.flaps
+    ? `Flaps em ${lab.flaps}°: o arrasto é ${fmt((drag / drag0 - 1) * 100)}% maior que sem flaps. Isso freia o avião e deixa a descida mais íngreme na aproximação para pouso.`
+    : 'Sem flaps: arrasto menor, bom para subir e voar em cruzeiro. Baixe os flaps para ver a diferença.';
   $('#rCl').textContent = fmt(cl, 2);
   $('#rRho').textContent = fmt(rho, 3) + ' kg/m³';
   $('#rLift').textContent = fmt(Math.max(0, kgf)) + ' kgf';
@@ -782,12 +812,19 @@ function updateLab() {
   $('#liftMsg').textContent = msg;
   buildFoil(); drawClChart();
 }
-['#lAoa', '#lSpd', '#lAlt', '#lFlap'].forEach((s) => $(s).addEventListener('input', updateLab));
+['#lAoa', '#lSpd', '#lAlt'].forEach((s) => $(s).addEventListener('input', updateLab));
+$('#labFlapSeg').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-lflap]');
+  if (!b) return;
+  lab.flaps = +b.dataset.lflap;
+  $$('#labFlapSeg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  updateLab();
+});
 function drawClChart() {
   const W = 300, H = 170, l = 34, r = 10, t = 12, b = 28;
   const xs = (a) => l + (a + 5) / 25 * (W - l - r), ys = (cl) => t + (2.2 - cl) / 2.4 * (H - t - b);
   let g = '';
-  const crit = lab.flaps ? 13 : 15.5;
+  const crit = critOf(lab.flaps);
   g += `<rect class="stallzone" x="${xs(crit)}" y="${t}" width="${xs(20) - xs(crit)}" height="${H - t - b}"/>`;
   for (let cl = 0; cl <= 2; cl += 0.5) g += `<line class="axis" x1="${l}" x2="${W - r}" y1="${ys(cl)}" y2="${ys(cl)}"/><text class="tick" x="${l - 6}" y="${ys(cl) + 3}" text-anchor="end">${fmt(cl, 1)}</text>`;
   for (let a = -5; a <= 20; a += 5) g += `<text class="tick" x="${xs(a)}" y="${H - b + 14}" text-anchor="middle">${a}°</text>`;

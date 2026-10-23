@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
   <header class="top">
@@ -60,82 +60,110 @@
               <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
                 <path d="M20 0H0V20" fill="none" class="grid-line"/>
               </pattern>
+              <linearGradient id="shadeX" x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0" style="stop-color:var(--shade)"/>
+                <stop offset=".35" style="stop-color:var(--plane)"/>
+                <stop offset=".65" style="stop-color:var(--plane)"/>
+                <stop offset="1" style="stop-color:var(--shade)"/>
+              </linearGradient>
+              <linearGradient id="shadeY" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0" style="stop-color:var(--plane)"/>
+                <stop offset="1" style="stop-color:var(--shade)"/>
+              </linearGradient>
             </defs>
             <rect width="600" height="540" fill="url(#grid)"/>
             <g class="airframe" id="airframe">
-              <g class="part" data-part="fuselagem" tabindex="0" role="button" aria-label="Fuselagem">
-                <path d="M271 160 L329 160 L314 420 L306 505 L294 505 L286 420 Z"/>
-              </g>
               <g class="part" data-part="estabh" tabindex="0" role="button" aria-label="Estabilizador horizontal">
-                <path d="M196 430 L404 430 Q412 430 412 438 L412 455 L188 455 L188 438 Q188 430 196 430 Z"/>
+                <path class="skin-y" d="M300 384 L232 396 Q216 399 216 410 L216 418 L384 418 L384 410 Q384 399 368 396 Z"/>
               </g>
               <g class="part" data-part="profundor" tabindex="0" role="button" aria-label="Profundor">
-                <path d="M190 457 L410 457 L404 476 L196 476 Z"/>
+                <path d="M218 419 L295 419 L295 434 L291 446 L230 441 Q218 439 218 429 Z"/>
+                <path d="M382 419 L305 419 L305 434 L309 446 L370 441 Q382 439 382 429 Z"/>
+              </g>
+              <g class="part shaded" data-part="fuselagem" tabindex="0" role="button" aria-label="Fuselagem">
+                <path d="M275.5 104 L324.5 104 L325 160 C325 250 314 380 305 440 L295 440 C286 380 275 250 275 160 Z"/>
+                <path class="glass" d="M285 238 L315 238 L312 264 Q300 269 288 264 Z"/>
               </g>
               <g class="part" data-part="estabv" tabindex="0" role="button" aria-label="Estabilizador vertical">
-                <rect x="286" y="392" width="28" height="92" fill="transparent" class="hit"/>
-                <rect x="295" y="392" width="10" height="92" rx="3"/>
+                <rect x="286" y="300" width="28" height="118" fill="transparent" class="hit"/>
+                <path d="M300 300 L302.5 360 L304 418 L296 418 L297.5 360 Z"/>
               </g>
               <g class="part" data-part="leme" tabindex="0" role="button" aria-label="Leme de direção">
-                <rect x="286" y="486" width="28" height="30" fill="transparent" class="hit"/>
-                <path d="M295 486 L305 486 L303 514 L297 514 Z"/>
-              </g>
-              <g class="part" data-part="asa" tabindex="0" role="button" aria-label="Asa">
-                <path d="M30 168 Q30 160 42 160 L558 160 Q570 160 570 168 L570 230 Q570 237 562 237 L38 237 Q30 237 30 230 Z"/>
-              </g>
-              <g class="part" data-part="aileron" tabindex="0" role="button" aria-label="Ailerons">
-                <path d="M36 216 L150 216 L150 235 L42 235 Q36 235 36 229 Z"/>
-                <path d="M450 216 L564 216 L564 229 Q564 235 558 235 L450 235 Z"/>
-              </g>
-              <g class="part" data-part="flap" tabindex="0" role="button" aria-label="Flaps">
-                <rect x="158" y="216" width="110" height="19"/>
-                <rect x="332" y="216" width="110" height="19"/>
-              </g>
-              <g class="part" data-part="cabine" tabindex="0" role="button" aria-label="Cabine">
-                <path d="M274 98 L326 98 L330 160 L270 160 Z"/>
-                <path class="glass" d="M280 112 L320 112 L325 156 L275 156 Z"/>
-              </g>
-              <g class="part" data-part="motor" tabindex="0" role="button" aria-label="Motor">
-                <path d="M283 46 Q300 38 317 46 L326 98 L274 98 Z"/>
-              </g>
-              <g class="part" data-part="helice" tabindex="0" role="button" aria-label="Hélice">
-                <rect x="236" y="22" width="128" height="22" fill="transparent" class="hit"/>
-                <rect x="238" y="30" width="124" height="6" rx="3"/>
-                <circle cx="300" cy="38" r="9"/>
+                <rect x="286" y="418" width="28" height="42" fill="transparent" class="hit"/>
+                <path d="M296 419 L304 419 L303 452 L300 456 L297 452 Z"/>
               </g>
               <g class="part" data-part="trem" tabindex="0" role="button" aria-label="Trem de pouso">
-                <path class="strut" d="M286 240 L236 262 M314 240 L364 262"/>
-                <rect x="226" y="256" width="20" height="12" rx="4"/>
-                <rect x="354" y="256" width="20" height="12" rx="4"/>
-                <rect x="292" y="100" width="16" height="10" rx="3"/>
+                <path class="strut" d="M279 236 L245 246 M321 236 L355 246"/>
+                <path d="M239 238 Q246 238 246 246 L246 258 Q246 266 239 266 Q232 266 232 258 L232 246 Q232 238 239 238 Z"/>
+                <path d="M361 238 Q368 238 368 246 L368 258 Q368 266 361 266 Q354 266 354 258 L354 246 Q354 238 361 238 Z"/>
+                <rect x="294" y="84" width="12" height="22" rx="5" class="hidden-part"/>
+              </g>
+              <g class="part" data-part="asa" tabindex="0" role="button" aria-label="Asa">
+                <path class="skin-y" d="M300 153 L178 153 L40 160 Q30 161 30 172 L30 203 Q30 213 40 213 L178 233 L422 233 L560 213 Q570 213 570 203 L570 172 Q570 161 560 160 L422 153 Z"/>
+              </g>
+              <g class="part" data-part="aileron" tabindex="0" role="button" aria-label="Ailerons">
+                <path d="M45 199.7 L165 217.1 L165 231.1 L45 213.7 Z"/>
+                <path d="M555 199.7 L435 217.1 L435 231.1 L555 213.7 Z"/>
+              </g>
+              <g class="part" data-part="flap" tabindex="0" role="button" aria-label="Flaps">
+                <path d="M276 215 L178 215 L168 213.6 L168 231.6 L178 233 L276 233 Z"/>
+                <path d="M324 215 L422 215 L432 213.6 L432 231.6 L422 233 L324 233 Z"/>
+              </g>
+              <g class="part" data-part="cabine" tabindex="0" role="button" aria-label="Cabine">
+                <path d="M275.5 104 L324.5 104 L325 153 L275 153 Z"/>
+                <path class="glass" d="M281 113 Q300 107 319 113 L322 152 L278 152 Z"/>
+              </g>
+              <g class="part shaded" data-part="motor" tabindex="0" role="button" aria-label="Motor">
+                <path d="M300 46 C312 46 322 62 324 90 L324.5 104 L275.5 104 L276 90 C278 62 288 46 300 46 Z"/>
+                <ellipse class="inlet" cx="290" cy="56" rx="5" ry="3"/>
+                <ellipse class="inlet" cx="310" cy="56" rx="5" ry="3"/>
+              </g>
+              <g class="part" data-part="helice" tabindex="0" role="button" aria-label="Hélice">
+                <rect x="248" y="26" width="104" height="26" fill="transparent" class="hit"/>
+                <path class="blade" d="M293 40 C282 35 266 34 256 36 Q251 39 256 42 C266 45 282 44 293 40 Z"/>
+                <path class="blade" d="M307 40 C318 35 334 34 344 36 Q349 39 344 42 C334 45 318 44 307 40 Z"/>
+                <path d="M300 30 Q309 32 309 42 L291 42 Q291 32 300 30 Z"/>
               </g>
               <g class="part" data-part="pitot" tabindex="0" role="button" aria-label="Tubo de pitot">
-                <rect x="108" y="138" width="24" height="26" fill="transparent" class="hit"/>
-                <path class="strut" d="M120 160 L120 144"/>
-                <circle cx="120" cy="143" r="3"/>
+                <rect x="98" y="136" width="24" height="26" fill="transparent" class="hit"/>
+                <path class="strut" d="M110 157 L110 142"/>
+                <circle cx="110" cy="141" r="2.5"/>
               </g>
               <g class="part" data-part="luzes" tabindex="0" role="button" aria-label="Luzes de navegação">
-                <rect x="18" y="182" width="24" height="24" fill="transparent" class="hit"/>
-                <rect x="558" y="182" width="24" height="24" fill="transparent" class="hit"/>
-                <circle class="nav-red" cx="30" cy="194" r="6"/>
-                <circle class="nav-green" cx="570" cy="194" r="6"/>
+                <rect x="16" y="175" width="24" height="24" fill="transparent" class="hit"/>
+                <rect x="560" y="175" width="24" height="24" fill="transparent" class="hit"/>
+                <circle class="nav-red" cx="31" cy="187" r="5"/>
+                <circle class="nav-green" cx="569" cy="187" r="5"/>
+                <circle class="nav-white" cx="300" cy="456" r="3"/>
+              </g>
+              <g class="deco" aria-hidden="true">
+                <path class="panel" d="M240 153 L240 215 M360 153 L360 215 M110 156.4 L110 209 M490 156.4 L490 209 M178 153 L178 215 M422 153 L422 215 M287 300 L313 300 M290 360 L310 360 M278 104 L322 104"/>
+                <path class="hidden-line" d="M276 200 L190 186 M324 200 L410 186"/>
+                <circle class="cap" cx="200" cy="162" r="3"/>
+                <circle class="cap" cx="400" cy="162" r="3"/>
               </g>
             </g>
             <g class="xray" id="xray" hidden>
-              <rect class="x-tank" x="70" y="170" width="170" height="36" rx="6"/>
-              <rect class="x-tank" x="360" y="170" width="170" height="36" rx="6"/>
-              <path class="x-fuel" d="M240 188 L300 188 L300 70 M360 188 L300 188"/>
-              <path class="x-cable" d="M300 140 L300 300 L300 466 M300 140 L190 210 L95 226 M300 140 L410 210 L505 226 M300 300 L300 500"/>
-              <path class="x-elec" d="M300 120 L300 150 L40 194 M300 150 L560 194 M300 150 L300 505"/>
-              <rect class="x-batt" x="288" y="112" width="24" height="12" rx="2"/>
+              <rect class="x-tank" x="184" y="160" width="88" height="42" rx="6"/>
+              <rect class="x-tank" x="328" y="160" width="88" height="42" rx="6"/>
+              <path class="x-fuel" d="M272 181 L300 181 L300 66 M328 181 L300 181"/>
+              <path class="x-cable" d="M300 132 L300 425 M300 132 L300 170 L170 205 L105 212 M300 170 L430 205 L495 212"/>
+              <path class="x-elec" d="M300 100 L300 140 L31 187 M300 140 L569 187 M300 140 L300 456"/>
+              <rect class="x-batt" x="289" y="94" width="22" height="12" rx="2"/>
               <g class="x-legend mono">
-                <rect x="20" y="470" width="150" height="58" rx="6"/>
-                <path class="x-fuel" d="M32 486 H58"/><text x="66" y="490">Combustível</text>
-                <path class="x-cable" d="M32 502 H58"/><text x="66" y="506">Cabos de comando</text>
-                <path class="x-elec" d="M32 518 H58"/><text x="66" y="522">Elétrica</text>
+                <rect x="14" y="26" width="150" height="58" rx="6"/>
+                <path class="x-fuel" d="M26 42 H52"/><text x="60" y="46">Combustível</text>
+                <path class="x-cable" d="M26 58 H52"/><text x="60" y="62">Cabos de comando</text>
+                <path class="x-elec" d="M26 74 H52"/><text x="60" y="78">Elétrica</text>
               </g>
             </g>
-            <text class="nose-tag mono" x="300" y="16" text-anchor="middle">PROA ↑</text>
+            <g class="dim mono" aria-hidden="true">
+              <path d="M30 486 L570 486 M30 478 L30 494 M570 478 L570 494"/>
+              <text x="300" y="506" text-anchor="middle">ENVERGADURA 11,00 m</text>
+              <path d="M588 30 L588 456 M580 30 L596 30 M580 456 L596 456"/>
+              <text x="0" y="0" text-anchor="middle" transform="translate(582 345) rotate(-90)">COMPRIMENTO 8,28 m</text>
+            </g>
+            <text class="nose-tag mono" x="300" y="18" text-anchor="middle">PROA ↑</text>
           </svg>
           <div class="chips" id="partChips" aria-label="Lista de peças"></div>
         </div>
@@ -264,6 +292,7 @@
             <span><i class="sw sw--slow"></i>ar lento · pressão alta</span>
             <span><i class="sw sw--fast"></i>ar rápido · pressão baixa</span>
             <span><i class="sw sw--lift"></i>sustentação</span>
+            <span><i class="sw sw--drag"></i>arrasto</span>
           </div>
         </div>
         <div class="card lab-side">
@@ -279,16 +308,27 @@
             <label for="lAlt">Altitude <output id="oAlt">0 ft</output></label>
             <input type="range" id="lAlt" min="0" max="20000" value="0" step="500">
           </div>
-          <label class="switch"><input type="checkbox" id="lFlap"><span class="switch__ui" aria-hidden="true"></span>Flaps baixados</label>
+          <div class="ctl">
+            <span class="label">Flaps</span>
+            <div class="seg" id="labFlapSeg">
+              <button type="button" data-lflap="0" aria-pressed="true">0°</button>
+              <button type="button" data-lflap="10">10°</button>
+              <button type="button" data-lflap="20">20°</button>
+              <button type="button" data-lflap="30">30°</button>
+            </div>
+          </div>
           <div class="readout">
             <div><span class="label">Coef. de sustentação (C<sub>L</sub>)</span><b id="rCl">0,66</b></div>
             <div><span class="label">Densidade do ar (ρ)</span><b id="rRho">1,225 kg/m³</b></div>
             <div><span class="label">Sustentação total</span><b id="rLift">0 kgf</b></div>
+            <div><span class="label">Arrasto total</span><b id="rDrag">0 kgf</b></div>
+            <div><span class="label">Eficiência (L/D)</span><b id="rLd">0</b></div>
           </div>
           <div class="meter">
             <div class="meter__bar"><span id="liftBar"></span><i id="mtowMark"></i></div>
             <p class="small" id="liftMsg"></p>
           </div>
+          <p class="small drag-msg" id="dragMsg"></p>
           <svg class="clchart" id="clChart" viewBox="0 0 300 170" role="img" aria-label="Curva de coeficiente de sustentação por ângulo de ataque"></svg>
           <p class="formula mono small">L = ½ · ρ · V² · S · C<sub>L</sub> &nbsp;·&nbsp; S = 16,2 m²</p>
         </div>
@@ -309,7 +349,7 @@
 
   <footer class="wrap foot small">Conteúdo educativo. Para voar de verdade, siga o manual da aeronave (POH) e um instrutor habilitado.</footer>
 
-  <script src="app.js?v=1"></script>
+  <script src="app.js?v=3"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
