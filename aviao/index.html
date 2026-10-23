@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
   <header class="top">
@@ -52,8 +52,11 @@
       <div class="explorer">
         <div class="card plane-card">
           <div class="plane-card__bar">
-            <span class="mono small">VISTA SUPERIOR · ESCALA 1:90</span>
-            <label class="switch"><input type="checkbox" id="xrayToggle"><span class="switch__ui" aria-hidden="true"></span>Raio‑X</label>
+            <div class="seg seg--sm" id="viewSeg">
+              <button type="button" data-pview="top" aria-pressed="true">Vista superior</button>
+              <button type="button" data-pview="side" aria-pressed="false">Vista lateral</button>
+            </div>
+            <label class="switch" id="xrayLabel"><input type="checkbox" id="xrayToggle"><span class="switch__ui" aria-hidden="true"></span>Raio‑X</label>
           </div>
           <svg class="plane" id="planeSvg" viewBox="0 0 600 540" role="group" aria-label="Avião visto de cima">
             <defs>
@@ -164,6 +167,99 @@
               <text x="0" y="0" text-anchor="middle" transform="translate(582 345) rotate(-90)">COMPRIMENTO 8,28 m</text>
             </g>
             <text class="nose-tag mono" x="300" y="18" text-anchor="middle">PROA ↑</text>
+          </svg>
+          <svg class="plane plane--side" id="planeSide" viewBox="0 0 600 290" role="group" aria-label="Avião visto de lado" hidden>
+            <defs>
+              <linearGradient id="pSideY" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0" style="stop-color:var(--plane)"/>
+                <stop offset=".55" style="stop-color:var(--plane)"/>
+                <stop offset="1" style="stop-color:var(--shade)"/>
+              </linearGradient>
+              <linearGradient id="pSideGlass" x1="0" x2="1" y1="0" y2="1">
+                <stop offset="0" style="stop-color:var(--sky)" stop-opacity=".95"/>
+                <stop offset="1" style="stop-color:var(--sky)" stop-opacity=".5"/>
+              </linearGradient>
+              <pattern id="gridS" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M20 0H0V20" fill="none" class="grid-line"/>
+              </pattern>
+            </defs>
+            <rect width="600" height="290" fill="url(#gridS)"/>
+            <rect class="side-ground" x="0" y="244" width="600" height="6"/>
+            <g transform="translate(-40 8) scale(2)">
+              <g class="part" data-part="estabv" tabindex="0" role="button" aria-label="Estabilizador vertical">
+                <path class="skin-s" d="M98 54 L56 15 Q54 13 50 13 L44 13 L46 61 Z"/>
+              </g>
+              <g class="part" data-part="leme" tabindex="0" role="button" aria-label="Leme de direção">
+                <path class="skin-s" d="M44 13 L46 61 L36 64 L31 19 Q32 13 38 13 Z"/>
+              </g>
+              <g class="part" data-part="trem" tabindex="0" role="button" aria-label="Trem de pouso">
+                <path class="strut" d="M201 86 L196 108 M262 82 L263 106"/>
+                <path class="skin-s" d="M182 106 Q186 101 197 101 L206 102 Q209 106 206 113 L196 116 Q184 116 182 110 Z"/>
+                <circle class="tire" cx="195" cy="110" r="8"/>
+                <circle class="hub" cx="195" cy="110" r="2.5"/>
+                <path class="skin-s" d="M254 107 Q257 103 265 103 L271 104 Q273 107 271 112 L264 115 Q256 115 254 111 Z"/>
+                <circle class="tire" cx="264" cy="112" r="6"/>
+                <circle class="hub" cx="264" cy="112" r="2"/>
+              </g>
+              <g class="part" data-part="fuselagem" tabindex="0" role="button" aria-label="Fuselagem">
+                <path class="skin-s" d="M36 62 L150 46 Q156 41 166 40 L222 40 L242 58 L268 61 L268 80 L240 86 Q205 90 160 86 L40 67 Z"/>
+              </g>
+              <g class="side-deco" aria-hidden="true">
+                <path class="s-stripe" d="M41 64.5 L160 80 L240 82.5 L240 85 L160 83 L40 67 Z"/>
+                <path class="s-line" d="M190 42 L192 84 M150 47 L152 84 M100 54 L102 74"/>
+                <text class="s-reg" x="92" y="63" transform="rotate(-7.5 92 63)">PT-APR</text>
+              </g>
+              <g class="part" data-part="cabine" tabindex="0" role="button" aria-label="Cabine">
+                <path class="win" d="M159 45 Q162 43 168 43 L186 43 L188 57 L162 56 Z"/>
+                <path class="win" d="M191 43 L220 43 L234 57 L193 57 Z"/>
+                <path class="win" d="M223 42 L240 58 L236 58 L222 44 Z"/>
+              </g>
+              <g class="part" data-part="asa" tabindex="0" role="button" aria-label="Asa">
+                <path class="strut" d="M206 85 L181 39"/>
+              </g>
+              <g class="part" data-part="motor" tabindex="0" role="button" aria-label="Motor">
+                <path class="skin-s" d="M240 57 L242 58 L268 61 L268 80 L240 86 Z"/>
+                <path class="s-vent" d="M248 76 L262 74 M248 72 L262 70"/>
+                <path class="strut" d="M246 86 L254 89"/>
+              </g>
+              <g class="part" data-part="estabh" tabindex="0" role="button" aria-label="Estabilizador horizontal">
+                <path class="skin-s" d="M76 62 Q76 59.5 71 59.5 L43 60.5 L43 64.5 L71 64.5 Q76 64.5 76 62 Z"/>
+              </g>
+              <g class="part" data-part="profundor" tabindex="0" role="button" aria-label="Profundor">
+                <rect x="18" y="56" width="26" height="12" fill="transparent" class="hit"/>
+                <path class="skin-s" d="M43 60.5 L23 62 Q21 62.6 23 63.2 L43 64.5 Z"/>
+              </g>
+              <g class="part" data-part="asa" tabindex="0" role="button" aria-label="Asa">
+                <path class="skin-s" d="M226 40 Q226 33.5 215 32.5 L182 33.3 L182 40.5 Z"/>
+              </g>
+              <g class="part" data-part="flap" tabindex="0" role="button" aria-label="Flaps">
+                <path d="M182 33.3 L160 38.5 L162 40.5 L182 40.5 Z"/>
+              </g>
+              <g class="part" data-part="pitot" tabindex="0" role="button" aria-label="Tubo de pitot">
+                <rect x="206" y="39" width="18" height="9" fill="transparent" class="hit"/>
+                <path class="strut" d="M212 40.5 L212 44 L221 44"/>
+              </g>
+              <g class="part" data-part="helice" tabindex="0" role="button" aria-label="Hélice">
+                <rect x="266" y="36" width="26" height="68" fill="transparent" class="hit"/>
+                <ellipse class="disc" cx="288" cy="70" rx="2.6" ry="31"/>
+                <path d="M268 61 Q284 63 287 70 Q284 77 268 80 Z"/>
+                <path class="blade" d="M286.3 41 Q288.8 40 288.8 44 L288.6 96 Q288.6 100 286.4 99 Z"/>
+              </g>
+              <g class="part" data-part="luzes" tabindex="0" role="button" aria-label="Luzes de navegação">
+                <rect x="28" y="56" width="10" height="12" fill="transparent" class="hit"/>
+                <rect x="214" y="30" width="12" height="10" fill="transparent" class="hit"/>
+                <circle class="nav-white" cx="33" cy="63" r="1.6"/>
+                <circle class="nav-green" cx="219" cy="35" r="2"/>
+                <circle class="nav-red" cx="47" cy="12" r="2"/>
+              </g>
+            </g>
+            <g class="dim mono" aria-hidden="true">
+              <path d="M22 268 L534 268 M22 260 L22 276 M534 260 L534 276"/>
+              <text x="278" y="284" text-anchor="middle">COMPRIMENTO 8,28 m</text>
+              <path d="M572 30 L572 244 M564 30 L580 30 M564 244 L580 244"/>
+              <text x="0" y="0" text-anchor="middle" transform="translate(566 137) rotate(-90)">ALTURA 2,72 m</text>
+              <text x="560" y="20" text-anchor="end">PROA →</text>
+            </g>
           </svg>
           <div class="chips" id="partChips" aria-label="Lista de peças"></div>
         </div>
@@ -402,7 +498,7 @@
 
   <footer class="wrap foot small">Conteúdo educativo. Para voar de verdade, siga o manual da aeronave (POH) e um instrutor habilitado.</footer>
 
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       navigator.serviceWorker.register('sw.js').catch(() => {});

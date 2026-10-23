@@ -306,6 +306,8 @@ function selectPart(id) {
   const p = PARTS[id];
   if (!p) return;
   selPart = id;
+  // Os ailerons não aparecem de lado: volta para a vista de cima.
+  if (planeView === 'side' && !$(`#planeSide [data-part="${id}"]`)) setPlaneView('top');
   $$('.part').forEach((g) => g.classList.toggle('is-sel', g.dataset.part === id));
   $$('.chip').forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.chip === id)));
   $('#partInfo').innerHTML = `
@@ -321,13 +323,27 @@ function selectPart(id) {
     <p class="tip"><b>Curiosidade.</b> ${p.curio}</p>
     ${p.ver ? `<button type="button" class="link-btn" data-tab="${p.ver}">${p.ver === 'lab' ? 'Ver a asa no túnel de vento' : 'Ver em ação no cockpit'} →</button>` : ''}`;
 }
-$('#planeSvg').addEventListener('click', (e) => {
-  const g = e.target.closest('[data-part]');
-  if (g) selectPart(g.dataset.part);
+let planeView = 'top';
+function setPlaneView(v) {
+  planeView = v;
+  $('#planeSvg').toggleAttribute('hidden', v !== 'top');
+  $('#planeSide').toggleAttribute('hidden', v !== 'side');
+  $('#xrayLabel').hidden = v !== 'top';
+  $$('#viewSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pview === v)));
+}
+$('#viewSeg').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-pview]');
+  if (b) setPlaneView(b.dataset.pview);
 });
-$('#planeSvg').addEventListener('keydown', (e) => {
-  const g = e.target.closest('[data-part]');
-  if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); selectPart(g.dataset.part); }
+$$('.plane').forEach((svg) => {
+  svg.addEventListener('click', (e) => {
+    const g = e.target.closest('[data-part]');
+    if (g) selectPart(g.dataset.part);
+  });
+  svg.addEventListener('keydown', (e) => {
+    const g = e.target.closest('[data-part]');
+    if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); selectPart(g.dataset.part); }
+  });
 });
 $('#partChips').addEventListener('click', (e) => {
   const c = e.target.closest('[data-chip]');

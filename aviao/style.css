@@ -124,6 +124,19 @@ main { padding-block: 24px 40px; }
 .part > rect.hidden-part { fill: none; stroke-dasharray: 3 3; stroke: var(--muted); }
 .part .nav-white { fill: var(--panel); stroke: var(--ink); stroke-width: 1; }
 .deco { pointer-events: none; }
+.part > path.skin-s { fill: url(#pSideY); }
+.part > path.win { fill: url(#pSideGlass); stroke-width: 1; }
+.part .tire { fill: var(--tire); }
+.part .hub { fill: var(--shade); stroke: none; }
+.part .disc { fill: var(--muted); fill-opacity: .15; stroke: var(--muted); stroke-opacity: .45; stroke-width: 1; }
+.part .s-vent { fill: none; stroke: var(--ink); stroke-opacity: .5; stroke-width: 1.2; }
+.plane--side * { vector-effect: non-scaling-stroke; }
+.side-deco { pointer-events: none; }
+.side-ground { fill: var(--grid); }
+.s-stripe { fill: var(--magenta); fill-opacity: .55; }
+.s-line { fill: none; stroke: var(--ink); stroke-opacity: .3; stroke-width: 1; }
+.s-reg { font: 600 7px var(--mono); fill: var(--ink); fill-opacity: .55; letter-spacing: .06em; }
+.seg--sm button { padding: 6px 12px; font-size: 13px; white-space: nowrap; }
 .deco .panel { fill: none; stroke: var(--ink); stroke-opacity: .22; stroke-width: 1; }
 .deco .hidden-line { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 5 4; }
 .deco .cap { fill: none; stroke: var(--ink); stroke-opacity: .5; stroke-width: 1.2; }
