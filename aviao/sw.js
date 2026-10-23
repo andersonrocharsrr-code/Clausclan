@@ -1,7 +1,7 @@
 /* Service worker: o app abre e funciona offline. */
-const CACHE = 'hangar-escola-v11';
+const CACHE = 'hangar-escola-v12';
 // Os arquivos levam "?v=" no index.html: ao mudar a versão, o celular nunca mistura CSS/JS antigo com HTML novo.
-const FILES = ['./', 'index.html', 'style.css?v=11', 'trace747.js?v=11', 'avioes.js?v=11', 'catalogo747.js?v=11', 'app.js?v=11', 'icon.svg', 'manifest.webmanifest', 'assets/747-realista.jpg'];
+const FILES = ['./', 'index.html', 'style.css?v=13', 'trace747.js?v=13', 'avioes.js?v=13', 'catalogo747.js?v=13', 'app.js?v=13', 'icon.svg', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
