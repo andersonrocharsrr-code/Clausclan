@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
   <header class="top">
@@ -37,6 +37,7 @@
         <a class="tab" role="tab" href="#cockpit" data-tab="cockpit"><span class="tab__key">C</span>Cockpit</a>
         <a class="tab" role="tab" href="#lab" data-tab="lab"><span class="tab__key">D</span>Laboratório</a>
         <a class="tab" role="tab" href="#glossario" data-tab="glossario"><span class="tab__key">E</span>Glossário</a>
+        <a class="tab" role="tab" href="#catalogo" data-tab="catalogo"><span class="tab__key">F</span>Catálogo 747</a>
       </div>
     </nav>
   </header>
@@ -504,12 +505,36 @@
       <input class="search" type="search" id="glossSearch" placeholder="Buscar termo, por exemplo: estol, yaw, flap">
       <dl class="gloss" id="glossList"></dl>
     </section>
+
+    <!-- F · CATÁLOGO 747 -->
+    <section class="view" id="view-catalogo" data-view="catalogo" hidden>
+      <div class="view__head">
+        <p class="eyebrow">Seção F · Boeing 747-8</p>
+        <h1>Catálogo de peças do 747-8</h1>
+        <p class="lede">O 747-8 existe em duas versões: o 747-8 Intercontinental (8I), para passageiros, e o 747-8 Freighter (8F), cargueiro. São 295 categorias de peças e componentes, organizadas por sistema, da estrutura aos parafusos.</p>
+      </div>
+      <div class="cat-bar">
+        <input class="search" type="search" id="catSearch" placeholder="Buscar peça, por exemplo: turbina, freio, oxigênio">
+        <button type="button" class="btn" data-open747="fuselagem">Ver o 747-8 no avião explodido</button>
+      </div>
+      <p class="small" id="catCount" aria-live="polite"></p>
+      <nav class="cat-index" id="catIndex" aria-label="Sistemas do avião"></nav>
+      <div class="cat-list" id="catList"></div>
+      <div class="card cat-about">
+        <h2>Sobre este catálogo</h2>
+        <p>A lista apresenta 295 <b>categorias</b> de peças e componentes, organizadas por função. Não são 295 referências oficiais do catálogo da Boeing, nem uma lista de todos os componentes instalados.</p>
+        <p>O documento com cada peça individual, inclusive os componentes internos de cada conjunto, é o <b>Illustrated Parts Catalog (IPC)</b> do 747-8. A documentação técnica da família inclui também o manual de manutenção, os diagramas elétricos e os manuais de reparo estrutural, e varia conforme a versão e a configuração do avião.</p>
+        <p>Para ir mais fundo, o melhor caminho é dividir o catálogo em conjuntos menores: começar pelos motores GEnx-2B e depois seguir para os sistemas hidráulico, elétrico, trem de pouso e controles de voo.</p>
+        <ul class="refs" id="catRefs"></ul>
+      </div>
+    </section>
   </main>
 
   <footer class="wrap foot small">Conteúdo educativo. Para voar de verdade, siga o manual da aeronave (POH) e um instrutor habilitado.</footer>
 
-  <script src="avioes.js?v=6"></script>
-  <script src="app.js?v=6"></script>
+  <script src="avioes.js?v=7"></script>
+  <script src="catalogo747.js?v=7"></script>
+  <script src="app.js?v=7"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       navigator.serviceWorker.register('sw.js').catch(() => {});

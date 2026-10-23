@@ -16,7 +16,8 @@ const JETS = [
     hc: 3.35, engY: 4.9, nacLen: 4.8, nacD: 2.05, nacFwd: 2.8, engBottom: 0.46,
     stabX: 33.2, stabSpan: 14.35, stabSweep: 30, stabRoot: 4.2, stabTip: 1.4,
     finX: 29.2, finSweep: 35, finRoot: 6.4, finTip: 1.7,
-    noseGearX: 4.3, mainX: 19.9, mainY: 2.86, wheelR: 0.56,
+    noseGearX: 4.3, mainX: 19.9, mainY: 2.86, wheelR: 0.56, coreLen: 1.2, flatInlet: true, comando: 'Manche', telas: '6',
+    doors: [4.9, 33.6], exits: [16.3, 17.3],
     asa: { area: '124,6 m²', comb: '26.000 L', enfl: '25°' },
     motor: { nome: 'CFM56-7B', empuxo: '121 kN', bpr: '5,1 : 1', curio: 'Como o 737 é baixo, o motor fica muito perto do chão. Por isso a entrada de ar tem a parte de baixo achatada, o famoso formato de "bochecha de hamster".' },
     cockpit: 'Dois pilotos com manche convencional (yoke) e seis telas grandes. Os comandos são hidráulicos e o manche se liga às superfícies por cabos.',
@@ -32,7 +33,8 @@ const JETS = [
     hc: 3.3, engY: 5.75, nacLen: 5.4, nacD: 2.45, nacFwd: 2.5, engBottom: 0.6,
     stabX: 32.0, stabSpan: 12.45, stabSweep: 29, stabRoot: 3.9, stabTip: 1.3,
     finX: 28.0, finSweep: 34, finRoot: 5.8, finTip: 1.9,
-    noseGearX: 5.1, mainX: 17.8, mainY: 3.8, wheelR: 0.6,
+    noseGearX: 5.1, mainX: 17.8, mainY: 3.8, wheelR: 0.6, coreLen: 1.7, comando: 'Sidestick', telas: '6',
+    doors: [4.9, 32.0], exits: [15.4, 16.2],
     asa: { area: '122,6 m²', comb: '26.700 L', enfl: '25°' },
     motor: { nome: 'CFM LEAP-1A ou PW1100G', empuxo: '120 kN', bpr: '11 : 1', curio: 'O fan do LEAP-1A tem pás de material composto tecido em 3D, mais leves e resistentes que as de titânio.' },
     cockpit: 'Dois pilotos com sidestick, uma alavanca lateral como de videogame, e fly-by-wire: computadores protegem o avião contra estol e manobras exageradas.',
@@ -48,12 +50,31 @@ const JETS = [
     hc: 2.75, engY: 5.6, nacLen: 5.3, nacD: 2.3, nacFwd: 2.5, engBottom: 0.55,
     stabX: 35.6, stabSpan: 12.1, stabSweep: 30, stabRoot: 3.6, stabTip: 1.3,
     finX: 31.4, finSweep: 38, finRoot: 5.5, finTip: 1.8,
-    noseGearX: 3.4, mainX: 21.0, mainY: 3.0, wheelR: 0.55,
+    noseGearX: 3.4, mainX: 21.0, mainY: 3.0, wheelR: 0.55, coreLen: 1.6, comando: 'Sidestick', telas: '5',
+    doors: [4.3, 36.0], exits: [19.0],
     asa: { area: '103 m²', comb: '17.000 L', enfl: '23°' },
     motor: { nome: 'Pratt & Whitney PW1900G', empuxo: '102 kN', bpr: '12 : 1', curio: 'É um turbofan "geared": uma caixa de engrenagens deixa o fan girar mais devagar que a turbina. Isso reduz o ruído em até 75% e o consumo em cerca de 17% em relação à geração anterior.' },
     cockpit: 'Dois pilotos com sidestick e fly-by-wire de malha fechada: o computador corrige o voo continuamente, o que deixou a cauda e o estabilizador menores e mais leves.',
     winglet: null,
     trem: 'Trem retrátil com duas rodas em cada perna. A asa longa e fina dispensou winglets: o alongamento alto já reduz o arrasto induzido.',
+  },
+  {
+    id: 'b747', nome: 'Boeing 747-8', sub: 'Jumbo de dois andares · 410 lugares',
+    lede: 'A "Rainha dos Céus". O 747-8 é a versão mais nova e maior do 747: andar superior alongado, asa nova com pontas inclinadas para trás e quatro motores GEnx-2B. Existe para passageiros (747-8I) e cargueiro (747-8F), com porta de carga no nariz. Veja também a aba Catálogo 747, com 295 categorias de peças.',
+    specs: { fab: 'Boeing (EUA)', voo: '2010 (8F) · 2011 (8I)', env: '68,40 m', comp: '76,30 m', alt: '19,40 m', pmd: '447.700 kg', mot: '4 × GEnx-2B67', pax: 'cerca de 410', cru: 'Mach 0,855 · 920 km/h', alc: '14.300 km', teto: '43.100 ft' },
+    L: 76.3, span: 68.4, D: 6.5, H: 19.4, noseLen: 7.0, tailLen: 16,
+    wingX: 26.5, sweep: 37.5, rootChord: 15.5, tipChord: 3.4, kink: 0.3, wingletType: null, wingletH: 0, raked: true,
+    hc: 5.0, engines: [{ y: 12.4, bottom: 1.3 }, { y: 21.2, bottom: 2.5 }], nacLen: 7.2, nacD: 3.25, nacFwd: 3.8, coreLen: 2.2,
+    stabX: 63.0, stabSpan: 22.2, stabSweep: 37, stabRoot: 10.5, stabTip: 3.0,
+    finX: 59.0, finSweep: 47, finRoot: 13.5, finTip: 4.5,
+    noseGearX: 6.5, mains: [{ x: 33.5, y: 5.6, bogie: true }, { x: 36.8, y: 1.9, bogie: true }], wheelR: 0.63,
+    hump: { end: 30.5, top: 9.9 }, cockpitWin: [[8.8, 9.55], [6.6, 9.3], [6.0, 8.85], [8.8, 8.95]],
+    doors: [7.0, 17.0, 33.0, 45.5, 57.0], exits: [], comando: 'Manche', telas: '6', rodas: '18',
+    asa: { area: '554 m²', comb: '238.600 L', enfl: '37,5°' },
+    motor: { nome: 'GE GEnx-2B67', empuxo: '296 kN', bpr: '8 : 1', curio: 'O GEnx-2B é uma versão do motor do Boeing 787 feita para o 747-8. As pás do fan e a carcaça são de fibra de carbono, mais leves que as de titânio.' },
+    cockpit: 'Dois pilotos com manche convencional (coluna de controle), telas PFD, ND e EICAS e o FMS. A cabine de comando fica no andar superior, no "corcunda" do 747.',
+    winglet: null,
+    trem: 'São 18 rodas: 2 no nariz e 16 em quatro pernas principais, duas sob as asas e duas sob a fuselagem. As pernas da fuselagem também viram nas curvas apertadas no solo.',
   },
 ];
 
@@ -67,7 +88,7 @@ function parts(a) {
       como: a.cockpit,
       manut: 'Testes dos sistemas a cada voo pela própria tripulação; os computadores registram falhas para a manutenção ler depois.',
       curio: 'O piloto automático pode fazer quase todo o voo, inclusive o pouso em neblina (pouso automático CAT III).',
-      spec: [['Pilotos', '2'], ['Telas', a.id === 'b737' ? '6' : a.id === 'a320' ? '6' : '5'], ['Comando', a.id === 'b737' ? 'Manche' : 'Sidestick']],
+      spec: [['Pilotos', '2'], ['Telas', a.telas], ['Comando', a.comando]],
     },
     fuselagem: {
       nome: 'Fuselagem', sistema: 'Estrutura',
@@ -179,7 +200,7 @@ function parts(a) {
       como: a.trem + ' Os freios de disco têm sistema antiderrapante, como o ABS de um carro, e autobrake.',
       manut: 'Pressão dos pneus todo dia (com nitrogênio), desgaste dos freios por pinos indicadores e revisão geral do trem a cada cerca de 10 anos.',
       curio: 'O pneu de um jato aguenta mais de 300 km/h no toque e é cheio de nitrogênio, que não pega fogo e varia menos com a temperatura.',
-      spec: [['Rodas', '6'], ['Tipo', 'Retrátil'], ['Freios', 'Disco + antiderrapante']],
+      spec: [['Rodas', a.rodas || '6'], ['Tipo', 'Retrátil'], ['Freios', 'Disco + antiderrapante']],
     },
     apu: {
       nome: 'APU', sistema: 'Elétrico',
@@ -225,6 +246,12 @@ function parts(a) {
 }
 const ORDER = ['asa', 'aileron', 'flap', 'slat', 'spoiler', 'winglet', 'motor', 'profundor', 'estabh', 'leme', 'estabv', 'fuselagem', 'cabine', 'trem', 'apu', 'pitot', 'luzes'];
 
+JETS.forEach((a) => {
+  a.engines = a.engines || [{ y: a.engY, bottom: a.engBottom }];
+  a.engY = a.engines[0].y;
+  a.mains = a.mains || [{ x: a.mainX, y: a.mainY }];
+});
+
 /* ---------- Geometria comum ---------- */
 function geo(a) {
   const r = a.D / 2;
@@ -251,14 +278,16 @@ function top(a) {
   const poly = (pts) => [1, -1].map((sd) => 'M' + pts.map(([e, m]) => pt(e, m, sd)).join(' L') + ' Z').join(' ');
   const band = (e1, e2, fa, fb) => poly([[e1, g.at(e1, fa)], [e2, g.at(e2, fa)], [e2, g.at(e2, fb)], [e1, g.at(e1, fb)]]);
   const { r, s } = g, w = r, nL = a.noseLen, tL = a.tailLen, L = a.L;
-  const fus = `M${cx} ${Y(0)} C${X(w * 0.62)} ${Y(0)} ${X(w)} ${Y(nL * 0.45)} ${X(w)} ${Y(nL)} L${X(w)} ${Y(L - tL)} C${X(w)} ${Y(L - tL * 0.45)} ${X(w * 0.32)} ${Y(L - 0.6)} ${X(w * 0.16)} ${Y(L)} L${X(-w * 0.16)} ${Y(L)} C${X(-w * 0.32)} ${Y(L - 0.6)} ${X(-w)} ${Y(L - tL * 0.45)} ${X(-w)} ${Y(L - tL)} L${X(-w)} ${Y(nL)} C${X(-w)} ${Y(nL * 0.45)} ${X(-w * 0.62)} ${Y(0)} ${cx} ${Y(0)} Z`;
-  const wing = poly([[r, a.wingX], [s - 0.15, g.tipLE - 0.05], [s, g.tipLE + 0.25], [s, g.tipTE], [g.eK, g.kinkTE], [r, g.rootTE]]);
+  const fus = `M${cx} ${Y(0)} C${X(w * 0.5)} ${Y(0)} ${X(w)} ${Y(nL * 0.5)} ${X(w)} ${Y(nL)} L${X(w)} ${Y(L - tL)} C${X(w)} ${Y(L - tL * 0.45)} ${X(w * 0.32)} ${Y(L - 0.6)} ${X(w * 0.16)} ${Y(L)} L${X(-w * 0.16)} ${Y(L)} C${X(-w * 0.32)} ${Y(L - 0.6)} ${X(-w)} ${Y(L - tL * 0.45)} ${X(-w)} ${Y(L - tL)} L${X(-w)} ${Y(nL)} C${X(-w)} ${Y(nL * 0.5)} ${X(-w * 0.5)} ${Y(0)} ${cx} ${Y(0)} Z`;
+  const wing = a.raked
+    ? poly([[r, a.wingX], [s - 3, g.leAt(s - 3)], [s, g.tipTE - 0.5], [s, g.tipTE], [g.eK, g.kinkTE], [r, g.rootTE]])
+    : poly([[r, a.wingX], [s - 0.15, g.tipLE - 0.05], [s, g.tipLE + 0.25], [s, g.tipTE], [g.eK, g.kinkTE], [r, g.rootTE]]);
   // Motor: a parte de trás fica escondida embaixo da asa.
-  const nf = g.leAt(a.engY) - a.nacFwd, nw = a.nacD / 2;
-  const nac = [1, -1].map((sd) => {
-    const c = cx + sd * a.engY * k, x1 = f(c - nw * k), x2 = f(c + nw * k), yA = Y(nf), yB = Y(nf + a.nacLen);
-    return `<path d="M${x1} ${Y(nf + 0.4)} Q${x1} ${yA} ${f(c)} ${yA} Q${x2} ${yA} ${x2} ${Y(nf + 0.4)} L${f(c + nw * 0.8 * k)} ${yB} L${f(c - nw * 0.8 * k)} ${yB} Z"/><ellipse class="inlet" cx="${f(c)}" cy="${Y(nf + 0.12)}" rx="${f(nw * k * 0.8)}" ry="${f(0.25 * k)}"/>`;
-  }).join('');
+  const nw = a.nacD / 2, nfOf = (e) => g.leAt(e) - a.nacFwd, nf = nfOf(a.engY);
+  const nac = a.engines.map(({ y: e }) => [1, -1].map((sd) => {
+    const c = cx + sd * e * k, n0 = nfOf(e), x1 = f(c - nw * k), x2 = f(c + nw * k), yA = Y(n0), yB = Y(n0 + a.nacLen);
+    return `<path d="M${x1} ${Y(n0 + 0.4)} Q${x1} ${yA} ${f(c)} ${yA} Q${x2} ${yA} ${x2} ${Y(n0 + 0.4)} L${f(c + nw * 0.8 * k)} ${yB} L${f(c - nw * 0.8 * k)} ${yB} Z"/><ellipse class="inlet" cx="${f(c)}" cy="${Y(n0 + 0.12)}" rx="${f(nw * k * 0.8)}" ry="${f(0.25 * k)}"/>`;
+  }).join('')).join('');
   const rS = r * 0.38, ss = a.stabSpan / 2, tS = Math.tan(a.stabSweep * D2R);
   const sTipLE = a.stabX + (ss - rS) * tS;
   const sAt = (e, fr) => { const le = a.stabX + (e - rS) * tS, te = a.stabX + a.stabRoot + (e - rS) / (ss - rS) * (sTipLE + a.stabTip - a.stabX - a.stabRoot); return le + fr * (te - le); };
@@ -284,7 +313,7 @@ function top(a) {
   </defs>
   <rect width="600" height="540" fill="url(#jGridT)"/>
   <g class="airframe">
-    ${part('trem', 'Trem de pouso', hid(0, a.noseGearX, 0.7, 1.3) + hid(a.mainY, a.mainX, 1.3, 1.7) + hid(-a.mainY, a.mainX, 1.3, 1.7))}
+    ${part('trem', 'Trem de pouso', hid(0, a.noseGearX, 0.7, 1.3) + a.mains.map((m) => hid(m.y, m.x, 1.3, m.bogie ? 2.6 : 1.7) + hid(-m.y, m.x, 1.3, m.bogie ? 2.6 : 1.7)).join(''))}
     ${part('motor', 'Motores', nac)}
     ${part('asa', 'Asa', `<path d="${wing}"/>`)}
     ${part('slat', 'Slats', `<path d="${band(r + 0.9, a.engY - 1.3, 0, 0.11)} ${band(a.engY + 1.3, s - 0.4, 0, 0.11)}"/>`)}
@@ -304,15 +333,15 @@ function top(a) {
     <g class="deco" aria-hidden="true">
       <path class="panel" d="M${X(-w)} ${Y(nL)} L${X(w)} ${Y(nL)} M${X(-w)} ${Y(L - tL)} L${X(w)} ${Y(L - tL)}"/>
       <path class="panel" d="${[0.25, 0.5, 0.75].map((t) => { const e = r + 0.6 + t * (g.e2 - r - 0.6); return `M${X(e)} ${Y(g.at(e, 0.56))} L${X(e)} ${Y(g.at(e, 0.7))} M${X(-e)} ${Y(g.at(e, 0.56))} L${X(-e)} ${Y(g.at(e, 0.7))}`; }).join(' ')}"/>
-      <path class="hidden-line" d="M${X(a.engY)} ${Y(g.leAt(a.engY))} L${X(a.engY)} ${Y(nf + a.nacLen)} M${X(-a.engY)} ${Y(g.leAt(a.engY))} L${X(-a.engY)} ${Y(nf + a.nacLen)}"/>
+      <path class="hidden-line" d="${a.engines.map(({ y: e }) => `M${X(e)} ${Y(g.leAt(e))} L${X(e)} ${Y(nfOf(e) + a.nacLen)} M${X(-e)} ${Y(g.leAt(e))} L${X(-e)} ${Y(nfOf(e) + a.nacLen)}`).join(' ')}"/>
     </g>
   </g>
   <g class="xray" hidden>
     <path class="x-tank" d="${tank}"/>
     <rect class="x-tank" x="${X(-w * 0.8)}" y="${Y(a.wingX + 0.6)}" width="${f(1.6 * w * k)}" height="${f((a.rootChord - 1.6) * k)}" rx="4"/>
-    <path class="x-fuel" d="M${X(0)} ${Y(midW)} L${X(a.engY)} ${Y(g.leAt(a.engY) + 1)} L${X(a.engY)} ${Y(nf + 1)} M${X(0)} ${Y(midW)} L${X(-a.engY)} ${Y(g.leAt(a.engY) + 1)} L${X(-a.engY)} ${Y(nf + 1)}"/>
+    <path class="x-fuel" d="${a.engines.map(({ y: e }) => [1, -1].map((sd) => `M${X(0)} ${Y(midW)} L${X(sd * e)} ${Y(g.leAt(e) + 1)} L${X(sd * e)} ${Y(nfOf(e) + 1)}`).join(' ')).join(' ')}"/>
     <path class="x-cable" d="M${X(0)} ${Y(nL * 0.6)} L${X(0)} ${Y(a.stabX + 1)} L${X(0)} ${Y(L - 0.6)} M${X(0)} ${Y(midW + 1.5)} L${X(g.e2 + 1)} ${Y(g.at(g.e2 + 1, 0.8))} L${X(g.e3 - 1)} ${Y(g.at(g.e3 - 1, 0.8))} M${X(0)} ${Y(midW + 1.5)} L${X(-g.e2 - 1)} ${Y(g.at(g.e2 + 1, 0.8))} L${X(-g.e3 + 1)} ${Y(g.at(g.e3 - 1, 0.8))} M${X(0)} ${Y(a.stabX + 1)} L${X(ss - 0.8)} ${Y(sAt(ss - 0.8, 0.75))} M${X(0)} ${Y(a.stabX + 1)} L${X(-ss + 0.8)} ${Y(sAt(ss - 0.8, 0.75))}"/>
-    <path class="x-elec" d="M${X(0)} ${Y(nL + 0.8)} L${X(0)} ${Y(midW - 0.5)} L${X(s)} ${Y(g.tipLE + 0.6)} M${X(0)} ${Y(midW - 0.5)} L${X(-s)} ${Y(g.tipLE + 0.6)} M${X(0)} ${Y(midW - 0.5)} L${X(0)} ${Y(L)} M${X(0)} ${Y(midW - 0.5)} L${X(a.engY)} ${Y(nf + 2)} M${X(0)} ${Y(midW - 0.5)} L${X(-a.engY)} ${Y(nf + 2)}"/>
+    <path class="x-elec" d="M${X(0)} ${Y(nL + 0.8)} L${X(0)} ${Y(midW - 0.5)} L${X(s)} ${Y(g.tipLE + 0.6)} M${X(0)} ${Y(midW - 0.5)} L${X(-s)} ${Y(g.tipLE + 0.6)} M${X(0)} ${Y(midW - 0.5)} L${X(0)} ${Y(L)} ${a.engines.map(({ y: e }) => `M${X(0)} ${Y(midW - 0.5)} L${X(e)} ${Y(nfOf(e) + 2)} M${X(0)} ${Y(midW - 0.5)} L${X(-e)} ${Y(nfOf(e) + 2)}`).join(' ')}"/>
     <rect class="x-batt" x="${X(-0.6)}" y="${Y(nL + 0.4)}" width="${f(1.2 * k)}" height="${f(0.8 * k)}" rx="2"/>
     <g class="x-legend mono">
       <rect x="14" y="26" width="168" height="58" rx="6"/>
@@ -338,39 +367,74 @@ function side(a) {
   const G = 246, xN = 40 + a.L * k;
   const x = (m) => f(xN - m * k), y = (h) => f(G - h * k);
   const { r, s } = g, hc = a.hc, D = a.D, nL = a.noseLen, tL = a.tailLen, L = a.L;
-  const fus = `M${x(L)} ${y(hc + 0.2 * D)} L${x(L - tL * 0.55)} ${y(hc + r)} L${x(nL)} ${y(hc + r)} C${x(nL * 0.35)} ${y(hc + r)} ${x(0)} ${y(hc + 0.08 * D)} ${x(0)} ${y(hc - 0.08 * D)} C${x(0)} ${y(hc - 0.32 * D)} ${x(nL * 0.3)} ${y(hc - r)} ${x(nL)} ${y(hc - r)} L${x(L - tL)} ${y(hc - r)} Q${x(L - tL * 0.3)} ${y(hc - r)} ${x(L)} ${y(hc - 0.02 * D)} Z`;
-  const glass = `M${x(nL * 0.8)} ${y(hc + 0.36 * D)} L${x(nL * 0.48)} ${y(hc + 0.33 * D)} L${x(nL * 0.3)} ${y(hc + 0.17 * D)} L${x(nL * 0.8)} ${y(hc + 0.19 * D)} Z`;
+  const hT = hc + r, hB = hc - r;
+
+  // Fuselagem: nariz afilado, para-brisa inclinado e cauda subindo até a saída da APU.
+  const hu = a.hump;
+  const crown = hu
+    ? `L${x(hu.end + 3)} ${y(hT)} C${x(hu.end)} ${y(hT)} ${x(hu.end - 1)} ${y(hu.top)} ${x(hu.end - 4)} ${y(hu.top)} L${x(nL * 1.6)} ${y(hu.top)} C${x(nL * 0.7)} ${y(hu.top)} ${x(nL * 0.2)} ${y(hc + 0.1 * D)} ${x(0)} ${y(hc - 0.1 * D)}`
+    : `L${x(nL * 1.5)} ${y(hT)} C${x(nL * 0.62)} ${y(hT)} ${x(nL * 0.2)} ${y(hc + 0.14 * D)} ${x(0)} ${y(hc - 0.12 * D)}`;
+  const fus = `M${x(L)} ${y(hc + 0.18 * D)} L${x(L - tL * 0.55)} ${y(hT)} ${crown} C${x(0.03)} ${y(hc - 0.34 * D)} ${x(nL * 0.35)} ${y(hB)} ${x(nL * 1.2)} ${y(hB)} L${x(L - tL)} ${y(hB)} Q${x(L - tL * 0.3)} ${y(hB)} ${x(L)} ${y(hc + 0.02 * D)} Z`;
+  const fairing = `M${x(a.wingX - 2.5)} ${y(hB + 0.05)} C${x(a.wingX - 0.5)} ${y(hB - 0.26 * D)} ${x(g.rootTE + 0.5)} ${y(hB - 0.26 * D)} ${x(g.rootTE + 3)} ${y(hB + 0.05)} Z`;
+  const cw = a.cockpitWin || [[nL * 0.95, hc + 0.36 * D], [nL * 0.55, hc + 0.29 * D], [nL * 0.45, hc + 0.16 * D], [nL * 0.95, hc + 0.2 * D]];
+  const glass = 'M' + cw.map(([m, h]) => `${x(m)} ${y(h)}`).join(' L') + ' Z';
+  const mull = [0.35, 0.68].map((t) => { const m1 = cw[0][0] + t * (cw[1][0] - cw[0][0]), h1 = cw[0][1] + t * (cw[1][1] - cw[0][1]); const m2 = cw[3][0] + t * (cw[2][0] - cw[3][0]), h2 = cw[3][1] + t * (cw[2][1] - cw[3][1]); return `M${x(m1)} ${y(h1)} L${x(m2)} ${y(h2)}`; }).join(' ');
+
+  // Asa: vista quase de perfil, subindo para a ponta por causa do diedro.
   const t6 = Math.tan(6 * D2R);
-  const hW = hc - 0.36 * D, hTip = hW + (s - r) * t6;
-  const wing = `M${x(a.wingX)} ${y(hW)} L${x(g.tipLE)} ${y(hTip + 0.18)} L${x(g.tipTE)} ${y(hTip)} L${x(g.rootTE)} ${y(hW - 0.12)} Z`;
+  const hW = hc - 0.42 * D, hTip = hW + (s - r) * t6;
+  const wing = `M${x(a.wingX)} ${y(hW + 0.1)} L${x(g.tipLE)} ${y(hTip + 0.15)} L${x(g.tipTE)} ${y(hTip)} L${x(g.rootTE)} ${y(hW - 0.2)} Z`;
   const wh = a.wingletH;
   const wl = a.wingletType === 'blended'
     ? `M${x(g.tipLE + 0.1)} ${y(hTip + 0.15)} Q${x(g.tipLE + 0.35)} ${y(hTip + wh * 0.45)} ${x(g.tipLE + 1.3)} ${y(hTip + wh)} L${x(g.tipLE + 1.95)} ${y(hTip + wh)} Q${x(g.tipTE + 0.05)} ${y(hTip + 0.6)} ${x(g.tipTE)} ${y(hTip)} Z`
     : a.wingletType === 'sharklet'
       ? `M${x(g.tipLE + 0.05)} ${y(hTip + 0.15)} Q${x(g.tipLE + 0.25)} ${y(hTip + 0.7)} ${x(g.tipLE + 0.9)} ${y(hTip + wh)} L${x(g.tipLE + 1.6)} ${y(hTip + wh)} Q${x(g.tipTE)} ${y(hTip + 0.9)} ${x(g.tipTE)} ${y(hTip)} Z` : '';
-  const sF = g.leAt(a.engY) - a.nacFwd, sR = sF + a.nacLen, hb = a.engBottom, ht = hb + a.nacD;
-  const xf = +x(sF), xr = +x(sR), yTop = +y(ht), yBot = +y(hb), yMid = (yTop + yBot) / 2;
-  const nac = `M${xf} ${yTop} L${xr} ${y(ht - a.nacD * 0.12)} L${xr} ${y(hb + a.nacD * 0.2)} L${xf} ${yBot} Q${f(xf + 0.3 * k)} ${f(yMid)} ${xf} ${yTop} Z`;
-  const cone = `M${xr} ${y(ht - a.nacD * 0.32)} L${f(xr - 0.9 * k)} ${y(hb + a.nacD * 0.5)} L${xr} ${y(hb + a.nacD * 0.34)} Z`;
-  const hWe = hW + (a.engY - r) * t6;
-  const pylon = `M${x(sF + a.nacLen * 0.3)} ${f(yTop + 1)} L${x(sF + a.nacLen * 0.85)} ${f(yTop + 1)} L${x(sF + a.nacLen * 1.08)} ${y(Math.max(hWe, ht) + 0.1)} L${x(sF + a.nacLen * 0.5)} ${y(Math.max(hWe, ht) + 0.1)} Z`;
+
+  // Motores: capô do fan, saída do núcleo e cone; pilone até a asa. O de fora fica por cima (mais perto de quem olha).
+  const engine = ({ y: e, bottom: hb }) => {
+    const nd = a.nacD, nl = a.nacLen, cl = a.coreLen || 1.4;
+    const sF = g.leAt(e) - a.nacFwd, sC = sF + nl, ht = hb + nd;
+    const hWe = hW + (e - r) * t6, hp = Math.max(hWe, ht - 0.2) + 0.25;
+    const pylon = `M${x(sF + nl * 0.3)} ${y(ht - 0.3)} L${x(sC + cl * 0.4)} ${y(ht - 0.5)} L${x(sC + cl + 0.6)} ${y(hp)} L${x(sF + nl * 0.45)} ${y(hp + 0.35)} Z`;
+    const lipB = hb + (a.flatInlet ? nd * 0.1 : 0.05);
+    const cowl = `M${x(sF)} ${y(ht - 0.06 * nd)} Q${x(sF + 0.25)} ${y(ht)} ${x(sF + nl * 0.25)} ${y(ht)} L${x(sC)} ${y(ht - 0.12 * nd)} L${x(sC)} ${y(hb + 0.16 * nd)} L${x(sF + nl * 0.3)} ${y(hb)} Q${x(sF + 0.3)} ${y(hb)} ${x(sF)} ${y(lipB)} Z`;
+    const core = `M${x(sC - 0.1)} ${y(ht - 0.24 * nd)} L${x(sC + cl)} ${y(ht - 0.32 * nd)} L${x(sC + cl)} ${y(hb + 0.32 * nd)} L${x(sC - 0.1)} ${y(hb + 0.26 * nd)} Z`;
+    const plug = `M${x(sC + cl)} ${y(ht - 0.37 * nd)} L${x(sC + cl + nd * 0.45)} ${y(hb + nd * 0.5)} L${x(sC + cl)} ${y(hb + 0.37 * nd)} Z`;
+    const seams = `M${x(sF + nl * 0.42)} ${y(ht - 0.02)} L${x(sF + nl * 0.42)} ${y(hb + 0.04)} M${x(sF + nl * 0.68)} ${y(ht - 0.06 * nd)} L${x(sF + nl * 0.68)} ${y(hb + 0.08 * nd)}`;
+    const lip = `<ellipse class="inlet" cx="${x(sF - 0.05)}" cy="${y((ht + lipB) / 2)}" rx="${f(0.14 * k)}" ry="${f((ht - lipB) * k * 0.47)}"/>`;
+    return `<path class="jskin-s" d="${pylon}"/><path class="cone" d="${core}"/><path class="cone" d="${plug}"/><path class="jskin-s" d="${cowl}"/><path class="seam" d="${seams}"/>${lip}`;
+  };
+  const engines = [...a.engines].sort((p, q) => p.y - q.y).map(engine).join('');
+
   const rS = r * 0.38, ss = a.stabSpan / 2, tS = Math.tan(a.stabSweep * D2R);
   const hs = hc + 0.12 * D, hsT = hs + (ss - rS) * Math.tan(7 * D2R);
   const sTipLE = a.stabX + (ss - rS) * tS;
   const stab = `M${x(a.stabX)} ${y(hs + 0.12)} L${x(sTipLE)} ${y(hsT + 0.12)} L${x(sTipLE + a.stabTip * 0.68)} ${y(hsT - 0.05)} L${x(a.stabX + a.stabRoot * 0.68)} ${y(hs - 0.18)} Z`;
   const elev = `M${x(a.stabX + a.stabRoot * 0.7)} ${y(hs - 0.18)} L${x(sTipLE + a.stabTip * 0.7)} ${y(hsT - 0.05)} L${x(sTipLE + a.stabTip)} ${y(hsT - 0.1)} L${x(a.stabX + a.stabRoot)} ${y(hs - 0.24)} Z`;
-  const fH = a.H - (hc + r), tF = Math.tan(a.finSweep * D2R);
-  const fTipLE = a.finX + fH * tF;
-  const fin = `M${x(a.finX)} ${y(hc + r)} L${x(fTipLE)} ${y(a.H)} L${x(fTipLE + a.finTip * 0.68)} ${y(a.H)} L${x(a.finX + a.finRoot * 0.68)} ${y(hc)} L${x(a.finX - 1)} ${y(hc)} Z`;
+
+  // Deriva com a "barbatana dorsal" que se curva para dentro da fuselagem.
+  const tF = Math.tan(a.finSweep * D2R);
+  const fTipLE = a.finX + (a.H - hT) * tF, hFil = hT + D * 0.2;
+  const fin = `M${x(a.finX - D * 0.9)} ${y(hT)} Q${x(a.finX - 0.2)} ${y(hT + 0.05)} ${x(a.finX + (hFil - hT) * tF)} ${y(hFil)} L${x(fTipLE)} ${y(a.H)} L${x(fTipLE + a.finTip * 0.68)} ${y(a.H)} L${x(a.finX + a.finRoot * 0.68)} ${y(hc)} L${x(a.finX - D * 0.9)} ${y(hc)} Z`;
   const rud = `M${x(fTipLE + a.finTip * 0.7)} ${y(a.H - 0.05)} L${x(fTipLE + a.finTip)} ${y(a.H - 0.15)} L${x(L + 0.25)} ${y(hc + r * 0.5)} L${x(a.finX + a.finRoot * 0.7)} ${y(hc + r * 0.5)} Z`;
-  const wr = a.wheelR;
-  const gearM = `<path class="strut" d="M${x(a.mainX)} ${y(hc - r)} L${x(a.mainX)} ${y(wr)}"/><circle class="tire" cx="${x(a.mainX + 0.35)}" cy="${y(wr)}" r="${f(wr * k)}"/><circle class="hub" cx="${x(a.mainX + 0.35)}" cy="${y(wr)}" r="${f(wr * k * 0.35)}"/>`;
-  const nr = wr * 0.62;
-  const gearN = `<path class="strut" d="M${x(a.noseGearX)} ${y(hc - r * 0.8)} L${x(a.noseGearX)} ${y(nr)}"/><circle class="tire" cx="${x(a.noseGearX)}" cy="${y(nr)}" r="${f(nr * k)}"/><circle class="hub" cx="${x(a.noseGearX)}" cy="${y(nr)}" r="${f(nr * k * 0.35)}"/>`;
-  const wy = y(hc + 0.14 * D), pitch = 0.53 * k;
-  const winRow = `<path class="win-row" d="M${x(L - tL - 0.3)} ${wy} L${x(nL + 2.3)} ${wy}" style="stroke-width:${f(0.3 * k)};stroke-dasharray:${f(pitch * 0.45)} ${f(pitch * 0.55)}"/>`;
-  const door = (m) => `<rect class="door" x="${x(m + 0.85)}" y="${y(hc + 0.34 * D)}" width="${f(0.85 * k)}" height="${f(0.55 * D * k)}" rx="2"/>`;
-  const exitM = a.wingX + a.rootChord * 0.35;
+
+  // Trem: perna e rodas (truque de 4 rodas no 747 mostra duas de lado).
+  const wr = a.wheelR, nr = wr * 0.7;
+  const wheel = (m, rad) => `<circle class="tire" cx="${x(m)}" cy="${y(rad)}" r="${f(rad * k)}"/><circle class="hub" cx="${x(m)}" cy="${y(rad)}" r="${f(rad * k * 0.38)}"/>`;
+  const gear = a.mains.map((mg) => `<path class="strut" d="M${x(mg.x)} ${y(hB + 0.2)} L${x(mg.x)} ${y(wr)}${mg.bogie ? ` M${x(mg.x - 0.85)} ${y(wr)} L${x(mg.x + 0.85)} ${y(wr)}` : ''}"/>` + (mg.bogie ? wheel(mg.x - 0.85, wr) + wheel(mg.x + 0.85, wr) : wheel(mg.x + 0.3, wr))).join('')
+    + `<path class="strut" d="M${x(a.noseGearX)} ${y(hB + 0.3)} L${x(a.noseGearX)} ${y(nr)}"/>${wheel(a.noseGearX, nr)}`;
+
+  // Detalhes: janelas, portas, saídas sobre a asa, antenas e faixa.
+  const pitch = 0.53 * k;
+  const row = (m1, m2, h) => `<path class="win-row" d="M${x(m1)} ${y(h)} L${x(m2)} ${y(h)}" style="stroke-width:${f(Math.max(2, 0.32 * k))};stroke-dasharray:${f(pitch * 0.42)} ${f(pitch * 0.58)}"/>`;
+  const wy = hc + 0.13 * D;
+  const rows = row(L - tL - 0.4, nL + 2.4, wy) + (hu ? row(hu.end - 4.5, nL * 1.75, hu.top - 0.95) : '');
+  const door = (m) => `<rect class="door" x="${x(m + 0.45)}" y="${y(hc + 0.3 * D)}" width="${f(0.9 * k)}" height="${f(0.48 * D * k)}" rx="2"/>`;
+  const exit = (m) => `<rect class="door" x="${x(m + 0.28)}" y="${y(hc + 0.24 * D)}" width="${f(0.55 * k)}" height="${f(0.24 * D * k)}" rx="2"/>`;
+  const ant = (m, top) => `<path class="ant" d="M${x(m)} ${y(top ? hT : hB)} L${x(m + 0.5)} ${y(top ? hT + 0.55 : hB - 0.55)} L${x(m + 0.7)} ${y(top ? hT + 0.55 : hB - 0.55)} L${x(m + 0.6)} ${y(top ? hT : hB)} Z"/>`;
+  const stripe = `M${x(L - tL * 0.35)} ${y(hc + 0.02 * D)} L${x(nL * 0.62)} ${y(hc + 0.02 * D)} L${x(nL * 0.55)} ${y(hc - 0.05 * D)} L${x(L - tL * 0.25)} ${y(hc - 0.05 * D)} Z`;
+  const topAnt = hu ? hu.end - 6 : a.wingX - 4;
+
   return `
 <svg class="plane plane--side" data-pv="side" viewBox="0 0 600 290" role="group" aria-label="${a.nome} visto de lado" hidden>
   <defs>
@@ -383,23 +447,23 @@ function side(a) {
   <rect class="side-ground" x="0" y="${G}" width="600" height="6"/>
   ${part('estabv', 'Estabilizador vertical', `<path class="jskin-s" d="${fin}"/>`)}
   ${part('leme', 'Leme de direção', `<path class="jskin-s" d="${rud}"/>`)}
-  ${part('trem', 'Trem de pouso', gearM + gearN)}
-  ${part('fuselagem', 'Fuselagem', `<path class="jskin-s" d="${fus}"/>`)}
+  ${part('trem', 'Trem de pouso', gear)}
+  ${part('fuselagem', 'Fuselagem', `<path class="jskin-s" d="${fus}"/><path class="jskin-s" d="${fairing}"/>`)}
   <g class="side-deco" aria-hidden="true">
-    ${winRow}${door(nL)}${door(L - tL - 1.2)}
-    <rect class="door" x="${x(exitM + 0.5)}" y="${y(hc + 0.3 * D)}" width="${f(0.5 * k)}" height="${f(0.32 * D * k)}" rx="2"/>
-    <path class="s-stripe" d="M${x(L - tL * 0.4)} ${y(hc - 0.12 * D)} L${x(nL * 0.5)} ${y(hc - 0.12 * D)} L${x(nL * 0.42)} ${y(hc - 0.2 * D)} L${x(L - tL * 0.25)} ${y(hc - 0.2 * D)} Z"/>
-    <path class="s-line" d="M${x(nL)} ${y(hc + r)} L${x(nL)} ${y(hc - r)}"/>
+    <path class="s-stripe" d="${stripe}"/>
+    ${rows}${(a.doors || []).map(door).join('')}${(a.exits || []).map(exit).join('')}
+    ${ant(topAnt, true)}${ant(nL + 3, true)}${ant(nL + 5, false)}
+    <path class="s-line" d="M${x(nL * 0.42)} ${y(hc - 0.16 * D)} Q${x(nL * 0.3)} ${y(hc - 0.02 * D)} ${x(nL * 0.42)} ${y(hc + 0.12 * D)}"/>
   </g>
-  ${part('cabine', 'Cabine de comando', `<path class="jglass" d="${glass}"/>`)}
-  ${part('asa', 'Asa', `<path class="jskin-s" d="${wing}"/>`)}
+  ${part('cabine', 'Cabine de comando', `<path class="jglass" d="${glass}"/><path class="seam" d="${mull}"/>`)}
+  ${part('asa', 'Asa', `<path class="wing-s" d="${wing}"/>`)}
   ${wl ? part('winglet', 'Winglets', `<path class="jskin-s" d="${wl}"/>`) : ''}
-  ${part('motor', 'Motores', `<path class="jskin-s" d="${pylon}"/><path class="jskin-s" d="${nac}"/><path class="cone" d="${cone}"/><ellipse class="inlet" cx="${f(xf + 0.12 * k)}" cy="${f(yMid)}" rx="${f(0.16 * k)}" ry="${f(a.nacD * k * 0.44)}"/>`)}
+  ${part('motor', 'Motores', engines)}
   ${part('estabh', 'Estabilizador horizontal', `<path class="jskin-s" d="${stab}"/>`)}
   ${part('profundor', 'Profundor', `<path d="${elev}"/>`)}
-  ${part('apu', 'APU', `<rect class="hit" fill="transparent" x="${x(L + 0.5)}" y="${y(hc + 0.5 * D)}" width="${f(1.4 * k)}" height="${f(0.7 * D * k)}"/><rect class="apu-dot" x="${x(L + 0.2)}" y="${y(hc + 0.17 * D)}" width="${f(0.35 * k)}" height="${f(0.16 * D * k)}" rx="1"/>`)}
-  ${part('pitot', 'Tubos de pitot', `<rect class="hit" fill="transparent" x="${x(nL * 0.7)}" y="${y(hc + 0.15 * D)}" width="${f(nL * 0.35 * k)}" height="${f(0.3 * D * k)}"/><path class="strut" d="M${x(nL * 0.55)} ${y(hc + 0.02 * D)} L${x(nL * 0.48)} ${y(hc + 0.02 * D)}"/>`)}
-  ${part('luzes', 'Luzes externas', `<circle class="beacon" cx="${x(a.wingX + 2)}" cy="${y(hc + r + 0.12)}" r="3.2"/><circle class="nav-green" cx="${x(a.wingletType ? g.tipLE + 1.6 : g.tipLE + 0.4)}" cy="${y(a.wingletType ? hTip + wh - 0.1 : hTip + 0.15)}" r="3.2"/>`)}
+  ${part('apu', 'APU', `<rect class="hit" fill="transparent" x="${x(L + 0.5)}" y="${y(hc + 0.5 * D)}" width="${f(1.4 * k)}" height="${f(0.7 * D * k)}"/><rect class="apu-dot" x="${x(L + 0.2)}" y="${y(hc + 0.16 * D)}" width="${f(0.35 * k)}" height="${f(0.13 * D * k)}" rx="1"/>`)}
+  ${part('pitot', 'Tubos de pitot', `<rect class="hit" fill="transparent" x="${x(nL * 0.75)}" y="${y(hc + 0.12 * D)}" width="${f(nL * 0.4 * k)}" height="${f(0.3 * D * k)}"/><path class="strut" d="M${x(nL * 0.6)} ${y(hc + 0.02 * D)} L${x(nL * 0.52)} ${y(hc + 0.02 * D)}"/>`)}
+  ${part('luzes', 'Luzes externas', `<circle class="beacon" cx="${x(a.wingX + 2)}" cy="${y(hT + 0.1)}" r="3"/><circle class="nav-green" cx="${x(a.wingletType ? g.tipLE + 1.6 : g.tipTE - 0.3)}" cy="${y(a.wingletType ? hTip + wh - 0.1 : hTip + 0.1)}" r="3"/><circle class="nav-white" cx="${x(L + 0.1)}" cy="${y(hc + 0.1 * D)}" r="2.2"/>`)}
   <g class="dim mono" aria-hidden="true">
     <path d="M${x(L)} 268 L${x(0)} 268 M${x(L)} 260 L${x(L)} 276 M${x(0)} 260 L${x(0)} 276"/>
     <text x="${f((+x(L) + +x(0)) / 2)}" y="284" text-anchor="middle">COMPRIMENTO ${a.specs.comp}</text>

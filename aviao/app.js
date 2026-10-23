@@ -285,7 +285,7 @@ const GLOSS = [
 ];
 
 /* ---------------- Abas ---------------- */
-const TABS = ['pecas', 'escola', 'cockpit', 'lab', 'glossario'];
+const TABS = ['pecas', 'escola', 'cockpit', 'lab', 'glossario', 'catalogo'];
 let current = null;
 function showTab(id, push) {
   if (!TABS.includes(id)) id = 'pecas';
@@ -914,6 +914,61 @@ function renderGloss(q = '') {
     : '<p class="small">Nenhum termo encontrado. Tente outra palavra.</p>';
 }
 $('#glossSearch').addEventListener('input', (e) => renderGloss(e.target.value));
+
+/* ---------------- F · Catálogo 747 ---------------- */
+const CAT = window.Catalogo747;
+const esc = (t) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fold = (t) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+function hl(text, q) {
+  if (!q) return esc(text);
+  const i = fold(text).indexOf(q);
+  return i < 0 ? esc(text) : esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + q.length)) + '</mark>' + esc(text.slice(i + q.length));
+}
+function renderCatalog(qRaw = '') {
+  if (!CAT) return;
+  const q = fold(qRaw.trim());
+  let hits = 0;
+  const html = CAT.secoes.map((sec, si) => {
+    const itens = q ? sec.itens.filter((it) => fold(it.nome + ' ' + it.funcao).includes(q)) : sec.itens;
+    if (!itens.length) return '';
+    hits += itens.length;
+    const first = sec.itens[0].n, last = sec.itens[sec.itens.length - 1].n;
+    return `<details class="cat-sec" id="cat-${sec.id}" ${q || si === 0 ? 'open' : ''}>
+      <summary><span class="n">${first}–${last}</span><span><h3>${sec.titulo}</h3><span class="small">${q ? `${itens.length} de ${sec.itens.length} itens` : `${sec.itens.length} itens`}</span></span></summary>
+      <div class="cat-body">
+        ${sec.intro && !q ? `<p>${sec.intro}</p>` : ''}
+        <table><thead><tr><th>Nº</th><th>Peça ou componente</th><th>Para que serve</th></tr></thead>
+        <tbody>${itens.map((it) => `<tr><td class="num">${it.n}</td><td class="nome">${hl(it.nome, q)}</td><td>${hl(it.funcao, q)}</td></tr>`).join('')}</tbody></table>
+        ${sec.extra && !q ? `<p><b>${sec.extraTitulo}</b></p><ul class="cat-extra">${sec.extra.map((e) => `<li>${e}</li>`).join('')}</ul>` : ''}
+        ${sec.nota && !q ? `<p class="tip">${sec.nota}</p>` : ''}
+        ${sec.parte ? `<button type="button" class="link-btn" data-open747="${sec.parte}">Ver no desenho do 747-8 →</button>` : ''}
+      </div>
+    </details>`;
+  }).join('');
+  $('#catList').innerHTML = html || '<p class="small">Nenhuma peça encontrada. Tente outra palavra.</p>';
+  $('#catCount').textContent = q ? `${hits} ${hits === 1 ? 'peça encontrada' : 'peças encontradas'} de ${CAT.total}.` : `${CAT.total} categorias em ${CAT.secoes.length} sistemas.`;
+}
+if (CAT) {
+  $('#catIndex').innerHTML = CAT.secoes.map((sec) => `<button type="button" class="chip" data-cat="${sec.id}">${sec.titulo}<b>${sec.itens.length}</b></button>`).join('');
+  $('#catRefs').innerHTML = CAT.referencias.map(([t, d, u]) => `<li><a href="${u}" target="_blank" rel="noopener">${t}</a> <span class="small">${d}</span></li>`).join('');
+  $('#catSearch').addEventListener('input', (e) => renderCatalog(e.target.value));
+  $('#catIndex').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-cat]');
+    if (!b) return;
+    if ($('#catSearch').value) { $('#catSearch').value = ''; renderCatalog(); }
+    const d = $('#cat-' + b.dataset.cat);
+    d.open = true;
+    d.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  });
+  renderCatalog();
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-open747]');
+  if (!b) return;
+  showTab('pecas', true);
+  setCraft('b747');
+  selectPart(b.dataset.open747);
+});
 
 /* ---------------- Início ---------------- */
 let resizeT;
