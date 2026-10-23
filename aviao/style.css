@@ -14,6 +14,9 @@
   --plane: #fbfcfb;
   --shade: #d9e0e2;
   --tire: #232b31;
+  --liv-orange: #f2651c;
+  --liv-grey: #8b9195;
+  --liv-light: #c4c8cb;
   --sel: #f6d9e8;
   --dial: #1a2229;
   --dial-ink: #eef2f3;
@@ -202,6 +205,13 @@ main { padding-block: 24px 40px; }
 .part > path.wing-s { fill: var(--shade); }
 .part > path.seam { fill: none; stroke: var(--ink); stroke-opacity: .35; stroke-width: 1; }
 .side-deco .ant { fill: var(--ink); fill-opacity: .7; }
+.side-deco .win { fill: var(--sky); fill-opacity: .8; stroke: var(--ink); stroke-opacity: .55; stroke-width: .7; }
+.part > path.livery-fin { fill: var(--liv-orange); }
+.livery { pointer-events: none; }
+.livery .liv-grey { fill: var(--liv-grey); }
+.livery .liv-light { fill: var(--liv-light); }
+.side-deco .liv-title { font-family: var(--display); font-weight: 700; fill: none; stroke: var(--ink); stroke-width: 1.6; letter-spacing: .02em; }
+.side-deco .liv-reg { font-family: var(--mono); font-weight: 600; fill: var(--ink); fill-opacity: .7; }
 .side-deco .win-row { fill: none; stroke: var(--sky); }
 .side-deco .door { fill: none; stroke: var(--ink); stroke-opacity: .45; stroke-width: 1; }
 .compare { display: grid; gap: 8px; }

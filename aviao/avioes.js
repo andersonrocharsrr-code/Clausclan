@@ -16,7 +16,7 @@ const JETS = [
     hc: 3.35, engY: 4.9, nacLen: 4.8, nacD: 2.05, nacFwd: 2.8, engBottom: 0.46,
     stabX: 33.2, stabSpan: 14.35, stabSweep: 30, stabRoot: 4.2, stabTip: 1.4,
     finX: 29.2, finSweep: 35, finRoot: 6.4, finTip: 1.7,
-    noseGearX: 4.3, mainX: 19.9, mainY: 2.86, wheelR: 0.56, coreLen: 1.2, flatInlet: true, comando: 'Manche', telas: '6',
+    noseGearX: 4.3, mainX: 19.9, mainY: 2.86, wheelR: 0.56, coreLen: 1.2, flatInlet: true, comando: 'Manche', telas: '6', livery: { title: 'HANGAR', reg: 'PT-APR' },
     doors: [4.9, 33.6], exits: [16.3, 17.3],
     asa: { area: '124,6 m²', comb: '26.000 L', enfl: '25°' },
     motor: { nome: 'CFM56-7B', empuxo: '121 kN', bpr: '5,1 : 1', curio: 'Como o 737 é baixo, o motor fica muito perto do chão. Por isso a entrada de ar tem a parte de baixo achatada, o famoso formato de "bochecha de hamster".' },
@@ -324,8 +324,8 @@ function top(a) {
     ${part('estabh', 'Estabilizador horizontal', `<path d="${stab}"/>`)}
     ${part('profundor', 'Profundor', `<path d="${elev}"/>`)}
     ${part('fuselagem', 'Fuselagem', `<path class="jskin-t" d="${fus}"/>`)}
-    ${part('estabv', 'Estabilizador vertical', `<rect class="hit" fill="transparent" x="${X(-1.4)}" y="${Y(a.finX)}" width="${f(2.8 * k)}" height="${f(a.finRoot * 0.72 * k)}"/><path d="${fin}"/>`)}
-    ${part('leme', 'Leme de direção', `<rect class="hit" fill="transparent" x="${X(-1.4)}" y="${Y(a.finX + a.finRoot * 0.74)}" width="${f(2.8 * k)}" height="${f((L + 0.4 - a.finX - a.finRoot * 0.74) * k)}"/><path d="${rud}"/>`)}
+    ${part('estabv', 'Estabilizador vertical', `<rect class="hit" fill="transparent" x="${X(-1.4)}" y="${Y(a.finX)}" width="${f(2.8 * k)}" height="${f(a.finRoot * 0.72 * k)}"/><path class="${a.livery ? 'livery-fin' : ''}" d="${fin}"/>`)}
+    ${part('leme', 'Leme de direção', `<rect class="hit" fill="transparent" x="${X(-1.4)}" y="${Y(a.finX + a.finRoot * 0.74)}" width="${f(2.8 * k)}" height="${f((L + 0.4 - a.finX - a.finRoot * 0.74) * k)}"/><path class="${a.livery ? 'livery-fin' : ''}" d="${rud}"/>`)}
     ${part('cabine', 'Cabine de comando', `<path class="jglass" d="${glass}"/>`)}
     ${part('apu', 'APU', `<rect class="hit" fill="transparent" x="${X(-1.2)}" y="${Y(L - 0.4)}" width="${f(2.4 * k)}" height="${f(1.6 * k)}"/><circle class="apu-dot" cx="${cx}" cy="${Y(L + 0.15)}" r="${f(Math.max(2.2, 0.25 * k))}"/>`)}
     ${part('pitot', 'Tubos de pitot', `<rect class="hit" fill="transparent" x="${X(-w - 1.2)}" y="${Y(nL * 0.45)}" width="${f((2 * w + 2.4) * k)}" height="${f(1.2 * k)}"/><path class="strut" d="M${X(w)} ${Y(nL * 0.6)} L${X(w + 0.55)} ${Y(nL * 0.66)} M${X(-w)} ${Y(nL * 0.6)} L${X(-w - 0.55)} ${Y(nL * 0.66)}"/>`)}
@@ -384,6 +384,8 @@ function side(a) {
   const t6 = Math.tan(6 * D2R);
   const hW = hc - 0.42 * D, hTip = hW + (s - r) * t6;
   const wing = `M${x(a.wingX)} ${y(hW + 0.1)} L${x(g.tipLE)} ${y(hTip + 0.15)} L${x(g.tipTE)} ${y(hTip)} L${x(g.rootTE)} ${y(hW - 0.2)} Z`;
+  // "Canoas": carenagens dos trilhos dos flaps, penduradas embaixo da asa.
+  const canoes = [0.28, 0.5, 0.72].map((t) => { const e = r + t * (s - r), m = g.at(e, 0.9), h = hW + (e - r) * t6 - 0.05; return `M${x(m - 1.7)} ${y(h)} Q${x(m - 0.2)} ${y(h - 0.6)} ${x(m + 1.5)} ${y(h - 0.05)} Z`; }).join(' ');
   const wh = a.wingletH;
   const wl = a.wingletType === 'blended'
     ? `M${x(g.tipLE + 0.1)} ${y(hTip + 0.15)} Q${x(g.tipLE + 0.35)} ${y(hTip + wh * 0.45)} ${x(g.tipLE + 1.3)} ${y(hTip + wh)} L${x(g.tipLE + 1.95)} ${y(hTip + wh)} Q${x(g.tipTE + 0.05)} ${y(hTip + 0.6)} ${x(g.tipTE)} ${y(hTip)} Z`
@@ -418,6 +420,14 @@ function side(a) {
   const fin = `M${x(a.finX - D * 0.9)} ${y(hT)} Q${x(a.finX - 0.2)} ${y(hT + 0.05)} ${x(a.finX + (hFil - hT) * tF)} ${y(hFil)} L${x(fTipLE)} ${y(a.H)} L${x(fTipLE + a.finTip * 0.68)} ${y(a.H)} L${x(a.finX + a.finRoot * 0.68)} ${y(hc)} L${x(a.finX - D * 0.9)} ${y(hc)} Z`;
   const rud = `M${x(fTipLE + a.finTip * 0.7)} ${y(a.H - 0.05)} L${x(fTipLE + a.finTip)} ${y(a.H - 0.15)} L${x(L + 0.25)} ${y(hc + r * 0.5)} L${x(a.finX + a.finRoot * 0.7)} ${y(hc + r * 0.5)} Z`;
 
+  // Pintura (só no 737): cauda laranja com arcos cinza, nome na fuselagem e matrícula.
+  const lv = a.livery, finCls = lv ? 'livery-fin' : 'jskin-s';
+  const livTail = lv ? `<clipPath id="tailClip"><path d="${fin} ${rud}"/></clipPath><g class="livery" clip-path="url(#tailClip)" aria-hidden="true">
+    <circle class="liv-grey" cx="${x(a.finX + a.finRoot * 0.12)}" cy="${y(hT + 1.1)}" r="${f(3.6 * k)}"/>
+    <circle class="liv-light" cx="${x(a.finX + a.finRoot * 0.02)}" cy="${y(hT + 1.5)}" r="${f(2.4 * k)}"/>
+    <path class="liv-grey" d="M${x(a.finX - D * 0.9)} ${y(hT)} L${x(a.finX + (hFil - hT) * tF + 0.4)} ${y(hFil + 0.3)} L${x(a.finX + a.finRoot * 0.75)} ${y(hT)} Z"/></g>` : '';
+  const livTitle = lv ? `<text class="liv-title" x="${x(13.4)}" y="${y(hc - 0.22 * D)}" textLength="${f(7.2 * k)}" lengthAdjust="spacingAndGlyphs" style="font-size:${f(0.5 * D * k)}px">${lv.title}</text><text class="liv-reg" x="${x(L - tL * 0.62)}" y="${y(hc - 0.02 * D)}" style="font-size:${f(0.16 * D * k)}px">${lv.reg}</text>` : '';
+
   // Trem: perna e rodas (truque de 4 rodas no 747 mostra duas de lado).
   const wr = a.wheelR, nr = wr * 0.7;
   const wheel = (m, rad) => `<circle class="tire" cx="${x(m)}" cy="${y(rad)}" r="${f(rad * k)}"/><circle class="hub" cx="${x(m)}" cy="${y(rad)}" r="${f(rad * k * 0.38)}"/>`;
@@ -425,12 +435,20 @@ function side(a) {
     + `<path class="strut" d="M${x(a.noseGearX)} ${y(hB + 0.3)} L${x(a.noseGearX)} ${y(nr)}"/>${wheel(a.noseGearX, nr)}`;
 
   // Detalhes: janelas, portas, saídas sobre a asa, antenas e faixa.
-  const pitch = 0.53 * k;
-  const row = (m1, m2, h) => `<path class="win-row" d="M${x(m1)} ${y(h)} L${x(m2)} ${y(h)}" style="stroke-width:${f(Math.max(2, 0.32 * k))};stroke-dasharray:${f(pitch * 0.42)} ${f(pitch * 0.58)}"/>`;
+  const doorsM = a.doors || [], exitsM = a.exits || [];
+  const blocked = (m) => doorsM.some((d) => m > d - 0.25 && m < d + 1.15) || exitsM.some((e) => m > e - 0.1 && m < e + 0.7);
+  const winRow = (m1, m2, h) => {
+    let out = '';
+    for (let m = m2; m <= m1; m += 0.53) {
+      if (!blocked(m)) out += `<rect class="win" x="${x(m + 0.26)}" y="${y(h + 0.22)}" width="${f(0.26 * k)}" height="${f(0.42 * k)}" rx="${f(0.1 * k)}"/>`;
+    }
+    return out;
+  };
   const wy = hc + 0.13 * D;
-  const rows = row(L - tL - 0.4, nL + 2.4, wy) + (hu ? row(hu.end - 4.5, nL * 1.75, hu.top - 0.95) : '');
-  const door = (m) => `<rect class="door" x="${x(m + 0.45)}" y="${y(hc + 0.3 * D)}" width="${f(0.9 * k)}" height="${f(0.48 * D * k)}" rx="2"/>`;
-  const exit = (m) => `<rect class="door" x="${x(m + 0.28)}" y="${y(hc + 0.24 * D)}" width="${f(0.55 * k)}" height="${f(0.24 * D * k)}" rx="2"/>`;
+  const rows = winRow(L - tL - 0.4, nL + 2.4, wy) + (hu ? winRow(hu.end - 4.5, nL * 1.75, hu.top - 0.95) : '');
+  const door = (m) => `<rect class="door" x="${x(m + 0.9)}" y="${y(hc + 0.3 * D)}" width="${f(0.9 * k)}" height="${f(0.5 * D * k)}" rx="2"/><rect class="win" x="${x(m + 0.6)}" y="${y(hc + 0.22 * D)}" width="${f(0.3 * k)}" height="${f(0.12 * D * k)}" rx="1"/><path class="door" d="M${x(m + 0.62)} ${y(hc + 0.02 * D)} L${x(m + 0.3)} ${y(hc + 0.02 * D)}"/>`;
+  const exit = (m) => `<rect class="door" x="${x(m + 0.6)}" y="${y(hc + 0.25 * D)}" width="${f(0.6 * k)}" height="${f(0.3 * D * k)}" rx="2"/>`;
+  const cargo = (m) => `<rect class="door" x="${x(m + 1.3)}" y="${y(hc - 0.14 * D)}" width="${f(1.3 * k)}" height="${f(0.27 * D * k)}" rx="2"/><path class="door" d="M${x(m + 1.05)} ${y(hc - 0.3 * D)} L${x(m + 0.25)} ${y(hc - 0.3 * D)}"/>`;
   const ant = (m, top) => `<path class="ant" d="M${x(m)} ${y(top ? hT : hB)} L${x(m + 0.5)} ${y(top ? hT + 0.55 : hB - 0.55)} L${x(m + 0.7)} ${y(top ? hT + 0.55 : hB - 0.55)} L${x(m + 0.6)} ${y(top ? hT : hB)} Z"/>`;
   const stripe = `M${x(L - tL * 0.35)} ${y(hc + 0.02 * D)} L${x(nL * 0.62)} ${y(hc + 0.02 * D)} L${x(nL * 0.55)} ${y(hc - 0.05 * D)} L${x(L - tL * 0.25)} ${y(hc - 0.05 * D)} Z`;
   const topAnt = hu ? hu.end - 6 : a.wingX - 4;
@@ -445,18 +463,20 @@ function side(a) {
   </defs>
   <rect width="600" height="290" fill="url(#jGridS)"/>
   <rect class="side-ground" x="0" y="${G}" width="600" height="6"/>
-  ${part('estabv', 'Estabilizador vertical', `<path class="jskin-s" d="${fin}"/>`)}
-  ${part('leme', 'Leme de direção', `<path class="jskin-s" d="${rud}"/>`)}
+  ${part('estabv', 'Estabilizador vertical', `<path class="${finCls}" d="${fin}"/>`)}
+  ${part('leme', 'Leme de direção', `<path class="${finCls}" d="${rud}"/>`)}
+  ${livTail}
   ${part('trem', 'Trem de pouso', gear)}
   ${part('fuselagem', 'Fuselagem', `<path class="jskin-s" d="${fus}"/><path class="jskin-s" d="${fairing}"/>`)}
   <g class="side-deco" aria-hidden="true">
-    <path class="s-stripe" d="${stripe}"/>
-    ${rows}${(a.doors || []).map(door).join('')}${(a.exits || []).map(exit).join('')}
+    ${lv ? '' : `<path class="s-stripe" d="${stripe}"/>`}
+    ${rows}${doorsM.map(door).join('')}${exitsM.map(exit).join('')}${cargo(a.wingX - 4.2)}${cargo(g.rootTE + 3.2)}${livTitle}
     ${ant(topAnt, true)}${ant(nL + 3, true)}${ant(nL + 5, false)}
     <path class="s-line" d="M${x(nL * 0.42)} ${y(hc - 0.16 * D)} Q${x(nL * 0.3)} ${y(hc - 0.02 * D)} ${x(nL * 0.42)} ${y(hc + 0.12 * D)}"/>
   </g>
   ${part('cabine', 'Cabine de comando', `<path class="jglass" d="${glass}"/><path class="seam" d="${mull}"/>`)}
   ${part('asa', 'Asa', `<path class="wing-s" d="${wing}"/>`)}
+  ${part('flap', 'Flaps', `<path class="jskin-s" d="${canoes}"/>`)}
   ${wl ? part('winglet', 'Winglets', `<path class="jskin-s" d="${wl}"/>`) : ''}
   ${part('motor', 'Motores', engines)}
   ${part('estabh', 'Estabilizador horizontal', `<path class="jskin-s" d="${stab}"/>`)}
