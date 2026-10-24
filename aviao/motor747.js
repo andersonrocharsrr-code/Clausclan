@@ -38,7 +38,7 @@ const cowl = smooth([[1.28, 0.69], [1.4, 0.735], [1.7, 0.78], [2.3, 0.80], [3.0,
 const outC = lin([[1.28, 0.69], [1.42, 0.645], [2.02, 0.60], [2.3, 0.50], [2.55, 0.44], [2.65, 0.425], [3.58, 0.365], [3.7, 0.42], [4.05, 0.425], [4.1, 0.40], [4.45, 0.44], [5.45, 0.55], [5.8, 0.50]]);
 const inC = lin([[1.15, 0.40], [1.42, 0.44], [2.02, 0.48], [2.3, 0.40], [2.55, 0.32], [2.65, 0.30], [3.58, 0.305], [3.7, 0.26], [4.05, 0.26], [4.1, 0.31], [4.45, 0.315], [5.45, 0.34], [5.8, 0.31], [6.7, 0.0]]);
 const hubIn = (x) => (x < 0.12 ? 0 : x < 1.15 ? spin(x) : inC(x));
-const caseAt = (x) => (x < -0.05 ? 1.40 : caseIn(x));
+const caseAt = (x) => (x < -0.05 ? 1.40 + 0.42 * clamp((-0.05 - x) / 0.85, 0, 1) ** 1.5 : caseIn(x));
 const SPLIT = 1.28, FAN_NOZ = 3.7, CORE_NOZ = 5.8, X0 = -0.9, X1 = 7.6;
 const FSPLIT = (0.69 - hubIn(SPLIT)) / (caseAt(SPLIT) - hubIn(SPLIT));
 
@@ -173,8 +173,8 @@ function readPal() {
     metal: dark ? ['#7d8993', '#3b4650'] : ['#f6f8f9', '#b4bcc3'], hollow: dark ? '#0f171e' : '#dde3e6',
     bypassBg: dark ? 'rgba(70,120,200,.20)' : 'rgba(79,143,224,.22)', coreBg: dark ? '#1f2a33' : '#bec6cc',
     ramp: dark
-      ? [[15, '#5b95ec'], [60, '#62bdf0'], [150, '#5fd6c6'], [400, '#d9d24c'], [700, '#f3a83c'], [1100, '#f06b2e'], [1500, '#ec3b33'], [1950, '#fff0b0']]
-      : [[15, '#2456a6'], [60, '#2a83c4'], [150, '#16958a'], [400, '#a8900c'], [700, '#d77814'], [1100, '#d24a1c'], [1500, '#c0221f'], [1950, '#ff7b00']],
+      ? [[15, '#5b95ec'], [60, '#62bdf0'], [150, '#5fd6c6'], [400, '#e6d84a'], [700, '#ffa62e'], [1100, '#ff6a1e'], [1500, '#ff3a26'], [1950, '#fff2a8']]
+      : [[15, '#2456a6'], [60, '#2a83c4'], [150, '#16958a'], [400, '#c79a00'], [700, '#f07800'], [1100, '#ff4a10'], [1500, '#ff2a1a'], [1950, '#ffd000']],
   };
   pal.lut = [];
   for (let i = 0; i < 24; i++) pal.lut.push(rampColor(15 + i / 23 * 1935));
@@ -198,7 +198,7 @@ const VB = lin([[0.9, 1.0], [1.3, 1.05], [3.4, 1.1], [4.0, 1.55]]);
 const VI = lin([[X0, 0.8], [0.85, 1.0]]);
 const tScale = () => 0.4 + 0.6 * sp;
 function pathY(p, x) {
-  if (p.s === 'o') return (x < -0.05 ? 1.40 : x <= FAN_NOZ ? nacOut(x) : 1.27 - 0.02 * (x - FAN_NOZ)) + 0.1 + p.F * 0.6;
+  if (p.s === 'o') return (x < -0.05 ? caseAt(x) + 0.05 : x <= FAN_NOZ ? nacOut(x) : 1.27 - 0.02 * (x - FAN_NOZ)) + 0.1 + p.F * 0.6;
   if (x < SPLIT) return lerp(hubIn(x), caseAt(x), p.F);
   if (p.s === 'c') {
     if (x <= CORE_NOZ) return lerp(inC(x), outC(x), p.f);
@@ -220,7 +220,7 @@ function makeParts() {
     }
   };
   // O núcleo recebe mais pontos que a proporção real (8 : 1) só para dar para ver o ar lá dentro.
-  mk('b', 380); mk('c', 260); mk('o', 70);
+  mk('b', 560); mk('c', 340); mk('o', 130);
 }
 
 /* ---------- Desenho ---------- */
@@ -266,13 +266,13 @@ function drawRow(rw) {
     } else {
       for (const r of [rh, rt]) { le.push([rw.x, r * ca]); te.push([rw.x + rw.c * cs, r * ca - rw.c * sn * s]); }
     }
-    const f = 0.62 + 0.38 * -s;
+    const f = rw.fan ? 0.45 + 0.9 * (1 - Math.abs(s)) ** 0.8 : 0.62 + 0.38 * -s;
     ctx.beginPath();
     const pts = le.concat(te.reverse());
     ctx.moveTo(SX(pts[0][0]), SY(pts[0][1]));
     for (let i = 1; i < pts.length; i++) ctx.lineTo(SX(pts[i][0]), SY(pts[i][1]));
     ctx.closePath();
-    ctx.fillStyle = rgb(base, pal.dark ? f : 0.7 + 0.3 * f);
+    ctx.fillStyle = rgb(base, rw.fan ? f : pal.dark ? f : 0.7 + 0.3 * f);
     ctx.fill();
     if (rw.fan || k > 140) { ctx.strokeStyle = rgb(base, pal.dark ? 1.35 : 0.6, 0.9); ctx.lineWidth = rw.fan ? 1 : 0.6; ctx.stroke(); }
     if (rw.fan) { // borda de ataque metálica
@@ -306,12 +306,21 @@ function drawCombustor() {
     ctx.moveTo(SX(3.67), SY(0.392 * s)); ctx.lineTo(SX(3.67), SY(0.362 * s)); // domo
     ctx.moveTo(SX(3.67), SY(0.318 * s)); ctx.lineTo(SX(3.67), SY(0.29 * s));
     ctx.stroke();
-    // Chama
-    const fx = SX(3.82 + Math.sin(time * 23) * 0.006), fy = SY(0.34 * s), rr = k * (0.07 + 0.03 * fl) * (1 + Math.sin(time * 31 + s) * 0.06);
-    const g = ctx.createRadialGradient(fx, fy, 0, fx, fy, rr * 1.6);
-    g.addColorStop(0, `rgba(255,240,180,${0.85 * fl})`); g.addColorStop(0.35, `rgba(255,150,40,${0.6 * fl})`); g.addColorStop(1, 'rgba(255,80,20,0)');
-    ctx.save(); ctx.translate(fx, fy); ctx.scale(1.7, 0.55); ctx.translate(-fx, -fy);
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(fx, fy, rr * 1.6, 0, 7); ctx.fill(); ctx.restore();
+    // Chama: línguas de fogo que tremulam e vão do injetor até a saída da câmara
+    ctx.save();
+    if (pal.dark) ctx.globalCompositeOperation = 'lighter';
+    for (let j = 0; j < 5; j++) {
+      const u = j / 4, w = Math.sin(time * (17 + j * 5) + j * 1.7 + s) * 0.5 + 0.5;
+      const fx = SX(3.7 + u * 0.32 + w * 0.015), fy = SY((0.345 - u * 0.005 + (w - 0.5) * 0.02) * s);
+      const rr = k * (0.05 + 0.045 * fl) * (1.15 - u * 0.35) * (0.85 + 0.3 * w);
+      const g = ctx.createRadialGradient(fx, fy, 0, fx, fy, rr);
+      g.addColorStop(0, `rgba(255,${250 - j * 18},${200 - j * 40},${(0.95 - u * 0.3) * fl})`);
+      g.addColorStop(0.35, `rgba(255,${170 - j * 20},30,${(0.8 - u * 0.2) * fl})`);
+      g.addColorStop(0.7, `rgba(235,60,20,${0.45 * fl})`); g.addColorStop(1, 'rgba(200,30,10,0)');
+      ctx.save(); ctx.translate(fx, fy); ctx.scale(1.9, 0.62); ctx.translate(-fx, -fy);
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(fx, fy, rr, 0, 7); ctx.fill(); ctx.restore();
+    }
+    ctx.restore();
     // Injetor: haste que atravessa a carcaça e bico na frente do domo
     ctx.beginPath(); ctx.moveTo(SX(3.6), SY(0.47 * s)); ctx.lineTo(SX(3.63), SY(0.345 * s)); ctx.lineTo(SX(3.668), SY(0.34 * s));
     ctx.strokeStyle = pal.dark ? '#d8c27a' : '#8a6d1c'; ctx.lineWidth = Math.max(2, k * 0.016); ctx.stroke();
@@ -408,7 +417,7 @@ function drawAir(dt) {
     if (p.s === 'c' && p.x < SPLIT) { /* o ar do núcleo segue a mesma faixa até o divisor */ }
     if (p.x > X1) { p.x = X0 + Math.random() * 0.3; p.side = Math.random() < 0.5 ? 1 : -1; }
     if (!showAir) continue;
-    const L = clamp(0.035 * v + 0.01, 0.015, 0.12), xa = p.x - L;
+    const L = clamp(0.07 * v + 0.02, 0.03, 0.22), xa = p.x - L;
     const sx = SX(p.x);
     if (sx < -20 || sx > W + 20) continue;
     const b = p.s === 'o' ? 24 : lutOf(tempOf(p, p.x));
@@ -416,10 +425,22 @@ function drawAir(dt) {
   }
   if (!showAir) return;
   ctx.lineCap = 'round';
-  ctx.lineWidth = clamp(k * 0.012, 1.3, 3);
+  const lw = clamp(k * 0.014, 1.5, 3.4);
+  // Gases quentes: um halo largo por baixo, mais brilhante quanto mais quente.
+  ctx.save();
+  if (pal.dark) ctx.globalCompositeOperation = 'lighter';
+  buckets.forEach((list, i) => {
+    if (i < 8 || i === 24 || !list.length) return;
+    ctx.strokeStyle = pal.lut[i]; ctx.globalAlpha = 0.16 + 0.22 * (i - 8) / 15; ctx.lineWidth = lw * 3.2;
+    ctx.beginPath();
+    for (const [a, b, c, d] of list) { ctx.moveTo(a, b); ctx.lineTo(c, d); }
+    ctx.stroke();
+  });
+  ctx.restore();
   buckets.forEach((list, i) => {
     if (!list.length) return;
-    ctx.strokeStyle = i === 24 ? rgb(hexRgb(pal.dark ? '#93a2ae' : '#586572'), 1, 0.35) : pal.lut[i];
+    ctx.lineWidth = i >= 8 && i !== 24 ? lw * 1.35 : lw;
+    ctx.strokeStyle = i === 24 ? rgb(hexRgb(pal.dark ? '#93a2ae' : '#586572'), 1, 0.5) : pal.lut[i];
     ctx.beginPath();
     for (const [a, b, c, d, x] of list) { if (x > 7.1) continue; ctx.moveTo(a, b); ctx.lineTo(c, d); }
     ctx.stroke();
@@ -484,7 +505,7 @@ function drawPins() {
 }
 // Vista de frente do fan (aparece na etapa do fan).
 function drawFront() {
-  if (!(step === 2 || sel === 'fan' || sel === 'spinner')) return;
+  if (!((step === 1 || step === 2) && !sel || sel === 'fan' || sel === 'spinner')) return;
   const R = Math.min(72, H * 0.27, W * 0.15), cx = W - R - 14, cyy = MT + R + 10;
   ctx.save();
   ctx.beginPath(); ctx.arc(cx, cyy, R + 6, 0, 7); ctx.fillStyle = pal.panel; ctx.fill(); ctx.strokeStyle = pal.ink; ctx.lineWidth = 2.5; ctx.stroke();
@@ -528,10 +549,15 @@ function frame(t) {
   fillBand(band(-0.05, SPLIT, hubIn, caseAt, 30), pal.duct);
   fillBand(band(-0.05, FAN_NOZ, (x) => (x < SPLIT ? hubIn(x) : cowl(x)), caseAt, 40), pal.bypassBg);
   fillBand(band(SPLIT, CORE_NOZ, inC, outC, 60), pal.coreBg);
-  fillBand(band(3.62, 4.08, inC, outC, 12), `rgba(232,110,40,${0.18 + 0.25 * sp})`);
+  {
+    const hq = 0.35 + 0.65 * sp, hg = ctx.createLinearGradient(SX(3.62), 0, SX(CORE_NOZ), 0);
+    hg.addColorStop(0, `rgba(255,120,20,${0.35 * hq})`); hg.addColorStop(0.18, `rgba(255,70,20,${0.6 * hq})`);
+    hg.addColorStop(0.4, `rgba(255,90,20,${0.4 * hq})`); hg.addColorStop(1, `rgba(255,140,40,${0.15 * hq})`);
+    fillBand(band(3.62, CORE_NOZ, inC, outC, 40), hg);
+  }
   // Brilho do jato quente
   const g = ctx.createLinearGradient(SX(CORE_NOZ), 0, SX(7.4), 0);
-  g.addColorStop(0, `rgba(255,120,30,${0.22 * (0.3 + sp)})`); g.addColorStop(1, 'rgba(255,120,30,0)');
+  g.addColorStop(0, `rgba(255,110,30,${0.35 * (0.3 + sp)})`); g.addColorStop(1, 'rgba(255,120,30,0)');
   ctx.fillStyle = g; ctx.beginPath(); ctx.rect(SX(CORE_NOZ), SY(0.55), SX(7.4) - SX(CORE_NOZ), SY(-0.55) - SY(0.55)); ctx.fill();
   drawDisks();
   drawBearings();
