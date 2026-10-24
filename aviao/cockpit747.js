@@ -261,6 +261,9 @@ function create(ctl) {
     s.x += ve * dt / NM;
     s.y += vn * dt / NM;
     s.fuel = Math.max(0, s.fuel - 4 * ffEngine() * dt / 3600 / 1000);
+    const ctgt = Math.max(50, Math.min(8000, hft() * 0.2));
+    if (s.cab == null) s.cab = ctgt;
+    s.cabRate = clamp((ctgt - s.cab) * 1.2, -750, 500); s.cab += s.cabRate / 60 * dt;
     s.ball = clamp(-ctl.rud * 0.7 + ctl.ail * 0.15, -1, 1);
     const now = ias();
     trend += ((now - iasPrev) / Math.max(dt, 1e-3) - trend) * Math.min(1, dt * 1.5);
@@ -624,16 +627,6 @@ function create(ctl) {
     return ND_INFO.map(([id, title, text], i) => ({ n: i + 1, id, title, text, at: geo[id][0], box: geo[id][1] }));
   }
 
-  function dial(c, cx, cy, r, val, max, redline, label) {
-    const a0 = Math.PI * 0.8, a1 = Math.PI * 2.05, an = a0 + (a1 - a0) * clamp(val / max, 0, 1.05);
-    c.fillStyle = '#4b5359'; c.beginPath(); c.moveTo(cx, cy); c.arc(cx, cy, r, a0, an); c.closePath(); c.fill();
-    c.strokeStyle = COL.white; c.lineWidth = 1.6; c.beginPath(); c.arc(cx, cy, r, a0, a1); c.stroke();
-    const ar = a0 + (a1 - a0) * redline / max;
-    c.strokeStyle = COL.red; c.lineWidth = 2.5; c.beginPath(); c.moveTo(cx + Math.cos(ar) * r * 0.75, cy + Math.sin(ar) * r * 0.75); c.lineTo(cx + Math.cos(ar) * r * 1.12, cy + Math.sin(ar) * r * 1.12); c.stroke();
-    c.strokeStyle = COL.white; c.lineWidth = 2; c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.cos(an) * r, cy + Math.sin(an) * r); c.stroke();
-    c.fillStyle = '#000'; c.strokeStyle = COL.white; c.lineWidth = 1.2; rr(c, cx - r * 0.55, cy - r * 1.62, r * 1.3, r * 0.5, 2); c.fill(); c.stroke();
-    txt(c, label, cx + r * 0.1, cy - r * 1.36, F(r * 0.36, 600), COL.white);
-  }
   function alerts() {
     const out = [];
     const kias = ias(), m = mach();
@@ -647,43 +640,76 @@ function create(ctl) {
     if (s.gear > 0.01 && s.gear < 0.99) out.push(['white', 'GEAR IN TRANSIT']);
     return out;
   }
+  // EICAS no formato de fitas verticais (como na foto do painel): para cada motor, caixa com o valor,
+  // fita que enche de baixo para cima, traço vermelho do limite e, no N1, o traço verde da referência
+  function tape(c, cx, top, bh, frac, refFrac, redFrac, val, bw, fsz) {
+    const boxH = fsz * 1.35;
+    c.fillStyle = '#000'; c.strokeStyle = COL.white; c.lineWidth = 1.2; c.fillRect(cx - bw / 2, top, bw, boxH); c.strokeRect(cx - bw / 2, top, bw, boxH);
+    txt(c, val, cx, top + boxH / 2 + 1, F(fsz, 600), COL.white);
+    const t0 = top + boxH + 4, tw = Math.max(6, bw * 0.3), ty = (f) => t0 + bh * (1 - clamp(f, 0, 1));
+    c.strokeRect(cx - tw / 2, t0, tw, bh);
+    const fy = ty(frac); c.fillStyle = '#d7dee3'; c.fillRect(cx - tw / 2 + 1.5, fy, tw - 3, t0 + bh - fy - 1);
+    c.strokeStyle = COL.white; c.lineWidth = 2; c.beginPath(); c.moveTo(cx - tw / 2 - 3, fy); c.lineTo(cx + tw / 2 + 3, fy); c.stroke();
+    c.strokeStyle = COL.red; c.beginPath(); c.moveTo(cx - tw / 2 - 3, ty(redFrac)); c.lineTo(cx + tw / 2 + 3, ty(redFrac)); c.stroke();
+    if (refFrac != null) { c.strokeStyle = COL.green; c.beginPath(); c.moveTo(cx - tw / 2 - 4, ty(refFrac)); c.lineTo(cx + tw / 2 + 4, ty(refFrac)); c.stroke(); }
+  }
+  // modo de empuxo de referência mostrado no alto (TO na decolagem, CLB na subida, CRZ em cruzeiro)
+  function thrustMode() {
+    if (s.ground || (hft() < 1500 && fpm() > 0 && ctl.thr > 0.9)) return ['TO', n1Of(1) - 1];
+    if (fpm() > 500) return ['CLB', n1Of(0.92)];
+    return ['CRZ', n1Of(0.8)];
+  }
   function drawEICAS(c, x, y, w, h) {
     frame(c, x, y, w, h, 'EICAS · MOTORES E ALERTAS');
-    const n1 = n1Of(s.spool), egt = 380 + 560 * Math.pow(clamp(s.spool, 0, 1), 1.4), ff = ffEngine() / 1000;
-    const cw = (w - 16) / 4, r = Math.min(cw * 0.36, h * 0.085);
-    for (let i = 0; i < 4; i++) {
-      const cx = x + 8 + cw * (i + 0.5);
-      dial(c, cx, y + h * 0.22, r, n1, 110, 102, n1.toFixed(1));
-      dial(c, cx, y + h * 0.44, r * 0.85, egt, 1100, 1060, Math.round(egt));
-      txt(c, ff.toFixed(1), cx, y + h * 0.545, F(h * 0.035, 600), COL.white);
+    const wide = w > 300, fs = Math.min(h * 0.032, w * (wide ? 0.026 : 0.05));
+    const sp = clamp(s.spool, 0, 1), n1 = n1Of(sp), n2 = 58 + 46 * Math.pow(sp, 0.5), egt = 380 + 560 * Math.pow(sp, 1.4);
+    const { T } = atm(), tat = T * (1 + 0.2 * mach() * mach()) - 273.15, [mode, ref] = thrustMode();
+    // cabeçalho: TAT e o modo de empuxo
+    txt(c, `TAT ${tat >= 0 ? '+' : ''}${Math.round(tat)}c`, x + 12, y + 14, F(fs, 600), COL.cyan, 'left');
+    const ex = x + 6, ew = wide ? w * 0.56 : w * 0.72, eTop = y + Math.max(h * 0.075, fs * 3.4), eH = (wide ? y + h * 0.8 : y + h * 0.76) - eTop;
+    txt(c, mode, ex + ew / 2, y + 14, F(fs * 1.1, 600), COL.green);
+    // três fileiras: N1, N2 e EGT dos quatro motores
+    const rows = [['N1', n1 / 110, ref / 110, 102 / 110, n1.toFixed(1)], ['N2', n2 / 120, null, 112 / 120, n2.toFixed(1)], ['EGT', egt / 1100, null, 1060 / 1100, String(Math.round(egt))]];
+    const rh = eH / 3, cw = ew / 4, bw = Math.min(cw * 0.78, fs * 3.6);
+    rows.forEach(([lab, f, rf, red, val], r) => {
+      const off = r === 0 ? fs * 1.0 : fs * 0.3, top = eTop + r * rh + off, bh = rh - off - fs * 1.35 - 4 - fs * 0.5;
+      for (let i = 0; i < 4; i++) {
+        const cx = ex + cw * (i + 0.5);
+        if (r === 0) txt(c, ref.toFixed(1), cx, top - fs * 0.6, F(fs * 0.85, 600), COL.green);
+        tape(c, cx, top, bh, f, rf, red, val, bw, fs);
+      }
+      txt(c, lab, ex + ew / 2, top + fs * 1.35 + 4 + bh * 0.55, F(fs * 0.9, 600), COL.cyan);
+    });
+    // mensagens: aviso em vermelho, cuidado em âmbar, informação em branco
+    const mx = wide ? x + w * 0.6 : x + 12, my = wide ? y + h * 0.09 : y + h * 0.8, mfs = fs * (wide ? 1.05 : 0.95);
+    alerts().slice(0, wide ? 9 : 2).forEach(([k, t], i) => txt(c, t, mx, my + i * mfs * 1.35, F(mfs, 600), COL[k], 'left'));
+    // trem e flaps (os flaps só aparecem quando não estão recolhidos)
+    const gw = Math.min(Math.max(fs * 4.2, w * 0.13), w * 0.24), gh = fs * 1.5, gx = wide ? x + w * 0.7 : x + w * 0.86, gy = wide ? y + h * 0.6 : eTop;
+    txt(c, 'GEAR', gx, gy + gh + fs * 0.75, F(fs * 0.9, 600), COL.cyan);
+    const gtxt = s.gear >= 0.99 ? 'DOWN' : s.gear <= 0.01 ? 'UP' : '', gcol = s.gear >= 0.99 ? COL.green : COL.white;
+    c.strokeStyle = s.gear > 0.01 && s.gear < 0.99 ? COL.amber : gcol; c.lineWidth = 1.6; c.strokeRect(gx - gw / 2, gy, gw, gh);
+    if (gtxt) txt(c, gtxt, gx, gy + gh / 2 + 1, F(fs * 1.05, 600), gcol);
+    else { c.save(); c.beginPath(); c.rect(gx - gw / 2, gy, gw, gh); c.clip(); c.strokeStyle = COL.amber; for (let k = -40; k < gw + 40; k += 6) { c.beginPath(); c.moveTo(gx - gw / 2 + k, gy + gh); c.lineTo(gx - gw / 2 + k + 12, gy); c.stroke(); } c.restore(); }
+    if (s.flap > 0.2 || ctl.flaps > 0) {
+      const fx = wide ? x + w * 0.88 : x + w * 0.9, fy0 = wide ? y + h * 0.5 : eTop + gh + fs * 3.6, fy1 = wide ? y + h * 0.74 : y + h * 0.72;
+      const fyy = (f) => fy0 + (fy1 - fy0) * f / 30, moving = Math.abs(s.flap - ctl.flaps) > 0.2;
+      txt(c, 'FLAPS', fx, fy0 - fs * 0.8, F(fs * 0.85, 600), COL.cyan);
+      c.strokeStyle = COL.white; c.lineWidth = 1.3; c.strokeRect(fx - 5, fy0, 10, fy1 - fy0);
+      c.fillStyle = moving ? COL.magenta : COL.green; c.fillRect(fx - 5, fy0, 10, fyy(s.flap) - fy0);
+      [5, 10, 20, 25, 30].forEach((d) => { c.beginPath(); c.moveTo(fx + 5, fyy(d)); c.lineTo(fx + 9, fyy(d)); c.stroke(); });
+      txt(c, String(Math.round(s.flap)), fx - 9, fyy(s.flap), F(fs, 600), moving ? COL.magenta : COL.green, 'right');
     }
-    txt(c, 'N1', x + w / 2, y + h * 0.3, F(h * 0.032, 600), COL.cyan);
-    txt(c, 'EGT', x + w / 2, y + h * 0.505, F(h * 0.03, 600), COL.cyan);
-    txt(c, 'FF t/h', x + w / 2, y + h * 0.585, F(h * 0.026, 600), COL.cyan);
-    // alertas
-    const al = alerts();
-    al.slice(0, 5).forEach(([k, t], i) => txt(c, t, x + 12, y + h * 0.65 + i * h * 0.05, F(h * 0.038, 600), COL[k], 'left'));
-    // flaps
-    const fx = x + w * 0.8, fy0 = y + h * 0.64, fy1 = y + h * 0.86;
-    txt(c, 'FLAPS', fx, fy0 - h * 0.025, F(h * 0.03, 600), COL.cyan);
-    c.strokeStyle = COL.white; c.lineWidth = 1.3; c.strokeRect(fx - 5, fy0, 10, fy1 - fy0);
-    const fyy = (f) => fy0 + (fy1 - fy0) * f / 30;
-    c.fillStyle = Math.abs(s.flap - ctl.flaps) > 0.2 ? COL.magenta : COL.green;
-    c.fillRect(fx - 5, fy0, 10, fyy(s.flap) - fy0);
-    [0, 1, 5, 10, 20, 25, 30].forEach((d) => { if (d === 0 || d === 1) return; c.beginPath(); c.moveTo(fx + 5, fyy(d)); c.lineTo(fx + 9, fyy(d)); c.stroke(); });
-    txt(c, Math.round(s.flap), fx - 10, fyy(s.flap), F(h * 0.038, 600), Math.abs(s.flap - ctl.flaps) > 0.2 ? COL.magenta : COL.green, 'right');
-    // trem
-    const gx = x + w * 0.56, gy = y + h * 0.7;
-    txt(c, 'GEAR', gx, gy - h * 0.035, F(h * 0.03, 600), COL.cyan);
-    const gtxt = s.gear >= 0.99 ? 'DOWN' : s.gear <= 0.01 ? 'UP' : '';
-    const gcol = s.gear >= 0.99 ? COL.green : COL.white;
-    c.strokeStyle = s.gear > 0.01 && s.gear < 0.99 ? COL.amber : gcol; c.lineWidth = 1.6; c.strokeRect(gx - w * 0.08, gy - h * 0.02, w * 0.16, h * 0.05);
-    if (gtxt) txt(c, gtxt, gx, gy + h * 0.005, F(h * 0.036, 600), gcol);
-    else { c.save(); c.beginPath(); c.rect(gx - w * 0.08, gy - h * 0.02, w * 0.16, h * 0.05); c.clip(); c.strokeStyle = COL.amber; for (let k = -40; k < 60; k += 6) { c.beginPath(); c.moveTo(gx - w * 0.08 + k, gy + h * 0.03); c.lineTo(gx - w * 0.08 + k + 12, gy - h * 0.02); c.stroke(); } c.restore(); }
-    // combustível e temperatura
-    const { T } = atm(), tat = T * (1 + 0.2 * mach() * mach()) - 273.15;
-    txt(c, `FUEL ${s.fuel.toFixed(1)} t`, gx, y + h * 0.8, F(h * 0.034, 600), COL.white);
-    txt(c, `TAT ${tat >= 0 ? '+' : ''}${Math.round(tat)}°C`, gx, y + h * 0.85, F(h * 0.03), COL.white);
+    // rodapé: pressurização (esquerda) e combustível (direita)
+    const by = wide ? y + h * 0.84 : y + h * 0.89, sfs = fs * 0.85;
+    const pr = (hf) => 14.696 * Math.pow(1 - 6.8756e-6 * hf, 5.2559), dp = Math.max(0, pr(s.cab || 0) - pr(Math.max(0, hft())));
+    if (!wide) txt(c, `CAB ALT ${Math.round((s.cab || 0) / 10) * 10}`, x + 12, by, F(sfs, 600), COL.cyan, 'left');
+    if (wide) {
+      txt(c, `DUCT PRESS ${Math.round(18 + 22 * sp)}  ${Math.round(18 + 22 * sp)}`, x + 12, by - sfs * 1.4, F(sfs, 600), COL.white, 'left');
+      txt(c, `CAB ALT ${Math.round((s.cab || 0) / 10) * 10}  RATE ${Math.round((s.cabRate || 0) / 50) * 50}`, x + 12, by, F(sfs, 600), COL.cyan, 'left');
+      txt(c, `LDG ALT 50 AUTO  ΔP ${dp.toFixed(1)}`, x + 12, by + sfs * 1.4, F(sfs, 600), COL.cyan, 'left');
+    }
+    txt(c, `TOTAL FUEL ${s.fuel.toFixed(1)}${wide ? '' : ' t'}`, x + w - 12, by, F(sfs * 1.1, 600), COL.white, 'right');
+    if (wide) txt(c, 'KGS X 1000', x + w - 12, by + sfs * 1.4, F(sfs * 0.8, 600), COL.cyan, 'right');
   }
 
   let L = null;
