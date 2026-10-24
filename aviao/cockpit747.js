@@ -264,12 +264,31 @@ function create(ctl) {
     if (step > bankStep && !s.ground) say('Bank angle, bank angle');
     if (step > bankStep || b < 30) bankStep = step;
   }
+  // voz gravada em assets/bank-angle.mp3 (o WebView do Android não tem síntese de voz). O celular só deixa
+  // tocar áudio depois de um toque: no primeiro toque na página o áudio é destravado tocando-o mudo.
+  const voice = typeof Audio !== 'undefined' ? new Audio('assets/bank-angle.mp3') : null;
+  if (voice && typeof document !== 'undefined') {
+    voice.preload = 'auto';
+    const unlock = () => {
+      voice.muted = true;
+      const p = voice.play();
+      const done = () => { voice.pause(); voice.currentTime = 0; voice.muted = false; ['pointerdown', 'touchend', 'keydown'].forEach((e) => document.removeEventListener(e, unlock, true)); };
+      if (p && p.then) p.then(done).catch(() => { voice.muted = false; }); else done();
+    };
+    ['pointerdown', 'touchend', 'keydown'].forEach((e) => document.addEventListener(e, unlock, true));
+  }
   function say(t) {
-    try {
-      const sp = window.speechSynthesis; if (!sp) return;
-      const u = new SpeechSynthesisUtterance(t); u.lang = 'en-US'; u.rate = 1.05;
-      sp.cancel(); sp.speak(u);
-    } catch (e) { /* sem voz neste aparelho */ }
+    const speak = () => {
+      try {
+        const sp = window.speechSynthesis; if (!sp) return;
+        const u = new SpeechSynthesisUtterance(t); u.lang = 'en-US'; u.rate = 1.05; sp.speak(u);
+      } catch (e) { /* sem voz neste aparelho */ }
+    };
+    if (!voice) return speak();
+    if (!voice.paused && !voice.ended && !voice.muted) return;   // ainda falando: não corta a frase
+    voice.muted = false; voice.currentTime = 0;
+    const p = voice.play();
+    if (p && p.catch) p.catch(speak);
   }
   function touchdown() {
     const v = fpm();
