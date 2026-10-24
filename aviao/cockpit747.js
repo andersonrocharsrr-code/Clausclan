@@ -320,7 +320,7 @@ function create(ctl) {
   /* ---------- telas ---------- */
   const F = (size, w = 500) => `${w} ${size}px "IBM Plex Mono", ui-monospace, monospace`;
   const FS = (size, w = 600) => `${w} ${size}px "IBM Plex Sans", "Segoe UI", system-ui, sans-serif`;
-  const COL = { white: '#f2f5f7', green: '#3be36c', magenta: '#f03bd9', cyan: '#4fd7ff', amber: '#ffb000', red: '#ff3b30', gray: '#3a4147', sky: '#2c74c9', ground: '#8a5730' };
+  const COL = { white: '#f2f5f7', green: '#3be36c', magenta: '#f03bd9', cyan: '#4fd7ff', amber: '#ffb000', red: '#ff3b30', gray: '#5a6168', sky: '#2c74c9', ground: '#8a5730' };
   function txt(c, t, x, y, font, color, align = 'center', base = 'middle') { c.font = font; c.fillStyle = color; c.textAlign = align; c.textBaseline = base; c.fillText(t, x, y); }
   function rr(c, x, y, w, h, r) { c.beginPath(); if (c.roundRect) c.roundRect(x, y, w, h, r); else c.rect(x, y, w, h); }
   function frame(c, x, y, w, h, title) {
@@ -409,8 +409,8 @@ function create(ctl) {
       c.save(); c.translate(cx, cy); c.strokeStyle = COL.magenta; c.lineWidth = 3;
       c.beginPath(); c.moveTo(-aw * 0.28, -pd); c.lineTo(aw * 0.28, -pd); c.moveTo(rd, -ah * 0.3); c.lineTo(rd, ah * 0.3); c.stroke(); c.restore();
     }
-    if (sc === 'aproximacao') { const g0 = rwyGeom(); ['ILS09', '110.30', `DME ${g0.dist.toFixed(1)}`].forEach((t, k) => txt(c, t, cx - aw / 2 + 6, cy - ah / 2 + 10 + k * h * 0.032, F(h * 0.028, 600), k ? COL.white : COL.magenta, 'left')); }
-    else txt(c, 'FMC', cx - aw / 2 + 6, cy - ah / 2 + 10, F(h * 0.03, 600), COL.white, 'left');
+    if (sc === 'aproximacao') { const g0 = rwyGeom(); [['IESC/090°', COL.white], [`DME ${g0.dist.toFixed(1)}`, COL.white], ['ILS', COL.green]].forEach(([t, col], k) => txt(c, t, cx - aw / 2 - w * 0.02, y + h * 0.125 + k * h * 0.03, F(h * 0.026, 600), col, 'left')); }
+    else txt(c, 'FMC', cx - aw / 2 - w * 0.02, y + h * 0.13, F(h * 0.032, 600), COL.white, 'left');
     // símbolo do avião (fixo)
     c.save(); c.translate(cx, cy);
     c.fillStyle = '#000'; c.strokeStyle = COL.white; c.lineWidth = 1.6;
@@ -419,7 +419,12 @@ function create(ctl) {
     c.fillRect(-4, -4, 8, 8); c.strokeRect(-4, -4, 8, 8);
     c.restore();
     // altitude-rádio e indicação da rampa
-    if (alt < 2500 && !s.ground) txt(c, `RA ${Math.round(alt / 10) * 10}`, cx - aw / 2 + 8, cy + ah / 2 - 28, F(ah * 0.06, 600), alt < 500 ? COL.amber : COL.white, 'left');
+    // altitude-rádio: grande, embaixo no centro da atitude (âmbar abaixo dos mínimos)
+    if (alt < 2500 && !s.ground) {
+      const ra = alt > 500 ? Math.round(alt / 10) * 10 : Math.round(alt), rw2 = aw * 0.26, rh2 = ah * 0.1, ry = cy + ah / 2 - rh2 - ah * 0.15;
+      c.fillStyle = '#000'; c.fillRect(cx - rw2 / 2, ry, rw2, rh2);
+      txt(c, String(ra), cx, ry + rh2 / 2 + 1, F(ah * 0.085, 600), sc === 'aproximacao' && alt < 200 ? COL.amber : COL.white);
+    }
     if (sc === 'aproximacao') {
       const g = rwyGeom();
       if (g.ahead && g.dist < 25) {
@@ -468,7 +473,7 @@ function create(ctl) {
     txt(c, Math.max(0, Math.round(kias)), tx + tw * 0.48, cy + 1, F(th * 0.075, 600), kias < vs1 * 1.05 && !s.ground ? COL.amber : COL.white);
     const mc = mach();
     if (mc > 0.4) txt(c, mc.toFixed(3).slice(1), tx + tw / 2, ty + th + h * 0.04, F(h * 0.04, 600), COL.white);
-    else txt(c, 'kt', tx + tw / 2, ty + th + h * 0.04, F(h * 0.035), '#9aa6b0');
+    else if (sc === 'aproximacao') txt(c, `30/${P.vref}`, tx + tw / 2, ty + th + h * 0.04, F(h * 0.034, 600), COL.green);
     // fita de altitude
     const ax = cx + aw / 2 + w * 0.03, awd = w * 0.16, ppf = th / 1000;
     const ay = (a) => cy - (a - alt) * ppf;
@@ -487,7 +492,7 @@ function create(ctl) {
     const a10 = Math.max(0, Math.round(alt / 20) * 20);
     txt(c, Math.floor(a10 / 1000), ax + awd * 0.46, cy + 1, F(th * 0.085, 600), COL.white, 'right');
     txt(c, String(a10 % 1000).padStart(3, '0'), ax + awd * 0.48, cy + 2, F(th * 0.06, 600), COL.white, 'left');
-    txt(c, alt > 18000 ? 'STD' : '1013 HPA', ax + awd / 2, ty + th + h * 0.04, F(h * 0.035, 600), COL.cyan);
+    txt(c, alt > 18000 ? 'STD' : '1013 HPA', ax + awd / 2, ty + th + h * 0.04, F(h * 0.035, 600), COL.green);
     // velocidade vertical
     const vx = x + w * 0.9, vwd = w * 0.06, vh = th * 0.86;
     const vmap = (f) => { const a = Math.abs(f), k = a <= 1000 ? a / 1000 * 0.42 : a <= 2000 ? 0.42 + (a - 1000) / 1000 * 0.2 : 0.62 + (Math.min(a, 6000) - 2000) / 4000 * 0.38; return Math.sign(f) * k * vh / 2; };
@@ -508,14 +513,15 @@ function create(ctl) {
     c.fillStyle = '#000'; c.strokeStyle = COL.white; rr(c, cx - w * 0.055, y + h * 0.79, w * 0.11, h * 0.05, 3); c.fill(); c.stroke();
     txt(c, String(Math.round(s.psi) % 360).padStart(3, '0'), cx, y + h * 0.815, F(h * 0.036, 600), COL.white);
     txt(c, 'MAG', cx + w * 0.065, y + h * 0.815, F(h * 0.028, 600), COL.green, 'left');
-    txt(c, `H ${String(mcp().hdg).padStart(3, '0')}`, cx - w * 0.065, y + h * 0.815, F(h * 0.028, 600), COL.magenta, 'right');
+    txt(c, `${String(mcp().hdg).padStart(3, '0')}H`, cx - w * 0.065, y + h * 0.815, F(h * 0.03, 600), COL.magenta, 'right');
     // FMA: três colunas (manetes | rolagem | arfagem); um modo novo ganha uma caixa branca por 10 s
-    const { m, st } = fma(), now = Date.now(), fcw = aw * 1.2 / 3, fx0 = cx - fcw * 1.5, fyy = y + h * 0.055;
-    c.strokeStyle = '#5b666f'; c.lineWidth = 1.2;
-    [1, 2].forEach((k) => { c.beginPath(); c.moveTo(fx0 + fcw * k, y + h * 0.025); c.lineTo(fx0 + fcw * k, y + h * 0.085); c.stroke(); });
+    const { m, st } = fma(), now = Date.now(), fcw = aw * 1.25 / 3, fx0 = cx - fcw * 1.5, fyy = y + h * 0.055;
+    c.fillStyle = '#3c434a'; c.fillRect(fx0, y + h * 0.022, fcw * 3, h * 0.066);
+    c.strokeStyle = '#8b959d'; c.lineWidth = 1.2; c.strokeRect(fx0, y + h * 0.022, fcw * 3, h * 0.066);
+    [1, 2].forEach((k) => { c.beginPath(); c.moveTo(fx0 + fcw * k, y + h * 0.022); c.lineTo(fx0 + fcw * k, y + h * 0.088); c.stroke(); });
     m.concat(st).forEach((t, k) => {
       if (t !== fmaPrev[k]) { fmaPrev[k] = t; fmaT[k] = now; }
-      const fxk = k < 3 ? fx0 + fcw * (k + 0.5) : cx, fyk = k < 3 ? fyy : y + h * 0.13, fsz = k < 3 ? h * 0.032 : h * 0.04;
+      const fxk = k < 3 ? fx0 + fcw * (k + 0.5) : cx, fyk = k < 3 ? fyy : cy - ah / 2 - h * 0.035, fsz = k < 3 ? h * 0.034 : h * 0.036;
       if (!t) return;
       txt(c, t, fxk, fyk, F(fsz, 600), COL.green);
       if (now - fmaT[k] < 10000 && k < 3) { c.font = F(fsz, 600); const tw2 = c.measureText(t).width + 8; c.strokeStyle = COL.white; c.lineWidth = 1.2; c.strokeRect(fxk - tw2 / 2, fyk - fsz * 0.7, tw2, fsz * 1.4); }
@@ -528,8 +534,8 @@ function create(ctl) {
     txt(c, `GS ${Math.round((s.gs == null ? s.V : s.gs) / KT)}`, x + 10, y + h * 0.87, F(h * 0.036, 600), COL.white, 'left');
     // mínimos (BARO) na aproximação: ficam âmbar abaixo deles
     if (sc === 'aproximacao') {
-      txt(c, 'BARO', cx + aw / 2 - 4, cy - ah / 2 + 10, F(h * 0.028, 600), COL.green, 'right');
-      txt(c, '200', cx + aw / 2 - 4, cy - ah / 2 + 10 + h * 0.035, F(h * 0.034, 600), alt < 200 && !s.ground ? COL.amber : COL.green, 'right');
+      txt(c, 'BARO', cx + aw / 2, y + h * 0.13, F(h * 0.028, 600), COL.green, 'right');
+      txt(c, '200', cx + aw / 2, y + h * 0.13 + h * 0.034, F(h * 0.034, 600), alt < 200 && !s.ground ? COL.amber : COL.green, 'right');
     }
   }
 
