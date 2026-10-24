@@ -787,6 +787,7 @@ function setCockpit(id) {
   $('#flapSeg').innerHTML = c.flaps.map((f) => `<button type="button" data-flap="${f}">${c.flapLabel(f)}</button>`).join('');
   $('#lThr').textContent = c.thr[0]; $('#eThr0').textContent = c.thr[1]; $('#eThr1').textContent = c.thr[2];
   $('#ctlJet').hidden = !c.jet;
+  $('#simOpen').hidden = !c.apPress;
   $('#viewsC172').hidden = id !== 'c172';
   $('#viewsJet').hidden = id === 'c172';
   if (c.jet) $('#viewsJet').innerHTML = c.minisHTML;
@@ -807,8 +808,8 @@ function simLoop(t) {
   const c = C();
   c.step(dt);
   if (c.demo && c.demo()) syncControls();   // os controles da tela acompanham o piloto de demonstração
-  if (gctx) { gctx.clearRect(0, 0, gW, gH); c.draw(gctx, gW, gH); }
-  c.minis($('#viewsJet'));
+  if (sim3.on) drawSim();
+  else { if (gctx) { gctx.clearRect(0, 0, gW, gH); c.draw(gctx, gW, gH); } c.minis($('#viewsJet')); }
   if ((simTick += dt) > 0.25) { simTick = 0; explain(); }
   simRaf = requestAnimationFrame(simLoop);
 }
@@ -1170,6 +1171,131 @@ $('#lessonND').addEventListener('pointerup', (e) => {
 });
 $('#lessonND').addEventListener('pointercancel', () => { swipeX = null; });
 
+/* ---------------- Modo voo simulado (tela deitada) ----------------
+   Tela cheia na horizontal com o MCP no alto, PFD e ND/EICAS no centro, manche à esquerda e alavancas à
+   direita. Se o celular estiver em pé (ou o navegador não deixar travar a orientação), o palco gira 90°. */
+const sim3 = { on: false, rot: false, right: 'nd', drag: null };
+function simLayout() {
+  const W = window.innerWidth, H = window.innerHeight, st = $('#simStage');
+  sim3.rot = H > W;
+  st.style.width = (sim3.rot ? H : W) + 'px'; st.style.height = (sim3.rot ? W : H) + 'px';
+  st.style.transformOrigin = 'top left';
+  st.style.transform = sim3.rot ? `rotate(90deg) translateY(-100%)` : 'none';
+  // o MCP inteiro (igual ao do avião) encolhe para caber na largura da tela
+  const mcp = $('#simMcp'); mcp.style.zoom = 1;
+  const need = mcp.scrollWidth, room = (sim3.rot ? H : W) - 16;
+  mcp.style.zoom = need > room ? (room / need).toFixed(3) : 1;
+  const cv = $('#simScreen'), dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+  const w = cv.parentElement.offsetWidth, h = cv.parentElement.offsetHeight;
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); sim3.w = w; sim3.h = h; sim3.dpr = dpr;
+}
+// posição do dedo dentro de um elemento, de 0 a 1, já desfazendo o giro de 90° do palco
+function simFrac(e, el) {
+  const r = el.getBoundingClientRect();
+  if (!sim3.rot) return [clamp((e.clientX - r.left) / r.width, 0, 1), clamp((e.clientY - r.top) / r.height, 0, 1)];
+  return [clamp((e.clientY - r.top) / r.height, 0, 1), clamp((r.right - e.clientX) / r.width, 0, 1)];
+}
+function simStart(id) {
+  const c = C(); c.start(id); c.simInit(); syncControls();
+  $('#simScn').value = id;
+}
+function openSim() {
+  if (ck !== 'b747') setCockpit('b747');
+  sim3.on = true; $('#simMode').hidden = false; document.body.classList.add('drawer-lock');
+  $('#simFlaps').innerHTML = [30, 25, 20, 10, 5, 1, 0].map((f) => `<button type="button" data-sflap="${f}">${f || 'UP'}</button>`).join('');
+  simStart($('#simScn').value || 'decolagem');
+  const el = document.documentElement;
+  const lock = () => { try { const o = screen.orientation; if (o && o.lock) o.lock('landscape').catch(() => {}).finally(() => setTimeout(simLayout, 300)); } catch (e) { /* sem trava */ } };
+  try { const p = el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : null; if (p && p.then) p.then(lock).catch(() => {}); } catch (e) { /* sem tela cheia */ }
+  simLayout(); startSim();
+}
+function closeSim() {
+  if (!sim3.on) return false;
+  sim3.on = false; $('#simMode').hidden = true; document.body.classList.remove('drawer-lock');
+  try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) { /* nada */ }
+  try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {}); } catch (e) { /* nada */ }
+  ctl.elev = 0; ctl.ail = 0; ctl.rud = 0; syncControls(); sizeGauges();
+  return true;
+}
+function drawSim() {
+  const c = C(), cv = $('#simScreen'), g = cv.getContext('2d'), { w, h, dpr } = sim3;
+  if (!w) return;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  // como no painel do 747: PFD e ND do comandante, instrumentos de reserva no centro e o EICAS
+  const gap = 6, pw = Math.min((w - gap * 4) / 3.4, (h - 8) / 1.08), ph = pw * 1.08, sw = pw * 0.4;
+  const x0 = (w - (pw * 3 + sw + gap * 3)) / 2, y0 = (h - ph) / 2;
+  const bez = (x, y2, ww, hh) => { g.fillStyle = '#26241f'; g.fillRect(x - 3, y2 - 3, ww + 6, hh + 6); };
+  [x0, x0 + pw + gap, x0 + pw * 2 + sw + gap * 3].forEach((x) => bez(x, y0, pw, ph));
+  c.drawOne('pfd', g, x0, y0, pw, ph);
+  c.drawOne('nd', g, x0 + pw + gap, y0, pw, ph);
+  drawStandby(g, x0 + pw * 2 + gap * 2, y0, sw, ph);
+  c.drawOne('eicas', g, x0 + pw * 2 + sw + gap * 3, y0, pw, ph);
+  // controles acompanham o avião (o piloto automático também mexe neles)
+  const ap = c.ap, st = c.state();
+  if (sim3.drag !== 'yoke') $('#simKnob').style.transform = `translate(calc(-50% + ${ctl.ail * 34}%), calc(-50% + ${ctl.elev * 34}%)) rotate(${ctl.ail * 25}deg)`;
+  else $('#simKnob').style.transform = `translate(calc(-50% + ${ctl.ail * 34}%), calc(-50% + ${ctl.elev * 34}%)) rotate(${ctl.ail * 25}deg)`;
+  $('#simRudKnob').style.left = `calc(50% + ${ctl.rud * 40}%)`;
+  $('#simThrH').style.top = `${(1 - ctl.thr) * 100}%`; $('#simThr').firstElementChild.style.height = `${ctl.thr * 100}%`;
+  $('#simSbH').style.top = `${ctl.sb * 100}%`;
+  $('#simN1').textContent = `N1 ${Math.round(st.n1)}`;
+  $$('#simFlaps button').forEach((b) => b.classList.toggle('is-on', +b.dataset.sflap === ctl.flaps));
+  const gb = $('#simGear'); gb.classList.toggle('is-down', st.gear >= 0.99); gb.classList.toggle('is-transit', st.gear > 0.01 && st.gear < 0.99);
+  $('#simGearTxt').textContent = ctl.gearDown ? 'DOWN' : 'UP';
+  $('#mSpd').textContent = ap.spd; $('#mHdg').textContent = String(ap.hdg).padStart(3, '0'); $('#mAlt').textContent = ap.alt; $('#mVs').textContent = (ap.vs > 0 ? '+' : '') + ap.vs;
+  const lit = { AT: ap.at, SPD: ap.at && ap.vert !== 'FLCH' && ap.vert !== 'VNAV', THR: ap.at && (ap.vert === 'FLCH' || ap.vert === 'VNAV'), CMD: ap.cmd, HDG: ap.lat === 'HDG', HDGHOLD: false, LNAV: ap.lat === 'LNAV', LOC: ap.lat === 'LOC', VS: ap.vert === 'V/S', VNAV: ap.vert === 'VNAV', FLCH: ap.vert === 'FLCH', ALTHOLD: ap.vert === 'ALT', APP: ap.vert === 'GS' };
+  $$('#simMcp [data-ap]').forEach((b) => b.classList.toggle('is-on', !!lit[b.dataset.ap]));
+  const warn = c.warn(), note = c.message(), bn = $('#simBanner');
+  bn.hidden = !(warn || note); bn.textContent = warn || note; bn.classList.toggle('is-warn', !!warn);
+}
+// instrumentos de reserva (ISFD) do centro do painel: atitude, velocidade e altitude
+function drawStandby(g, x, y, w, h) {
+  const st = C().state(), s0 = C().attitude ? C().attitude() : { theta: 0, phi: 0 };
+  const r = Math.min(w * 0.46, h * 0.2), cx = x + w / 2, cy = y + h * 0.3;
+  g.fillStyle = '#1b1a17'; g.fillRect(x, y + h * 0.08, w, h * 0.5);
+  g.save(); g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.clip();
+  g.translate(cx, cy); g.rotate(-s0.phi * Math.PI / 180); g.translate(0, s0.theta * r / 25);
+  g.fillStyle = '#2c74c9'; g.fillRect(-r * 3, -r * 3, r * 6, r * 3); g.fillStyle = '#8a5730'; g.fillRect(-r * 3, 0, r * 6, r * 3);
+  g.strokeStyle = '#fff'; g.lineWidth = 1; g.beginPath(); g.moveTo(-r * 3, 0); g.lineTo(r * 3, 0); g.stroke();
+  g.restore();
+  g.strokeStyle = '#ffb000'; g.lineWidth = 2; g.beginPath(); g.moveTo(cx - r * 0.6, cy); g.lineTo(cx - r * 0.2, cy); g.moveTo(cx + r * 0.2, cy); g.lineTo(cx + r * 0.6, cy); g.stroke();
+  g.fillStyle = '#ffb000'; g.fillRect(cx - 2, cy - 2, 4, 4);
+  g.fillStyle = '#e8edf1'; g.font = `600 ${Math.max(8, w * 0.17)}px "IBM Plex Mono", monospace`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(String(Math.round(st.ias)), cx, y + h * 0.12);
+  g.fillText(String(Math.round(st.alt / 10) * 10), cx, y + h * 0.5);
+  g.fillStyle = '#9aa6b0'; g.font = `600 ${Math.max(6, w * 0.11)}px "IBM Plex Mono", monospace`; g.fillText('STBY', cx, y + h * 0.56);
+}
+// arrastar: manche (volta ao centro ao soltar), pedais (idem), manetes e speedbrake (ficam onde soltar)
+function simDrag(el, kind, move, release) {
+  el.addEventListener('pointerdown', (e) => { el.setPointerCapture(e.pointerId); sim3.drag = kind; move(simFrac(e, el)); e.preventDefault(); });
+  el.addEventListener('pointermove', (e) => { if (sim3.drag === kind) move(simFrac(e, el)); });
+  const up = () => { if (sim3.drag === kind) { sim3.drag = null; if (release) release(); } };
+  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+}
+simDrag($('#simYoke'), 'yoke', ([fx, fy]) => { C().manual('yoke'); ctl.ail = clamp((fx - 0.5) * 2.4, -1, 1); ctl.elev = clamp((fy - 0.5) * 2.4, -1, 1); }, () => { ctl.ail = 0; ctl.elev = 0; });
+simDrag($('#simRud'), 'rud', ([fx]) => { C().manual(); ctl.rud = clamp((fx - 0.5) * 2.2, -1, 1); }, () => { ctl.rud = 0; });
+simDrag($('#simThr'), 'thr', ([, fy]) => { C().manual('thr'); ctl.thr = clamp(1 - fy, 0, 1); });
+simDrag($('#simSb'), 'sb', ([, fy]) => { ctl.sb = clamp(fy, 0, 1); });
+// botões que repetem enquanto o dedo fica apertado (MCP e compensador)
+function simHold(el, fn) {
+  let t1 = 0, t2 = 0;
+  const stop = () => { clearTimeout(t1); clearInterval(t2); };
+  el.addEventListener('pointerdown', (e) => { e.preventDefault(); fn(); t1 = setTimeout(() => { t2 = setInterval(fn, 90); }, 380); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((k) => el.addEventListener(k, stop));
+}
+$$('#simMcp [data-inc]').forEach((b) => { const [k, d] = b.dataset.inc.split(':'); simHold(b, () => C().apPress(k, C().ap[k] + +d)); });
+$('#simMcp').addEventListener('click', (e) => { const b = e.target.closest('[data-ap]'); if (b) C().apPress(b.dataset.ap); });
+$('#simApDisc').addEventListener('click', () => { if (C().ap.cmd) C().apPress('CMD'); });
+$('#simApDis').addEventListener('click', () => { if (C().ap.cmd) C().apPress('CMD'); });
+simHold($('#simTrimUp'), () => C().trimNudge(0.08));
+simHold($('#simTrimDn'), () => C().trimNudge(-0.08));
+$('#simFlaps').addEventListener('click', (e) => { const b = e.target.closest('[data-sflap]'); if (b) { ctl.flaps = +b.dataset.sflap; } });
+$('#simGear').addEventListener('click', () => { ctl.gearDown = ctl.gearDown ? 0 : 1; });
+$('#simScn').addEventListener('change', (e) => simStart(e.target.value));
+$('#simOpen').addEventListener('click', openSim);
+$('#simExit').addEventListener('click', closeSim);
+window.addEventListener('resize', () => { if (sim3.on) simLayout(); });
+document.addEventListener('keydown', (e) => { if (sim3.on && e.key === 'Escape') closeSim(); });
+
 const Cap = window.Capacitor;
 const NATIVE = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
 if (NATIVE) {
@@ -1179,6 +1305,7 @@ if (NATIVE) {
   AppPlugin?.addListener('backButton', () => {
     hideHint();
     if (!$('#lessonND').hidden && $('#sidePanel').classList.contains('is-open')) { panelMenu(); return; }
+    if (closeSim()) return;
     if (closePanel()) return;
     if (current === 'pecas' && planeView !== 'top') { setPlaneView('top'); return; }
     if (current !== 'pecas') { showTab('pecas', true); return; }

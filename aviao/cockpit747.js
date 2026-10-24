@@ -84,7 +84,10 @@ function create(ctl) {
   let sc = 'cruzeiro';
   let msg = null;          // mensagem temporária (pouso, cauda na pista)
   let iasPrev = 0, trend = 0, airborneOnce = false;
-  let demo = null, demoH = 0, demoT = 0, thrI = 0, v1Said = false;   // piloto de demonstração (ver pilot())
+  let demo = null, demoH = 0, demoT = 0, thrI = 0, v1Said = false;
+  /* piloto automático do modo voo simulado (MCP): on = o aluno está usando o painel;
+     cmd = piloto automático ligado; at = manetes automáticas; lat/vert = modos lateral e vertical */
+  const ap = { on: false, cmd: false, at: false, spd: 250, hdg: 90, alt: 10000, vs: 0, lat: '', vert: '', disc: 0, atDisc: 0 };   // piloto de demonstração (ver pilot())
 
   function start(id) {
     sc = id;
@@ -112,6 +115,7 @@ function create(ctl) {
       airborneOnce = true;
     }
     iasPrev = ias(); trend = 0; s.fuel0 = s.fuel;
+    ap.on = false; ap.cmd = false; ap.at = false; ap.lat = ''; ap.vert = '';
     // decolagem, aproximação e estol começam com o piloto de demonstração voando; cruzeiro fica nivelado
     demo = { decolagem: 'roll', aproximacao: 'app', estol: 'entry' }[id] || null;
     demoH = s.h; demoT = 0; thrI = ctl.thr; v1Said = false;
@@ -200,6 +204,71 @@ function create(ctl) {
       }
     }
   }
+  /* ---------- piloto automático (modo voo simulado) ----------
+     Lateral: HDG (proa do MCP), LNAV (rota 090 do ND), LOC (localizador). Vertical: ALT (mantém), V/S (razão),
+     FLCH (sobe ou desce mudando o nariz para manter a velocidade, com empuxo de subida ou marcha lenta), GS (rampa).
+     A/T: as manetes mantêm a velocidade do MCP. Usa as mesmas funções do piloto de demonstração (flyGamma). */
+  function apStep(dt, k) {
+    const hf = hft(), sp = ap.spd;
+    if (ap.cmd && !s.ground) {
+      // lateral
+      let tgt = null, ref = s.psi;
+      if (ap.lat === 'HDG') tgt = ap.hdg;
+      else if (ap.lat === 'LNAV' || ap.lat === 'LOC') { tgt = 90 + clamp(s.y * (ap.lat === 'LOC' ? 90 : 45), -35, 35); ref = s.trk == null ? s.psi : s.trk; }
+      if (tgt != null) { const e = ((tgt - ref + 540) % 360) - 180; ctl.ail = clamp(clamp(e * 1.5, -25, 25) / 50, -1, 1); }
+      // vertical
+      if (ap.vert === 'ALT') flyGamma(clamp((ap.alt - hf) / 150, -3, 3), dt, 15);
+      else if (ap.vert === 'V/S') flyGamma(Math.asin(clamp(ap.vs * FT / 60 / s.V, -0.25, 0.25)) / D2R, dt, 15);
+      else if (ap.vert === 'FLCH' || ap.vert === 'VNAV') flyGamma(ap.alt > hf ? clamp(4 + (k - sp) * 0.3, -2, 12) : clamp(-2.5 + (k - sp) * 0.3, -8, 2), dt, 15);
+      else if (ap.vert === 'GS') {
+        if (hf > 45) flyGamma(-3 + clamp((50 + Math.max(0, -s.x) * 318 - hf) / 120, -2, 2), dt, 8);
+        else { flyGamma(Math.asin(clamp(Math.max(-750, -hf * 16 - 120) * FT / 60 / s.V, -0.2, 0.2)) / D2R, dt, 8, 0); if (hf < 30 && ap.at) ctl.thr = 0; }
+      }
+      // captura da altitude do MCP em V/S e FLCH
+      if ((ap.vert === 'V/S' || ap.vert === 'FLCH' || ap.vert === 'VNAV') && Math.abs(ap.alt - hf) < Math.max(150, Math.abs(fpm()) / 8)) ap.vert = 'ALT';
+    } else if (ap.cmd && s.ground && ap.vert === 'GS') { ctl.thr = 0; flyTheta(Math.max(0, s.theta - 1.5), dt); ctl.ail = 0; }
+    // manetes automáticas
+    if (ap.at && !(ap.vert === 'GS' && hf < 30)) {
+      if (ap.cmd && (ap.vert === 'FLCH' || ap.vert === 'VNAV')) ctl.thr = ap.alt > hf ? 0.92 : 0;
+      else { thrI = clamp(thrI + 0.004 * (sp - k) * dt, 0, 1); ctl.thr = clamp(thrI + 0.05 * (sp - k) - 0.04 * trend, 0, 1); }
+    } else thrI = ctl.thr;
+  }
+  // botões do MCP
+  function apPress(btn, val) {
+    ap.on = true;
+    if (demo) demo = null;
+    const hf = hft();
+    if (btn === 'spd') ap.spd = clamp(Math.round(val), 100, 365);
+    else if (btn === 'hdg') ap.hdg = (Math.round(val) % 360 + 360) % 360 || 360;
+    else if (btn === 'alt') ap.alt = clamp(Math.round(val / 100) * 100, 0, 43000);
+    else if (btn === 'vs') ap.vs = clamp(Math.round(val / 100) * 100, -6000, 6000);
+    else if (btn === 'AT') { ap.at = !ap.at; if (ap.at) thrI = ctl.thr; else ap.atDisc = 4; }
+    else if (btn === 'CMD') {
+      if (ap.cmd) { ap.cmd = false; ap.disc = 5; }
+      else { ap.cmd = true; if (!ap.lat) ap.lat = 'HDG'; if (!ap.vert) { ap.vert = Math.abs(fpm()) > 300 ? 'V/S' : 'ALT'; ap.vs = Math.round(fpm() / 100) * 100; if (ap.vert === 'ALT') ap.alt = Math.round(hf / 100) * 100; } }
+    }
+    else if (btn === 'HDG') { ap.lat = 'HDG'; }
+    else if (btn === 'LNAV') { ap.lat = 'LNAV'; }
+    else if (btn === 'ALTHOLD') { ap.vert = 'ALT'; ap.alt = Math.round(hf / 100) * 100; }
+    else if (btn === 'VS') { ap.vert = 'V/S'; ap.vs = Math.round(fpm() / 100) * 100; }
+    else if (btn === 'FLCH') { ap.vert = 'FLCH'; }
+    else if (btn === 'VNAV') { ap.vert = 'VNAV'; }
+    else if (btn === 'LOC') { ap.lat = 'LOC'; }
+    else if (btn === 'HDGHOLD') { ap.lat = 'HDG'; ap.hdg = Math.round(s.psi) % 360 || 360; }
+    else if (btn === 'SPD' || btn === 'THR') { ap.at = true; thrI = ctl.thr; }
+    else if (btn === 'APP') { ap.lat = 'LOC'; ap.vert = 'GS'; }
+  }
+  // o aluno mexeu no manche: o piloto automático desliga (como no avião, com o alerta vermelho)
+  function manual(kind) {
+    if (kind === 'yoke' && ap.cmd) { ap.cmd = false; ap.disc = 5; }
+    if (kind === 'thr' && ap.at) { ap.at = false; ap.atDisc = 4; }
+    if (demo) takeover();
+  }
+  function simInit() {
+    const m0 = mcp();
+    Object.assign(ap, { on: true, cmd: false, at: false, spd: m0.spd, hdg: m0.hdg, alt: m0.alt, vs: 0, lat: '', vert: '', disc: 0, atDisc: 0 });
+    demo = null; thrI = ctl.thr;
+  }
   function takeover() {
     if (!demo) return;
     demo = null;
@@ -216,6 +285,8 @@ function create(ctl) {
     const V = s.V, q = 0.5 * rho * V * V, M = V / a, W = P.m * G;
     const kias = V * Math.sqrt(rho / 1.225) / KT;
     if (demo) pilot(dt);
+    else if (ap.on) apStep(dt, kias);
+    ap.disc = Math.max(0, ap.disc - dt); ap.atDisc = Math.max(0, ap.atDisc - dt);
     // V1 na corrida de decolagem: a voz avisa no instante em que a velocidade chega a V1
     if (sc === 'decolagem' && s.ground && !v1Said && kias >= P.v1) {
       v1Said = true; say('v1', 'V one');
@@ -359,6 +430,13 @@ function create(ctl) {
   function fma() {
     const hf = hft();
     let m;
+    if (ap.on && !demo) {
+      const climb = ap.alt > hf;
+      const at = !ap.at ? '' : ap.vert === 'FLCH' || ap.vert === 'VNAV' ? (climb ? 'THR REF' : 'IDLE') : s.ground && sc === 'aproximacao' ? 'IDLE' : 'SPD';
+      const vert = ap.vert === 'GS' ? (s.ground ? '' : hf < 45 ? 'FLARE' : 'G/S') : ap.vert === 'FLCH' ? 'FLCH SPD' : ap.vert === 'VNAV' ? 'VNAV SPD' : ap.vert;
+      const lat = ap.lat === 'LOC' && s.ground ? 'ROLLOUT' : ap.lat === 'HDG' ? 'HDG SEL' : ap.lat;
+      return { m: [at, lat, vert], st: ap.cmd ? (ap.vert === 'GS' && hf < 1500 ? 'LAND 3' : 'CMD') : 'FD' };
+    }
     if (sc === 'decolagem') m = s.ground ? ['THR REF', 'TO/GA', 'TO/GA'] : hf < 1000 ? ['THR REF', 'LNAV', 'TO/GA'] : ['THR REF', 'LNAV', 'VNAV SPD'];
     else if (sc === 'cruzeiro') m = ['SPD', 'LNAV', 'VNAV PTH'];
     else if (sc === 'aproximacao') m = s.ground ? ['IDLE', 'ROLLOUT', ''] : demo === 'flare' ? ['IDLE', 'LOC', 'FLARE'] : ['SPD', 'LOC', 'G/S'];
@@ -369,6 +447,7 @@ function create(ctl) {
   let fmaPrev = ['', '', '', ''], fmaT = [0, 0, 0, 0];
   // velocidade e altitude selecionadas no painel do piloto automático (MCP), em magenta no PFD
   function mcp() {
+    if (ap.on) return { spd: ap.spd, alt: ap.alt, hdg: ap.hdg };
     const hf = hft();
     if (sc === 'decolagem') return { spd: hf < 1000 ? P.v2 + 10 : 250, alt: 13000, hdg: 90 };
     if (sc === 'cruzeiro') return { spd: 260, alt: 37000, hdg: 90 };
@@ -715,6 +794,8 @@ function create(ctl) {
     const vfe = P.vfe[ctl.flaps] || 365;
     if (ctl.flaps > 0 && kias > vfe + 3) out.push(['amber', `>FLAP LIMIT ${vfe}`]);
     if (s.gear > 0.01 && kias > P.vlo + 3 && !s.ground) out.push(['amber', `>GEAR LIMIT ${P.vlo}`]);
+    if (ap.disc > 0) out.push(['red', 'AUTOPILOT DISC']);
+    if (ap.atDisc > 0) out.push(['amber', 'AUTOTHROT DISC']);
     if (s.tailstrike) out.push(['amber', 'TAIL STRIKE']);
     if (ctl.sb > 0.05 && !s.ground && (s.flap >= 24 || hft() < 800)) out.push(['amber', 'SPEEDBRAKE EXT']);
     if (s.gear > 0.01 && s.gear < 0.99) out.push(['white', 'GEAR IN TRANSIT']);
@@ -1105,6 +1186,11 @@ function create(ctl) {
   return {
     id: 'b747', flaps: DET, flapLabel: (f) => String(f), scenarios: SCENARIOS, defaultScenario: 'cruzeiro',
     start, step, size, draw, minisHTML, minis, explain, warn, trim, takeover, demo: () => !!demo, ndTeach, pfdTeach, eicasTeach,
+    // modo voo simulado
+    ap, apPress, manual, simInit, message: () => (msg ? msg.txt : ''), trimNudge: (d) => { s.ttrim = clamp(s.ttrim + d, -5, 15); },
+    drawOne: (kind, c, x, y, w, h) => (kind === 'pfd' ? drawPFD : kind === 'nd' ? drawND : drawEICAS)(c, x, y, w, h),
+    attitude: () => ({ theta: s.theta, phi: s.phi }),
+    state: () => ({ ias: ias(), alt: hft(), vs: fpm(), gear: s.gear, flap: s.flap, ground: s.ground, n1: n1Of(s.spool) }),
     trimText: () => `${s.ttrim >= 0 ? '+' : ''}${s.ttrim.toFixed(1)}°`,
     n1: () => n1Of(ctl.thr),
   };
