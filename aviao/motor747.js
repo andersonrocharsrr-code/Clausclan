@@ -168,13 +168,18 @@ function readPal() {
   const dark = ((c) => { const n = parseInt(c.replace('#', '').padEnd(6, '0').slice(0, 6), 16); return ((n >> 16) + (n >> 8 & 255) + (n & 255)) / 3 < 100; })(css('--tunnel') || '#e6ecee');
   pal = {
     dark, bg: css('--tunnel'), duct: css('--shade'), shell: css('--plane'), ink: css('--ink'), muted: css('--muted'), hl: css('--magenta'), panel: css('--panel'),
-    lp: dark ? [150, 178, 220] : [143, 165, 198], hp: dark ? [222, 160, 192] : [198, 152, 176], st: dark ? [120, 132, 142] : [112, 121, 130],
-    hot: dark ? [214, 166, 110] : [184, 134, 80], fan: dark ? [120, 132, 144] : [96, 108, 120],
+    lp: [196, 208, 224], hp: [232, 220, 198], st: [128, 134, 140], hot: [232, 206, 166], fan: [176, 184, 192],
+    cut: dark ? '#3cc4ff' : '#1fa3dc', outAir: dark ? '#9fb1c0' : '#5d6c79',
+    shell4: dark ? ['#a4afb8', '#5f6a74', '#8f9ba5', '#3a444e'] : ['#ffffff', '#c7ced4', '#eef1f3', '#97a0a8'],
+    disk: dark ? ['#c9ced2', '#8e959b', '#4a525a'] : ['#f2f0ea', '#c8c4b8', '#7e7a70'],
+    shaftLp: ['#2f353b', '#f5f7f8', '#a3acb3', '#d9dee1', '#30363c'],
+    shaftHp: ['#3b3a34', '#f3efe4', '#b4ad9c', '#5d584c'],
+    lip: dark ? ['#4b545c', '#c9d0d5', '#8e979e', '#d7dcdf', '#7d868d'] : ['#7f888f', '#f4f6f7', '#c3c9cd', '#eef0f2', '#b1b8bd'],
+    ductB: ['#1d3048', '#0d1824'], ductC: ['#141c25', '#0a0f15'],
     metal: dark ? ['#7d8993', '#3b4650'] : ['#f6f8f9', '#b4bcc3'], hollow: dark ? '#0f171e' : '#dde3e6',
     bypassBg: dark ? 'rgba(70,120,200,.20)' : 'rgba(79,143,224,.22)', coreBg: dark ? '#1f2a33' : '#bec6cc',
-    ramp: dark
-      ? [[15, '#5b95ec'], [60, '#62bdf0'], [150, '#5fd6c6'], [400, '#e6d84a'], [700, '#ffa62e'], [1100, '#ff6a1e'], [1500, '#ff3a26'], [1950, '#fff2a8']]
-      : [[15, '#2456a6'], [60, '#2a83c4'], [150, '#16958a'], [400, '#c79a00'], [700, '#f07800'], [1100, '#ff4a10'], [1500, '#ff2a1a'], [1950, '#ffd000']],
+    // O interior do motor é escuro, então o ar usa cores vivas nos dois temas.
+    ramp: [[15, '#62a0ff'], [60, '#6cc8ff'], [150, '#5fe0cf'], [400, '#ecdc4c'], [700, '#ffa62e'], [1100, '#ff6a1e'], [1500, '#ff3a26'], [1950, '#fff2a8']],
   };
   pal.lut = [];
   for (let i = 0; i < 24; i++) pal.lut.push(rampColor(15 + i / 23 * 1935));
@@ -220,7 +225,7 @@ function makeParts() {
     }
   };
   // O núcleo recebe mais pontos que a proporção real (8 : 1) só para dar para ver o ar lá dentro.
-  mk('b', 560); mk('c', 340); mk('o', 130);
+  mk('b', 470); mk('c', 320); mk('o', 90);
 }
 
 /* ---------- Desenho ---------- */
@@ -243,97 +248,132 @@ function strokeProfile(fn, x0, x1, color, lw) {
   }
 }
 
-// Pás vistas de lado: cada pá está num ângulo φ em volta do eixo. Desenhamos a metade de trás do disco (a da frente foi "cortada").
+// Luz vinda de cima, da esquerda e da frente do desenho; o reflexo usa o meio do caminho entre a luz e quem olha.
+const D2R = Math.PI / 180;
+const unit = (v) => { const n = Math.hypot(...v); return v.map((c) => c / n); };
+const LIGHT = unit([-0.35, 0.55, 0.76]), HALF = unit([LIGHT[0], LIGHT[1], LIGHT[2] + 1]);
+// Cor de uma pá: parte difusa (metal) + brilho especular (cromado), conforme o ângulo da pá em relação à luz.
+function shade(base, beta, a, spk, gloss, amb = 0.16) {
+  const sb = Math.sin(beta), cb = Math.cos(beta), n0 = -sb, n1 = -cb * Math.sin(a), n2 = cb * Math.cos(a);
+  const d = Math.abs(n0 * LIGHT[0] + n1 * LIGHT[1] + n2 * LIGHT[2]);
+  const s = Math.pow(Math.abs(n0 * HALF[0] + n1 * HALF[1] + n2 * HALF[2]), gloss) * spk;
+  const f = amb + (1 - amb) * d, w = 255 * s;
+  return [Math.min(255, base[0] * f + w), Math.min(255, base[1] * f + w), Math.min(255, base[2] * f + w), s];
+}
+// Gradiente "cromado": faixas claras e escuras alternadas, como metal polido refletindo o ambiente.
+function chrome(c, x0, y0, x1, y1, stops) {
+  const g = c.createLinearGradient(x0, y0, x1, y1);
+  stops.forEach((col, i) => g.addColorStop(i / (stops.length - 1), col));
+  return g;
+}
+
+// Pás vistas de lado: cada pá está num ângulo φ em volta do eixo. Como nos cortes de fábrica, só a carcaça é cortada:
+// as pás aparecem inteiras, das de trás para as da frente.
 function drawRow(rw) {
   const ph = rw.kind === 's' ? 0.37 : rw.sp === 'hp' ? phHP : phLP;
   const xc = rw.x + (rw.c || 0.25) / 2, rh = rw.hub(xc), rt = rw.tip(xc);
   const base = rw.fan ? pal.fan : rw.kind === 's' ? pal.st : rw.hot ? pal.hot : rw.sp === 'hp' ? pal.hp : pal.lp;
-  const st = rw.fan ? null : rw.st * Math.PI / 180, cs = st == null ? 0 : Math.cos(st), sn = st == null ? 0 : Math.sin(st);
+  const st = (rw.fan ? 48 : rw.st) * D2R, cs = Math.cos(st), sn = Math.sin(st);
+  const gloss = rw.kind === 's' ? 10 : rw.fan ? 12 : 26, spk = rw.kind === 's' ? 0.3 : rw.fan ? 1.1 : 0.8, amb = rw.fan ? 0.42 : 0.2;
   const list = [];
+  const cmax = rw.fan ? 0.42 : rw.c;
   for (let j = 0; j < rw.n; j++) {
-    const a = ph * (rw.fan ? 1 : 1) + j * 2 * Math.PI / rw.n, s = Math.sin(a);
-    if (s < 0) list.push([a, s]);
+    const a = ph + j * 2 * Math.PI / rw.n, s = Math.sin(a);
+    // Pula as pás que ficam inteiras fora do duto (escondidas pelos discos e pela carcaça).
+    if (Math.abs(Math.cos(a)) * rt + cmax * Math.abs(sn * s) < rh) continue;
+    list.push([a, s]);
   }
   list.sort((p, q) => p[1] - q[1]);
+  const outline = rw.fan || k > 70;
   for (const [a, s] of list) {
     const ca = Math.cos(a), le = [], te = [];
     if (rw.fan) {
       // Pá do fan: corda maior e mais torcida na ponta.
-      for (let u = 0; u <= 1.001; u += 0.25) {
-        const r = lerp(rh, rt, u), c = lerp(0.17, 0.30, u), b = lerp(25, 64, u) * Math.PI / 180, xl = rw.x + lerp(0.03, -0.02, u * u);
+      for (let u = 0; u <= 1.001; u += 0.2) {
+        const r = lerp(rh, rt, u), c = lerp(0.22, 0.42, u), b = lerp(30, 58, u) * D2R, xl = rw.x + lerp(0.03, -0.02, u * u);
         le.push([xl, r * ca]); te.push([xl + c * Math.cos(b), r * ca - c * Math.sin(b) * s]);
       }
     } else {
-      for (const r of [rh, rt]) { le.push([rw.x, r * ca]); te.push([rw.x + rw.c * cs, r * ca - rw.c * sn * s]); }
+      for (const r of [rh, (rh + rt) / 2, rt]) {
+        const bow = r === rt || r === rh ? 0 : rw.c * 0.12; // leve curvatura do perfil
+        le.push([rw.x + bow, r * ca]); te.push([rw.x + rw.c * cs + bow, r * ca - rw.c * sn * s]);
+      }
     }
-    const f = rw.fan ? 0.45 + 0.9 * (1 - Math.abs(s)) ** 0.8 : 0.62 + 0.38 * -s;
+    const [R, G, B, spec] = shade(base, st, a, spk, gloss, amb);
+    const pts = le.concat(te.slice().reverse());
     ctx.beginPath();
-    const pts = le.concat(te.reverse());
     ctx.moveTo(SX(pts[0][0]), SY(pts[0][1]));
     for (let i = 1; i < pts.length; i++) ctx.lineTo(SX(pts[i][0]), SY(pts[i][1]));
     ctx.closePath();
-    ctx.fillStyle = rgb(base, rw.fan ? f : pal.dark ? f : 0.7 + 0.3 * f);
+    ctx.fillStyle = `rgb(${R | 0},${G | 0},${B | 0})`;
     ctx.fill();
-    if (rw.fan || k > 140) { ctx.strokeStyle = rgb(base, pal.dark ? 1.35 : 0.6, 0.9); ctx.lineWidth = rw.fan ? 1 : 0.6; ctx.stroke(); }
-    if (rw.fan) { // borda de ataque metálica
+    if (outline) { ctx.strokeStyle = 'rgba(4,6,8,.85)'; ctx.lineWidth = rw.fan ? 1 : 0.6; ctx.stroke(); }
+    if (rw.fan || (k > 110 && rw.kind === 'r')) {
+      // Borda de ataque: um fio cromado que acende quando a pá passa de frente para a luz.
       ctx.beginPath(); ctx.moveTo(SX(le[0][0]), SY(le[0][1]));
-      for (let i = 1; i < 5; i++) ctx.lineTo(SX(pts[i][0]), SY(pts[i][1]));
-      ctx.strokeStyle = pal.dark ? '#c9d3da' : '#9aa6ae'; ctx.lineWidth = 1.4; ctx.stroke();
+      for (let i = 1; i < le.length; i++) ctx.lineTo(SX(le[i][0]), SY(le[i][1]));
+      ctx.strokeStyle = `rgba(255,255,255,${clamp(0.25 + spec * 1.4, 0, 0.95)})`; ctx.lineWidth = rw.fan ? 1.6 : 0.8; ctx.stroke();
     }
   }
 }
-// Discos que prendem cada fileira de pás ao seu eixo (no corte).
+// Discos que prendem cada fileira de pás ao seu eixo (no corte), e os eixos como cilindros polidos.
 function drawDisks() {
-  for (const rw of ROWS) {
-    if (rw.kind !== 'r') continue;
-    const c = rw.fan ? 0.24 : rw.c, xc = rw.x + c / 2, rh = rw.hub(xc) - 0.004, rb = SHAFT[rw.sp] + 0.004;
-    const w = rw.fan ? 0.2 : c * 0.8, web = rw.fan ? 0.03 : 0.006, wb = rw.fan ? 0.09 : Math.max(0.03, c * 0.7);
-    const pts = [[xc - w / 2, rh], [xc + w / 2, rh], [xc + web, rh - 0.03], [xc + web, rb + 0.035], [xc + wb / 2, rb + 0.012], [xc + wb / 2, rb], [xc - wb / 2, rb], [xc - wb / 2, rb + 0.012], [xc - web, rb + 0.035], [xc - web, rh - 0.03]];
-    fillBand(pts, rgb(rw.hot ? pal.hot : pal[rw.sp], pal.dark ? 0.75 : 1, 0.85), null);
+  for (const s of [1, -1]) {
+    ctx.beginPath();
+    for (const rw of ROWS) {
+      if (rw.kind !== 'r') continue;
+      const c = rw.fan ? 0.24 : rw.c, xc = rw.x + c / 2, rh = rw.hub(xc) - 0.004, rb = SHAFT[rw.sp] + 0.004;
+      const w = rw.fan ? 0.2 : c * 0.8, web = rw.fan ? 0.03 : 0.006, wb = rw.fan ? 0.09 : Math.max(0.03, c * 0.7);
+      poly([[xc - w / 2, rh], [xc + w / 2, rh], [xc + web, rh - 0.03], [xc + web, rb + 0.035], [xc + wb / 2, rb + 0.012], [xc + wb / 2, rb], [xc - wb / 2, rb], [xc - wb / 2, rb + 0.012], [xc - web, rb + 0.035], [xc - web, rh - 0.03]], s);
+    }
+    ctx.fillStyle = chrome(ctx, 0, SY(0.62 * s), 0, SY(0.05 * s), pal.disk); ctx.fill();
+    ctx.strokeStyle = 'rgba(4,6,8,.55)'; ctx.lineWidth = 0.6; ctx.stroke();
   }
-  // Eixos
-  fillBand(band(0.95, 5.65, K(0), K(SHAFT.lp)), rgb(pal.lp, pal.dark ? 0.85 : 1), pal.ink, 0.6);
-  fillBand(band(2.62, 4.42, K(0.12), K(SHAFT.hp)), rgb(pal.hp, pal.dark ? 0.85 : 1), pal.ink, 0.6);
+  // Eixo de baixa (N1): cilindro inteiro, com o reflexo correndo por cima
+  ctx.beginPath(); poly(band(0.95, 5.65, K(-SHAFT.lp), K(SHAFT.lp), 2), 1);
+  ctx.fillStyle = chrome(ctx, 0, SY(SHAFT.lp), 0, SY(-SHAFT.lp), pal.shaftLp); ctx.fill(); ctx.strokeStyle = pal.cut; ctx.lineWidth = 1; ctx.stroke();
+  // Eixo de alta (N2): um tubo em volta do eixo N1 (no corte aparecem as duas paredes)
+  for (const s of [1, -1]) {
+    ctx.beginPath(); poly(band(2.62, 4.42, K(0.12), K(SHAFT.hp), 2), s);
+    ctx.fillStyle = chrome(ctx, 0, SY(SHAFT.hp * s), 0, SY(0.12 * s), pal.shaftHp); ctx.fill(); ctx.strokeStyle = pal.cut; ctx.lineWidth = 1; ctx.stroke();
+  }
 }
+const linerOut = lin([[3.67, 0.392], [3.85, 0.408], [4.06, 0.395]]), linerIn = lin([[3.67, 0.29], [3.85, 0.274], [4.06, 0.318]]);
 function drawCombustor() {
   const fl = 0.35 + 0.65 * sp;
-  const liner = (r0, r1) => lin([[3.67, r0], [3.8, r1], [4.06, (r0 + r1) / 2 + (r1 > r0 ? 0 : 0)]]);
-  ctx.strokeStyle = pal.dark ? '#a9b4bc' : '#6c7880'; ctx.lineWidth = Math.max(1.2, k * 0.008);
   for (const s of [1, -1]) {
-    ctx.beginPath(); // parede externa e interna da câmara
-    ctx.moveTo(SX(3.67), SY(0.392 * s)); ctx.quadraticCurveTo(SX(3.85), SY(0.41 * s), SX(4.06), SY(0.395 * s));
-    ctx.moveTo(SX(3.67), SY(0.29 * s)); ctx.quadraticCurveTo(SX(3.85), SY(0.272 * s), SX(4.06), SY(0.318 * s));
-    ctx.moveTo(SX(3.67), SY(0.392 * s)); ctx.lineTo(SX(3.67), SY(0.362 * s)); // domo
-    ctx.moveTo(SX(3.67), SY(0.318 * s)); ctx.lineTo(SX(3.67), SY(0.29 * s));
-    ctx.stroke();
-    // Chama: línguas de fogo que tremulam e vão do injetor até a saída da câmara
+    // Interior da câmara escuro, e a chama acesa por dentro: azul no injetor, violeta, laranja, amarelo e quase branca no meio.
     ctx.save();
-    if (pal.dark) ctx.globalCompositeOperation = 'lighter';
-    for (let j = 0; j < 5; j++) {
-      const u = j / 4, w = Math.sin(time * (17 + j * 5) + j * 1.7 + s) * 0.5 + 0.5;
-      const fx = SX(3.7 + u * 0.32 + w * 0.015), fy = SY((0.345 - u * 0.005 + (w - 0.5) * 0.02) * s);
-      const rr = k * (0.05 + 0.045 * fl) * (1.15 - u * 0.35) * (0.85 + 0.3 * w);
+    ctx.beginPath(); poly(band(3.67, 4.06, linerIn, linerOut, 12), s); ctx.fillStyle = '#0a0d24'; ctx.fill(); ctx.clip();
+    ctx.globalCompositeOperation = 'lighter';
+    const tongues = 9;
+    for (let j = 0; j < tongues; j++) {
+      const u = j / (tongues - 1), w = Math.sin(time * (13 + j * 4.3) + j * 2.1 + s * 1.3) * 0.5 + 0.5, w2 = Math.sin(time * (21 + j * 3.1) + j) * 0.5 + 0.5;
+      const fx = SX(3.69 + u * 0.36 + (w - 0.5) * 0.02), fy = SY((0.343 + (w2 - 0.5) * 0.03 * (0.4 + u)) * s);
+      const rr = k * (0.035 + 0.04 * fl) * (0.7 + 0.6 * Math.sin(u * Math.PI)) * (0.8 + 0.35 * w);
+      const core = u < 0.18 ? [90, 110, 255] : u < 0.35 ? [190, 90, 255] : u < 0.75 ? [255, 236, 170] : [255, 190, 60];
+      const rim = u < 0.18 ? [40, 30, 200] : u < 0.35 ? [150, 40, 220] : u < 0.75 ? [255, 120, 20] : [240, 70, 20];
       const g = ctx.createRadialGradient(fx, fy, 0, fx, fy, rr);
-      g.addColorStop(0, `rgba(255,${250 - j * 18},${200 - j * 40},${(0.95 - u * 0.3) * fl})`);
-      g.addColorStop(0.35, `rgba(255,${170 - j * 20},30,${(0.8 - u * 0.2) * fl})`);
-      g.addColorStop(0.7, `rgba(235,60,20,${0.45 * fl})`); g.addColorStop(1, 'rgba(200,30,10,0)');
-      ctx.save(); ctx.translate(fx, fy); ctx.scale(1.9, 0.62); ctx.translate(-fx, -fy);
+      g.addColorStop(0, `rgba(${core.join(',')},${0.95 * fl})`);
+      g.addColorStop(0.45, `rgba(${rim.join(',')},${0.6 * fl})`);
+      g.addColorStop(1, `rgba(${rim.join(',')},0)`);
+      ctx.save(); ctx.translate(fx, fy); ctx.scale(1.9, 0.75); ctx.translate(-fx, -fy);
       ctx.fillStyle = g; ctx.beginPath(); ctx.arc(fx, fy, rr, 0, 7); ctx.fill(); ctx.restore();
     }
     ctx.restore();
+    // Paredes da câmara (com o corte em azul) e o domo
+    ctx.beginPath(); poly(band(3.67, 4.06, linerIn, linerOut, 12), s);
+    ctx.strokeStyle = pal.cut; ctx.lineWidth = Math.max(1.2, k * 0.009); ctx.stroke();
     // Injetor: haste que atravessa a carcaça e bico na frente do domo
     ctx.beginPath(); ctx.moveTo(SX(3.6), SY(0.47 * s)); ctx.lineTo(SX(3.63), SY(0.345 * s)); ctx.lineTo(SX(3.668), SY(0.34 * s));
-    ctx.strokeStyle = pal.dark ? '#d8c27a' : '#8a6d1c'; ctx.lineWidth = Math.max(2, k * 0.016); ctx.stroke();
-    ctx.strokeStyle = pal.dark ? '#a9b4bc' : '#6c7880'; ctx.lineWidth = Math.max(1.2, k * 0.008);
+    ctx.strokeStyle = pal.dark ? '#c9d0d6' : '#8c959c'; ctx.lineWidth = Math.max(2.2, k * 0.018); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = Math.max(0.8, k * 0.005); ctx.stroke();
   }
-  void liner;
 }
-// Preenchimento metálico: claro na superfície de fora, mais escuro para dentro (cada metade separada).
-function metalBand(pts, rOut, rIn, stroke = pal.ink, lw = 1.2) {
+// Preenchimento metálico em corte: metal polido e a borda do corte em azul.
+function metalBand(pts, rOut, rIn, stroke = pal.cut, lw = 1.5) {
   for (const s of [1, -1]) {
-    const g = ctx.createLinearGradient(0, SY(rOut * s), 0, SY(rIn * s));
-    g.addColorStop(0, pal.metal[0]); g.addColorStop(1, pal.metal[1]);
-    ctx.beginPath(); poly(pts, s); ctx.fillStyle = g; ctx.fill();
+    ctx.beginPath(); poly(pts, s); ctx.fillStyle = chrome(ctx, 0, SY(rOut * s), 0, SY(rIn * s), pal.shell4); ctx.fill();
     ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke();
   }
 }
@@ -352,6 +392,11 @@ function drawShellsMetal() {
   }
   drawAgb();
   metalBand(band(SPLIT, CORE_NOZ, outC, cowl, 50), 0.8, 0.42);
+  // Carcaça da parte quente (turbinas) em vermelho, como nos cortes de fábrica
+  for (const s of [1, -1]) {
+    ctx.beginPath(); poly(band(4.06, 5.5, outC, (x) => outC(x) + 0.045, 14), s);
+    ctx.fillStyle = `rgba(214,52,44,${0.75 + 0.2 * sp})`; ctx.fill(); ctx.strokeStyle = pal.cut; ctx.lineWidth = 1.2; ctx.stroke();
+  }
   drawVbv();
   // Cone do fan com a espiral pintada
   for (const s of [1, -1]) {
@@ -410,45 +455,55 @@ function drawBearings() {
 }
 function drawAir(dt) {
   const U = (0.3 + 1.4 * sp) * (slow ? 0.3 : 1);
-  const buckets = Array.from({ length: 25 }, () => []);
+  // Três baldes de transparência por cor: o rastro de cada partícula vai sumindo da cabeça para a cauda.
+  const buckets = Array.from({ length: 25 * 3 * 2 }, () => []);
+  const lvA = [0.16, 0.42, 0.95];
   for (const p of parts) {
     const v = U * velOf(p, p.x);
     p.x += v * dt;
-    if (p.s === 'c' && p.x < SPLIT) { /* o ar do núcleo segue a mesma faixa até o divisor */ }
     if (p.x > X1) { p.x = X0 + Math.random() * 0.3; p.side = Math.random() < 0.5 ? 1 : -1; }
     if (!showAir) continue;
-    const L = clamp(0.07 * v + 0.02, 0.03, 0.22), xa = p.x - L;
     const sx = SX(p.x);
-    if (sx < -20 || sx > W + 20) continue;
-    const b = p.s === 'o' ? 24 : lutOf(tempOf(p, p.x));
-    buckets[b].push([SX(xa), SY(pathY(p, xa) * p.side), sx, SY(pathY(p, p.x) * p.side), p.x]);
+    if (sx < -60 || sx > W + 60) continue;
+    const L = clamp(0.12 * v + 0.035, 0.05, 0.34);
+    const ci = p.s === 'o' ? 24 : lutOf(tempOf(p, p.x));
+    let px = p.x - L, py = airY(p, px);
+    for (let lv = 0; lv < 3; lv++) {
+      const nx = p.x - L * (2 - lv) / 3, ny = airY(p, nx);
+      buckets[(ci * 3 + lv) * 2 + (p.x > 7.0 ? 1 : 0)].push(SX(px), SY(py), SX(nx), SY(ny));
+      px = nx; py = ny;
+    }
   }
   if (!showAir) return;
-  ctx.lineCap = 'round';
-  const lw = clamp(k * 0.014, 1.5, 3.4);
-  // Gases quentes: um halo largo por baixo, mais brilhante quanto mais quente.
-  ctx.save();
-  if (pal.dark) ctx.globalCompositeOperation = 'lighter';
-  buckets.forEach((list, i) => {
-    if (i < 8 || i === 24 || !list.length) return;
-    ctx.strokeStyle = pal.lut[i]; ctx.globalAlpha = 0.16 + 0.22 * (i - 8) / 15; ctx.lineWidth = lw * 3.2;
-    ctx.beginPath();
-    for (const [a, b, c, d] of list) { ctx.moveTo(a, b); ctx.lineTo(c, d); }
-    ctx.stroke();
-  });
+  ctx.lineCap = 'butt';
+  const lw = clamp(k * 0.0095, 1.1, 2.6);
+  // Gases quentes: um halo largo por baixo, mais forte quanto mais quente.
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (let i = 9; i < 24; i++) {
+    const l = buckets[(i * 3 + 2) * 2]; if (!l.length) continue;
+    ctx.strokeStyle = pal.lut[i]; ctx.globalAlpha = 0.1 + 0.22 * (i - 9) / 14; ctx.lineWidth = lw * 4;
+    ctx.beginPath(); for (let j = 0; j < l.length; j += 4) { ctx.moveTo(l[j], l[j + 1]); ctx.lineTo(l[j + 2], l[j + 3]); } ctx.stroke();
+  }
   ctx.restore();
-  buckets.forEach((list, i) => {
-    if (!list.length) return;
-    ctx.lineWidth = i >= 8 && i !== 24 ? lw * 1.35 : lw;
-    ctx.strokeStyle = i === 24 ? rgb(hexRgb(pal.dark ? '#93a2ae' : '#586572'), 1, 0.5) : pal.lut[i];
-    ctx.beginPath();
-    for (const [a, b, c, d, x] of list) { if (x > 7.1) continue; ctx.moveTo(a, b); ctx.lineTo(c, d); }
-    ctx.stroke();
-    // Os jatos vão sumindo no fim
-    ctx.globalAlpha = 0.45; ctx.beginPath();
-    for (const [a, b, c, d, x] of list) { if (x <= 7.1) continue; ctx.moveTo(a, b); ctx.lineTo(c, d); }
-    ctx.stroke(); ctx.globalAlpha = 1;
-  });
+  for (let i = 0; i < 25; i++) for (let lv = 0; lv < 3; lv++) {
+    ctx.strokeStyle = i === 24 ? pal.outAir : pal.lut[i];
+    ctx.lineWidth = i >= 9 && i !== 24 ? lw * 1.3 : lw;
+    for (let far = 0; far < 2; far++) {
+      const q = buckets[(i * 3 + lv) * 2 + far]; if (!q.length) continue;
+      ctx.globalAlpha = lvA[lv] * (far ? 0.4 : 1) * (i === 24 ? 0.45 : 1);
+      ctx.beginPath();
+      for (let j = 0; j < q.length; j += 4) { ctx.moveTo(q[j], q[j + 1]); ctx.lineTo(q[j + 2], q[j + 3]); }
+      ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+// Caminho do ar com um leve ondular nos jatos, onde o ar de dentro se mistura com o de fora.
+function airY(p, x) {
+  let y = pathY(p, x);
+  const x0 = p.s === 'c' ? CORE_NOZ : p.s === 'b' ? FAN_NOZ : 99;
+  if (x > x0) y += Math.sin(time * 5 + x * 7 + p.F * 40) * 0.018 * Math.min(1, (x - x0) / 1.2);
+  return y * p.side;
 }
 function highlightIds() { return sel ? [sel] : STEPS[step].parts; }
 function drawHighlight() {
@@ -457,7 +512,7 @@ function drawHighlight() {
   ctx.save();
   ctx.beginPath(); ctx.rect(0, 0, W, H);
   ids.forEach((id) => PARTS[id].polys.forEach((q) => { if (PARTS[id].only !== -1) poly(q, 1); poly(q, -1); }));
-  ctx.fillStyle = pal.dark ? 'rgba(6,10,14,.55)' : 'rgba(230,236,238,.62)';
+  ctx.fillStyle = pal.dark ? 'rgba(4,7,10,.6)' : 'rgba(12,16,20,.45)';
   ctx.fill('evenodd');
   ctx.beginPath(); ids.forEach((id) => PARTS[id].polys.forEach((q) => { if (PARTS[id].only !== -1) poly(q, 1); poly(q, -1); }));
   ctx.strokeStyle = pal.hl; ctx.lineWidth = 2; ctx.setLineDash([6, 4]); ctx.lineDashOffset = -time * 20; ctx.stroke();
@@ -488,7 +543,7 @@ function drawPins() {
       const bx = it.x + 10;
       ctx.strokeStyle = it.hl ? pal.hl : pal.muted; ctx.globalAlpha = it.hl ? 1 : 0.7; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(bx, y + (key === 'top' ? 9 : -9)); ctx.lineTo(it.ax, it.ay); ctx.stroke();
-      ctx.fillStyle = it.hl ? pal.hl : pal.ink; ctx.beginPath(); ctx.arc(it.ax, it.ay, 2.5, 0, 7); ctx.fill();
+      ctx.fillStyle = it.hl ? pal.hl : '#ffffff'; ctx.beginPath(); ctx.arc(it.ax, it.ay, 3, 0, 7); ctx.fill(); ctx.strokeStyle = it.hl ? pal.panel : '#11161b'; ctx.lineWidth = 1.2; ctx.stroke();
       ctx.globalAlpha = 1;
       ctx.beginPath(); ctx.arc(bx, y, 9.5, 0, 7);
       ctx.fillStyle = it.hl ? pal.hl : pal.panel; ctx.fill(); ctx.strokeStyle = it.hl ? pal.hl : pal.ink; ctx.stroke();
@@ -503,30 +558,98 @@ function drawPins() {
     }
   }
 }
-// Vista de frente do fan (aparece na etapa do fan).
+// Fan visto de frente, como na foto: pás cromadas e curvas, vãos pretos, spinner preto com a espiral branca.
+const fanAir = Array.from({ length: 70 }, () => ({ a: Math.random() * 7, r: 1.05 + Math.random() * 0.75, v: 0.5 + Math.random() * 0.6 }));
+const LIGHT_ANG = -2.25; // luz vindo de cima, à esquerda
+function drawFanFront(c, cx, cy0, R, o = {}) {
+  const rh = R * 0.3, n = 18, rotv = (0.25 + 1.0 * sp) * (slow ? 0.25 : 1);
+  // Boca da nacele (lábio polido)
+  if (o.lip) {
+    const lip = c.createRadialGradient(cx, cy0, R * 0.96, cx, cy0, R * 1.2);
+    pal.lip.forEach((col, i) => lip.addColorStop(i / (pal.lip.length - 1), col));
+    c.beginPath(); c.arc(cx, cy0, R * 1.2, 0, 7); c.fillStyle = lip; c.fill();
+    const sh = c.createLinearGradient(cx - R, cy0 - R, cx + R, cy0 + R);
+    sh.addColorStop(0, 'rgba(255,255,255,.35)'); sh.addColorStop(0.5, 'rgba(255,255,255,0)'); sh.addColorStop(1, 'rgba(0,0,0,.28)');
+    c.fillStyle = sh; c.fill();
+  }
+  c.save();
+  c.beginPath(); c.arc(cx, cy0, R, 0, 7); c.clip();
+  const bg = c.createRadialGradient(cx, cy0, rh, cx, cy0, R);
+  bg.addColorStop(0, '#010203'); bg.addColorStop(0.75, '#07090b'); bg.addColorStop(1, '#1d2226');
+  c.fillStyle = bg; c.fillRect(cx - R, cy0 - R, 2 * R, 2 * R);
+  const blade = (a0, alpha) => {
+    const P = [], Q = [];
+    for (let i = 0; i <= 10; i++) {
+      const u = i / 10, r = lerp(rh * 0.97, R * 0.99, u), a = a0 + 0.62 * Math.pow(u, 1.35), wv = lerp(0.1, 0.21, u);
+      P.push([cx + r * Math.cos(a), cy0 + r * Math.sin(a)]);
+      Q.push([cx + r * Math.cos(a + wv), cy0 + r * Math.sin(a + wv)]);
+    }
+    // O brilho depende de onde a pá está: as que passam do lado da luz acendem, as do outro lado ficam escuras.
+    const am = a0 + 0.3, cl = Math.cos(am - LIGHT_ANG), lit = 0.5 + 0.5 * cl, lit2 = Math.max(0, cl) ** 6;
+    const mr = lerp(rh, R, 0.55), ma = a0 + 0.62 * Math.pow(0.55, 1.35);
+    const g = c.createLinearGradient(cx + mr * Math.cos(ma), cy0 + mr * Math.sin(ma), cx + mr * Math.cos(ma + 0.18), cy0 + mr * Math.sin(ma + 0.18));
+    const hi = Math.round(140 + 115 * lit), sp2 = Math.min(255, hi + 60 * lit2), mid = Math.round(60 + 90 * lit);
+    g.addColorStop(0, `rgba(${hi},${hi},${Math.min(255, hi + 6)},${alpha})`);
+    g.addColorStop(0.2, `rgba(${sp2},${sp2},${sp2},${alpha})`);
+    g.addColorStop(0.55, `rgba(${mid},${mid + 4},${mid + 8},${alpha})`);
+    g.addColorStop(1, `rgba(10,12,14,${alpha})`);
+    c.beginPath(); c.moveTo(...P[0]); P.forEach((q) => c.lineTo(...q)); Q.slice().reverse().forEach((q) => c.lineTo(...q)); c.closePath();
+    c.fillStyle = g; c.fill();
+    if (alpha > 0.9) {
+      c.strokeStyle = 'rgba(0,0,0,.9)'; c.lineWidth = Math.max(0.8, R * 0.008); c.stroke();
+      c.beginPath(); c.moveTo(...P[0]); P.forEach((q) => c.lineTo(...q));
+      c.strokeStyle = `rgba(255,255,255,${0.3 + 0.65 * lit2})`; c.lineWidth = Math.max(1, R * 0.012); c.stroke();
+    }
+  };
+  const ph = -phLP, blur = slow ? 0 : clamp(rotv - 0.35, 0, 1);
+  for (let j = 0; j < n; j++) {
+    const a0 = ph + j * 2 * Math.PI / n;
+    // Rastro do movimento quando o fan gira rápido
+    if (blur > 0.05) { blade(a0 + 0.09 * blur, 0.2 * blur); blade(a0 + 0.045 * blur, 0.32 * blur); }
+    blade(a0, 1);
+  }
+  // Anel da carcaça do fan
+  c.beginPath(); c.arc(cx, cy0, R * 0.995, 0, 7); c.strokeStyle = '#2a3035'; c.lineWidth = R * 0.03; c.stroke();
+  c.restore();
+  // Spinner preto brilhante, parafusos em volta e a espiral branca (avisa a equipe no chão que o motor está girando)
+  const sg = c.createRadialGradient(cx - rh * 0.35, cy0 - rh * 0.4, rh * 0.05, cx, cy0, rh);
+  sg.addColorStop(0, '#5c636a'); sg.addColorStop(0.35, '#1d2125'); sg.addColorStop(1, '#050607');
+  c.beginPath(); c.arc(cx, cy0, rh, 0, 7); c.fillStyle = sg; c.fill(); c.strokeStyle = '#3a4046'; c.lineWidth = Math.max(1, R * 0.01); c.stroke();
+  c.fillStyle = '#6b737a';
+  for (let i = 0; i < 28; i++) { const a = ph + i / 28 * Math.PI * 2; c.beginPath(); c.arc(cx + Math.cos(a) * rh * 0.9, cy0 + Math.sin(a) * rh * 0.9, Math.max(0.7, R * 0.006), 0, 7); c.fill(); }
+  c.beginPath();
+  for (let i = 0; i <= 40; i++) { const t = i / 40, rr = rh * (0.06 + 0.52 * t), a = ph + t * Math.PI * 2.3; i ? c.lineTo(cx + rr * Math.cos(a), cy0 + rr * Math.sin(a)) : c.moveTo(cx + rr * Math.cos(a), cy0 + rr * Math.sin(a)); }
+  c.strokeStyle = '#f3f2ec'; c.lineWidth = Math.max(1.5, rh * 0.13); c.lineCap = 'round'; c.stroke();
+  // Ar sendo puxado para dentro da boca
+  if (o.air && showAir) {
+    c.lineCap = 'round'; c.lineWidth = Math.max(1, R * 0.008);
+    for (const q of fanAir) {
+      q.r -= q.v * (0.35 + sp) * (slow ? 0.3 : 1) * 0.06; q.a += 0.002;
+      if (q.r < 1.0) { q.r = 1.45 + Math.random() * 0.45; q.a = Math.random() * 7; }
+      const r1 = q.r * R, r0 = (q.r + 0.12) * R, al = clamp((1.6 - q.r) * 1.4, 0, 0.6) * clamp((q.r - 1.0) * 8, 0, 1);
+      c.strokeStyle = pal.dark ? `rgba(170,205,255,${al})` : `rgba(60,100,160,${al})`;
+      c.beginPath(); c.moveTo(cx + r0 * Math.cos(q.a), cy0 + r0 * Math.sin(q.a)); c.lineTo(cx + r1 * Math.cos(q.a), cy0 + r1 * Math.sin(q.a)); c.stroke();
+    }
+  }
+}
+// Vista de frente pequena dentro do corte (etapas da entrada e do fan).
 function drawFront() {
   if (!((step === 1 || step === 2) && !sel || sel === 'fan' || sel === 'spinner')) return;
   const R = Math.min(72, H * 0.27, W * 0.15), cx = W - R - 14, cyy = MT + R + 10;
-  ctx.save();
-  ctx.beginPath(); ctx.arc(cx, cyy, R + 6, 0, 7); ctx.fillStyle = pal.panel; ctx.fill(); ctx.strokeStyle = pal.ink; ctx.lineWidth = 2.5; ctx.stroke();
-  ctx.beginPath(); ctx.arc(cx, cyy, R, 0, 7); ctx.fillStyle = pal.duct; ctx.fill(); ctx.clip();
-  const hub = R * 0.29;
-  for (let j = 0; j < 18; j++) {
-    const a0 = -phLP + j * 2 * Math.PI / 18;
-    ctx.beginPath();
-    for (let i = 0; i <= 6; i++) { const u = i / 6, r = lerp(hub, R, u), a = a0 + 0.55 * u * u; i ? ctx.lineTo(cx + r * Math.cos(a), cyy + r * Math.sin(a)) : ctx.moveTo(cx + r * Math.cos(a), cyy + r * Math.sin(a)); }
-    for (let i = 6; i >= 0; i--) { const u = i / 6, r = lerp(hub, R, u), a = a0 + 0.55 * u * u + lerp(0.12, 0.3, u); ctx.lineTo(cx + r * Math.cos(a), cyy + r * Math.sin(a)); }
-    ctx.closePath();
-    ctx.fillStyle = rgb(pal.fan, pal.dark ? 1.15 : 1); ctx.fill();
-    ctx.strokeStyle = pal.dark ? '#c9d3da' : '#9aa6ae'; ctx.lineWidth = 1; ctx.stroke();
-  }
-  ctx.restore();
-  ctx.beginPath(); ctx.arc(cx, cyy, hub, 0, 7); ctx.fillStyle = pal.dark ? '#4a5560' : '#3a434c'; ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 1.5; ctx.beginPath();
-  for (let i = 0; i <= 20; i++) { const u = i / 20, a = -phLP + u * 4.2, r = hub * u; i ? ctx.lineTo(cx + r * Math.cos(a), cyy + r * Math.sin(a)) : ctx.moveTo(cx, cyy); }
-  ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cyy, R + 5, 0, 7); ctx.fillStyle = pal.panel; ctx.fill(); ctx.strokeStyle = pal.ink; ctx.lineWidth = 2; ctx.stroke();
+  drawFanFront(ctx, cx, cyy, R * 0.84, { lip: true });
   ctx.fillStyle = pal.ink; ctx.font = `600 10.5px ${css('--mono') || 'monospace'}`; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
   ctx.fillText('DE FRENTE · 18 PÁS', cx, cyy + R + 10);
+}
+// Cartão grande do fan de frente
+let fcv = null, fctx = null, FW = 0, FH = 0;
+function drawFanCard() {
+  if (!fctx) return;
+  fctx.fillStyle = pal.bg; fctx.fillRect(0, 0, FW, FH);
+  const R = Math.min(FW, FH) * 0.385;
+  drawFanFront(fctx, FW / 2, FH / 2, R, { lip: true, air: true });
+  fctx.fillStyle = pal.ink; fctx.font = `600 12px ${css('--mono') || 'monospace'}`; fctx.textAlign = 'left'; fctx.textBaseline = 'bottom';
+  fctx.fillText(`N1 ${nf(n1(), 1)} %`, 12, FH - 10);
 }
 
 function frame(t) {
@@ -546,9 +669,12 @@ function frame(t) {
   ctx.strokeStyle = pal.muted; ctx.globalAlpha = 0.5; ctx.setLineDash([10, 4, 2, 4]); ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(W, cy); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
   // Fundo dos dutos (o interior do motor, atrás do corte)
-  fillBand(band(-0.05, SPLIT, hubIn, caseAt, 30), pal.duct);
-  fillBand(band(-0.05, FAN_NOZ, (x) => (x < SPLIT ? hubIn(x) : cowl(x)), caseAt, 40), pal.bypassBg);
-  fillBand(band(SPLIT, CORE_NOZ, inC, outC, 60), pal.coreBg);
+  for (const s of [1, -1]) {
+    ctx.beginPath(); poly(band(-0.05, FAN_NOZ, (x) => (x < SPLIT ? hubIn(x) : cowl(x)), caseAt, 40), s);
+    ctx.fillStyle = chrome(ctx, 0, SY(1.35 * s), 0, SY(0.4 * s), pal.ductB); ctx.fill();
+    ctx.beginPath(); poly(band(SPLIT, CORE_NOZ, inC, outC, 60), s);
+    ctx.fillStyle = chrome(ctx, 0, SY(0.65 * s), 0, SY(0.28 * s), pal.ductC); ctx.fill();
+  }
   {
     const hq = 0.35 + 0.65 * sp, hg = ctx.createLinearGradient(SX(3.62), 0, SX(CORE_NOZ), 0);
     hg.addColorStop(0, `rgba(255,120,20,${0.35 * hq})`); hg.addColorStop(0.18, `rgba(255,70,20,${0.6 * hq})`);
@@ -556,9 +682,10 @@ function frame(t) {
     fillBand(band(3.62, CORE_NOZ, inC, outC, 40), hg);
   }
   // Brilho do jato quente
-  const g = ctx.createLinearGradient(SX(CORE_NOZ), 0, SX(7.4), 0);
-  g.addColorStop(0, `rgba(255,110,30,${0.35 * (0.3 + sp)})`); g.addColorStop(1, 'rgba(255,120,30,0)');
-  ctx.fillStyle = g; ctx.beginPath(); ctx.rect(SX(CORE_NOZ), SY(0.55), SX(7.4) - SX(CORE_NOZ), SY(-0.55) - SY(0.55)); ctx.fill();
+  const g = ctx.createLinearGradient(SX(CORE_NOZ), 0, SX(7.6), 0);
+  g.addColorStop(0, `rgba(255,110,30,${0.4 * (0.3 + sp)})`); g.addColorStop(0.5, `rgba(255,120,40,${0.15 * (0.3 + sp)})`); g.addColorStop(1, 'rgba(255,120,30,0)');
+  ctx.fillStyle = g; ctx.beginPath();
+  ctx.moveTo(SX(CORE_NOZ), SY(0.5)); ctx.quadraticCurveTo(SX(6.8), SY(0.62), SX(7.6), SY(0.78)); ctx.lineTo(SX(7.6), SY(-0.78)); ctx.quadraticCurveTo(SX(6.8), SY(-0.62), SX(CORE_NOZ), SY(-0.5)); ctx.closePath(); ctx.fill();
   drawDisks();
   drawBearings();
   for (const rw of ROWS) {
@@ -570,7 +697,7 @@ function frame(t) {
   drawCombustor();
   drawAir(dt);
   drawShellsMetal();
-  strokeProfile(inC, 1.15, CORE_NOZ, pal.ink, 1);
+  strokeProfile(inC, 1.15, CORE_NOZ, pal.cut, 1.4);
   drawHighlight();
   drawPins();
   drawFront();
@@ -578,19 +705,21 @@ function frame(t) {
   uiT -= dt;
   if (uiT <= 0) { uiT = 0.2; updateUI(); }
   if ((gT -= dt) <= 0) { gT = 1 / 24; drawGallery(); }
+  drawFanCard();
   raf = requestAnimationFrame(frame);
 }
 
 
 /* ---------- Peças separadas (galeria) ---------- */
-function metalGrad(c, x0, y0, x1, y1, a = pal.metal[0], b = pal.metal[1]) { const g = c.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, b); g.addColorStop(0.45, a); g.addColorStop(1, b); return g; }
+// Metal polido: faixas claras e escuras, como cromado refletindo o ambiente.
+function metalGrad(c, x0, y0, x1, y1, a = '#f7f9fa', b = pal.dark ? '#3a444d' : '#7d8790') { const g = c.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, b); g.addColorStop(0.25, a); g.addColorStop(0.45, b); g.addColorStop(0.7, a); g.addColorStop(1, b); return g; }
 const PIECES = [
   { id: 'fan', nome: 'Pá do fan', txt: 'Fibra de carbono, borda de ataque metálica e raiz encaixada no disco.', draw(c, w, h) {
     const cx = w / 2;
     c.beginPath(); // aerofólio torcido e enflechado
     c.moveTo(cx - 6, h * 0.8); c.bezierCurveTo(cx - 14, h * 0.55, cx - 30, h * 0.3, cx - 22, h * 0.05);
     c.lineTo(cx + 18, h * 0.08); c.bezierCurveTo(cx + 16, h * 0.35, cx + 10, h * 0.6, cx + 8, h * 0.8); c.closePath();
-    c.fillStyle = metalGrad(c, cx - 30, 0, cx + 20, 0, pal.dark ? '#7b8792' : '#5a6672', pal.dark ? '#3c4650' : '#2c343c'); c.fill(); c.strokeStyle = pal.ink; c.lineWidth = 1; c.stroke();
+    c.fillStyle = metalGrad(c, cx - 30, 0, cx + 20, 0, '#eef2f5', '#22282e'); c.fill(); c.strokeStyle = '#0b0e11'; c.lineWidth = 1.2; c.stroke();
     c.beginPath(); c.moveTo(cx - 6, h * 0.8); c.bezierCurveTo(cx - 14, h * 0.55, cx - 30, h * 0.3, cx - 22, h * 0.05);
     c.strokeStyle = pal.dark ? '#dfe5ea' : '#c4ccd2'; c.lineWidth = 3; c.stroke();
     c.fillStyle = metalGrad(c, cx - 16, 0, cx + 16, 0); // plataforma e raiz em rabo de andorinha
@@ -743,12 +872,18 @@ function hit(e) {
 function size() {
   if (!cv) return;
   const w = cv.clientWidth || 700, h = Math.round(clamp(w * 0.56, 300, 520));
-  dpr = window.devicePixelRatio || 1;
+  dpr = Math.min(2, window.devicePixelRatio || 1); // mais que 2x pesa muito no celular sem ganho visível
   cv.width = w * dpr; cv.height = h * dpr; cv.style.height = h + 'px';
   ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   W = w; H = h;
   readPal();
   sizeGallery();
+  fcv = $('#engFan');
+  if (fcv) {
+    FW = fcv.clientWidth || 320; FH = Math.round(clamp(FW * 0.8, 260, 420));
+    fcv.width = FW * dpr; fcv.height = FH * dpr; fcv.style.height = FH + 'px';
+    fctx = fcv.getContext('2d'); fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
 }
 function start() {
   size();

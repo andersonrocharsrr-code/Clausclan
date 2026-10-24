@@ -452,11 +452,11 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 .drag-msg { border-left: 3px solid var(--warn); padding-left: 10px; }
 .lab-side { display: grid; gap: 16px; }
 .lab-pick { max-width: 480px; margin-bottom: 18px; }
-.sw--byp { background: #4f8fe0; }
-.sw--heat { width: 34px; background: linear-gradient(90deg, #2456a6, #16958a, #d9a10c, #e0701a, #c0221f); }
-.sw--n1 { background: #8fa8cc; }
-.sw--n2 { background: #cc9fb6; }
-.sw--st { background: #79838c; }
+.sw--byp { background: #62a0ff; }
+.sw--heat { width: 34px; background: linear-gradient(90deg, #62a0ff, #5fe0cf, #ecdc4c, #ff6a1e, #ff3a26); }
+.sw--n1 { background: #c4d0e0; box-shadow: inset 0 0 0 1px #6c7a8a; }
+.sw--n2 { background: #e8dcc6; box-shadow: inset 0 0 0 1px #8a7d66; }
+.sw--st { background: #80868c; }
 .eng { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 20px; align-items: start; margin-top: 18px; }
 .eng__main { display: grid; gap: 20px; min-width: 0; }
 .eng__stage canvas { width: 100%; display: block; touch-action: manipulation; cursor: pointer; }
@@ -479,6 +479,12 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 .eng__parts { margin-top: 8px; }
 .eng__parts .chip { font-size: 12.5px; }
 .eng__exploded { display: grid; gap: 12px; }
+.eng__fan { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; align-items: center; padding: 0; overflow: hidden; }
+.eng__fan canvas { width: 100%; display: block; }
+.eng__fantext { display: grid; gap: 8px; padding: 18px 18px 18px 0; }
+.eng__fantext h2 { margin: 0; font-family: var(--display); font-size: 24px; font-weight: 600; line-height: 1.1; }
+.eng__fantext p { margin: 0; line-height: 1.55; }
+@media (max-width: 700px) { .eng__fan { grid-template-columns: minmax(0, 1fr); gap: 0; } .eng__fantext { padding: 14px 16px 16px; } }
 .eng__gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
 .eng__piece { display: grid; gap: 4px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--tunnel); cursor: pointer; text-align: left; color: var(--ink); font: inherit; }
 .eng__piece:hover { border-color: var(--ink); }

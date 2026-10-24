@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=47">
+  <link rel="stylesheet" href="style.css?v=48">
 </head>
 <body>
   <header class="top">
@@ -547,6 +547,15 @@
                 <div class="spec eng__facts" id="engFacts"></div>
               </div>
             </div>
+            <div class="card eng__fan">
+              <canvas id="engFan" aria-label="Fan do GEnx-2B visto de frente, girando"></canvas>
+              <div class="eng__fantext">
+                <span class="label">O fan visto de frente</span>
+                <h2>18 pás, cromado e preto</h2>
+                <p>É o que se vê olhando para dentro do motor parado na pista. As pás são curvas como uma cimitarra: a borda de ataque metálica brilha com a luz, e o preto é o vão entre uma pá e outra e a sombra do lado de trás delas. Mexa na manete para ver o fan acelerar.</p>
+                <p class="small">A espiral branca no spinner gira junto com o fan. Ela serve para a equipe no chão ver de longe que o motor ainda está girando, mesmo devagar.</p>
+              </div>
+            </div>
             <div class="card eng__exploded">
               <span class="label">Peças separadas</span>
               <div class="eng__gallery" id="engGallery"></div>
@@ -647,11 +656,11 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=47"></script>
-  <script src="catalogo747.js?v=47"></script>
-  <script src="cockpit747.js?v=47"></script>
-  <script src="motor747.js?v=47"></script>
-  <script src="app.js?v=47"></script>
+  <script src="avioes.js?v=48"></script>
+  <script src="catalogo747.js?v=48"></script>
+  <script src="cockpit747.js?v=48"></script>
+  <script src="motor747.js?v=48"></script>
+  <script src="app.js?v=48"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
