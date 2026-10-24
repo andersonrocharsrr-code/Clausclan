@@ -214,7 +214,8 @@ function create(ctl) {
     s.spool += (ctl.thr - s.spool) * dt * 0.35;
     s.flap += Math.sign(ctl.flaps - s.flap) * Math.min(Math.abs(ctl.flaps - s.flap), 3 * dt);
     s.gear += Math.sign(ctl.gearDown - s.gear) * Math.min(Math.abs(ctl.gearDown - s.gear), dt / 10);
-    s.phi += ((s.ground ? 0 : ctl.ail * 35) - s.phi) * dt * 0.45;
+    s.phi += ((s.ground ? 0 : ctl.ail * 50) - s.phi) * dt * 0.45;
+    bankAlert();
     // depois do pouso, com as manetes em marcha lenta, os spoilers de solo sobem sozinhos
     s.groundSb = s.ground && airborneOnce && ctl.thr < 0.08 ? 1 : 0;
     const sb = Math.max(ctl.sb, s.groundSb);
@@ -254,6 +255,21 @@ function create(ctl) {
     trend += ((now - iasPrev) / Math.max(dt, 1e-3) - trend) * Math.min(1, dt * 1.5);
     iasPrev = now;
     if (msg && (msg.t -= dt) <= 0) msg = null;
+  }
+  // alerta do EGPWS do 747-8: ao passar de 35°, 40° e 45° de inclinação a voz diz "BANK ANGLE, BANK ANGLE"
+  // e, no PFD, o ponteiro de inclinação e o indicador de derrapagem ficam âmbar
+  let bankStep = 0;
+  function bankAlert() {
+    const b = Math.abs(s.phi), step = b > 45 ? 3 : b > 40 ? 2 : b > 35 ? 1 : 0;
+    if (step > bankStep && !s.ground) say('Bank angle, bank angle');
+    if (step > bankStep || b < 30) bankStep = step;
+  }
+  function say(t) {
+    try {
+      const sp = window.speechSynthesis; if (!sp) return;
+      const u = new SpeechSynthesisUtterance(t); u.lang = 'en-US'; u.rate = 1.05;
+      sp.cancel(); sp.speak(u);
+    } catch (e) { /* sem voz neste aparelho */ }
   }
   function touchdown() {
     const v = fpm();
@@ -321,8 +337,13 @@ function create(ctl) {
     [-60, -45, -30, -20, -10, 10, 20, 30, 45, 60].forEach((b) => { const an = (b - 90) * D2R, l = Math.abs(b) % 30 === 0 ? 10 : 6; c.beginPath(); c.moveTo(Math.cos(an) * R, Math.sin(an) * R); c.lineTo(Math.cos(an) * (R + l), Math.sin(an) * (R + l)); c.stroke(); });
     c.fillStyle = COL.white; c.beginPath(); c.moveTo(0, -R); c.lineTo(-6, -R - 10); c.lineTo(6, -R - 10); c.closePath(); c.fill();
     c.rotate(-s.phi * D2R);
-    c.fillStyle = Math.abs(s.phi) > 35 ? COL.amber : COL.white;
+    // acima de 35° o ponteiro e o indicador de derrapagem ficam âmbar e cheios (como no 747-8)
+    const bankOver = Math.abs(s.phi) > 35;
+    c.fillStyle = bankOver ? COL.amber : COL.white; c.strokeStyle = c.fillStyle; c.lineWidth = 1.5;
     c.beginPath(); c.moveTo(0, -R + 1); c.lineTo(-6, -R + 11); c.lineTo(6, -R + 11); c.closePath(); c.fill();
+    const bx = (s.ball || 0) * 9;
+    c.beginPath(); c.moveTo(bx - 7, -R + 13); c.lineTo(bx + 7, -R + 13); c.lineTo(bx + 8, -R + 17); c.lineTo(bx - 8, -R + 17); c.closePath();
+    if (bankOver) c.fill(); else c.stroke();
     c.restore();
     // símbolo do avião (fixo)
     c.save(); c.translate(cx, cy);
@@ -706,6 +727,7 @@ function create(ctl) {
       const d = ctl.ail > 0 ? 'direita' : 'esquerda';
       out.push(['', `Manche girado para a ${d}: os ailerons e os spoilers da asa ${d} sobem para ajudar a inclinar.${s.flap < 0.5 ? ' Com flaps recolhidos, os ailerons externos ficam travados (em alta velocidade eles torceriam a asa).' : ''}`]);
     }
+    if (Math.abs(s.phi) > 35 && !s.ground) out.push(['warn', `BANK ANGLE: ${Math.round(Math.abs(s.phi))}° de inclinação passa do limite de 35° do alerta do 747-8. A voz avisa "bank angle" e o ponteiro do PFD fica âmbar. Centre o manche para nivelar as asas.`]);
     if (Math.abs(s.phi) > 5 && !s.ground) { const om = G * Math.tan(s.phi * D2R) / s.V / D2R; out.push(['', `Inclinado ${Math.round(Math.abs(s.phi))}°: curva de ${Math.abs(om).toFixed(1)}°/s. A linha verde no ND mostra para onde o avião vai nos próximos 90 s.`]); }
     if (Math.abs(ctl.rud) > 0.08) out.push(['', `Pedal ${ctl.rud > 0 ? 'direito' : 'esquerdo'}: o leme guina o nariz. No 747 ele é usado sobretudo com vento cruzado ou motor parado.`]);
     if (ctl.sb > 0.05) out.push(['', `Freio aerodinâmico em ${Math.round(ctl.sb * 100)}%: os spoilers sobem nas duas asas, a sustentação cai e o arrasto aumenta. Serve para descer sem ganhar velocidade.`]);
