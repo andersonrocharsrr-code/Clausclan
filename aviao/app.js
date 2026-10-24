@@ -295,6 +295,7 @@ function showTab(id, push) {
   $$('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === id)));
   if (push) { try { history.replaceState(null, '', '#' + id); } catch {} }
   if (id === 'cockpit') { sizeGauges(); startSim(); }
+  if (typeof updateNdTab === 'function') updateNdTab();
   if (id === 'lab') { sizeTunnel(); startTunnel(); }
   window.scrollTo({ top: 0 });
 }
@@ -794,6 +795,7 @@ function setCockpit(id) {
   c.start(c.defaultScenario);
   lastExplain = '';
   syncControls(); sizeGauges(); explain();
+  updateNdTab();
 }
 $('#ckList').innerHTML = Object.values(CK).map((c) => `<button type="button" class="craft" data-ck="${c.id}" aria-pressed="false"><b>${c.nome}</b><span>${c.sub}</span></button>`).join('');
 $('#ckList').addEventListener('click', (e) => {
@@ -1087,6 +1089,60 @@ new MutationObserver(readColors).observe(document.documentElement, { attributes:
 window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
 
 // No APK (Capacitor): margens da barra de status e botão voltar do Android.
+/* ---------------- Aula do ND (gaveta da esquerda) ---------------- */
+// A aba só aparece no cockpit de um avião que tenha a aula (o 747-8).
+function updateNdTab() {
+  const ok = current === 'cockpit' && !!C().ndTeach;
+  $('#ndTab').hidden = !ok;
+  if (!ok) closeNdGuide();
+}
+function buildNdGuide() {
+  const W = 520, H = 480, dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const off = document.createElement('canvas'); off.width = W * dpr; off.height = H * dpr;
+  const oc = off.getContext('2d'); oc.scale(dpr, dpr);
+  const items = C().ndTeach(oc, W, H);
+  // mapa com os marcadores numerados
+  const map = $('#ndGuideMap'); map.width = W * dpr; map.height = H * dpr;
+  const mc = map.getContext('2d'); mc.drawImage(off, 0, 0);
+  mc.scale(dpr, dpr);
+  const pink = getComputedStyle(document.documentElement).getPropertyValue('--magenta').trim() || '#f06aae';
+  items.forEach((it) => {
+    const [mx, my] = it.at;
+    mc.fillStyle = pink; mc.strokeStyle = '#05070a'; mc.lineWidth = 2;
+    mc.beginPath(); mc.arc(mx, my, 10, 0, Math.PI * 2); mc.fill(); mc.stroke();
+    mc.fillStyle = '#fff'; mc.font = '700 11px "IBM Plex Mono", monospace'; mc.textAlign = 'center'; mc.textBaseline = 'middle';
+    mc.fillText(String(it.n), mx, my + 0.5);
+  });
+  // um cartão por informação, com o recorte ampliado do ND
+  $('#ndGuideList').innerHTML = items.map((it) => `<li class="nd-item"><h3><span class="nd-item__n">${it.n}</span>${it.title}</h3><canvas data-n="${it.n}"></canvas><p>${it.text}</p></li>`).join('');
+  items.forEach((it) => {
+    const [bx, by, bw, bh] = it.box.map((v) => Math.max(0, v));
+    const cv = $(`#ndGuideList canvas[data-n="${it.n}"]`), zoom = Math.min(2.2, 300 / bw);
+    cv.width = Math.round(bw * zoom * dpr); cv.height = Math.round(bh * zoom * dpr);
+    cv.style.width = Math.round(bw * zoom) + 'px';
+    cv.getContext('2d').drawImage(off, bx * dpr, by * dpr, bw * dpr, bh * dpr, 0, 0, cv.width, cv.height);
+  });
+}
+function openNdGuide() {
+  if (!C().ndTeach) return;
+  buildNdGuide();
+  $('#ndDrawer').classList.add('is-open'); $('#ndDrawer').setAttribute('aria-hidden', 'false');
+  $('#ndBackdrop').hidden = false; $('#ndTab').setAttribute('aria-expanded', 'true');
+  document.body.classList.add('drawer-lock');
+  $('#ndClose').focus();
+}
+function closeNdGuide() {
+  if (!$('#ndDrawer').classList.contains('is-open')) return false;
+  $('#ndDrawer').classList.remove('is-open'); $('#ndDrawer').setAttribute('aria-hidden', 'true');
+  $('#ndBackdrop').hidden = true; $('#ndTab').setAttribute('aria-expanded', 'false');
+  document.body.classList.remove('drawer-lock');
+  return true;
+}
+$('#ndTab').addEventListener('click', openNdGuide);
+$('#ndClose').addEventListener('click', () => { closeNdGuide(); $('#ndTab').focus(); });
+$('#ndBackdrop').addEventListener('click', closeNdGuide);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeNdGuide(); });
+
 const Cap = window.Capacitor;
 const NATIVE = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
 if (NATIVE) {
@@ -1095,6 +1151,7 @@ if (NATIVE) {
   // Voltar: volta para a vista de cima, depois para a primeira aba, depois minimiza.
   AppPlugin?.addListener('backButton', () => {
     hideHint();
+    if (closeNdGuide()) return;
     if (current === 'pecas' && planeView !== 'top') { setPlaneView('top'); return; }
     if (current !== 'pecas') { showTab('pecas', true); return; }
     AppPlugin.minimizeApp();

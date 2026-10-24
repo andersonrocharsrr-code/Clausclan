@@ -568,6 +568,62 @@ function create(ctl) {
     });
   }
 
+  /* ---------- aula do ND ----------
+     Desenha o ND numa situação fixa de exemplo (ao sul da rota, voltando para ela numa curva leve, com vento de lado)
+     e devolve, para cada informação, o ponto do marcador numerado e o retângulo do recorte (em pixels). */
+  const ND_SAMPLE = { x: -30, y: -6, psi: 66, trk: 60, gs: 236 * KT, V: 214 * KT, phi: 12, gamma: 0, h: 3000, wdir: 300, wspd: 28 };
+  const ND_INFO = [
+    ['GS', 'Velocidade no solo', 'GS (ground speed) é a velocidade em relação ao chão, em nós. É ela que define quanto tempo falta para chegar: com vento de cauda fica maior que a TAS, com vento de frente fica menor.'],
+    ['TAS', 'Velocidade verdadeira', 'TAS (true airspeed) é a velocidade real em relação ao ar em volta. Em altitude o ar é rarefeito, então a TAS fica bem maior que a velocidade indicada do PFD.'],
+    ['WIND', 'Vento e seta do vento', 'Direção de onde o vento vem (graus magnéticos) e a velocidade em nós, por exemplo 300°/ 28. A seta aponta para onde o vento sopra, já girada para a tela: seta para baixo é vento de frente, para cima é de cauda, de lado empurra o avião para fora da rota.'],
+    ['TRK', 'Trajetória (TRK) e MAG', 'O número na caixa é a trajetória sobre o solo, o caminho que o avião realmente faz. Neste modo a tela gira para a trajetória ficar sempre para cima. MAG indica que os graus são magnéticos (da bússola).'],
+    ['RANGE', 'Alcance', 'Distância, em milhas náuticas, do avião até o arco da bússola. O piloto troca no painel: 10 NM para a aproximação, 40 NM ou mais em cruzeiro.'],
+    ['NEXT', 'Próximo fixo, distância e hora', 'Em magenta, o nome do próximo ponto da rota (fixo). Embaixo, a distância até ele e a hora estimada de passagem em UTC (z = horário de Greenwich), calculada com a GS.'],
+    ['ARC', 'Arco da bússola', 'Rosa dos ventos cortada: marcas a cada 5°, números a cada 30° em dezenas (9 = 090°, 12 = 120°). Gira conforme a trajetória muda.'],
+    ['PTR', 'Ponteiros de trajetória e de proa', 'O triângulo cheio no topo marca a trajetória. O triângulo vazado mostra para onde o nariz aponta (proa). A diferença entre os dois é a deriva causada pelo vento de lado.'],
+    ['HALF', 'Linha da trajetória e meio alcance', 'A linha branca sai do avião até o arco, na direção da trajetória. O tracinho com número marca a metade do alcance (aqui, 20 NM).'],
+    ['ROUTE', 'Rota e fixos', 'A linha magenta é a rota ativa programada no computador de voo (FMC). As estrelas são os fixos; o próximo fica em magenta e os outros em branco.'],
+    ['RWY', 'Pista e aeroporto', 'A pista aparece em branco no tamanho certo para a escala, com o círculo azul do aeroporto e o nome da pista (RW09 = rumo 090°).'],
+    ['VOR', 'VOR', 'Estação de rádio no chão (hexágono azul) com o identificador. O avião sintoniza o VOR para saber em que direção ele está e, com o DME, a que distância.'],
+    ['TREND', 'Vetor de tendência', 'A curva verde mostra por onde o avião vai passar nos próximos 30, 60 e 90 segundos se mantiver a inclinação. Só aparece em curva.'],
+    ['ACFT', 'Símbolo do avião', 'O triângulo branco é o próprio avião, sempre no mesmo lugar. Tudo no mapa se move em volta dele.'],
+    ['TCAS', 'TCAS OFF', 'TCAS é o sistema anticolisão que mostra outros aviões por perto. Em âmbar, OFF avisa que ele está desligado (aqui o simulador não tem outros aviões).'],
+    ['VORLR', 'VOR L / VOR R e DME', 'Os dois receptores de VOR (esquerdo e direito), a estação sintonizada em cada um e a distância DME até ela, em milhas náuticas.'],
+  ];
+  function ndTeach(c, w, h) {
+    const keep = s, keepSc = sc;
+    s = Object.assign({}, s, ND_SAMPLE); sc = 'cruzeiro';
+    c.fillStyle = '#05070a'; c.fillRect(0, 0, w, h);
+    drawND(c, 0, 0, w, h);
+    const cx = w / 2, cy = h * 0.84, R = Math.min(h * 0.64, w * 0.46), fs = h * 0.036, range = RANGE[sc], ppn = R / range, tr = s.trk * D2R;
+    const toND = (ex, ny) => { const dx = ex - s.x, dy = ny - s.y; return [cx + (dx * Math.cos(tr) - dy * Math.sin(tr)) * ppn, cy - (dx * Math.sin(tr) + dy * Math.cos(tr)) * ppn]; };
+    const bw = w * 0.17, bh = h * 0.07, fy = h * 0.78, rxb = cx - bw / 2 - fs * 2.6 - w * 0.1;
+    const bravo = toND(-25, 0), leg = toND(-33, 0), rw = toND(1.1, 0), vor = toND(VOR.x, VOR.y), arcP = [cx - R * Math.sin(40 * D2R), cy - R * Math.cos(40 * D2R)];
+    const om = G * Math.tan(s.phi * D2R) / s.V, vnm = s.gs / KT / 3600;
+    let px = 0, py = -14, ang = 0; for (let t = 0; t < 45; t += 3) { px += Math.sin(ang) * vnm * 3 * ppn; py -= Math.cos(ang) * vnm * 3 * ppn; ang += om * 3; }
+    const box = (x0, y0, bw2, bh2) => [x0, y0, bw2, bh2];
+    const geo = {
+      GS: [[fs * 6.4, 16], box(4, 2, fs * 5.6, h * 0.05)],
+      TAS: [[fs * 6.4, 16 + h * 0.052], box(4, 4 + h * 0.03, fs * 5.6, h * 0.05)],
+      WIND: [[fs * 7, 16 + h * 0.105], box(4, 6 + h * 0.08, fs * 6.4, h * 0.17)],
+      TRK: [[cx, 6 + bh + 8], box(cx - bw / 2 - fs * 2.6, 2, bw + fs * 5.2, bh + 8)],
+      RANGE: [[rxb + w * 0.0425, 6 + bh + 8], box(rxb - 4, 2, w * 0.085 + 8, bh + 8)],
+      NEXT: [[w - fs * 6.6, 16 + h * 0.05], box(w - fs * 6.4, 2, fs * 6.4 - 2, h * 0.13)],
+      ARC: [arcP, box(arcP[0] - R * 0.3, arcP[1] - R * 0.2, R * 0.6, R * 0.42)],
+      PTR: [[cx - 24, cy - R - 12], box(cx - R * 0.32, cy - R - 20, R * 0.64, 42)],
+      HALF: [[cx - 52, cy - R / 2], box(cx - 50, cy - R / 2 - 22, 100, 44)],
+      ROUTE: [leg, box(bravo[0] - 44, bravo[1] - 34, 110, 64)],
+      RWY: [[rw[0] - 18, rw[1] + 12], box(rw[0] - 40, rw[1] - 40, 104, 64)],
+      VOR: [[vor[0] - 14, vor[1] + 10], box(vor[0] - 30, vor[1] - 26, 80, 52)],
+      TREND: [[cx - 16, cy + py + 10], box(cx - 20, cy + py - 30, Math.max(60, px + 50), 70)],
+      ACFT: [[cx + 22, cy + 2], box(cx - 26, cy - 26, 52, 46)],
+      TCAS: [[4 + fs * 2.6, fy - h * 0.08], box(2, fy - h * 0.13, fs * 3.6, h * 0.1)],
+      VORLR: [[4 + fs * 4.6, fy + h * 0.045], box(2, fy - h * 0.03, fs * 5.4, h * 0.14)],
+    };
+    s = keep; sc = keepSc;
+    return ND_INFO.map(([id, title, text], i) => ({ n: i + 1, id, title, text, at: geo[id][0], box: geo[id][1] }));
+  }
+
   function dial(c, cx, cy, r, val, max, redline, label) {
     const a0 = Math.PI * 0.8, a1 = Math.PI * 2.05, an = a0 + (a1 - a0) * clamp(val / max, 0, 1.05);
     c.fillStyle = '#4b5359'; c.beginPath(); c.moveTo(cx, cy); c.arc(cx, cy, r, a0, an); c.closePath(); c.fill();
@@ -831,7 +887,7 @@ function create(ctl) {
   start('cruzeiro');
   return {
     id: 'b747', flaps: DET, flapLabel: (f) => String(f), scenarios: SCENARIOS, defaultScenario: 'cruzeiro',
-    start, step, size, draw, minisHTML, minis, explain, warn, trim, takeover, demo: () => !!demo,
+    start, step, size, draw, minisHTML, minis, explain, warn, trim, takeover, demo: () => !!demo, ndTeach,
     trimText: () => `${s.ttrim >= 0 ? '+' : ''}${s.ttrim.toFixed(1)}°`,
     n1: () => n1Of(ctl.thr),
   };
