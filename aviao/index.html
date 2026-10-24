@@ -306,7 +306,6 @@
         <p class="eyebrow">Seção C · Comandos na prática</p>
         <h1>Cockpit interativo</h1>
         <p class="lede" id="ckLede">Mexa no manche, nos pedais, na manete e nos flaps. Veja as superfícies de comando se moverem e os seis instrumentos básicos reagirem.</p>
-        <button type="button" class="sim-open" id="simOpen" hidden><b>Modo voo simulado</b><span>Tela deitada com piloto automático, manche, manetes e alavancas</span></button>
       </div>
       <div class="crafts" id="ckList" role="group" aria-label="Escolha o cockpit"></div>
       <div class="cockpit">
@@ -552,56 +551,6 @@
   </main>
 
   <footer class="wrap foot small">Conteúdo educativo. Para voar de verdade, siga o manual da aeronave (POH) e um instrutor habilitado.</footer>
-  <!-- Modo voo simulado: tela deitada com MCP, telas, manche e alavancas (no celular em pé, o palco gira 90°) -->
-  <div class="sim" id="simMode" hidden>
-    <div class="sim__stage" id="simStage">
-      <!-- MCP do 747-8 no glareshield, na ordem do avião -->
-      <div class="sim__mcp" id="simMcp">
-        <button type="button" class="sim-exit" id="simExit" aria-label="Sair do modo voo simulado">✕</button>
-        <div class="mcp-sec"><span class="mcp-lab">A/T ARM</span><button type="button" class="mcp-sw" data-ap="AT"><i></i></button></div>
-        <div class="mcp-sec"><button type="button" class="mcp-b" data-ap="THR">THR</button><button type="button" class="mcp-b" data-ap="SPD">SPD</button></div>
-        <div class="mcp-sec"><div class="mcp-k"><em>IAS/MACH</em><button type="button" data-inc="spd:-5">−</button><b id="mSpd">250</b><button type="button" data-inc="spd:5">+</button></div></div>
-        <div class="mcp-sec"><button type="button" class="mcp-b" data-ap="LNAV">LNAV</button><button type="button" class="mcp-b" data-ap="VNAV">VNAV</button><button type="button" class="mcp-b" data-ap="FLCH">FL CH</button></div>
-        <div class="mcp-sec"><div class="mcp-k"><em>HEADING</em><button type="button" data-inc="hdg:-5">−</button><b id="mHdg">090</b><button type="button" data-inc="hdg:5">+</button></div><button type="button" class="mcp-b" data-ap="HDG">SEL</button><button type="button" class="mcp-b" data-ap="HDGHOLD">HOLD</button></div>
-        <div class="mcp-sec"><div class="mcp-k"><em>VERT SPD</em><button type="button" data-inc="vs:-100">−</button><b id="mVs">0</b><button type="button" data-inc="vs:100">+</button></div><button type="button" class="mcp-b" data-ap="VS">V/S</button></div>
-        <div class="mcp-sec"><div class="mcp-k"><em>ALTITUDE</em><button type="button" data-inc="alt:-500">−</button><b id="mAlt">10000</b><button type="button" data-inc="alt:500">+</button></div><button type="button" class="mcp-b" data-ap="ALTHOLD">HOLD</button></div>
-        <div class="mcp-sec"><button type="button" class="mcp-b" data-ap="LOC">LOC</button><button type="button" class="mcp-b" data-ap="APP">APP</button></div>
-        <div class="mcp-sec"><span class="mcp-lab">A/P</span><button type="button" class="mcp-b mcp-b--cmd" data-ap="CMD">CMD L</button><button type="button" class="mcp-b mcp-b--cmd" data-ap="CMD">C</button><button type="button" class="mcp-b mcp-b--cmd" data-ap="CMD">R</button><button type="button" class="mcp-dis" id="simApDis">DISENGAGE</button></div>
-      </div>
-      <div class="sim__left">
-        <div class="yoke" id="simYoke" aria-label="Manche: arraste para os lados e para cima ou para baixo"><div class="yoke__cross"></div><div class="yoke__knob" id="simKnob"><svg viewBox="0 0 100 60" aria-hidden="true"><path d="M8 8 Q8 40 30 44 L70 44 Q92 40 92 8 L80 8 Q80 30 66 32 L34 32 Q20 30 20 8 Z"/><rect x="44" y="44" width="12" height="14" rx="2"/><circle cx="20" cy="14" r="3" class="ap-dot"/></svg></div></div>
-        <div class="sim-col">
-          <label class="sim-scn"><span class="sim-label">COMEÇAR</span><select id="simScn"><option value="decolagem">Na pista</option><option value="cruzeiro">Cruzeiro</option><option value="aproximacao">Aproximação</option></select></label>
-          <button type="button" class="ap-disc" id="simApDisc">A/P DISC</button>
-          <div class="rud" id="simRud" title="Pedais do leme"><div class="rud__knob" id="simRudKnob"></div></div>
-          <div class="sim-label">PEDAIS · manche: arraste (para baixo = nariz sobe)</div>
-        </div>
-      </div>
-      <div class="sim__center"><canvas id="simScreen" aria-label="PFD, ND, instrumentos de reserva e EICAS"></canvas>
-        <div class="sim-banner" id="simBanner" hidden></div>
-      </div>
-      <div class="sim__right">
-        <div class="lever">
-          <div class="sim-label">MANETES</div>
-          <div class="track track--thr" id="simThr"><div class="track__fill"></div><div class="handle" id="simThrH">⫴</div></div>
-          <div class="sim-val" id="simN1">N1 --</div>
-        </div>
-        <div class="lever">
-          <div class="sim-label">SPD BRK</div>
-          <div class="track track--sb" id="simSb"><div class="handle handle--sb" id="simSbH"></div></div>
-        </div>
-        <div class="lever lever--flaps">
-          <div class="sim-label">FLAPS</div>
-          <div class="flapstack" id="simFlaps"></div>
-        </div>
-        <div class="lever lever--wide">
-          <button type="button" class="gear-btn" id="simGear"><span class="gear-lights"><i></i><i></i><i></i></span><b>TREM</b><span id="simGearTxt">DOWN</span></button>
-          <div class="trim"><button type="button" id="simTrimDn">NOSE DN</button><span class="sim-label">TRIM</span><button type="button" id="simTrimUp">NOSE UP</button></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Menu do canto superior direito: aulas, como a do ND (folheada página por página) -->
   <div class="drawer-backdrop" id="panelBackdrop" hidden></div>
   <aside class="side-panel" id="sidePanel" aria-label="Menu" aria-hidden="true">
