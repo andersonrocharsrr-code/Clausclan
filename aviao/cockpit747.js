@@ -614,11 +614,10 @@ function create(ctl) {
   // asa vista de trás (desenho de referência): bordo de fuga do centro (150; 104,2) à ponta (150 ± 116,6; 89,5);
   // t vai de 0 (centro) a 1 (ponta)
   const wingPt = (t, sd) => [+(150 + sd * 116.6 * t).toFixed(1), +(104.2 - 14.7 * t).toFixed(1)];
-  // faixa de 0,8 sobre a linha (y0 acima do bordo de fuga), deslocada d para cima
-  const strip = (a, b, y0, d) => `M${a[0]} ${(a[1] - y0 - d - 0.4).toFixed(2)} L${b[0]} ${(b[1] - y0 - d - 0.4).toFixed(2)} L${b[0]} ${(b[1] - y0 - d + 0.4).toFixed(2)} L${a[0]} ${(a[1] - y0 - d + 0.4).toFixed(2)} Z`;
   // aileron: placa presa na articulação (0,6 acima do bordo de fuga) até o bordo de fuga deslocado d para cima
-  const surf = (t0, t1, sd, d) => { const a = wingPt(t0, sd), b = wingPt(t1, sd);
-    return `M${a[0]} ${(a[1] - 0.6).toFixed(2)} L${b[0]} ${(b[1] - 0.6).toFixed(2)} L${b[0]} ${(b[1] - d + 0.4).toFixed(2)} L${a[0]} ${(a[1] - d + 0.4).toFixed(2)} Z`; };
+  // (o profundor usa a mesma placa articulada)
+  const hinged = (a, b, d) => `M${a[0]} ${(a[1] - 0.6).toFixed(2)} L${b[0]} ${(b[1] - 0.6).toFixed(2)} L${b[0]} ${(b[1] - d + 0.4).toFixed(2)} L${a[0]} ${(a[1] - d + 0.4).toFixed(2)} Z`;
+  const surf = (t0, t1, sd, d) => hinged(wingPt(t0, sd), wingPt(t1, sd), d);
   // spoiler: placa no extradorso que levanta d
   const spoil = (t0, t1, sd, h) => { const a = wingPt(t0, sd), b = wingPt(t1, sd), y = 1.6, d = h * 0.6; return d < 0.05 ? '' : `M${a[0]} ${(a[1] - y).toFixed(2)} L${b[0]} ${(b[1] - y).toFixed(2)} L${b[0]} ${(b[1] - y - d).toFixed(2)} L${a[0]} ${(a[1] - y - d).toFixed(2)} Z`; };
   // spoiler visto de lado: placa articulada na frente (hx, hy); k de 0 (recolhido) a 1 (45°)
@@ -660,8 +659,8 @@ function create(ctl) {
     // profundores vistos de trás: sobem com o manche puxado
     const e = ctl.elev * 3;
     // estabilizador visto de trás: bordo de fuga da raiz (150 ± 3,8; 94,4) à ponta (150 ± 46; 87,8)
-    $('j7ElevR').setAttribute('d', strip([153.8, 94.4], [196, 87.8], 0, e));
-    $('j7ElevL').setAttribute('d', strip([146.2, 94.4], [104, 87.8], 0, e));
+    $('j7ElevR').setAttribute('d', hinged([153.8, 94.4], [196, 87.8], e));
+    $('j7ElevL').setAttribute('d', hinged([146.2, 94.4], [104, 87.8], e));
     $('j7Rud').setAttribute('transform', `translate(${(ctl.rud * 2.5).toFixed(1)} 0)`);
   }
 
