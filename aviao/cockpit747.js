@@ -8,7 +8,7 @@
 const D2R = Math.PI / 180, KT = 0.514444, FT = 0.3048, NM = 1852, G = 9.81;
 const P = {
   m: 350000, S: 554, CLa: 0.095, a0: -2.5, CLmax: 1.40, cd0: 0.017, k: 0.043,
-  T0: 4 * 296000, gearCD: 0.020, sbCD: 0.035, sbCL: 0.30, incid: 2,
+  T0: 4 * 296000, gearCD: 0.020, sbCD: 0.035, sbCL: 0.30, incid: 0,   // incid: ângulo da asa com o avião parado no chão
   // posição: [ganho de sustentação, arrasto]
   flaps: { 0: [0, 0], 1: [0.25, 0.003], 5: [0.45, 0.008], 10: [0.62, 0.015], 20: [0.85, 0.025], 25: [1.0, 0.040], 30: [1.15, 0.060] },
   vfe: { 0: 365, 1: 285, 5: 265, 10: 245, 20: 230, 25: 205, 30: 180 },
@@ -28,7 +28,8 @@ function flapAt(f) {
 }
 function aero(s, sb) {
   const [dCL, dCD] = flapAt(s.flap);
-  const a0 = P.a0 - 0.75 * dCL / P.CLa;
+  // os flaps deslocam a curva de sustentação: a mesma sustentação sai com menos ângulo de ataque
+  const a0 = P.a0 - 0.6 * dCL / P.CLa;
   const clmax = P.CLmax + dCL * 0.95;
   const acrit = a0 + clmax / P.CLa;
   let CL = P.CLa * (s.alpha - a0), over = 0;
@@ -78,6 +79,7 @@ function create(ctl) {
   let sc = 'cruzeiro';
   let msg = null;          // mensagem temporária (pouso, cauda na pista)
   let iasPrev = 0, trend = 0, airborneOnce = false;
+  let demo = null, demoH = 0, demoT = 0, thrI = 0;   // piloto de demonstração (ver pilot())
 
   function start(id) {
     sc = id;
@@ -105,6 +107,97 @@ function create(ctl) {
       airborneOnce = true;
     }
     iasPrev = ias(); trend = 0;
+    // decolagem, aproximação e estol começam com o piloto de demonstração voando; cruzeiro fica nivelado
+    demo = { decolagem: 'roll', aproximacao: 'app', estol: 'entry' }[id] || null;
+    demoH = s.h; demoT = 0; thrI = ctl.thr;
+  }
+
+  /* ---------- piloto de demonstração ----------
+     Voa o cenário sozinho e mexe nos mesmos comandos que o aluno (os controles da tela acompanham),
+     até o aluno tocar em qualquer comando. */
+  const DEMO = {
+    roll: 'manetes em TOGA, acelerando na pista até a velocidade de rotação',
+    rotate: 'VR: puxando o manche, o nariz sobe uns 3° por segundo',
+    climb: 'subindo com o nariz alto; trem e flaps recolhidos aos poucos',
+    app: 'na rampa de 3° com o nariz um pouco acima do horizonte',
+    flare: 'arredondamento: perto da pista o nariz sobe e a cauda baixa para tocar primeiro com o trem principal',
+    rollout: 'no chão: manetes em marcha lenta, spoilers de solo, freio automático e o nariz baixando',
+    entry: 'motores em marcha lenta e o manche puxado para manter a altitude: a velocidade cai e o nariz sobe',
+    stall: 'estol: a asa perdeu sustentação e o nariz cai sozinho',
+    recover: 'recuperação: manche à frente para baixar o ângulo de ataque e potência máxima',
+    pullout: 'saindo do mergulho: o nariz volta aos poucos para o horizonte',
+  };
+  // manche leva o nariz à atitude tt (graus); com trim > 0 o compensador vai aliviando o manche (°/s)
+  function flyTheta(tt, dt, trim = 0) {
+    s.ttrim += clamp(tt - s.ttrim, -1, 1) * trim * dt;
+    ctl.elev = clamp((tt - s.ttrim) / 12, -1, 1);
+  }
+  // atitude para seguir a trajetória gc (graus): ângulo de ataque atual + trajetória desejada + correção,
+  // sem passar de 2° abaixo do ângulo de estol (a não ser no cenário de estol, que quer chegar lá)
+  const flyGamma = (gc, dt, max, trim = 0.4, protect = true) => {
+    let tt = clamp(s.alpha + gc + 0.6 * (gc - s.gamma / D2R), -6, max);
+    if (protect && s.A) tt = Math.min(tt, s.gamma / D2R + s.A.acrit - 2);
+    flyTheta(tt, dt, trim);
+  };
+  function endDemo(txt) {
+    demo = null; s.ttrim = s.theta; ctl.elev = 0;
+    msg = { t: 12, cls: '', txt };
+  }
+  function pilot(dt) {
+    const k = ias(), hf = hft(), vs = fpm();
+    if (demo === 'roll' || demo === 'rotate' || demo === 'climb') {
+      ctl.thr = hf > 1000 ? 0.92 : 1;
+      if (s.ground && demo !== 'climb') {
+        if (k >= P.vr) demo = 'rotate';
+        flyTheta(demo === 'rotate' ? 9 : 0, dt);
+      } else {
+        demo = 'climb';
+        if (vs > 300 && s.h > 10) ctl.gearDown = 0;
+        // até 1000 ft sobe a V2 + 10; depois baixa um pouco o nariz para acelerar até 250 kt
+        const vt = hf > 1000 ? Math.min(250, k + 12) : P.v2 + 10;
+        flyGamma(clamp(6 + (k - vt) * 0.25, 0, 9), dt, 17, 0.25);
+        if (hf > 1000) ctl.flaps = k > 230 ? 0 : k > 215 ? 1 : k > 200 ? 5 : k > 185 ? 10 : 20;
+        if (hf > 4000) endDemo('Fim da demonstração: o 747 decolou, recolheu o trem e os flaps e está subindo. Agora os comandos são seus.');
+      }
+    } else if (demo === 'app' || demo === 'flare' || demo === 'rollout') {
+      if (!s.ground) {
+        if (hf > 45 && demo === 'app') {
+          const gs = 50 + Math.max(0, -s.x) * 318;   // altura da rampa de 3° (318 ft por milha)
+          flyGamma(-3 + clamp((gs - hf) / 120, -2, 2), dt, 8);
+          thrI = clamp(thrI + 0.004 * (157 - k) * dt, 0, 1);
+          ctl.thr = clamp(thrI + 0.05 * (157 - k) - 0.04 * trend, 0, 1);
+        } else {
+          demo = 'flare';
+          const vc = Math.max(-750, -hf * 16 - 120);   // razão de descida desejada (ft/min), cai até ~120 no toque
+          flyGamma(Math.asin(clamp(vc * FT / 60 / s.V, -0.2, 0.2)) / D2R, dt, 8, 0);
+          if (hf < 30) ctl.thr = 0;
+        }
+      } else {
+        demo = 'rollout'; ctl.thr = 0;
+        flyTheta(Math.max(0, s.theta - 1.5), dt);
+        if (s.V < 1) endDemo('Fim da demonstração: pouso feito e o avião parou na pista. Agora os comandos são seus.');
+      }
+    } else if (demo) {
+      const vs1 = stallIas(s.flap, s.phi), acrit = s.A ? s.A.acrit : 15;
+      if (demo === 'entry') {
+        ctl.thr = 0;
+        flyGamma(clamp((demoH - s.h) / 40, -1, 1), dt, 22, 0, false);
+        if (s.stalled) { demo = 'stall'; demoT = 0; }
+      } else if (demo === 'stall') {
+        if ((demoT += dt) > 2.5) demo = 'recover';   // segura uns segundos para mostrar o estol
+      } else if (demo === 'recover') {
+        ctl.thr = 1; flyTheta(Math.min(s.theta, -2), dt);
+        if (!s.stalled && s.alpha < acrit - 3 && k > vs1 + 15) demo = 'pullout';
+      } else {
+        ctl.thr = 1; flyGamma(clamp((k - vs1 - 45) * 0.2, -6, 3), dt, 12, 0.3);
+        if (vs > 0 && k > vs1 + 35) endDemo('Fim da demonstração: estol recuperado. Lembre: baixar o nariz primeiro, depois potência. Agora os comandos são seus.');
+      }
+    }
+  }
+  function takeover() {
+    if (!demo) return;
+    demo = null;
+    msg = { t: 6, cls: '', txt: 'Você assumiu os comandos: o piloto de demonstração saiu.' };
   }
   const atm = () => isa(Math.max(0, s.h));
   const ias = () => s.V * Math.sqrt(atm().rho / 1.225) / KT;
@@ -116,6 +209,7 @@ function create(ctl) {
     const { rho, a } = atm();
     const V = s.V, q = 0.5 * rho * V * V, M = V / a, W = P.m * G;
     const kias = V * Math.sqrt(rho / 1.225) / KT;
+    if (demo) pilot(dt);
     // os motores a jato demoram alguns segundos para acelerar (spool)
     s.spool += (ctl.thr - s.spool) * dt * 0.35;
     s.flap += Math.sign(ctl.flaps - s.flap) * Math.min(Math.abs(ctl.flaps - s.flap), 3 * dt);
@@ -575,6 +669,7 @@ function create(ctl) {
   function explain() {
     const out = [];
     const kias = ias(), alt = hft(), vs = fpm(), vs1 = Math.round(stallIas(s.flap, s.phi));
+    if (demo) out.push(['', `Piloto de demonstração: ${DEMO[demo]}. Mexa em qualquer comando para assumir.`]);
     if (msg) out.push([msg.cls, msg.txt]);
     if (s.stalled) out.push(['warn', 'ESTOL. O manche vibra (stick shaker) e o nariz cai sozinho. Para sair: empurre o manche, potência máxima e asas niveladas.']);
     else if (!s.ground && s.A && s.alpha > s.A.acrit - 1.5) out.push(['warn', `Perto do estol: o manche começa a vibrar (stick shaker). Estol a ~${vs1} kt nesta configuração. Baixe o nariz ou aumente a potência.`]);
@@ -631,7 +726,7 @@ function create(ctl) {
   start('cruzeiro');
   return {
     id: 'b747', flaps: DET, flapLabel: (f) => String(f), scenarios: SCENARIOS, defaultScenario: 'cruzeiro',
-    start, step, size, draw, minisHTML, minis, explain, warn, trim,
+    start, step, size, draw, minisHTML, minis, explain, warn, trim, takeover, demo: () => !!demo,
     trimText: () => `${s.ttrim >= 0 ? '+' : ''}${s.ttrim.toFixed(1)}°`,
     n1: () => n1Of(ctl.thr),
   };

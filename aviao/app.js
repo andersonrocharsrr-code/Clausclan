@@ -529,19 +529,21 @@ function readControls() {
   if (C().trimText) $('#oTrim').textContent = C().trimText();
 }
 const signed = (v) => (v > 0 ? '+' : '') + v;
-['#cElev', '#cAil', '#cRud', '#cThr', '#cSb'].forEach((s) => $(s).addEventListener('input', readControls));
+// mexer em qualquer comando tira o piloto de demonstração (se o cockpit tiver um)
+const takeover = () => { if (C().takeover) C().takeover(); };
+['#cElev', '#cAil', '#cRud', '#cThr', '#cSb'].forEach((s) => $(s).addEventListener('input', () => { takeover(); readControls(); }));
 $('#flapSeg').addEventListener('click', (e) => {
   const b = e.target.closest('[data-flap]');
   if (!b) return;
-  ctl.flaps = +b.dataset.flap; syncControls();
+  takeover(); ctl.flaps = +b.dataset.flap; syncControls();
 });
 $('#gearSeg').addEventListener('click', (e) => {
   const b = e.target.closest('[data-gear]');
   if (!b) return;
-  ctl.gearDown = +b.dataset.gear; syncControls();
+  takeover(); ctl.gearDown = +b.dataset.gear; syncControls();
 });
-$('#trimBtn').addEventListener('click', () => { if (C().trim) { C().trim(); syncControls(); } });
-$('#centerBtn').addEventListener('click', () => { ctl.elev = 0; ctl.ail = 0; ctl.rud = 0; syncControls(); });
+$('#trimBtn').addEventListener('click', () => { takeover(); if (C().trim) { C().trim(); syncControls(); } });
+$('#centerBtn').addEventListener('click', () => { takeover(); ctl.elev = 0; ctl.ail = 0; ctl.rud = 0; syncControls(); });
 $('#scnSeg').addEventListener('click', (e) => {
   const b = e.target.closest('[data-scn]');
   if (!b) return;
@@ -804,6 +806,7 @@ function simLoop(t) {
   const dt = Math.min(0.05, (t - (simLast || t)) / 1000); simLast = t;
   const c = C();
   c.step(dt);
+  if (c.demo && c.demo()) syncControls();   // os controles da tela acompanham o piloto de demonstração
   if (gctx) { gctx.clearRect(0, 0, gW, gH); c.draw(gctx, gW, gH); }
   c.minis($('#viewsJet'));
   if ((simTick += dt) > 0.25) { simTick = 0; explain(); }
