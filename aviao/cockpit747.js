@@ -450,7 +450,34 @@ function create(ctl) {
   // O profundor, os flaps, os spoilers e o trem são camadas separadas que se mexem com os comandos.
   const IMG = 'x="21.32" y="60.58" width="262.55" height="54.02"';
   // o trem só aparece abaixo da barriga e, no principal, abaixo da nacele que fica na frente dele
-  const BELLY = 'M137 108.6 L141.6 108.6 L141.6 112.6 L161.6 112.6 L161.6 108.6 L168 108.6 L168 126 L137 126 Z M249 107.6 L261 107.4 L261 126 L249 126 Z';
+  const BELLY = 'M137 108.6 L141.6 108.6 L141.6 112.6 L161.6 112.6 L161.6 108.6 L168 108.6 L168 126 L137 126 Z M247 107.6 L263 107.4 L263 126 L247 126 Z';
+  // roda vista de lado: pneu com flanco e brilho, aro, cubo e parafusos
+  const wheel = (cx, cy, r) => {
+    const bolts = [0, 1, 2, 3, 4].map((i) => { const a = (i * 72 - 90) * Math.PI / 180; return `M${(cx + Math.cos(a) * r * 0.4).toFixed(2)} ${(cy + Math.sin(a) * r * 0.4).toFixed(2)}h.01`; }).join('');
+    return `<circle class="j7g-tire" cx="${cx}" cy="${cy}" r="${r}"/><circle class="j7g-wall" cx="${cx}" cy="${cy}" r="${(r * 0.81).toFixed(2)}"/>` +
+      `<path class="j7g-shine" d="M${(cx - r * 0.72).toFixed(2)} ${(cy - r * 0.42).toFixed(2)} A${(r * 0.84).toFixed(2)} ${(r * 0.84).toFixed(2)} 0 0 1 ${(cx - r * 0.25).toFixed(2)} ${(cy - r * 0.8).toFixed(2)}"/>` +
+      `<circle class="j7g-rim" cx="${cx}" cy="${cy}" r="${(r * 0.56).toFixed(2)}"/><circle class="j7g-hub" cx="${cx}" cy="${cy}" r="${(r * 0.24).toFixed(2)}"/><path class="j7g-bolt" d="${bolts}"/>`;
+  };
+  // perna do trem principal com truque de 4 rodas (de lado aparecem 2): cilindro, haste cromada, compasso e viga
+  const R = 2.35, AY = 118 - R;
+  const bogie = (sx, far) => `<g class="j7g${far ? ' j7g-far' : ''}">
+            <rect class="j7g-strut" x="${sx - 0.75}" y="104" width="1.5" height="9.7"/>
+            <rect class="j7g-piston" x="${sx - 0.42}" y="113.6" width=".84" height="2.2"/>
+            <path class="j7g-link" d="M${sx + 0.45} 113.5 L${sx + 0.95} 114.25 L${sx + 0.42} 115"/>
+            <rect class="j7g-strut" x="${sx - 2.95}" y="${AY - 0.5}" width="5.9" height="1" rx=".5"/>
+            ${wheel(+(sx - 2.6).toFixed(1), AY, R)}${wheel(+(sx + 2.6).toFixed(1), AY, R)}
+          </g>`;
+  const RN = 2.15, NY = 118 - RN;
+  const noseGear = `<g class="j7g">
+            <g class="j7g-far">${wheel(255.6, NY - 0.2, RN)}</g>
+            <path class="j7g-link" d="M255.3 110.4 L259.8 107.6"/><circle class="j7g-hub" cx="255.3" cy="110.4" r=".32"/>
+            <rect class="j7g-strut" x="254.35" y="104" width="1.3" height="7.7"/>
+            <rect class="j7g-strut" x="254.05" y="109.2" width="1.9" height=".8" rx=".25"/>
+            <rect class="j7g-piston" x="254.58" y="111.6" width=".84" height="4.3"/>
+            <path class="j7g-link" d="M255.6 111.4 L256.6 112.65 L255.45 113.8"/>
+            <path class="j7g-door" d="M249.6 107.7 L253.8 107.45 L253.7 110.3 L249.7 110.7 Z"/>
+            ${wheel(255, NY, RN)}
+          </g>`;
   const minisHTML = `
     <figure class="card mini">
       <figcaption class="mono small">VISTA LATERAL · arfagem, profundor, flaps e trem</figcaption>
@@ -461,10 +488,9 @@ function create(ctl) {
         <rect class="m-ground" x="0" y="118" width="300" height="12"/>
         <g id="j7Side">
           <g clip-path="url(#j7GearOut)"><g id="j7GearS">
-            <path class="m-strut j7-gear" d="M148 106 L148 113.6 M158 106 L158 113.6 M144.6 113.8 L151.4 113.8 M154.6 113.8 L161.4 113.8 M255 105 L255 115.4"/>
-            <circle class="m-tire j7-gear" cx="145.4" cy="115.3" r="2.7"/><circle class="m-tire j7-gear" cx="150.6" cy="115.3" r="2.7"/>
-            <circle class="m-tire j7-gear" cx="155.4" cy="115.3" r="2.7"/><circle class="m-tire j7-gear" cx="160.6" cy="115.3" r="2.7"/>
-            <circle class="m-tire j7-gear" cx="255" cy="115.5" r="2.5"/>
+            ${bogie(148, true)}
+            ${bogie(158, false)}
+            ${noseGear}
           </g></g>
           <image class="j7-photo" href="assets/747-lado.webp" ${IMG}/>
           <g id="j7Elev">

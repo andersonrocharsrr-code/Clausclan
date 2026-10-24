@@ -417,10 +417,22 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 /* 747-8 nas vistas pequenas do cockpit */
 .j7-photo { filter: drop-shadow(0 0 .4px rgba(14, 21, 27, .55)); }
 .j7-tint { fill: var(--magenta); fill-opacity: .62; stroke-width: .3; stroke-linejoin: round; }
-/* sobre a foto (avião branco) as peças móveis ganham contorno escuro nos dois temas */
-#j7Side .m-surf, #j7Side .j7-spoiler, #j7Side .j7-tint { stroke: #0e151b; stroke-opacity: .85; }
-#j7Side .m-surf { stroke-width: .35; }
-#j7Side .j7-spoiler { stroke-width: .3; }
+/* o desenho lateral é sempre escuro com traço branco (nos dois temas): peças móveis e trem seguem o mesmo traço */
+#j7Side .m-surf, #j7Side .j7-spoiler, #j7Side .j7-tint { stroke: #f2f5f7; stroke-opacity: .85; }
+#j7Side .m-surf { stroke-width: .3; }
+#j7Side .j7-spoiler { stroke-width: .25; }
+.j7g { color: #f2f5f7; }
+.j7g-far { color: #9aa6b1; }
+.j7g-tire { fill: #10171e; stroke: currentColor; stroke-width: .3; }
+.j7g-wall { fill: none; stroke: #4e5c69; stroke-width: .22; }
+.j7g-shine { fill: none; stroke: #8d9aa6; stroke-width: .26; stroke-linecap: round; }
+.j7g-rim { fill: #36424e; stroke: currentColor; stroke-width: .2; }
+.j7g-hub { fill: #aeb9c3; stroke: currentColor; stroke-width: .12; }
+.j7g-bolt { fill: none; stroke: #f2f5f7; stroke-width: .2; stroke-linecap: round; }
+.j7g-strut { fill: #26313c; stroke: currentColor; stroke-width: .2; }
+.j7g-piston { fill: #c2ccd4; stroke: currentColor; stroke-width: .14; }
+.j7g-link { fill: none; stroke: currentColor; stroke-width: .26; stroke-linecap: round; stroke-linejoin: round; }
+.j7g-door { fill: #10171e; stroke: currentColor; stroke-width: .22; stroke-linejoin: round; }
 .j7-wingr, .j7-fus { fill: url(#j7GradR); stroke: var(--ink); stroke-width: 1; stroke-linejoin: round; }
 .j7-eng { fill: var(--shade); stroke: var(--ink); stroke-width: 1; }
 .j7-hub { fill: var(--ink); }
