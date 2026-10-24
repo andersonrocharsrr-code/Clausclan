@@ -544,18 +544,6 @@ $('#gearSeg').addEventListener('click', (e) => {
 });
 $('#trimBtn').addEventListener('click', () => { takeover(); if (C().trim) { C().trim(); syncControls(); } });
 $('#centerBtn').addEventListener('click', () => { takeover(); ctl.elev = 0; ctl.ail = 0; ctl.rud = 0; syncControls(); });
-let failSel = 'motor';
-$('#failSeg').addEventListener('click', (e) => {
-  const b = e.target.closest('[data-fail]'); if (!b) return;
-  failSel = b.dataset.fail; $$('#failSeg [data-fail]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-});
-$('#failBox').addEventListener('click', (e) => {
-  const b = e.target.closest('[data-fmode]'); if (!b || !C().startFail) return;
-  C().startFail(failSel, b.dataset.fmode); syncControls(); explain();
-  $('#failCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
-});
-$('#failSteps').addEventListener('click', (e) => { const b = e.target.closest('[data-fstep]'); if (b) { C().failAct(+b.dataset.fstep); syncControls(); explain(); } });
-$('#failStop').addEventListener('click', () => { if (C().stopFail) C().stopFail(); explain(); });
 $('#scnSeg').addEventListener('click', (e) => {
   const b = e.target.closest('[data-scn]');
   if (!b) return;
@@ -766,22 +754,6 @@ function explain() {
   if (w) $('#stallWarn').textContent = w;
   if (C().trimText) $('#oTrim').textContent = C().trimText();
   if (C().n1) $('#oThr').textContent = `N1 ${fmt(C().n1(), 0)}%`;
-  renderFail();
-}
-// checklist da pane em treino (atualizado junto com a lista de explicações)
-let lastFail = '';
-function renderFail() {
-  const f = C().failState ? C().failState() : null, card = $('#failCard');
-  if (!f) { card.hidden = true; lastFail = ''; return; }
-  card.hidden = false;
-  const next = f.steps.findIndex((st) => !st.done);
-  const html = f.steps.map((st, i) => `<li class="${st.done ? 'is-done' : i === next ? 'is-next' : ''}"><div>${st.t}${st.act && !st.done && f.mode === 'solo' && f.on ? `<br><button type="button" data-fstep="${i}">${st.act}</button>` : ''}</div></li>`).join('');
-  const key = f.title + f.mode + f.on + f.complete + html;
-  if (key === lastFail) return;
-  lastFail = key;
-  $('#failMode').textContent = (f.mode === 'solo' ? 'Treino' : 'Demonstração') + (f.complete ? ' · concluído' : f.on ? ' · pane ativa' : ' · aguardando a pane');
-  $('#failTitle').textContent = f.title;
-  $('#failSteps').innerHTML = html;
 }
 
 /* Cockpit de cada avião: o Cessna usa as funções acima; o 747-8 vem de cockpit747.js. */
@@ -815,7 +787,6 @@ function setCockpit(id) {
   $('#flapSeg').innerHTML = c.flaps.map((f) => `<button type="button" data-flap="${f}">${c.flapLabel(f)}</button>`).join('');
   $('#lThr').textContent = c.thr[0]; $('#eThr0').textContent = c.thr[1]; $('#eThr1').textContent = c.thr[2];
   $('#ctlJet').hidden = !c.jet;
-  $('#failBox').hidden = !c.startFail; $('#failCard').hidden = true;
   $('#viewsC172').hidden = id !== 'c172';
   $('#viewsJet').hidden = id === 'c172';
   if (c.jet) $('#viewsJet').innerHTML = c.minisHTML;

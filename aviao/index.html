@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=44">
+  <link rel="stylesheet" href="style.css?v=45">
 </head>
 <body>
   <header class="top">
@@ -314,20 +314,6 @@
             <span class="label">Cenários</span>
             <div class="seg seg--chips" id="scnSeg"></div>
           </div>
-          <!-- panes para treinar (só no 747-8) -->
-          <div class="fails" id="failBox" hidden>
-            <span class="label">Panes para treinar</span>
-            <div class="seg seg--chips" id="failSeg">
-              <button type="button" data-fail="motor" aria-pressed="true">Motor falha após V1</button>
-              <button type="button" data-fail="fogo" aria-pressed="false">Fogo no motor</button>
-              <button type="button" data-fail="despress" aria-pressed="false">Despressurização</button>
-              <button type="button" data-fail="trem" aria-pressed="false">Trem não baixa</button>
-            </div>
-            <div class="fails__go">
-              <button type="button" class="fails__btn" data-fmode="demo">Ver a demonstração</button>
-              <button type="button" class="fails__btn fails__btn--solo" data-fmode="solo">Treinar sozinho</button>
-            </div>
-          </div>
           <div class="ctl">
             <label for="cElev">Manche: frente ↔ trás <output id="oElev">0</output></label>
             <input type="range" id="cElev" min="-100" max="100" value="0">
@@ -373,11 +359,6 @@
           <button type="button" class="btn-ghost" id="centerBtn">Soltar o manche e os pedais</button>
         </div>
         <div class="cockpit__main">
-          <section class="card fail-card" id="failCard" hidden aria-live="polite">
-            <div class="fail-card__head"><p class="eyebrow mono small" id="failMode">Pane</p><button type="button" class="fail-card__stop" id="failStop">Encerrar pane</button></div>
-            <h3 id="failTitle"></h3>
-            <ol class="fail-steps" id="failSteps"></ol>
-          </section>
           <div class="card panel">
             <div class="stall" id="stallWarn" hidden>ESTOL · ALARME SONORO</div>
             <canvas id="gauges" aria-label="Painel com os seis instrumentos básicos"></canvas>
@@ -598,10 +579,10 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=44"></script>
-  <script src="catalogo747.js?v=44"></script>
-  <script src="cockpit747.js?v=44"></script>
-  <script src="app.js?v=44"></script>
+  <script src="avioes.js?v=45"></script>
+  <script src="catalogo747.js?v=45"></script>
+  <script src="cockpit747.js?v=45"></script>
+  <script src="app.js?v=45"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
