@@ -295,7 +295,7 @@ function showTab(id, push) {
   $$('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === id)));
   if (push) { try { history.replaceState(null, '', '#' + id); } catch {} }
   if (id === 'cockpit') { sizeGauges(); startSim(); }
-  if (id === 'lab') { sizeTunnel(); startTunnel(); }
+  if (id === 'lab') startLab();
   window.scrollTo({ top: 0 });
 }
 document.addEventListener('click', (e) => {
@@ -303,8 +303,24 @@ document.addEventListener('click', (e) => {
   if (!a) return;
   e.preventDefault();
   if (a.dataset.ck && CK[a.dataset.ck] && a.dataset.ck !== ck) setCockpit(a.dataset.ck);
+  if (a.dataset.lmode) setLabMode(a.dataset.lmode);
   showTab(a.dataset.tab, true);
 });
+
+/* ---------------- D · Laboratório: asa ou motor ---------------- */
+let labMode = 'asa';
+function startLab() {
+  if (labMode === 'asa') { sizeTunnel(); startTunnel(); } else window.Motor747?.start();
+}
+function setLabMode(m) {
+  labMode = m === 'motor' ? 'motor' : 'asa';
+  $('#labAsa').hidden = labMode !== 'asa';
+  $('#labMotor').hidden = labMode !== 'motor';
+  $$('#labPick [data-lmode]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lmode === labMode)));
+  if (current === 'lab') startLab();
+}
+$('#labPick').addEventListener('click', (e) => { const b = e.target.closest('[data-lmode]'); if (b) setLabMode(b.dataset.lmode); });
+window.Motor747?.init({ active: () => current === 'lab' && labMode === 'motor' });
 
 /* ---------------- A · Explorador ---------------- */
 // O Cessna é desenhado à mão no HTML; os jatos vêm de avioes.js, gerados a partir das medidas reais.
@@ -377,7 +393,8 @@ function selectPart(id, open) {
     </dl>
     <p class="tip"><b>Curiosidade.</b> ${p.curio}</p>
     ${subs.length ? `<div class="subparts"><span class="label">Partes no desenho</span><div class="chips">${subs.map(([k, v]) => `<button type="button" class="chip" data-sub="${k}"><b>${v.num}</b> ${v.nome}</button>`).join('')}</div></div>` : ''}
-    ${p.ver ? `<button type="button" class="link-btn" data-tab="${p.ver}" data-ck="${craft}">${p.ver === 'lab' ? 'Ver a asa no túnel de vento' : 'Ver em ação no cockpit'} →</button>` : ''}`;
+    ${p.ver ? `<button type="button" class="link-btn" data-tab="${p.ver}" data-ck="${craft}">${p.ver === 'lab' ? 'Ver a asa no túnel de vento' : 'Ver em ação no cockpit'} →</button>` : ''}
+    ${(p.pai || id) === 'motor' ? '<button type="button" class="link-btn" data-tab="lab" data-lmode="motor">Ver o ar passando dentro do motor GEnx-2B →</button>' : ''}`;
   if (open) showHint();
 }
 
@@ -906,7 +923,7 @@ function arrow(c, x0, y0, x1, y1, color, w) {
 }
 let tunRaf = 0, tunLast = 0;
 function tunnelFrame(t) {
-  if (current !== 'lab') { tunRaf = 0; return; }
+  if (current !== 'lab' || labMode !== 'asa') { tunRaf = 0; return; }
   const dt = Math.min(0.04, (t - (tunLast || t)) / 1000); tunLast = t;
   const c = tctx;
   c.globalAlpha = 0.14; c.fillStyle = colBg; c.fillRect(0, 0, tW, tH); c.globalAlpha = 1;
@@ -1080,7 +1097,7 @@ document.addEventListener('click', (e) => {
 let resizeT;
 window.addEventListener('resize', () => {
   clearTimeout(resizeT);
-  resizeT = setTimeout(() => { if (current === 'cockpit') sizeGauges(); if (current === 'lab') { sizeTunnel(); buildFoil(); } }, 150);
+  resizeT = setTimeout(() => { if (current === 'cockpit') sizeGauges(); if (current === 'lab') { if (labMode === 'asa') { sizeTunnel(); buildFoil(); } else window.Motor747?.size(); } }, 150);
 });
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', readColors);
 new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });

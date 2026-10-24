@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=45">
+  <link rel="stylesheet" href="style.css?v=46">
 </head>
 <body>
   <header class="top">
@@ -460,6 +460,11 @@
 
     <!-- D · LABORATÓRIO -->
     <section class="view" id="view-lab" data-view="lab" hidden>
+      <div class="seg seg--sm lab-pick" id="labPick" role="group" aria-label="Experimento">
+        <button type="button" data-lmode="asa" aria-pressed="true">Asa · túnel de vento</button>
+        <button type="button" data-lmode="motor" aria-pressed="false">Motor a jato · GEnx-2B</button>
+      </div>
+      <div id="labAsa">
       <div class="view__head">
         <p class="eyebrow">Seção D · Aerodinâmica</p>
         <h1>Túnel de vento</h1>
@@ -511,6 +516,69 @@
           <p class="small drag-msg" id="dragMsg"></p>
           <svg class="clchart" id="clChart" viewBox="0 0 300 170" role="img" aria-label="Curva de coeficiente de sustentação por ângulo de ataque"></svg>
           <p class="formula mono small">L = ½ · ρ · V² · S · C<sub>L</sub> &nbsp;·&nbsp; S = 16,2 m²</p>
+        </div>
+      </div>
+      </div>
+      <div id="labMotor" hidden>
+        <div class="view__head">
+          <p class="eyebrow">Seção D · Propulsão</p>
+          <h1>Motor GEnx-2B em corte</h1>
+          <p class="lede">O motor do 747-8 cortado ao meio. Os traços são o ar, que muda de azul (frio) para vermelho (quente). Passe as etapas para seguir o ar do começo ao fim, ou toque numa peça do desenho.</p>
+        </div>
+        <div class="eng">
+          <div class="eng__main">
+            <div class="card tunnel eng__stage">
+              <canvas id="engCv" aria-label="Animação do ar passando pelo motor GEnx-2B em corte"></canvas>
+              <div class="tunnel__legend mono small">
+                <span><i class="sw sw--byp"></i>ar do fan (bypass)</span>
+                <span><i class="sw sw--heat"></i>ar do núcleo · frio → quente</span>
+                <span><i class="sw sw--n1"></i>pás do eixo N1</span>
+                <span><i class="sw sw--n2"></i>pás do eixo N2</span>
+                <span><i class="sw sw--st"></i>palhetas fixas</span>
+              </div>
+              <div class="eng__step">
+                <div class="eng__nav">
+                  <button type="button" class="lesson__arrow" id="engPrev" aria-label="Etapa anterior">‹</button>
+                  <div class="eng__head"><span class="label" id="engCount">1 / 11</span><h2 id="engTitle"></h2></div>
+                  <button type="button" class="lesson__arrow" id="engNext" aria-label="Próxima etapa">›</button>
+                </div>
+                <div class="eng__dots" id="engDots" aria-hidden="true"></div>
+                <p id="engText"></p>
+                <div class="spec eng__facts" id="engFacts"></div>
+              </div>
+            </div>
+            <div class="card eng__exploded">
+              <span class="label">Peças separadas</span>
+              <div class="eng__gallery" id="engGallery"></div>
+            </div>
+          </div>
+          <div class="card lab-side">
+            <div class="ctl">
+              <label for="engThr">Manete <output id="engThrO">80%</output></label>
+              <input type="range" id="engThr" min="0" max="100" value="80">
+              <div class="ctl__ends"><span>IDLE</span><span>TOGA</span></div>
+            </div>
+            <div class="eng__toggles">
+              <label class="switch"><input type="checkbox" id="engSlow"><span class="switch__ui" aria-hidden="true"></span>Câmera lenta</label>
+              <label class="switch"><input type="checkbox" id="engAir" checked><span class="switch__ui" aria-hidden="true"></span>Mostrar o ar</label>
+            </div>
+            <div class="readout">
+              <div><span class="label">N1 · fan</span><b id="engN1">0 %</b></div>
+              <div><span class="label">N2 · núcleo</span><b id="engN2">0 %</b></div>
+              <div><span class="label">EGT</span><b id="engEgt">0 °C</b></div>
+              <div><span class="label">Empuxo</span><b><span id="engThrust">0 kN</span> <small class="small" id="engLbf"></small></b></div>
+              <div><span class="label">Ar que entra</span><b id="engFlow">0 kg/s</b></div>
+            </div>
+            <div>
+              <span class="label">O ar em cada etapa</span>
+              <div class="eng__sta" id="engSta"></div>
+              <p class="small">Valores aproximados, ao nível do mar.</p>
+            </div>
+            <div>
+              <span class="label">Peças no desenho</span>
+              <div class="chips eng__parts" id="engParts"></div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -579,10 +647,11 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=45"></script>
-  <script src="catalogo747.js?v=45"></script>
-  <script src="cockpit747.js?v=45"></script>
-  <script src="app.js?v=45"></script>
+  <script src="avioes.js?v=46"></script>
+  <script src="catalogo747.js?v=46"></script>
+  <script src="cockpit747.js?v=46"></script>
+  <script src="motor747.js?v=46"></script>
+  <script src="app.js?v=46"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
