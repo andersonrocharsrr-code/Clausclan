@@ -264,7 +264,7 @@ function create(ctl) {
     if (step > bankStep && !s.ground) say('Bank angle, bank angle');
     if (step > bankStep || b < 30) bankStep = step;
   }
-  // voz gravada em assets/bank-angle.mp3 (o WebView do Android não tem síntese de voz). O celular só deixa
+  // voz gravada do alerta real em assets/bank-angle.mp3 (o WebView do Android não tem síntese de voz). O celular só deixa
   // tocar áudio depois de um toque: no primeiro toque na página o áudio é destravado tocando-o mudo.
   const voice = typeof Audio !== 'undefined' ? new Audio('assets/bank-angle.mp3') : null;
   if (voice && typeof document !== 'undefined') {
