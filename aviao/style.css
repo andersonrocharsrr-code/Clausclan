@@ -433,11 +433,9 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 .j7g-piston { fill: #c2ccd4; stroke: currentColor; stroke-width: .14; }
 .j7g-link { fill: none; stroke: currentColor; stroke-width: .26; stroke-linecap: round; stroke-linejoin: round; }
 .j7g-door { fill: #10171e; stroke: currentColor; stroke-width: .22; stroke-linejoin: round; }
-.j7-wingr, .j7-fus { fill: url(#j7GradR); stroke: var(--ink); stroke-width: 1; stroke-linejoin: round; }
-.j7-eng { fill: var(--shade); stroke: var(--ink); stroke-width: 1; }
-.j7-hub { fill: var(--ink); }
 .j7-spoiler { fill: var(--blue); stroke: var(--ink); stroke-width: .7; }
-.j7-pylon { fill: var(--shade); stroke: var(--ink); stroke-width: .7; }
+/* a vista de trás é o desenho branco: peças móveis com contorno escuro nos dois temas */
+#j7Rear .m-surf, #j7Rear .j7-spoiler { stroke: #0e151b; stroke-opacity: .8; stroke-width: .3; }
 .explain ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 6px; }
 .explain li.warn { color: var(--bad); font-weight: 600; }
 

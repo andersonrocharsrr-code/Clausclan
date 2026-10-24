@@ -505,40 +505,28 @@ function create(ctl) {
     <figure class="card mini">
       <figcaption class="mono small">VISTA DE TRÁS · rolagem, ailerons e spoilers</figcaption>
       <svg viewBox="0 0 300 130" class="mini__svg" aria-label="747-8 visto de trás">
-        <defs>
-          <linearGradient id="j7GradR" x1="0" x2="1" y1="0" y2="0"><stop offset="0" style="stop-color:var(--shade)"/><stop offset=".4" style="stop-color:var(--plane)"/><stop offset=".6" style="stop-color:var(--plane)"/><stop offset="1" style="stop-color:var(--shade)"/></linearGradient>
-        </defs>
         <rect class="m-ground" x="0" y="118" width="300" height="12"/>
         <g id="j7Rear">
-          <g id="j7GearR">
-            <path class="m-strut" d="M143.5 108 L143.5 111.5 M156.5 108 L156.5 111.5 M131 106 L131 111.5 M169 106 L169 111.5"/>
-            <rect class="m-tire" x="139.6" y="111.4" width="3" height="6.4" rx="1"/><rect class="m-tire" x="144.4" y="111.4" width="3" height="6.4" rx="1"/>
-            <rect class="m-tire" x="152.6" y="111.4" width="3" height="6.4" rx="1"/><rect class="m-tire" x="157.4" y="111.4" width="3" height="6.4" rx="1"/>
-            <rect class="m-tire" x="127.1" y="111.4" width="3" height="6.4" rx="1"/><rect class="m-tire" x="131.9" y="111.4" width="3" height="6.4" rx="1"/>
-            <rect class="m-tire" x="165.1" y="111.4" width="3" height="6.4" rx="1"/><rect class="m-tire" x="169.9" y="111.4" width="3" height="6.4" rx="1"/>
-          </g>
-          <ellipse class="j7-fus" cx="150" cy="91" rx="8" ry="6"/>
-          <path class="j7-wingr" d="M150 101.5 L266.6 88.6 Q268.6 89.2 266.4 90.6 L150 105.5 L33.6 90.6 Q31.4 89.2 33.4 88.6 Z"/>
-          <path class="j7-pylon" d="M106.5 99 L109.5 99 L109.5 103 L106.5 103 Z M190.5 99 L193.5 99 L193.5 103 L190.5 103 Z M76.5 95.5 L79.5 95.5 L79.5 99 L76.5 99 Z M220.5 95.5 L223.5 95.5 L223.5 99 L220.5 99 Z"/>
-          <circle class="j7-eng" cx="108" cy="108" r="5.5"/><circle class="j7-eng" cx="192" cy="108" r="5.5"/>
-          <circle class="j7-eng" cx="78" cy="104" r="5.5"/><circle class="j7-eng" cx="222" cy="104" r="5.5"/>
-          <circle class="j7-hub" cx="108" cy="108" r="1.8"/><circle class="j7-hub" cx="192" cy="108" r="1.8"/><circle class="j7-hub" cx="78" cy="104" r="1.8"/><circle class="j7-hub" cx="222" cy="104" r="1.8"/>
+          <image class="j7-photo" href="assets/747-tras.webp" x="32.86" y="40.89" width="234.41" height="77.64"/>
+          <g id="j7GearR"><image href="assets/747-tras-trem.webp" x="32.86" y="40.89" width="234.41" height="77.64"/></g>
+          <path id="j7SpL" class="j7-spoiler" d=""/><path id="j7SpR" class="j7-spoiler" d=""/>
           <path id="j7AilLo" class="m-surf" d=""/><path id="j7AilRo" class="m-surf" d=""/>
           <path id="j7AilLi" class="m-surf" d=""/><path id="j7AilRi" class="m-surf" d=""/>
-          <path id="j7SpL" class="j7-spoiler" d=""/><path id="j7SpR" class="j7-spoiler" d=""/>
-          <circle class="j7-fus" cx="150" cy="100" r="11"/>
-          <path class="j7-wingr" d="M112.2 94.6 L187.8 94.6 Q189.4 95.6 187.8 96.6 L112.2 96.6 Q110.6 95.6 112.2 94.6 Z"/>
           <path id="j7ElevL" class="m-surf" d=""/><path id="j7ElevR" class="m-surf" d=""/>
-          <path class="j7-fus" d="M148.4 89.5 L149.2 52 L150.8 52 L151.6 89.5 Z"/>
-          <g id="j7Rud"><path class="m-surf" d="M149.3 53 L150.7 53 L151 88 L149 88 Z"/></g>
-          <circle class="m-nav-red" cx="32.6" cy="89.6" r="2"/><circle class="m-nav-green" cx="267.4" cy="89.6" r="2"/>
-          <circle class="m-beacon" cx="150" cy="51.4" r="1.6"/>
+          <g id="j7Rud"><path class="m-surf" d="M149.5 45 L150.5 45 L151 83 L149 83 Z"/></g>
         </g>
       </svg>
     </figure>`;
-  // asa vista de trás: da raiz (150, 103) à ponta (150 ± 116,6; 89,6); t vai de 0 (centro) a 1 (ponta)
-  const wingPt = (t, sd) => [+(150 + sd * 116.6 * t).toFixed(1), +(103 - 13.4 * t).toFixed(1)];
-  const surf = (t0, t1, sd, d0, d1) => { const a = wingPt(t0, sd), b = wingPt(t1, sd); return `M${a[0]} ${a[1] + 1.5} L${b[0]} ${b[1] + 1.5} L${b[0]} ${(b[1] + 1.5 - d1).toFixed(1)} L${a[0]} ${(a[1] + 1.5 - d0).toFixed(1)} Z`; };
+  // asa vista de trás (desenho de referência): bordo de fuga do centro (150; 104,2) à ponta (150 ± 116,6; 89,5);
+  // t vai de 0 (centro) a 1 (ponta)
+  const wingPt = (t, sd) => [+(150 + sd * 116.6 * t).toFixed(1), +(104.2 - 14.7 * t).toFixed(1)];
+  // faixa de 0,8 sobre a linha (y0 acima do bordo de fuga), deslocada d para cima
+  const strip = (a, b, y0, d) => `M${a[0]} ${(a[1] - y0 - d - 0.4).toFixed(2)} L${b[0]} ${(b[1] - y0 - d - 0.4).toFixed(2)} L${b[0]} ${(b[1] - y0 - d + 0.4).toFixed(2)} L${a[0]} ${(a[1] - y0 - d + 0.4).toFixed(2)} Z`;
+  // aileron: placa presa na articulação (0,6 acima do bordo de fuga) até o bordo de fuga deslocado d para cima
+  const surf = (t0, t1, sd, d) => { const a = wingPt(t0, sd), b = wingPt(t1, sd);
+    return `M${a[0]} ${(a[1] - 0.6).toFixed(2)} L${b[0]} ${(b[1] - 0.6).toFixed(2)} L${b[0]} ${(b[1] - d + 0.4).toFixed(2)} L${a[0]} ${(a[1] - d + 0.4).toFixed(2)} Z`; };
+  // spoiler: placa no extradorso que levanta d
+  const spoil = (t0, t1, sd, h) => { const a = wingPt(t0, sd), b = wingPt(t1, sd), y = 1.6, d = h * 0.6; return d < 0.05 ? '' : `M${a[0]} ${(a[1] - y).toFixed(2)} L${b[0]} ${(b[1] - y).toFixed(2)} L${b[0]} ${(b[1] - y - d).toFixed(2)} L${a[0]} ${(a[1] - y - d).toFixed(2)} Z`; };
   // spoiler visto de lado: placa articulada na frente (hx, hy); k de 0 (recolhido) a 1 (45°)
   const spoilerSide = (hx, hy, L, k) => {
     if (k < 0.02) return '';
@@ -562,24 +550,25 @@ function create(ctl) {
     $('j7GearR').setAttribute('transform', `translate(0 ${(-(1 - s.gear) * 6).toFixed(1)})`);
     $('j7Rear').setAttribute('transform', `rotate(${s.phi.toFixed(2)} 150 100)`);
     // ailerons: os internos sempre; os externos só com flaps baixados (em alta velocidade ficam travados)
-    const ai = ctl.ail * 4, ao = s.flap > 0.5 ? ctl.ail * 5 : 0;
-    $('j7AilRi').setAttribute('d', surf(0.42, 0.56, 1, ai, ai));
-    $('j7AilLi').setAttribute('d', surf(0.42, 0.56, -1, -ai, -ai));
-    $('j7AilRo').setAttribute('d', surf(0.78, 0.96, 1, ao, ao));
-    $('j7AilLo').setAttribute('d', surf(0.78, 0.96, -1, -ao, -ao));
+    const ai = ctl.ail * 2.2, ao = s.flap > 0.5 ? ctl.ail * 2.8 : 0;
+    $('j7AilRi').setAttribute('d', surf(0.40, 0.50, 1, ai));
+    $('j7AilLi').setAttribute('d', surf(0.40, 0.50, -1, -ai));
+    $('j7AilRo').setAttribute('d', surf(0.70, 0.94, 1, ao));
+    $('j7AilLo').setAttribute('d', surf(0.70, 0.94, -1, -ao));
     // spoilers: sobem juntos como freio aerodinâmico e, na curva, sobem na asa que desce
     const sb = Math.max(ctl.sb, s.groundSb || 0);
     const spR = Math.max(sb, ctl.ail > 0.15 ? ctl.ail * 0.7 : 0) * 6, spL = Math.max(sb, ctl.ail < -0.15 ? -ctl.ail * 0.7 : 0) * 6;
-    $('j7SpR').setAttribute('d', surf(0.12, 0.6, 1, spR, spR));
-    $('j7SpL').setAttribute('d', surf(0.12, 0.6, -1, spL, spL));
+    $('j7SpR').setAttribute('d', spoil(0.14, 0.38, 1, spR));
+    $('j7SpL').setAttribute('d', spoil(0.14, 0.38, -1, spL));
     // de lado se vê a asa direita: os spoilers dela levantam a borda de trás
     $('j7SpS1').setAttribute('d', spoilerSide(144, 99.3, 7.5, spR / 6));
     $('j7SpS2').setAttribute('d', spoilerSide(134.5, 98.4, 7.5, spR / 6));
     // profundores vistos de trás: sobem com o manche puxado
     const e = ctl.elev * 3;
-    $('j7ElevR').setAttribute('d', `M154 96.6 L187 96.6 L187 ${(96.6 - e).toFixed(1)} L154 ${(96.6 - e).toFixed(1)} Z`);
-    $('j7ElevL').setAttribute('d', `M113 96.6 L146 96.6 L146 ${(96.6 - e).toFixed(1)} L113 ${(96.6 - e).toFixed(1)} Z`);
-    $('j7Rud').setAttribute('transform', `translate(${(ctl.rud * 3).toFixed(1)} 0)`);
+    // estabilizador visto de trás: bordo de fuga da raiz (150 ± 3,8; 94,4) à ponta (150 ± 46; 87,8)
+    $('j7ElevR').setAttribute('d', strip([153.8, 94.4], [196, 87.8], 0, e));
+    $('j7ElevL').setAttribute('d', strip([146.2, 94.4], [104, 87.8], 0, e));
+    $('j7Rud').setAttribute('transform', `translate(${(ctl.rud * 2.5).toFixed(1)} 0)`);
   }
 
   /* ---------- o que está acontecendo ---------- */
