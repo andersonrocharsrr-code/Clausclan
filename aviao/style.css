@@ -415,9 +415,12 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 .seg--chips button { border: 1px solid var(--line) !important; border-radius: 8px; }
 #ckList { margin-top: -4px; }
 /* 747-8 nas vistas pequenas do cockpit */
-.j7-skin { fill: url(#j7GradS); stroke: var(--ink); stroke-width: 1; stroke-linejoin: round; }
-.j7-wing { fill: var(--shade); stroke: var(--ink); stroke-width: .9; stroke-linejoin: round; }
-.j7-intake { fill: var(--ink); }
+.j7-photo { filter: drop-shadow(0 0 .4px rgba(14, 21, 27, .55)); }
+.j7-tint { fill: var(--magenta); fill-opacity: .62; stroke-width: .3; stroke-linejoin: round; }
+/* sobre a foto (avião branco) as peças móveis ganham contorno escuro nos dois temas */
+#j7Side .m-surf, #j7Side .j7-spoiler, #j7Side .j7-tint { stroke: #0e151b; stroke-opacity: .85; }
+#j7Side .m-surf { stroke-width: .35; }
+#j7Side .j7-spoiler { stroke-width: .3; }
 .j7-wingr, .j7-fus { fill: url(#j7GradR); stroke: var(--ink); stroke-width: 1; stroke-linejoin: round; }
 .j7-eng { fill: var(--shade); stroke: var(--ink); stroke-width: 1; }
 .j7-hub { fill: var(--ink); }
