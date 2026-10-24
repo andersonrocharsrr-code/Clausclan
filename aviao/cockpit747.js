@@ -720,6 +720,92 @@ function create(ctl) {
     if (s.gear > 0.01 && s.gear < 0.99) out.push(['white', 'GEAR IN TRANSIT']);
     return out;
   }
+  /* ---------- aulas do PFD e do EICAS (mesma ideia da aula do ND) ---------- */
+  // desenha o painel num estado de exemplo e devolve cada informação com o retângulo a destacar (pixels)
+  function sampled(sample, scn, demoState, fn) {
+    const keep = s, keepSc = sc, keepDemo = demo;
+    s = Object.assign({}, s, sample); sc = scn; demo = demoState;
+    try { return fn(); } finally { s = keep; sc = keepSc; demo = keepDemo; }
+  }
+  const PFD_INFO = [
+    ['FMA', 'Modos do piloto automático (FMA)', 'Três colunas no alto: à esquerda o modo das manetes (SPD = mantém a velocidade, THR REF = empuxo de decolagem ou subida, IDLE = marcha lenta), no meio o modo lateral (LNAV = rota do FMC, LOC = localizador do ILS, HDG = proa) e à direita o vertical (VNAV, G/S = rampa do ILS, FLARE = arredondamento). Um modo que acabou de entrar ganha uma caixa branca por 10 s.'],
+    ['AFDS', 'Estado do piloto automático', 'CMD = piloto automático ligado; FD = só o diretor de voo (o piloto voa seguindo as barras); LAND 3 = os três pilotos automáticos prontos para o pouso automático.'],
+    ['ADI', 'Horizonte artificial', 'Azul é o céu e marrom é o chão. A linha branca é o horizonte e a escada de números mostra quantos graus o nariz está acima ou abaixo dele. Em curva, o horizonte inteiro inclina.'],
+    ['BANK', 'Escala de inclinação', 'Marcas de 10°, 20°, 30°, 45° e 60° no arco de cima. O triângulo que se move mostra quanto as asas estão inclinadas; acima de 35° ele fica âmbar (BANK ANGLE). O trapézio embaixo dele é o indicador de derrapagem.'],
+    ['ACFT', 'Símbolo do avião', 'As duas "asas" pretas e o quadradinho no centro são o próprio avião, sempre fixos. O horizonte se move atrás deles.'],
+    ['FD', 'Diretor de voo', 'A cruz magenta mostra para onde o piloto automático quer levar o nariz: se a barra horizontal está acima do quadradinho, puxe; se a vertical está à direita, incline para a direita. Manter o quadradinho no centro da cruz é seguir a orientação.'],
+    ['SPD', 'Fita e caixa de velocidade', 'Velocidade indicada em nós. A fita corre atrás da caixa, que mostra o valor atual.'],
+    ['SEL', 'Velocidade selecionada', 'O número magenta em cima é a velocidade escolhida no painel do piloto automático (MCP). O marcador magenta na fita mostra onde ela fica.'],
+    ['BAR', 'Faixas de limite', 'As listras vermelhas e pretas marcam a velocidade máxima (em cima) e a de estol (embaixo). A faixa âmbar avisa que a velocidade mínima de manobra está perto.'],
+    ['TREND', 'Vetor de tendência', 'A linha verde sai da caixa e aponta para a velocidade que o avião terá em 10 segundos se nada mudar: para cima está acelerando, para baixo está perdendo velocidade.'],
+    ['REF', 'Velocidades de referência e de flap', 'Marcas verdes na fita: REF é a velocidade de aproximação (VREF); os números (25, 20, 10…) são as velocidades mínimas para recolher os flaps até aquela posição. Na decolagem aparecem V1, VR e V2.'],
+    ['FLREF', 'Flaps e VREF', 'Embaixo da fita: "30/152" quer dizer flaps 30 com VREF de 152 kt, a configuração escolhida para pousar. Em altitude este lugar mostra o número Mach.'],
+    ['ALT', 'Fita e caixa de altitude', 'Altitude em pés. Na caixa, os milhares ficam grandes e as centenas menores.'],
+    ['SALT', 'Altitude selecionada', 'O número magenta em cima da fita é a altitude escolhida no MCP (na aproximação, a altitude de arremetida). O marcador magenta mostra onde ela fica na fita.'],
+    ['BARO', 'Ajuste do altímetro', 'A pressão usada pelo altímetro: 1013 HPA (ou STD acima de 18.000 ft, padrão internacional). Com a pressão do aeroporto, o altímetro mostra a altitude certa sobre o nível do mar.'],
+    ['VS', 'Velocidade vertical', 'O ponteiro mostra quantos milhares de pés por minuto o avião sobe ou desce; o número aparece acima de 400 ft/min. Na rampa de 3° a descida fica perto de 750 a 800 ft/min.'],
+    ['ILS', 'ILS sintonizado', 'O identificador e o curso da pista (IESC/090°), a distância DME até a antena e "ILS" em verde quando o sinal está bom.'],
+    ['DIAM', 'Losangos do ILS', 'O losango da direita é a rampa (glide slope): acima do centro, o avião está baixo. O de baixo é o localizador: à direita do centro, a pista está à direita. Os dois no centro = avião na rampa e alinhado.'],
+    ['MINS', 'Mínimos', 'BARO 200 é a altitude de decisão: se o piloto não vir a pista ao chegar nela, arremete. Abaixo dos mínimos o número fica âmbar.'],
+    ['RA', 'Radioaltímetro', 'A altura real sobre o chão, medida por rádio. Aparece abaixo de 2.500 ft, grande no centro, e é a referência para o arredondamento.'],
+    ['HDG', 'Proa e proa selecionada', 'A rosa da bússola mostra a proa (para onde o nariz aponta) na caixa. Em magenta, a proa escolhida no MCP (090H) e o marcador na rosa. MAG = graus magnéticos.'],
+    ['GS', 'Velocidade no solo', 'GS é a velocidade em relação ao chão, a mesma do ND. Com vento de frente fica menor que a indicada.'],
+  ];
+  function pfdTeach(c, w, h) {
+    return sampled({ h: 1200 * FT, V: 160 * KT, gamma: -3 * D2R, theta: 3.2, alpha: 6.2, phi: 9, ground: false, flap: 30, gear: 1, x: -3.5, y: 0.04, psi: 92, gs: 150 * KT, fdPitch: 4.6, spool: 0.42 }, 'aproximacao', 'app', () => {
+      // tendência e modos do exemplo sem mexer no voo de verdade (e sem as caixas de "modo novo")
+      const keepTr = trend, keepFp = fmaPrev.slice(), keepFt = fmaT.slice(), f0 = fma();
+      trend = 1.6; fmaPrev = f0.m.concat(f0.st); fmaT = [0, 0, 0, 0];
+      drawPFD(c, 0, 0, w, h);
+      trend = keepTr; fmaPrev = keepFp; fmaT = keepFt;
+      const cx = w * 0.45, cy = h * 0.45, aw = w * 0.42, ah = h * 0.5, th = ah * 1.12, ty = cy - th / 2, tx = w * 0.035, tw = w * 0.135;
+      const ax = cx + aw / 2 + w * 0.03, awd = w * 0.16, fcw = aw * 1.25 / 3, R = ah * 0.46;
+      const ppk = th / 120, kias = ias(), vy = (v) => cy - (v - kias) * ppk;
+      const g = {
+        FMA: [cx - fcw * 1.5, h * 0.02, fcw * 3, h * 0.07], AFDS: [cx - w * 0.09, cy - ah / 2 - h * 0.06, w * 0.18, h * 0.05],
+        ADI: [cx - aw / 2, cy - ah / 2, aw, ah], BANK: [cx - R - 14, cy - R - 16, R * 2 + 28, R * 0.55],
+        ACFT: [cx - aw * 0.4, cy - 10, aw * 0.8, 28], FD: [cx - aw * 0.32, cy - ah * 0.34, aw * 0.64, ah * 0.66],
+        SPD: [tx - 4, cy - th * 0.07, tw + 4, th * 0.14], SEL: [tx, ty - h * 0.06, tw, h * 0.055], BAR: [tx + tw - 10, vy(stallIas(30, 9) * 1.15), 12, ty + th - vy(stallIas(30, 9) * 1.15)],
+        TREND: [tx + tw - 30, vy(kias + 16) - 4, 16, cy - vy(kias + 16) + 6], REF: [tx + tw * 0.35, vy(P.vref + 12), tw * 0.68, vy(P.vref - 3) - vy(P.vref + 12)],
+        FLREF: [tx - 2, ty + th + h * 0.015, tw + 6, h * 0.05], ALT: [ax, cy - th * 0.07, awd + 8, th * 0.14], SALT: [ax, ty - h * 0.06, awd + 6, h * 0.055],
+        BARO: [ax - 4, ty + th + h * 0.015, awd + 10, h * 0.05], VS: [w * 0.89, cy - th * 0.45, w * 0.1, th * 0.9],
+        ILS: [cx - aw / 2 - w * 0.025, h * 0.105, w * 0.2, h * 0.1], DIAM: [cx - aw * 0.25, cy - ah * 0.24, aw * 0.75, ah * 0.74],
+        MINS: [cx + aw / 2 - w * 0.09, h * 0.105, w * 0.1, h * 0.08], RA: [cx - aw * 0.16, cy + ah / 2 - ah * 0.27, aw * 0.32, ah * 0.14],
+        HDG: [cx - w * 0.2, h * 0.78, w * 0.4, h * 0.15], GS: [4, h * 0.85, w * 0.2, h * 0.045],
+      };
+      return PFD_INFO.map(([id, title, text]) => ({ id, title, text, box: g[id] }));
+    });
+  }
+  const EICAS_INFO = [
+    ['TAT', 'TAT', 'Temperatura total do ar: a do ar lá fora somada ao aquecimento por compressão com a velocidade. Serve, entre outras coisas, para o computador calcular o empuxo.'],
+    ['MODE', 'Modo e referência de empuxo', 'Em verde: TO (decolagem), CLB (subida) ou CRZ (cruzeiro). O número verde acima de cada motor é o N1 de referência desse modo, o valor que as manetes devem buscar.'],
+    ['N1', 'N1', 'Rotação do ventilador (fan) de cada motor, em % da rotação máxima. É o principal indicador de empuxo do 747-8 (motores GEnx). A fita enche de baixo para cima; o traço verde é a referência e o vermelho, o limite.'],
+    ['EGT', 'EGT', 'Temperatura dos gases do escapamento, em °C. Sobe com a potência; passar do traço vermelho estraga a turbina, por isso o piloto acompanha principalmente na decolagem.'],
+    ['MSG', 'Mensagens', 'Alertas e lembretes da tripulação. Vermelho = aviso (agir já, como CONFIG GEAR); âmbar = cuidado (atenção, como >FLAP LIMIT); branco = memo, só lembra uma situação normal (AUTOBRAKES RTO, SEATBELTS ON).'],
+    ['GEAR', 'Trem de pouso', 'DOWN em verde = as três pernas embaixo e travadas. UP = recolhido. Enquanto se mexe, a caixa fica hachurada em âmbar.'],
+    ['FLAPS', 'Flaps', 'Posição dos flaps (0 a 30). Só aparece quando eles não estão recolhidos. Fica magenta enquanto estão se movendo até a posição escolhida.'],
+    ['STAB', 'Compensador (STAB)', 'Posição do estabilizador horizontal, de ND (nariz para baixo) a NU (nariz para cima), em unidades. No chão aparece a faixa verde: o compensador precisa estar dentro dela para decolar, senão a buzina de configuração toca.'],
+    ['CAB', 'Altitude da cabine', 'CAB ALT é a "altitude" que os passageiros sentem lá dentro (a cabine é pressurizada; em cruzeiro fica perto de 7.000 ft). LDG ALT é a altitude do aeroporto de destino, para a pressurização se ajustar até o pouso.'],
+    ['PRESS', 'Pressurização', 'DUCT PRESS: pressão do ar tirado dos motores para os sistemas. RATE: quanto a cabine sobe ou desce por minuto. ΔP: diferença de pressão entre dentro e fora, em psi.'],
+    ['WT', 'Peso e combustível', 'GROSS WT é o peso total do avião e TOTAL FUEL o combustível a bordo, ambos em toneladas (KGS × 1000). O peso cai conforme o combustível é queimado.'],
+    ['SAT', 'SAT e temperatura do combustível', 'SAT é a temperatura do ar parado lá fora. FUEL TEMP é a do combustível nos tanques: em voos longos e frios, ele não pode chegar perto do ponto de congelamento.'],
+  ];
+  function eicasTeach(c, w, h) {
+    return sampled({ h: 0, V: 112 * KT, gamma: 0, theta: 0, phi: 0, ground: true, flap: 20, gear: 1, spool: 0.97, cab: 50, cabRate: 0, fuel: 150, fuel0: 150, ttrim: 0 }, 'decolagem', null, () => {
+      const kf = ctl.flaps, kt = ctl.thr; ctl.flaps = 20; ctl.thr = 1;
+      drawEICAS(c, 0, 0, w, h);
+      ctl.flaps = kf; ctl.thr = kt;
+      const fs = Math.min(h * 0.034, w * 0.042), ew = w * 0.66, rx = w * 0.69, gw = w * 0.15, gh = fs * 1.45, gy = h * 0.5;
+      const g = {
+        TAT: [4, 2, fs * 5.2, fs * 2.2], MODE: [6, 2, ew, fs * 3.4], N1: [4, fs * 3.1, ew + 4, h * 0.5 - fs * 3.1 + 4],
+        EGT: [4, h * 0.53, ew + 4, h * 0.235], MSG: [rx - 4, h * 0.1, w - rx, h * 0.14], GEAR: [rx - 4, gy - 4, gw + 8, gh + fs * 1.6],
+        FLAPS: [rx + gw / 2 - fs * 2.4, gy + gh + fs * 1.6, fs * 3.8, h * 0.78 - (gy + gh + fs * 1.6) + 4], STAB: [w - fs * 4.6 - 3, h * 0.46, fs * 4.6, h * 0.3],
+        CAB: [4, h * 0.805, w * 0.33, h * 0.075], PRESS: [w * 0.35, h * 0.805, w * 0.3, h * 0.075], WT: [w * 0.62, h * 0.805, w * 0.375, h * 0.075], SAT: [w * 0.38, h * 0.875, w * 0.615, h * 0.05],
+      };
+      return EICAS_INFO.map(([id, title, text]) => ({ id, title, text, box: g[id] }));
+    });
+  }
+
   // EICAS no formato de fitas verticais (como na foto do painel): para cada motor, caixa com o valor,
   // fita que enche de baixo para cima, traço vermelho do limite e, no N1, o traço verde da referência
   function tape(c, cx, top, bh, frac, refFrac, redFrac, val, bw, fsz) {
@@ -1018,7 +1104,7 @@ function create(ctl) {
   start('cruzeiro');
   return {
     id: 'b747', flaps: DET, flapLabel: (f) => String(f), scenarios: SCENARIOS, defaultScenario: 'cruzeiro',
-    start, step, size, draw, minisHTML, minis, explain, warn, trim, takeover, demo: () => !!demo, ndTeach,
+    start, step, size, draw, minisHTML, minis, explain, warn, trim, takeover, demo: () => !!demo, ndTeach, pfdTeach, eicasTeach,
     trimText: () => `${s.ttrim >= 0 ? '+' : ''}${s.ttrim.toFixed(1)}°`,
     n1: () => n1Of(ctl.thr),
   };

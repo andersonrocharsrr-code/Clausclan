@@ -1090,14 +1090,21 @@ window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
 /* ---------------- Menu (canto superior direito) e aula do ND ---------------- */
 // A aula usa o ND do 747-8 desenhado numa situação de exemplo; cada página destaca uma informação
 // e escurece o resto, sem tirar o ND da tela.
+const PANEL_LESSONS = {
+  nd: { fn: 'ndTeach', title: 'Aula · ND do 747-8', W: 520, H: 480 },
+  pfd: { fn: 'pfdTeach', title: 'Aula · PFD do 747-8', W: 440, H: 475 },
+  eicas: { fn: 'eicasTeach', title: 'Aula · EICAS do 747-8', W: 440, H: 475 },
+};
 const nd = { base: null, items: [], i: 0, W: 520, H: 480 };
 const rrect = (c, x, y, w, h) => (c.roundRect ? c.roundRect(x, y, w, h, 8) : c.rect(x, y, w, h));
-function ndLessonBuild() {
-  const T = CK.b747; if (!T || !T.ndTeach) return false;
+function ndLessonBuild(kind) {
+  const T = CK.b747, L = PANEL_LESSONS[kind]; if (!T || !L || !T[L.fn]) return false;
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  nd.W = L.W; nd.H = L.H; nd.dpr = dpr;
   nd.base = document.createElement('canvas'); nd.base.width = nd.W * dpr; nd.base.height = nd.H * dpr;
   const bc = nd.base.getContext('2d'); bc.scale(dpr, dpr);
-  nd.items = T.ndTeach(bc, nd.W, nd.H); nd.dpr = dpr;
+  nd.items = T[L.fn](bc, nd.W, nd.H);
+  $('#ndLessonCanvas').style.aspectRatio = `${nd.W} / ${nd.H}`;
   $('#ndDots').innerHTML = nd.items.map(() => '<i></i>').join('');
   return true;
 }
@@ -1122,8 +1129,8 @@ function panelMenu() {
   $('#panelMenu').hidden = false; $('#lessonND').hidden = true;
 }
 function openLesson(id) {
-  if (id !== 'nd' || !ndLessonBuild()) return;
-  $('#panelTitle').textContent = 'Aula · ND do 747-8'; $('#panelBack').hidden = false;
+  if (!ndLessonBuild(id)) return;
+  $('#panelTitle').textContent = PANEL_LESSONS[id].title; $('#panelBack').hidden = false;
   $('#panelMenu').hidden = true; $('#lessonND').hidden = false;
   ndLessonShow(0);
 }
