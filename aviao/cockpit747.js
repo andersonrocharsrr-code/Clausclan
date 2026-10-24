@@ -605,7 +605,7 @@ function create(ctl) {
     const geo = {
       GS: [[fs * 6.4, 16], box(4, 2, fs * 5.6, h * 0.05)],
       TAS: [[fs * 6.4, 16 + h * 0.052], box(4, 4 + h * 0.03, fs * 5.6, h * 0.05)],
-      WIND: [[fs * 7, 16 + h * 0.105], box(4, 6 + h * 0.08, fs * 6.4, h * 0.17)],
+      WIND: [[fs * 7, 16 + h * 0.105], box(4, 16 + h * 0.079, fs * 6.4, h * 0.16)],
       TRK: [[cx, 6 + bh + 8], box(cx - bw / 2 - fs * 2.6, 2, bw + fs * 5.2, bh + 8)],
       RANGE: [[rxb + w * 0.0425, 6 + bh + 8], box(rxb - 4, 2, w * 0.085 + 8, bh + 8)],
       NEXT: [[w - fs * 6.6, 16 + h * 0.05], box(w - fs * 6.4, 2, fs * 6.4 - 2, h * 0.13)],

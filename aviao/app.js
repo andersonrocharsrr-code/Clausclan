@@ -295,7 +295,6 @@ function showTab(id, push) {
   $$('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === id)));
   if (push) { try { history.replaceState(null, '', '#' + id); } catch {} }
   if (id === 'cockpit') { sizeGauges(); startSim(); }
-  if (typeof updateNdTab === 'function') updateNdTab();
   if (id === 'lab') { sizeTunnel(); startTunnel(); }
   window.scrollTo({ top: 0 });
 }
@@ -795,7 +794,6 @@ function setCockpit(id) {
   c.start(c.defaultScenario);
   lastExplain = '';
   syncControls(); sizeGauges(); explain();
-  updateNdTab();
 }
 $('#ckList').innerHTML = Object.values(CK).map((c) => `<button type="button" class="craft" data-ck="${c.id}" aria-pressed="false"><b>${c.nome}</b><span>${c.sub}</span></button>`).join('');
 $('#ckList').addEventListener('click', (e) => {
@@ -1089,59 +1087,81 @@ new MutationObserver(readColors).observe(document.documentElement, { attributes:
 window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
 
 // No APK (Capacitor): margens da barra de status e botão voltar do Android.
-/* ---------------- Aula do ND (gaveta da esquerda) ---------------- */
-// A aba só aparece no cockpit de um avião que tenha a aula (o 747-8).
-function updateNdTab() {
-  const ok = current === 'cockpit' && !!C().ndTeach;
-  $('#ndTab').hidden = !ok;
-  if (!ok) closeNdGuide();
+/* ---------------- Menu (canto superior direito) e aula do ND ---------------- */
+// A aula usa o ND do 747-8 desenhado numa situação de exemplo; cada página destaca uma informação
+// e escurece o resto, sem tirar o ND da tela.
+const nd = { base: null, items: [], i: 0, W: 520, H: 480 };
+const rrect = (c, x, y, w, h) => (c.roundRect ? c.roundRect(x, y, w, h, 8) : c.rect(x, y, w, h));
+function ndLessonBuild() {
+  const T = CK.b747; if (!T || !T.ndTeach) return false;
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  nd.base = document.createElement('canvas'); nd.base.width = nd.W * dpr; nd.base.height = nd.H * dpr;
+  const bc = nd.base.getContext('2d'); bc.scale(dpr, dpr);
+  nd.items = T.ndTeach(bc, nd.W, nd.H); nd.dpr = dpr;
+  $('#ndDots').innerHTML = nd.items.map(() => '<i></i>').join('');
+  return true;
 }
-function buildNdGuide() {
-  const W = 520, H = 480, dpr = Math.min(window.devicePixelRatio || 1, 3);
-  const off = document.createElement('canvas'); off.width = W * dpr; off.height = H * dpr;
-  const oc = off.getContext('2d'); oc.scale(dpr, dpr);
-  const items = C().ndTeach(oc, W, H);
-  // mapa com os marcadores numerados
-  const map = $('#ndGuideMap'); map.width = W * dpr; map.height = H * dpr;
-  const mc = map.getContext('2d'); mc.drawImage(off, 0, 0);
-  mc.scale(dpr, dpr);
+function ndLessonShow(i) {
+  nd.i = Math.max(0, Math.min(nd.items.length - 1, i));
+  const it = nd.items[nd.i], cv = $('#ndLessonCanvas'), dpr = nd.dpr;
+  cv.width = nd.W * dpr; cv.height = nd.H * dpr;
+  const c = cv.getContext('2d'); c.drawImage(nd.base, 0, 0); c.scale(dpr, dpr);
+  const pad = 5, [bx, by, bw, bh] = [it.box[0] - pad, it.box[1] - pad, it.box[2] + pad * 2, it.box[3] + pad * 2];
   const pink = getComputedStyle(document.documentElement).getPropertyValue('--magenta').trim() || '#f06aae';
-  items.forEach((it) => {
-    const [mx, my] = it.at;
-    mc.fillStyle = pink; mc.strokeStyle = '#05070a'; mc.lineWidth = 2;
-    mc.beginPath(); mc.arc(mx, my, 10, 0, Math.PI * 2); mc.fill(); mc.stroke();
-    mc.fillStyle = '#fff'; mc.font = '700 11px "IBM Plex Mono", monospace'; mc.textAlign = 'center'; mc.textBaseline = 'middle';
-    mc.fillText(String(it.n), mx, my + 0.5);
-  });
-  // um cartão por informação, com o recorte ampliado do ND
-  $('#ndGuideList').innerHTML = items.map((it) => `<li class="nd-item"><h3><span class="nd-item__n">${it.n}</span>${it.title}</h3><canvas data-n="${it.n}"></canvas><p>${it.text}</p></li>`).join('');
-  items.forEach((it) => {
-    const [bx, by, bw, bh] = it.box.map((v) => Math.max(0, v));
-    const cv = $(`#ndGuideList canvas[data-n="${it.n}"]`), zoom = Math.min(2.2, 300 / bw);
-    cv.width = Math.round(bw * zoom * dpr); cv.height = Math.round(bh * zoom * dpr);
-    cv.style.width = Math.round(bw * zoom) + 'px';
-    cv.getContext('2d').drawImage(off, bx * dpr, by * dpr, bw * dpr, bh * dpr, 0, 0, cv.width, cv.height);
-  });
+  // escurece tudo menos a informação da página
+  c.fillStyle = 'rgba(0, 0, 0, .62)'; c.beginPath(); c.rect(0, 0, nd.W, nd.H); rrect(c, bx, by, bw, bh); c.fill('evenodd');
+  c.strokeStyle = pink; c.lineWidth = 3; c.shadowColor = pink; c.shadowBlur = 10;
+  c.beginPath(); rrect(c, bx, by, bw, bh); c.stroke(); c.shadowBlur = 0;
+  $('#ndCount').textContent = `${nd.i + 1} de ${nd.items.length}`;
+  $('#ndTitle').textContent = it.title; $('#ndText').textContent = it.text;
+  $$('#ndDots i').forEach((d, k) => d.classList.toggle('on', k === nd.i));
+  $('#ndPrev').disabled = nd.i === 0; $('#ndNext').disabled = nd.i === nd.items.length - 1;
 }
-function openNdGuide() {
-  if (!C().ndTeach) return;
-  buildNdGuide();
-  $('#ndDrawer').classList.add('is-open'); $('#ndDrawer').setAttribute('aria-hidden', 'false');
-  $('#ndBackdrop').hidden = false; $('#ndTab').setAttribute('aria-expanded', 'true');
-  document.body.classList.add('drawer-lock');
-  $('#ndClose').focus();
+function panelMenu() {
+  $('#panelTitle').textContent = 'Menu'; $('#panelBack').hidden = true;
+  $('#panelMenu').hidden = false; $('#lessonND').hidden = true;
 }
-function closeNdGuide() {
-  if (!$('#ndDrawer').classList.contains('is-open')) return false;
-  $('#ndDrawer').classList.remove('is-open'); $('#ndDrawer').setAttribute('aria-hidden', 'true');
-  $('#ndBackdrop').hidden = true; $('#ndTab').setAttribute('aria-expanded', 'false');
+function openLesson(id) {
+  if (id !== 'nd' || !ndLessonBuild()) return;
+  $('#panelTitle').textContent = 'Aula · ND do 747-8'; $('#panelBack').hidden = false;
+  $('#panelMenu').hidden = true; $('#lessonND').hidden = false;
+  ndLessonShow(0);
+}
+function openPanel() {
+  panelMenu();
+  $('#sidePanel').classList.add('is-open'); $('#sidePanel').setAttribute('aria-hidden', 'false');
+  $('#panelBackdrop').hidden = false; $('#menuBtn').setAttribute('aria-expanded', 'true');
+  document.body.classList.add('drawer-lock'); $('#panelClose').focus();
+}
+function closePanel() {
+  if (!$('#sidePanel').classList.contains('is-open')) return false;
+  $('#sidePanel').classList.remove('is-open'); $('#sidePanel').setAttribute('aria-hidden', 'true');
+  $('#panelBackdrop').hidden = true; $('#menuBtn').setAttribute('aria-expanded', 'false');
   document.body.classList.remove('drawer-lock');
   return true;
 }
-$('#ndTab').addEventListener('click', openNdGuide);
-$('#ndClose').addEventListener('click', () => { closeNdGuide(); $('#ndTab').focus(); });
-$('#ndBackdrop').addEventListener('click', closeNdGuide);
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeNdGuide(); });
+$('#menuBtn').addEventListener('click', openPanel);
+$('#panelClose').addEventListener('click', () => { closePanel(); $('#menuBtn').focus(); });
+$('#panelBackdrop').addEventListener('click', closePanel);
+$('#panelBack').addEventListener('click', panelMenu);
+$('#panelMenu').addEventListener('click', (e) => { const b = e.target.closest('[data-lesson]'); if (b) openLesson(b.dataset.lesson); });
+$('#ndPrev').addEventListener('click', () => ndLessonShow(nd.i - 1));
+$('#ndNext').addEventListener('click', () => ndLessonShow(nd.i + 1));
+document.addEventListener('keydown', (e) => {
+  if (!$('#sidePanel').classList.contains('is-open')) return;
+  if (e.key === 'Escape') closePanel();
+  if (!$('#lessonND').hidden && e.key === 'ArrowRight') ndLessonShow(nd.i + 1);
+  if (!$('#lessonND').hidden && e.key === 'ArrowLeft') ndLessonShow(nd.i - 1);
+});
+// arrastar para o lado passa a página, como num livro
+let swipeX = null, swipeY = 0;
+$('#lessonND').addEventListener('pointerdown', (e) => { swipeX = e.clientX; swipeY = e.clientY; });
+$('#lessonND').addEventListener('pointerup', (e) => {
+  if (swipeX === null) return;
+  const dx = e.clientX - swipeX, dy = e.clientY - swipeY; swipeX = null;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) ndLessonShow(nd.i + (dx < 0 ? 1 : -1));
+});
+$('#lessonND').addEventListener('pointercancel', () => { swipeX = null; });
 
 const Cap = window.Capacitor;
 const NATIVE = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -1151,7 +1171,8 @@ if (NATIVE) {
   // Voltar: volta para a vista de cima, depois para a primeira aba, depois minimiza.
   AppPlugin?.addListener('backButton', () => {
     hideHint();
-    if (closeNdGuide()) return;
+    if (!$('#lessonND').hidden && $('#sidePanel').classList.contains('is-open')) { panelMenu(); return; }
+    if (closePanel()) return;
     if (current === 'pecas' && planeView !== 'top') { setPlaneView('top'); return; }
     if (current !== 'pecas') { showTab('pecas', true); return; }
     AppPlugin.minimizeApp();

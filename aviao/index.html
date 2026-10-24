@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=34">
+  <link rel="stylesheet" href="style.css?v=35">
 </head>
 <body>
   <header class="top">
@@ -25,9 +25,12 @@
         <span class="brand__name">Hangar Escola</span>
         <span class="brand__reg">PT-APR</span>
       </a>
-      <div class="progress-chip" id="progressChip" title="Lições concluídas">
-        <span id="progressTxt">0/8 lições</span>
-        <span class="progress-chip__bar"><span id="progressBar"></span></span>
+      <div class="top__right">
+        <div class="progress-chip" id="progressChip" title="Lições concluídas">
+          <span id="progressTxt">0/8 lições</span>
+          <span class="progress-chip__bar"><span id="progressBar"></span></span>
+        </div>
+        <button type="button" class="menu-btn" id="menuBtn" aria-label="Abrir o menu" aria-controls="sidePanel" aria-expanded="false"><span></span><span></span><span></span></button>
       </div>
     </div>
     <nav class="tabs" aria-label="Seções">
@@ -548,24 +551,36 @@
   </main>
 
   <footer class="wrap foot small">Conteúdo educativo. Para voar de verdade, siga o manual da aeronave (POH) e um instrutor habilitado.</footer>
-  <!-- Aula do ND: aba presa no canto esquerdo (só no cockpit do 747-8) que abre uma gaveta -->
-  <button type="button" class="guide-tab" id="ndTab" hidden aria-controls="ndDrawer" aria-expanded="false">Aprender o ND</button>
-  <div class="drawer-backdrop" id="ndBackdrop" hidden></div>
-  <aside class="drawer" id="ndDrawer" aria-label="Aprender o ND" aria-hidden="true">
-    <header class="drawer__head">
-      <div><p class="eyebrow mono small">Aula · 747-8</p><h2>Navigation Display (ND)</h2></div>
-      <button type="button" class="drawer__close" id="ndClose" aria-label="Fechar">×</button>
+  <!-- Menu do canto superior direito: aulas, como a do ND (folheada página por página) -->
+  <div class="drawer-backdrop" id="panelBackdrop" hidden></div>
+  <aside class="side-panel" id="sidePanel" aria-label="Menu" aria-hidden="true">
+    <header class="side-panel__head">
+      <button type="button" class="side-panel__btn" id="panelBack" aria-label="Voltar ao menu" hidden>‹</button>
+      <h2 id="panelTitle">Menu</h2>
+      <button type="button" class="side-panel__btn" id="panelClose" aria-label="Fechar o menu">×</button>
     </header>
-    <div class="drawer__body">
-      <p class="drawer__lede">O ND é a tela de navegação: um mapa visto de cima, com o avião embaixo e o caminho à frente. Os números no desenho abaixo mostram onde fica cada informação; role para ver para que serve cada uma.</p>
-      <canvas id="ndGuideMap" class="drawer__map" aria-label="ND com as informações numeradas"></canvas>
-      <ol class="nd-items" id="ndGuideList"></ol>
-    </div>
+    <nav class="side-panel__menu" id="panelMenu">
+      <p class="eyebrow mono small">Aulas</p>
+      <button type="button" class="menu-item" data-lesson="nd"><b>Navigation Display (ND)</b><span>Boeing 747-8 · para que serve cada informação da tela de navegação</span></button>
+    </nav>
+    <section class="lesson" id="lessonND" hidden aria-roledescription="carrossel">
+      <canvas id="ndLessonCanvas" class="lesson__screen" aria-label="ND com a informação atual destacada"></canvas>
+      <div class="lesson__card" aria-live="polite">
+        <p class="lesson__count mono small" id="ndCount"></p>
+        <h3 id="ndTitle"></h3>
+        <p id="ndText"></p>
+      </div>
+      <div class="lesson__nav">
+        <button type="button" class="lesson__arrow" id="ndPrev">‹ Anterior</button>
+        <div class="lesson__dots" id="ndDots" aria-hidden="true"></div>
+        <button type="button" class="lesson__arrow" id="ndNext">Próxima ›</button>
+      </div>
+    </section>
   </aside>
-  <script src="avioes.js?v=34"></script>
-  <script src="catalogo747.js?v=34"></script>
-  <script src="cockpit747.js?v=34"></script>
-  <script src="app.js?v=34"></script>
+  <script src="avioes.js?v=35"></script>
+  <script src="catalogo747.js?v=35"></script>
+  <script src="cockpit747.js?v=35"></script>
+  <script src="app.js?v=35"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
