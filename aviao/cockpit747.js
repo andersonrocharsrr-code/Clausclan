@@ -134,6 +134,7 @@ function create(ctl) {
   };
   // manche leva o nariz à atitude tt (graus); com trim > 0 o compensador vai aliviando o manche (°/s)
   function flyTheta(tt, dt, trim = 0) {
+    s.fdPitch = tt;
     s.ttrim += clamp(tt - s.ttrim, -1, 1) * trim * dt;
     ctl.elev = clamp((tt - s.ttrim) / 12, -1, 1);
   }
@@ -343,6 +344,29 @@ function create(ctl) {
     return { dist, brg, loc, ahead, gsDev: hft() - (dist * 318 + 50) };
   }
 
+  /* modos do piloto automático (FMA): [manetes, rolagem, arfagem] e o estado do AFDS embaixo.
+     Com o piloto de demonstração voando aparece CMD (ou LAND 3 na aproximação final); sem ele, FD. */
+  function fma() {
+    const hf = hft();
+    let m;
+    if (sc === 'decolagem') m = s.ground ? ['THR REF', 'TO/GA', 'TO/GA'] : hf < 1000 ? ['THR REF', 'LNAV', 'TO/GA'] : ['THR REF', 'LNAV', 'VNAV SPD'];
+    else if (sc === 'cruzeiro') m = ['SPD', 'LNAV', 'VNAV PTH'];
+    else if (sc === 'aproximacao') m = s.ground ? ['IDLE', 'ROLLOUT', ''] : demo === 'flare' ? ['IDLE', 'LOC', 'FLARE'] : ['SPD', 'LOC', 'G/S'];
+    else m = demo === 'entry' ? ['HOLD', 'HDG HOLD', 'ALT'] : demo ? ['THR', 'HDG HOLD', 'FLCH SPD'] : ['', 'HDG HOLD', ''];
+    const st = !demo ? 'FD' : sc === 'aproximacao' && hf < 1500 ? 'LAND 3' : 'CMD';
+    return { m, st };
+  }
+  let fmaPrev = ['', '', '', ''], fmaT = [0, 0, 0, 0];
+  // velocidade e altitude selecionadas no painel do piloto automático (MCP), em magenta no PFD
+  function mcp() {
+    const hf = hft();
+    if (sc === 'decolagem') return { spd: hf < 1000 ? P.v2 + 10 : 250, alt: 13000, hdg: 90 };
+    if (sc === 'cruzeiro') return { spd: 260, alt: 37000, hdg: 90 };
+    if (sc === 'aproximacao') return { spd: 157, alt: 3000, hdg: 90 };
+    return { spd: 180, alt: 10000, hdg: 90 };
+  }
+  // velocidades de manobra de cada posição de flap (referência VREF 30 + margem), mostradas na fita
+  const FLAP_SPD = { 0: ['UP', 80], 1: ['1', 60], 5: ['5', 40], 10: ['10', 30], 20: ['20', 20], 25: ['25', 10] };
   function drawPFD(c, x, y, w, h) {
     frame(c, x, y, w, h, 'PFD · TELA DE VOO PRINCIPAL');
     const kias = ias(), alt = hft(), vs = fpm();
@@ -378,6 +402,15 @@ function create(ctl) {
     c.beginPath(); c.moveTo(bx - 7, -R + 13); c.lineTo(bx + 7, -R + 13); c.lineTo(bx + 8, -R + 17); c.lineTo(bx - 8, -R + 17); c.closePath();
     if (bankOver) c.fill(); else c.stroke();
     c.restore();
+    // barras do diretor de voo (magenta): a horizontal mostra a atitude pedida, a vertical a inclinação pedida
+    {
+      const pd = demo && s.fdPitch != null ? clamp((s.fdPitch - s.theta) * ppd, -ah * 0.35, ah * 0.35) : 0;
+      const rd = clamp(-s.phi * aw * 0.006, -aw * 0.3, aw * 0.3);
+      c.save(); c.translate(cx, cy); c.strokeStyle = COL.magenta; c.lineWidth = 3;
+      c.beginPath(); c.moveTo(-aw * 0.28, -pd); c.lineTo(aw * 0.28, -pd); c.moveTo(rd, -ah * 0.3); c.lineTo(rd, ah * 0.3); c.stroke(); c.restore();
+    }
+    if (sc === 'aproximacao') { const g0 = rwyGeom(); ['ILS09', '110.30', `DME ${g0.dist.toFixed(1)}`].forEach((t, k) => txt(c, t, cx - aw / 2 + 6, cy - ah / 2 + 10 + k * h * 0.032, F(h * 0.028, 600), k ? COL.white : COL.magenta, 'left')); }
+    else txt(c, 'FMC', cx - aw / 2 + 6, cy - ah / 2 + 10, F(h * 0.03, 600), COL.white, 'left');
     // símbolo do avião (fixo)
     c.save(); c.translate(cx, cy);
     c.fillStyle = '#000'; c.strokeStyle = COL.white; c.lineWidth = 1.6;
@@ -420,6 +453,13 @@ function create(ctl) {
     const bug = (v, t) => { c.strokeStyle = COL.green; c.beginPath(); c.moveTo(tx + tw - 7, vy(v)); c.lineTo(tx + tw, vy(v)); c.stroke(); txt(c, t, tx + tw - 2, vy(v) - 6, F(th * 0.04, 600), COL.green, 'right'); };
     if (sc === 'decolagem' && kias < 230) { bug(P.v1, 'V1'); bug(P.vr, 'VR'); bug(P.v2, 'V2'); }
     if (sc === 'aproximacao') bug(P.vref, 'REF');
+    // velocidades de manobra: a da posição atual e a da próxima acima (só em voo)
+    if (!s.ground) {
+      const dets = [0, 1, 5, 10, 20, 25], cur = ctl.flaps, nxt = dets.filter((d) => d < cur).pop();
+      [cur, nxt].forEach((d) => { if (d == null || !FLAP_SPD[d]) return; const v = P.vref + FLAP_SPD[d][1]; c.strokeStyle = COL.green; c.lineWidth = 1.5; c.beginPath(); c.moveTo(tx + tw - 7, vy(v)); c.lineTo(tx + tw, vy(v)); c.stroke(); txt(c, FLAP_SPD[d][0], tx + tw - 9, vy(v), F(th * 0.042, 600), COL.green, 'right'); });
+    }
+    // marcador da velocidade selecionada (magenta, preso na borda da fita se estiver fora)
+    { const yv = clamp(vy(mcp().spd), ty + 4, ty + th - 4); c.strokeStyle = COL.magenta; c.lineWidth = 2; c.beginPath(); c.moveTo(tx + tw, yv - 6); c.lineTo(tx + tw - 8, yv - 6); c.lineTo(tx + tw - 8, yv + 6); c.lineTo(tx + tw, yv + 6); c.moveTo(tx + tw - 8, yv); c.lineTo(tx + tw - 3, yv); c.stroke(); }
     // vetor de tendência: onde a velocidade estará em 10 s
     const tv = clamp(trend * 10, -60, 60);
     if (Math.abs(tv) > 2) { c.strokeStyle = COL.green; c.lineWidth = 2; c.beginPath(); c.moveTo(tx + tw - 22, cy); c.lineTo(tx + tw - 22, vy(kias + tv)); c.stroke(); }
@@ -441,6 +481,7 @@ function create(ctl) {
       c.beginPath(); c.moveTo(ax, ay(a)); c.lineTo(ax + 7, ay(a)); c.stroke();
       if (a % 200 === 0) txt(c, a, ax + 10, ay(a), F(th * 0.05), COL.white, 'left');
     }
+    { const ya = clamp(ay(mcp().alt), ty + 4, ty + th - 4); c.strokeStyle = COL.magenta; c.lineWidth = 2; c.beginPath(); c.moveTo(ax, ya - 7); c.lineTo(ax + 9, ya - 7); c.lineTo(ax + 9, ya + 7); c.lineTo(ax, ya + 7); c.moveTo(ax + 2, ya); c.lineTo(ax + 8, ya); c.stroke(); }
     c.restore();
     c.fillStyle = '#000'; c.strokeStyle = COL.white; rr(c, ax + 3, cy - th * 0.055, awd + 4, th * 0.11, 3); c.fill(); c.stroke();
     const a10 = Math.max(0, Math.round(alt / 20) * 20);
@@ -462,11 +503,34 @@ function create(ctl) {
     c.fillStyle = COL.gray; c.beginPath(); c.arc(rcx, rcy, rr2, 0, Math.PI * 2); c.fill();
     c.translate(rcx, rcy); c.rotate(-s.psi * D2R); c.strokeStyle = COL.white; c.lineWidth = 1.3;
     for (let d = 0; d < 360; d += 5) { c.save(); c.rotate(d * D2R); c.beginPath(); c.moveTo(0, -rr2); c.lineTo(0, -rr2 + (d % 10 ? 5 : 9)); c.stroke(); if (d % 30 === 0) txt(c, d / 10, 0, -rr2 + 18, F(h * 0.034, 600), COL.white); c.restore(); }
+    c.save(); c.rotate(mcp().hdg * D2R); c.strokeStyle = COL.magenta; c.lineWidth = 2; c.beginPath(); c.moveTo(-7, -rr2 - 1); c.lineTo(-7, -rr2 + 6); c.lineTo(-3, -rr2 + 6); c.lineTo(0, -rr2 + 2); c.lineTo(3, -rr2 + 6); c.lineTo(7, -rr2 + 6); c.lineTo(7, -rr2 - 1); c.stroke(); c.restore();
     c.restore();
     c.fillStyle = '#000'; c.strokeStyle = COL.white; rr(c, cx - w * 0.055, y + h * 0.79, w * 0.11, h * 0.05, 3); c.fill(); c.stroke();
     txt(c, String(Math.round(s.psi) % 360).padStart(3, '0'), cx, y + h * 0.815, F(h * 0.036, 600), COL.white);
-    // modos (piloto automático desligado)
-    txt(c, 'A/T OFF   VOO MANUAL', cx, y + h * 0.065, F(h * 0.032, 600), COL.green);
+    txt(c, 'MAG', cx + w * 0.065, y + h * 0.815, F(h * 0.028, 600), COL.green, 'left');
+    txt(c, `H ${String(mcp().hdg).padStart(3, '0')}`, cx - w * 0.065, y + h * 0.815, F(h * 0.028, 600), COL.magenta, 'right');
+    // FMA: três colunas (manetes | rolagem | arfagem); um modo novo ganha uma caixa branca por 10 s
+    const { m, st } = fma(), now = Date.now(), fcw = aw * 1.2 / 3, fx0 = cx - fcw * 1.5, fyy = y + h * 0.055;
+    c.strokeStyle = '#5b666f'; c.lineWidth = 1.2;
+    [1, 2].forEach((k) => { c.beginPath(); c.moveTo(fx0 + fcw * k, y + h * 0.025); c.lineTo(fx0 + fcw * k, y + h * 0.085); c.stroke(); });
+    m.concat(st).forEach((t, k) => {
+      if (t !== fmaPrev[k]) { fmaPrev[k] = t; fmaT[k] = now; }
+      const fxk = k < 3 ? fx0 + fcw * (k + 0.5) : cx, fyk = k < 3 ? fyy : y + h * 0.13, fsz = k < 3 ? h * 0.032 : h * 0.04;
+      if (!t) return;
+      txt(c, t, fxk, fyk, F(fsz, 600), COL.green);
+      if (now - fmaT[k] < 10000 && k < 3) { c.font = F(fsz, 600); const tw2 = c.measureText(t).width + 8; c.strokeStyle = COL.white; c.lineWidth = 1.2; c.strokeRect(fxk - tw2 / 2, fyk - fsz * 0.7, tw2, fsz * 1.4); }
+    });
+    // velocidade e altitude selecionadas (magenta) em cima das fitas
+    const sel = mcp();
+    txt(c, String(sel.spd), tx + tw / 2, ty - h * 0.03, F(h * 0.042, 600), COL.magenta);
+    txt(c, String(sel.alt), ax + awd / 2 + 2, ty - h * 0.03, F(h * 0.042, 600), COL.magenta);
+    // GS no canto de baixo à esquerda
+    txt(c, `GS ${Math.round((s.gs == null ? s.V : s.gs) / KT)}`, x + 10, y + h * 0.87, F(h * 0.036, 600), COL.white, 'left');
+    // mínimos (BARO) na aproximação: ficam âmbar abaixo deles
+    if (sc === 'aproximacao') {
+      txt(c, 'BARO', cx + aw / 2 - 4, cy - ah / 2 + 10, F(h * 0.028, 600), COL.green, 'right');
+      txt(c, '200', cx + aw / 2 - 4, cy - ah / 2 + 10 + h * 0.035, F(h * 0.034, 600), alt < 200 && !s.ground ? COL.amber : COL.green, 'right');
+    }
   }
 
   // estrela de fixo (4 pontas)
