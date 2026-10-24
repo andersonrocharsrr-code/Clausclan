@@ -84,7 +84,7 @@ function create(ctl) {
   let sc = 'cruzeiro';
   let msg = null;          // mensagem temporária (pouso, cauda na pista)
   let iasPrev = 0, trend = 0, airborneOnce = false;
-  let demo = null, demoH = 0, demoT = 0, thrI = 0;   // piloto de demonstração (ver pilot())
+  let demo = null, demoH = 0, demoT = 0, thrI = 0, v1Said = false;   // piloto de demonstração (ver pilot())
 
   function start(id) {
     sc = id;
@@ -114,7 +114,7 @@ function create(ctl) {
     iasPrev = ias(); trend = 0; s.fuel0 = s.fuel;
     // decolagem, aproximação e estol começam com o piloto de demonstração voando; cruzeiro fica nivelado
     demo = { decolagem: 'roll', aproximacao: 'app', estol: 'entry' }[id] || null;
-    demoH = s.h; demoT = 0; thrI = ctl.thr;
+    demoH = s.h; demoT = 0; thrI = ctl.thr; v1Said = false;
   }
 
   /* ---------- piloto de demonstração ----------
@@ -216,6 +216,11 @@ function create(ctl) {
     const V = s.V, q = 0.5 * rho * V * V, M = V / a, W = P.m * G;
     const kias = V * Math.sqrt(rho / 1.225) / KT;
     if (demo) pilot(dt);
+    // V1 na corrida de decolagem: a voz avisa no instante em que a velocidade chega a V1
+    if (sc === 'decolagem' && s.ground && !v1Said && kias >= P.v1) {
+      v1Said = true; say('v1', 'V one');
+      msg = { t: 6, cls: '', txt: `V1 (${P.v1} kt): a partir daqui a decolagem continua mesmo se um motor falhar; não há mais pista para parar.` };
+    }
     // os motores a jato demoram alguns segundos para acelerar (spool)
     s.spool += (ctl.thr - s.spool) * dt * 0.35;
     s.flap += Math.sign(ctl.flaps - s.flap) * Math.min(Math.abs(ctl.flaps - s.flap), 3 * dt);
@@ -276,33 +281,38 @@ function create(ctl) {
   let bankStep = 0;
   function bankAlert() {
     const b = Math.abs(s.phi), step = b > 45 ? 3 : b > 40 ? 2 : b > 35 ? 1 : 0;
-    if (step > bankStep && !s.ground) say('Bank angle, bank angle');
+    if (step > bankStep && !s.ground) say('bank', 'Bank angle, bank angle');
     if (step > bankStep || b < 30) bankStep = step;
   }
-  // voz gravada do alerta real em assets/bank-angle.mp3 (o WebView do Android não tem síntese de voz). O celular só deixa
-  // tocar áudio depois de um toque: no primeiro toque na página o áudio é destravado tocando-o mudo.
-  const voice = typeof Audio !== 'undefined' ? new Audio('assets/bank-angle.mp3') : null;
-  if (voice && typeof document !== 'undefined') {
-    voice.preload = 'auto';
+  // vozes gravadas da cabine real (o WebView do Android não tem síntese de voz): "bank angle" e o "V1" da decolagem.
+  // O celular só deixa tocar áudio depois de um toque: no primeiro toque na página cada áudio é destravado tocando-o mudo.
+  const VOICES = { bank: 'assets/bank-angle.mp3', v1: 'assets/v1.mp3' };
+  const voices = {};
+  if (typeof Audio !== 'undefined' && typeof document !== 'undefined') {
+    Object.entries(VOICES).forEach(([k, src]) => { voices[k] = new Audio(src); voices[k].preload = 'auto'; });
     const unlock = () => {
-      voice.muted = true;
-      const p = voice.play();
-      const done = () => { voice.pause(); voice.currentTime = 0; voice.muted = false; ['pointerdown', 'touchend', 'keydown'].forEach((e) => document.removeEventListener(e, unlock, true)); };
-      if (p && p.then) p.then(done).catch(() => { voice.muted = false; }); else done();
+      let pending = 0;
+      Object.values(voices).forEach((a) => {
+        a.muted = true; pending++;
+        const p = a.play();
+        const done = () => { a.pause(); a.currentTime = 0; a.muted = false; if (--pending === 0) ['pointerdown', 'touchend', 'keydown'].forEach((e) => document.removeEventListener(e, unlock, true)); };
+        if (p && p.then) p.then(done).catch(() => { a.muted = false; }); else done();
+      });
     };
     ['pointerdown', 'touchend', 'keydown'].forEach((e) => document.addEventListener(e, unlock, true));
   }
-  function say(t) {
+  function say(key, t) {
     const speak = () => {
       try {
         const sp = window.speechSynthesis; if (!sp) return;
         const u = new SpeechSynthesisUtterance(t); u.lang = 'en-US'; u.rate = 1.05; sp.speak(u);
       } catch (e) { /* sem voz neste aparelho */ }
     };
-    if (!voice) return speak();
-    if (!voice.paused && !voice.ended && !voice.muted) return;   // ainda falando: não corta a frase
-    voice.muted = false; voice.currentTime = 0;
-    const p = voice.play();
+    const a = voices[key];
+    if (!a) return speak();
+    if (!a.paused && !a.ended && !a.muted) return;   // ainda falando: não corta a frase
+    a.muted = false; a.currentTime = 0;
+    const p = a.play();
     if (p && p.catch) p.catch(speak);
   }
   function touchdown() {
