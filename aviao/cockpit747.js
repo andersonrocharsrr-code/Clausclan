@@ -73,6 +73,11 @@ const SCENARIOS = [
   ['estol', 'Estol'],
 ];
 const RANGE = { decolagem: 10, cruzeiro: 40, aproximacao: 20, estol: 20 };
+// vento de cada cenário: [de onde vem (graus), nós]. Na aproximação e na decolagem é de frente (pista 09).
+const WIND = { decolagem: [90, 10], cruzeiro: [250, 85], aproximacao: [90, 14], estol: [300, 35] };
+// rota no ND: fixos ao longo da linha da pista 09 (x em milhas a leste da cabeceira)
+const WPTS = [['ARARA', -60], ['BRAVO', -25], ['RW09', 0], ['TAPIR', 30], ['URUBU', 90], ['VESPA', 170], ['XAXIM', 260]];
+const VOR = { id: 'ESC', x: -6, y: 2 };
 
 function create(ctl) {
   let s = {};
@@ -246,9 +251,15 @@ function create(ctl) {
       s.A = A;
       if (s.h <= 0) touchdown();
     }
-    const gs = s.V * Math.cos(s.gamma);
-    s.x += gs * Math.sin(s.psi * D2R) * dt / NM;
-    s.y += gs * Math.cos(s.psi * D2R) * dt / NM;
+    // vento: cresce do chão (calmo) até ~1000 ft e soma com a velocidade do ar para dar a velocidade no solo
+    const [wd, wk] = WIND[sc] || [0, 0], wf = Math.sqrt(clamp(s.h / 300, 0, 1)), wto = (wd + 180) * D2R;
+    s.wdir = wd; s.wspd = wk * wf;
+    const va = s.V * Math.cos(s.gamma);
+    const ve = va * Math.sin(s.psi * D2R) + s.wspd * KT * Math.sin(wto), vn = va * Math.cos(s.psi * D2R) + s.wspd * KT * Math.cos(wto);
+    s.gs = Math.hypot(ve, vn);
+    s.trk = s.gs > 1 ? (Math.atan2(ve, vn) / D2R + 360) % 360 : s.psi;
+    s.x += ve * dt / NM;
+    s.y += vn * dt / NM;
     s.fuel = Math.max(0, s.fuel - 4 * ffEngine() * dt / 3600 / 1000);
     s.ball = clamp(-ctl.rud * 0.7 + ctl.ail * 0.15, -1, 1);
     const now = ias();
@@ -455,52 +466,106 @@ function create(ctl) {
     txt(c, 'A/T OFF   VOO MANUAL', cx, y + h * 0.065, F(h * 0.032, 600), COL.green);
   }
 
+  // estrela de fixo (4 pontas)
+  function fix(c, px, py, r, col) {
+    c.strokeStyle = col; c.lineWidth = 1.4; c.beginPath();
+    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, rr2 = i % 2 ? r * 0.3 : r; c.lineTo(px + Math.sin(a) * rr2, py - Math.cos(a) * rr2); }
+    c.closePath(); c.stroke();
+  }
+  // ND no modo MAP com a trajetória para cima (TRK), como no 747-8
   function drawND(c, x, y, w, h) {
     frame(c, x, y, w, h, 'ND · NAVEGAÇÃO');
-    const cx = x + w / 2, cy = y + h * 0.8, R = Math.min(h * 0.6, w * 0.44), range = RANGE[sc] || 10;
-    const gs = s.V * Math.cos(s.gamma) / KT;
-    txt(c, `GS ${Math.round(gs)}`, x + 10, y + 16, F(h * 0.042, 600), COL.white, 'left');
-    txt(c, `TAS ${Math.round(s.V / KT)}`, x + 10, y + 16 + h * 0.055, F(h * 0.034), COL.white, 'left');
-    c.fillStyle = '#000'; c.strokeStyle = COL.white; c.lineWidth = 1.5; rr(c, cx - w * 0.09, y + 6, w * 0.18, h * 0.07, 3); c.fill(); c.stroke();
-    txt(c, String(Math.round(s.psi) % 360).padStart(3, '0'), cx, y + 6 + h * 0.037, F(h * 0.048, 600), COL.white);
-    txt(c, 'HDG', cx - w * 0.11, y + 6 + h * 0.037, F(h * 0.032, 600), COL.green, 'right');
-    txt(c, 'MAG', cx + w * 0.11, y + 6 + h * 0.037, F(h * 0.032, 600), COL.green, 'left');
+    const cx = x + w / 2, cy = y + h * 0.84, R = Math.min(h * 0.64, w * 0.46), range = RANGE[sc] || 10;
+    const trk = s.trk == null ? s.psi : s.trk, gsk = (s.gs == null ? s.V : s.gs) / KT, fs = h * 0.036;
+    // canto esquerdo: velocidade no solo, verdadeira e o vento com a seta
+    txt(c, 'GS', x + 10, y + 16, F(fs * 0.85, 600), COL.white, 'left');
+    txt(c, String(Math.round(gsk)), x + 10 + fs * 1.6, y + 16, F(fs * 1.25, 600), COL.white, 'left');
+    txt(c, 'TAS', x + 10, y + 16 + h * 0.052, F(fs * 0.85, 600), COL.white, 'left');
+    txt(c, String(Math.round(s.V / KT)), x + 10 + fs * 2.1, y + 16 + h * 0.052, F(fs, 600), COL.white, 'left');
+    if (s.wspd >= 1) {
+      const wy = y + 16 + h * 0.105;
+      txt(c, `${String(Math.round(s.wdir) % 360).padStart(3, '0')}°/ ${Math.round(s.wspd)}`, x + 10, wy, F(fs, 600), COL.white, 'left');
+      // a seta aponta para onde o vento sopra, na tela com a trajetória para cima
+      c.save(); c.translate(x + 10 + fs * 1.4, wy + h * 0.085); c.rotate((s.wdir + 180 - trk) * D2R);
+      const L = h * 0.05; c.strokeStyle = COL.white; c.fillStyle = COL.white; c.lineWidth = 2;
+      c.beginPath(); c.moveTo(0, L); c.lineTo(0, -L + 5); c.stroke();
+      c.beginPath(); c.moveTo(0, -L); c.lineTo(-5, -L + 8); c.lineTo(5, -L + 8); c.closePath(); c.fill();
+      c.restore();
+    }
+    // centro: alcance, trajetória e o norte magnético
+    const bw = w * 0.17, by = y + 6, bh = h * 0.07;
+    c.fillStyle = '#000'; c.strokeStyle = COL.white; c.lineWidth = 1.5; rr(c, cx - bw / 2, by, bw, bh, 2); c.fill(); c.stroke();
+    txt(c, String(Math.round(trk) % 360).padStart(3, '0'), cx, by + bh / 2 + 1, F(h * 0.05, 600), COL.white);
+    txt(c, 'TRK', cx - bw / 2 - 4, by + bh / 2, F(fs * 0.9, 600), COL.green, 'right');
+    txt(c, 'MAG', cx + bw / 2 + 4, by + bh / 2, F(fs * 0.9, 600), COL.green, 'left');
+    if (w > 300) {
+      const rx = cx - bw / 2 - fs * 2.6 - w * 0.1;
+      c.strokeStyle = COL.white; c.lineWidth = 1; c.strokeRect(rx, by, w * 0.085, bh);
+      txt(c, 'RANGE', rx + w * 0.0425, by + bh * 0.3, F(fs * 0.5, 600), COL.white);
+      txt(c, String(range), rx + w * 0.0425, by + bh * 0.72, F(fs * 0.75, 600), COL.white);
+    }
+    // canto direito: próximo fixo (magenta), distância e hora estimada (UTC)
+    const nxt = WPTS.find(([, wx]) => wx > s.x + 0.05);
+    if (nxt) {
+      const dist = Math.hypot(nxt[1] - s.x, s.y), eta = new Date(Date.now() + dist / Math.max(gsk, 60) * 3600e3);
+      txt(c, nxt[0], x + w - 10, y + 16, F(fs * 1.05, 600), COL.magenta, 'right');
+      txt(c, `${dist < 10 ? dist.toFixed(1) : Math.round(dist)}NM`, x + w - 10, y + 16 + h * 0.052, F(fs, 600), COL.white, 'right');
+      txt(c, `${String(eta.getUTCHours()).padStart(2, '0')}${String(eta.getUTCMinutes()).padStart(2, '0')}.${Math.floor(eta.getUTCSeconds() / 6)}z`, x + w - 10, y + 16 + h * 0.1, F(fs * 0.9, 600), COL.white, 'right');
+    }
     c.save(); c.beginPath(); c.rect(x + 3, y + h * 0.1, w - 6, h * 0.83); c.clip();
     c.translate(cx, cy);
-    c.strokeStyle = COL.white; c.lineWidth = 1.4;
-    c.beginPath(); c.arc(0, 0, R, (-90 - 62) * D2R, (-90 + 62) * D2R); c.stroke();
-    for (let d = 0; d < 360; d += 5) {
-      const rel = ((d - s.psi + 540) % 360) - 180;
-      if (Math.abs(rel) > 62) continue;
-      const an = (rel - 90) * D2R, l = d % 10 ? 6 : 11;
-      c.beginPath(); c.moveTo(Math.cos(an) * R, Math.sin(an) * R); c.lineTo(Math.cos(an) * (R - l), Math.sin(an) * (R - l)); c.stroke();
-      if (d % 30 === 0) txt(c, d / 10, Math.cos(an) * (R - 22), Math.sin(an) * (R - 22), F(h * 0.04, 600), COL.white);
-    }
-    c.setLineDash([4, 6]); c.beginPath(); c.arc(0, 0, R / 2, (-90 - 62) * D2R, (-90 + 62) * D2R); c.stroke(); c.setLineDash([]);
-    // pista
-    const g = rwyGeom(), ppn = R / range;
-    const toND = (ex, ny) => { const dx = ex - s.x, dy = ny - s.y, ps = s.psi * D2R; return [(dx * Math.cos(ps) - dy * Math.sin(ps)) * ppn, -(dx * Math.sin(ps) + dy * Math.cos(ps)) * ppn]; };
+    const ppn = R / range, tr = trk * D2R;
+    const toND = (ex, ny) => { const dx = ex - s.x, dy = ny - s.y; return [(dx * Math.cos(tr) - dy * Math.sin(tr)) * ppn, -(dx * Math.sin(tr) + dy * Math.cos(tr)) * ppn]; };
+    // rota: linha magenta entre os fixos; o próximo fixo em magenta, os outros em branco
+    c.strokeStyle = COL.magenta; c.lineWidth = 1.8; c.beginPath();
+    WPTS.forEach(([, wx], i) => { const p = toND(wx, 0); if (i) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.stroke();
+    WPTS.forEach(([nm, wx]) => { const p = toND(wx, 0); if (Math.hypot(p[0], p[1]) > R * 1.25 || nm === 'RW09') return; const act = nxt && nxt[0] === nm; fix(c, p[0], p[1], 7, act ? COL.magenta : COL.white); txt(c, nm, p[0] + 9, p[1] + 11, F(fs * 0.8, 600), act ? COL.magenta : COL.white, 'left'); });
+    // pista e aeroporto
     const r = rwy(), e = [r.x + Math.sin(r.hdg * D2R) * r.len, r.y + Math.cos(r.hdg * D2R) * r.len];
     const a1 = toND(r.x, r.y), a2 = toND(e[0], e[1]);
-    if (sc === 'aproximacao' || sc === 'decolagem') {
-      const ext = toND(r.x - Math.sin(r.hdg * D2R) * 14, r.y - Math.cos(r.hdg * D2R) * 14);
-      c.strokeStyle = COL.magenta; c.lineWidth = 1.6; c.setLineDash([8, 6]); c.beginPath(); c.moveTo(ext[0], ext[1]); c.lineTo(a1[0], a1[1]); c.stroke(); c.setLineDash([]);
-      c.strokeStyle = COL.white; c.lineWidth = Math.max(3, ppn * 0.05); c.beginPath(); c.moveTo(a1[0], a1[1]); c.lineTo(a2[0], a2[1]); c.stroke();
-      txt(c, r.name, a2[0] + 8, a2[1], F(h * 0.034, 600), COL.white, 'left');
+    c.strokeStyle = COL.white; c.lineWidth = Math.max(3, ppn * 0.05); c.beginPath(); c.moveTo(a1[0], a1[1]); c.lineTo(a2[0], a2[1]); c.stroke();
+    c.strokeStyle = COL.cyan; c.lineWidth = 1.4; c.beginPath(); c.arc((a1[0] + a2[0]) / 2, (a1[1] + a2[1]) / 2 - 12, 4.5, 0, Math.PI * 2); c.stroke();
+    txt(c, 'RW09', (a1[0] + a2[0]) / 2 + 8, (a1[1] + a2[1]) / 2 - 12, F(fs * 0.8, 600), COL.cyan, 'left');
+    // VOR (hexágono verde-água) com o identificador
+    const vp = toND(VOR.x, VOR.y);
+    c.strokeStyle = COL.cyan; c.lineWidth = 1.3; c.beginPath();
+    for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; c.lineTo(vp[0] + Math.cos(a) * 5, vp[1] + Math.sin(a) * 5); } c.closePath(); c.stroke();
+    txt(c, VOR.id, vp[0] + 8, vp[1] + 10, F(fs * 0.8, 600), COL.cyan, 'left');
+    // arco da bússola: marcas a cada 5°, números a cada 30° (em dezenas)
+    c.strokeStyle = COL.white; c.lineWidth = 1.5;
+    c.beginPath(); c.arc(0, 0, R, (-90 - 62) * D2R, (-90 + 62) * D2R); c.stroke();
+    for (let d = 0; d < 360; d += 5) {
+      const rel = ((d - trk + 540) % 360) - 180;
+      if (Math.abs(rel) > 62) continue;
+      const an = (rel - 90) * D2R, l = d % 10 ? 6 : 12;
+      c.beginPath(); c.moveTo(Math.cos(an) * R, Math.sin(an) * R); c.lineTo(Math.cos(an) * (R - l), Math.sin(an) * (R - l)); c.stroke();
+      if (d % 30 === 0) { c.save(); c.translate(Math.cos(an) * (R - 24), Math.sin(an) * (R - 24)); c.rotate(rel * D2R); txt(c, String(d / 10), 0, 0, F(h * 0.045, 500), COL.white); c.restore(); }
     }
+    // linha da trajetória até o arco, com a marca de meio alcance, e o ponteiro do rumo (proa) no arco
+    c.beginPath(); c.moveTo(0, -14); c.lineTo(0, -R); c.stroke();
+    c.beginPath(); c.moveTo(-6, -R / 2); c.lineTo(6, -R / 2); c.stroke();
+    txt(c, String(range / 2), -9, -R / 2, F(fs * 0.85, 600), COL.white, 'right');
+    c.fillStyle = COL.white; c.beginPath(); c.moveTo(0, -R + 1); c.lineTo(-7, -R - 11); c.lineTo(7, -R - 11); c.closePath(); c.fill();
+    const hrel = ((s.psi - trk + 540) % 360) - 180;
+    if (Math.abs(hrel) < 60) { c.save(); c.rotate(hrel * D2R); c.beginPath(); c.moveTo(0, -R - 1); c.lineTo(-6, -R + 10); c.lineTo(6, -R + 10); c.closePath(); c.strokeStyle = COL.white; c.lineWidth = 1.6; c.stroke(); c.restore(); }
     // vetor de tendência da curva (30, 60 e 90 s)
-    const om = s.V > 1 ? (G * Math.tan(s.phi * D2R) / s.V) : 0, vnm = gs / 3600;
-    c.strokeStyle = COL.green; c.lineWidth = 2; c.beginPath(); c.moveTo(0, 0);
-    let px = 0, py = 0, ang = 0;
+    const om = s.V > 1 ? (G * Math.tan(s.phi * D2R) / s.V) : 0, vnm = gsk / 3600;
+    c.strokeStyle = COL.green; c.lineWidth = 2; c.beginPath(); c.moveTo(0, -14);
+    let px = 0, py = -14, ang = 0;
     for (let t = 0; t <= 90; t += 3) { px += Math.sin(ang) * vnm * 3 * ppn; py -= Math.cos(ang) * vnm * 3 * ppn; ang += om * 3; c.lineTo(px, py); }
-    c.stroke();
-    c.strokeStyle = COL.white; c.lineWidth = 2; c.beginPath(); c.moveTo(0, -12); c.lineTo(-8, 10); c.lineTo(8, 10); c.closePath(); c.stroke();
+    if (Math.abs(om) > 0.002) c.stroke();
+    // símbolo do avião
+    c.strokeStyle = COL.white; c.lineWidth = 2; c.beginPath(); c.moveTo(0, -14); c.lineTo(-8, 10); c.lineTo(8, 10); c.closePath(); c.stroke();
     c.restore();
-    txt(c, `${range} NM`, x + 10, y + h * 0.88, F(h * 0.032), '#c9d2d8', 'left');
-    if (sc === 'aproximacao' || sc === 'decolagem') {
-      txt(c, r.name, x + w - 10, y + 16, F(h * 0.04, 600), COL.white, 'right');
-      txt(c, `${g.dist.toFixed(1)} NM`, x + w - 10, y + 16 + h * 0.055, F(h * 0.036), COL.white, 'right');
-    }
+    // rodapé: TCAS e os dois VOR (L e R) com a distância DME
+    const dme = Math.hypot(VOR.x - s.x, VOR.y - s.y).toFixed(1), fy = y + h * 0.78;
+    txt(c, 'TCAS', x + 10, fy - h * 0.1, F(fs * 0.85, 600), COL.amber, 'left');
+    txt(c, 'OFF', x + 10, fy - h * 0.06, F(fs * 0.85, 600), COL.amber, 'left');
+    [['L', x + 10, 'left'], ['R', x + w - 10, 'right']].forEach(([sd, tx, al]) => {
+      txt(c, `VOR ${sd}`, tx, fy, F(fs * 0.85, 600), COL.green, al);
+      txt(c, VOR.id, tx, fy + h * 0.045, F(fs * 0.85, 600), COL.green, al);
+      txt(c, `DME ${dme}`, tx, fy + h * 0.09, F(fs * 0.85, 600), COL.green, al);
+    });
   }
 
   function dial(c, cx, cy, r, val, max, redline, label) {
