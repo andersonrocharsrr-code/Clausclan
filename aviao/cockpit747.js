@@ -445,30 +445,34 @@ function create(ctl) {
   }
 
   /* ---------- vistas pequenas (lado e trás) ---------- */
-  // Vista lateral feita da foto de referência do 747-8 (espelhada: nariz para a direita), em escala de
-  // 3,41 px por metro: 76,3 m de comprimento = 260 px, rodas no chão em y = 118. O profundor, os flaps,
-  // os spoilers e o trem são camadas separadas que se mexem com os comandos.
-  const IMG = 'x="21.4" y="50.92" width="262.39" height="67.63"';
-  const BELLY = 'M136 110.4 L141.2 110.4 L141.4 112.3 L143 112.6 L147.4 113.1 L151.4 113.4 L158.4 113.4 L160.4 112.6 L160.8 110.7 L166.8 110.7 L168.6 111.5 L170 112 L170 126 L136 126 Z M247 109.4 L250.3 109.1 L253.3 108.8 L255.9 108.5 L259.4 108 L264 107.6 L264 126 L247 126 Z';
+  // Vista lateral no estilo prancha (traço branco, detalhes em rosa), feita do desenho de referência do
+  // 747-8 e espelhada: nariz para a direita. 76,3 m de comprimento = 261 px; rodas no chão em y = 118.
+  // O profundor, os flaps, os spoilers e o trem são camadas separadas que se mexem com os comandos.
+  const IMG = 'x="21.32" y="60.58" width="262.55" height="54.02"';
+  // o trem só aparece abaixo da barriga e, no principal, abaixo da nacele que fica na frente dele
+  const BELLY = 'M137 108.6 L141.6 108.6 L141.6 112.6 L161.6 112.6 L161.6 108.6 L168 108.6 L168 126 L137 126 Z M249 107.6 L261 107.4 L261 126 L249 126 Z';
   const minisHTML = `
     <figure class="card mini">
       <figcaption class="mono small">VISTA LATERAL · arfagem, profundor, flaps e trem</figcaption>
       <svg viewBox="0 0 300 130" class="mini__svg" aria-label="747-8 visto de lado">
         <defs>
           <clipPath id="j7GearOut"><path d="${BELLY}"/></clipPath>
-          <clipPath id="j7GearIn"><path clip-rule="evenodd" d="M134 98 L172 98 L172 126 L134 126 Z M245 98 L266 98 L266 126 L245 126 Z ${BELLY}"/></clipPath>
         </defs>
         <rect class="m-ground" x="0" y="118" width="300" height="12"/>
         <g id="j7Side">
+          <g clip-path="url(#j7GearOut)"><g id="j7GearS">
+            <path class="m-strut j7-gear" d="M148 106 L148 113.6 M158 106 L158 113.6 M144.6 113.8 L151.4 113.8 M154.6 113.8 L161.4 113.8 M255 105 L255 115.4"/>
+            <circle class="m-tire j7-gear" cx="145.4" cy="115.3" r="2.7"/><circle class="m-tire j7-gear" cx="150.6" cy="115.3" r="2.7"/>
+            <circle class="m-tire j7-gear" cx="155.4" cy="115.3" r="2.7"/><circle class="m-tire j7-gear" cx="160.6" cy="115.3" r="2.7"/>
+            <circle class="m-tire j7-gear" cx="255" cy="115.5" r="2.5"/>
+          </g></g>
           <image class="j7-photo" href="assets/747-lado.webp" ${IMG}/>
-          <g clip-path="url(#j7GearIn)"><image id="j7GearDoor" href="assets/747-lado-trem.webp" ${IMG}/></g>
-          <g clip-path="url(#j7GearOut)"><image id="j7GearS" href="assets/747-lado-trem.webp" ${IMG}/></g>
           <g id="j7Elev">
             <image href="assets/747-lado-prof.webp" ${IMG}/>
-            <path class="j7-tint" d="M35.5 86.2 L22.8 87.3 L28.2 89.7 L30.6 90.55 L32.8 91.2 L35.5 92 Z"/>
+            <path class="j7-tint" d="M31.8 87.9 L21.8 87.9 L22.2 89.1 L28.9 91.4 L31.8 92.2 Z"/>
           </g>
           <path id="j7SpS1" class="j7-spoiler" d=""/><path id="j7SpS2" class="j7-spoiler" d=""/>
-          <g id="j7Flap"><path class="m-surf" d="M139.6 103.8 Q140.6 104.6 139.6 105.4 L126.6 104.3 L126.6 103.6 Z"/></g>
+          <g id="j7Flap"><path class="m-surf" d="M141.5 103.5 Q142.5 104.3 141.5 105.1 L128 104 L128 103.3 Z"/></g>
         </g>
       </svg>
     </figure>
@@ -522,13 +526,12 @@ function create(ctl) {
     // gira em torno das rodas principais (no chão, a cauda encosta na pista perto de 11°) e sobe um pouco ao sair do chão
     const lift = 9 * (1 - Math.exp(-Math.max(0, s.h) / 12));
     $('j7Side').setAttribute('transform', `translate(0 ${(-lift).toFixed(2)}) rotate(${(-s.theta).toFixed(2)} 153.2 118)`);
-    $('j7Elev').setAttribute('transform', `rotate(${(ctl.elev * 22).toFixed(1)} 35.5 89.1)`);
+    $('j7Elev').setAttribute('transform', `rotate(${(ctl.elev * 22).toFixed(1)} 31.8 90.1)`);
     // flap: desce e corre para trás (Fowler), aumentando a área e a curvatura da asa
     const fl = s.flap / 30;
-    $('j7Flap').setAttribute('transform', `translate(${(-fl * 2.2).toFixed(2)} ${(fl * 0.6).toFixed(2)}) rotate(${(-fl * 34).toFixed(1)} 139.6 104.6)`);
-    // trem: as pernas saem da barriga (o recorte esconde o que ainda está dentro) e as portas abertas aparecem junto
+    $('j7Flap').setAttribute('transform', `translate(${(-fl * 2.2).toFixed(2)} ${(fl * 0.6).toFixed(2)}) rotate(${(-fl * 34).toFixed(1)} 141.5 104.3)`);
+    // trem: as pernas saem da barriga (o recorte esconde o que ainda está dentro)
     $('j7GearS').setAttribute('transform', `translate(0 ${(-(1 - s.gear) * 10.5).toFixed(2)})`);
-    $('j7GearDoor').style.opacity = s.gear.toFixed(2);
     $('j7GearR').style.opacity = s.gear.toFixed(2);
     $('j7GearR').setAttribute('transform', `translate(0 ${(-(1 - s.gear) * 6).toFixed(1)})`);
     $('j7Rear').setAttribute('transform', `rotate(${s.phi.toFixed(2)} 150 100)`);
@@ -544,8 +547,8 @@ function create(ctl) {
     $('j7SpR').setAttribute('d', surf(0.12, 0.6, 1, spR, spR));
     $('j7SpL').setAttribute('d', surf(0.12, 0.6, -1, spL, spL));
     // de lado se vê a asa direita: os spoilers dela levantam a borda de trás
-    $('j7SpS1').setAttribute('d', spoilerSide(144, 98.6, 7.5, spR / 6));
-    $('j7SpS2').setAttribute('d', spoilerSide(134.5, 97.9, 7.5, spR / 6));
+    $('j7SpS1').setAttribute('d', spoilerSide(144, 99.3, 7.5, spR / 6));
+    $('j7SpS2').setAttribute('d', spoilerSide(134.5, 98.4, 7.5, spR / 6));
     // profundores vistos de trás: sobem com o manche puxado
     const e = ctl.elev * 3;
     $('j7ElevR').setAttribute('d', `M154 96.6 L187 96.6 L187 ${(96.6 - e).toFixed(1)} L154 ${(96.6 - e).toFixed(1)} Z`);
