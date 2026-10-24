@@ -520,3 +520,22 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 .lesson__dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--line); }
 .lesson__dots i.on { background: var(--magenta); }
 body.drawer-lock { overflow: hidden; }
+
+/* panes para treinar e o checklist */
+.fails { display: grid; gap: 8px; margin-top: 14px; }
+.fails__go { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.fails__btn { min-height: 40px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font-weight: 600; font-size: 14px; font-family: inherit; cursor: pointer; }
+.fails__btn--solo { border-color: var(--magenta); color: var(--magenta); }
+.fail-card { border-left: 4px solid var(--bad); }
+.fail-card[hidden] { display: none; }
+.fail-card__head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.fail-card__head .eyebrow { margin: 0; color: var(--bad); }
+.fail-card h3 { margin: 4px 0 8px; font-size: 18px; }
+.fail-card__stop { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--muted); font-size: 12px; font-family: inherit; cursor: pointer; }
+.fail-steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; counter-reset: st; }
+.fail-steps li { counter-increment: st; display: grid; grid-template-columns: 26px 1fr; gap: 8px; align-items: start; font-size: 14px; line-height: 1.4; color: var(--ink); }
+.fail-steps li::before { content: counter(st); display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); font: 600 12px var(--mono); color: var(--muted); }
+.fail-steps li.is-done { color: var(--muted); }
+.fail-steps li.is-done::before { content: "✓"; background: var(--ok); border-color: var(--ok); color: #fff; }
+.fail-steps li.is-next::before { border-color: var(--bad); color: var(--bad); }
+.fail-steps button { margin-top: 4px; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--bad); background: transparent; color: var(--bad); font-weight: 600; font-size: 13px; font-family: inherit; cursor: pointer; }

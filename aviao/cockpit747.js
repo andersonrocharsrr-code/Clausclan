@@ -84,7 +84,8 @@ function create(ctl) {
   let sc = 'cruzeiro';
   let msg = null;          // mensagem temporária (pouso, cauda na pista)
   let iasPrev = 0, trend = 0, airborneOnce = false;
-  let demo = null, demoH = 0, demoT = 0, thrI = 0, v1Said = false;   // piloto de demonstração (ver pilot())
+  let demo = null, demoH = 0, demoT = 0, thrI = 0, v1Said = false;
+  let fail = null;   // pane em treino (ver FAILS)   // piloto de demonstração (ver pilot())
 
   function start(id) {
     sc = id;
@@ -114,6 +115,7 @@ function create(ctl) {
     iasPrev = ias(); trend = 0; s.fuel0 = s.fuel;
     // decolagem, aproximação e estol começam com o piloto de demonstração voando; cruzeiro fica nivelado
     demo = { decolagem: 'roll', aproximacao: 'app', estol: 'entry' }[id] || null;
+    fail = null; s.eng = [1, 1, 1, 1];
     demoH = s.h; demoT = 0; thrI = ctl.thr; v1Said = false;
   }
 
@@ -131,6 +133,8 @@ function create(ctl) {
     stall: 'estol: a asa perdeu sustentação e o nariz cai sozinho',
     recover: 'recuperação: manche à frente para baixar o ângulo de ataque e potência máxima',
     pullout: 'saindo do mergulho: o nariz volta aos poucos para o horizonte',
+    hold: 'mantendo altitude, rumo e velocidade',
+    emerg: 'descida de emergência: manetes em IDLE, speedbrake todo e nariz baixo, até 10.000 ft',
   };
   // manche leva o nariz à atitude tt (graus); com trim > 0 o compensador vai aliviando o manche (°/s)
   function flyTheta(tt, dt, trim = 0) {
@@ -183,6 +187,18 @@ function create(ctl) {
         flyTheta(Math.max(0, s.theta - 1.5), dt);
         if (s.V < 1) endDemo('Fim da demonstração: pouso feito e o avião parou na pista. Agora os comandos são seus.');
       }
+    } else if (demo === 'hold' || demo === 'emerg') {
+      // cruzeiro (ou nivelado depois da descida): mantém altitude, rumo 090 e a velocidade
+      ctl.ail = clamp((((90 - s.psi + 540) % 360) - 180) * 0.03, -0.5, 0.5);
+      if (demo === 'emerg') {
+        ctl.thr = 0; ctl.sb = 1;
+        flyGamma(clamp(-5 - (330 - k) * 0.12, -12, -1.5), dt, 10, 0.3);
+        if (hf < 10600) { demo = 'hold'; demoH = 10000 * FT; ctl.sb = 0; thrI = 0.55; }
+      } else {
+        flyGamma(clamp((demoH - s.h) / 45, -2.5, 2.5), dt, 12, 0.3);
+        const vt = hf < 11000 && fail && fail.id === 'despress' ? 280 : 260;
+        thrI = clamp(thrI + 0.004 * (vt - k) * dt, 0, 1); ctl.thr = clamp(thrI + 0.05 * (vt - k) - 0.04 * trend, 0, 1);
+      }
     } else if (demo) {
       const vs1 = stallIas(s.flap, s.phi), acrit = s.A ? s.A.acrit : 15;
       if (demo === 'entry') {
@@ -200,6 +216,103 @@ function create(ctl) {
       }
     }
   }
+  /* ---------- panes para treinar ----------
+     Cada pane tem o cenário, o que acontece com o avião e o checklist (como no QRH do 747). Em "demonstração"
+     o piloto faz tudo sozinho; em "treinar" o aluno voa e toca nos itens do checklist. */
+  // potência de cada motor: 1 = normal, 0 = parado (ou cortado); manete em IDLE no motor com fogo ≈ 0
+  const engPow = (i) => (!s.eng || s.eng[i] ? (fail && fail.idle[i] ? 0.05 : 1) : 0);
+  const engFrac = () => (engPow(0) + engPow(1) + engPow(2) + engPow(3)) / 4;
+  // guinada (°/s) quando os motores de um lado empurram mais: os de fora têm braço maior
+  const yawAsym = () => (engPow(0) * 1 + engPow(1) * 0.6 - engPow(2) * 0.6 - engPow(3) * 1) * thrustFrac(s.spool) * 0.5;
+  const FAILS = {
+    motor: { scn: 'decolagem', title: 'Falha do motor 1 depois do V1',
+      intro: 'Logo depois do V1 o motor 1 (o de fora, na asa esquerda) para. Os outros três empurram mais à direita e o nariz guina para a esquerda.',
+      steps: [
+        { t: 'Passou de V1: continue a decolagem. Não há mais pista para parar.', done: () => fail.on && !s.ground },
+        { t: 'Pé no pedal do lado do motor bom (direito) para manter a reta: "pé morto, motor morto".', done: () => fail.on && ctl.rud > 0.15 },
+        { t: 'Em VR, rode e suba na V2, com uns 12° de nariz.', done: () => fail.on && hft() > 50 },
+        { t: 'Razão de subida positiva: trem em cima.', act: 'Trem em cima', fn: () => { ctl.gearDown = 0; }, done: () => fail.on && ctl.gearDown === 0 },
+        { t: 'A 1.000 ft: manete 1 em IDLE e FUEL CONTROL 1 em CUTOFF.', act: 'FUEL CONTROL 1: CUTOFF', fn: () => { fail.cut[0] = true; }, done: () => fail.cut[0] },
+      ] },
+    fogo: { scn: 'cruzeiro', title: 'Fogo no motor 2',
+      intro: 'No cruzeiro, o detector de fogo do motor 2 dispara: alarme, luz vermelha na alavanca de fogo e FIRE ENG 2 no EICAS.',
+      steps: [
+        { t: 'FIRE ENG 2: confirme qual é o motor antes de mexer em qualquer coisa.', done: () => fail.on },
+        { t: 'Manete do motor 2 em IDLE.', act: 'Manete 2: IDLE', fn: () => { fail.idle[1] = true; }, done: () => fail.idle[1] },
+        { t: 'FUEL CONTROL 2 em CUTOFF: corta o combustível do motor.', act: 'FUEL CONTROL 2: CUTOFF', fn: () => { fail.cut[1] = true; s.eng[1] = 0; }, done: () => fail.cut[1] },
+        { t: 'Puxar a alavanca de fogo do motor 2: isola ar, combustível e hidráulica dele.', act: 'Puxar a alavanca de fogo 2', fn: () => { fail.handle = true; }, done: () => fail.handle },
+        { t: 'Girar a alavanca para disparar a garrafa extintora.', act: 'Disparar a garrafa', fn: () => { if (!fail.handle) { msg = { t: 6, cls: 'warn', txt: 'Primeiro puxe a alavanca de fogo: só depois dá para girar e disparar a garrafa.' }; return false; } fail.bottle = true; fail.outT = fail.t + 3; return true; }, done: () => fail.bottle },
+        { t: 'Fogo apagado: siga com três motores e planeje o pouso no aeroporto mais próximo.', done: () => fail.bottle && !fail.fire },
+      ] },
+    despress: { scn: 'cruzeiro', title: 'Despressurização',
+      intro: 'A 37.000 ft o ar da cabine começa a escapar e a altitude da cabine sobe rápido. Acima de 10.000 ft aparece CABIN ALTITUDE: sem oxigênio, a consciência dura poucos segundos lá em cima.',
+      steps: [
+        { t: 'CABIN ALTITUDE: a cabine passou de 10.000 ft.', done: () => fail.on && s.cab > 10000 },
+        { t: 'Máscaras de oxigênio da tripulação: colocar.', act: 'Colocar as máscaras', fn: () => { fail.masks = true; }, done: () => fail.masks },
+        { t: 'Descida de emergência: manetes em IDLE e speedbrake todo.', act: 'IDLE e speedbrake', fn: () => { ctl.thr = 0; ctl.sb = 1; }, done: () => fail.on && ctl.thr < 0.08 && ctl.sb > 0.9 },
+        { t: 'Nariz para baixo, perto de 330 kt, até 10.000 ft (onde dá para respirar).', done: () => fail.on && hft() < 10600 },
+        { t: 'A 10.000 ft: recolher o speedbrake, nivelar e acelerar.', act: 'Recolher o speedbrake', fn: () => { ctl.sb = 0; }, done: () => fail.on && hft() < 11000 && ctl.sb < 0.1 },
+      ] },
+    trem: { scn: 'aproximacao', title: 'Trem não baixa',
+      intro: 'Na aproximação a alavanca do trem vai para DOWN, mas o trem para no meio do caminho e não trava: GEAR DISAGREE.',
+      steps: [
+        { t: 'Alavanca do trem em DOWN.', act: 'Trem: DOWN', fn: () => { ctl.gearDown = 1; }, done: () => ctl.gearDown === 1 },
+        { t: 'GEAR DISAGREE: o trem não travou embaixo.', done: () => ctl.gearDown && fail.gt > 12 },
+        { t: 'ALTN GEAR EXTEND: a extensão alternativa solta as travas e o trem desce pelo próprio peso (mais devagar).', act: 'ALTN GEAR EXTEND', fn: () => { fail.altn = true; }, done: () => fail.altn },
+        { t: 'GEAR DOWN em verde: continue a aproximação e pouse.', done: () => s.gear >= 0.99 },
+      ] },
+  };
+  function startFail(id, mode) {
+    const F = FAILS[id]; if (!F) return;
+    start(F.scn);
+    fail = { id, mode, t: 0, on: false, done: F.steps.map(() => false), cut: [false, false, false, false], idle: [false, false, false, false], gt: 0, fire: false, depress: false, complete: false };
+    if (mode === 'solo') demo = null;
+    else if (F.scn === 'cruzeiro') { demo = 'hold'; demoH = s.h; thrI = ctl.thr; }
+    if (id === 'trem') { s.gear = 0; ctl.gearDown = 0; fail.on = true; }
+    msg = { t: 8, cls: '', txt: mode === 'solo' ? 'Treino: voe o avião e siga o checklist da pane quando ela aparecer.' : 'Demonstração: observe o piloto e o checklist sendo feitos.' };
+  }
+  function failAct(i) {
+    if (!fail) return;
+    const st = FAILS[fail.id].steps[i];
+    if (!st || !st.fn || fail.done[i]) return;
+    if (st.fn() !== false) fail.done[i] = true;
+  }
+  function failStep(dt, k) {
+    const F = FAILS[fail.id], hf = hft();
+    fail.t += dt;
+    if (ctl.gearDown) fail.gt += dt; else fail.gt = 0;
+    // a pane acontece
+    if (!fail.on) {
+      if (fail.id === 'motor' && s.ground && k >= P.v1 + 3) { fail.on = true; s.eng[0] = 0; }
+      if ((fail.id === 'fogo' || fail.id === 'despress') && fail.t > 5) { fail.on = true; if (fail.id === 'fogo') fail.fire = true; else fail.depress = true; fail.tOn = fail.t; }
+    }
+    if (fail.fire && fail.bottle && fail.t > fail.outT) { fail.fire = false; msg = { t: 8, cls: '', txt: 'Fogo apagado: a luz da alavanca de fogo do motor 2 apagou.' }; }
+    // na demonstração o piloto faz o checklist
+    if (fail.mode === 'demo' && fail.on) {
+      const after = fail.t - (fail.tOn || 0), act = (i) => failAct(i);
+      if (fail.id === 'motor') {
+        ctl.rud = clamp(-yawAsym() / 0.6 + (((90 - s.psi + 540) % 360) - 180) * 0.4, -1, 1);
+        if (hf > 1000) act(4);
+      } else if (fail.id === 'fogo') {
+        if (after > 3) act(1); if (after > 5) act(2); if (after > 7) act(3); if (after > 9) act(4);
+      } else if (fail.id === 'despress') {
+        if (after > 2) act(1);
+        if (after > 4 && !fail.done[2]) { act(2); demo = 'emerg'; }
+        if (demo === 'hold' && fail.done[2] && hf < 11000) act(4);
+      } else if (fail.id === 'trem') {
+        if (fail.t > 3) act(0);
+        if (fail.gt > 18) act(2);
+      }
+    }
+    F.steps.forEach((st, i) => { if (!fail.done[i] && !st.act && st.done()) fail.done[i] = true; });
+    F.steps.forEach((st, i) => { if (!fail.done[i] && st.act && st.done()) fail.done[i] = true; });
+    if (!fail.complete && fail.done.every(Boolean)) { fail.complete = true; msg = { t: 12, cls: '', txt: `Checklist completo: ${F.title.toLowerCase()} resolvida.` }; }
+  }
+  function failState() {
+    if (!fail) return null;
+    const F = FAILS[fail.id];
+    return { id: fail.id, mode: fail.mode, title: F.title, intro: F.intro, on: fail.on, complete: fail.complete, steps: F.steps.map((st, i) => ({ t: st.t, act: st.act || '', done: fail.done[i] })) };
+  }
   function takeover() {
     if (!demo) return;
     demo = null;
@@ -216,6 +329,7 @@ function create(ctl) {
     const V = s.V, q = 0.5 * rho * V * V, M = V / a, W = P.m * G;
     const kias = V * Math.sqrt(rho / 1.225) / KT;
     if (demo) pilot(dt);
+    if (fail) failStep(dt, kias);
     // V1 na corrida de decolagem: a voz avisa no instante em que a velocidade chega a V1
     if (sc === 'decolagem' && s.ground && !v1Said && kias >= P.v1) {
       v1Said = true; say('v1', 'V one');
@@ -224,7 +338,11 @@ function create(ctl) {
     // os motores a jato demoram alguns segundos para acelerar (spool)
     s.spool += (ctl.thr - s.spool) * dt * 0.35;
     s.flap += Math.sign(ctl.flaps - s.flap) * Math.min(Math.abs(ctl.flaps - s.flap), 3 * dt);
-    s.gear += Math.sign(ctl.gearDown - s.gear) * Math.min(Math.abs(ctl.gearDown - s.gear), dt / 10);
+    {
+      const stuck = fail && fail.id === 'trem' && !fail.altn && ctl.gearDown;
+      const tgt = stuck ? Math.min(ctl.gearDown, 0.35) : ctl.gearDown, rate = fail && fail.altn ? dt / 25 : dt / 10;
+      s.gear += Math.sign(tgt - s.gear) * Math.min(Math.abs(tgt - s.gear), rate);
+    }
     s.phi += ((s.ground ? 0 : ctl.ail * 50) - s.phi) * dt * 0.45;
     bankAlert();
     // depois do pouso, com as manetes em marcha lenta, os spoilers de solo sobem sozinhos
@@ -236,22 +354,25 @@ function create(ctl) {
     s.theta += clamp((tcmd - s.theta) * 0.9 * dt, -3 * dt, 3 * dt);
     if (s.ground) {
       s.theta = Math.max(0, s.theta); s.gamma = 0; s.alpha = s.theta + P.incid;
-      const A = aero(s, sb), L = q * P.S * A.CL, D = q * P.S * A.CD, T = thrust(s.spool, rho, M);
+      const A = aero(s, sb), L = q * P.S * A.CL, D = q * P.S * A.CD, T = thrust(s.spool, rho, M) * engFrac();
       const mu = ctl.thr < 0.08 && V > 1 ? 0.25 : 0.015;   // em marcha lenta no solo: freio automático
       s.V = Math.max(0, V + ((T - D - mu * Math.max(0, W - L)) / P.m) * dt);
       if (s.theta > 11 && !s.tailstrike) { s.tailstrike = true; msg = { t: 8, cls: 'warn', txt: 'TAIL STRIKE: com o nariz acima de 11° no solo, a cauda do 747 encosta na pista. Puxe o manche mais devagar na rotação.' }; }
       if (L > W) { s.ground = false; s.gamma = 0.0005; s.airH = 0; airborneOnce = true; }
       s.h = 0; s.stalled = false; s.A = A;
+      // no chão o leme e a roda do nariz viram o avião; um motor parado puxa para o lado dele
+      const gk = clamp(s.V / 40, 0, 1);
+      s.psi = (s.psi + (yawAsym() + ctl.rud * 0.6) * gk * dt + 360) % 360;
     } else {
       s.alpha = s.theta - s.gamma / D2R;
       let A = aero(s, sb);
       if (s.alpha > A.acrit) s.stalled = true; else if (s.alpha < A.acrit - 1) s.stalled = false;
       // em estol o nariz cai sozinho (o vento empurra a cauda para cima); o manche puxado só atrasa isso
       if (s.alpha > A.acrit) { s.theta -= (s.alpha - A.acrit + 1.5) * 1.1 * dt; s.alpha = s.theta - s.gamma / D2R; A = aero(s, sb); }
-      const L = q * P.S * A.CL, D = q * P.S * A.CD, T = thrust(s.spool, rho, M), al = s.alpha * D2R;
+      const L = q * P.S * A.CL, D = q * P.S * A.CD, T = thrust(s.spool, rho, M) * engFrac(), al = s.alpha * D2R;
       s.V = Math.max(40, V + ((T * Math.cos(al) - D) / P.m - G * Math.sin(s.gamma)) * dt);
       s.gamma += ((L * Math.cos(s.phi * D2R) + T * Math.sin(al) - W * Math.cos(s.gamma)) / (P.m * V)) * dt;
-      s.psi = (s.psi + (L * Math.sin(s.phi * D2R) / (P.m * V * Math.cos(s.gamma))) / D2R * dt + ctl.rud * 0.6 * dt + 360) % 360;
+      s.psi = (s.psi + (L * Math.sin(s.phi * D2R) / (P.m * V * Math.cos(s.gamma))) / D2R * dt + ctl.rud * 0.6 * dt + yawAsym() * dt + 360) % 360;
       s.h += V * Math.sin(s.gamma) * dt;
       s.airH = Math.max(s.airH || 0, s.h / FT);
       s.A = A;
@@ -269,8 +390,10 @@ function create(ctl) {
     s.fuel = Math.max(0, s.fuel - 4 * ffEngine() * dt / 3600 / 1000);
     const ctgt = Math.max(50, Math.min(8000, hft() * 0.2));
     if (s.cab == null) s.cab = ctgt;
-    s.cabRate = clamp((ctgt - s.cab) * 1.2, -750, 500); s.cab += s.cabRate / 60 * dt;
-    s.ball = clamp(-ctl.rud * 0.7 + ctl.ail * 0.15, -1, 1);
+    if (fail && fail.depress) s.cabRate = s.cab < hft() ? clamp((hft() - s.cab) * 2, 0, 3000) : (hft() - s.cab) * 2;
+    else s.cabRate = clamp((ctgt - s.cab) * 1.2, -750, 500);
+    s.cab += s.cabRate / 60 * dt;
+    s.ball = clamp(-ctl.rud * 0.7 + ctl.ail * 0.15 - yawAsym() * 1.4, -1, 1);
     const now = ias();
     trend += ((now - iasPrev) / Math.max(dt, 1e-3) - trend) * Math.min(1, dt * 1.5);
     iasPrev = now;
@@ -715,6 +838,10 @@ function create(ctl) {
     const vfe = P.vfe[ctl.flaps] || 365;
     if (ctl.flaps > 0 && kias > vfe + 3) out.push(['amber', `>FLAP LIMIT ${vfe}`]);
     if (s.gear > 0.01 && kias > P.vlo + 3 && !s.ground) out.push(['amber', `>GEAR LIMIT ${P.vlo}`]);
+    if (fail && fail.fire) out.push(['red', 'FIRE ENG 2']);
+    if (s.cab > 10000) out.push(['red', 'CABIN ALTITUDE']);
+    if (s.eng) s.eng.forEach((on, i) => { if (!on) out.push(['amber', fail && fail.cut[i] ? `ENG ${i + 1} SHUTDOWN` : `ENG ${i + 1} FAIL`]); });
+    if (fail && fail.id === 'trem' && ctl.gearDown && s.gear < 0.99 && fail.gt > 12) out.push(['amber', 'GEAR DISAGREE']);
     if (s.tailstrike) out.push(['amber', 'TAIL STRIKE']);
     if (ctl.sb > 0.05 && !s.ground && (s.flap >= 24 || hft() < 800)) out.push(['amber', 'SPEEDBRAKE EXT']);
     if (s.gear > 0.01 && s.gear < 0.99) out.push(['white', 'GEAR IN TRANSIT']);
@@ -852,12 +979,16 @@ function create(ctl) {
     for (let i = 0; i < 4; i++) {
       const cx = ex + cw * (i + 0.5);
       txt(c, ref.toFixed(1), cx, n1Top - fs * 0.75, F(fs * 0.95, 600), COL.green);
-      tape(c, cx, n1Top, n1Bh, n1 / 110, ref / 110, 102 / 110, n1.toFixed(1), bw, fs);
+      const n1i = engPow(i) >= 1 ? n1 : engPow(i) > 0 ? n1Of(0) : clamp(ias() / 12, 0, 26);
+      tape(c, cx, n1Top, n1Bh, n1i / 110, ref / 110, 102 / 110, n1i.toFixed(1), bw, fs);
     }
     txt(c, 'N1', ex + ew / 2, n1Top + fs * 3.2, F(fs * 0.9, 600), COL.cyan);
     // EGT: caixa e fita menor
     const egTop = y + h * 0.54, egBh = y + h * 0.76 - (egTop + fs * 1.35 + 4);
-    for (let i = 0; i < 4; i++) tape(c, ex + cw * (i + 0.5), egTop, egBh, egt / 1100, null, 1060 / 1100, String(Math.round(egt)), bw, fs);
+    for (let i = 0; i < 4; i++) {
+      const egti = engPow(i) >= 1 ? egt : engPow(i) > 0 ? 400 : 60 + clamp(ias() / 12, 0, 26) * 4;
+      tape(c, ex + cw * (i + 0.5), egTop, egBh, egti / 1100, null, 1060 / 1100, String(Math.round(egti)), bw, fs);
+    }
     txt(c, 'EGT', ex + ew / 2, egTop + fs * 1.35 + 4 + egBh * 0.4, F(fs * 0.9, 600), COL.cyan);
     // coluna da direita: alertas (vermelho/âmbar) e memos (branco)
     const rx = x + w * 0.69, mfs = fs * 0.8;
@@ -1046,6 +1177,7 @@ function create(ctl) {
   function explain() {
     const out = [];
     const kias = ias(), alt = hft(), vs = fpm(), vs1 = Math.round(stallIas(s.flap, s.phi));
+    if (fail) out.push(['warn', `PANE · ${FAILS[fail.id].title}: ${fail.on ? FAILS[fail.id].intro : 'ela vai acontecer daqui a pouco.'}`]);
     if (demo) out.push(['', `Piloto de demonstração: ${DEMO[demo]}. Mexa em qualquer comando para assumir.`]);
     if (msg) out.push([msg.cls, msg.txt]);
     if (s.stalled) out.push(['warn', 'ESTOL. O manche vibra (stick shaker) e o nariz cai sozinho. Para sair: empurre o manche, potência máxima e asas niveladas.']);
@@ -1105,6 +1237,7 @@ function create(ctl) {
   return {
     id: 'b747', flaps: DET, flapLabel: (f) => String(f), scenarios: SCENARIOS, defaultScenario: 'cruzeiro',
     start, step, size, draw, minisHTML, minis, explain, warn, trim, takeover, demo: () => !!demo, ndTeach, pfdTeach, eicasTeach,
+    startFail, failAct, failState, stopFail: () => { fail = null; s.eng = [1, 1, 1, 1]; },
     trimText: () => `${s.ttrim >= 0 ? '+' : ''}${s.ttrim.toFixed(1)}°`,
     n1: () => n1Of(ctl.thr),
   };
