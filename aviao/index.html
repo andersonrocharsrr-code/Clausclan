@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=54">
+  <link rel="stylesheet" href="style.css?v=55">
 </head>
 <body>
   <header class="top">
@@ -529,6 +529,10 @@
           <div class="eng__main">
             <div class="card tunnel eng__stage">
               <div class="eng__view"><canvas id="engGl" aria-hidden="true"></canvas><canvas id="engCv" aria-label="Motor GEnx-2B em corte, em 3D, com o ar passando. Arraste para girar."></canvas></div>
+              <div class="eng__mods eng__fire" id="engFireBox" hidden>
+                <div class="eng__modsbar"><span class="label">Fogo no motor · extintor em ação</span><button type="button" class="chip" id="engFireAgain">↻ Repetir</button></div>
+                <ol class="eng__firesteps" id="engFireSteps"></ol>
+              </div>
               <div class="eng__mods" id="engRevBox" hidden>
                 <p><b>Reverso de empuxo em ação</b>Logo depois do toque na pista, o piloto puxa as alavancas do reverso. Atuadores hidráulicos empurram o capô de trás da nacele 55 cm para trás e abrem um vão no meio do motor. Ao mesmo tempo, as portas de bloqueio giram e fecham o duto do fan. Sem saída para trás, o ar frio do fan sobe pelas grades (cascatas), que têm as palhetas inclinadas, e é jogado para a frente: isso ajuda a frear o avião. Só o ar do fan é desviado; o jato quente do núcleo continua saindo por trás.</p>
               </div>
@@ -608,6 +612,7 @@
               <label class="switch"><input type="checkbox" id="engSlow"><span class="switch__ui" aria-hidden="true"></span>Câmera lenta</label>
               <label class="switch"><input type="checkbox" id="engAir" checked><span class="switch__ui" aria-hidden="true"></span>Mostrar o ar</label>
               <label class="switch"><input type="checkbox" id="engExplode"><span class="switch__ui" aria-hidden="true"></span>Separar os módulos</label>
+              <label class="switch" id="engFireLabel"><input type="checkbox" id="engFireOn"><span class="switch__ui" aria-hidden="true"></span>Fogo no motor</label>
               <label class="switch" id="engRevLabel"><input type="checkbox" id="engRevOn"><span class="switch__ui" aria-hidden="true"></span>Reverso</label>
             </div>
             <div class="readout">
@@ -695,12 +700,12 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=54"></script>
-  <script src="catalogo747.js?v=54"></script>
-  <script src="cockpit747.js?v=54"></script>
-  <script src="motor3d.js?v=54"></script>
-  <script src="motor747.js?v=54"></script>
-  <script src="app.js?v=54"></script>
+  <script src="avioes.js?v=55"></script>
+  <script src="catalogo747.js?v=55"></script>
+  <script src="cockpit747.js?v=55"></script>
+  <script src="motor3d.js?v=55"></script>
+  <script src="motor747.js?v=55"></script>
+  <script src="app.js?v=55"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());

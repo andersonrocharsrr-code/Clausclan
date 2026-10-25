@@ -154,7 +154,8 @@ const MATS = [
 const CAPS = [[0.8, 0.81, 0.83], [0.96, 0.47, 0.17], [0.5, 0.52, 0.55], [0.56, 0.66, 0.8], [0.84, 0.3, 0.22]];
 
 /* ---------- O motor ---------- */
-const MOD = { inlet: -1.6, fan: -0.85, case: 0, casc: 0, sleeve: 0, core: 0.95, lpt: 2.0 };
+const MOD = { inlet: -1.6, fan: -0.85, case: 0, casc: 0, sleeve: 0, fire: 0, core: 0.95, lpt: 2.0 };
+const FIRE_ANG = 30, FIRE_R = 0.62; // onde ficam o anel de descarga e o fogo (no compartimento do núcleo)
 const XS = 2.55, SLIDE = 0.55, NDOOR = 16, DOOR_L = 0.42;
 // Portas de bloqueio: presas no capô móvel; com o reversor aberto giram e fecham o duto do fan
 function doorMesh(g, rev, part) {
@@ -283,6 +284,17 @@ function buildEngine(g) {
     tube(M('case'), [[1.65, 1.47 + dr, 0], [1.5, 1.49 + dr, 0], [1.2, 1.5 + dr, 0], [0.95, 1.5 + dr, 0]].map(([x, r]) => P3(x, r, t)), 0.01, { mat: 0, part: id('agb') }, 6);
     tube(M('case'), [[2.45, 1.5 + dr, 0], [2.7, 1.52 + dr, 0], [3.0, 1.48 + dr, 0]].map(([x, r]) => P3(x, r, t + 0.05)), 0.009, { mat: 0, part: id('agb') }, 6);
   }
+  // Sistema de fogo (só aparece no cenário de fogo): garrafas de extintor no pilone, tubos de descarga,
+  // anel com bicos em volta do núcleo e os laços de detecção (vermelhos) no compartimento do núcleo
+  const fm = (mat) => ({ mat, part: id('extintor') }), FA = FIRE_ANG * D2R;
+  for (const [bx, bt] of [[1.88, FA - 0.1], [2.12, FA + 0.1]]) {
+    sphere(M('fire'), P3(bx, 1.46, bt), 0.075, fm(12), 14);
+    tube(M('fire'), [P3(bx, 1.46, bt), P3(bx, 1.555, bt)], 0.02, fm(0), 10); // cabeça com o cartucho de disparo
+    tube(M('fire'), [P3(bx + 0.06, 1.44, bt), P3(2.36, 1.42, FA), P3(2.42, 1.2, FA), P3(2.46, 0.9, FA), P3(2.5, FIRE_R + 0.06, FA)], 0.012, fm(0), 8);
+  }
+  tube(M('fire'), Array.from({ length: 97 }, (_, i) => P3(2.5, FIRE_R + 0.06, i / 96 * TAU)), 0.012, fm(0), 8, false);
+  for (let j = 0; j < 8; j++) { const t = j / 8 * TAU + 0.2; tube(M('fire'), [P3(2.5, FIRE_R + 0.06, t), P3(2.56, FIRE_R + 0.03, t)], 0.016, fm(7), 8); }
+  for (const a of [18, 52, 80]) tube(M('fire'), Array.from({ length: 21 }, (_, i) => P3(lerp(2.6, 4.4, i / 20), lerp(0.58, 0.7, Math.sin(i / 20 * Math.PI)) , a * D2R)), 0.007, fm(12), 6);
   // Válvula de sangria (VBV): portinhas entre o booster e o compressor de alta
   for (let j = 0; j < 12; j++) { const t = (j + 0.5) / 12 * TAU; box(M('fan'), P3(2.1, g.outC(2.1) + 0.045, t), [0.05, 0, 0], scl([0, Math.cos(t), Math.sin(t)], 0.01), scl([0, -Math.sin(t), Math.cos(t)], 0.07), { mat: 7, part: id('vbv') }); }
   return groups;
@@ -523,12 +535,14 @@ function create(canvas, g) {
       const [mod, spin] = k.split(':');
       // As grades e as portas do reversor só aparecem com o reverso ligado (senão atrapalham a vista do miolo)
       if ((mod === 'casc' || k === 'sleeve:door') && !st.revOn) continue;
-      if (st.only && (mod === 'sleeve' || mod === 'casc' ? 'case' : mod) !== st.only) continue;
+      if (mod === 'fire' && !st.fire) continue;
+      if (st.only && (mod === 'sleeve' || mod === 'casc' ? 'case' : mod === 'fire' ? 'core' : mod) !== st.only) continue;
       const rot = spin === 'lp' ? rotX(st.phLP) : spin === 'hp' ? rotX(st.phHP) : I4;
       R.drawMesh(b, Vm, rot, transl(MOD[mod] * st.ex + (mod === 'sleeve' ? SLIDE * rv : 0), 0, 0));
     }
     for (const k of ['aP', 'aN', 'aM', 'aC']) if (R.main.a[k] >= 0) gl.disableVertexAttribArray(R.main.a[k]);
     drawAir(st);
+    if (st.fire) drawFire(st);
   }
   function drawAir(st) {
     const fade = 1 - clamp(st.ex * 3, 0, 1);
@@ -593,6 +607,57 @@ function create(canvas, g) {
     gl.blendFunc(gl.ONE, gl.ONE);
     gl.vertexAttrib1f(A.aW, wpx * 4); gl.drawArrays(gl.TRIANGLES, nAir, flames.length * 6);
     gl.vertexAttrib1f(A.aW, wpx * 14); gl.drawArrays(gl.TRIANGLES, nAir + flames.length * 6, n - nAir - flames.length * 6);
+    gl.depthMask(true); gl.disable(gl.BLEND);
+    for (const k of ['aA', 'aB', 'aSE', 'aCol']) gl.disableVertexAttribArray(A[k]);
+  }
+  // Fogo e agente extintor: o fogo sobe da superfície do núcleo e é levado para trás; o agente sai dos bicos e enche o compartimento
+  const fireP = Array.from({ length: 260 }, () => ({ u: Math.random(), x: lerp(2.7, 4.4, Math.random()), th: lerp(-2, 92, Math.random()) * D2R, k: Math.random() }));
+  const agentP = Array.from({ length: 320 }, () => ({ u: Math.random(), th: (FIRE_ANG + lerp(-35, 60, Math.random())) * D2R, k: Math.random() }));
+  const fdata = new Float32Array((fireP.length * 2 + agentP.length + 60) * 6 * 12);
+  function drawFire(st) {
+    const f = st.fire, dt = st.dt * (st.slow ? 0.3 : 1);
+    let n = 0;
+    const put = (A, B, col, a) => { for (const [s, e] of [[-1, 0], [1, 0], [1, 1], [-1, 0], [1, 1], [-1, 1]]) { fdata.set([A[0], A[1], A[2], B[0], B[1], B[2], s, e, col[0], col[1], col[2], a], n * 12); n++; } };
+    const base = (x) => g.outC(x) + 0.04;
+    for (const p of fireP) {
+      p.u += dt * (0.9 + p.k * 0.8);
+      if (p.u > 1) { p.u = 0; p.x = lerp(2.7, 4.4, Math.random()); p.th = lerp(-2, 92, Math.random()) * D2R; p.k = Math.random(); }
+      if (p.k > f.flame) continue;
+      const u = p.u, x = p.x + u * 0.25, r = base(p.x) + u * (0.18 + 0.12 * p.k), w = Math.sin(st.time * 11 + p.k * 30) * 0.02;
+      const col = u < 0.25 ? [1, 0.95, 0.55] : u < 0.6 ? [1, 0.55, 0.1] : [0.9, 0.2, 0.05];
+      put(P3(x - 0.05, r - 0.06, p.th + w), P3(x, r, p.th + w), col, (1 - u) * 0.9);
+    }
+    const nF = n;
+    for (const p of fireP) { // fumaça escura saindo por cima do fogo
+      if (p.k > f.flame * 0.8 || p.u < 0.5) continue;
+      const u = p.u, x = p.x + 0.25 + u * 0.4, r = base(p.x) + 0.2 + u * 0.25;
+      put(P3(x - 0.08, r - 0.05, p.th), P3(x, r, p.th), [0.18, 0.17, 0.17], (1 - u) * 0.35 * f.flame);
+    }
+    const nS = n;
+    for (const p of agentP) { // agente extintor: névoa branca saindo dos bicos e indo para trás
+      p.u += dt * (0.35 + p.k * 0.3);
+      if (p.u > 1) { p.u = 0; p.k = Math.random(); p.th = (FIRE_ANG + lerp(-35, 60, Math.random())) * D2R; }
+      if (p.k > f.agent) continue;
+      const u = p.u, x = 2.56 + u * 1.9, r = lerp(FIRE_R + 0.03, base(x) + 0.08 + p.k * 0.12, Math.min(1, u * 3)), th = lerp(FIRE_ANG * D2R, p.th, Math.min(1, u * 2.5));
+      put(P3(x - 0.1, r, th), P3(x, r, th), [0.92, 0.96, 1], 0.75 * (1 - u * 0.6));
+    }
+    // Brilho dos laços de detecção quando o fogo é detectado
+    for (const a of [18, 52, 80]) for (let i = 0; i < 10 && f.loop > 0.02; i++) {
+      const x0 = lerp(2.6, 4.4, i / 10), x1 = lerp(2.6, 4.4, (i + 1) / 10);
+      put(P3(x0, lerp(0.58, 0.7, Math.sin(i / 10 * Math.PI)), a * D2R), P3(x1, lerp(0.58, 0.7, Math.sin((i + 1) / 10 * Math.PI)), a * D2R), [1, 0.1, 0.08], f.loop * (0.55 + 0.45 * Math.sin(st.time * 10)));
+    }
+    gl.useProgram(streak.p);
+    gl.uniformMatrix4fv(streak.u.uPV, false, PV); gl.uniform2fv(streak.u.uRes, [canvas.width, canvas.height]);
+    gl.bindBuffer(gl.ARRAY_BUFFER, sbuf); gl.bufferData(gl.ARRAY_BUFFER, fdata.subarray(0, n * 12), gl.DYNAMIC_DRAW);
+    const A = streak.a, at = (k, s, o) => { gl.enableVertexAttribArray(A[k]); gl.vertexAttribPointer(A[k], s, gl.FLOAT, false, 48, o * 4); };
+    at('aA', 3, 0); at('aB', 3, 3); at('aSE', 2, 6); at('aCol', 4, 8);
+    const wpx = clamp(H / 260, 1.4, 3.2) * dpr;
+    gl.enable(gl.BLEND); gl.depthMask(false); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.vertexAttrib1f(A.aW, wpx * 7); gl.drawArrays(gl.TRIANGLES, nF, nS - nF); // fumaça
+    gl.vertexAttrib1f(A.aW, wpx * 6); gl.drawArrays(gl.TRIANGLES, 0, nF); // fogo
+    gl.blendFunc(gl.ONE, gl.ONE); gl.vertexAttrib1f(A.aW, wpx * 2.5); gl.drawArrays(gl.TRIANGLES, 0, nF); // miolo claro do fogo
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.vertexAttrib1f(A.aW, wpx * 5); gl.drawArrays(gl.TRIANGLES, nS, n - nS); // agente e laços
     gl.depthMask(true); gl.disable(gl.BLEND);
     for (const k of ['aA', 'aB', 'aSE', 'aCol']) gl.disableVertexAttribArray(A[k]);
   }

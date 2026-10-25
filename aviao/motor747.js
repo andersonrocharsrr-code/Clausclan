@@ -97,12 +97,13 @@ const PARTS = {
   lpshaft: { nome: 'Eixo de baixa (N1)', at: [5.2, -0.04], polys: [band(0.95, 5.6, K(0), K(0.075))] },
   mancal: { nome: 'Mancais (rolamentos)', at: [4.5, -0.103], polys: BRG.map(([x, s]) => box(x - 0.045, x + 0.045, brgR(s) - 0.035, brgR(s) + 0.035)) },
   reverser: { nome: 'Reversor de empuxo', at: [2.9, 1.5], polys: [band(2.55, 3.7, caseIn, nacOut)] },
+  extintor: { nome: 'Extintor de fogo', at: [2.0, 1.46], polys: [band(1.8, 2.2, K(1.38), K(1.54))] },
   agb: { nome: 'Caixa de acessórios', only: -1, at: [2.05, -1.47], polys: [band(AGB[0], AGB[1], agbLo, agbHi)] },
   nozzle: { nome: 'Bocal e cone de escape', at: [6.15, -0.28], polys: [band(5.45, 6.75, K(0), (x) => (x <= 5.8 ? cowl(x) : 0.52))] },
 };
 Object.values(PARTS).forEach((p, i) => { p.n = i + 1; });
 // Ordem para o toque no desenho: as peças menores primeiro.
-const HIT = ['reverser', 'mancal', 'agb', 'vbv', 'fuel', 'splitter', 'ogv', 'spinner', 'fan', 'lpc', 'hpc', 'comb', 'hpt', 'lpt', 'hpshaft', 'lpshaft', 'nozzle', 'inlet', 'fancase', 'bypass'];
+const HIT = ['extintor', 'reverser', 'mancal', 'agb', 'vbv', 'fuel', 'splitter', 'ogv', 'spinner', 'fan', 'lpc', 'hpc', 'comb', 'hpt', 'lpt', 'hpshaft', 'lpshaft', 'nozzle', 'inlet', 'fancase', 'bypass'];
 
 const STEPS = [
   { t: 'O caminho do ar', cam: [X0, X1 - 0.2, 1.75], parts: [],
@@ -139,7 +140,7 @@ const STEPS = [
     txt: 'Os dois fluxos saem separados: o ar do fan, frio e em enorme quantidade, pela borda da nacele; os gases do núcleo, quentes, pelo bocal em volta do cone de escape. Empurrar toda essa massa de ar para trás faz o motor ser empurrado para a frente, como diz a terceira lei de Newton. Isso é o empuxo.',
     facts: [['Jato do fan', 'Frio · maior parte'], ['Jato do núcleo', 'Quente · parte menor'], ['Empuxo', 'Ação e reação']] },
 ];
-const PART_STEP = { inlet: 1, spinner: 1, fan: 2, fancase: 2, splitter: 3, ogv: 3, bypass: 3, lpc: 4, vbv: 4, hpc: 5, fuel: 6, comb: 6, hpt: 7, lpt: 8, lpshaft: 9, hpshaft: 9, mancal: 9, agb: 9, nozzle: 10, reverser: 3 };
+const PART_STEP = { inlet: 1, spinner: 1, fan: 2, fancase: 2, splitter: 3, ogv: 3, bypass: 3, lpc: 4, vbv: 4, hpc: 5, fuel: 6, comb: 6, hpt: 7, lpt: 8, lpshaft: 9, hpshaft: 9, mancal: 9, agb: 9, nozzle: 10, reverser: 3, extintor: 9 };
 
 // Estações do ar na decolagem (valores aproximados, ao nível do mar): [nome, °C, atm, etapa]
 const STA = [
@@ -164,9 +165,11 @@ const SX = (x) => ox + x * k, SY = (y) => cy - y * k;
 const TS2 = (x, y) => [SX(x), SY(y)];
 let TS = TS2;
 
-const n1 = () => 25 + 75 * Math.pow(sp, 0.55);
-const n2 = () => 64 + 36 * Math.pow(sp, 0.6);
-const egt = () => 380 + 560 * Math.pow(sp, 1.4);
+// fuelCut: combustível cortado (cenário de fogo); o motor desacelera até girar só com o vento
+let fuelCut = 0;
+const n1 = () => (25 + 75 * Math.pow(sp, 0.55)) * (1 - 0.85 * fuelCut);
+const n2 = () => (64 + 36 * Math.pow(sp, 0.6)) * (1 - 0.85 * fuelCut);
+const egt = () => lerp(380 + 560 * Math.pow(sp, 1.4), 120, fuelCut);
 
 function readPal() {
   const dark = ((c) => { const n = parseInt(c.replace('#', '').padEnd(6, '0').slice(0, 6), 16); return ((n >> 16) + (n >> 8 & 255) + (n & 255)) / 3 < 100; })(css('--tunnel') || '#e6ecee');
@@ -791,7 +794,7 @@ function frame(t) {
   if (!active()) { raf = 0; return; }
   const dt = Math.min(0.05, (t - (last || t)) / 1000); last = t; time += dt;
   sp += clamp(lever - sp, -dt / 4, dt / 6);
-  const rot = (0.25 + 1.0 * sp) * 2 * Math.PI * (slow ? 0.25 : 1) * dt;
+  const rot = (0.25 + 1.0 * sp) * (1 - 0.85 * fuelCut) * 2 * Math.PI * (slow ? 0.25 : 1) * dt;
   phLP += rot; phHP -= rot * 1.6;
   // Câmera desliza até a etapa
   ex += (exT - ex) * (1 - Math.exp(-dt * 2.2)); if (Math.abs(ex - exT) < 0.002) ex = exT;
@@ -1418,15 +1421,55 @@ const CAM3 = [
 ];
 const EXP3 = { at: [3.6, 0, 0.2], d: 17, az: 52, el: 18 };
 // Reverso: o capô móvel desliza 0,55 m para trás, as portas fecham o duto do fan e o ar sai pelas grades para a frente
+/* Fogo no motor: o fogo aparece no compartimento do núcleo, os laços detectam, o piloto corta o combustível,
+   puxa a alavanca de fogo e dispara a garrafa; o agente extintor enche o compartimento e o fogo apaga. */
+const FIRECAM = { at: [3.0, 0.5, 0.45], d: 5.4, az: 58, el: 34 };
+const FIRE_STEPS = [
+  [0, 'Fogo no compartimento do núcleo', 'Um vazamento de combustível pega fogo em volta do núcleo, entre a carcaça do motor e a carenagem.'],
+  [2, 'Os laços de detecção esquentam', 'Os laços de detecção (os tubos vermelhos) sentem o calor. No cockpit toca a campainha, acende FIRE ENG 2 no EICAS e a alavanca de fogo do motor fica vermelha.'],
+  [5, 'Manete em IDLE', 'O piloto confirma qual motor está pegando fogo e leva a manete dele para IDLE.'],
+  [7, 'Combustível cortado', 'A chave FUEL CONTROL vai para CUTOFF: o combustível para de chegar aos injetores, a chama da câmara apaga e o motor desacelera.'],
+  [9, 'Alavanca de fogo puxada', 'Puxar a alavanca de fogo fecha as válvulas de combustível, de óleo hidráulico e de ar sangrado, desliga o gerador e arma as garrafas.'],
+  [11, 'Garrafa disparada', 'Girar a alavanca dispara o cartucho da garrafa. O agente extintor desce pelo tubo, sai pelos bicos do anel e enche o compartimento, tirando o oxigênio do fogo.'],
+  [15.5, 'Fogo apagado', 'Os laços esfriam e o alarme apaga. Se o fogo continuasse depois de 30 segundos, o piloto giraria a alavanca para o outro lado e dispararia a segunda garrafa.'],
+];
+let fireOn = false, fireT = 0, fireLever = 0.8, fireStep = -1;
+const ramp = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
+function fireState() {
+  const t = fireT;
+  return { flame: ramp(t, 0, 2) * (1 - ramp(t, 12, 15)), loop: ramp(t, 2, 3) * (1 - ramp(t, 15, 16.5)), agent: ramp(t, 11, 11.4) * (1 - ramp(t, 15.5, 17.5)) };
+}
+function renderFireSteps() {
+  const ol = $('#engFireSteps'); if (!ol) return;
+  ol.innerHTML = FIRE_STEPS.map(([t0, tt, d], i) => `<li class="${i < fireStep ? 'done' : i === fireStep ? 'now' : ''}"><b>${tt}</b>${i === fireStep ? `<span>${d}</span>` : ''}</li>`).join('');
+}
+const FIRE_LABELS = [['Garrafas de extintor', [2.0, 1.5, 30], 0], ['Laços de detecção', [3.9, 0.68, 52], 0], ['Bicos do agente', [2.56, 0.66, 20], 0], ['Fogo', [3.4, 0.66, 70], 0]];
 const REVCAM = { at: [2.6, 0.55, 0.55], d: 7.4, az: 64, el: 24 };
 let rev = 0, revT = 0;
 const REV_LABELS = [['Capô móvel (desliza para trás)', [3.75, 1.44, 64], 1], ['Grades (cascatas)', [2.83, 1.5, 22], 0], ['Portas de bloqueio', [3.22, 1.05, 50], 1], ['Ar do fan saindo para a frente', [2.3, 2.0, 38], 0], ['Jato quente continua para trás', [6.6, 0.3, 80], 0]];
 function drawRevLabels() {
+  if (fireOn) return drawLabels3(FIRE_LABELS.map(([n, a], i) => [n, a, 0, ['Garrafas', 'Detecção', 'Bicos', 'Fogo'][i]]), 1);
   if (rev < 0.08) return;
-  ctx.save(); ctx.globalAlpha = clamp((rev - 0.08) * 2, 0, 1);
+  const SHORT0 = ['Capô móvel', 'Grades', 'Portas', 'Ar para a frente', 'Jato quente'];
+  drawLabels3(REV_LABELS.map(([n, a, sl], i) => [n, a, sl, SHORT0[i]]), clamp((rev - 0.08) * 2, 0, 1));
+}
+// Aviso FIRE ENG 2 (como no EICAS) piscando enquanto os laços detectam o fogo
+function drawFireAlert() {
+  const f = fireState();
+  if (f.loop < 0.5) return;
+  const on = Math.sin(time * 7) > -0.3, x = 12, y = 34;
+  ctx.save();
+  ctx.font = `700 15px ${css('--mono') || 'monospace'}`; ctx.textBaseline = 'middle';
+  const w = ctx.measureText('FIRE ENG 2').width + 22;
+  ctx.fillStyle = '#05070a'; ctx.fillRect(x, y, w, 28);
+  ctx.strokeStyle = '#ff2a1f'; ctx.lineWidth = 2; ctx.strokeRect(x, y, w, 28);
+  ctx.fillStyle = on ? '#ff2a1f' : '#6a1410'; ctx.fillText('FIRE ENG 2', x + 11, y + 14.5);
+  ctx.restore();
+}
+function drawLabels3(list, alpha) {
+  ctx.save(); ctx.globalAlpha = alpha;
   ctx.font = `600 11.5px ${css('--mono') || 'monospace'}`; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
-  const SHORT = ['Capô móvel', 'Grades', 'Portas', 'Ar para a frente', 'Jato quente'];
-  const items = REV_LABELS.map(([nome0, a, sl], i) => { const nome = W < 600 ? SHORT[i] : nome0; const q = r3d.project(P3d(a[0] + (sl ? 0.55 * rev : 0), a[1], a[2])); return q && { nome, ax: q[0], ay: q[1], top: i % 2 === 0, w: ctx.measureText(nome).width + 18 }; }).filter(Boolean);
+  const items = list.map(([nome0, a, sl, short], i) => { const nome = W < 600 ? short : nome0; const q = r3d.project(P3d(a[0] + (sl ? 0.55 * rev : 0), a[1], a[2])); return q && { nome, ax: q[0], ay: q[1], top: i % 2 === 0, w: ctx.measureText(nome).width + 18 }; }).filter(Boolean);
   for (const top of [true, false]) {
     const list = items.filter((it) => it.top === top).sort((a, b) => a.ax - b.ax);
     let pos = 4; list.forEach((it) => { it.x = Math.max(it.ax - it.w / 2, pos); pos = it.x + it.w + 6; });
@@ -1475,16 +1518,25 @@ function frame3D(dt) {
   // O capô abre devagar, como no avião (cerca de 2 s)
   rev += clamp(revT - rev, -dt / 1.6, dt / 2.0);
   const cr = clamp(revT ? 1 : rev * 1.5, 0, 1), fit = Math.max(1, Math.pow(1.6 / (W / H), 0.6));
-  const T0 = { at: t.at.map((v, i) => lerp(v, REVCAM.at[i], cr)), d: lerp(t.d, REVCAM.d * fit, cr), az: lerp(t.az, REVCAM.az, cr), el: lerp(t.el, REVCAM.el, cr) };
+  const RC = fireOn ? FIRECAM : REVCAM, crr = fireOn ? 1 : cr;
+  const T0 = { at: t.at.map((v, i) => lerp(v, RC.at[i], crr)), d: lerp(t.d, RC.d * fit, crr), az: lerp(t.az, RC.az, crr), el: lerp(t.el, RC.el, crr) };
+  if (fireOn) {
+    fireT += dt * (slow ? 0.3 : 1);
+    const k2 = FIRE_STEPS.reduce((a, s, i) => (fireT >= s[0] ? i : a), 0);
+    if (k2 !== fireStep) { fireStep = k2; renderFireSteps(); }
+    if (fireT > 5 && lever) { lever = 0; const t2 = $('#engThr'); if (t2) t2.value = 0; const o2 = $('#engThrO'); if (o2) o2.textContent = 'IDLE'; }
+    fuelCut += (clamp(ramp(fireT, 7, 7.5), 0, 1) - fuelCut) * (1 - Math.exp(-dt * 0.8));
+  } else fuelCut += (0 - fuelCut) * (1 - Math.exp(-dt * 2));
   const tgAt = T0.at.map((v, i) => lerp(v, X.at[i], ex)), tgD = lerp(T0.d, X.d, ex), tgAz = lerp(T0.az, X.az, ex) + uAz, tgEl = clamp(lerp(T0.el, X.el, ex) + uEl, -20, 70);
   cam3.at = cam3.at.map((v, i) => v + (tgAt[i] - v) * e); cam3.dist += (tgD - cam3.dist) * e; cam3.az += (tgAz - cam3.az) * e; cam3.el += (tgEl - cam3.el) * e;
   const ids = ex > 0.05 ? [] : highlightIds();
   const deep = (step === 9 && !sel) || ['lpshaft', 'hpshaft', 'mancal'].includes(sel) ? 1 : 0;
   const only = ex > 0.5 && exMod ? exMod : '', mc = only && MODCAM[only];
-  r3d.render({ cam: cam3, phLP, phHP, ex, sp, time, dt, slow, showAir, deep, only, rev, revOn: revT > 0 || rev > 0.01, shadow: mc ? [mc.at[0] + r3d.MOD[only] * ex, 0, 2.2, 1.9] : null, hl: ids.map((id) => PARTS[id].n), dark: pal.dark });
+  r3d.render({ cam: cam3, phLP, phHP, ex, sp: sp * (1 - 0.9 * fuelCut), time, dt, slow, showAir, deep, only, rev, revOn: revT > 0 || rev > 0.01, fire: fireOn ? fireState() : null, shadow: mc ? [mc.at[0] + r3d.MOD[only] * ex, 0, 2.2, 1.9] : null, hl: ids.map((id) => PARTS[id].n), dark: pal.dark });
   ctx.clearRect(0, 0, W, H);
   TS = TS3; const k0 = k; k = H / 3.4;
-  if (ex < 0.05 && rev < 0.05 && !revT) { drawFlowArrows(dt); drawPins(); drawMainCallout(dt); } else { arrowA = 0; calloutA = 0; }
+  if (fireOn) drawFireAlert();
+  if (ex < 0.05 && rev < 0.05 && !revT && !fireOn) { drawFlowArrows(dt); drawPins(); drawMainCallout(dt); } else { arrowA = 0; calloutA = 0; }
   drawModLabels();
   drawRevLabels();
   TS = TS2; k = k0;
@@ -1506,7 +1558,7 @@ function updateUI() {
   $('#engThrust').textContent = nf(Math.round(T)) + ' kN';
   $('#engLbf').textContent = nf(Math.round(T * 224.8 / 100) * 100) + ' lbf';
   $('#engFlow').textContent = '≈ ' + nf(Math.round(1100 * (0.22 + 0.78 * sp) / 10) * 10) + ' kg/s';
-  const q = tScale(), pq = 0.08 + 0.92 * Math.pow(sp, 1.6);
+  const q = tScale() * (1 - 0.85 * fuelCut), pq = (0.08 + 0.92 * Math.pow(sp, 1.6)) * (1 - 0.9 * fuelCut);
   $('#engSta').innerHTML = STA.map(([nome, tc, pa, st]) => {
     const T0 = tc === 'egt' ? E : 15 + (tc - 15) * q, P0 = 1 + (pa - 1) * pq;
     return `<div class="${st === step ? 'is-on' : ''}"><i style="background:${rampColor(Math.min(1950, T0))}"></i><span>${nome}</span><b>${nf(Math.round(T0 / 5) * 5)} °C</b><b>${nf(P0, P0 < 10 ? 1 : 0)} atm</b></div>`;
@@ -1582,7 +1634,7 @@ function init(opts) {
     const PID = {}; Object.entries(PARTS).forEach(([id, p]) => { PID[id] = p.n; });
     const geo = { nacOut, caseIn, spin, cowl, outC, inC, hubIn, ROWS, SHAFT, BRG, SPLIT, FAN_NOZ, CORE_NOZ, FSPLIT, X0, X1, PID, pathY, velOf, tempOf, tempRGB };
     r3d = window.Motor3D.create(gl, geo);
-    if (!r3d) $('#engRevLabel')?.setAttribute('hidden', '');
+    if (!r3d) { $('#engRevLabel')?.setAttribute('hidden', ''); $('#engFireLabel')?.setAttribute('hidden', ''); }
     if (r3d) { cv.closest('.eng__view')?.classList.add('is-3d'); pieces3d = window.Motor3D.createPieces(geo); window.__motorTris = r3d.tris; }
   }
   makeParts();
@@ -1598,19 +1650,34 @@ function init(opts) {
   $('#engAir').addEventListener('change', (e) => { showAir = e.target.checked; });
   $('#engExplode')?.addEventListener('change', (e) => {
     exT = e.target.checked ? 1 : 0;
+    if (exT && fireOn) setFire(false);
     if (exT && revT) { const r = $('#engRevOn'); r.checked = false; r.dispatchEvent(new Event('change')); }
     const box = $('#engMods'); if (box) box.hidden = !exT || !r3d;
     setExMod('');
   });
+  const toTop = () => {
+    const view = cv.closest('.eng__view') || cv, top = document.querySelector('.top');
+    const hdr = top ? top.getBoundingClientRect().bottom : 0;
+    window.scrollTo({ top: view.getBoundingClientRect().top + window.scrollY - hdr - 8, behavior: 'smooth' });
+  };
+  const setFire = (on) => {
+    if (on === fireOn) { if (on) { fireT = 0; fireStep = -1; } return; }
+    fireOn = on; fireT = 0; fireStep = -1;
+    $('#engFireBox').hidden = !on; $('#engFireOn').checked = on;
+    uAz = 0; uEl = 0;
+    if (on) {
+      fireLever = lever;
+      for (const id of ['#engRevOn', '#engExplode']) { const x = $(id); if (x.checked) { x.checked = false; x.dispatchEvent(new Event('change')); } }
+      toTop();
+    } else { lever = fireLever; sp = Math.min(sp, lever); thr.value = Math.round(lever * 100); setThr(); }
+  };
+  $('#engFireOn')?.addEventListener('change', (e) => setFire(e.target.checked));
+  $('#engFireAgain')?.addEventListener('click', () => { fireT = 0; fireStep = -1; lever = fireLever; sp = fireLever; fuelCut = 0; });
   $('#engRevOn')?.addEventListener('change', (e) => {
+    if (e.target.checked && fireOn) setFire(false);
     revT = e.target.checked ? 1 : 0;
     $('#engRevBox').hidden = !revT;
-    // Leva a página até o motor para ver a animação (o cabeçalho fixo fica em cima)
-    if (revT) {
-      const view = cv.closest('.eng__view') || cv, top = document.querySelector('.top');
-      const hdr = top ? top.getBoundingClientRect().bottom : 0;
-      window.scrollTo({ top: view.getBoundingClientRect().top + window.scrollY - hdr - 8, behavior: 'smooth' });
-    }
+    if (revT) toTop();
     uAz = 0; uEl = 0;
     if (revT && exT) { const x = $('#engExplode'); x.checked = false; x.dispatchEvent(new Event('change')); }
   });

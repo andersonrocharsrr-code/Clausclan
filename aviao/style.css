@@ -463,6 +463,15 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 .eng__view { position: relative; }
 .eng__mods { border-top: 1px solid var(--line); padding: 12px 16px; display: grid; gap: 8px; }
 .eng__mods[hidden] { display: none; }
+.eng__firesteps { margin: 0; padding: 0; list-style: none; counter-reset: fs; display: grid; gap: 6px; }
+.eng__firesteps li { counter-increment: fs; display: grid; grid-template-columns: 24px 1fr; column-gap: 10px; align-items: start; color: var(--muted); font-size: 14px; line-height: 1.45; }
+.eng__firesteps li::before { content: counter(fs); display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line); font: 600 11px var(--mono); grid-row: span 2; }
+.eng__firesteps li b { font-weight: 600; }
+.eng__firesteps li span { grid-column: 2; color: var(--ink); }
+.eng__firesteps li.done { color: var(--ink); }
+.eng__firesteps li.done::before { content: "✓"; background: var(--ok); border-color: var(--ok); color: #fff; }
+.eng__firesteps li.now { color: var(--ink); }
+.eng__firesteps li.now::before { background: #d3261c; border-color: #d3261c; color: #fff; }
 .eng__modsbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .eng__mods p { margin: 0; line-height: 1.5; font-size: 14px; }
 .eng__mods p b { display: block; font-family: var(--display); font-size: 19px; font-weight: 600; }
