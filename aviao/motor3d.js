@@ -473,7 +473,7 @@ function create(canvas, g) {
     // Sombra no chão
     gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
     gl.useProgram(ground.p);
-    gl.uniformMatrix4fv(ground.u.uPV, false, PV); gl.uniform4fv(ground.u.uS, [3.2 + st.ex * 1.0, 0, 5.2 + st.ex * 2.5, 2.1]); gl.uniform1f(ground.u.uY, -1.9); gl.uniform1f(ground.u.uA, st.dark ? 0.5 : 0.22);
+    gl.uniformMatrix4fv(ground.u.uPV, false, PV); gl.uniform4fv(ground.u.uS, st.shadow || [3.2 + st.ex * 1.0, 0, 5.2 + st.ex * 2.5, 2.1]); gl.uniform1f(ground.u.uY, -1.9); gl.uniform1f(ground.u.uA, st.dark ? 0.5 : 0.22);
     gl.bindBuffer(gl.ARRAY_BUFFER, gbuf); gl.enableVertexAttribArray(ground.a.aQ); gl.vertexAttribPointer(ground.a.aQ, 2, gl.FLOAT, false, 8, 0);
     gl.drawArrays(gl.TRIANGLES, 0, 6); gl.disableVertexAttribArray(ground.a.aQ);
     gl.depthMask(true); gl.disable(gl.BLEND);
@@ -481,6 +481,7 @@ function create(canvas, g) {
     R.useMain(Pm, Vm, { cut: [-8 * D2R, 98 * D2R, 0, 0], door: [108 * D2R, 166 * D2R, 1.55, 3.1], deep: st.deep, time: st.time, heat: 0.35 + 0.65 * st.sp, hl: st.hl });
     for (const [k, b] of Object.entries(bufs)) {
       const [mod, spin] = k.split(':');
+      if (st.only && mod !== st.only) continue;
       const rot = spin === 'lp' ? rotX(st.phLP) : spin === 'hp' ? rotX(st.phHP) : I4;
       R.drawMesh(b, Vm, rot, transl(MOD[mod] * st.ex, 0, 0));
     }

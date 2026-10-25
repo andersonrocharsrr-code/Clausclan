@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=51">
+  <link rel="stylesheet" href="style.css?v=52">
 </head>
 <body>
   <header class="top">
@@ -529,6 +529,20 @@
           <div class="eng__main">
             <div class="card tunnel eng__stage">
               <div class="eng__view"><canvas id="engGl" aria-hidden="true"></canvas><canvas id="engCv" aria-label="Motor GEnx-2B em corte, em 3D, com o ar passando. Arraste para girar."></canvas></div>
+              <div class="eng__mods" id="engMods" hidden>
+                <div class="eng__modsbar">
+                  <span class="label">Ver de perto</span>
+                  <div class="chips" id="engModChips">
+                    <button type="button" class="chip" data-exmod="" aria-pressed="true">Todos</button>
+                    <button type="button" class="chip" data-exmod="inlet" aria-pressed="false">Entrada de ar</button>
+                    <button type="button" class="chip" data-exmod="fan" aria-pressed="false">Fan</button>
+                    <button type="button" class="chip" data-exmod="case" aria-pressed="false">Carcaça do fan</button>
+                    <button type="button" class="chip" data-exmod="core" aria-pressed="false">Núcleo</button>
+                    <button type="button" class="chip" data-exmod="lpt" aria-pressed="false">Turbina de baixa</button>
+                  </div>
+                </div>
+                <p id="engModText"></p>
+              </div>
               <div class="tunnel__legend mono small">
                 <span><i class="sw sw--byp"></i>ar do fan (bypass)</span>
                 <span><i class="sw sw--heat"></i>ar do núcleo · frio → quente</span>
@@ -677,12 +691,12 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=51"></script>
-  <script src="catalogo747.js?v=51"></script>
-  <script src="cockpit747.js?v=51"></script>
-  <script src="motor3d.js?v=51"></script>
-  <script src="motor747.js?v=51"></script>
-  <script src="app.js?v=51"></script>
+  <script src="avioes.js?v=52"></script>
+  <script src="catalogo747.js?v=52"></script>
+  <script src="cockpit747.js?v=52"></script>
+  <script src="motor3d.js?v=52"></script>
+  <script src="motor747.js?v=52"></script>
+  <script src="app.js?v=52"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());

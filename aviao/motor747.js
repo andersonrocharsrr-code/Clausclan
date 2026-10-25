@@ -450,17 +450,20 @@ function drawModLabels() {
   if (ex < 0.05) return;
   ctx.save(); ctx.globalAlpha = clamp((ex - 0.05) * 2, 0, 1);
   ctx.font = `600 11.5px ${css('--mono') || 'monospace'}`; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+  modHits = [];
   // Etiquetas em cima (fan, núcleo, turbina) e embaixo (entrada, carcaça), espalhadas para não se sobreporem
   for (const top of [true, false]) {
-    const list = MOD_NAMES.filter(([m]) => (m === 'inlet' || m === 'case') !== top).map(([m, nome, x]) => { const q = TS(x + off(m), top ? 1.3 : -1.3) || [0, 0]; return { m, nome, ax: q[0], ay: q[1], w: ctx.measureText(nome).width + 18 }; });
+    const list = MOD_NAMES.filter(([m]) => (!exMod || m === exMod) && (m === 'inlet' || m === 'case') !== top).map(([m, nome, x]) => { const q = TS(x + off(m), top ? 1.3 : -1.3) || [0, 0]; return { m, nome, ax: q[0], ay: q[1], w: ctx.measureText(nome).width + 18 }; });
     let pos = 4; list.forEach((it) => { it.x = Math.max(it.ax - it.w / 2, pos); pos = it.x + it.w + 6; });
     let lim = W - 4; for (let i = list.length - 1; i >= 0; i--) { list[i].x = Math.min(list[i].x, lim - list[i].w); lim = list[i].x - 6; }
     const y = top ? 16 : H - 16;
     for (const it of list) {
       const cx = it.x + it.w / 2;
       ctx.strokeStyle = pal.hl; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(cx, y + (top ? 10 : -10)); ctx.lineTo(it.ax, it.ay); ctx.stroke();
-      ctx.fillStyle = pal.panel; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(it.x, y - 10, it.w, 20, 10) : ctx.rect(it.x, y - 10, it.w, 20); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = pal.ink; ctx.fillText(it.nome, cx, y + 0.5);
+      const on = it.m === exMod;
+      modHits.push({ m: it.m, x0: it.x - 6, x1: it.x + it.w + 6, y0: y - 16, y1: y + 16 });
+      ctx.fillStyle = on ? pal.hl : pal.panel; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(it.x, y - 10, it.w, 20, 10) : ctx.rect(it.x, y - 10, it.w, 20); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = on ? '#fff' : pal.ink; ctx.fillText(it.nome, cx, y + 0.5);
     }
   }
   ctx.restore();
@@ -1412,16 +1415,43 @@ const CAM3 = [
   { at: [3.85, 0.27, 0.28], d: 1.9, az: 86, el: 38 }, { at: [4.25, 0.27, 0.28], d: 1.9, az: 88, el: 36 }, { at: [5.0, 0.3, 0.32], d: 2.7, az: 92, el: 34 },
   { at: [3.2, 0.05, 0.1], d: 5.6, az: 82, el: 36 }, { at: [6.1, 0.1, 0.2], d: 5.0, az: 125, el: 16 },
 ];
-const EXP3 = { at: [3.6, 0, 0.2], d: 20, az: 52, el: 18 };
+const EXP3 = { at: [3.6, 0, 0.2], d: 17, az: 52, el: 18 };
+// Ver um módulo de perto (com o motor separado): centro do módulo montado, distância e ângulos da câmera
+const MODCAM = {
+  inlet: { at: [0.35, 0.05, 0], d: 6.4, az: 40, el: 16 }, fan: { at: [1.05, 0.08, 0.1], d: 6.4, az: 36, el: 14 },
+  case: { at: [2.2, -0.05, 0.1], d: 8.4, az: 56, el: 20 }, core: { at: [3.45, 0.05, 0.1], d: 5.4, az: 66, el: 24 }, lpt: { at: [5.5, 0.03, 0.1], d: 5.0, az: 62, el: 22 },
+};
+const MODTXT = {
+  inlet: ['Entrada de ar', 'A boca da nacele. É uma peça inteira de alumínio e compósito, com a borda aquecida para não juntar gelo e painéis acústicos por dentro. Sai inteira para inspeção e para trocar os painéis.'],
+  fan: ['Fan', 'O conjunto que gira na frente: o cone com o anel branco, o disco e as 18 pás pretas de compósito com a borda de ataque cromada. Junto com ele vem o booster, os 4 estágios do compressor de baixa no mesmo eixo N1. Cada pá pode ser trocada sozinha.'],
+  case: ['Carcaça do fan', 'A estrutura que envolve o fan: o anel azul por dentro, as palhetas guia (OGV), os tubos e válvulas em cima e, embaixo, a caixa de acessórios com as bombas de combustível, óleo e hidráulica e o gerador. É ela que prende o motor na asa.'],
+  core: ['Núcleo', 'O coração do motor: o compressor de alta com 10 estágios, a câmara de combustão com os 22 injetores em volta e a turbina de alta com 2 estágios, todos no eixo N2. Na manutenção ele sai inteiro, como um bloco.'],
+  lpt: ['Turbina de baixa', 'Os 6 estágios da turbina de baixa, o eixo N1 que passa por dentro do núcleo até o fan, o bocal e o cone de escape. É o que gira o fan e o booster.'],
+};
+const MOD_PARTS = { inlet: ['inlet'], fan: ['spinner', 'fan', 'lpc', 'vbv', 'splitter'], case: ['fancase', 'ogv', 'bypass', 'agb'], core: ['hpc', 'comb', 'fuel', 'hpt', 'hpshaft', 'mancal'], lpt: ['lpt', 'lpshaft', 'nozzle'] };
+let exMod = '', modHits = [];
+function setExMod(m) {
+  exMod = m || ''; uAz = 0; uEl = 0;
+  document.querySelectorAll('#engModChips [data-exmod]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.exmod === exMod)));
+  const t = MODTXT[exMod], p = $('#engModText');
+  if (p) p.innerHTML = t ? `<b>${t[0]}</b>${t[1]}` : 'Toque num módulo, aqui ou no nome dele no desenho, para ver de perto. Arraste para girar.';
+}
 const cam3 = { at: CAM3[0].at.slice(), dist: CAM3[0].d, az: CAM3[0].az, el: CAM3[0].el };
 let uAz = 0, uEl = 0;
 function frame3D(dt) {
   const t = CAM3[step], e = 1 - Math.exp(-dt * 3);
-  const tgAt = t.at.map((v, i) => lerp(v, EXP3.at[i], ex)), tgD = lerp(t.d, EXP3.d, ex), tgAz = lerp(t.az, EXP3.az, ex) + uAz, tgEl = clamp(lerp(t.el, EXP3.el, ex) + uEl, -20, 70);
+  let X = EXP3;
+  if (exMod && MODCAM[exMod]) {
+    // Módulo sozinho na cena, girando devagar; em telas estreitas a câmera recua para ele caber
+    const c = MODCAM[exMod], fit = Math.max(1, Math.pow(1.6 / (W / H), 0.6));
+    X = { ...c, d: c.d * fit, az: c.az + Math.sin(time * 0.25) * 18, at: [c.at[0] + r3d.MOD[exMod] * ex, c.at[1], c.at[2]] };
+  }
+  const tgAt = t.at.map((v, i) => lerp(v, X.at[i], ex)), tgD = lerp(t.d, X.d, ex), tgAz = lerp(t.az, X.az, ex) + uAz, tgEl = clamp(lerp(t.el, X.el, ex) + uEl, -20, 70);
   cam3.at = cam3.at.map((v, i) => v + (tgAt[i] - v) * e); cam3.dist += (tgD - cam3.dist) * e; cam3.az += (tgAz - cam3.az) * e; cam3.el += (tgEl - cam3.el) * e;
-  const ids = highlightIds();
+  const ids = ex > 0.05 ? [] : highlightIds();
   const deep = (step === 9 && !sel) || ['lpshaft', 'hpshaft', 'mancal'].includes(sel) ? 1 : 0;
-  r3d.render({ cam: cam3, phLP, phHP, ex, sp, time, dt, slow, showAir, deep, hl: ids.map((id) => PARTS[id].n), dark: pal.dark });
+  const only = ex > 0.5 && exMod ? exMod : '', mc = only && MODCAM[only];
+  r3d.render({ cam: cam3, phLP, phHP, ex, sp, time, dt, slow, showAir, deep, only, shadow: mc ? [mc.at[0] + r3d.MOD[only] * ex, 0, 2.2, 1.9] : null, hl: ids.map((id) => PARTS[id].n), dark: pal.dark });
   ctx.clearRect(0, 0, W, H);
   TS = TS3; const k0 = k; k = H / 3.4;
   if (ex < 0.05) { drawFlowArrows(dt); drawPins(); drawMainCallout(dt); } else { arrowA = 0; calloutA = 0; }
@@ -1534,7 +1564,12 @@ function init(opts) {
   thr.addEventListener('input', setThr); setThr(); sp = lever;
   $('#engSlow').addEventListener('change', (e) => { slow = e.target.checked; });
   $('#engAir').addEventListener('change', (e) => { showAir = e.target.checked; });
-  $('#engExplode')?.addEventListener('change', (e) => { exT = e.target.checked ? 1 : 0; });
+  $('#engExplode')?.addEventListener('change', (e) => {
+    exT = e.target.checked ? 1 : 0;
+    const box = $('#engMods'); if (box) box.hidden = !exT || !r3d;
+    setExMod('');
+  });
+  $('#engModChips')?.addEventListener('click', (e) => { const b = e.target.closest('[data-exmod]'); if (b) setExMod(b.dataset.exmod); });
   // Arrastar gira a vista (no celular, só para os lados, para não atrapalhar a rolagem da página)
   let drag = null, dragged = false;
   cv.addEventListener('pointerdown', (e) => { if (!r3d) return; drag = { x: e.clientX, y: e.clientY, az: uAz, el: uEl, touch: e.pointerType === 'touch' }; dragged = false; });
@@ -1549,7 +1584,13 @@ function init(opts) {
   cv.addEventListener('dblclick', () => { uAz = 0; uEl = 0; });
   cv.addEventListener('click', (e) => {
     if (dragged) { dragged = false; return; }
-    if (ex > 0.05) return;
+    if (ex > 0.05) {
+      // Com o motor separado, tocar no nome de um módulo (ou de novo nele) aproxima ou volta para a vista geral
+      const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+      const m = modHits.find((q) => x >= q.x0 && x <= q.x1 && y >= q.y0 && y <= q.y1);
+      if (m && r3d) setExMod(m.m === exMod ? '' : m.m);
+      return;
+    }
     const id = r3d ? hit3(e) : hit(e);
     if (id) pickPart(id); else if (sel) showStep(step);
   });
