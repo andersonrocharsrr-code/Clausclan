@@ -285,7 +285,7 @@ const GLOSS = [
 ];
 
 /* ---------------- Abas ---------------- */
-const TABS = ['pecas', 'escola', 'cockpit', 'lab', 'glossario', 'catalogo'];
+const TABS = ['pecas', 'escola', 'cockpit', 'lab', 'meteo', 'glossario', 'catalogo'];
 let current = null;
 function showTab(id, push) {
   if (typeof hideHint === 'function') hideHint();
@@ -300,6 +300,7 @@ function showTab(id, push) {
   if (push) { try { history.replaceState(null, '', '#' + id); } catch {} }
   if (id === 'cockpit') { sizeGauges(); startSim(); }
   if (id === 'lab') startLab();
+  if (id === 'meteo') window.Meteo?.start();
   window.scrollTo({ top: 0 });
 }
 // Explorar: a aba abre a lista das seções
@@ -335,6 +336,7 @@ function setLabMode(m) {
 }
 $('#labPick').addEventListener('click', (e) => { const b = e.target.closest('[data-lmode]'); if (b) setLabMode(b.dataset.lmode); });
 window.Motor747?.init({ active: () => current === 'lab' && labMode === 'motor' });
+window.Meteo?.init({ active: () => current === 'meteo' });
 
 /* ---------------- A · Explorador ---------------- */
 // O Cessna é desenhado à mão no HTML; os jatos vêm de avioes.js, gerados a partir das medidas reais.
@@ -1111,7 +1113,8 @@ document.addEventListener('click', (e) => {
 let resizeT;
 window.addEventListener('resize', () => {
   clearTimeout(resizeT);
-  resizeT = setTimeout(() => { if (current === 'cockpit') sizeGauges(); if (current === 'lab') { if (labMode === 'asa') { sizeTunnel(); buildFoil(); } else window.Motor747?.size(); } }, 150);
+  resizeT = setTimeout(() => { if (current === 'cockpit') sizeGauges(); if (current === 'meteo') window.Meteo?.size();
+    if (current === 'lab') { if (labMode === 'asa') { sizeTunnel(); buildFoil(); } else window.Motor747?.size(); } }, 150);
 });
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', readColors);
 new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });

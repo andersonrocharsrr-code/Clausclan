@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=57">
+  <link rel="stylesheet" href="style.css?v=58">
 </head>
 <body>
   <header class="top">
@@ -41,6 +41,7 @@
             <a role="menuitem" href="#pecas" data-tab="pecas" data-short="Peças"><b>Peças do avião</b><span>Toque nas peças, raio-X e as vistas do 747</span></a>
             <a role="menuitem" href="#cockpit" data-tab="cockpit"><b>Cockpit</b><span>Comandos na prática, PFD, ND e EICAS</span></a>
             <a role="menuitem" href="#lab" data-tab="lab"><b>Laboratório</b><span>Túnel de vento e o motor GEnx-2B em 3D</span></a>
+            <a role="menuitem" href="#meteo" data-tab="meteo"><b>Meteorologia</b><span>Tipos de nuvens e o radar meteorológico no ND</span></a>
             <a role="menuitem" href="#glossario" data-tab="glossario"><b>Glossário</b><span>Os termos em português e em inglês</span></a>
             <a role="menuitem" href="#catalogo" data-tab="catalogo"><b>Catálogo 747</b><span>As categorias de peças do 747-8</span></a>
           </div>
@@ -641,6 +642,87 @@
       </div>
     </section>
 
+    <!-- EXPLORAR · METEOROLOGIA -->
+    <section class="view" id="view-meteo" data-view="meteo" hidden>
+      <div class="view__head">
+        <p class="eyebrow">Explorar · Meteorologia</p>
+        <h1>Meteorologia para pilotos</h1>
+        <p class="lede">As nuvens contam o que o ar está fazendo. Aqui estão os 10 tipos da classificação oficial, onde ficam, o que trazem para o voo e como uma tempestade aparece no radar meteorológico do ND.</p>
+      </div>
+      <div class="met">
+        <div class="card met__atlas">
+          <canvas id="metAtlas" aria-label="Os tipos de nuvens por altitude. Toque numa nuvem."></canvas>
+          <div class="met__info">
+            <span class="label" id="metLevel"></span>
+            <h2 id="metName"></h2>
+            <div class="met__tags" id="metTags"></div>
+            <p><b>Como é.</b> <span id="metHow"></span></p>
+            <p><b>Para o voo.</b> <span id="metFly"></span></p>
+          </div>
+        </div>
+        <div class="card">
+          <span class="label">Tipos de nuvens</span>
+          <div class="met__cards" id="metCards"></div>
+          <p class="small">Ilustrações feitas no app, para mostrar a forma típica de cada nuvem.</p>
+        </div>
+        <div class="card met__codes">
+          <span class="label">Como as nuvens aparecem no METAR</span>
+          <div class="met__codegrid">
+            <div><b>FEW</b><span>1 a 2 oitavos do céu</span></div>
+            <div><b>SCT</b><span>3 a 4 oitavos</span></div>
+            <div><b>BKN</b><span>5 a 7 oitavos · conta como teto</span></div>
+            <div><b>OVC</b><span>céu todo coberto · teto</span></div>
+          </div>
+          <p class="small">A altura vem em centenas de pés: <b class="mono">BKN015CB</b> = nublado a 1.500 ft com cumulonimbus. Só CB e TCU são citados pelo nome.</p>
+        </div>
+
+        <div class="card met__radar">
+          <div class="met__radarhead">
+            <div><span class="label">Radar meteorológico no ND</span><h2>Tempestade na tela</h2></div>
+            <div class="seg seg--sm" id="metScen" role="group" aria-label="Cenário">
+              <button type="button" data-sc="leve">Chuva leve</button>
+              <button type="button" data-sc="cb" aria-pressed="true">CB isolado</button>
+              <button type="button" data-sc="linha">Linha de CBs</button>
+              <button type="button" data-sc="topo">Topo de CB</button>
+            </div>
+          </div>
+          <div class="met__radargrid">
+            <div>
+              <canvas id="metNd" aria-label="Tela ND com o radar meteorológico"></canvas>
+              <canvas id="metProf" aria-label="Corte de lado mostrando o feixe do radar e as nuvens"></canvas>
+              <p class="small met__proflabel">Corte de lado: a faixa verde é o feixe do radar. Ele só enxerga o que estiver dentro dela.</p>
+            </div>
+            <div class="met__side">
+              <div class="met__legend">
+                <div><i style="background:#28c83c"></i><b>Verde</b><span>20 a 30 dBZ · chuva leve (cerca de 1 a 4 mm/h)</span></div>
+                <div><i style="background:#f5e628"></i><b>Amarelo</b><span>30 a 40 dBZ · chuva moderada (cerca de 4 a 12 mm/h)</span></div>
+                <div><i style="background:#eb1e1e"></i><b>Vermelho</b><span>40 a 50 dBZ · chuva forte (cerca de 12 a 50 mm/h)</span></div>
+                <div><i style="background:#e628dc"></i><b>Magenta</b><span>acima de 50 dBZ · muito forte, granizo provável. No modo WX+T, também a turbulência (até 40 NM).</span></div>
+              </div>
+              <div class="ctl"><label for="metTilt">Inclinação da antena (tilt) <output id="metTiltO">−1,5°</output></label><input type="range" id="metTilt" min="-30" max="30" value="-3"><div class="ctl__ends"><span>−15°</span><span>+15°</span></div></div>
+              <div class="ctl"><label for="metAlt">Altitude do avião <output id="metAltO">35.000 ft</output></label><input type="range" id="metAlt" min="5000" max="41000" step="1000" value="35000"></div>
+              <div class="ctl"><span class="label">Alcance</span><div class="seg seg--sm" id="metRange"><button type="button" data-rng="40">40 NM</button><button type="button" data-rng="80" aria-pressed="true">80 NM</button><button type="button" data-rng="160">160 NM</button></div></div>
+              <div class="ctl"><span class="label">Modo</span><div class="seg seg--sm" id="metMode"><button type="button" data-md="wx" aria-pressed="true">WX</button><button type="button" data-md="wxt">WX+T</button></div></div>
+              <div class="ctl"><span class="label">Ganho</span><div class="seg seg--sm" id="metGain"><button type="button" data-g="-8">Menos</button><button type="button" data-g="0" aria-pressed="true">Calibrado</button><button type="button" data-g="8">Mais</button></div></div>
+            </div>
+          </div>
+          <p class="met__scen" id="metScenTxt"></p>
+          <div class="met__rules">
+            <span class="label">Regras de ouro com tempestade</span>
+            <ul>
+              <li>Desviar <b>pelo menos 20 NM</b> de ecos vermelhos e magenta. Em grande altitude, ainda mais.</li>
+              <li>Desviar pelo lado de onde vem o vento e <b>nunca passar por baixo da bigorna</b>: o granizo cai por lá.</li>
+              <li>Não passar entre duas células fortes que estejam a menos de 40 NM uma da outra.</li>
+              <li>Contornos em forma de gancho, dedo ou "U" e bordas muito apertadas indicam granizo e turbulência forte.</li>
+              <li>Atrás de uma célula forte pode haver outra escondida: a chuva forte "apaga" o radar (atenuação).</li>
+              <li>Inclinar a antena para baixo até aparecerem os primeiros ecos do solo na borda da tela e depois subir um pouco.</li>
+              <li>O topo do CB, só com gelo, reflete pouco. Pouca cor lá em cima não quer dizer ar calmo.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- E · GLOSSÁRIO -->
     <section class="view" id="view-glossario" data-view="glossario" hidden>
       <div class="view__head">
@@ -705,12 +787,13 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=57"></script>
-  <script src="catalogo747.js?v=57"></script>
-  <script src="cockpit747.js?v=57"></script>
-  <script src="motor3d.js?v=57"></script>
-  <script src="motor747.js?v=57"></script>
-  <script src="app.js?v=57"></script>
+  <script src="avioes.js?v=58"></script>
+  <script src="catalogo747.js?v=58"></script>
+  <script src="cockpit747.js?v=58"></script>
+  <script src="motor3d.js?v=58"></script>
+  <script src="motor747.js?v=58"></script>
+  <script src="meteo.js?v=58"></script>
+  <script src="app.js?v=58"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
