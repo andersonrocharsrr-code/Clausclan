@@ -78,12 +78,13 @@ function toast(msg) {
 
 /* ---------- estado ---------- */
 const MONEY = ['foiCobrar', 'antecipados', 'valorPepinos', 'pepinoParcial',
-  'vale', 'ajuda', 'salario', 'mecanica', 'despSupervisor', 'excedido', 'valorDeixado'];
+  'vale', 'vale2', 'ajuda', 'salario', 'mecanica', 'despSupervisor', 'excedido', 'valorDeixado'];
 // Despesas do vendedor (campo em branco vale 0, então o salário só entra quando é preenchido).
-const DESPESAS = ['ajuda', 'vale', 'salario', 'mecanica', 'despSupervisor', 'excedido'];
+// Vale adiantado tem dois campos (dois vales na semana); os dois abatem do que falta depositar.
+const DESPESAS = ['ajuda', 'vale', 'vale2', 'salario', 'mecanica', 'despSupervisor', 'excedido'];
 const ONDE = { empresa: 'Depto. empresa espécie', banco: 'Depto. banco/TED/trans.', pix: 'Depto. Pix' };
 const ONDE_CURTO = { empresa: 'Empresa', banco: 'Banco/TED', pix: 'Pix' };
-const NOMES = { ajuda: 'Ajuda de custo', vale: 'Vale adiantado', salario: 'Salário', mecanica: 'Mecânica',
+const NOMES = { ajuda: 'Ajuda de custo', vale: 'Vale adiantado', vale2: 'Vale adiantado (2º)', salario: 'Salário', mecanica: 'Mecânica',
   despSupervisor: 'Despesas supervisor', excedido: 'Excedido da despesa' };
 // Campos das listas que são dinheiro.
 const K_DINHEIRO = ['valor', 'devolucao', 'antecipado', 'valorNota', 'devendo'];
@@ -119,7 +120,7 @@ function novo() {
     foiCobrar: 0, qtNotas: '', qtNotasDeixadas: '', pinos: '',
     antecipados: 0, valorPepinos: 0, pepinoParcial: 0,
     notas25: [], notas4050: [], extras: [], pila: [], outros: [], obs: [], depositos: [], antecipadas: [], parciais: [], feitas: [], devendo: [],
-    vale: 0, ajuda: 0, salario: 0, mecanica: 0, despSupervisor: 0, excedido: 0,
+    vale: 0, vale2: 0, ajuda: 0, salario: 0, mecanica: 0, despSupervisor: 0, excedido: 0,
     valorDeixado: 0, assinatura: ultimo?.assinatura || '',
     // Relatório diário: o que só o vendedor sabe (da semana e de cada dia) e os acumulados de cada dia.
     rel: {}, relDia: {},
@@ -1848,7 +1849,9 @@ function resumo() {
   st.extras.forEach((x) => L.push(`  • ${x.numero || ''} ${x.cidade || ''} ${x.vendedora || ''} — ${R$(x.valor)}`));
   L.push('', `*Recebimento: ${R$(c.recebimento)}*`, '');
   L.push('*Despesas*');
-  DESPESAS.forEach((k) => { if (st[k]) L.push(`${NOMES[k]}: ${R$(st[k])}`); });
+  const vales = [st.vale, st.vale2].filter((v) => Number(v));
+  if (vales.length) L.push(`Vale adiantado: ${vales.map(R$).join(' / ')}`);
+  DESPESAS.filter((k) => k !== 'vale' && k !== 'vale2').forEach((k) => { if (st[k]) L.push(`${NOMES[k]}: ${R$(st[k])}`); });
   st.pila.forEach((o) => L.push(`Pila — ${o.tipo || 'despesa'}: ${R$(o.valor)}`));
   st.outros.forEach((o) => L.push(`Outros: ${o.desc || ''} ${R$(o.valor)}`));
   st.obs.forEach((o) => L.push(`OBS: ${o.desc || ''} ${R$(o.valor)}`));
@@ -1907,7 +1910,7 @@ function dadosCaixa() {
     valorPepinos: vazioOu(pep.valor), pepinoParcial: vazioOu(st.pepinoParcial),
     notas25: vazioOu(c.notas25), notas4050: vazioOu(c.notas4050), pepinoExtra: vazioOu(c.extras),
     recebimento: vazioOu(c.recebimento), depEspecie: naEmpresa ? vazioOu(totalDep) : '', depPix: '',
-    depBanco: naEmpresa ? '' : vazioOu(totalDep), vale: vazioOu(st.vale), ajuda: vazioOu(st.ajuda), mecanica: vazioOu(st.mecanica),
+    depBanco: naEmpresa ? '' : vazioOu(totalDep), vale: [st.vale, st.vale2].filter((v) => Number(v)).map(brl).join(' / '), ajuda: vazioOu(st.ajuda), mecanica: vazioOu(st.mecanica),
     despSupervisor: vazioOu(st.despSupervisor), excedido: vazioOu(st.excedido), valorDeixado: vazioOu(st.valorDeixado),
     assinatura: st.assinatura, outros, obs,
     extras: st.extras.map((x) => ({ numero: x.numero || '', cidade: x.cidade || '', valor: vazioOu(x.valor), vendedora: x.vendedora || '' })),

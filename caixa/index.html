@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=60">
+  <link rel="stylesheet" href="style.css?v=61">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -187,7 +187,12 @@
       </div>
       <div class="grid">
         <label>Ajuda de custo<input data-f="ajuda" enterkeyhint="done" data-money inputmode="decimal"></label>
-        <label>Vale adiantado<input data-f="vale" enterkeyhint="done" data-money inputmode="decimal"></label>
+        <div class="campo-duplo"><span>Vale adiantado</span>
+          <div class="campo-duplo__par">
+            <input data-f="vale" enterkeyhint="done" data-money inputmode="decimal" placeholder="1º vale" aria-label="Vale adiantado (1º)">
+            <input data-f="vale2" enterkeyhint="done" data-money inputmode="decimal" placeholder="2º vale" aria-label="Vale adiantado (2º)">
+          </div>
+        </div>
         <label>Salário <small>(só entra se preencher)</small><input data-f="salario" enterkeyhint="done" data-money inputmode="decimal" placeholder="Em branco = não entra"></label>
         <label>Mecânica<input data-f="mecanica" enterkeyhint="done" data-money inputmode="decimal"></label>
         <label>Despesas supervisor<input data-f="despSupervisor" enterkeyhint="done" data-money inputmode="decimal"></label>
@@ -524,6 +529,6 @@
   </div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=79"></script>
+  <script type="module" src="app.js?v=80"></script>
 </body>
 </html>

@@ -366,3 +366,7 @@ body{overflow-x:clip}
 #btnRota{width:100%;margin-top:4px}
 /* Aviso abaixo do relatório */
 .rel-aviso{margin:10px 0 0;padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.4;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:var(--ink)}
+/* Vale adiantado: dois campos lado a lado (os dois abatem do depósito). */
+.campo-duplo{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);min-width:0}
+.campo-duplo__par{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.campo-duplo__par input{min-width:0}
