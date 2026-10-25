@@ -1433,6 +1433,8 @@ const FIRE_STEPS = [
   [11, 'Garrafa disparada', 'Girar a alavanca dispara o cartucho da garrafa. O agente extintor desce pelo tubo, sai pelos bicos do anel e enche o compartimento, tirando o oxigênio do fogo.'],
   [15.5, 'Fogo apagado', 'Os laços esfriam e o alarme apaga. Se o fogo continuasse depois de 30 segundos, o piloto giraria a alavanca para o outro lado e dispararia a segunda garrafa.'],
 ];
+const FIRE_PACE = 0.28;
+let firePause = false;
 let fireOn = false, fireT = 0, fireLever = 0.8, fireStep = -1;
 const ramp = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
 function fireState() {
@@ -1521,7 +1523,8 @@ function frame3D(dt) {
   const RC = fireOn ? FIRECAM : REVCAM, crr = fireOn ? 1 : cr;
   const T0 = { at: t.at.map((v, i) => lerp(v, RC.at[i], crr)), d: lerp(t.d, RC.d * fit, crr), az: lerp(t.az, RC.az, crr), el: lerp(t.el, RC.el, crr) };
   if (fireOn) {
-    fireT += dt * (slow ? 0.3 : 1);
+    // A cena anda devagar (cada passo fica de 7 a 16 s na tela) para dar tempo de ler; dá para pausar
+    if (!firePause) fireT += dt * FIRE_PACE * (slow ? 0.5 : 1);
     const k2 = FIRE_STEPS.reduce((a, s, i) => (fireT >= s[0] ? i : a), 0);
     if (k2 !== fireStep) { fireStep = k2; renderFireSteps(); }
     if (fireT > 5 && lever) { lever = 0; const t2 = $('#engThr'); if (t2) t2.value = 0; const o2 = $('#engThrO'); if (o2) o2.textContent = 'IDLE'; }
@@ -1660,9 +1663,10 @@ function init(opts) {
     const hdr = top ? top.getBoundingClientRect().bottom : 0;
     window.scrollTo({ top: view.getBoundingClientRect().top + window.scrollY - hdr - 8, behavior: 'smooth' });
   };
+  const pauseBtn = $('#engFirePause');
   const setFire = (on) => {
     if (on === fireOn) { if (on) { fireT = 0; fireStep = -1; } return; }
-    fireOn = on; fireT = 0; fireStep = -1;
+    fireOn = on; fireT = 0; fireStep = -1; firePause = false; if (pauseBtn) pauseBtn.textContent = '❚❚ Pausar';
     $('#engFireBox').hidden = !on; $('#engFireOn').checked = on;
     uAz = 0; uEl = 0;
     if (on) {
@@ -1673,6 +1677,9 @@ function init(opts) {
   };
   $('#engFireOn')?.addEventListener('change', (e) => setFire(e.target.checked));
   $('#engFireAgain')?.addEventListener('click', () => { fireT = 0; fireStep = -1; lever = fireLever; sp = fireLever; fuelCut = 0; });
+  pauseBtn?.addEventListener('click', () => { firePause = !firePause; pauseBtn.textContent = firePause ? '▶ Continuar' : '❚❚ Pausar'; pauseBtn.setAttribute('aria-pressed', String(firePause)); });
+  // Avançar para o próximo passo sem esperar
+  $('#engFireNext')?.addEventListener('click', () => { const nx = FIRE_STEPS[fireStep + 1]; if (nx) fireT = nx[0]; });
   $('#engRevOn')?.addEventListener('change', (e) => {
     if (e.target.checked && fireOn) setFire(false);
     revT = e.target.checked ? 1 : 0;
