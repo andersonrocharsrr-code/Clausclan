@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=48">
+  <link rel="stylesheet" href="style.css?v=49">
 </head>
 <body>
   <header class="top">
@@ -547,6 +547,23 @@
                 <div class="spec eng__facts" id="engFacts"></div>
               </div>
             </div>
+            <div class="card eng__sec">
+              <div class="eng__sechead">
+                <span class="label">Seções em detalhe</span>
+                <div class="seg seg--sm" id="secSeg" role="group" aria-label="Seção do motor">
+                  <button type="button" data-sec="lpc" aria-pressed="true">Compressor de baixa</button>
+                  <button type="button" data-sec="hpc" aria-pressed="false">Compressor de alta</button>
+                  <button type="button" data-sec="comb" aria-pressed="false">Combustor</button>
+                </div>
+              </div>
+              <canvas id="engSec" aria-label="Seção do motor em detalhe, animada"></canvas>
+              <div class="eng__secinfo">
+                <h2 id="secTitle"></h2>
+                <ol class="eng__seclist" id="secList"></ol>
+                <p id="secText"></p>
+                <div class="spec eng__facts" id="secFacts"></div>
+              </div>
+            </div>
             <div class="card eng__fan">
               <canvas id="engFan" aria-label="Fan do GEnx-2B visto de frente, girando"></canvas>
               <div class="eng__fantext">
@@ -656,11 +673,11 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=48"></script>
-  <script src="catalogo747.js?v=48"></script>
-  <script src="cockpit747.js?v=48"></script>
-  <script src="motor747.js?v=48"></script>
-  <script src="app.js?v=48"></script>
+  <script src="avioes.js?v=49"></script>
+  <script src="catalogo747.js?v=49"></script>
+  <script src="cockpit747.js?v=49"></script>
+  <script src="motor747.js?v=49"></script>
+  <script src="app.js?v=49"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());

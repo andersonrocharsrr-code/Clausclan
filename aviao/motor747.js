@@ -117,13 +117,13 @@ const STEPS = [
     txt: 'Logo atrás do fan, o divisor separa o ar em dois caminhos. Cerca de 8 partes vão por fora, pelo duto do fan, para cada parte que entra no núcleo. O fan deixa o ar girando; as palhetas guia (OGV) endireitam esse fluxo para ele sair reto pela traseira, o que dá mais empuxo. É nesse duto que fica o reversor, que desvia o ar do fan para a frente no pouso.',
     facts: [['Bypass', '8 : 1'], ['OGV', 'Palhetas fixas'], ['Reversor', 'No fim do duto']] },
   { t: 'Compressor de baixa (booster)', cam: [1.1, 2.85, 0.9], parts: ['lpc', 'vbv'],
-    txt: 'O ar do núcleo passa primeiro pelo booster: 4 estágios presos no mesmo eixo do fan. Cada estágio tem uma fileira de pás que giram (rotor, as blades) e logo atrás uma fileira de palhetas fixas (estator, as vanes). O rotor acelera o ar e o estator freia esse ar, transformando a velocidade em pressão. Logo depois ficam as válvulas de sangria variável (VBV): em baixa rotação elas abrem e jogam parte do ar no duto do fan, para o compressor não engasgar. Mexa na manete e veja as portinhas abrindo e fechando.',
+    txt: 'O ar do núcleo passa primeiro pelo booster: 4 estágios presos no mesmo eixo do fan. Cada estágio tem uma fileira de pás que giram (rotor, as blades) e logo atrás uma fileira de palhetas fixas (estator, as vanes). O rotor acelera o ar e o estator freia esse ar, transformando a velocidade em pressão. Logo depois ficam as válvulas de sangria variável (VBV): em baixa rotação elas abrem e jogam parte do ar no duto do fan, para o compressor não engasgar. Mexa na manete e veja as portinhas abrindo e fechando. Logo abaixo, em Seções em detalhe, o booster aparece de perto.',
     facts: [['Estágios', '4'], ['1 estágio', 'Rotor + estator'], ['Eixo', 'N1 (baixa)'], ['VBV', 'Abertas em baixa rotação']] },
   { t: 'Compressor de alta (HPC)', cam: [2.2, 3.9, 0.6], parts: ['hpc'],
-    txt: 'São 10 estágios, cada um menor que o anterior, porque o ar ocupa menos espaço quanto mais apertado. O HPC comprime o ar cerca de 23 vezes, e ele sai a mais de 600 °C só por ter sido comprimido. As primeiras fileiras de estator mudam de ângulo (VSV) para o compressor não estolar em baixa rotação. Daqui também sai o ar sangrado (bleed) para pressurizar a cabine e o antigelo.',
+    txt: 'São 10 estágios, cada um menor que o anterior, porque o ar ocupa menos espaço quanto mais apertado. O HPC comprime o ar cerca de 23 vezes, e ele sai a mais de 600 °C só por ter sido comprimido. As primeiras fileiras de estator mudam de ângulo (VSV) para o compressor não estolar em baixa rotação. Daqui também sai o ar sangrado (bleed) para pressurizar a cabine e o antigelo. Veja de perto em Seções em detalhe, logo abaixo.',
     facts: [['Estágios', '10'], ['Compressão', 'cerca de 23 vezes'], ['Eixo', 'N2 (alta)'], ['Bleed', 'Cabine e antigelo']] },
   { t: 'Câmara de combustão', cam: [3.25, 4.65, 0.6], parts: ['comb', 'fuel'],
-    txt: 'Na câmara anular TAPS, os injetores soltam o combustível dentro de ar que já entra girando, numa mistura pobre que queima mais limpa e solta menos poluentes (NOx). A chama chega perto de 2.000 °C. Parte do ar do compressor não entra na chama: passa em volta das paredes e as resfria. Na partida, as velas de ignição acendem a mistura.',
+    txt: 'Na câmara anular TAPS, os injetores soltam o combustível dentro de ar que já entra girando, numa mistura pobre que queima mais limpa e solta menos poluentes (NOx). A chama chega perto de 2.000 °C. Parte do ar do compressor não entra na chama: passa em volta das paredes e as resfria. Na partida, as velas de ignição acendem a mistura. A câmara aparece em detalhe logo abaixo, em Seções em detalhe.',
     facts: [['Tipo', 'Anular TAPS'], ['Chama', 'cerca de 2.000 °C'], ['Ignição', 'Velas, na partida']] },
   { t: 'Turbina de alta (HPT)', cam: [3.75, 5.0, 0.65], parts: ['hpt'],
     txt: 'Os gases quentes batem nas pás da turbina de alta, 2 estágios, que giram o compressor de alta pelo eixo N2. O gás é mais quente que o ponto de fusão do metal, então as pás são de liga de níquel de cristal único, ocas, com furinhos que soltam ar mais frio e formam uma película protetora em volta delas.',
@@ -154,6 +154,7 @@ const STA = [
 /* ---------- Estado ---------- */
 let cv, ctx, W = 0, H = 0, dpr = 1, raf = 0, last = 0, active = () => false;
 let lever = 0.8, sp = 0.8, slow = false, showAir = true;
+const vis = { main: true, fan: false, sec: false };
 let gT = 0, step = 0, sel = null, phLP = 0, phHP = 0, time = 0, uiT = 0;
 const cam = { x0: STEPS[0].cam[0], x1: STEPS[0].cam[1], r: STEPS[0].cam[2] };
 let k = 1, ox = 0, cy = 0, pal = null, parts = [];
@@ -272,7 +273,7 @@ function chrome(c, x0, y0, x1, y1, stops) {
 function drawRow(rw) {
   const ph = rw.kind === 's' ? 0.37 : rw.sp === 'hp' ? phHP : phLP;
   const xc = rw.x + (rw.c || 0.25) / 2, rh = rw.hub(xc), rt = rw.tip(xc);
-  const base = rw.fan ? pal.fan : rw.kind === 's' ? pal.st : rw.hot ? pal.hot : rw.sp === 'hp' ? pal.hp : pal.lp;
+  const base = rw.fan ? pal.fan : rw.part === 'hpt' && rw.kind === 's' && rw.x < 4.12 ? [230, 80, 70] : rw.kind === 's' ? pal.st : rw.hot ? pal.hot : rw.sp === 'hp' ? pal.hp : pal.lp;
   const st = (rw.fan ? 48 : rw.st) * D2R, cs = Math.cos(st), sn = Math.sin(st);
   const gloss = rw.kind === 's' ? 10 : rw.fan ? 12 : 26, spk = rw.kind === 's' ? 0.3 : rw.fan ? 1.1 : 0.8, amb = rw.fan ? 0.42 : 0.2;
   const list = [];
@@ -368,6 +369,9 @@ function drawCombustor() {
     ctx.beginPath(); ctx.moveTo(SX(3.6), SY(0.47 * s)); ctx.lineTo(SX(3.63), SY(0.345 * s)); ctx.lineTo(SX(3.668), SY(0.34 * s));
     ctx.strokeStyle = pal.dark ? '#c9d0d6' : '#8c959c'; ctx.lineWidth = Math.max(2.2, k * 0.018); ctx.stroke();
     ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = Math.max(0.8, k * 0.005); ctx.stroke();
+    // Turbilhonador (swirler) no domo, onde o injetor solta o combustível
+    ctx.fillStyle = chrome(ctx, 0, SY(0.36 * s), 0, SY(0.33 * s), pal.shaftLp);
+    ctx.beginPath(); ctx.rect(SX(3.648), SY(0.358 * s), 0.024 * k, 0.026 * k * s); ctx.fill(); ctx.strokeStyle = '#0b0e11'; ctx.lineWidth = 0.6; ctx.stroke();
   }
 }
 // Preenchimento metálico em corte: metal polido e a borda do corte em azul.
@@ -664,6 +668,7 @@ function frame(t) {
   k = Math.min((W - 16) / (cam.x1 - cam.x0), (H - 2 * MT - 8) / (2 * cam.r));
   ox = W / 2 - k * (cam.x0 + cam.x1) / 2; cy = H / 2;
 
+  if (vis.main) {
   ctx.fillStyle = pal.bg; ctx.fillRect(0, 0, W, H);
   // Linha de centro
   ctx.strokeStyle = pal.muted; ctx.globalAlpha = 0.5; ctx.setLineDash([10, 4, 2, 4]); ctx.lineWidth = 1;
@@ -701,11 +706,13 @@ function frame(t) {
   drawHighlight();
   drawPins();
   drawFront();
+  }
 
   uiT -= dt;
   if (uiT <= 0) { uiT = 0.2; updateUI(); }
   if ((gT -= dt) <= 0) { gT = 1 / 24; drawGallery(); }
-  drawFanCard();
+  if (vis.fan) drawFanCard();
+  if (vis.sec) drawSection(dt);
   raf = requestAnimationFrame(frame);
 }
 
@@ -820,6 +827,354 @@ function drawGallery() {
   }
 }
 
+/* ---------- Seções em detalhe: compressor de baixa, compressor de alta e câmara de combustão ---------- */
+// Close-ups sem a carcaça da frente: o tambor gira e as pás aparecem inteiras, com o ar passando entre elas.
+let scv = null, sctx = null, SW = 0, SH = 0, sec = 'lpc';
+const ST = { k: 1, ox: 0, oy: 0 };
+const sX = (x) => ST.ox + x * ST.k, sY = (y) => ST.oy - y * ST.k;
+const SMT = 34, SMB = 46; // faixas de cima (etiquetas) e de baixo (pressão)
+const SECS = {
+  lpc: {
+    x0: 1.37, x1: 2.34, y0: 0.26, y1: 0.83, t: 'Compressor de baixa (booster)', temp: [55, 110], pres: [1.6, 2], sp: 'lp',
+    txt: 'Visto de perto e sem a carcaça da frente. O tambor gira junto com o fan (eixo N1) e leva 4 fileiras de pás (rotor). Entre elas ficam as palhetas fixas, presas na carcaça (estator). Repare no ar: o rotor empurra e faz o ar girar, o estator endireita esse giro e transforma a velocidade em pressão. No fim, as válvulas VBV abrem em baixa rotação e soltam o excesso de ar para o duto do fan.',
+    facts: [['Estágios', '4'], ['Eixo', 'N1 (baixa)'], ['Pressão', 'cerca de 1,6 → 2 atm'], ['VBV', 'Abertas em baixa rotação']],
+    pins: [['Pás do rotor (giram)', 1.62, 0.5], ['Palhetas do estator (fixas)', 1.73, 0.62], ['Tambor do rotor', 1.85, 0.36], ['Carcaça (cortada)', 1.5, 0.66], ['Válvula de sangria (VBV)', 2.12, 0.6], ['Ar vindo do fan', 1.4, 0.55]],
+  },
+  hpc: {
+    x0: 2.6, x1: 3.62, y0: 0.1, y1: 0.56, t: 'Compressor de alta (HPC)', temp: [115, 640], pres: [2, 44], sp: 'hp',
+    txt: 'São 10 estágios no eixo N2, que gira mais rápido e no sentido contrário do N1. As pás ficam menores a cada estágio porque o ar, mais apertado, ocupa menos espaço. As primeiras fileiras de estator são variáveis (VSV): um anel na carcaça gira todas as palhetas juntas, fechando em baixa rotação e abrindo em alta. Mexa na manete e veja as alavancas mudarem de ângulo. O ar sai a cerca de 44 atm e mais de 600 °C.',
+    facts: [['Estágios', '10'], ['Eixo', 'N2 (alta)'], ['Pressão', 'cerca de 2 → 44 atm'], ['VSV', 'Primeiras fileiras']],
+    pins: [['Pás do rotor (giram)', 2.95, 0.36], ['Palhetas do estator (fixas)', 3.2, 0.38], ['VSV: anel e alavancas', 2.76, 0.47], ['Tambor do rotor', 3.05, 0.15], ['Carcaça (cortada)', 3.4, 0.4], ['Saída para a câmara', 3.58, 0.34]],
+  },
+  comb: {
+    x0: 3.5, x1: 4.3, y0: 0.215, y1: 0.53, t: 'Câmara de combustão', temp: [640, 1500], pres: [44, 42], sp: 'hp',
+    txt: 'O ar chega do compressor de alta a cerca de 44 atm e mais de 600 °C e desacelera no difusor. Uma parte entra pelo turbilhonador (swirler), que faz o ar girar e mistura o querosene que sai do injetor. A chama passa de azul a amarelo e branco, perto de 2.000 °C. O resto do ar passa por fora do revestimento, resfria as paredes pelos furinhos e entra pelos furos de diluição para baixar a temperatura antes da turbina. Na saída, as palhetas guia (em vermelho) apontam o gás para as pás da turbina de alta.',
+    facts: [['Entrada', 'cerca de 600 °C e 44 atm'], ['Chama', 'perto de 2.000 °C'], ['Saída', 'cerca de 1.500 °C'], ['Ignição', 'Velas, na partida']],
+    pins: [['Injetor de combustível', 3.6, 0.44], ['Turbilhonador (swirler)', 3.68, 0.355], ['Revestimento da câmara', 3.92, 0.414], ['Furos de diluição', 3.87, 0.288], ['Vela de ignição', 3.86, 0.44], ['Ar do compressor', 3.54, 0.33], ['Palhetas guia da turbina', 4.1, 0.37], ['Pás da turbina de alta', 4.19, 0.34]],
+  },
+};
+// Geometria da câmara em detalhe
+const CB = {
+  out: lin([[3.5, 0.368], [3.6, 0.44], [4.1, 0.452], [4.3, 0.45]]),
+  inn: lin([[3.5, 0.303], [3.6, 0.262], [4.1, 0.25], [4.3, 0.28]]),
+  linO: smooth([[3.69, 0.396], [3.8, 0.414], [3.95, 0.415], [4.065, 0.4]]),
+  linI: smooth([[3.69, 0.302], [3.8, 0.286], [3.95, 0.287], [4.065, 0.316]]),
+  gasO: lin([[4.06, 0.402], [4.3, 0.43]]), gasI: lin([[4.06, 0.314], [4.3, 0.314]]),
+};
+function sPoly(c, pts) { c.moveTo(sX(pts[0][0]), sY(pts[0][1])); for (let i = 1; i < pts.length; i++) c.lineTo(sX(pts[i][0]), sY(pts[i][1])); c.closePath(); }
+function sFill(c, pts, fill, stroke, lw = 1.5) { c.beginPath(); sPoly(c, pts); if (fill) { c.fillStyle = fill; c.fill(); } if (stroke) { c.strokeStyle = stroke; c.lineWidth = lw; c.stroke(); } }
+
+// Uma fileira de pás no close-up. side = -1: metade de trás (aparece acima do tambor); +1: metade da frente (por cima do tambor).
+function secRow(c, rw, ph, side, stAdd = 0, color = null) {
+  const xc = rw.x + rw.c / 2, rh = rw.hub(xc), rt = rw.tip(xc);
+  const base = color || (rw.kind === 's' ? pal.st : rw.hot ? pal.hot : rw.sp === 'hp' ? pal.hp : pal.lp);
+  const st = (rw.st + stAdd) * D2R, cs = Math.cos(st), sn = Math.sin(st);
+  const list = [], n = rw.part === 'lpc' || rw.part === 'hpc' ? Math.round(rw.n * 2.3) : rw.n;
+  for (let j = 0; j < n; j++) {
+    const a = (rw.kind === 's' ? 0.37 : ph) + j * 2 * Math.PI / n, s = Math.sin(a);
+    if ((side > 0) !== (s > 0) || Math.cos(a) < -0.1) continue;
+    list.push([a, s]);
+  }
+  list.sort((p, q) => p[1] - q[1]);
+  const spk = rw.kind === 's' ? 0.35 : 0.85, gloss = rw.kind === 's' ? 10 : 22;
+  for (const [a, s] of list) {
+    const ca = Math.cos(a), le = [], te = [];
+    for (const u of [0, 0.5, 1]) {
+      const r = lerp(rh, rt, u), bow = u === 0.5 ? rw.c * 0.14 : 0, cc = rw.c * (1 - 0.15 * u);
+      le.push([rw.x + bow, r * ca]); te.push([rw.x + cc * cs + bow, r * ca - cc * sn * s]);
+    }
+    const [R, G, B, spec] = shade(base, st, a, spk, gloss, side > 0 ? 0.58 : 0.4);
+    c.beginPath(); c.moveTo(sX(le[0][0]), sY(le[0][1]));
+    for (const q of le.slice(1)) c.lineTo(sX(q[0]), sY(q[1]));
+    for (const q of te.slice().reverse()) c.lineTo(sX(q[0]), sY(q[1]));
+    c.closePath();
+    c.fillStyle = `rgb(${R | 0},${G | 0},${B | 0})`; c.fill();
+    c.strokeStyle = side > 0 ? 'rgba(40,36,30,.45)' : 'rgba(4,6,8,.8)'; c.lineWidth = side > 0 ? 0.6 : 0.8; c.stroke();
+    if (rw.kind === 'r') {
+      c.beginPath(); c.moveTo(sX(le[0][0]), sY(le[0][1])); for (const q of le.slice(1)) c.lineTo(sX(q[0]), sY(q[1]));
+      c.strokeStyle = `rgba(255,255,255,${clamp(0.2 + spec * 1.5, 0, 0.95)})`; c.lineWidth = 1.2; c.stroke();
+    }
+  }
+}
+// Ar no close-up do compressor: anda em hélice; cada rotor faz o ar girar e cada estator endireita.
+let secAir = [], swirlTab = null, swirlId = '';
+function buildSwirl(id) {
+  const S = SECS[id], rows = ROWS.filter((r) => r.part === id), N = 300, dir = id === 'hpc' ? -1 : 1, tab = new Float32Array(N + 1);
+  let acc = 0;
+  for (let i = 0; i <= N; i++) {
+    const x = lerp(S.x0, S.x1, i / N), dx = (S.x1 - S.x0) / N;
+    for (const rw of rows) if (x >= rw.x && x < rw.x + rw.c) acc += (rw.kind === 'r' ? 0.14 : -0.14) * dir * dx / rw.c;
+    tab[i] = acc;
+  }
+  swirlTab = tab; swirlId = id;
+  secAir = Array.from({ length: 300 }, () => ({ x: lerp(S.x0, S.x1, Math.random()), f: 0.08 + Math.random() * 0.84, th: Math.random() * Math.PI * 2 }));
+}
+function swirlAt(id, x) { const S = SECS[id], i = clamp(Math.round((x - S.x0) / (S.x1 - S.x0) * 300), 0, 300); return swirlTab[i]; }
+function airPos(id, p, x) {
+  const r = lerp(inC(x) + 0.006, outC(x) - 0.006, p.f), th = p.th + swirlAt(id, x);
+  return [r * Math.cos(th), r * Math.sin(th), r];
+}
+function secAirDraw(c, id, dt, near) {
+  const S = SECS[id], U = (0.1 + 0.3 * sp) * (slow ? 0.3 : 1);
+  const lw = clamp(ST.k * 0.004, 1.2, 2.6);
+  c.lineCap = 'round';
+  for (const p of secAir) {
+    if (near) { p.x += U * dt; if (p.x > S.x1) { p.x = S.x0; p.th = Math.random() * Math.PI * 2; } }
+    const L = 0.06, hx = p.x, [y, z] = airPos(id, p, hx);
+    const vis = (z > 0) === near && y > 0 && (z > 0 || y > inC(hx));
+    if (!vis) continue;
+    const tf = (hx - S.x0) / (S.x1 - S.x0), T = lerp(S.temp[0], S.temp[1], tf) * (0.4 + 0.6 * tScale());
+    c.strokeStyle = pal.lut[lutOf(T)];
+    let [py] = airPos(id, p, hx - L), px = hx - L;
+    for (let lv = 0; lv < 3; lv++) {
+      const nx = hx - L * (2 - lv) / 3, [ny] = airPos(id, p, nx);
+      c.globalAlpha = [0.18, 0.45, 0.95][lv] * (near ? 1 : 0.55);
+      c.lineWidth = near ? lw : lw * 0.8;
+      c.beginPath(); c.moveTo(sX(px), sY(py)); c.lineTo(sX(nx), sY(ny)); c.stroke();
+      px = nx; py = ny;
+    }
+  }
+  c.globalAlpha = 1;
+}
+// Tambor do rotor visto de lado: cilindro polido, mais claro onde a luz bate.
+function drumGrad(c, rMax) {
+  const g = c.createLinearGradient(0, sY(0), 0, sY(rMax));
+  for (let i = 0; i <= 6; i++) {
+    const u = i / 6, ny = u, nz = Math.sqrt(Math.max(0, 1 - u * u));
+    const d = Math.max(0, ny * LIGHT[1] + nz * LIGHT[2]), sp2 = Math.pow(Math.max(0, ny * HALF[1] + nz * HALF[2]), 18);
+    const v = clamp(0.25 + 0.7 * d, 0, 1), w = 255 * sp2 * 0.6;
+    g.addColorStop(u, `rgb(${Math.min(255, 232 * v + w) | 0},${Math.min(255, 226 * v + w) | 0},${Math.min(255, 212 * v + w) | 0})`);
+  }
+  return g;
+}
+function secCompressor(c, id, dt) {
+  const S = SECS[id], rows = ROWS.filter((r) => r.part === id), ph = S.sp === 'hp' ? phHP : phLP;
+  if (swirlId !== id) buildSwirl(id);
+  const vsv = id === 'hpc' ? -22 * (1 - sp) : 0; // VSV: fecham em baixa rotação
+  const casing = (x) => outC(x) + 0.05;
+  // Duto (fundo escuro), metade de trás das fileiras e o ar de trás
+  c.beginPath(); sPoly(c, band(S.x0, S.x1, inC, outC, 40)); c.fillStyle = chrome(c, 0, sY(0.7), 0, sY(0.25), pal.ductC); c.fill();
+  c.save(); c.beginPath(); sPoly(c, band(S.x0, S.x1, inC, outC, 40)); c.clip();
+  let si = 0;
+  for (const rw of rows) { secRow(c, rw, ph, -1, rw.kind === 's' && si++ < 4 ? vsv : 0); }
+  secAirDraw(c, id, dt, false);
+  c.restore();
+  // Tambor com as emendas dos discos e parafusos
+  const rMax = Math.max(...rows.map((r) => r.hub(r.x)));
+  c.beginPath(); sPoly(c, band(S.x0, S.x1, K(0), inC, 40)); c.fillStyle = drumGrad(c, rMax); c.fill();
+  c.strokeStyle = pal.cut; c.lineWidth = 1.2; c.stroke();
+  for (const rw of rows) {
+    if (rw.kind !== 'r') continue;
+    const x = rw.x + rw.c * 0.5, h0 = inC(x);
+    c.strokeStyle = 'rgba(60,56,48,.45)'; c.lineWidth = Math.max(1, ST.k * 0.004);
+    c.beginPath(); c.moveTo(sX(x + rw.c * 0.7), sY(0)); c.lineTo(sX(x + rw.c * 0.7), sY(h0)); c.stroke();
+    c.fillStyle = 'rgba(70,66,58,.55)';
+    for (let b = 0; b < 6; b++) { const yy = h0 * (0.12 + b * 0.15); c.beginPath(); c.arc(sX(x + rw.c * 0.7 + 0.008), sY(yy), Math.max(1, ST.k * 0.0035), 0, 7); c.fill(); }
+  }
+  // Metade da frente das pás do rotor, por cima do tambor, e o ar da frente
+  c.save(); c.beginPath(); sPoly(c, band(S.x0, S.x1, K(-0.05), outC, 40)); c.clip();
+  for (const rw of rows) if (rw.kind === 'r') secRow(c, rw, ph, 1);
+  secAirDraw(c, id, dt, true);
+  c.restore();
+  // Carcaça cortada (com a borda azul do corte)
+  c.beginPath(); sPoly(c, band(S.x0, S.x1, outC, casing, 40));
+  c.fillStyle = chrome(c, 0, sY(0.8), 0, sY(0.3), pal.shell4); c.fill(); c.strokeStyle = pal.cut; c.lineWidth = 2; c.stroke();
+  if (id === 'lpc') {
+    // Carenagem do núcleo por cima e a porta da VBV
+    c.beginPath(); sPoly(c, band(S.x0, S.x1, cowl, K(0.95), 20)); c.fillStyle = chrome(c, 0, sY(0.95), 0, sY(0.75), pal.ductB); c.fill();
+    c.beginPath(); sPoly(c, band(S.x0, S.x1, (x) => cowl(x) - 0.025, cowl, 30));
+    c.fillStyle = chrome(c, 0, sY(0.82), 0, sY(0.7), pal.shell4); c.fill(); c.strokeStyle = pal.cut; c.lineWidth = 1.5; c.stroke();
+    const open = clamp(1 - sp * 1.6, 0, 1) * 0.9, x = 2.1, r0 = outC(x);
+    c.save(); c.translate(sX(x), sY(r0 + 0.02)); c.rotate(-open);
+    c.fillStyle = '#c99a2e'; c.fillRect(0, -4, 0.13 * ST.k, 8); c.strokeStyle = '#0b0e11'; c.lineWidth = 1; c.strokeRect(0, -4, 0.13 * ST.k, 8);
+    c.restore();
+    if (open > 0.05) { // ar saindo pela VBV
+      c.strokeStyle = pal.lut[2]; c.lineWidth = 2;
+      for (let i = 0; i < 5; i++) { const u = (time * 0.8 + i / 5) % 1; c.globalAlpha = (1 - u) * open; c.beginPath(); c.moveTo(sX(x + 0.02 + u * 0.05), sY(r0 + 0.04 + u * 0.12)); c.lineTo(sX(x + 0.04 + u * 0.06), sY(r0 + 0.07 + u * 0.14)); c.stroke(); }
+      c.globalAlpha = 1;
+    }
+  } else {
+    // VSV: anéis de comando e alavancas em cima da carcaça, que giram com a manete
+    const st = rows.filter((r) => r.kind === 's').slice(0, 4);
+    for (const rw of st) {
+      const x = rw.x + rw.c / 2, top = casing(x);
+      c.fillStyle = chrome(c, 0, sY(top + 0.03), 0, sY(top), pal.shaftHp); c.fillRect(sX(x - 0.012), sY(top + 0.028), 0.024 * ST.k, 0.028 * ST.k);
+      c.strokeStyle = '#0b0e11'; c.lineWidth = 0.8; c.strokeRect(sX(x - 0.012), sY(top + 0.028), 0.024 * ST.k, 0.028 * ST.k);
+      const ang = (vsv - 10) * D2R * 1.6;
+      c.save(); c.translate(sX(x), sY(top + 0.028)); c.rotate(ang);
+      c.strokeStyle = '#d6dde2'; c.lineWidth = Math.max(2, ST.k * 0.006); c.lineCap = 'round';
+      c.beginPath(); c.moveTo(0, 0); c.lineTo(0.035 * ST.k, -0.012 * ST.k); c.stroke(); c.restore();
+    }
+    const y0 = casing(2.7) + 0.045;
+    c.strokeStyle = '#9aa4ac'; c.lineWidth = Math.max(2, ST.k * 0.007); c.beginPath(); c.moveTo(sX(2.68), sY(y0)); c.lineTo(sX(3.0), sY(casing(3.0) + 0.045)); c.stroke();
+  }
+}
+
+// Chama feita de "manchas" de luz pré-desenhadas (mais leve que gradiente a cada quadro).
+const FLAME_COLS = [[[110, 130, 255], [40, 30, 200]], [[190, 100, 255], [120, 30, 210]], [[255, 250, 210], [255, 200, 60]], [[255, 236, 120], [255, 140, 20]], [[255, 170, 60], [235, 70, 20]], [[255, 110, 40], [200, 40, 20]]];
+let flameSpr = null;
+function flameSprites() {
+  flameSpr = FLAME_COLS.map(([a, b]) => {
+    const cv2 = document.createElement('canvas'); cv2.width = cv2.height = 64;
+    const g2 = cv2.getContext('2d'), gr = g2.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, `rgba(${a.join(',')},.9)`); gr.addColorStop(0.45, `rgba(${b.join(',')},.5)`); gr.addColorStop(1, `rgba(${b.join(',')},0)`);
+    g2.fillStyle = gr; g2.fillRect(0, 0, 64, 64); return cv2;
+  });
+}
+let flames = [], combAir = [];
+// Caminhos do ar em volta da câmara: por fora e por dentro do revestimento, com entrada pelos furos de diluição.
+const CPATH = [
+  { col: 'cold', pts: [[3.5, 0.352], [3.6, 0.392], [3.72, 0.425], [3.95, 0.43], [4.04, 0.418], [4.07, 0.395], [4.3, 0.4]] },
+  { col: 'cold', pts: [[3.5, 0.345], [3.6, 0.385], [3.75, 0.425], [3.87, 0.426], [3.875, 0.405], [3.93, 0.37], [4.07, 0.365], [4.3, 0.37]], dil: 3.875 },
+  { col: 'cold', pts: [[3.5, 0.31], [3.6, 0.285], [3.75, 0.27], [3.95, 0.27], [4.04, 0.29], [4.07, 0.322], [4.3, 0.322]] },
+  { col: 'cold', pts: [[3.5, 0.315], [3.6, 0.29], [3.8, 0.272], [3.97, 0.272], [3.975, 0.292], [4.02, 0.33], [4.07, 0.345], [4.3, 0.345]], dil: 3.975 },
+  { col: 'swirl', pts: [[3.5, 0.335], [3.6, 0.345], [3.67, 0.35]] },
+].map((p) => { let L = 0; const seg = p.pts.map((q, i) => (i ? (L += Math.hypot(q[0] - p.pts[i - 1][0], q[1] - p.pts[i - 1][1])) : 0)); return { ...p, seg, L }; });
+function pathAt(P, d) {
+  for (let i = 1; i < P.pts.length; i++) if (d <= P.seg[i]) { const u = (d - P.seg[i - 1]) / (P.seg[i] - P.seg[i - 1]); return [lerp(P.pts[i - 1][0], P.pts[i][0], u), lerp(P.pts[i - 1][1], P.pts[i][1], u)]; }
+  return P.pts[P.pts.length - 1];
+}
+function secCombustor(c, dt) {
+  if (!flameSpr) flameSprites();
+  const U = (0.12 + 0.3 * sp) * (slow ? 0.3 : 1), fl = 0.35 + 0.65 * sp;
+  // Fundo: o ar do compressor (azul) ocupa a carcaça toda
+  c.beginPath(); sPoly(c, band(3.5, 4.3, CB.inn, CB.out, 30)); c.fillStyle = 'rgba(40,80,200,.35)'; c.fill();
+  c.fillStyle = 'rgba(8,14,30,.55)'; c.fill();
+  // Gás quente na saída (até a turbina)
+  c.beginPath(); sPoly(c, band(4.06, 4.3, CB.gasI, CB.gasO, 10));
+  const hg = c.createLinearGradient(sX(4.06), 0, sX(4.3), 0); hg.addColorStop(0, `rgba(255,120,30,${0.6 * fl})`); hg.addColorStop(1, `rgba(255,90,30,${0.35 * fl})`);
+  c.fillStyle = hg; c.fill();
+  // Interior do revestimento (escuro) e a chama
+  const liner = band(3.69, 4.065, CB.linI, CB.linO, 24);
+  c.save(); c.beginPath(); sPoly(c, liner); c.fillStyle = '#0a0d24'; c.fill(); c.clip();
+  c.globalCompositeOperation = 'lighter';
+  const want = 170;
+  while (flames.length < want) flames.push({ x: 3.7, y: 0.35 + (Math.random() - 0.5) * 0.02, vx: 0.4 + Math.random() * 0.5, vy: (Math.random() - 0.5) * 0.7, life: Math.random() });
+  for (const f of flames) {
+    f.life += dt * U * 2.6 * (0.7 + 0.6 * Math.random());
+    f.x = lerp(3.7, 4.07, f.life);
+    f.vy += (Math.random() - 0.5) * 2.2 * dt; f.vy *= 0.96;
+    f.y = clamp(f.y + f.vy * dt * 0.05, CB.linI(f.x) + 0.01, CB.linO(f.x) - 0.01);
+    if (f.life >= 1) { f.life = 0; f.x = 3.7; f.y = 0.35 + (Math.random() - 0.5) * 0.02; f.vy = (Math.random() - 0.5) * 0.9; }
+    const u = f.life, ci = u < 0.08 ? 0 : u < 0.18 ? 1 : u < 0.45 ? 2 : u < 0.65 ? 3 : u < 0.85 ? 4 : 5;
+    const size = ST.k * (0.02 + 0.042 * Math.sin(Math.min(1, u * 1.4) * Math.PI * 0.9)) * (0.6 + 0.6 * fl);
+    c.globalAlpha = (u < 0.05 ? u / 0.05 : 1) * (u > 0.9 ? (1 - u) / 0.1 : 1) * (ci === 2 ? 0.13 : ci === 3 ? 0.22 : 0.3) * fl;
+    c.drawImage(flameSpr[ci], sX(f.x) - size, sY(f.y) - size * 0.7, size * 2, size * 1.4);
+  }
+  c.restore(); c.globalAlpha = 1;
+  // Carcaças externa e interna (cortadas, borda azul)
+  c.beginPath(); sPoly(c, band(3.5, 4.3, CB.out, (x) => CB.out(x) + 0.03, 20)); c.fillStyle = chrome(c, 0, sY(0.48), 0, sY(0.44), pal.shell4); c.fill(); c.strokeStyle = pal.cut; c.lineWidth = 2; c.stroke();
+  c.beginPath(); sPoly(c, band(3.5, 4.3, (x) => CB.inn(x) - 0.03, CB.inn, 20)); c.fillStyle = chrome(c, 0, sY(0.26), 0, sY(0.22), pal.shell4); c.fill(); c.strokeStyle = pal.cut; c.lineWidth = 2; c.stroke();
+  // Paredes do revestimento com furinhos de resfriamento e furos de diluição
+  for (const fn of [CB.linO, CB.linI]) {
+    c.beginPath(); for (let i = 0; i <= 30; i++) { const x = lerp(3.69, 4.065, i / 30); i ? c.lineTo(sX(x), sY(fn(x))) : c.moveTo(sX(x), sY(fn(x))); }
+    c.strokeStyle = '#c9d0d5'; c.lineWidth = Math.max(3, ST.k * 0.007); c.stroke();
+    c.strokeStyle = pal.cut; c.lineWidth = 1; c.stroke();
+    c.fillStyle = '#20262c';
+    for (let x = 3.72; x < 4.05; x += 0.016) { c.beginPath(); c.arc(sX(x), sY(fn(x)), Math.max(0.8, ST.k * 0.0016), 0, 7); c.fill(); }
+  }
+  for (const [x, fn] of [[3.875, CB.linO], [3.975, CB.linI]]) { c.fillStyle = '#0a0d24'; c.beginPath(); c.ellipse(sX(x), sY(fn(x)), ST.k * 0.009, ST.k * 0.006, 0, 0, 7); c.fill(); c.strokeStyle = pal.cut; c.lineWidth = 1; c.stroke(); }
+  // Domo (capuz) na frente do revestimento
+  c.strokeStyle = '#c9d0d5'; c.lineWidth = Math.max(3, ST.k * 0.007);
+  c.beginPath(); c.moveTo(sX(3.69), sY(0.396)); c.quadraticCurveTo(sX(3.64), sY(0.392), sX(3.645), sY(0.372)); c.stroke();
+  c.beginPath(); c.moveTo(sX(3.69), sY(0.302)); c.quadraticCurveTo(sX(3.64), sY(0.306), sX(3.645), sY(0.328)); c.stroke();
+  // Ar do compressor: passa por fora e por dentro do revestimento, entra pelos furos e pelo turbilhonador
+  c.lineCap = 'round';
+  while (combAir.length < 160) combAir.push({ p: (Math.random() * CPATH.length) | 0, d: Math.random() * 0.9 });
+  for (const a of combAir) {
+    const P = CPATH[a.p]; a.d += U * dt * 0.9;
+    if (a.d > P.L) { a.d = 0; a.p = (Math.random() * CPATH.length) | 0; }
+    const [x, y] = pathAt(P, a.d), [x0, y0] = pathAt(P, Math.max(0, a.d - 0.04));
+    const hot = x > 4.07 || (P.dil && x > P.dil + 0.01);
+    // Azul = ar do compressor (bem mais frio que a chama); laranja = depois de misturar com o gás quente
+    c.strokeStyle = hot ? pal.lut[16] : P.col === 'swirl' ? pal.lut[3] : pal.lut[1];
+    c.globalAlpha = 0.9; c.lineWidth = clamp(ST.k * 0.0035, 1.2, 2.6);
+    c.beginPath(); c.moveTo(sX(x0), sY(y0)); c.lineTo(sX(x), sY(y)); c.stroke();
+  }
+  c.globalAlpha = 1;
+  // Injetor: flange fora da carcaça, haste dobrada e o turbilhonador com as fendas
+  c.fillStyle = chrome(c, sX(3.565), 0, sX(3.635), 0, pal.shaftLp); c.strokeStyle = '#0b0e11'; c.lineWidth = 1;
+  c.fillRect(sX(3.565), sY(0.495), 0.07 * ST.k, 0.016 * ST.k); c.strokeRect(sX(3.565), sY(0.495), 0.07 * ST.k, 0.016 * ST.k);
+  c.beginPath(); c.moveTo(sX(3.6), sY(0.48)); c.lineTo(sX(3.6), sY(0.385)); c.quadraticCurveTo(sX(3.6), sY(0.35), sX(3.64), sY(0.35));
+  c.strokeStyle = '#0b0e11'; c.lineWidth = 0.024 * ST.k + 2; c.stroke();
+  c.strokeStyle = chrome(c, sX(3.588), 0, sX(3.612), 0, pal.shaftLp); c.lineWidth = 0.024 * ST.k; c.stroke();
+  c.fillStyle = chrome(c, 0, sY(0.37), 0, sY(0.33), pal.shell4); c.strokeStyle = '#0b0e11'; c.lineWidth = 1;
+  c.fillRect(sX(3.64), sY(0.369), 0.05 * ST.k, 0.038 * ST.k); c.strokeRect(sX(3.64), sY(0.369), 0.05 * ST.k, 0.038 * ST.k);
+  c.strokeStyle = 'rgba(20,24,28,.8)'; c.lineWidth = 1;
+  for (let i = 1; i < 9; i++) { const x = 3.64 + i * 0.0055; c.beginPath(); c.moveTo(sX(x), sY(0.367)); c.lineTo(sX(x + 0.003), sY(0.333)); c.stroke(); }
+  // Spray de combustível saindo do bico
+  c.strokeStyle = 'rgba(255,220,120,.7)';
+  for (let i = -3; i <= 3; i++) { c.beginPath(); c.moveTo(sX(3.692), sY(0.35)); c.lineTo(sX(3.72), sY(0.35 + i * 0.006 + Math.sin(time * 30 + i) * 0.002)); c.stroke(); }
+  // Vela de ignição
+  c.fillStyle = chrome(c, sX(3.852), 0, sX(3.868), 0, pal.shaftLp); c.fillRect(sX(3.852), sY(0.5), 0.016 * ST.k, (0.5 - 0.416) * ST.k);
+  c.strokeStyle = '#0b0e11'; c.strokeRect(sX(3.852), sY(0.5), 0.016 * ST.k, (0.5 - 0.416) * ST.k);
+  // Palhetas guia da turbina (vermelhas) e a primeira fileira de pás da turbina de alta (girando)
+  const ngv = { x: 4.075, c: 0.06, n: 24, st: 50, kind: 's', hub: CB.gasI, tip: CB.gasO };
+  const hpt = { x: 4.16, c: 0.055, n: 30, st: -55, kind: 'r', sp: 'hp', hot: 1, hub: CB.gasI, tip: CB.gasO };
+  c.save(); c.beginPath(); sPoly(c, band(4.07, 4.3, CB.gasI, CB.gasO, 6)); c.clip();
+  secRow(c, ngv, 0, -1, 0, [230, 80, 70]); secRow(c, ngv, 0, 1, 0, [230, 80, 70]);
+  secRow(c, hpt, phHP, -1); secRow(c, hpt, phHP, 1);
+  c.restore();
+}
+function secPins(c, S) {
+  c.font = `600 11px ${css('--mono') || 'monospace'}`;
+  const list = S.pins.map(([nome, x, y], i) => ({ n: i + 1, nome, ax: sX(x), ay: sY(y) })).sort((a, b) => a.ax - b.ax);
+  let pos = 4; list.forEach((it) => { it.x = Math.max(it.ax - 10, pos); pos = it.x + 24; });
+  let lim = SW - 4; for (let i = list.length - 1; i >= 0; i--) { list[i].x = Math.min(list[i].x, lim - 20); lim = list[i].x - 4; }
+  for (const it of list) {
+    const bx = it.x + 10, by = 16;
+    c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 1; c.beginPath(); c.moveTo(bx, by + 9); c.lineTo(it.ax, it.ay); c.stroke();
+    c.fillStyle = '#ffffff'; c.beginPath(); c.arc(it.ax, it.ay, 3.2, 0, 7); c.fill(); c.strokeStyle = '#11161b'; c.lineWidth = 1.2; c.stroke();
+    c.beginPath(); c.arc(bx, by, 9.5, 0, 7); c.fillStyle = pal.hl; c.fill(); c.strokeStyle = pal.panel; c.stroke();
+    c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(it.n, bx, by + 0.5);
+  }
+}
+function secPressure(c, S) {
+  // Faixa de baixo: como a pressão e a temperatura sobem ao longo da seção
+  const y = SH - 12, x0 = sX(S.x0) + 6, x1 = sX(S.x1) - 6, q = tScale(), pq = 0.08 + 0.92 * Math.pow(sp, 1.6);
+  const P = (v) => 1 + (v - 1) * pq, T = (v) => 15 + (v - 15) * q;
+  const g = c.createLinearGradient(x0, 0, x1, 0); g.addColorStop(0, rampColor(T(S.temp[0]))); g.addColorStop(1, rampColor(T(S.temp[1])));
+  c.fillStyle = g; c.fillRect(x0, y - 3, x1 - x0, 6);
+  c.font = `600 11px ${css('--mono') || 'monospace'}`; c.fillStyle = pal.ink; c.textBaseline = 'middle';
+  const fmtP = (v) => nf(v, v < 10 ? 1 : 0);
+  c.textAlign = 'left'; c.fillText(`${fmtP(P(S.pres[0]))} atm · ${nf(Math.round(T(S.temp[0]) / 5) * 5)} °C`, x0, y - 13);
+  c.textAlign = 'right'; c.fillText(`${fmtP(P(S.pres[1]))} atm · ${nf(Math.round(T(S.temp[1]) / 5) * 5)} °C`, x1, y - 13);
+}
+function drawSection(dt) {
+  if (!sctx) return;
+  const c = sctx, S = SECS[sec];
+  ST.k = Math.min((SW - 24) / (S.x1 - S.x0), (SH - SMT - SMB) / (S.y1 - S.y0));
+  ST.ox = SW / 2 - ST.k * (S.x0 + S.x1) / 2; ST.oy = SMT + (SH - SMT - SMB) / 2 + ST.k * (S.y0 + S.y1) / 2;
+  c.fillStyle = pal.dark ? '#0b1117' : '#1a2128'; c.fillRect(0, 0, SW, SH);
+  c.save(); c.beginPath(); c.rect(0, SMT - 4, SW, SH - SMT - SMB + 8); c.clip();
+  if (sec === 'comb') secCombustor(c, dt); else secCompressor(c, sec, dt);
+  c.restore();
+  secPins(c, S);
+  c.fillStyle = '#e9eef2'; secPressureDark(c, S);
+}
+function secPressureDark(c, S) { const ink = pal.ink; pal.ink = '#e9eef2'; secPressure(c, S); pal.ink = ink; }
+// A altura do canvas acompanha a seção, para o desenho ocupar a largura toda sem sobrar faixa vazia.
+function sizeSec() {
+  scv = $('#engSec');
+  if (!scv) return;
+  const S = SECS[sec];
+  SW = scv.clientWidth || 600;
+  SH = Math.round(clamp((SW - 24) / (S.x1 - S.x0) * (S.y1 - S.y0) + SMT + SMB, 230, 470));
+  scv.width = SW * dpr; scv.height = SH * dpr; scv.style.height = SH + 'px';
+  sctx = scv.getContext('2d'); sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function setSec(id) {
+  if (!SECS[id] || !scv) return;
+  sec = id;
+  if (W) sizeSec();
+  const S = SECS[id];
+  document.querySelectorAll('#secSeg [data-sec]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.sec === id)));
+  $('#secTitle').textContent = S.t;
+  $('#secText').textContent = S.txt;
+  $('#secFacts').innerHTML = S.facts.map(([a, b]) => `<div><span class="label">${a}</span><b>${b}</b></div>`).join('');
+  $('#secList').innerHTML = S.pins.map(([n]) => `<li>${n}</li>`).join('');
+}
+
 /* ---------- Interface ---------- */
 function updateUI() {
   const N1 = n1(), N2 = n2(), E = egt(), T = 296 * (0.05 + 0.95 * Math.pow(sp, 1.5));
@@ -848,6 +1203,8 @@ function showStep(i, keepSel) {
     const id = b.dataset.epart;
     b.setAttribute('aria-pressed', String(sel ? id === sel : s.parts.includes(id)));
   });
+  const sid = { 4: 'lpc', 5: 'hpc', 6: 'comb' }[step];
+  if (sid && sid !== sec) setSec(sid);
   uiT = 0;
 }
 function pickPart(id) {
@@ -884,6 +1241,7 @@ function size() {
     fcv.width = FW * dpr; fcv.height = FH * dpr; fcv.style.height = FH + 'px';
     fctx = fcv.getContext('2d'); fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
+  sizeSec();
 }
 function start() {
   size();
@@ -909,6 +1267,14 @@ function init(opts) {
     if (id) pickPart(id); else if (sel) showStep(step);
   });
   matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => readPal());
+  scv = $('#engSec');
+  $('#secSeg')?.addEventListener('click', (e) => { const b = e.target.closest('[data-sec]'); if (b) setSec(b.dataset.sec); });
+  setSec('lpc');
+  // Só desenha o que está na tela (poupa bateria e deixa a animação mais leve).
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((es) => es.forEach((en) => { vis[en.target.dataset.vis] = en.isIntersecting; }));
+    [['#engCv', 'main'], ['#engFan', 'fan'], ['#engSec', 'sec']].forEach(([s, key]) => { const el = $(s); if (el) { el.dataset.vis = key; io.observe(el); } });
+  } else { vis.fan = vis.sec = true; }
   showStep(0);
 }
 
