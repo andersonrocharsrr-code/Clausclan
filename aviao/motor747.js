@@ -1481,7 +1481,7 @@ function frame3D(dt) {
   const ids = ex > 0.05 ? [] : highlightIds();
   const deep = (step === 9 && !sel) || ['lpshaft', 'hpshaft', 'mancal'].includes(sel) ? 1 : 0;
   const only = ex > 0.5 && exMod ? exMod : '', mc = only && MODCAM[only];
-  r3d.render({ cam: cam3, phLP, phHP, ex, sp, time, dt, slow, showAir, deep, only, rev, shadow: mc ? [mc.at[0] + r3d.MOD[only] * ex, 0, 2.2, 1.9] : null, hl: ids.map((id) => PARTS[id].n), dark: pal.dark });
+  r3d.render({ cam: cam3, phLP, phHP, ex, sp, time, dt, slow, showAir, deep, only, rev, revOn: revT > 0 || rev > 0.01, shadow: mc ? [mc.at[0] + r3d.MOD[only] * ex, 0, 2.2, 1.9] : null, hl: ids.map((id) => PARTS[id].n), dark: pal.dark });
   ctx.clearRect(0, 0, W, H);
   TS = TS3; const k0 = k; k = H / 3.4;
   if (ex < 0.05 && rev < 0.05 && !revT) { drawFlowArrows(dt); drawPins(); drawMainCallout(dt); } else { arrowA = 0; calloutA = 0; }
@@ -1605,6 +1605,12 @@ function init(opts) {
   $('#engRevOn')?.addEventListener('change', (e) => {
     revT = e.target.checked ? 1 : 0;
     $('#engRevBox').hidden = !revT;
+    // Leva a página até o motor para ver a animação (o cabeçalho fixo fica em cima)
+    if (revT) {
+      const view = cv.closest('.eng__view') || cv, top = document.querySelector('.top');
+      const hdr = top ? top.getBoundingClientRect().bottom : 0;
+      window.scrollTo({ top: view.getBoundingClientRect().top + window.scrollY - hdr - 8, behavior: 'smooth' });
+    }
     uAz = 0; uEl = 0;
     if (revT && exT) { const x = $('#engExplode'); x.checked = false; x.dispatchEvent(new Event('change')); }
   });

@@ -154,7 +154,7 @@ const MATS = [
 const CAPS = [[0.8, 0.81, 0.83], [0.96, 0.47, 0.17], [0.5, 0.52, 0.55], [0.56, 0.66, 0.8], [0.84, 0.3, 0.22]];
 
 /* ---------- O motor ---------- */
-const MOD = { inlet: -1.6, fan: -0.85, case: 0, sleeve: 0, core: 0.95, lpt: 2.0 };
+const MOD = { inlet: -1.6, fan: -0.85, case: 0, casc: 0, sleeve: 0, core: 0.95, lpt: 2.0 };
 const XS = 2.55, SLIDE = 0.55, NDOOR = 16, DOOR_L = 0.42;
 // Portas de bloqueio: presas no capô móvel; com o reversor aberto giram e fecham o duto do fan
 function doorMesh(g, rev, part) {
@@ -187,18 +187,18 @@ function buildEngine(g) {
   const skin = (mod, x0, x1, n, part) => revolve(M(mod), [...S(g.nacOut, x0, x1, n), [x1, g.nacOut(x1) - 0.03], ...S((x) => g.nacOut(x) - 0.03, x1, x0, n).map((p) => [p[0], p[1], 4])], { mat: 1, part, cap: 0, cut: COWL }, { segs: 72 });
   skin('case', 0.72, XS, 26, 0); skin('sleeve', XS, 3.7, 14, id('reverser'));
   // Anel de trás da parte fixa (onde o capô móvel encosta)
-  revolve(M('case'), [[XS - 0.03, g.caseIn(XS) + 0.03], [XS, g.caseIn(XS) + 0.03], [XS, g.nacOut(XS) - 0.03], [XS - 0.03, g.nacOut(XS) - 0.03]], { mat: 1, part: id('reverser'), cap: 2 }, { segs: 72 });
+  revolve(M('casc'), [[XS - 0.03, g.caseIn(XS) + 0.03], [XS, g.caseIn(XS) + 0.03], [XS, g.nacOut(XS) - 0.03], [XS - 0.03, g.nacOut(XS) - 0.03]], { mat: 1, part: id('reverser'), cap: 2 }, { segs: 72 });
   // Grades do reversor (cascatas): ficam escondidas dentro do capô até ele abrir
   const casc = { mat: 0, part: id('reverser') }, CR0 = g.caseIn(XS) + 0.05, CR1 = g.nacOut(XS) - 0.05, NC = 56;
-  for (const x of [XS + 0.01, XS + 0.52]) revolve(M('case'), [[x, CR0], [x + 0.025, CR0], [x + 0.025, CR1], [x, CR1]], { mat: 4, part: id('reverser'), cap: 2 }, { segs: 72 });
+  for (const x of [XS + 0.01, XS + 0.52]) revolve(M('casc'), [[x, CR0], [x + 0.025, CR0], [x + 0.025, CR1], [x, CR1]], { mat: 4, part: id('reverser'), cap: 2 }, { segs: 72 });
   for (let j = 0; j < NC; j++) {
     const t = j / NC * TAU, rd = [0, Math.cos(t), Math.sin(t)], tg = [0, -Math.sin(t), Math.cos(t)], rm = (CR0 + CR1) / 2;
-    box(M('case'), add([XS + 0.27, 0, 0], scl(rd, rm)), [0.25, 0, 0], scl(rd, (CR1 - CR0) / 2), scl(tg, 0.006), { mat: 4, part: id('reverser') });
+    box(M('casc'), add([XS + 0.27, 0, 0], scl(rd, rm)), [0.25, 0, 0], scl(rd, (CR1 - CR0) / 2), scl(tg, 0.006), { mat: 4, part: id('reverser') });
     for (let i = 0; i < 6; i++) {
       // Palhetas inclinadas para a frente: é o que vira o ar
       const x = XS + 0.07 + i * 0.08, tc = t + Math.PI / NC, rdc = [0, Math.cos(tc), Math.sin(tc)], tgc = [0, -Math.sin(tc), Math.cos(tc)];
       const u = add(scl([1, 0, 0], 0.022), scl(rdc, 0.0)), v = scl(norm(add([-0.7, 0, 0], rdc)), (CR1 - CR0) / 2 / 0.81), w = scl(tgc, rm * Math.PI / NC * 0.95);
-      box(M('case'), add([x, 0, 0], scl(rdc, rm)), scl(norm(add([0.7, 0, 0], rdc)), 0.006), v, w, casc);
+      box(M('casc'), add([x, 0, 0], scl(rdc, rm)), scl(norm(add([0.7, 0, 0], rdc)), 0.006), v, w, casc);
       void u;
     }
   }
@@ -521,7 +521,9 @@ function create(canvas, g) {
     }
     for (const [k, b] of Object.entries({ ...bufs, 'sleeve:door': doorBuf })) {
       const [mod, spin] = k.split(':');
-      if (st.only && (mod === 'sleeve' ? 'case' : mod) !== st.only) continue;
+      // As grades e as portas do reversor só aparecem com o reverso ligado (senão atrapalham a vista do miolo)
+      if ((mod === 'casc' || k === 'sleeve:door') && !st.revOn) continue;
+      if (st.only && (mod === 'sleeve' || mod === 'casc' ? 'case' : mod) !== st.only) continue;
       const rot = spin === 'lp' ? rotX(st.phLP) : spin === 'hp' ? rotX(st.phHP) : I4;
       R.drawMesh(b, Vm, rot, transl(MOD[mod] * st.ex + (mod === 'sleeve' ? SLIDE * rv : 0), 0, 0));
     }
