@@ -45,6 +45,8 @@ const CLOUDS = [
     como: 'A nuvem de tempestade: uma torre enorme com o topo achatado em bigorna, base escura e pancadas de chuva.',
     voo: 'O maior perigo da meteorologia: turbulência severa, granizo, raios, gelo forte, tesoura de vento (windshear) e microexplosões perto do solo. Nunca se atravessa: desvia-se de longe.', perigo: ['Turbulência severa', 'Granizo', 'Raios', 'Windshear', 'Gelo forte'] },
 ];
+// Fotos reais (quando houver): o cartão e o painel da nuvem usam a foto no lugar da ilustração
+const PHOTO = { cb: 'assets/nuvem-cb.webp' };
 const NIVEL = { alta: 'Nuvens altas', 'média': 'Nuvens médias', baixa: 'Nuvens baixas', vertical: 'Desenvolvimento vertical' };
 
 /* ---------- Desenho das nuvens ---------- */
@@ -378,6 +380,7 @@ function showCloud(id) {
   $('#metName').textContent = `${cl.nome} (${cl.sigla})`;
   $('#metLevel').textContent = `${NIVEL[cl.nivel]} · ${cl.alt}`;
   $('#metHow').textContent = cl.como; $('#metFly').textContent = cl.voo;
+  const ph = $('#metPhoto'); if (ph) { ph.hidden = !PHOTO[id]; if (PHOTO[id]) { ph.src = PHOTO[id]; ph.alt = `Foto de ${cl.nome}`; } }
   $('#metTags').innerHTML = cl.perigo.map((p) => `<span class="met-tag">${p}</span>`).join('');
   document.querySelectorAll('#metCards [data-cl]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cl === id)));
 }
@@ -389,7 +392,7 @@ function setScen(id) {
 function init(opts) {
   if (!$('#metAtlas')) return;
   active = opts.active;
-  $('#metCards').innerHTML = CLOUDS.map((k) => `<button type="button" class="met-card" data-cl="${k.id}" aria-pressed="false"><canvas data-cl="${k.id}"></canvas><b>${k.nome} <small>${k.sigla}</small></b><span>${NIVEL[k.nivel]}</span></button>`).join('');
+  $('#metCards').innerHTML = CLOUDS.map((k) => `<button type="button" class="met-card" data-cl="${k.id}" aria-pressed="false">${PHOTO[k.id] ? `<img src="${PHOTO[k.id]}" alt="Foto de ${k.nome}" loading="lazy">` : `<canvas data-cl="${k.id}"></canvas>`}<b>${k.nome} <small>${k.sigla}</small></b><span>${NIVEL[k.nivel]}</span></button>`).join('');
   $('#metCards').addEventListener('click', (e) => { const b = e.target.closest('[data-cl]'); if (b) showCloud(b.dataset.cl); });
   $('#metAtlas').addEventListener('click', (e) => {
     const r = e.currentTarget.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;

@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=58">
+  <link rel="stylesheet" href="style.css?v=59">
 </head>
 <body>
   <header class="top">
@@ -653,6 +653,7 @@
         <div class="card met__atlas">
           <canvas id="metAtlas" aria-label="Os tipos de nuvens por altitude. Toque numa nuvem."></canvas>
           <div class="met__info">
+            <img class="met__photo" id="metPhoto" alt="" hidden>
             <span class="label" id="metLevel"></span>
             <h2 id="metName"></h2>
             <div class="met__tags" id="metTags"></div>
@@ -663,7 +664,7 @@
         <div class="card">
           <span class="label">Tipos de nuvens</span>
           <div class="met__cards" id="metCards"></div>
-          <p class="small">Ilustrações feitas no app, para mostrar a forma típica de cada nuvem.</p>
+          <p class="small">Fotos reais quando disponíveis; as outras são ilustrações feitas no app com a forma típica de cada nuvem.</p>
         </div>
         <div class="card met__codes">
           <span class="label">Como as nuvens aparecem no METAR</span>
@@ -787,13 +788,13 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=58"></script>
-  <script src="catalogo747.js?v=58"></script>
-  <script src="cockpit747.js?v=58"></script>
-  <script src="motor3d.js?v=58"></script>
-  <script src="motor747.js?v=58"></script>
-  <script src="meteo.js?v=58"></script>
-  <script src="app.js?v=58"></script>
+  <script src="avioes.js?v=59"></script>
+  <script src="catalogo747.js?v=59"></script>
+  <script src="cockpit747.js?v=59"></script>
+  <script src="motor3d.js?v=59"></script>
+  <script src="motor747.js?v=59"></script>
+  <script src="meteo.js?v=59"></script>
+  <script src="app.js?v=59"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
