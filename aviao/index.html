@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=50">
+  <link rel="stylesheet" href="style.css?v=51">
 </head>
 <body>
   <header class="top">
@@ -523,12 +523,12 @@
         <div class="view__head">
           <p class="eyebrow">Seção D · Propulsão</p>
           <h1>Motor GEnx-2B em corte</h1>
-          <p class="lede">O motor do 747-8 cortado ao meio. Os traços são o ar, que muda de azul (frio) para vermelho (quente). Passe as etapas para seguir o ar do começo ao fim, ou toque numa peça do desenho.</p>
+          <p class="lede">O motor do 747-8 cortado ao meio. Os traços são o ar, que muda de azul (frio) para vermelho (quente). Passe as etapas para seguir o ar do começo ao fim, toque numa peça do desenho ou arraste para girar a vista.</p>
         </div>
         <div class="eng">
           <div class="eng__main">
             <div class="card tunnel eng__stage">
-              <canvas id="engCv" aria-label="Animação do ar passando pelo motor GEnx-2B em corte"></canvas>
+              <div class="eng__view"><canvas id="engGl" aria-hidden="true"></canvas><canvas id="engCv" aria-label="Motor GEnx-2B em corte, em 3D, com o ar passando. Arraste para girar."></canvas></div>
               <div class="tunnel__legend mono small">
                 <span><i class="sw sw--byp"></i>ar do fan (bypass)</span>
                 <span><i class="sw sw--heat"></i>ar do núcleo · frio → quente</span>
@@ -677,11 +677,12 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=50"></script>
-  <script src="catalogo747.js?v=50"></script>
-  <script src="cockpit747.js?v=50"></script>
-  <script src="motor747.js?v=50"></script>
-  <script src="app.js?v=50"></script>
+  <script src="avioes.js?v=51"></script>
+  <script src="catalogo747.js?v=51"></script>
+  <script src="cockpit747.js?v=51"></script>
+  <script src="motor3d.js?v=51"></script>
+  <script src="motor747.js?v=51"></script>
+  <script src="app.js?v=51"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());

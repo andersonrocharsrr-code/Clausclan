@@ -460,6 +460,13 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 .eng { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 20px; align-items: start; margin-top: 18px; }
 .eng__main { display: grid; gap: 20px; min-width: 0; }
 .eng__stage canvas { width: 100%; display: block; touch-action: manipulation; cursor: pointer; }
+.eng__view { position: relative; }
+.eng__view #engGl { display: none; position: absolute; left: 0; top: 0; pointer-events: none; }
+.eng__view.is-3d { background: radial-gradient(ellipse 70% 60% at 45% 42%, #ffffff, #e9edf0 60%, #d9dfe3); }
+.eng__view.is-3d #engGl { display: block; }
+.eng__view.is-3d #engCv { position: relative; touch-action: pan-y; cursor: grab; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .eng__view.is-3d { background: radial-gradient(ellipse 70% 60% at 45% 42%, #26313b, #151d24 65%, #0d1318); } }
+:root[data-theme="dark"] .eng__view.is-3d { background: radial-gradient(ellipse 70% 60% at 45% 42%, #26313b, #151d24 65%, #0d1318); }
 .eng__step { border-top: 1px solid var(--line); padding: 14px 16px 16px; display: grid; gap: 10px; }
 .eng__nav { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; }
 .eng__nav .lesson__arrow { min-width: 44px; font-size: 20px; }

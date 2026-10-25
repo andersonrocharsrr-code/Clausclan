@@ -160,6 +160,8 @@ const cam = { x0: STEPS[0].cam[0], x1: STEPS[0].cam[1], r: STEPS[0].cam[2] };
 let k = 1, ox = 0, cy = 0, pal = null, parts = [];
 const MT = 30; // faixa das etiquetas em cima e embaixo
 const SX = (x) => ox + x * k, SY = (y) => cy - y * k;
+const TS2 = (x, y) => [SX(x), SY(y)];
+let TS = TS2;
 
 const n1 = () => 25 + 75 * Math.pow(sp, 0.55);
 const n2 = () => 64 + 36 * Math.pow(sp, 0.6);
@@ -450,13 +452,13 @@ function drawModLabels() {
   ctx.font = `600 11.5px ${css('--mono') || 'monospace'}`; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
   // Etiquetas em cima (fan, núcleo, turbina) e embaixo (entrada, carcaça), espalhadas para não se sobreporem
   for (const top of [true, false]) {
-    const list = MOD_NAMES.filter(([m]) => (m === 'inlet' || m === 'case') !== top).map(([m, nome, x]) => ({ m, nome, ax: SX(x + off(m)), w: ctx.measureText(nome).width + 18 }));
+    const list = MOD_NAMES.filter(([m]) => (m === 'inlet' || m === 'case') !== top).map(([m, nome, x]) => { const q = TS(x + off(m), top ? 1.3 : -1.3) || [0, 0]; return { m, nome, ax: q[0], ay: q[1], w: ctx.measureText(nome).width + 18 }; });
     let pos = 4; list.forEach((it) => { it.x = Math.max(it.ax - it.w / 2, pos); pos = it.x + it.w + 6; });
     let lim = W - 4; for (let i = list.length - 1; i >= 0; i--) { list[i].x = Math.min(list[i].x, lim - list[i].w); lim = list[i].x - 6; }
     const y = top ? 16 : H - 16;
     for (const it of list) {
       const cx = it.x + it.w / 2;
-      ctx.strokeStyle = pal.hl; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(cx, y + (top ? 10 : -10)); ctx.lineTo(it.ax, SY(top ? 1.3 : -1.3)); ctx.stroke();
+      ctx.strokeStyle = pal.hl; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(cx, y + (top ? 10 : -10)); ctx.lineTo(it.ax, it.ay); ctx.stroke();
       ctx.fillStyle = pal.panel; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(it.x, y - 10, it.w, 20, 10) : ctx.rect(it.x, y - 10, it.w, 20); ctx.fill(); ctx.stroke();
       ctx.fillStyle = pal.ink; ctx.fillText(it.nome, cx, y + 0.5);
     }
@@ -468,13 +470,15 @@ function drawModLabels() {
 function flowArrow(pts, rgbCol, alpha, w) {
   if (pts.length < 2 || alpha < 0.02) return;
   ctx.save(); ctx.globalAlpha = alpha; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  const path = () => { ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(SX(x), SY(y)) : ctx.moveTo(SX(x), SY(y)))); };
+  const sp2 = pts.map(([x, y]) => TS(x, y)).filter(Boolean);
+  if (sp2.length < 2) { ctx.restore(); return; }
+  const path = () => { ctx.beginPath(); sp2.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); };
   path(); ctx.strokeStyle = `rgba(${rgbCol},.45)`; ctx.lineWidth = w; ctx.stroke();
   path(); ctx.strokeStyle = `rgba(${rgbCol},.95)`; ctx.lineWidth = Math.max(1.5, w * 0.28); ctx.setLineDash([w * 1.2, w * 1.6]); ctx.lineDashOffset = -time * w * 6; ctx.stroke(); ctx.setLineDash([]);
   // Bolinha no começo e ponta de flecha no fim
-  const [x0, y0] = pts[0], [xa, ya] = pts[pts.length - 2], [xb, yb] = pts[pts.length - 1];
-  ctx.fillStyle = `rgba(${rgbCol},1)`; ctx.beginPath(); ctx.arc(SX(x0), SY(y0), w * 0.45, 0, 7); ctx.fill();
-  const a = Math.atan2(SY(yb) - SY(ya), SX(xb) - SX(xa)), hx = SX(xb), hy = SY(yb), L = w * 1.5;
+  const [x0, y0] = sp2[0], [xa, ya] = sp2[sp2.length - 2], [xb, yb] = sp2[sp2.length - 1];
+  ctx.fillStyle = `rgba(${rgbCol},1)`; ctx.beginPath(); ctx.arc(x0, y0, w * 0.45, 0, 7); ctx.fill();
+  const a = Math.atan2(yb - ya, xb - xa), hx = xb, hy = yb, L = w * 1.5;
   ctx.beginPath(); ctx.moveTo(hx + Math.cos(a) * L * 0.4, hy + Math.sin(a) * L * 0.4);
   ctx.lineTo(hx + Math.cos(a + 2.5) * L, hy + Math.sin(a + 2.5) * L); ctx.lineTo(hx + Math.cos(a - 2.5) * L, hy + Math.sin(a - 2.5) * L); ctx.closePath(); ctx.fill();
   ctx.restore();
@@ -642,11 +646,15 @@ function drawPins() {
   const ids = new Set(highlightIds());
   const rows = { top: [], bot: [] };
   ctx.font = `600 11px ${css('--mono') || 'monospace'}`;
+  pinHits = [];
   for (const [id, p] of Object.entries(PARTS)) {
-    const ax = SX(p.at[0]), ay = SY(p.at[1]);
+    const q = pinAt(id, p);
+    if (!q) continue;
+    const [ax, ay] = q;
     if (ax < 6 || ax > W - 6 || ay < MT || ay > H - MT) continue;
-    const hl = ids.has(id), label = hl ? p.nome : '', lw = hl ? ctx.measureText(label).width + 14 : 0;
-    rows[p.at[1] > 0 ? 'top' : 'bot'].push({ id, p, ax, ay, hl, label, w: 20 + (lw ? lw + 4 : 0) });
+    if (r3d && !(ids.has(id) || (!ids.size && PIN0.includes(id)))) continue;
+    const hl = ids.has(id), label = hl || r3d ? p.nome : '', lw = label ? ctx.measureText(label).width + 14 : 0;
+    rows[(r3d ? ay < H * 0.5 : p.at[1] > 0) ? 'top' : 'bot'].push({ id, p, ax, ay, hl, label, w: 20 + (lw ? lw + 4 : 0) });
   }
   for (const [key, list] of Object.entries(rows)) {
     if (!list.length) continue;
@@ -661,6 +669,7 @@ function drawPins() {
     const y = key === 'top' ? 15 : H - 15;
     for (const it of list) {
       const bx = it.x + 10;
+      pinHits.push({ id: it.id, x: bx, y, ax: it.ax, ay: it.ay });
       ctx.strokeStyle = it.hl ? pal.hl : pal.muted; ctx.globalAlpha = it.hl ? 1 : 0.7; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(bx, y + (key === 'top' ? 9 : -9)); ctx.lineTo(it.ax, it.ay); ctx.stroke();
       ctx.fillStyle = it.hl ? pal.hl : '#ffffff'; ctx.beginPath(); ctx.arc(it.ax, it.ay, 3, 0, 7); ctx.fill(); ctx.strokeStyle = it.hl ? pal.panel : '#11161b'; ctx.lineWidth = 1.2; ctx.stroke();
@@ -787,7 +796,8 @@ function frame(t) {
   k = Math.min((W - 16) / (cam.x1 - cam.x0), (H - 2 * MT - 8) / (2 * cam.r));
   ox = W / 2 - k * (cam.x0 + cam.x1) / 2; cy = H / 2;
 
-  if (vis.main) {
+  if (vis.main && r3d) frame3D(dt);
+  else if (vis.main) {
   ctx.fillStyle = pal.bg; ctx.fillRect(0, 0, W, H);
   // Linha de centro
   ctx.strokeStyle = pal.muted; ctx.globalAlpha = 0.5; ctx.setLineDash([10, 4, 2, 4]); ctx.lineWidth = 1;
@@ -949,6 +959,11 @@ function sizeGallery() {
 function drawGallery() {
   for (const g of gal) {
     if (!g.c) continue;
+    if (pieces3d && pieces3d.has(g.p.id)) {
+      const img = pieces3d.render(g.p.id, g.w, g.h, dpr, time * (slow ? 0.25 : 1));
+      g.c.clearRect(0, 0, g.w, g.h);
+      if (img) { g.c.drawImage(img, 0, 0, g.w, g.h); continue; }
+    }
     g.c.clearRect(0, 0, g.w, g.h);
     g.c.lineJoin = 'round';
     g.p.draw(g.c, g.w, g.h, time * (slow ? 0.25 : 1) * (0.3 + sp));
@@ -1370,6 +1385,57 @@ function setSec(id) {
   const note = $('#secNote'); if (note) { note.hidden = !S.callout; note.innerHTML = S.callout ? `<b>${S.callout[0]}</b> ${S.callout[1]}` : ''; }
 }
 
+
+/* ---------- Motor em 3D (motor3d.js): câmera por etapa, girar arrastando, etiquetas projetadas ---------- */
+let r3d = null, pieces3d = null, pinHits = [];
+const PIN0 = ['fan', 'lpc', 'hpc', 'comb', 'fuel', 'hpt', 'lpt', 'agb', 'inlet'];
+const PMOD = { inlet: 'inlet', spinner: 'fan', fan: 'fan', lpc: 'fan', vbv: 'fan', splitter: 'fan', fancase: 'case', ogv: 'case', bypass: 'case', agb: 'case', lpt: 'lpt', lpshaft: 'lpt', nozzle: 'lpt' };
+// Onde cada etiqueta aponta no 3D: [x, raio, ângulo em graus em volta do eixo (0 = em cima, 90 = do lado de quem olha)]
+const A3 = {
+  inlet: [0.1, 1.5, 128], spinner: [0.42, 0.16, 100], fan: [1.0, 0.95, 62], fancase: [1.0, 1.47, 30], splitter: [1.36, 0.71, 50],
+  ogv: [1.96, 1.1, 55], bypass: [2.9, 1.02, 60], lpc: [1.72, 0.55, 48], vbv: [2.1, 0.66, 40], hpc: [3.1, 0.37, 50], fuel: [3.585, 0.6, 46],
+  comb: [3.88, 0.36, 52], hpt: [4.27, 0.37, 50], lpt: [4.98, 0.45, 50], hpshaft: [3.3, 0.17, 40], lpshaft: [5.3, 0.075, 40], mancal: [4.5, 0.13, 40],
+  agb: [2.05, 1.53, 136], nozzle: [6.2, 0.26, 70],
+};
+const P3d = (x, r, deg) => [x, r * Math.cos(deg * Math.PI / 180), r * Math.sin(deg * Math.PI / 180)];
+function pinAt(id, p) {
+  if (!r3d) return [SX(p.at[0]), SY(p.at[1])];
+  const a = A3[id]; if (!a) return null;
+  return r3d.project(P3d(a[0], a[1], a[2]), (r3d.MOD[PMOD[id] || 'core'] || 0) * ex);
+}
+// Pontos (x, r) do 2D vão para o 3D num ângulo de 42° (dentro do corte); r negativo vai para o lado de baixo
+const TS3 = (x, y) => r3d.project(P3d(x, Math.abs(y), y >= 0 ? 42 : 222));
+// Câmera de cada etapa: ponto olhado, distância, ângulo em volta (0 = de frente) e altura
+const CAM3 = [
+  { at: [2.9, -0.05, 0.25], d: 10.2, az: 44, el: 15 }, { at: [0.4, 0.0, 0.3], d: 6.4, az: 32, el: 12 }, { at: [0.85, 0.1, 0.3], d: 5.0, az: 28, el: 10 },
+  { at: [2.2, 0.55, 0.6], d: 6.6, az: 76, el: 32 }, { at: [1.8, 0.4, 0.42], d: 3.1, az: 96, el: 48 }, { at: [3.1, 0.25, 0.26], d: 2.4, az: 88, el: 38 },
+  { at: [3.85, 0.27, 0.28], d: 1.9, az: 86, el: 38 }, { at: [4.25, 0.27, 0.28], d: 1.9, az: 88, el: 36 }, { at: [5.0, 0.3, 0.32], d: 2.7, az: 92, el: 34 },
+  { at: [3.2, 0.05, 0.1], d: 5.6, az: 82, el: 36 }, { at: [6.1, 0.1, 0.2], d: 5.0, az: 125, el: 16 },
+];
+const EXP3 = { at: [3.6, 0, 0.2], d: 20, az: 52, el: 18 };
+const cam3 = { at: CAM3[0].at.slice(), dist: CAM3[0].d, az: CAM3[0].az, el: CAM3[0].el };
+let uAz = 0, uEl = 0;
+function frame3D(dt) {
+  const t = CAM3[step], e = 1 - Math.exp(-dt * 3);
+  const tgAt = t.at.map((v, i) => lerp(v, EXP3.at[i], ex)), tgD = lerp(t.d, EXP3.d, ex), tgAz = lerp(t.az, EXP3.az, ex) + uAz, tgEl = clamp(lerp(t.el, EXP3.el, ex) + uEl, -20, 70);
+  cam3.at = cam3.at.map((v, i) => v + (tgAt[i] - v) * e); cam3.dist += (tgD - cam3.dist) * e; cam3.az += (tgAz - cam3.az) * e; cam3.el += (tgEl - cam3.el) * e;
+  const ids = highlightIds();
+  const deep = (step === 9 && !sel) || ['lpshaft', 'hpshaft', 'mancal'].includes(sel) ? 1 : 0;
+  r3d.render({ cam: cam3, phLP, phHP, ex, sp, time, dt, slow, showAir, deep, hl: ids.map((id) => PARTS[id].n), dark: pal.dark });
+  ctx.clearRect(0, 0, W, H);
+  TS = TS3; const k0 = k; k = H / 3.4;
+  if (ex < 0.05) { drawFlowArrows(dt); drawPins(); drawMainCallout(dt); } else { arrowA = 0; calloutA = 0; }
+  drawModLabels();
+  TS = TS2; k = k0;
+}
+function hit3(e) {
+  const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  let best = null, bd = 24;
+  for (const q of pinHits) for (const [px, py] of [[q.x, q.y], [q.ax, q.ay]]) { const d = Math.hypot(px - x, py - y); if (d < bd) { bd = d; best = q.id; } }
+  return best;
+}
+function tempRGB(T) { const s = rampColor(Math.min(1950, T)); const m = s.match(/\d+/g); return m && s.startsWith('rgb') ? m.slice(0, 3).map((v) => v / 255) : hexRgb(s).map((v) => v / 255); }
+
 /* ---------- Interface ---------- */
 function updateUI() {
   const N1 = n1(), N2 = n2(), E = egt(), T = 296 * (0.05 + 0.95 * Math.pow(sp, 1.5));
@@ -1387,6 +1453,7 @@ function updateUI() {
 }
 function showStep(i, keepSel) {
   step = (i + STEPS.length) % STEPS.length;
+  uAz = 0; uEl = 0;
   if (!keepSel) sel = null;
   const s = STEPS[step];
   $('#engCount').textContent = `${step + 1} / ${STEPS.length}`;
@@ -1430,6 +1497,7 @@ function size() {
   cv.width = w * dpr; cv.height = h * dpr; cv.style.height = h + 'px';
   ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   W = w; H = h;
+  if (r3d) r3d.resize(w, h, dpr);
   readPal();
   sizeGallery();
   fcv = $('#engFan');
@@ -1448,6 +1516,13 @@ function init(opts) {
   cv = $('#engCv');
   if (!cv) return;
   active = opts.active;
+  const gl = $('#engGl');
+  if (gl && window.Motor3D) {
+    const PID = {}; Object.entries(PARTS).forEach(([id, p]) => { PID[id] = p.n; });
+    const geo = { nacOut, caseIn, spin, cowl, outC, inC, hubIn, ROWS, SHAFT, BRG, SPLIT, FAN_NOZ, CORE_NOZ, FSPLIT, X0, X1, PID, pathY, velOf, tempOf, tempRGB };
+    r3d = window.Motor3D.create(gl, geo);
+    if (r3d) { cv.closest('.eng__view')?.classList.add('is-3d'); pieces3d = window.Motor3D.createPieces(geo); window.__motorTris = r3d.tris; }
+  }
   makeParts();
   buildGallery();
   $('#engParts').innerHTML = Object.entries(PARTS).map(([id, p]) => `<button type="button" class="chip" data-epart="${id}" aria-pressed="false"><b>${p.n}</b> ${p.nome}</button>`).join('');
@@ -1460,9 +1535,22 @@ function init(opts) {
   $('#engSlow').addEventListener('change', (e) => { slow = e.target.checked; });
   $('#engAir').addEventListener('change', (e) => { showAir = e.target.checked; });
   $('#engExplode')?.addEventListener('change', (e) => { exT = e.target.checked ? 1 : 0; });
+  // Arrastar gira a vista (no celular, só para os lados, para não atrapalhar a rolagem da página)
+  let drag = null, dragged = false;
+  cv.addEventListener('pointerdown', (e) => { if (!r3d) return; drag = { x: e.clientX, y: e.clientY, az: uAz, el: uEl, touch: e.pointerType === 'touch' }; dragged = false; });
+  cv.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (Math.hypot(dx, dy) > 6) dragged = true;
+    uAz = drag.az - dx * 0.35; if (!drag.touch) uEl = clamp(drag.el + dy * 0.25, -35, 55);
+  });
+  const endDrag = () => { drag = null; };
+  cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', endDrag); cv.addEventListener('pointerleave', endDrag);
+  cv.addEventListener('dblclick', () => { uAz = 0; uEl = 0; });
   cv.addEventListener('click', (e) => {
+    if (dragged) { dragged = false; return; }
     if (ex > 0.05) return;
-    const id = hit(e);
+    const id = r3d ? hit3(e) : hit(e);
     if (id) pickPart(id); else if (sel) showStep(step);
   });
   matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => readPal());
