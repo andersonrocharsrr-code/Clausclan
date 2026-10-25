@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=49">
+  <link rel="stylesheet" href="style.css?v=50">
 </head>
 <body>
   <header class="top">
@@ -544,6 +544,7 @@
                 </div>
                 <div class="eng__dots" id="engDots" aria-hidden="true"></div>
                 <p id="engText"></p>
+                <p class="eng__note" id="engNote" hidden></p>
                 <div class="spec eng__facts" id="engFacts"></div>
               </div>
             </div>
@@ -554,11 +555,13 @@
                   <button type="button" data-sec="lpc" aria-pressed="true">Compressor de baixa</button>
                   <button type="button" data-sec="hpc" aria-pressed="false">Compressor de alta</button>
                   <button type="button" data-sec="comb" aria-pressed="false">Combustor</button>
+                  <button type="button" data-sec="turb" aria-pressed="false">Turbinas</button>
                 </div>
               </div>
               <canvas id="engSec" aria-label="Seção do motor em detalhe, animada"></canvas>
               <div class="eng__secinfo">
                 <h2 id="secTitle"></h2>
+                <p class="eng__note" id="secNote" hidden></p>
                 <ol class="eng__seclist" id="secList"></ol>
                 <p id="secText"></p>
                 <div class="spec eng__facts" id="secFacts"></div>
@@ -587,6 +590,7 @@
             <div class="eng__toggles">
               <label class="switch"><input type="checkbox" id="engSlow"><span class="switch__ui" aria-hidden="true"></span>Câmera lenta</label>
               <label class="switch"><input type="checkbox" id="engAir" checked><span class="switch__ui" aria-hidden="true"></span>Mostrar o ar</label>
+              <label class="switch"><input type="checkbox" id="engExplode"><span class="switch__ui" aria-hidden="true"></span>Separar os módulos</label>
             </div>
             <div class="readout">
               <div><span class="label">N1 · fan</span><b id="engN1">0 %</b></div>
@@ -673,11 +677,11 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=49"></script>
-  <script src="catalogo747.js?v=49"></script>
-  <script src="cockpit747.js?v=49"></script>
-  <script src="motor747.js?v=49"></script>
-  <script src="app.js?v=49"></script>
+  <script src="avioes.js?v=50"></script>
+  <script src="catalogo747.js?v=50"></script>
+  <script src="cockpit747.js?v=50"></script>
+  <script src="motor747.js?v=50"></script>
+  <script src="app.js?v=50"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
