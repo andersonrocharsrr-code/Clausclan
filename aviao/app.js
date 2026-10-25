@@ -292,12 +292,26 @@ function showTab(id, push) {
   if (!TABS.includes(id)) id = 'pecas';
   current = id;
   $$('.view').forEach((v) => { v.hidden = v.dataset.view !== id; });
-  $$('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === id)));
+  $$('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.id === 'exploreBtn' ? id !== 'escola' : t.dataset.tab === id)));
+  const item = $(`#exploreMenu [data-tab="${id}"]`);
+  $$('#exploreMenu [data-tab]').forEach((a) => { if (a === item) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  if (item) $('#exploreSub').textContent = item.dataset.short || item.querySelector('b').textContent;
+  setExplore(false);
   if (push) { try { history.replaceState(null, '', '#' + id); } catch {} }
   if (id === 'cockpit') { sizeGauges(); startSim(); }
   if (id === 'lab') startLab();
   window.scrollTo({ top: 0 });
 }
+// Explorar: a aba abre a lista das seções
+function setExplore(open) {
+  const m = $('#exploreMenu'), b = $('#exploreBtn');
+  if (!m) return;
+  m.hidden = !open; b.setAttribute('aria-expanded', String(open));
+  if (open) (m.querySelector('[aria-current]') || m.querySelector('a')).focus({ preventScroll: true });
+}
+$('#exploreBtn').addEventListener('click', (e) => { e.stopPropagation(); setExplore($('#exploreMenu').hidden); });
+document.addEventListener('click', (e) => { if (!e.target.closest('.tabdrop')) setExplore(false); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#exploreMenu').hidden) { setExplore(false); $('#exploreBtn').focus(); } });
 document.addEventListener('click', (e) => {
   const a = e.target.closest('[data-tab]');
   if (!a) return;

@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=56">
+  <link rel="stylesheet" href="style.css?v=57">
 </head>
 <body>
   <header class="top">
@@ -35,21 +35,26 @@
     </div>
     <nav class="tabs" aria-label="Seções">
       <div class="wrap tabs__row" role="tablist">
-        <a class="tab" role="tab" href="#pecas" data-tab="pecas"><span class="tab__key">A</span>Avião explodido</a>
+        <div class="tabdrop">
+          <button type="button" class="tab tab--drop" id="exploreBtn" role="tab" aria-haspopup="menu" aria-expanded="false" aria-controls="exploreMenu"><span class="tab__key">A</span>Explorar<span class="tab__sub" id="exploreSub">Peças</span><span class="tab__caret" aria-hidden="true"></span></button>
+          <div class="tabmenu" id="exploreMenu" role="menu" hidden>
+            <a role="menuitem" href="#pecas" data-tab="pecas" data-short="Peças"><b>Peças do avião</b><span>Toque nas peças, raio-X e as vistas do 747</span></a>
+            <a role="menuitem" href="#cockpit" data-tab="cockpit"><b>Cockpit</b><span>Comandos na prática, PFD, ND e EICAS</span></a>
+            <a role="menuitem" href="#lab" data-tab="lab"><b>Laboratório</b><span>Túnel de vento e o motor GEnx-2B em 3D</span></a>
+            <a role="menuitem" href="#glossario" data-tab="glossario"><b>Glossário</b><span>Os termos em português e em inglês</span></a>
+            <a role="menuitem" href="#catalogo" data-tab="catalogo"><b>Catálogo 747</b><span>As categorias de peças do 747-8</span></a>
+          </div>
+        </div>
         <a class="tab" role="tab" href="#escola" data-tab="escola"><span class="tab__key">B</span>Escola de voo</a>
-        <a class="tab" role="tab" href="#cockpit" data-tab="cockpit"><span class="tab__key">C</span>Cockpit</a>
-        <a class="tab" role="tab" href="#lab" data-tab="lab"><span class="tab__key">D</span>Laboratório</a>
-        <a class="tab" role="tab" href="#glossario" data-tab="glossario"><span class="tab__key">E</span>Glossário</a>
-        <a class="tab" role="tab" href="#catalogo" data-tab="catalogo"><span class="tab__key">F</span>Catálogo 747</a>
       </div>
     </nav>
   </header>
 
   <main class="wrap">
-    <!-- A · AVIÃO EXPLODIDO -->
+    <!-- EXPLORAR · PEÇAS DO AVIÃO -->
     <section class="view" id="view-pecas" data-view="pecas">
       <div class="view__head">
-        <p class="eyebrow">Seção A · Exploração visual</p>
+        <p class="eyebrow">Explorar · Peças do avião</p>
         <h1>Toque numa peça do avião</h1>
         <p class="lede" id="craftLede">Modelo baseado no Cessna 172, o avião de treinamento mais fabricado da história. Ligue o raio‑X para ver combustível, cabos de comando e fiação.</p>
       </div>
@@ -290,7 +295,7 @@
     <!-- B · ESCOLA DE VOO -->
     <section class="view" id="view-escola" data-view="escola" hidden>
       <div class="view__head">
-        <p class="eyebrow">Seção B · Trilha de aprendizado</p>
+        <p class="eyebrow">Escola de voo · Trilha de aprendizado</p>
         <h1>Escola de voo</h1>
         <p class="lede">Oito módulos em ordem, do básico ao pouso. Cada lição termina com uma pergunta. Acerte para marcar como concluída.</p>
       </div>
@@ -303,7 +308,7 @@
     <!-- C · COCKPIT -->
     <section class="view" id="view-cockpit" data-view="cockpit" hidden>
       <div class="view__head">
-        <p class="eyebrow">Seção C · Comandos na prática</p>
+        <p class="eyebrow">Explorar · Cockpit</p>
         <h1>Cockpit interativo</h1>
         <p class="lede" id="ckLede">Mexa no manche, nos pedais, na manete e nos flaps. Veja as superfícies de comando se moverem e os seis instrumentos básicos reagirem.</p>
       </div>
@@ -466,7 +471,7 @@
       </div>
       <div id="labAsa">
       <div class="view__head">
-        <p class="eyebrow">Seção D · Aerodinâmica</p>
+        <p class="eyebrow">Explorar · Laboratório · Aerodinâmica</p>
         <h1>Túnel de vento</h1>
         <p class="lede">Um perfil de asa no túnel. As linhas mostram o ar: azul é ar mais lento (pressão maior), magenta é ar mais rápido (pressão menor). Aumente o ângulo de ataque até o estol.</p>
       </div>
@@ -521,7 +526,7 @@
       </div>
       <div id="labMotor" hidden>
         <div class="view__head">
-          <p class="eyebrow">Seção D · Propulsão</p>
+          <p class="eyebrow">Explorar · Laboratório · Propulsão</p>
           <h1>Motor GEnx-2B em corte</h1>
           <p class="lede">O motor do 747-8 cortado ao meio. Os traços são o ar, que muda de azul (frio) para vermelho (quente). Passe as etapas para seguir o ar do começo ao fim, toque numa peça do desenho ou arraste para girar a vista.</p>
         </div>
@@ -639,7 +644,7 @@
     <!-- E · GLOSSÁRIO -->
     <section class="view" id="view-glossario" data-view="glossario" hidden>
       <div class="view__head">
-        <p class="eyebrow">Seção E · Consulta rápida</p>
+        <p class="eyebrow">Explorar · Glossário</p>
         <h1>Glossário aeronáutico</h1>
         <p class="lede">Os termos que aparecem no manual, no rádio e nas aulas, em português e em inglês.</p>
       </div>
@@ -650,7 +655,7 @@
     <!-- F · CATÁLOGO 747 -->
     <section class="view" id="view-catalogo" data-view="catalogo" hidden>
       <div class="view__head">
-        <p class="eyebrow">Seção F · Boeing 747-8</p>
+        <p class="eyebrow">Explorar · Catálogo 747</p>
         <h1>Catálogo de peças do 747-8</h1>
         <p class="lede">O 747-8 existe em duas versões: o 747-8 Intercontinental (8I), para passageiros, e o 747-8 Freighter (8F), cargueiro. São 295 categorias de peças e componentes, organizadas por sistema, da estrutura aos parafusos.</p>
       </div>
@@ -700,12 +705,12 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=56"></script>
-  <script src="catalogo747.js?v=56"></script>
-  <script src="cockpit747.js?v=56"></script>
-  <script src="motor3d.js?v=56"></script>
-  <script src="motor747.js?v=56"></script>
-  <script src="app.js?v=56"></script>
+  <script src="avioes.js?v=57"></script>
+  <script src="catalogo747.js?v=57"></script>
+  <script src="cockpit747.js?v=57"></script>
+  <script src="motor3d.js?v=57"></script>
+  <script src="motor747.js?v=57"></script>
+  <script src="app.js?v=57"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());

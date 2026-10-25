@@ -83,7 +83,7 @@ button, input { font: inherit; color: inherit; }
 .progress-chip { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
 .progress-chip__bar { width: 70px; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
 .progress-chip__bar span { display: block; height: 100%; width: 0; background: var(--ok); transition: width .4s; }
-.tabs { overflow-x: auto; scrollbar-width: none; }
+.tabs { position: relative; }
 .tabs::-webkit-scrollbar { display: none; }
 .tabs__row { display: flex; gap: 4px; }
 .tab {
@@ -94,6 +94,20 @@ button, input { font: inherit; color: inherit; }
 .tab:hover { color: var(--ink); }
 .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--magenta); }
 .tab[aria-selected="true"] .tab__key { background: var(--magenta); border-color: var(--magenta); color: var(--paper); }
+/* Explorar: uma aba com a lista das seções */
+.tabdrop { position: relative; min-width: 0; }
+.tab--drop { background: none; border-top: 0; border-left: 0; border-right: 0; font: inherit; font-weight: 500; cursor: pointer; max-width: 100%; }
+.tab__sub { color: var(--muted); font-weight: 400; overflow: hidden; text-overflow: ellipsis; }
+.tab__sub::before { content: "·"; margin-right: 8px; }
+.tab__caret { width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); transition: transform .15s; flex: none; }
+.tab--drop[aria-expanded="true"] .tab__caret { transform: translateY(2px) rotate(-135deg); }
+.tabmenu { position: absolute; left: 0; top: calc(100% + 4px); z-index: 20; width: min(340px, calc(100vw - 32px)); background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 14px 40px rgba(0,0,0,.18); padding: 6px; display: grid; gap: 2px; }
+.tabmenu[hidden] { display: none; }
+.tabmenu a { display: grid; gap: 2px; padding: 10px 12px; border-radius: 8px; text-decoration: none; color: var(--ink); border-left: 3px solid transparent; }
+.tabmenu a span { font-size: 13px; color: var(--muted); }
+.tabmenu a:hover, .tabmenu a:focus-visible { background: var(--paper); }
+.tabmenu a[aria-current="page"] { background: var(--sel); border-left-color: var(--magenta); }
+@media (max-width: 430px) { .tab__sub { max-width: 120px; } .tab { padding-inline: 8px; } }
 
 main { padding-block: 24px 40px; }
 .view { display: grid; gap: 20px; }
