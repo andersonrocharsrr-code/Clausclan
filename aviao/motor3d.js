@@ -154,7 +154,21 @@ const MATS = [
 const CAPS = [[0.8, 0.81, 0.83], [0.96, 0.47, 0.17], [0.5, 0.52, 0.55], [0.56, 0.66, 0.8], [0.84, 0.3, 0.22]];
 
 /* ---------- O motor ---------- */
-const MOD = { inlet: -1.6, fan: -0.85, case: 0, core: 0.95, lpt: 2.0 };
+const MOD = { inlet: -1.6, fan: -0.85, case: 0, sleeve: 0, core: 0.95, lpt: 2.0 };
+const XS = 2.55, SLIDE = 0.55, NDOOR = 16, DOOR_L = 0.42;
+// Portas de bloqueio: presas no capô móvel; com o reversor aberto giram e fecham o duto do fan
+function doorMesh(g, rev, part) {
+  const m = new Mesh(), a = rev * 68 * D2R, x0 = XS + 0.07, r0 = g.caseIn(x0) - 0.012;
+  for (let j = 0; j < NDOOR; j++) {
+    const t = (j + 0.5) / NDOOR * TAU, rd = [0, Math.cos(t), Math.sin(t)], tg = [0, -Math.sin(t), Math.cos(t)];
+    const dir = add(scl([1, 0, 0], Math.cos(a)), scl(rd, -Math.sin(a))), nrm = add(scl([1, 0, 0], Math.sin(a)), scl(rd, Math.cos(a)));
+    const hinge = add([x0, 0, 0], scl(rd, r0)), rmid = r0 - Math.sin(a) * DOOR_L / 2;
+    box(m, add(hinge, scl(dir, DOOR_L / 2)), scl(dir, DOOR_L / 2), scl(nrm, 0.008), scl(tg, rmid * Math.PI / NDOOR * 0.97), { mat: 3, part });
+    // Haste que puxa a porta (vai até a parede do núcleo)
+    if (rev > 0.02) tube(m, [add(hinge, scl(dir, DOOR_L * 0.7)), add([x0 + 0.25 - SLIDE * rev, 0, 0], scl(rd, g.cowl(x0 + 0.25) + 0.01))], 0.006, { mat: 0, part }, 6);
+  }
+  return m;
+}
 function buildEngine(g) {
   const groups = {};
   const M = (mod, spin = 's') => (groups[mod + ':' + spin] ||= new Mesh());
@@ -166,9 +180,28 @@ function buildEngine(g) {
   // Entrada de ar (lábio polido, inteiro)
   revolve(M('inlet'), [...S(g.nacOut, -0.05, 0.72, 18), ...S(g.caseIn, 0.72, -0.05, 14)], { mat: 1, part: id('inlet'), cap: 0 }, { segs: 72 });
   // Carcaça do fan: por dentro azul (o anel em volta do fan e o duto)
-  revolve(M('case'), [...S(g.caseIn, 0.72, 3.62, 40).map((p) => [p[0], p[1], 3, 3, p[0] < 1.6 ? id('fancase') : id('bypass')]), [3.62, g.caseIn(3.62) + 0.03], ...S((x) => g.caseIn(x) + caseTh(x), 3.62, 0.72, 40)], { mat: 4, part: id('fancase'), cap: 0, cut: CUT }, { segs: 72 });
+  // A parte de trás (a partir de XS) é o capô móvel do reversor: desliza para trás e descobre as grades
+  const wall = (mod, x0, x1, n) => revolve(M(mod), [...S(g.caseIn, x0, x1, n).map((p) => [p[0], p[1], 3, 3, p[0] < 1.6 ? id('fancase') : id('bypass')]), [x1, g.caseIn(x1) + caseTh(x1)], ...S((x) => g.caseIn(x) + caseTh(x), x1, x0, n)], { mat: 4, part: id('fancase'), cap: 0, cut: CUT }, { segs: 72 });
+  wall('case', 0.72, XS, 30); wall('sleeve', XS, 3.62, 14);
   // Capô (pele de fora), aberto em cima e com a porta de baixo aberta
-  revolve(M('case'), [...S(g.nacOut, 0.72, 3.7, 34), [3.7, g.nacOut(3.7) - 0.03], ...S((x) => g.nacOut(x) - 0.03, 3.7, 0.72, 34).map((p) => [p[0], p[1], 4])], { mat: 1, part: 0, cap: 0, cut: COWL }, { segs: 72 });
+  const skin = (mod, x0, x1, n, part) => revolve(M(mod), [...S(g.nacOut, x0, x1, n), [x1, g.nacOut(x1) - 0.03], ...S((x) => g.nacOut(x) - 0.03, x1, x0, n).map((p) => [p[0], p[1], 4])], { mat: 1, part, cap: 0, cut: COWL }, { segs: 72 });
+  skin('case', 0.72, XS, 26, 0); skin('sleeve', XS, 3.7, 14, id('reverser'));
+  // Anel de trás da parte fixa (onde o capô móvel encosta)
+  revolve(M('case'), [[XS - 0.03, g.caseIn(XS) + 0.03], [XS, g.caseIn(XS) + 0.03], [XS, g.nacOut(XS) - 0.03], [XS - 0.03, g.nacOut(XS) - 0.03]], { mat: 1, part: id('reverser'), cap: 2 }, { segs: 72 });
+  // Grades do reversor (cascatas): ficam escondidas dentro do capô até ele abrir
+  const casc = { mat: 0, part: id('reverser') }, CR0 = g.caseIn(XS) + 0.05, CR1 = g.nacOut(XS) - 0.05, NC = 56;
+  for (const x of [XS + 0.01, XS + 0.52]) revolve(M('case'), [[x, CR0], [x + 0.025, CR0], [x + 0.025, CR1], [x, CR1]], { mat: 4, part: id('reverser'), cap: 2 }, { segs: 72 });
+  for (let j = 0; j < NC; j++) {
+    const t = j / NC * TAU, rd = [0, Math.cos(t), Math.sin(t)], tg = [0, -Math.sin(t), Math.cos(t)], rm = (CR0 + CR1) / 2;
+    box(M('case'), add([XS + 0.27, 0, 0], scl(rd, rm)), [0.25, 0, 0], scl(rd, (CR1 - CR0) / 2), scl(tg, 0.006), { mat: 4, part: id('reverser') });
+    for (let i = 0; i < 6; i++) {
+      // Palhetas inclinadas para a frente: é o que vira o ar
+      const x = XS + 0.07 + i * 0.08, tc = t + Math.PI / NC, rdc = [0, Math.cos(tc), Math.sin(tc)], tgc = [0, -Math.sin(tc), Math.cos(tc)];
+      const u = add(scl([1, 0, 0], 0.022), scl(rdc, 0.0)), v = scl(norm(add([-0.7, 0, 0], rdc)), (CR1 - CR0) / 2 / 0.81), w = scl(tgc, rm * Math.PI / NC * 0.95);
+      box(M('case'), add([x, 0, 0], scl(rdc, rm)), scl(norm(add([0.7, 0, 0], rdc)), 0.006), v, w, casc);
+      void u;
+    }
+  }
   // Cone do fan (preto com anel branco) e cubo cromado
   revolve(M('fan', 'lp'), [[0.12, 0], ...S(g.spin, 0.12, 0.95, 22).map((p) => [p[0], p[1], p[0] > 0.3 && p[0] < 0.36 ? 5 : 2]), [0.95, 0]], { mat: 2, part: id('spinner') }, { segs: 56 });
   revolve(M('fan', 'lp'), [[0.95, 0], [0.95, g.spin(0.95)], [1.0, 0.385], [1.22, 0.405], [1.22, 0]], { mat: 0, part: id('fan') }, { segs: 56 });
@@ -434,6 +467,7 @@ function create(canvas, g) {
   const streak = program(gl, VS_S, FS_S), ground = program(gl, VS_G, FS_G);
   const sbuf = gl.createBuffer(), gbuf = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, gbuf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1]), gl.STATIC_DRAW);
+  let doorBuf = null, doorRev = -1;
   let W = 1, H = 1, dpr = 1, Pm = I4, Vm = I4, PV = I4, eye = [0, 0, 0];
 
   // Ar: cada partícula segue o caminho do 2D (x, r) num ângulo fixo em volta do eixo, quase todas dentro do corte para aparecerem
@@ -479,11 +513,17 @@ function create(canvas, g) {
     gl.depthMask(true); gl.disable(gl.BLEND);
     // Peças
     R.useMain(Pm, Vm, { cut: [-8 * D2R, 98 * D2R, 0, 0], door: [108 * D2R, 166 * D2R, 1.55, 3.1], deep: st.deep, time: st.time, heat: 0.35 + 0.65 * st.sp, hl: st.hl });
-    for (const [k, b] of Object.entries(bufs)) {
+    const rv = st.rev || 0;
+    if (Math.abs(rv - doorRev) > 0.004 || !doorBuf) {
+      doorRev = rv; const dm = doorMesh(g, rv, g.PID.reverser || 0);
+      if (!doorBuf) doorBuf = { b: gl.createBuffer(), n: 0 };
+      gl.bindBuffer(gl.ARRAY_BUFFER, doorBuf.b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(dm.d), gl.DYNAMIC_DRAW); doorBuf.n = dm.d.length / STRIDE;
+    }
+    for (const [k, b] of Object.entries({ ...bufs, 'sleeve:door': doorBuf })) {
       const [mod, spin] = k.split(':');
-      if (st.only && mod !== st.only) continue;
+      if (st.only && (mod === 'sleeve' ? 'case' : mod) !== st.only) continue;
       const rot = spin === 'lp' ? rotX(st.phLP) : spin === 'hp' ? rotX(st.phHP) : I4;
-      R.drawMesh(b, Vm, rot, transl(MOD[mod] * st.ex, 0, 0));
+      R.drawMesh(b, Vm, rot, transl(MOD[mod] * st.ex + (mod === 'sleeve' ? SLIDE * rv : 0), 0, 0));
     }
     for (const k of ['aP', 'aN', 'aM', 'aC']) if (R.main.a[k] >= 0) gl.disableVertexAttribArray(R.main.a[k]);
     drawAir(st);
@@ -497,7 +537,23 @@ function create(canvas, g) {
     };
     const U = (0.3 + 1.4 * st.sp) * (st.slow ? 0.3 : 1), dt = st.dt;
     const wpx = clamp(H / 260, 1.4, 3.2) * dpr;
+    const rv = st.rev || 0, XR = XS + 0.06;
     for (const p of air) {
+      // Com o reversor aberto, o ar do fan bate nas portas, sobe pelas grades e sai para a frente
+      const back = p.s === 'b' && ((p.F * 997) % 1) < rv;
+      if (back && p.x >= XR) {
+        p.x += U * dt * 0.9;
+        const s = p.x - XR;
+        if (s > 1.7) { p.x = g.X0 + Math.random() * 0.3; continue; }
+        const rp = (ss) => {
+          const r0 = g.pathY(p, XR), cx = XS + 0.3 + SLIDE * rv * 0.15;
+          if (ss < 0.35) { const u = ss / 0.35; return [lerp(XR, cx, u * (2 - u)), lerp(r0, g.nacOut(XS) + 0.06, u * u)]; }
+          const k2 = ss - 0.35; return [cx - k2 * 0.85, g.nacOut(XS) + 0.06 + k2 * 0.6];
+        };
+        const [xa2, ra2] = rp(Math.max(0, s - 0.22)), [xb2, rb2] = rp(s);
+        put(P3(xa2, ra2, p.th), P3(xb2, rb2, p.th), [0.3, 0.68, 1], fade * clamp((1.7 - s) / 0.6, 0, 1));
+        continue;
+      }
       const v = U * g.velOf(p, p.x);
       p.x += v * dt;
       if (p.x > g.X1) { p.x = g.X0 + Math.random() * 0.3; }

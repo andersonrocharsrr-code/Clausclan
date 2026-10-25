@@ -96,12 +96,13 @@ const PARTS = {
   hpshaft: { nome: 'Eixo de alta (N2)', at: [3.3, -0.145], polys: [band(2.6, 4.45, K(0.115), K(0.17))] },
   lpshaft: { nome: 'Eixo de baixa (N1)', at: [5.2, -0.04], polys: [band(0.95, 5.6, K(0), K(0.075))] },
   mancal: { nome: 'Mancais (rolamentos)', at: [4.5, -0.103], polys: BRG.map(([x, s]) => box(x - 0.045, x + 0.045, brgR(s) - 0.035, brgR(s) + 0.035)) },
+  reverser: { nome: 'Reversor de empuxo', at: [2.9, 1.5], polys: [band(2.55, 3.7, caseIn, nacOut)] },
   agb: { nome: 'Caixa de acessórios', only: -1, at: [2.05, -1.47], polys: [band(AGB[0], AGB[1], agbLo, agbHi)] },
   nozzle: { nome: 'Bocal e cone de escape', at: [6.15, -0.28], polys: [band(5.45, 6.75, K(0), (x) => (x <= 5.8 ? cowl(x) : 0.52))] },
 };
 Object.values(PARTS).forEach((p, i) => { p.n = i + 1; });
 // Ordem para o toque no desenho: as peças menores primeiro.
-const HIT = ['mancal', 'agb', 'vbv', 'fuel', 'splitter', 'ogv', 'spinner', 'fan', 'lpc', 'hpc', 'comb', 'hpt', 'lpt', 'hpshaft', 'lpshaft', 'nozzle', 'inlet', 'fancase', 'bypass'];
+const HIT = ['reverser', 'mancal', 'agb', 'vbv', 'fuel', 'splitter', 'ogv', 'spinner', 'fan', 'lpc', 'hpc', 'comb', 'hpt', 'lpt', 'hpshaft', 'lpshaft', 'nozzle', 'inlet', 'fancase', 'bypass'];
 
 const STEPS = [
   { t: 'O caminho do ar', cam: [X0, X1 - 0.2, 1.75], parts: [],
@@ -138,7 +139,7 @@ const STEPS = [
     txt: 'Os dois fluxos saem separados: o ar do fan, frio e em enorme quantidade, pela borda da nacele; os gases do núcleo, quentes, pelo bocal em volta do cone de escape. Empurrar toda essa massa de ar para trás faz o motor ser empurrado para a frente, como diz a terceira lei de Newton. Isso é o empuxo.',
     facts: [['Jato do fan', 'Frio · maior parte'], ['Jato do núcleo', 'Quente · parte menor'], ['Empuxo', 'Ação e reação']] },
 ];
-const PART_STEP = { inlet: 1, spinner: 1, fan: 2, fancase: 2, splitter: 3, ogv: 3, bypass: 3, lpc: 4, vbv: 4, hpc: 5, fuel: 6, comb: 6, hpt: 7, lpt: 8, lpshaft: 9, hpshaft: 9, mancal: 9, agb: 9, nozzle: 10 };
+const PART_STEP = { inlet: 1, spinner: 1, fan: 2, fancase: 2, splitter: 3, ogv: 3, bypass: 3, lpc: 4, vbv: 4, hpc: 5, fuel: 6, comb: 6, hpt: 7, lpt: 8, lpshaft: 9, hpshaft: 9, mancal: 9, agb: 9, nozzle: 10, reverser: 3 };
 
 // Estações do ar na decolagem (valores aproximados, ao nível do mar): [nome, °C, atm, etapa]
 const STA = [
@@ -1398,7 +1399,7 @@ const A3 = {
   inlet: [0.1, 1.5, 128], spinner: [0.42, 0.16, 100], fan: [1.0, 0.95, 62], fancase: [1.0, 1.47, 30], splitter: [1.36, 0.71, 50],
   ogv: [1.96, 1.1, 55], bypass: [2.9, 1.02, 60], lpc: [1.72, 0.55, 48], vbv: [2.1, 0.66, 40], hpc: [3.1, 0.37, 50], fuel: [3.585, 0.6, 46],
   comb: [3.88, 0.36, 52], hpt: [4.27, 0.37, 50], lpt: [4.98, 0.45, 50], hpshaft: [3.3, 0.17, 40], lpshaft: [5.3, 0.075, 40], mancal: [4.5, 0.13, 40],
-  agb: [2.05, 1.53, 136], nozzle: [6.2, 0.26, 70],
+  agb: [2.05, 1.53, 136], nozzle: [6.2, 0.26, 70], reverser: [3.1, 1.48, 30],
 };
 const P3d = (x, r, deg) => [x, r * Math.cos(deg * Math.PI / 180), r * Math.sin(deg * Math.PI / 180)];
 function pinAt(id, p) {
@@ -1416,6 +1417,31 @@ const CAM3 = [
   { at: [3.2, 0.05, 0.1], d: 5.6, az: 82, el: 36 }, { at: [6.1, 0.1, 0.2], d: 5.0, az: 125, el: 16 },
 ];
 const EXP3 = { at: [3.6, 0, 0.2], d: 17, az: 52, el: 18 };
+// Reverso: o capô móvel desliza 0,55 m para trás, as portas fecham o duto do fan e o ar sai pelas grades para a frente
+const REVCAM = { at: [2.6, 0.55, 0.55], d: 7.4, az: 64, el: 24 };
+let rev = 0, revT = 0;
+const REV_LABELS = [['Capô móvel (desliza para trás)', [3.75, 1.44, 64], 1], ['Grades (cascatas)', [2.83, 1.5, 22], 0], ['Portas de bloqueio', [3.22, 1.05, 50], 1], ['Ar do fan saindo para a frente', [2.3, 2.0, 38], 0], ['Jato quente continua para trás', [6.6, 0.3, 80], 0]];
+function drawRevLabels() {
+  if (rev < 0.08) return;
+  ctx.save(); ctx.globalAlpha = clamp((rev - 0.08) * 2, 0, 1);
+  ctx.font = `600 11.5px ${css('--mono') || 'monospace'}`; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+  const SHORT = ['Capô móvel', 'Grades', 'Portas', 'Ar para a frente', 'Jato quente'];
+  const items = REV_LABELS.map(([nome0, a, sl], i) => { const nome = W < 600 ? SHORT[i] : nome0; const q = r3d.project(P3d(a[0] + (sl ? 0.55 * rev : 0), a[1], a[2])); return q && { nome, ax: q[0], ay: q[1], top: i % 2 === 0, w: ctx.measureText(nome).width + 18 }; }).filter(Boolean);
+  for (const top of [true, false]) {
+    const list = items.filter((it) => it.top === top).sort((a, b) => a.ax - b.ax);
+    let pos = 4; list.forEach((it) => { it.x = Math.max(it.ax - it.w / 2, pos); pos = it.x + it.w + 6; });
+    let lim = W - 4; for (let i = list.length - 1; i >= 0; i--) { list[i].x = Math.min(list[i].x, lim - list[i].w); lim = list[i].x - 6; }
+    const y = top ? 16 : H - 16;
+    for (const it of list) {
+      const cx = it.x + it.w / 2;
+      ctx.strokeStyle = pal.hl; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(cx, y + (top ? 10 : -10)); ctx.lineTo(it.ax, it.ay); ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(it.ax, it.ay, 3, 0, 7); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = pal.panel; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(it.x, y - 10, it.w, 20, 10) : ctx.rect(it.x, y - 10, it.w, 20); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = pal.ink; ctx.fillText(it.nome, cx, y + 0.5);
+    }
+  }
+  ctx.restore();
+}
 // Ver um módulo de perto (com o motor separado): centro do módulo montado, distância e ângulos da câmera
 const MODCAM = {
   inlet: { at: [0.35, 0.05, 0], d: 6.4, az: 40, el: 16 }, fan: { at: [1.05, 0.08, 0.1], d: 6.4, az: 36, el: 14 },
@@ -1446,16 +1472,21 @@ function frame3D(dt) {
     const c = MODCAM[exMod], fit = Math.max(1, Math.pow(1.6 / (W / H), 0.6));
     X = { ...c, d: c.d * fit, az: c.az + Math.sin(time * 0.25) * 18, at: [c.at[0] + r3d.MOD[exMod] * ex, c.at[1], c.at[2]] };
   }
-  const tgAt = t.at.map((v, i) => lerp(v, X.at[i], ex)), tgD = lerp(t.d, X.d, ex), tgAz = lerp(t.az, X.az, ex) + uAz, tgEl = clamp(lerp(t.el, X.el, ex) + uEl, -20, 70);
+  // O capô abre devagar, como no avião (cerca de 2 s)
+  rev += clamp(revT - rev, -dt / 1.6, dt / 2.0);
+  const cr = clamp(revT ? 1 : rev * 1.5, 0, 1), fit = Math.max(1, Math.pow(1.6 / (W / H), 0.6));
+  const T0 = { at: t.at.map((v, i) => lerp(v, REVCAM.at[i], cr)), d: lerp(t.d, REVCAM.d * fit, cr), az: lerp(t.az, REVCAM.az, cr), el: lerp(t.el, REVCAM.el, cr) };
+  const tgAt = T0.at.map((v, i) => lerp(v, X.at[i], ex)), tgD = lerp(T0.d, X.d, ex), tgAz = lerp(T0.az, X.az, ex) + uAz, tgEl = clamp(lerp(T0.el, X.el, ex) + uEl, -20, 70);
   cam3.at = cam3.at.map((v, i) => v + (tgAt[i] - v) * e); cam3.dist += (tgD - cam3.dist) * e; cam3.az += (tgAz - cam3.az) * e; cam3.el += (tgEl - cam3.el) * e;
   const ids = ex > 0.05 ? [] : highlightIds();
   const deep = (step === 9 && !sel) || ['lpshaft', 'hpshaft', 'mancal'].includes(sel) ? 1 : 0;
   const only = ex > 0.5 && exMod ? exMod : '', mc = only && MODCAM[only];
-  r3d.render({ cam: cam3, phLP, phHP, ex, sp, time, dt, slow, showAir, deep, only, shadow: mc ? [mc.at[0] + r3d.MOD[only] * ex, 0, 2.2, 1.9] : null, hl: ids.map((id) => PARTS[id].n), dark: pal.dark });
+  r3d.render({ cam: cam3, phLP, phHP, ex, sp, time, dt, slow, showAir, deep, only, rev, shadow: mc ? [mc.at[0] + r3d.MOD[only] * ex, 0, 2.2, 1.9] : null, hl: ids.map((id) => PARTS[id].n), dark: pal.dark });
   ctx.clearRect(0, 0, W, H);
   TS = TS3; const k0 = k; k = H / 3.4;
-  if (ex < 0.05) { drawFlowArrows(dt); drawPins(); drawMainCallout(dt); } else { arrowA = 0; calloutA = 0; }
+  if (ex < 0.05 && rev < 0.05 && !revT) { drawFlowArrows(dt); drawPins(); drawMainCallout(dt); } else { arrowA = 0; calloutA = 0; }
   drawModLabels();
+  drawRevLabels();
   TS = TS2; k = k0;
 }
 function hit3(e) {
@@ -1551,6 +1582,7 @@ function init(opts) {
     const PID = {}; Object.entries(PARTS).forEach(([id, p]) => { PID[id] = p.n; });
     const geo = { nacOut, caseIn, spin, cowl, outC, inC, hubIn, ROWS, SHAFT, BRG, SPLIT, FAN_NOZ, CORE_NOZ, FSPLIT, X0, X1, PID, pathY, velOf, tempOf, tempRGB };
     r3d = window.Motor3D.create(gl, geo);
+    if (!r3d) $('#engRevLabel')?.setAttribute('hidden', '');
     if (r3d) { cv.closest('.eng__view')?.classList.add('is-3d'); pieces3d = window.Motor3D.createPieces(geo); window.__motorTris = r3d.tris; }
   }
   makeParts();
@@ -1566,8 +1598,15 @@ function init(opts) {
   $('#engAir').addEventListener('change', (e) => { showAir = e.target.checked; });
   $('#engExplode')?.addEventListener('change', (e) => {
     exT = e.target.checked ? 1 : 0;
+    if (exT && revT) { const r = $('#engRevOn'); r.checked = false; r.dispatchEvent(new Event('change')); }
     const box = $('#engMods'); if (box) box.hidden = !exT || !r3d;
     setExMod('');
+  });
+  $('#engRevOn')?.addEventListener('change', (e) => {
+    revT = e.target.checked ? 1 : 0;
+    $('#engRevBox').hidden = !revT;
+    uAz = 0; uEl = 0;
+    if (revT && exT) { const x = $('#engExplode'); x.checked = false; x.dispatchEvent(new Event('change')); }
   });
   $('#engModChips')?.addEventListener('click', (e) => { const b = e.target.closest('[data-exmod]'); if (b) setExMod(b.dataset.exmod); });
   // Arrastar gira a vista (no celular, só para os lados, para não atrapalhar a rolagem da página)
