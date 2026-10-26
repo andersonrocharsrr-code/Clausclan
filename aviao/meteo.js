@@ -38,15 +38,12 @@ const CLOUDS = [
   { id: 'cu', nome: 'Cumulus', sigla: 'Cu', nivel: 'vertical', alt: 'base 2.000 a 5.000 ft', base: 3000, top: 8000,
     como: 'Nuvens de algodão com a base reta e o topo em couve-flor. Nascem do ar quente que sobe.',
     voo: 'Turbulência de calor (térmicas) embaixo e dentro. Quando crescem viram cumulus congestus.', perigo: ['Térmicas'] },
-  { id: 'tcu', nome: 'Cumulus congestus', sigla: 'TCU', nivel: 'vertical', alt: 'base 2.000 a 5.000 ft, topo até 25.000 ft', base: 3000, top: 22000,
-    como: 'Torres altas e brilhantes de couve-flor, crescendo rápido. No METAR aparecem como TCU.',
-    voo: 'Turbulência moderada a forte e gelo. Muitas viram cumulonimbus em poucos minutos: o piloto desvia delas.', perigo: ['Turbulência forte', 'Gelo', 'Vira CB'] },
   { id: 'cb', nome: 'Cumulonimbus', sigla: 'CB', nivel: 'vertical', alt: 'base 1.000 a 5.000 ft, topo até 45.000 ft ou mais', base: 2500, top: 45000,
     como: 'A nuvem de tempestade: uma torre enorme com o topo achatado em bigorna, base escura e pancadas de chuva.',
     voo: 'O maior perigo da meteorologia: turbulência severa, granizo, raios, gelo forte, tesoura de vento (windshear) e microexplosões perto do solo. Nunca se atravessa: desvia-se de longe.', perigo: ['Turbulência severa', 'Granizo', 'Raios', 'Windshear', 'Gelo forte'] },
 ];
 // Fotos reais (quando houver): o cartão e o painel da nuvem usam a foto no lugar da ilustração
-const PHOTO = { cb: 'assets/nuvem-cb.webp', cu: 'assets/nuvem-cu.webp', tcu: 'assets/nuvem-tcu.webp', ci: 'assets/nuvem-ci.webp', cc: 'assets/nuvem-cc.webp', cs: 'assets/nuvem-cs.webp', ac: 'assets/nuvem-ac.webp', as: 'assets/nuvem-as.webp', ns: 'assets/nuvem-ns.webp', sc: 'assets/nuvem-sc.webp', st: 'assets/nuvem-st.webp' };
+const PHOTO = { cb: 'assets/nuvem-cb.webp', cu: 'assets/nuvem-cu.webp', ci: 'assets/nuvem-ci.webp', cc: 'assets/nuvem-cc.webp', cs: 'assets/nuvem-cs.webp', ac: 'assets/nuvem-ac.webp', as: 'assets/nuvem-as.webp', ns: 'assets/nuvem-ns.webp', sc: 'assets/nuvem-sc.webp', st: 'assets/nuvem-st.webp' };
 const NIVEL = { alta: 'Nuvens altas', 'média': 'Nuvens médias', baixa: 'Nuvens baixas', vertical: 'Desenvolvimento vertical' };
 
 /* ---------- Desenho das nuvens ---------- */
@@ -162,14 +159,13 @@ function drawCloud(c, id, w, h, t = 0) {
     case 'st': stratus(c, w * 0.5, h * 0.62, w * 1.3, h * 0.3, 16, '#c3c9cf', '#a2aab2'); break;
     case 'sc': for (let i = 0; i < 5; i++) cumulus(c, w * (0.1 + i * 0.2), h * 0.66, w * 0.28, h * 0.16, 30 + i, 0.5, '#e9edf0'); break;
     case 'cu': cumulus(c, w * 0.3, h * 0.78, w * 0.32, h * 0.3, 41); cumulus(c, w * 0.72, h * 0.8, w * 0.26, h * 0.22, 42); break;
-    case 'tcu': cumulus(c, w * 0.5, h * 0.86, w * 0.45, h * 0.75, 51, 0.45); break;
     case 'cb': cumulonimbus(c, w * 0.45, h * 0.8, w * 0.7, h * 0.72, 61, t); break;
   }
 }
 
 /* ---------- Atlas: todas as nuvens por altitude ---------- */
 let atlas = null, sel = 'cb';
-const ATLAS_X = { ci: 0.36, cc: 0.56, cs: 0.74, ac: 0.24, as: 0.52, ns: 0.85, st: 0.34, sc: 0.52, cu: 0.65, tcu: 0.76, cb: 0.9 };
+const ATLAS_X = { ci: 0.36, cc: 0.56, cs: 0.74, ac: 0.24, as: 0.52, ns: 0.85, st: 0.34, sc: 0.52, cu: 0.65, cb: 0.9 };
 function drawAtlas(t) {
   const { c, w, h } = atlas, top = 48000, Y = (ft) => h - 14 - ft / top * (h - 30);
   sky(c, w, h, false);
@@ -186,7 +182,7 @@ function drawAtlas(t) {
     c.save();
     if (sel && sel !== cl.id) c.globalAlpha = 0.55;
     if (cl.id === 'cb') cumulonimbus(c, x - cw * 0.1, y0, cw * 1.1, y0 - y1, 61, t);
-    else if (cl.id === 'cu' || cl.id === 'tcu') cumulus(c, x, y0, cw * (cl.id === 'cu' ? 0.45 : 0.6), y0 - y1, cl.id === 'cu' ? 41 : 51, cl.id === 'tcu' ? 0.4 : 0);
+    else if (cl.id === 'cu') cumulus(c, x, y0, cw * 0.45, y0 - y1, 41, 0);
     else if (cl.id === 'ci') cirrus(c, x, (y0 + y1) / 2, cw * 1.2, y0 - y1, 11);
     else if (cl.id === 'cc') flecks(c, x, (y0 + y1) / 2, cw * 1.2, y0 - y1, 12);
     else if (cl.id === 'ac') flecks(c, x, (y0 + y1) / 2, cw * 1.1, y0 - y1, 13, 1);
