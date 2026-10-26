@@ -99,19 +99,19 @@ button, input { font: inherit; color: inherit; }
 /* Intro */
 .intro { position: fixed; inset: 0; z-index: 100; background: #04070a; display: grid; overflow: hidden; cursor: pointer; transition: opacity .45s ease; }
 .intro.is-out { opacity: 0; pointer-events: none; }
-.intro__scene { position: absolute; inset: 0; width: 100%; height: 100%; }
-.intro__scene text { font: 500 11px var(--mono); }
-.intro__arc { fill: none; stroke: #eef2ef; stroke-width: 1.4; }
-.intro__ring { fill: none; stroke: rgba(238,242,239,.45); stroke-width: 1; stroke-dasharray: 3 6; }
-.intro__route { fill: none; stroke: #f06aae; stroke-width: 2.2; stroke-dasharray: 290; stroke-dashoffset: 290; animation: introDraw 1.6s ease-out .5s both; }
-.intro__wpt, .intro__wx { opacity: 0; animation: introFade .4s ease-out var(--d) both; }
-.intro__sweep { stroke: #5fe08a; stroke-width: 1.5; transform-box: view-box; transform-origin: 180px 520px; animation: introSweep 2.2s linear .1s both; }
-.intro__rose { transform-box: view-box; transform-origin: 180px 520px; animation: introTurn 2.2s cubic-bezier(.3,.6,.3,1) both; }
+.intro__layer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.intro__layer text { font: 500 11px var(--mono); }
+.intro__rose text { stroke: none; font-size: 12px; }
+/* Só transform e opacidade animam: rodam na GPU mesmo com o app carregando por trás */
+.intro__wx, .intro__wpt { opacity: 0; will-change: opacity; animation: introFade .4s ease-out var(--d) both; }
+.intro__rose { transform-origin: var(--ox, 50%) var(--oy, 80%); will-change: transform; animation: introTurn 2.2s cubic-bezier(.3,.6,.3,1) both; }
+.intro__sweep { transform-origin: var(--ox, 50%) var(--oy, 80%); will-change: transform, opacity; animation: introSweep 2.2s linear .1s both; }
+.intro__route { clip-path: inset(100% 0 0 0); animation: introReveal 1.6s ease-out .5s both; }
 .intro__text { align-self: start; justify-self: center; text-align: center; margin-top: calc(13vh + env(safe-area-inset-top, 0px)); padding: 0 16px; color: #eef2ef; position: relative; }
 .intro__title { margin: 0; font-family: var(--display); font-weight: 700; font-size: clamp(36px, 11vw, 64px); letter-spacing: .04em; opacity: 0; animation: introIn .8s ease-out 2.4s both; }
 .intro__sub { margin: 6px 0 0; font-size: clamp(14px, 4vw, 18px); color: #f06aae; letter-spacing: .02em; opacity: 0; animation: introIn .8s ease-out 2.8s both; }
 .intro__skip { position: absolute; left: 0; right: 0; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); margin: 0; text-align: center; font: 500 12px var(--mono); color: rgba(238,242,239,.45); letter-spacing: .08em; text-transform: uppercase; }
-@keyframes introDraw { to { stroke-dashoffset: 0; } }
+@keyframes introReveal { to { clip-path: inset(0 0 0 0); } }
 @keyframes introFade { to { opacity: 1; } }
 @keyframes introSweep { from { transform: rotate(-58deg); opacity: .7; } 92% { opacity: .7; } to { transform: rotate(58deg); opacity: 0; } }
 @keyframes introTurn { from { transform: rotate(40deg); } to { transform: none; } }

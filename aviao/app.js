@@ -325,7 +325,7 @@ document.addEventListener('click', (e) => {
 /* ---------------- D · Laboratório: asa ou motor ---------------- */
 let labMode = 'asa';
 function startLab() {
-  if (labMode === 'asa') { sizeTunnel(); startTunnel(); } else window.Motor747?.start();
+  if (labMode === 'asa') { sizeTunnel(); startTunnel(); } else { initMotor(); window.Motor747?.start(); }
 }
 function setLabMode(m) {
   labMode = m === 'motor' ? 'motor' : 'asa';
@@ -335,7 +335,13 @@ function setLabMode(m) {
   if (current === 'lab') startLab();
 }
 $('#labPick').addEventListener('click', (e) => { const b = e.target.closest('[data-lmode]'); if (b) setLabMode(b.dataset.lmode); });
-window.Motor747?.init({ active: () => current === 'lab' && labMode === 'motor' });
+// O motor 3D é pesado de montar (quase 1 s no celular): só monta quando o laboratório do motor abre
+let motorReady = false;
+function initMotor() {
+  if (motorReady) return;
+  motorReady = true;
+  window.Motor747?.init({ active: () => current === 'lab' && labMode === 'motor' });
+}
 window.Meteo?.init({ active: () => current === 'meteo' });
 
 /* ---------------- A · Explorador ---------------- */
@@ -1231,21 +1237,12 @@ showTab(location.hash.slice(1) || 'pecas');
   if (!intro) return;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   // Na tela deitada o ND inteiro cabe (meet); em pé ele preenche a tela (slice)
-  if (innerWidth > innerHeight) intro.querySelector('.intro__scene')?.setAttribute('preserveAspectRatio', 'xMidYMax meet');
-  // Rosa dos ventos: marcas a cada 5°, números a cada 30°, proa 290 em cima
-  const rose = $('#introRose'), NS = 'http://www.w3.org/2000/svg';
-  for (let h = 0; h < 360; h += 5) {
-    const a = (h - 290) * Math.PI / 180, s = Math.sin(a), c = Math.cos(a), L = h % 10 ? 7 : 12;
-    const ln = document.createElementNS(NS, 'line');
-    Object.entries({ x1: 180 + 200 * s, y1: 520 - 200 * c, x2: 180 + (200 - L) * s, y2: 520 - (200 - L) * c, stroke: '#eef2ef', 'stroke-width': 1.2 }).forEach(([k, v]) => ln.setAttribute(k, v));
-    rose.appendChild(ln);
-    if (h % 30 === 0) {
-      const t = document.createElementNS(NS, 'text');
-      Object.entries({ x: 180 + 176 * s, y: 520 - 176 * c + 4, fill: '#eef2ef', 'text-anchor': 'middle', 'font-size': 12 }).forEach(([k, v]) => t.setAttribute(k, v));
-      t.textContent = String(h / 10).padStart(2, '0');
-      rose.appendChild(t);
-    }
-  }
+  const wide = innerWidth > innerHeight;
+  if (wide) intro.querySelectorAll('.intro__layer').forEach((l) => l.setAttribute('preserveAspectRatio', 'xMidYMax meet'));
+  // Centro da rosa (180, 520 no desenho) em pixels, para girar as camadas no lugar certo
+  const W = innerWidth, H = innerHeight, k = wide ? Math.min(W / 360, H / 640) : Math.max(W / 360, H / 640);
+  intro.style.setProperty('--ox', `${(W - 360 * k) / 2 + 180 * k}px`);
+  intro.style.setProperty('--oy', `${H - 640 * k + 520 * k}px`);
   let gone = false;
   const done = () => { if (gone) return; gone = true; intro.classList.add('is-out'); setTimeout(() => intro.remove(), 500); };
   const t = setTimeout(done, reduce ? 900 : 4000);

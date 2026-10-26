@@ -1,7 +1,7 @@
 /* Service worker: o app abre e funciona offline. */
-const CACHE = 'hangar-escola-v77';
+const CACHE = 'hangar-escola-v78';
 // Os arquivos levam "?v=" no index.html: ao mudar a versão, o celular nunca mistura CSS/JS antigo com HTML novo.
-const FILES = ['./', 'index.html', 'style.css?v=77', 'avioes.js?v=77', 'catalogo747.js?v=77', 'cockpit747.js?v=77', 'motor3d.js?v=77', 'motor747.js?v=77', 'meteo.js?v=77', 'app.js?v=77', 'icon.svg', 'manifest.webmanifest', 'assets/747-lateral.jpg', 'assets/747-frontal.jpg', 'assets/747-motor.jpg', 'assets/747-superior.png', 'assets/747-lado.webp', 'assets/747-lado-prof.webp', 'assets/747-tras.webp', 'assets/747-tras-trem.webp', 'assets/bank-angle.mp3', 'assets/v1.mp3', 'assets/nuvem-cb.webp', 'assets/nuvem-cu.webp', 'assets/nuvem-ci.webp', 'assets/nuvem-cc.webp', 'assets/nuvem-cs.webp', 'assets/nuvem-ac.webp', 'assets/nuvem-as.webp', 'assets/nuvem-ns.webp', 'assets/nuvem-sc.webp', 'assets/nuvem-st.webp', 'assets/nuvens-atlas.webp'];
+const FILES = ['./', 'index.html', 'style.css?v=78', 'avioes.js?v=78', 'catalogo747.js?v=78', 'cockpit747.js?v=78', 'motor3d.js?v=78', 'motor747.js?v=78', 'meteo.js?v=78', 'app.js?v=78', 'icon.svg', 'manifest.webmanifest', 'assets/747-lateral.jpg', 'assets/747-frontal.jpg', 'assets/747-motor.jpg', 'assets/747-superior.png', 'assets/747-lado.webp', 'assets/747-lado-prof.webp', 'assets/747-tras.webp', 'assets/747-tras-trem.webp', 'assets/bank-angle.mp3', 'assets/v1.mp3', 'assets/nuvem-cb.webp', 'assets/nuvem-cu.webp', 'assets/nuvem-ci.webp', 'assets/nuvem-cc.webp', 'assets/nuvem-cs.webp', 'assets/nuvem-ac.webp', 'assets/nuvem-as.webp', 'assets/nuvem-ns.webp', 'assets/nuvem-sc.webp', 'assets/nuvem-st.webp', 'assets/nuvens-atlas.webp'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
