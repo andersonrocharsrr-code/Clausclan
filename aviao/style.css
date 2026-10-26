@@ -99,7 +99,7 @@ button, input { font: inherit; color: inherit; }
 /* Intro */
 .intro { position: fixed; inset: 0; z-index: 100; container-type: size; background: #04070a; display: grid; overflow: hidden; cursor: pointer; transition: opacity .45s ease; }
 .intro.is-out { opacity: 0; pointer-events: none; }
-/* Centro da rosa (180, 520 no desenho de 360x640): no meio da largura e 120 unidades acima da base,
+/* Centro da rosa (180, 520 no desenho de 360x640): no meio da largura e 120 unidades acima da base;
    em pé o desenho cobre a tela (escala = maior razão), deitado ele cabe inteiro (menor razão) */
 .intro__layer { --nd-o: 50% calc(100% - max(33.333vw, 18.75vh)); --nd-o: 50% calc(100% - max(33.333cqw, 18.75cqh)); }
 @media (orientation: landscape) { .intro__layer { --nd-o: 50% calc(100% - min(33.333vw, 18.75vh)); --nd-o: 50% calc(100% - min(33.333cqw, 18.75cqh)); } }
@@ -107,17 +107,18 @@ button, input { font: inherit; color: inherit; }
 .intro__layer text { font: 500 11px var(--mono); }
 .intro__rose text { stroke: none; font-size: 12px; }
 /* Só transform e opacidade animam: rodam na GPU mesmo com o app carregando por trás */
-.intro__wx, .intro__wpt { opacity: 0; will-change: opacity; animation: introFade .4s ease-out var(--d) both; }
+.intro__wpt { opacity: 0; will-change: opacity; animation: introFade .4s ease-out var(--d) both; }
+/* O radar não mostra linha de varredura: os ecos aparecem fracos e firmam na varredura seguinte */
+.intro__wx { opacity: 0; will-change: opacity; animation: introWx 1s linear var(--d) both; }
 .intro__rose { transform-origin: var(--nd-o); will-change: transform; animation: introTurn 2.2s cubic-bezier(.3,.6,.3,1) both; }
-.intro__sweep { transform-origin: var(--nd-o); will-change: transform, opacity; animation: introSweep 2.2s linear .1s both; }
 .intro__route { clip-path: inset(100% 0 0 0); animation: introReveal 1.6s ease-out .5s both; }
 .intro__text { align-self: start; justify-self: center; text-align: center; margin-top: calc(13vh + env(safe-area-inset-top, 0px)); padding: 0 16px; color: #eef2ef; position: relative; }
 .intro__title { margin: 0; font-family: var(--display); font-weight: 700; font-size: clamp(36px, 11vw, 64px); letter-spacing: .04em; opacity: 0; animation: introIn .8s ease-out 2.4s both; }
 .intro__sub { margin: 6px 0 0; font-size: clamp(14px, 4vw, 18px); color: #f06aae; letter-spacing: .02em; opacity: 0; animation: introIn .8s ease-out 2.8s both; }
 .intro__skip { position: absolute; left: 0; right: 0; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); margin: 0; text-align: center; font: 500 12px var(--mono); color: rgba(238,242,239,.45); letter-spacing: .08em; text-transform: uppercase; }
 @keyframes introReveal { to { clip-path: inset(0 0 0 0); } }
+@keyframes introWx { 0%, 45% { opacity: 0; } 46%, 95% { opacity: .55; } 100% { opacity: 1; } }
 @keyframes introFade { to { opacity: 1; } }
-@keyframes introSweep { from { transform: rotate(-58deg); opacity: .7; } 92% { opacity: .7; } to { transform: rotate(58deg); opacity: 0; } }
 @keyframes introTurn { from { transform: rotate(40deg); } to { transform: none; } }
 @keyframes introIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .intro * { animation-duration: .01s !important; animation-delay: 0s !important; } }
