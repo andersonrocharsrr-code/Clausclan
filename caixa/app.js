@@ -96,8 +96,9 @@ const K_DINHEIRO = ['valor', 'devolucao', 'antecipado', 'valorNota', 'devendo'];
 const LISTAS = {
   // Da nota o caixa só precisa do valor recebido (e da faixa, que é a lista onde ela está); o nome ajuda a achar a nota.
   // Devolução: o "TOTAL DE DEVOLUCOES" da nota (lido da foto ou digitado), para as notas em branco.
-  notas25: [['cliente', 'Cliente'], ['valor', 'Valor recebido'], ['devolucao', 'Devolução']],
-  notas4050: [['cliente', 'Cliente'], ['valor', 'Valor recebido'], ['devolucao', 'Devolução']],
+  // Antecipado: o que a cliente já tinha pago antes (sai das notas em branco junto com o recebido).
+  notas25: [['cliente', 'Cliente'], ['valor', 'Valor recebido'], ['devolucao', 'Devolução'], ['antecipado', 'Antecipado']],
+  notas4050: [['cliente', 'Cliente'], ['valor', 'Valor recebido'], ['devolucao', 'Devolução'], ['antecipado', 'Antecipado']],
   extras: [['numero', 'Nº'], ['vendedora', 'Vendedora/cliente'], ['cidade', 'Cidade'], ['valor', 'Valor']],
   pila: [['tipo', 'Despesa'], ['data', 'Dia', 'date'], ['valor', 'Valor']],
   depositos: [['data', 'Data', 'date'], ['onde', 'Onde', 'select'], ['valor', 'Valor']],
@@ -382,6 +383,22 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
       ? `<p class="item__dica">O valor que você acrescentar entra no relatório de hoje (${fmtDia(hoje())}).</p>` : '') +
     (item.nota ? `<p class="item__nota">⚠ ${esc(item.nota)}</p>` : '');
 
+  // Antecipado: só aparece quando a bolinha "Antecipado" é marcada (ou se a nota já tem antecipado).
+  const labAntec = row.querySelector('.item__antecipado');
+  if (labAntec) {
+    if (!edita) { if (!numero(item.antecipado)) labAntec.remove(); } else {
+      const tem = !!numero(item.antecipado);
+      const tog = document.createElement('label');
+      tog.className = 'item__antecTog';
+      tog.innerHTML = `<input type="checkbox" ${tem ? 'checked' : ''}><span>Antecipado</span>`;
+      labAntec.before(tog);
+      labAntec.hidden = !tem;
+      tog.querySelector('input').addEventListener('change', (e) => {
+        labAntec.hidden = !e.target.checked;
+        if (!e.target.checked) { rasc.antecipado = 0; labAntec.querySelector('input').value = ''; }
+      });
+    }
+  }
   const sair = () => pintarLista(nome);
   if (modo === 'travada') {
     row.querySelector('.item__editar').addEventListener('click', () => {
