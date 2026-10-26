@@ -336,11 +336,10 @@ function drawND(t) {
   sweep = Math.sin(t * 0.9) * 62;
   const swa = (sweep - 90) * D2R;
   c.strokeStyle = 'rgba(255,255,255,.18)'; c.lineWidth = 2; c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.cos(swa) * Rp, cy + Math.sin(swa) * Rp); c.stroke();
-  // Avião (amarelo)
-  c.strokeStyle = '#ffe14a'; c.lineWidth = 4; c.lineCap = 'round';
+  // Avião (amarelo): traço fino como no ND real — fuselagem, asa larga na altura do ponto de referência e cauda curta
+  c.strokeStyle = '#ffe14a'; c.lineWidth = 2;
   const s = Rp * 0.07;
-  c.beginPath(); c.moveTo(cx, cy - s * 1.1); c.lineTo(cx, cy + s * 1.3); c.moveTo(cx - s, cy); c.lineTo(cx + s, cy); c.moveTo(cx - s * 0.45, cy + s * 1.2); c.lineTo(cx + s * 0.45, cy + s * 1.2); c.stroke();
-  c.lineCap = 'butt';
+  c.beginPath(); c.moveTo(cx, cy - s * 0.7); c.lineTo(cx, cy + s * 1.9); c.moveTo(cx - s * 1.25, cy); c.lineTo(cx + s * 1.25, cy); c.moveTo(cx - s * 0.5, cy + s * 1.75); c.lineTo(cx + s * 0.5, cy + s * 1.75); c.stroke();
   // Dados no topo: velocidades e vento (esquerda), próximo ponto (direita)
   c.textAlign = 'left'; c.textBaseline = 'alphabetic';
   const tl = bz + fs * 1.3;
