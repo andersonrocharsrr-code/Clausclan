@@ -233,6 +233,9 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   V. pep. 5% impresso; se a folha for de outra semana, o fechamento atual é salvo em ☰ e começa um novo.
 - **Notas feitas (vendas)**: uma linha por dia (dia, Ab, Rp, valor). A soma vira o **Valor deixado**
   e as **Notas deixadas** da folha (não entram nas contas do caixa).
+- **Comprovante do depósito**: todo depósito novo precisa da foto do comprovante (📷 Câmera ou 🖼 Galeria). A foto fica
+  no aparelho (IndexedDB) e abre em "📎 Ver comprovante"; depósitos antigos sem foto têm "📷 Anexar comprovante".
+- **Ao gerar o caixa**: o primeiro aviso pede para conferir se o Recebimento do app bate com o recebimento do sistema.
 - **Quilometragem (GPS, funciona sem internet)**: aba Relatório → "Iniciar rota" / "Parar rota". Conta os km com a
   tela desligada (notificação fixa "Contando os km"; plugin `@capacitor-community/background-geolocation`). Ignora
   pontos imprecisos (> 50 m), tremidas (< 15 m) e saltos impossíveis (> 200 km/h). O **Km** do carro (Carro e
