@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=60">
+  <link rel="stylesheet" href="style.css?v=61">
 </head>
 <body>
   <header class="top">
@@ -682,7 +682,8 @@
             <div><span class="label">Radar meteorológico no ND</span><h2>Tempestade na tela</h2></div>
             <div class="seg seg--sm" id="metScen" role="group" aria-label="Cenário">
               <button type="button" data-sc="leve">Chuva leve</button>
-              <button type="button" data-sc="cb" aria-pressed="true">CB isolado</button>
+              <button type="button" data-sc="cb" aria-pressed="true">Área de tempestades</button>
+              <button type="button" data-sc="isolado">CB isolado</button>
               <button type="button" data-sc="linha">Linha de CBs</button>
               <button type="button" data-sc="topo">Topo de CB</button>
             </div>
@@ -788,13 +789,13 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=60"></script>
-  <script src="catalogo747.js?v=60"></script>
-  <script src="cockpit747.js?v=60"></script>
-  <script src="motor3d.js?v=60"></script>
-  <script src="motor747.js?v=60"></script>
-  <script src="meteo.js?v=60"></script>
-  <script src="app.js?v=60"></script>
+  <script src="avioes.js?v=61"></script>
+  <script src="catalogo747.js?v=61"></script>
+  <script src="cockpit747.js?v=61"></script>
+  <script src="motor3d.js?v=61"></script>
+  <script src="motor747.js?v=61"></script>
+  <script src="meteo.js?v=61"></script>
+  <script src="app.js?v=61"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());

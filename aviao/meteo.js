@@ -210,112 +210,165 @@ function drawAtlas(t) {
 }
 
 /* ---------- Radar meteorológico ---------- */
-// Células de tempestade: posição em milhas náuticas (x para a direita, y para a frente do avião), raio, refletividade máxima (dBZ) e topo (ft)
+// Células: [x, y (NM, y para a frente do avião), raio, refletividade máxima (dBZ), topo (ft), alongamento, giro (graus)].
+// As áreas largas e fracas são a chuva em volta; as pequenas e fortes são os núcleos convectivos.
 const SCEN = {
-  leve: { nome: 'Chuva leve em camada', txt: 'Chuva de nimbostratus: uma área larga, só verde e um pouco de amarelo. Dá para voar através com o sinal de cintos ligado, atento ao gelo.',
-    cells: [[-10, 55, 38, 30, 16000], [18, 70, 30, 32, 15000], [-30, 90, 30, 28, 15000], [5, 100, 34, 33, 16000]] },
-  cb: { nome: 'CB isolado com granizo', txt: 'Um cumulonimbus maduro à frente e à direita: núcleo vermelho e magenta (granizo provável) e o contorno apertado do lado de onde vem o vento. A regra é desviar pelo menos 20 NM dos ecos fortes, de preferência pelo lado de onde vem o vento, e nunca passar por baixo da bigorna.',
-    cells: [[14, 42, 7, 58, 45000], [17, 46, 5, 48, 42000], [9, 38, 9, 38, 38000], [-25, 95, 10, 30, 20000]] },
+  leve: { nome: 'Chuva leve em camada', txt: 'Chuva de nimbostratus: uma área larga, quase toda verde, com manchas amarelas. Dá para voar através com o sinal de cintos ligado, atento ao gelo.',
+    cells: [[-20, 55, 34, 31, 16000, 1.6, 20], [22, 70, 30, 33, 15000, 1.4, -15], [-35, 95, 26, 29, 15000, 1.3, 40], [8, 100, 30, 34, 16000, 1.5, 0], [40, 40, 16, 27, 14000, 1.2, 60]] },
+  cb: { nome: 'Área de tempestades', txt: 'Uma área de chuva cheia de células, como na foto do ND: o verde é chuva fraca, o amarelo moderada e as manchas vermelhas são os núcleos dos CBs. Repare nas bordas recortadas e nos contornos apertados do lado das células. O piloto procura um caminho com pelo menos 20 NM de distância das áreas vermelhas.',
+    cells: [[-38, 52, 30, 33, 26000, 1.5, 30], [-22, 60, 11, 47, 40000, 1.2, 20], [-46, 36, 8, 44, 36000, 1, 0], [-30, 30, 6, 41, 32000, 1, 0], [26, 50, 34, 34, 28000, 1.1, -20], [30, 34, 13, 48, 42000, 1.7, -35], [44, 48, 9, 43, 36000, 1.3, 10], [-58, 18, 7, 40, 30000, 1, 0], [55, 70, 9, 38, 30000, 1.2, 0], [0, 85, 22, 31, 22000, 1.6, 90], [62, 20, 9, 34, 26000, 1, 0], [-10, 22, 10, 24, 15000, 1.4, 0], [14, 14, 8, 26, 15000, 1.2, 0]] },
+  isolado: { nome: 'CB isolado com granizo', txt: 'Um cumulonimbus maduro à frente e à direita: núcleo vermelho e magenta (granizo provável), contorno apertado do lado de onde vem o vento e a chuva espalhada para o lado da bigorna. A regra é desviar pelo menos 20 NM, de preferência pelo lado de onde vem o vento, e nunca passar por baixo da bigorna.',
+    cells: [[14, 42, 15, 35, 40000, 1.7, -40], [12, 44, 6, 64, 45000, 1.2, -30], [20, 50, 7, 50, 42000, 1.3, -40], [-25, 95, 10, 30, 20000, 1, 0]] },
   linha: { nome: 'Linha de instabilidade', txt: 'Uma linha de CBs cruzando a rota, com núcleos fortes muito juntos. Não se passa entre duas células a menos de 40 NM uma da outra: o piloto contorna a linha inteira ou espera. Repare na sombra atrás das células mais fortes: o radar não enxerga através delas.',
-    cells: [[-55, 62, 9, 50, 40000], [-33, 58, 8, 56, 43000], [-12, 60, 9, 52, 42000], [8, 63, 8, 57, 45000], [28, 66, 9, 49, 40000], [48, 70, 8, 45, 38000], [-5, 110, 12, 40, 30000]] },
+    cells: [[0, 64, 16, 33, 30000, 5, 6], [-55, 62, 8, 50, 40000, 1.3, 10], [-33, 58, 7, 55, 43000, 1.2, 0], [-12, 60, 8, 51, 42000, 1.4, 20], [8, 63, 7, 56, 45000, 1.2, 0], [28, 66, 8, 49, 40000, 1.3, 10], [48, 70, 7, 45, 38000, 1.2, 0], [-5, 110, 14, 38, 30000, 1.4, 30]] },
   topo: { nome: 'Topo de CB com gelo seco', txt: 'O feixe passa pela parte de cima de um CB, onde só há gelo e cristais. Gelo seco reflete pouco: o radar mostra só verde ou quase nada, mas a turbulência é severa. Por isso o piloto inclina a antena para baixo (tilt) para medir a parte com água, mais embaixo.',
-    cells: [[-6, 40, 9, 56, 46000], [10, 85, 11, 45, 35000]] },
+    cells: [[-6, 40, 14, 34, 46000, 1.4, 0], [-6, 40, 7, 56, 46000, 1.1, 0], [10, 85, 12, 45, 35000, 1.3, 30]] },
 };
 let sc = 'cb', range = 80, tilt = -1.5, alt = 35000, mode = 'wx', gain = 0, radar = null, prof = null, sweep = 0, dirty = true;
+// Ruído suave (value noise) em várias escalas: deixa as bordas da chuva recortadas como no radar de verdade
+function hash2(i, j) { let n = i * 374761393 + j * 668265263; n = (n ^ (n >>> 13)) * 1274126177; return ((n ^ (n >>> 16)) >>> 0) / 4294967295; }
+function vnoise(x, y) {
+  const i = Math.floor(x), j = Math.floor(y), fx = x - i, fy = y - j, sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+  return lerp(lerp(hash2(i, j), hash2(i + 1, j), sx), lerp(hash2(i, j + 1), hash2(i + 1, j + 1), sx), sy);
+}
+function fbm(x, y) { return 0.5 * vnoise(x, y) + 0.27 * vnoise(x * 2.1 + 5.2, y * 2.1 + 1.3) + 0.15 * vnoise(x * 4.3 + 9.1, y * 4.3 + 7.7) + 0.08 * vnoise(x * 8.7 + 3.3, y * 8.7 + 2.1); }
 // Refletividade (dBZ) num ponto do espaço: forte embaixo, perto do nível de congelamento; o topo de gelo reflete pouco
 function dbz(x, y, ft) {
   let best = 0;
-  for (const [cx, cy, r, peak, topFt] of SCEN[sc].cells) {
-    const d2 = ((x - cx) ** 2 + (y - cy) ** 2) / (r * r);
-    if (d2 > 4) continue;
+  const n1 = fbm(x * 0.09, y * 0.09), n2 = fbm(x * 0.35 + 40, y * 0.35 + 40);
+  for (const [cx, cy, r, peak, topFt, ar = 1, rot = 0] of SCEN[sc].cells) {
+    const ca = Math.cos(rot * D2R), sa = Math.sin(rot * D2R), dx = x - cx, dy = y - cy, u = (dx * ca + dy * sa) / (r * ar), v = (-dx * sa + dy * ca) / r;
+    const d2 = u * u + v * v;
+    if (d2 > 5) continue;
     if (ft > topFt) continue;
     const z = ft / topFt, vert = z < 0.45 ? 1 : z < 0.75 ? lerp(1, 0.55, (z - 0.45) / 0.3) : lerp(0.55, 0.12, (z - 0.75) / 0.25);
-    const wob = 1 + 0.08 * Math.sin(x * 0.9 + y * 0.7) + 0.06 * Math.sin(x * 2.3 - y * 1.7);
-    const v = peak * Math.exp(-d2 * 1.1) * vert * wob;
-    if (v > best) best = v;
+    // a borda "come" a chuva onde o ruído é baixo: contornos irregulares e buracos
+    const shape = Math.exp(-d2 * 1.05) * (0.62 + 0.75 * n1) * (0.85 + 0.3 * n2);
+    const val = peak * Math.min(1.08, shape) * vert;
+    if (val > best) best = val;
   }
   return best;
 }
 // Feixe de 3,5° de abertura: na distância R ele cobre de alt + R·tan(tilt − 1,75°) até alt + R·tan(tilt + 1,75°)
 const NM_FT = 6076;
 function beam(R) { return [alt + R * NM_FT * Math.tan((tilt - 1.75) * D2R), alt + R * NM_FT * Math.tan((tilt + 1.75) * D2R)]; }
-function colorOf(z) { // escala de cores do radar de bordo
-  if (z >= 50) return [230, 40, 220];
-  if (z >= 40) return [235, 30, 30];
-  if (z >= 30) return [245, 230, 40];
-  if (z >= 20) return [40, 200, 60];
+// Cores das telas de radar de bordo (como na foto do ND)
+const COL = { g: [44, 235, 56], y: [236, 200, 92], r: [238, 74, 64], m: [236, 62, 236] };
+function colorOf(z) {
+  if (z >= 50) return COL.m;
+  if (z >= 40) return COL.r;
+  if (z >= 30) return COL.y;
+  if (z >= 20) return COL.g;
   return null;
 }
+const AW = 82; // a imagem vai até os cantos da tela, como no ND de verdade // meia abertura da varredura (graus)
 function buildRadar() {
-  const { off, S } = radar, oc = off.getContext('2d'), img = oc.createImageData(S, S), cx = S / 2, cy = S * 0.86, Rpx = S * 0.78;
-  const NA = 160, NR = 120, grid = [];
+  const { off, S } = radar, OW = off.width, oc = off.getContext('2d'), img = oc.createImageData(OW, S), cx = OW / 2, cy = S * 0.98, Rpx = S * 0.96;
+  const NA = 360, NR = 190, grid = [];
   // Ao longo de cada raio: refletividade, eco de solo e a atenuação (o radar perde força atravessando chuva forte)
   for (let ia = 0; ia < NA; ia++) {
-    const a = lerp(-50, 50, ia / (NA - 1)) * D2R; let att = 0;
+    const a = lerp(-AW, AW, ia / (NA - 1)) * D2R; let att = 0;
     const row = [];
     for (let ir = 0; ir < NR; ir++) {
       const R = (ir + 0.5) / NR * range, x = R * Math.sin(a), y = R * Math.cos(a), [b0, b1] = beam(R);
       let z = 0;
-      for (let k = 0; k <= 4; k++) { const ft = lerp(Math.max(0, b0), Math.max(0, b1), k / 4); if (b1 < 0) break; z = Math.max(z, dbz(x, y, ft)); }
-      if (b0 < 0) z = Math.max(z, 22 + 25 * clamp(-b0 / 20000, 0, 1) * (0.5 + 0.5 * Math.sin(x * 3.1) * Math.sin(y * 2.7)));
+      if (b1 >= 0) for (let k = 0; k <= 3; k++) { const ft = lerp(Math.max(0, b0), Math.max(0, b1), k / 3); z = Math.max(z, dbz(x, y, ft)); }
+      // Eco do solo quando o feixe encosta no chão: manchas granuladas, mais fortes onde o feixe bate em cheio
+      if (b0 < 0) { const gnd = clamp(-b0 / 25000, 0, 1), tex = fbm(x * 0.6 + 70, y * 0.6 + 70); z = Math.max(z, (16 + 34 * gnd) * (0.55 + 0.7 * tex)); }
+      // granulado de cada célula do radar (como a imagem real, que não é lisa)
+      z += (hash2(ia >> 1, ir >> 1) - 0.5) * 3 + (hash2(ia, ir) - 0.5) * 1.5;
       z = z + gain - att;
       att += Math.max(0, z - 40) * 0.12 * range / NR;
       let turb = false;
-      if (mode === 'wxt' && R < 40 && z > 30) { const dz = Math.abs(dbz(x + 1.5, y, alt) - dbz(x - 1.5, y, alt)) + Math.abs(dbz(x, y + 1.5, alt) - dbz(x, y - 1.5, alt)); turb = dz > 14; }
+      if (mode === 'wxt' && R < 40 && z > 30) { const dz = Math.abs(dbz(x + 1.5, y, alt) - dbz(x - 1.5, y, alt)) + Math.abs(dbz(x, y + 1.5, alt) - dbz(x, y - 1.5, alt)); turb = dz > 12; }
       row.push([z, turb]);
     }
     grid.push(row);
   }
-  for (let py = 0; py < S; py++) for (let px = 0; px < S; px++) {
+  for (let py = 0; py < S; py++) for (let px = 0; px < OW; px++) {
     const dx = px - cx, dy = cy - py, r = Math.hypot(dx, dy) / Rpx, a = Math.atan2(dx, dy) / D2R;
-    if (r > 1 || r <= 0 || Math.abs(a) > 50) continue;
-    const ia = Math.round((a + 50) / 100 * (NA - 1)), ir = Math.min(NR - 1, Math.floor(r * NR)), [z, turb] = grid[ia][ir];
-    const col = turb ? [230, 40, 220] : colorOf(z);
+    if (r > 1 || r <= 0 || Math.abs(a) > AW) continue;
+    const ia = Math.round((a + AW) / (2 * AW) * (NA - 1)), ir = Math.min(NR - 1, Math.floor(r * NR)), [z, turb] = grid[ia][ir];
+    const col = turb ? COL.m : colorOf(z);
     if (!col) continue;
-    const k = (py * S + px) * 4; img.data[k] = col[0]; img.data[k + 1] = col[1]; img.data[k + 2] = col[2]; img.data[k + 3] = 235;
+    const k = (py * OW + px) * 4; img.data[k] = col[0]; img.data[k + 1] = col[1]; img.data[k + 2] = col[2]; img.data[k + 3] = 255;
   }
   oc.putImageData(img, 0, 0);
   dirty = false;
 }
+// Tela no padrão de um ND de jato: fundo preto, rosa com os rumos, anéis de distância tracejados, avião amarelo embaixo
+const HDG = 290;
 function drawND(t) {
   const { c, w, h, off, S } = radar;
   if (dirty) buildRadar();
-  c.fillStyle = '#05080b'; c.fillRect(0, 0, w, h);
-  // O arco de ±50° precisa caber na largura e, com os números do rumo, na altura
-  const Rp = Math.min(w * 0.62, h - 90), cx = w / 2, cy = h - 48, sc2 = Rp / (S * 0.78), ox = cx - S / 2 * sc2, oy = cy - S * 0.86 * sc2;
-  const fs = Math.round(clamp(Rp * 0.035, 11, 15));
-  // Ecos com a varredura: a antena vai e volta e o setor recém-varrido fica mais vivo
-  c.save(); c.beginPath(); c.moveTo(cx, cy); c.arc(cx, cy, Rp, -Math.PI / 2 - 50 * D2R, -Math.PI / 2 + 50 * D2R); c.closePath(); c.clip();
-  c.drawImage(off, ox, oy, S * sc2, S * sc2);
+  // Moldura (o vidro dentro do painel)
+  c.fillStyle = '#2b2f33'; c.fillRect(0, 0, w, h);
+  const bz = Math.max(10, Math.round(w * 0.025));
+  c.fillStyle = '#000'; c.fillRect(bz, bz, w - 2 * bz, h - 2 * bz);
+  c.fillStyle = '#4a4f54'; for (let i = 0; i < 6; i++) { const y = bz + (h - 2 * bz) * (i + 0.5) / 6; for (const x of [bz / 2, w - bz / 2]) { c.beginPath(); c.arc(x, y, bz * 0.22, 0, 7); c.fill(); } }
+  c.save(); c.beginPath(); c.rect(bz, bz, w - 2 * bz, h - 2 * bz); c.clip();
+  const W2 = w - 2 * bz, H2 = h - 2 * bz;
+  const Rp = Math.min(W2 * 0.52, H2 * 0.74), cx = w / 2, cy = bz + H2 * 0.87, sc2 = Rp / (S * 0.96), ox = cx - off.width / 2 * sc2, oy = cy - S * 0.98 * sc2;
+  const fs = Math.round(clamp(Rp * 0.06, 12, 22));
+  const mono = '"B612 Mono", "IBM Plex Mono", ui-monospace, monospace';
+  // Ecos (sem suavizar: o radar de verdade mostra os pixels)
+  c.imageSmoothingEnabled = false;
+  c.save(); c.beginPath(); c.moveTo(cx, cy); c.arc(cx, cy, Rp * 1.12, -Math.PI / 2 - AW * D2R, -Math.PI / 2 + AW * D2R); c.closePath(); c.clip();
+  c.drawImage(off, ox, oy, off.width * sc2, S * sc2);
   c.restore();
-  sweep = Math.sin(t * 0.9) * 50;
-  const sa = (sweep - 90) * D2R;
-  c.strokeStyle = 'rgba(120,255,150,.35)'; c.lineWidth = 2; c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.cos(sa) * Rp, cy + Math.sin(sa) * Rp); c.stroke();
-  // Arcos de distância e a rosa
-  const mono = getComputedStyle(document.documentElement).getPropertyValue('--mono') || 'monospace';
-  c.strokeStyle = '#e8eef2'; c.lineWidth = 1.5;
-  c.beginPath(); c.arc(cx, cy, Rp, -Math.PI / 2 - 52 * D2R, -Math.PI / 2 + 52 * D2R); c.stroke();
-  c.setLineDash([4, 6]); c.lineWidth = 1;
-  for (const f of [0.25, 0.5, 0.75]) { c.beginPath(); c.arc(cx, cy, Rp * f, -Math.PI / 2 - 52 * D2R, -Math.PI / 2 + 52 * D2R); c.stroke(); }
+  c.imageSmoothingEnabled = true;
+  // Anéis de distância tracejados e os números em azul-claro
+  c.strokeStyle = '#ffffff'; c.lineWidth = 1.6; c.setLineDash([Rp * 0.03, Rp * 0.03]);
+  for (const f of [0.25, 0.5, 0.75]) { c.beginPath(); c.arc(cx, cy, Rp * f, -Math.PI / 2 - 62 * D2R, -Math.PI / 2 + 62 * D2R); c.stroke(); }
   c.setLineDash([]);
-  c.font = `600 ${fs}px ${mono}`; c.fillStyle = '#e8eef2'; c.textAlign = 'right';
-  for (const f of [0.5, 1]) c.fillText(String(range * f), cx - Rp * f * Math.sin(42 * D2R) - 4, cy - Rp * f * Math.cos(42 * D2R) + 4);
-  // marcas da bússola no arco (rumo 090 para cima)
-  c.textAlign = 'center';
-  for (let d = -50; d <= 50; d += 5) {
-    const a = (d - 90) * D2R, L = d % 10 ? 7 : 13;
-    c.beginPath(); c.moveTo(cx + Math.cos(a) * Rp, cy + Math.sin(a) * Rp); c.lineTo(cx + Math.cos(a) * (Rp + L), cy + Math.sin(a) * (Rp + L)); c.stroke();
-    if (!(d % 30)) c.fillText(String(((90 + d + 360) % 360) / 10).padStart(2, '0'), cx + Math.cos(a) * (Rp + 14 + fs), cy + Math.sin(a) * (Rp + 14 + fs) + fs * 0.35);
+  c.font = `500 ${fs * 0.85}px ${mono}`; c.fillStyle = '#3ad8f0'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  for (const f of [0.5, 0.75]) for (const s of [-1, 1]) c.fillText(String(Math.round(range * f / 2) * 2 === range * f ? range * f : nf(range * f, 0)), cx + s * Rp * f * Math.sin(62 * D2R) - s * fs * 0.4, cy - Rp * f * Math.cos(62 * D2R) + fs * 0.2);
+  // Rosa (arco externo) com os rumos
+  c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, Rp, -Math.PI / 2 - 62 * D2R, -Math.PI / 2 + 62 * D2R); c.stroke();
+  c.fillStyle = '#fff'; c.font = `500 ${fs}px ${mono}`;
+  for (let d = -60; d <= 60; d += 5) {
+    const hd = HDG + d, a = (d - 90) * D2R, L = hd % 10 ? Rp * 0.025 : Rp * 0.05;
+    c.lineWidth = 2; c.beginPath(); c.moveTo(cx + Math.cos(a) * Rp, cy + Math.sin(a) * Rp); c.lineTo(cx + Math.cos(a) * (Rp - L), cy + Math.sin(a) * (Rp - L)); c.stroke();
+    if (!(hd % 10)) {
+      const n = ((hd % 360) + 360) % 360 / 10, big = !(n % 3), rr = Rp + fs * 0.9;
+      c.save(); c.translate(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); c.rotate(d * D2R);
+      c.font = `500 ${big ? fs * 1.15 : fs * 0.85}px ${mono}`; c.fillText(String(n), 0, 0); c.restore();
+    }
   }
-  // Rota (magenta) e o avião
-  c.strokeStyle = '#ff52d9'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx, cy - Rp); c.stroke();
-  c.strokeStyle = '#fff'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(cx, cy - 14); c.lineTo(cx, cy + 10); c.moveTo(cx - 12, cy - 2); c.lineTo(cx + 12, cy - 2); c.moveTo(cx - 5, cy + 9); c.lineTo(cx + 5, cy + 9); c.stroke();
-  // Anúncios do radar (embaixo, à esquerda, como no ND)
-  c.font = `600 ${fs + 1}px ${mono}`; c.textAlign = 'left'; c.fillStyle = '#3fe07a';
-  c.fillText(mode === 'wxt' ? 'WX+T' : 'WXR', 10, h - 14 - fs * 1.4);
-  c.fillText(`${tilt > 0 ? '+' : ''}${nf(tilt, 1)}°`, 10, h - 14);
-  if (gain) { c.fillStyle = '#f2d23a'; c.fillText(gain > 0 ? 'GAIN +' : 'GAIN −', 10 + fs * 5, h - 14); }
-  c.textAlign = 'right'; c.fillStyle = '#e8eef2'; c.fillText(`HDG 090 · ${range} NM`, w - 10, h - 14);
+  // Marca do rumo (amarela) e o triângulo do rumo selecionado (azul)
+  c.strokeStyle = '#ffe14a'; c.lineWidth = 3; c.beginPath(); c.moveTo(cx, cy - Rp - fs * 0.2); c.lineTo(cx, cy - Rp + Rp * 0.07); c.stroke();
+  c.strokeStyle = '#3ad8f0'; c.lineWidth = 2; const ta = (-3 - 90) * D2R, tx = cx + Math.cos(ta) * Rp, ty = cy + Math.sin(ta) * Rp;
+  c.beginPath(); c.moveTo(tx - fs * 0.45, ty - fs * 0.6); c.lineTo(tx + fs * 0.45, ty - fs * 0.6); c.lineTo(tx, ty + fs * 0.2); c.closePath(); c.stroke();
+  // Rota (verde) e a linha da pista em espera
+  c.strokeStyle = '#3cf04c'; c.lineWidth = 2; c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.sin(3 * D2R) * Rp, cy - Rp); c.stroke();
+  // Varredura da antena (uma linha fraca indo e voltando)
+  sweep = Math.sin(t * 0.9) * 62;
+  const swa = (sweep - 90) * D2R;
+  c.strokeStyle = 'rgba(255,255,255,.18)'; c.lineWidth = 2; c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.cos(swa) * Rp, cy + Math.sin(swa) * Rp); c.stroke();
+  // Avião (amarelo)
+  c.strokeStyle = '#ffe14a'; c.lineWidth = 4; c.lineCap = 'round';
+  const s = Rp * 0.07;
+  c.beginPath(); c.moveTo(cx, cy - s * 1.1); c.lineTo(cx, cy + s * 1.3); c.moveTo(cx - s, cy); c.lineTo(cx + s, cy); c.moveTo(cx - s * 0.45, cy + s * 1.2); c.lineTo(cx + s * 0.45, cy + s * 1.2); c.stroke();
+  c.lineCap = 'butt';
+  // Dados no topo: velocidades e vento (esquerda), próximo ponto (direita)
+  c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+  const tl = bz + fs * 1.3;
+  const txt = (s2, x, y, col, size = fs) => { c.font = `500 ${size}px ${mono}`; c.fillStyle = col; c.fillText(s2, x, y); return c.measureText(s2).width; };
+  let x = bz + fs * 0.5; x += txt('GS', x, tl, '#fff', fs * 0.8) + 4; x += txt('478', x, tl, '#3cf04c') + fs * 0.6; x += txt('TAS', x, tl, '#fff', fs * 0.8) + 4; txt('476', x, tl, '#3cf04c');
+  txt('254/38', bz + fs * 0.5, tl + fs * 1.2, '#3cf04c');
+  c.strokeStyle = '#3cf04c'; c.lineWidth = 2; c.beginPath(); const wx = bz + fs * 1.2, wy = tl + fs * 2.3; c.moveTo(wx - fs * 0.7, wy - fs * 0.3); c.lineTo(wx + fs * 0.7, wy + fs * 0.3); c.moveTo(wx + fs * 0.7, wy + fs * 0.3); c.lineTo(wx + fs * 0.15, wy + fs * 0.35); c.moveTo(wx + fs * 0.7, wy + fs * 0.3); c.lineTo(wx + fs * 0.35, wy - fs * 0.15); c.stroke();
+  c.textAlign = 'right';
+  const rx = w - bz - fs * 0.5;
+  c.font = `500 ${fs}px ${mono}`; c.fillStyle = '#fff'; c.fillText('ABLOG', rx - fs * 4.2, tl); c.fillStyle = '#3cf04c'; c.fillText('293°', rx, tl);
+  c.fillText(`${Math.round(range * 0.6)} NM`, rx, tl + fs * 1.2); c.fillText('11:19', rx, tl + fs * 2.4);
+  // Embaixo: modo do radar, tilt e ganho (como o ND mostra)
+  c.fillStyle = '#3ad8f0'; c.font = `500 ${fs}px ${mono}`;
+  c.fillText(mode === 'wxt' ? 'WX+T' : 'WX', rx, h - bz - fs * 1.6);
+  c.fillText(`${tilt > 0 ? '+' : ''}${nf(tilt, 1)}°`, rx, h - bz - fs * 0.4);
+  c.textAlign = 'left'; c.fillStyle = '#fff';
+  c.fillText(`${range}NM`, bz + fs * 0.5, h - bz - fs * 1.6);
+  if (gain) { c.fillStyle = '#ffb000'; c.fillText(gain > 0 ? 'GAIN +' : 'GAIN −', bz + fs * 0.5, h - bz - fs * 0.4); }
+  c.restore();
 }
 
 /* ---------- Corte de lado: o feixe atravessando as nuvens ---------- */
@@ -358,8 +411,8 @@ function setCanvas(cv, hgt) {
 function size() {
   if (!$('#metAtlas')) return;
   atlas = { ...setCanvas($('#metAtlas'), (w) => Math.round(clamp(w * 0.6, 300, 460))), hits: [] };
-  const S = 520, off = document.createElement('canvas'); off.width = off.height = S;
-  radar = { ...setCanvas($('#metNd'), (w) => Math.round(clamp(w * 0.62, 300, 480))), off, S };
+  const S = 500, off = document.createElement('canvas'); off.width = Math.round(S * 1.8); off.height = S;
+  radar = { ...setCanvas($('#metNd'), (w) => Math.round(clamp(w * 0.8, 320, 600))), off, S };
   prof = setCanvas($('#metProf'), (w) => Math.round(clamp(w * 0.36, 150, 230)));
   cards = [...document.querySelectorAll('#metCards canvas')].map((cv) => ({ id: cv.dataset.cl, ...setCanvas(cv, 120) }));
   dirty = true; atlasDirty = true; profDirty = true;
