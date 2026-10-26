@@ -420,6 +420,16 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
       }, 150));
     }
   }
+  // Depósito: ver o comprovante (ou anexar, nos antigos sem foto).
+  if (nome === 'depositos' && modo === 'travada') {
+    const f = document.createElement('div');
+    f.className = 'item__comprov';
+    f.innerHTML = item.fotoId ? '<button type="button" class="item__verFoto">📎 Ver comprovante</button>'
+      : '<label class="item__anexar">📷 Anexar comprovante<input type="file" accept="image/*" hidden></label>';
+    row.append(f);
+    f.querySelector('.item__verFoto')?.addEventListener('click', () => verComprovante(item));
+    f.querySelector('input')?.addEventListener('change', (e) => { const fl = e.target.files?.[0]; if (fl) anexarComprovante(item, fl); });
+  }
   row.querySelector('.item__mover')?.addEventListener('click', () => {
     const outra = nome === 'notas25' ? 'notas4050' : 'notas25';
     st[nome].splice(st[nome].indexOf(item), 1);
@@ -529,15 +539,81 @@ $$('[data-pila]').forEach((b) => b.addEventListener('click', () => {
   if (ultima) mostrarNoMeio(ultima); // sem abrir o teclado sozinho
 }));
 
-// Depósito só entra quando o vendedor lança: onde + valor + data. Nada é lançado sozinho.
+/* ---------- fotos dos comprovantes (ficam no aparelho, no IndexedDB: não pesam no salvamento) ---------- */
+const fotosDb = () => new Promise((ok, erro) => {
+  const r = indexedDB.open('caixa-fotos', 1);
+  r.onupgradeneeded = () => r.result.createObjectStore('fotos');
+  r.onsuccess = () => ok(r.result);
+  r.onerror = () => erro(r.error);
+});
+async function fotoSalvar(id, dataUrl) {
+  const db = await fotosDb();
+  return new Promise((ok, erro) => {
+    const tx = db.transaction('fotos', 'readwrite');
+    tx.objectStore('fotos').put(dataUrl, id);
+    tx.oncomplete = () => ok();
+    tx.onerror = () => erro(tx.error);
+  });
+}
+async function fotoLer(id) {
+  const db = await fotosDb();
+  return new Promise((ok, erro) => {
+    const r = db.transaction('fotos').objectStore('fotos').get(id);
+    r.onsuccess = () => ok(r.result || null);
+    r.onerror = () => erro(r.error);
+  });
+}
+// Comprovante: diminui a foto (dá para ler e não ocupa muito espaço).
+async function fotoComprovante(file) {
+  return 'data:image/jpeg;base64,' + (await prepararFotoMax(file, 1400, 0.72));
+}
+async function verComprovante(dep) {
+  const url = dep.fotoId ? await fotoLer(dep.fotoId).catch(() => null) : null;
+  if (!url) { toast('A foto deste comprovante não está neste aparelho.'); return; }
+  $('#fotoTitulo').textContent = `Comprovante · ${R$(dep.valor)} · ${fmtDia(dep.data)} · ${ONDE_CURTO[dep.onde] || ''}`;
+  $('#fotoImg').src = url;
+  $('#dlgFoto').showModal();
+}
+// Depósito antigo sem foto: dá para anexar depois.
+async function anexarComprovante(dep, file) {
+  try {
+    const url = await fotoComprovante(file);
+    const id = dep.fotoId || uid();
+    await fotoSalvar(id, url);
+    dep.fotoId = id;
+    salvarAtual(); pintarLista('depositos');
+    toast('Comprovante anexado ✓');
+  } catch { toast('Não deu para guardar a foto.'); }
+}
+
+// Depósito só entra quando o vendedor lança: onde + valor + data + foto do comprovante. Nada é lançado sozinho.
+let depFoto = null;
+function pintarDepFoto() {
+  $('#depFotoPrev').hidden = !depFoto;
+  $('#depFotoBotoes').hidden = !!depFoto;
+  $('#depFotoImg').src = depFoto || '';
+}
+$$('[data-dep-foto]').forEach((inp) => inp.addEventListener('change', async () => {
+  const f = inp.files?.[0];
+  inp.value = '';
+  if (!f) return;
+  try { depFoto = await fotoComprovante(f); } catch { toast('Não deu para abrir a foto.'); }
+  pintarDepFoto();
+}));
+$('#depFotoTirar').addEventListener('click', () => { depFoto = null; pintarDepFoto(); });
+$('#depFotoImg').addEventListener('click', () => { $('#fotoTitulo').textContent = 'Comprovante'; $('#fotoImg').src = depFoto; $('#dlgFoto').showModal(); });
 $$('input[name="depOnde"]').forEach((r) => r.addEventListener('change', () => { depOndeEscolhido = true; }));
 $('#depData').value = hoje();
-$('#btnLancarDep').addEventListener('click', () => {
+$('#btnLancarDep').addEventListener('click', async () => {
   const valor = numero($('#depValor').value);
   if (!(valor > 0)) { toast('Digite o valor que você depositou.'); return; }
+  if (!depFoto) { toast('Tire a foto do comprovante do depósito (📷 Câmera ou 🖼 Galeria).'); return; }
   const onde = $('input[name="depOnde"]:checked')?.value || tipoDeposito(st);
-  st.depositos.push({ id: uid(), data: $('#depData').value || hoje(), onde, valor });
+  const fotoId = uid();
+  try { await fotoSalvar(fotoId, depFoto); } catch { toast('Não deu para guardar a foto. Tente de novo.'); return; }
+  st.depositos.push({ id: uid(), data: $('#depData').value || hoje(), onde, valor, fotoId });
   $('#depValor').value = '';
+  depFoto = null; pintarDepFoto();
   salvarAtual(); pintarLista('depositos'); pintarTotais();
   const { falta } = calcular();
   toast(`Depósito de ${R$(valor)} lançado (${ONDE_CURTO[onde]}).` + (falta > 0 ? ` Falta depositar ${R$(falta)}.` : falta === 0 ? ' Tudo depositado ✓' : ` Passou ${R$(-falta)}.`));
@@ -699,15 +775,15 @@ function getCliente() {
 }
 
 // Diminui a foto (celular tira fotos enormes) e devolve base64 JPEG.
-async function prepararFoto(file) {
+const prepararFoto = (file) => prepararFotoMax(file, 1800, 0.85);
+async function prepararFotoMax(file, max, qualidade) {
   const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
-  const max = 1800;
   const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
   const cv = document.createElement('canvas');
   cv.width = Math.round(bmp.width * k);
   cv.height = Math.round(bmp.height * k);
   cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height);
-  return cv.toDataURL('image/jpeg', 0.85).split(',')[1];
+  return cv.toDataURL('image/jpeg', qualidade).split(',')[1];
 }
 
 const ITEM_NOTA = {
@@ -1904,6 +1980,7 @@ function dadosCaixa() {
 function pendencias() {
   const c = calcular();
   const p = [];
+  p.push(`Confira se o Recebimento do app (${R$(c.recebimento)}) está batendo com o recebimento do sistema.`);
   if (!st.semana) p.push('A semana não está preenchida.');
   if (c.falta > 0) p.push(`Ainda falta depositar ${R$(c.falta)}.`);
   if (c.falta < 0) p.push(`Os depósitos passaram ${R$(-c.falta)} do que tinha para depositar.`);

@@ -362,3 +362,13 @@ body{overflow-x:clip}
 .campo-duplo{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);min-width:0}
 .campo-duplo__par{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .campo-duplo__par input{min-width:0}
+/* Comprovante do depósito */
+.dep-foto{display:flex;flex-direction:column;gap:6px;margin:4px 0 12px}
+.dep-foto__rot{font-size:13px;color:var(--muted)}
+.dep-foto__prev{display:flex;align-items:center;gap:12px}
+.dep-foto__prev[hidden],#depFotoBotoes[hidden]{display:none}
+.dep-foto__prev img{width:84px;height:84px;object-fit:cover;border-radius:12px;border:1px solid var(--line);cursor:zoom-in}
+.item__comprov{grid-column:1/-1}
+.item__verFoto,.item__anexar{font:inherit;font-size:14px;font-weight:600;color:var(--accent);background:none;border:0;padding:4px 0;cursor:pointer}
+.dlg-foto img{display:block;width:100%;max-height:70vh;object-fit:contain;border-radius:12px;background:#000;margin:8px 0 12px}
+.dlg-foto h2{font-size:16px}

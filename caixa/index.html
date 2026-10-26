@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=62">
+  <link rel="stylesheet" href="style.css?v=63">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -265,6 +265,17 @@
           <label>Valor depositado (R$)<input id="depValor" inputmode="decimal" enterkeyhint="done" placeholder="0,00" autocomplete="off"></label>
           <label>Data<input id="depData" type="date"></label>
         </div>
+        <div class="dep-foto">
+          <span class="dep-foto__rot">Foto do comprovante <small>(obrigatória)</small></span>
+          <div class="row-actions" id="depFotoBotoes">
+            <label class="btn">📷 Câmera<input type="file" accept="image/*" capture="environment" hidden data-dep-foto></label>
+            <label class="btn btn--sec">🖼 Galeria<input type="file" accept="image/*" hidden data-dep-foto></label>
+          </div>
+          <div class="dep-foto__prev" id="depFotoPrev" hidden>
+            <img id="depFotoImg" alt="Comprovante do depósito">
+            <button type="button" class="btn btn--ghost" id="depFotoTirar">✕ Trocar foto</button>
+          </div>
+        </div>
         <button class="btn btn--primary btn--grande" id="btnLancarDep">＋ Lançar depósito</button>
       </div>
       <div class="lista" data-lista="depositos"></div>
@@ -464,7 +475,15 @@
     </form>
   </dialog>
 
-    <dialog id="dlgNovaNota" class="dlg-remover">
+    <dialog id="dlgFoto" class="dlg-foto">
+    <form method="dialog">
+      <h2 id="fotoTitulo">Comprovante</h2>
+      <img id="fotoImg" alt="Comprovante do depósito">
+      <div class="row-actions"><button class="btn btn--primary" value="ok">Fechar</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="dlgNovaNota" class="dlg-remover">
     <form method="dialog">
       <h2>Lançar nova nota?</h2>
       <p class="muted">A nota foi quitada. Quer abrir uma linha em <b>Notas feitas</b> para a nota nova?</p>
@@ -529,6 +548,6 @@
   </div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=81"></script>
+  <script type="module" src="app.js?v=82"></script>
 </body>
 </html>
