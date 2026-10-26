@@ -78,14 +78,19 @@ function toast(msg) {
 
 /* ---------- estado ---------- */
 const MONEY = ['foiCobrar', 'antecipados', 'valorPepinos', 'pepinoParcial',
-  'vale', 'vale2', 'ajuda', 'salario', 'mecanica', 'despSupervisor', 'excedido', 'valorDeixado'];
+  'vale', 'vale2', 'ajuda', 'salario', 'mecanica', 'despSupervisor', 'excedido', 'valorDeixado',
+  'acHotel', 'acCombustivel', 'acAlimentacao', 'acSemanal'];
+// Vendedor que ainda está em ajuda de custo: gastos da semana numa seção própria (também abatem do depósito).
+const AJUDA_CUSTO = ['acHotel', 'acCombustivel', 'acAlimentacao', 'acSemanal'];
 // Despesas do vendedor (campo em branco vale 0, então o salário só entra quando é preenchido).
 // Vale adiantado tem dois campos (dois vales na semana); os dois abatem do que falta depositar.
-const DESPESAS = ['ajuda', 'vale', 'vale2', 'salario', 'mecanica', 'despSupervisor', 'excedido'];
+const DESPESAS = ['ajuda', 'vale', 'vale2', 'salario', 'mecanica', 'despSupervisor', 'excedido', ...AJUDA_CUSTO];
 const ONDE = { empresa: 'Depto. empresa espécie', banco: 'Depto. banco/TED/trans.', pix: 'Depto. Pix' };
 const ONDE_CURTO = { empresa: 'Empresa', banco: 'Banco/TED', pix: 'Pix' };
 const NOMES = { ajuda: 'Ajuda de custo', vale: 'Vale adiantado', vale2: 'Vale adiantado (2º)', salario: 'Salário', mecanica: 'Mecânica',
-  despSupervisor: 'Despesas supervisor', excedido: 'Excedido da despesa' };
+  despSupervisor: 'Despesas supervisor', excedido: 'Excedido da despesa',
+  acHotel: 'Ajuda de custo — Hotel', acCombustivel: 'Ajuda de custo — Combustível', acAlimentacao: 'Ajuda de custo — Alimentação',
+  acSemanal: 'Ajuda de custo — Salário semanal' };
 // Campos das listas que são dinheiro.
 const K_DINHEIRO = ['valor', 'devolucao', 'antecipado', 'valorNota', 'devendo'];
 const LISTAS = {
@@ -119,7 +124,7 @@ function novo() {
     foiCobrar: 0, qtNotas: '', qtNotasDeixadas: '', pinos: '',
     antecipados: 0, valorPepinos: 0, pepinoParcial: 0,
     notas25: [], notas4050: [], extras: [], pila: [], outros: [], obs: [], depositos: [], antecipadas: [], parciais: [], feitas: [], devendo: [],
-    vale: 0, vale2: 0, ajuda: 0, salario: 0, mecanica: 0, despSupervisor: 0, excedido: 0,
+    vale: 0, vale2: 0, acHotel: 0, acCombustivel: 0, acAlimentacao: 0, acSemanal: 0, ajuda: 0, salario: 0, mecanica: 0, despSupervisor: 0, excedido: 0,
     valorDeixado: 0, assinatura: ultimo?.assinatura || '',
     // Relatório diário: o que só o vendedor sabe (da semana e de cada dia) e os acumulados de cada dia.
     rel: {}, relDia: {},
@@ -204,6 +209,7 @@ function calcular(s = st) {
   c.valorDeixado = soma(s.feitas || []);
   c.recebimento = arred(c.notas25 + c.notas4050 + c.antecipados + c.extras + c.pepinoParcial);
   c.despVendedor = arred(DESPESAS.reduce((t, k) => t + (Number(s[k]) || 0), 0));
+  c.ajudaCusto = arred(AJUDA_CUSTO.reduce((t, k) => t + (Number(s[k]) || 0), 0));
   c.pila = soma(s.pila);
   c.outros = soma(s.outros);
   c.obs = soma(s.obs);
@@ -226,6 +232,7 @@ function salvarAtual() { sincronizar(); ls.set(KEY_ATUAL, st); }
 var avisosProntos = false; // eslint-disable-line no-var
 function pintarTotais() {
   sincronizar();
+  pintarAjudaCusto();
   if (avisosProntos) { pintarSino(); agendarDepois(); }
   const c = calcular();
   $$('[data-c]').forEach((el) => {
@@ -584,6 +591,26 @@ $$('[data-pila]').forEach((b) => b.addEventListener('click', () => {
   const ultima = rows[rows.length - 1];
   if (ultima) mostrarNoMeio(ultima); // sem abrir o teclado sozinho
 }));
+
+/* ---------- Vendedor em ajuda de custo (seção minimizada em Despesas) ---------- */
+// Fica fechada até o vendedor abrir; com algum valor preenchido, fica sempre aberta (só esconde com tudo em branco).
+var acAberta = false; // eslint-disable-line no-var
+const acTemValor = () => AJUDA_CUSTO.some((k) => Number(st[k]) > 0);
+function pintarAjudaCusto() {
+  const corpo = $('#acCorpo');
+  if (!corpo) return;
+  const aberta = acAberta || acTemValor();
+  corpo.hidden = !aberta;
+  $('#acAbrir').setAttribute('aria-expanded', String(aberta));
+  $('#acSeta').textContent = aberta ? '▾' : '▸';
+}
+$('#acAbrir')?.addEventListener('click', () => {
+  if (acAberta || acTemValor()) {
+    if (acTemValor()) { toast('Para esconder, deixe todos os campos da ajuda de custo em branco.'); return; }
+    acAberta = false;
+  } else acAberta = true;
+  pintarAjudaCusto();
+});
 
 /* ---------- fotos dos comprovantes (ficam no aparelho, no IndexedDB: não pesam no salvamento) ---------- */
 const fotosDb = () => new Promise((ok, erro) => {
@@ -1997,6 +2024,7 @@ function dadosCaixa() {
     // Pila (almoço, hotel…) vai somada numa linha só; o semanal fica separado. Escritos como no OBS: "410,00 (Despesa pila)".
     ...(soma(semanal) ? [`${brl(soma(semanal))} (Semanal)`] : []),
     ...(soma(pilaResto) ? [`${brl(soma(pilaResto))} (Despesa pila)`] : []),
+    ...(c.ajudaCusto ? [`${brl(c.ajudaCusto)} (Ajuda de custo)`] : []),
     ...st.outros.filter((o) => o.valor).map((o) => comValor(o.desc || 'Outros', o.valor)),
   ];
   // Na folha o OBS é escrito "4.000,00 (Fernando)".

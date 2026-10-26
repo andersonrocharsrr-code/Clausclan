@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=65">
+  <link rel="stylesheet" href="style.css?v=66">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -197,6 +197,23 @@
         <label>Mecânica<input data-f="mecanica" enterkeyhint="done" data-money inputmode="decimal"></label>
         <label>Despesas supervisor<input data-f="despSupervisor" enterkeyhint="done" data-money inputmode="decimal"></label>
         <label>Excedido da despesa<input data-f="excedido" enterkeyhint="done" data-money inputmode="decimal"></label>
+      </div>
+    </section>
+
+    <section class="card card--ac" id="cardAC">
+      <button type="button" class="card__head ac-abrir" id="acAbrir" aria-expanded="false" aria-controls="acCorpo">
+        <h2><span id="acSeta">▸</span> Vendedor em ajuda de custo</h2>
+        <strong class="total" data-c="ajudaCusto"></strong>
+      </button>
+      <div id="acCorpo" hidden>
+        <p class="ac-obs">📌 Só para o vendedor que <b>ainda está em ajuda de custo</b> na empresa. Lance aqui os gastos da semana:
+          eles <b>abatem do valor a depositar</b>. Se não for o seu caso, deixe em branco.</p>
+        <div class="grid">
+          <label>Hotel<input data-f="acHotel" enterkeyhint="done" data-money inputmode="decimal" placeholder="0,00"></label>
+          <label>Combustível<input data-f="acCombustivel" enterkeyhint="done" data-money inputmode="decimal" placeholder="0,00"></label>
+          <label>Alimentação<input data-f="acAlimentacao" enterkeyhint="done" data-money inputmode="decimal" placeholder="0,00"></label>
+          <label>Salário semanal<input data-f="acSemanal" enterkeyhint="done" data-money inputmode="decimal" placeholder="0,00"></label>
+        </div>
       </div>
     </section>
 
@@ -548,6 +565,6 @@
   </div>
   <div id="salvo" class="aviso-salvo" role="status" aria-live="polite">✓ Salva</div>
 
-  <script type="module" src="app.js?v=84"></script>
+  <script type="module" src="app.js?v=85"></script>
 </body>
 </html>
