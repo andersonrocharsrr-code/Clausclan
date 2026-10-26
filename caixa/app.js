@@ -78,23 +78,29 @@ function toast(msg) {
 
 /* ---------- estado ---------- */
 const MONEY = ['foiCobrar', 'antecipados', 'valorPepinos', 'pepinoParcial',
-  'vale', 'vale2', 'ajuda', 'salario', 'mecanica', 'despSupervisor', 'excedido', 'valorDeixado'];
+  'vale', 'vale2', 'ajuda', 'salario', 'mecanica', 'despSupervisor', 'excedido', 'valorDeixado',
+  'acHotel', 'acCombustivel', 'acAlimentacao', 'acSemanal'];
+// Vendedor que ainda está em ajuda de custo: gastos da semana numa seção própria (também abatem do depósito).
+const AJUDA_CUSTO = ['acHotel', 'acCombustivel', 'acAlimentacao', 'acSemanal'];
 // Despesas do vendedor (campo em branco vale 0, então o salário só entra quando é preenchido).
 // Vale adiantado tem dois campos (dois vales na semana); os dois abatem do que falta depositar.
-const DESPESAS = ['ajuda', 'vale', 'vale2', 'salario', 'mecanica', 'despSupervisor', 'excedido'];
+const DESPESAS = ['ajuda', 'vale', 'vale2', 'salario', 'mecanica', 'despSupervisor', 'excedido', ...AJUDA_CUSTO];
 const ONDE = { empresa: 'Depto. empresa espécie', banco: 'Depto. banco/TED/trans.', pix: 'Depto. Pix' };
 const ONDE_CURTO = { empresa: 'Empresa', banco: 'Banco/TED', pix: 'Pix' };
 const NOMES = { ajuda: 'Ajuda de custo', vale: 'Vale adiantado', vale2: 'Vale adiantado (2º)', salario: 'Salário', mecanica: 'Mecânica',
-  despSupervisor: 'Despesas supervisor', excedido: 'Excedido da despesa' };
+  despSupervisor: 'Despesas supervisor', excedido: 'Excedido da despesa',
+  acHotel: 'Ajuda de custo — Hotel', acCombustivel: 'Ajuda de custo — Combustível', acAlimentacao: 'Ajuda de custo — Alimentação',
+  acSemanal: 'Ajuda de custo — Salário semanal' };
 // Campos das listas que são dinheiro.
 const K_DINHEIRO = ['valor', 'devolucao', 'antecipado', 'valorNota', 'devendo'];
 const LISTAS = {
   // Da nota o caixa só precisa do valor recebido (e da faixa, que é a lista onde ela está); o nome ajuda a achar a nota.
   // Devolução: o "TOTAL DE DEVOLUCOES" da nota (lido da foto ou digitado), para as notas em branco.
-  notas25: [['cliente', 'Cliente'], ['valor', 'Valor recebido'], ['devolucao', 'Devolução']],
-  notas4050: [['cliente', 'Cliente'], ['valor', 'Valor recebido'], ['devolucao', 'Devolução']],
+  // Antecipado: o que a cliente já tinha pago antes (sai das notas em branco junto com o recebido).
+  notas25: [['cliente', 'Cliente'], ['valor', 'Valor recebido'], ['devolucao', 'Devolução'], ['antecipado', 'Antecipado']],
+  notas4050: [['cliente', 'Cliente'], ['valor', 'Valor recebido'], ['devolucao', 'Devolução'], ['antecipado', 'Antecipado']],
   extras: [['numero', 'Nº'], ['vendedora', 'Vendedora/cliente'], ['cidade', 'Cidade'], ['valor', 'Valor']],
-  pila: [['tipo', 'Despesa'], ['valor', 'Valor']],
+  pila: [['tipo', 'Despesa'], ['data', 'Dia', 'date'], ['valor', 'Valor']],
   depositos: [['data', 'Data', 'date'], ['onde', 'Onde', 'select'], ['valor', 'Valor']],
   outros: [['desc', 'Descrição'], ['valor', 'Valor']],
   // Cada nota antecipada com o nome; o total vai para "Antecipados".
@@ -119,7 +125,7 @@ function novo() {
     foiCobrar: 0, qtNotas: '', qtNotasDeixadas: '', pinos: '',
     antecipados: 0, valorPepinos: 0, pepinoParcial: 0,
     notas25: [], notas4050: [], extras: [], pila: [], outros: [], obs: [], depositos: [], antecipadas: [], parciais: [], feitas: [], devendo: [],
-    vale: 0, vale2: 0, ajuda: 0, salario: 0, mecanica: 0, despSupervisor: 0, excedido: 0,
+    vale: 0, vale2: 0, acHotel: 0, acCombustivel: 0, acAlimentacao: 0, acSemanal: 0, ajuda: 0, salario: 0, mecanica: 0, despSupervisor: 0, excedido: 0,
     valorDeixado: 0, assinatura: ultimo?.assinatura || '',
     // Relatório diário: o que só o vendedor sabe (da semana e de cada dia) e os acumulados de cada dia.
     rel: {}, relDia: {},
@@ -204,6 +210,7 @@ function calcular(s = st) {
   c.valorDeixado = soma(s.feitas || []);
   c.recebimento = arred(c.notas25 + c.notas4050 + c.antecipados + c.extras + c.pepinoParcial);
   c.despVendedor = arred(DESPESAS.reduce((t, k) => t + (Number(s[k]) || 0), 0));
+  c.ajudaCusto = arred(AJUDA_CUSTO.reduce((t, k) => t + (Number(s[k]) || 0), 0));
   c.pila = soma(s.pila);
   c.outros = soma(s.outros);
   c.obs = soma(s.obs);
@@ -226,6 +233,7 @@ function salvarAtual() { sincronizar(); ls.set(KEY_ATUAL, st); }
 var avisosProntos = false; // eslint-disable-line no-var
 function pintarTotais() {
   sincronizar();
+  pintarAjudaCusto();
   if (avisosProntos) { pintarSino(); agendarDepois(); }
   const c = calcular();
   $$('[data-c]').forEach((el) => {
@@ -348,7 +356,7 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
   const rasc = { ...item };
   const row = document.createElement('div');
   row.className = 'item' + (item.conferir ? ' item--conferir' : '') + (cols.length === 2 ? ' item--2' : '') + (nome.startsWith('notas') ? ' item--nota' : '')
-    + (nome === 'depositos' ? ' item--dep' : '') + (nome === 'feitas' ? ' item--feitas' : '') + (nome === 'parciais' ? ' item--parcial' : '')
+    + (nome === 'depositos' ? ' item--dep' : '') + (nome === 'feitas' ? ' item--feitas' : '') + (nome === 'parciais' ? ' item--parcial' : '') + (nome === 'pila' ? ' item--pila' : '')
     + (edita ? ' item--editando' : ' item--travada');
   const acr = (item.acrescimos || []).map((a) => `+ ${fmtDia(a.data)}: ${[a.ab ? `${a.ab} Ab` : '', a.rp ? `${a.rp} Rp` : '', a.valor ? R$(a.valor) : ''].filter(Boolean).join(' · ')}`);
   // Ab/Rp: no rascunho escolhe; depois de lançada a nota mostra só "1 Ab" (ou "1 Rp") e não muda mais.
@@ -375,6 +383,22 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
       ? `<p class="item__dica">O valor que você acrescentar entra no relatório de hoje (${fmtDia(hoje())}).</p>` : '') +
     (item.nota ? `<p class="item__nota">⚠ ${esc(item.nota)}</p>` : '');
 
+  // Antecipado: só aparece quando a bolinha "Antecipado" é marcada (ou se a nota já tem antecipado).
+  const labAntec = row.querySelector('.item__antecipado');
+  if (labAntec) {
+    if (!edita) { if (!numero(item.antecipado)) labAntec.remove(); } else {
+      const tem = !!numero(item.antecipado);
+      const tog = document.createElement('label');
+      tog.className = 'item__antecTog';
+      tog.innerHTML = `<input type="checkbox" ${tem ? 'checked' : ''}><span>Antecipado</span>`;
+      labAntec.before(tog);
+      labAntec.hidden = !tem;
+      tog.querySelector('input').addEventListener('change', (e) => {
+        labAntec.hidden = !e.target.checked;
+        if (!e.target.checked) { rasc.antecipado = 0; labAntec.querySelector('input').value = ''; }
+      });
+    }
+  }
   const sair = () => pintarLista(nome);
   if (modo === 'travada') {
     row.querySelector('.item__editar').addEventListener('click', () => {
@@ -396,8 +420,17 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
       const k = e.target.dataset.k;
       if (k && K_DINHEIRO.includes(k)) e.target.value = rasc[k] ? brl(rasc[k]) : '';
     });
-    const lancar = () => {
+    const lancar = async () => {
       if (nome === 'feitas' && modo === 'rascunho' && !rasc.tipo) { toast('Escolha Ab ou Rp.'); return; }
+      // Gasto do Pila: a foto do recibo é obrigatória (fica no aparelho, como o comprovante do depósito).
+      if (nome === 'pila' && modo === 'rascunho') {
+        if (/^refei/i.test(rasc.tipo || '')) { toast('Escolha Almoço ou Janta.'); return; }
+        if (!rasc._foto) { toast('Tire a foto do recibo (📷 Câmera ou 🖼 Galeria).'); return; }
+        const id = uid();
+        try { await fotoSalvar(id, rasc._foto); } catch { toast('Não deu para guardar a foto. Tente de novo.'); return; }
+        rasc.fotoId = id;
+        delete rasc._foto;
+      }
       document.activeElement?.blur();
       rasc.conferir = false;
       if (modo === 'rascunho') { st[nome].push(rasc); delete rascunhos[nome]; } else aplicarEdicao(nome, item, rasc);
@@ -420,15 +453,52 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
       }, 150));
     }
   }
-  // Depósito: ver o comprovante (ou anexar, nos antigos sem foto).
-  if (nome === 'depositos' && modo === 'travada') {
+  // Depósito e Pila: ver o comprovante/recibo (ou anexar, nos antigos sem foto).
+  if ((nome === 'depositos' || nome === 'pila') && modo === 'travada') {
+    const doc = nome === 'pila' ? 'recibo' : 'comprovante';
     const f = document.createElement('div');
     f.className = 'item__comprov';
-    f.innerHTML = item.fotoId ? '<button type="button" class="item__verFoto">📎 Ver comprovante</button>'
-      : '<label class="item__anexar">📷 Anexar comprovante<input type="file" accept="image/*" hidden></label>';
+    f.innerHTML = item.fotoId ? `<button type="button" class="item__verFoto">📎 Ver ${doc}</button>`
+      : `<label class="item__anexar">📷 Anexar ${doc}<input type="file" accept="image/*" hidden></label>`;
     row.append(f);
-    f.querySelector('.item__verFoto')?.addEventListener('click', () => verComprovante(item));
-    f.querySelector('input')?.addEventListener('change', (e) => { const fl = e.target.files?.[0]; if (fl) anexarComprovante(item, fl); });
+    f.querySelector('.item__verFoto')?.addEventListener('click', () => verComprovante(item, nome));
+    f.querySelector('input')?.addEventListener('change', (e) => { const fl = e.target.files?.[0]; if (fl) anexarComprovante(item, fl, nome); });
+  }
+  // Refeição: escolher Almoço ou Janta (vira o nome da despesa).
+  if (nome === 'pila' && modo === 'rascunho' && /^(refei|almo|janta)/i.test(rasc.tipo || '')) {
+    const ref = document.createElement('div');
+    ref.className = 'item__refeicao';
+    ref.innerHTML = `<span class="item__rot">Refeição</span><span class="tipo-sel" role="radiogroup">${['Almoço', 'Janta'].map((t) =>
+      `<label class="tipo-op"><input type="radio" name="ref-${item.id}" value="${t}" ${rasc.tipo === t ? 'checked' : ''}><span>${t}</span></label>`).join('')}</span>`;
+    row.querySelector('.item__acoes').before(ref);
+    ref.querySelectorAll('input').forEach((r) => r.addEventListener('change', () => {
+      rasc.tipo = r.value; item.tipo = r.value;
+      const campo = row.querySelector('[data-k="tipo"]');
+      if (campo) campo.value = r.value;
+    }));
+  }
+  // Gasto novo do Pila: escolher a foto do recibo antes de lançar.
+  if (nome === 'pila' && modo === 'rascunho') {
+    const f = document.createElement('div');
+    f.className = 'item__recibo';
+    f.innerHTML = `<span class="item__rot">Foto do recibo <small>(obrigatória)</small></span>
+      <div class="item__reciboLinha">
+        <img class="item__reciboImg" alt="Recibo" hidden>
+        <label class="btn">📷 Câmera<input type="file" accept="image/*" capture="environment" hidden></label>
+        <label class="btn btn--sec">🖼 Galeria<input type="file" accept="image/*" hidden></label>
+      </div>`;
+    row.querySelector('.item__acoes').before(f);
+    const img = f.querySelector('img');
+    const mostrar = () => { img.hidden = !rasc._foto; img.src = rasc._foto || ''; };
+    mostrar();
+    f.querySelectorAll('input').forEach((inp) => inp.addEventListener('change', async () => {
+      const fl = inp.files?.[0];
+      inp.value = '';
+      if (!fl) return;
+      try { rasc._foto = await fotoComprovante(fl); item._foto = rasc._foto; } catch { toast('Não deu para abrir a foto.'); }
+      mostrar();
+    }));
+    img.addEventListener('click', () => { $('#fotoTitulo').textContent = 'Recibo'; $('#fotoImg').src = rasc._foto; $('#dlgFoto').showModal(); });
   }
   row.querySelector('.item__mover')?.addEventListener('click', () => {
     const outra = nome === 'notas25' ? 'notas4050' : 'notas25';
@@ -531,13 +601,33 @@ $$('[data-f]').forEach((el) => {
 });
 
 $$('[data-pila]').forEach((b) => b.addEventListener('click', () => {
-  rascunhos.pila = { id: uid(), tipo: b.dataset.pila, valor: 0 };
+  rascunhos.pila = { id: uid(), tipo: b.dataset.pila, data: hoje(), valor: 0 };
   abrirLista('pila');
   pintarLista('pila');
   const rows = $$('[data-lista="pila"] .item');
   const ultima = rows[rows.length - 1];
   if (ultima) mostrarNoMeio(ultima); // sem abrir o teclado sozinho
 }));
+
+/* ---------- Vendedor em ajuda de custo (seção minimizada em Despesas) ---------- */
+// Fica fechada até o vendedor abrir; com algum valor preenchido, fica sempre aberta (só esconde com tudo em branco).
+var acAberta = false; // eslint-disable-line no-var
+const acTemValor = () => AJUDA_CUSTO.some((k) => Number(st[k]) > 0);
+function pintarAjudaCusto() {
+  const corpo = $('#acCorpo');
+  if (!corpo) return;
+  const aberta = acAberta || acTemValor();
+  corpo.hidden = !aberta;
+  $('#acAbrir').setAttribute('aria-expanded', String(aberta));
+  $('#acSeta').textContent = aberta ? '▾' : '▸';
+}
+$('#acAbrir')?.addEventListener('click', () => {
+  if (acAberta || acTemValor()) {
+    if (acTemValor()) { toast('Para esconder, deixe todos os campos da ajuda de custo em branco.'); return; }
+    acAberta = false;
+  } else acAberta = true;
+  pintarAjudaCusto();
+});
 
 /* ---------- fotos dos comprovantes (ficam no aparelho, no IndexedDB: não pesam no salvamento) ---------- */
 const fotosDb = () => new Promise((ok, erro) => {
@@ -567,22 +657,23 @@ async function fotoLer(id) {
 async function fotoComprovante(file) {
   return 'data:image/jpeg;base64,' + (await prepararFotoMax(file, 1400, 0.72));
 }
-async function verComprovante(dep) {
+async function verComprovante(dep, nome = 'depositos') {
   const url = dep.fotoId ? await fotoLer(dep.fotoId).catch(() => null) : null;
-  if (!url) { toast('A foto deste comprovante não está neste aparelho.'); return; }
-  $('#fotoTitulo').textContent = `Comprovante · ${R$(dep.valor)} · ${fmtDia(dep.data)} · ${ONDE_CURTO[dep.onde] || ''}`;
+  if (!url) { toast('A foto não está neste aparelho.'); return; }
+  $('#fotoTitulo').textContent = nome === 'pila' ? `Recibo · ${dep.tipo || 'Pila'} · ${R$(dep.valor)}`
+    : `Comprovante · ${R$(dep.valor)} · ${fmtDia(dep.data)} · ${ONDE_CURTO[dep.onde] || ''}`;
   $('#fotoImg').src = url;
   $('#dlgFoto').showModal();
 }
 // Depósito antigo sem foto: dá para anexar depois.
-async function anexarComprovante(dep, file) {
+async function anexarComprovante(dep, file, nome = 'depositos') {
   try {
     const url = await fotoComprovante(file);
     const id = dep.fotoId || uid();
     await fotoSalvar(id, url);
     dep.fotoId = id;
-    salvarAtual(); pintarLista('depositos');
-    toast('Comprovante anexado ✓');
+    salvarAtual(); pintarLista(nome);
+    toast(nome === 'pila' ? 'Recibo anexado ✓' : 'Comprovante anexado ✓');
   } catch { toast('Não deu para guardar a foto.'); }
 }
 
@@ -1950,6 +2041,9 @@ function dadosCaixa() {
     // Pila (almoço, hotel…) vai somada numa linha só; o semanal fica separado. Escritos como no OBS: "410,00 (Despesa pila)".
     ...(soma(semanal) ? [`${brl(soma(semanal))} (Semanal)`] : []),
     ...(soma(pilaResto) ? [`${brl(soma(pilaResto))} (Despesa pila)`] : []),
+    // Ajuda de custo: hotel + alimentação + combustível somados como "Despesa"; o salário semanal à parte.
+    ...((() => { const v = arred((Number(st.acHotel) || 0) + (Number(st.acAlimentacao) || 0) + (Number(st.acCombustivel) || 0)); return v ? [`${brl(v)} (Despesa)`] : []; })()),
+    ...(Number(st.acSemanal) ? [`${brl(st.acSemanal)} (Salário)`] : []),
     ...st.outros.filter((o) => o.valor).map((o) => comValor(o.desc || 'Outros', o.valor)),
   ];
   // Na folha o OBS é escrito "4.000,00 (Fernando)".

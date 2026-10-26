@@ -266,6 +266,14 @@ label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--acc
 /* Notas: cliente em cima; valor recebido e devolução lado a lado. */
 .item--nota{grid-template-columns:1fr 1fr}
 .item--nota .item__cliente{grid-column:1/-1}
+.item__antecipado[hidden]{display:none}
+/* Bolinha "Antecipado": marca para abrir o campo do valor pago antes. */
+.item .item__antecTog{grid-column:1/-1;display:flex;flex-direction:row;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;align-items:center;gap:8px;font-size:14px;color:var(--muted);cursor:pointer;width:max-content}
+.item .item__antecTog input{appearance:none;-webkit-appearance:none;width:20px;height:20px;margin:0;padding:0;border-radius:50%;
+  border:2px solid var(--accent);background:transparent;display:grid;place-content:center;cursor:pointer}
+.item .item__antecTog input::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--accent);transform:scale(0);transition:transform .15s}
+.item .item__antecTog input:checked::after{transform:scale(1)}
+.item .item__antecTog input:focus{outline:none}
 /* Puxar para atualizar: bolinha com ↻ que desce com o dedo; gira ao soltar. O navegador não faz o dele. */
 html,body{overscroll-behavior-y:contain}
 body{overflow-x:clip}
@@ -372,3 +380,19 @@ body{overflow-x:clip}
 .item__verFoto,.item__anexar{font:inherit;font-size:14px;font-weight:600;color:var(--accent);background:none;border:0;padding:4px 0;cursor:pointer}
 .dlg-foto img{display:block;width:100%;max-height:70vh;object-fit:contain;border-radius:12px;background:#000;margin:8px 0 12px}
 .dlg-foto h2{font-size:16px}
+/* Recibo do Pila (no gasto novo) */
+.item__recibo{grid-column:1/-1;display:flex;flex-direction:column;gap:6px}
+.item__reciboLinha{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.item__reciboLinha .btn{padding:8px 12px;font-size:14px}
+.item__reciboImg{width:56px;height:56px;object-fit:cover;border-radius:10px;border:1px solid var(--line);cursor:zoom-in}
+.item__reciboImg[hidden]{display:none}
+/* Pila: despesa em cima; dia e valor lado a lado; refeição: Almoço/Janta */
+.item--pila{grid-template-columns:1fr 1fr}
+.item--pila .item__tipo{grid-column:1/-1}
+.item__refeicao{grid-column:1/-1;display:flex;flex-direction:column;gap:4px}
+/* Vendedor em ajuda de custo: cabeçalho que abre/fecha a seção */
+.ac-abrir{width:100%;background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ac-abrir h2{display:flex;align-items:center;gap:8px}
+#acSeta{color:var(--accent);font-size:.9em;width:1em}
+#acCorpo[hidden]{display:none}
+.ac-obs{margin:10px 0 12px;padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.4;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:var(--ink)}

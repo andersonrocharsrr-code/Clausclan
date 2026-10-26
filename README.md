@@ -235,11 +235,17 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   e as **Notas deixadas** da folha (não entram nas contas do caixa).
 - **Comprovante do depósito**: todo depósito novo precisa da foto do comprovante (📷 Câmera ou 🖼 Galeria). A foto fica
   no aparelho (IndexedDB) e abre em "📎 Ver comprovante"; depósitos antigos sem foto têm "📷 Anexar comprovante".
+- **Recibo do Pila**: todo gasto novo do Pila precisa da foto do recibo; depois abre em "📎 Ver recibo" (antigos: "📷 Anexar recibo").
+- **Vendedor em ajuda de custo** (aba Despesas): seção minimizada com Hotel, Combustível, Alimentação e Salário semanal.
+  Abre ao tocar; com algum valor fica sempre aberta (só esconde com tudo em branco). Abate do depósito e sai na folha
+  em Outros: hotel + alimentação + combustível como "410,00 (Despesa)" e o salário semanal como "500,00 (Salário)".
 - **Ao gerar o caixa**: o primeiro aviso pede para conferir se o Recebimento do app bate com o recebimento do sistema.
 - **Quilometragem (GPS, funciona sem internet)**: aba Relatório → "Iniciar rota" / "Parar rota". Conta os km com a
   tela desligada (notificação fixa "Contando os km"; plugin `@capacitor-community/background-geolocation`). Ignora
   pontos imprecisos (> 50 m), tremidas (< 15 m) e saltos impossíveis (> 200 km/h). O **Km** do carro (Carro e
   supervisor) vai subindo sozinho a cada km rodado, e é ele que sai no relatório.
+- **Antecipado nas notas 25% e 40/50%**: o que a cliente já tinha pago antes; soma com o recebido para tirar a nota
+  inteira das notas em branco (25%: (recebido + antecipado) ÷ 0,75 + devolução; 40/50%: recebido + antecipado + devolução).
 - **Nº de pinos / Valor dos pepinos**: o valor é digitado e só abre depois que o Nº de pinos é preenchido. Na folha
   (e no resumo) eles somam também os pepinos parciais (quantidade e o que ficou devendo) e as notas em branco
   (quantidade e valor sem os 25%: × 0,75).
