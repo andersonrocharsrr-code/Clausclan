@@ -1236,13 +1236,6 @@ showTab(location.hash.slice(1) || 'pecas');
   const intro = $('#intro');
   if (!intro) return;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // Na tela deitada o ND inteiro cabe (meet); em pé ele preenche a tela (slice)
-  const wide = innerWidth > innerHeight;
-  if (wide) intro.querySelectorAll('.intro__layer').forEach((l) => l.setAttribute('preserveAspectRatio', 'xMidYMax meet'));
-  // Centro da rosa (180, 520 no desenho) em pixels, para girar as camadas no lugar certo
-  const W = innerWidth, H = innerHeight, k = wide ? Math.min(W / 360, H / 640) : Math.max(W / 360, H / 640);
-  intro.style.setProperty('--ox', `${(W - 360 * k) / 2 + 180 * k}px`);
-  intro.style.setProperty('--oy', `${H - 640 * k + 520 * k}px`);
   let gone = false;
   const done = () => { if (gone) return; gone = true; intro.classList.add('is-out'); setTimeout(() => intro.remove(), 500); };
   const t = setTimeout(done, reduce ? 900 : 4000);
