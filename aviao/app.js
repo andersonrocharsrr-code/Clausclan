@@ -1225,16 +1225,30 @@ renderProgress(); renderModules(); renderLesson();
 setCockpit('c172'); updateLab(); renderGloss();
 showTab(location.hash.slice(1) || 'pecas');
 
-// Intro: some sozinha depois da decolagem; um toque pula
+// Intro: radar ND que some sozinho; um toque pula
 (() => {
   const intro = $('#intro');
   if (!intro) return;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // Na tela deitada a pista inteira cabe (meet); em pé ela preenche a tela (slice)
+  // Na tela deitada o ND inteiro cabe (meet); em pé ele preenche a tela (slice)
   if (innerWidth > innerHeight) intro.querySelector('.intro__scene')?.setAttribute('preserveAspectRatio', 'xMidYMax meet');
+  // Rosa dos ventos: marcas a cada 5°, números a cada 30°, proa 290 em cima
+  const rose = $('#introRose'), NS = 'http://www.w3.org/2000/svg';
+  for (let h = 0; h < 360; h += 5) {
+    const a = (h - 290) * Math.PI / 180, s = Math.sin(a), c = Math.cos(a), L = h % 10 ? 7 : 12;
+    const ln = document.createElementNS(NS, 'line');
+    Object.entries({ x1: 180 + 200 * s, y1: 520 - 200 * c, x2: 180 + (200 - L) * s, y2: 520 - (200 - L) * c, stroke: '#eef2ef', 'stroke-width': 1.2 }).forEach(([k, v]) => ln.setAttribute(k, v));
+    rose.appendChild(ln);
+    if (h % 30 === 0) {
+      const t = document.createElementNS(NS, 'text');
+      Object.entries({ x: 180 + 176 * s, y: 520 - 176 * c + 4, fill: '#eef2ef', 'text-anchor': 'middle', 'font-size': 12 }).forEach(([k, v]) => t.setAttribute(k, v));
+      t.textContent = String(h / 10).padStart(2, '0');
+      rose.appendChild(t);
+    }
+  }
   let gone = false;
   const done = () => { if (gone) return; gone = true; intro.classList.add('is-out'); setTimeout(() => intro.remove(), 500); };
-  const t = setTimeout(done, reduce ? 900 : 3300);
+  const t = setTimeout(done, reduce ? 900 : 4000);
   intro.addEventListener('click', () => { clearTimeout(t); done(); });
 })();
 })();

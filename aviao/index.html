@@ -13,46 +13,29 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=75">
+  <link rel="stylesheet" href="style.css?v=76">
 </head>
 <body>
   <!-- Intro: o avião decola pela pista iluminada e aparece o nome do app (toque para pular) -->
   <div class="intro" id="intro" aria-hidden="true">
     <svg class="intro__scene" viewBox="0 0 360 640" preserveAspectRatio="xMidYMax slice">
-      <defs>
-        <linearGradient id="introTrail" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#eef2ef" stop-opacity="0"/><stop offset="1" stop-color="#eef2ef" stop-opacity=".55"/></linearGradient>
-      </defs>
-      <path class="intro__runway" d="M150 640 L176 220 L184 220 L210 640 Z"/>
-      <line class="intro__center" x1="180" y1="640" x2="180" y2="230"/>
-        <circle class="intro__light" cx="140.8" cy="590.0" r="3.31" style="animation-delay:0.00s"/>
-        <circle class="intro__light" cx="219.2" cy="590.0" r="3.31" style="animation-delay:0.00s"/>
-        <circle class="intro__light" cx="142.9" cy="562.0" r="3.15" style="animation-delay:0.07s"/>
-        <circle class="intro__light" cx="217.1" cy="562.0" r="3.15" style="animation-delay:0.07s"/>
-        <circle class="intro__light" cx="145.1" cy="534.0" r="2.99" style="animation-delay:0.14s"/>
-        <circle class="intro__light" cx="214.9" cy="534.0" r="2.99" style="animation-delay:0.14s"/>
-        <circle class="intro__light" cx="147.2" cy="506.0" r="2.83" style="animation-delay:0.21s"/>
-        <circle class="intro__light" cx="212.8" cy="506.0" r="2.83" style="animation-delay:0.21s"/>
-        <circle class="intro__light" cx="149.3" cy="478.0" r="2.67" style="animation-delay:0.28s"/>
-        <circle class="intro__light" cx="210.7" cy="478.0" r="2.67" style="animation-delay:0.28s"/>
-        <circle class="intro__light" cx="151.5" cy="450.0" r="2.51" style="animation-delay:0.35s"/>
-        <circle class="intro__light" cx="208.5" cy="450.0" r="2.51" style="animation-delay:0.35s"/>
-        <circle class="intro__light" cx="153.6" cy="422.0" r="2.35" style="animation-delay:0.42s"/>
-        <circle class="intro__light" cx="206.4" cy="422.0" r="2.35" style="animation-delay:0.42s"/>
-        <circle class="intro__light" cx="155.7" cy="394.0" r="2.19" style="animation-delay:0.49s"/>
-        <circle class="intro__light" cx="204.3" cy="394.0" r="2.19" style="animation-delay:0.49s"/>
-        <circle class="intro__light" cx="157.9" cy="366.0" r="2.03" style="animation-delay:0.56s"/>
-        <circle class="intro__light" cx="202.1" cy="366.0" r="2.03" style="animation-delay:0.56s"/>
-        <circle class="intro__light" cx="160.0" cy="338.0" r="1.87" style="animation-delay:0.63s"/>
-        <circle class="intro__light" cx="200.0" cy="338.0" r="1.87" style="animation-delay:0.63s"/>
-        <circle class="intro__light" cx="162.1" cy="310.0" r="1.71" style="animation-delay:0.70s"/>
-        <circle class="intro__light" cx="197.9" cy="310.0" r="1.71" style="animation-delay:0.70s"/>
-        <circle class="intro__light" cx="164.3" cy="282.0" r="1.55" style="animation-delay:0.77s"/>
-        <circle class="intro__light" cx="195.7" cy="282.0" r="1.55" style="animation-delay:0.77s"/>
-        <circle class="intro__light" cx="166.4" cy="254.0" r="1.39" style="animation-delay:0.84s"/>
-        <circle class="intro__light" cx="193.6" cy="254.0" r="1.39" style="animation-delay:0.84s"/>
-      <line class="intro__trail" x1="166" y1="560" x2="174" y2="300"/>
-      <line class="intro__trail" x1="194" y1="560" x2="186" y2="300"/>
-      <g class="intro__plane"><path d="M32 10 L35.5 26 L54 33 L54 38 L35.5 34.5 L34.5 47 L40.5 52 L40.5 55 L32 53 L23.5 55 L23.5 52 L29.5 47 L28.5 34.5 L10 38 L10 33 L28.5 26 Z" transform="translate(148 520)"/></g>
+      <defs><clipPath id="introArcClip"><path d="M180 520 L-234 230 L594 230 Z"/></clipPath><filter id="introWxBlur" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5"/></filter></defs>
+      <g filter="url(#introWxBlur)">
+        <g class="intro__wx" style="--d:.7s"><ellipse cx="96" cy="400" rx="44" ry="30" fill="#2fbf4a"/><ellipse cx="102" cy="402" rx="24" ry="16" fill="#f2d33a"/><ellipse cx="106" cy="404" rx="10" ry="7" fill="#e5322d"/></g>
+        <g class="intro__wx" style="--d:1.6s"><ellipse cx="282" cy="370" rx="36" ry="22" fill="#2fbf4a"/><ellipse cx="276" cy="372" rx="16" ry="10" fill="#f2d33a"/></g>
+      </g>
+      <g clip-path="url(#introArcClip)"><g class="intro__rose" id="introRose"></g></g>
+      <path class="intro__arc" d="M16.2 405.3 A200 200 0 0 1 343.8 405.3"/>
+      <path class="intro__ring" d="M98.1 462.6 A100 100 0 0 1 261.9 462.6"/>
+      <g class="intro__sweep"><line x1="180" y1="520" x2="180" y2="320"/></g>
+      <path class="intro__route" d="M180 520 L232 386 L196 252"/>
+      <g class="intro__wpt" style="--d:1s"><path d="M232 380 l3 6 l6 0 l-5 4 l2 6 l-6 -4 l-6 4 l2 -6 l-5 -4 l6 0z" fill="none" stroke="#eef2ef"/><text x="246" y="392" fill="#eef2ef">HNGR</text></g>
+      <g class="intro__wpt" style="--d:1.5s"><path d="M196 246 l3 6 l6 0 l-5 4 l2 6 l-6 -4 l-6 4 l2 -6 l-5 -4 l6 0z" fill="none" stroke="#f06aae"/><text x="210" y="258" fill="#f06aae">ESCOL</text></g>
+      <rect x="160" y="296" width="40" height="18" fill="#04070a" stroke="#eef2ef"/>
+      <text x="167" y="309" fill="#eef2ef">290</text>
+      <path d="M180 510 l9 18 h-18z" fill="none" stroke="#ffd76a" stroke-width="2"/>
+      <text x="44" y="236" fill="#5fe08a">GS 145</text><text x="44" y="252" fill="#eef2ef">TAS 150</text>
+      <text x="282" y="236" fill="#5fe08a">WXR</text><text x="282" y="252" fill="#eef2ef">+2.0°</text>
     </svg>
     <div class="intro__text">
       <p class="intro__title">HANGAR ESCOLA</p>
@@ -833,13 +816,13 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=75"></script>
-  <script src="catalogo747.js?v=75"></script>
-  <script src="cockpit747.js?v=75"></script>
-  <script src="motor3d.js?v=75"></script>
-  <script src="motor747.js?v=75"></script>
-  <script src="meteo.js?v=75"></script>
-  <script src="app.js?v=75"></script>
+  <script src="avioes.js?v=76"></script>
+  <script src="catalogo747.js?v=76"></script>
+  <script src="cockpit747.js?v=76"></script>
+  <script src="motor3d.js?v=76"></script>
+  <script src="motor747.js?v=76"></script>
+  <script src="meteo.js?v=76"></script>
+  <script src="app.js?v=76"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
