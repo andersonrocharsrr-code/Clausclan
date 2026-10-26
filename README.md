@@ -238,7 +238,7 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
 - **Recibo do Pila**: todo gasto novo do Pila precisa da foto do recibo; depois abre em "📎 Ver recibo" (antigos: "📷 Anexar recibo").
 - **Vendedor em ajuda de custo** (aba Despesas): seção minimizada com Hotel, Combustível, Alimentação e Salário semanal.
   Abre ao tocar; com algum valor fica sempre aberta (só esconde com tudo em branco). Abate do depósito e sai na folha
-  em Outros como "910,00 (Ajuda de custo)".
+  em Outros: hotel + alimentação + combustível como "410,00 (Despesa)" e o salário semanal como "500,00 (Salário)".
 - **Ao gerar o caixa**: o primeiro aviso pede para conferir se o Recebimento do app bate com o recebimento do sistema.
 - **Quilometragem (GPS, funciona sem internet)**: aba Relatório → "Iniciar rota" / "Parar rota". Conta os km com a
   tela desligada (notificação fixa "Contando os km"; plugin `@capacitor-community/background-geolocation`). Ignora

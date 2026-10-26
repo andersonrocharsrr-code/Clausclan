@@ -2024,7 +2024,9 @@ function dadosCaixa() {
     // Pila (almoço, hotel…) vai somada numa linha só; o semanal fica separado. Escritos como no OBS: "410,00 (Despesa pila)".
     ...(soma(semanal) ? [`${brl(soma(semanal))} (Semanal)`] : []),
     ...(soma(pilaResto) ? [`${brl(soma(pilaResto))} (Despesa pila)`] : []),
-    ...(c.ajudaCusto ? [`${brl(c.ajudaCusto)} (Ajuda de custo)`] : []),
+    // Ajuda de custo: hotel + alimentação + combustível somados como "Despesa"; o salário semanal à parte.
+    ...((() => { const v = arred((Number(st.acHotel) || 0) + (Number(st.acAlimentacao) || 0) + (Number(st.acCombustivel) || 0)); return v ? [`${brl(v)} (Despesa)`] : []; })()),
+    ...(Number(st.acSemanal) ? [`${brl(st.acSemanal)} (Salário)`] : []),
     ...st.outros.filter((o) => o.valor).map((o) => comValor(o.desc || 'Outros', o.valor)),
   ];
   // Na folha o OBS é escrito "4.000,00 (Fernando)".
