@@ -266,14 +266,6 @@ label.btn--sec{background:var(--card);color:var(--accent);border-color:var(--acc
 /* Notas: cliente em cima; valor recebido e devolução lado a lado. */
 .item--nota{grid-template-columns:1fr 1fr}
 .item--nota .item__cliente{grid-column:1/-1}
-.item__antecipado[hidden]{display:none}
-/* Bolinha "Antecipado": marca para abrir o campo do valor pago antes. */
-.item .item__antecTog{grid-column:1/-1;display:flex;flex-direction:row;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;align-items:center;gap:8px;font-size:14px;color:var(--muted);cursor:pointer;width:max-content}
-.item .item__antecTog input{appearance:none;-webkit-appearance:none;width:20px;height:20px;margin:0;padding:0;border-radius:50%;
-  border:2px solid var(--accent);background:transparent;display:grid;place-content:center;cursor:pointer}
-.item .item__antecTog input::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--accent);transform:scale(0);transition:transform .15s}
-.item .item__antecTog input:checked::after{transform:scale(1)}
-.item .item__antecTog input:focus{outline:none}
 /* Puxar para atualizar: bolinha com ↻ que desce com o dedo; gira ao soltar. O navegador não faz o dele. */
 html,body{overscroll-behavior-y:contain}
 body{overflow-x:clip}
