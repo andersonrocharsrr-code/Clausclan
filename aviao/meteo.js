@@ -46,7 +46,7 @@ const CLOUDS = [
     voo: 'O maior perigo da meteorologia: turbulência severa, granizo, raios, gelo forte, tesoura de vento (windshear) e microexplosões perto do solo. Nunca se atravessa: desvia-se de longe.', perigo: ['Turbulência severa', 'Granizo', 'Raios', 'Windshear', 'Gelo forte'] },
 ];
 // Fotos reais (quando houver): o cartão e o painel da nuvem usam a foto no lugar da ilustração
-const PHOTO = { cb: 'assets/nuvem-cb.webp', cu: 'assets/nuvem-cu.webp', tcu: 'assets/nuvem-tcu.webp', ci: 'assets/nuvem-ci.webp', cc: 'assets/nuvem-cc.webp', cs: 'assets/nuvem-cs.webp', ac: 'assets/nuvem-ac.webp', as: 'assets/nuvem-as.webp', ns: 'assets/nuvem-ns.webp' };
+const PHOTO = { cb: 'assets/nuvem-cb.webp', cu: 'assets/nuvem-cu.webp', tcu: 'assets/nuvem-tcu.webp', ci: 'assets/nuvem-ci.webp', cc: 'assets/nuvem-cc.webp', cs: 'assets/nuvem-cs.webp', ac: 'assets/nuvem-ac.webp', as: 'assets/nuvem-as.webp', ns: 'assets/nuvem-ns.webp', sc: 'assets/nuvem-sc.webp' };
 const NIVEL = { alta: 'Nuvens altas', 'média': 'Nuvens médias', baixa: 'Nuvens baixas', vertical: 'Desenvolvimento vertical' };
 
 /* ---------- Desenho das nuvens ---------- */
