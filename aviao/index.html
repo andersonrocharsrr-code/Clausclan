@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=82">
+  <link rel="stylesheet" href="style.css?v=83">
 </head>
 <body>
   <!-- Intro: o avião decola pela pista iluminada e aparece o nome do app (toque para pular) -->
@@ -62,6 +62,7 @@
             <a role="menuitem" href="#cockpit" data-tab="cockpit"><b>Cockpit</b><span>Comandos na prática, PFD, ND e EICAS</span></a>
             <a role="menuitem" href="#lab" data-tab="lab"><b>Laboratório</b><span>Túnel de vento e o motor GEnx-2B em 3D</span></a>
             <a role="menuitem" href="#meteo" data-tab="meteo"><b>Meteorologia</b><span>Tipos de nuvens e o radar meteorológico no ND</span></a>
+            <a role="menuitem" href="#radio" data-tab="radio"><b>Rádio</b><span>Fale com a torre: fraseologia e alfabeto fonético</span></a>
             <a role="menuitem" href="#glossario" data-tab="glossario"><b>Glossário</b><span>Os termos em português e em inglês</span></a>
             <a role="menuitem" href="#catalogo" data-tab="catalogo"><b>Catálogo 747</b><span>As categorias de peças do 747-8</span></a>
           </div>
@@ -745,6 +746,71 @@
       </div>
     </section>
 
+    <!-- RÁDIO -->
+    <section class="view" id="view-radio" data-view="radio" hidden>
+      <div class="view__head">
+        <p class="eyebrow">Explorar · Rádio</p>
+        <h1>Fale com a torre</h1>
+        <p class="lede">No rádio cada palavra tem um jeito certo de ser dita. Faça um voo de treino num Cessna 172, do hangar ao pouso, respondendo ao Solo e à Torre como um piloto de verdade.</p>
+      </div>
+      <div class="rd">
+        <div class="card rd__sim">
+          <div class="rd__head">
+            <div><span class="label">Voo de treino · PR-HGE</span><h2>Do hangar ao pouso</h2></div>
+            <div class="seg seg--sm" id="rdLang" role="group" aria-label="Idioma"><button type="button" data-lang="pt" aria-pressed="true">Português</button><button type="button" data-lang="en">Inglês</button></div>
+          </div>
+          <ol class="rd__fases" id="rdFases"></ol>
+          <div class="rd__log" id="rdLog" aria-live="polite"></div>
+          <div class="rd__opts" id="rdOpts"></div>
+          <p class="rd__fb" id="rdFb" role="status" hidden></p>
+          <div class="rd__foot">
+            <button type="button" class="btn-ghost" id="rdAgain">Recomeçar o voo</button>
+            <p class="small">Frases no padrão da fraseologia do DECEA e da OACI. O aeródromo, as frequências e a matrícula são fictícios.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <span class="label">Alfabeto fonético da OACI</span>
+          <div class="rd__alfa" id="rdAlfa"></div>
+          <span class="label rd__numlabel">Números no rádio · português e inglês</span>
+          <div class="rd__alfa rd__nums" id="rdNums"></div>
+          <p class="small">No Brasil o 6 é "meia" (de meia dúzia), porque "seis" e "três" soam parecidos no rádio, e o 1 é dito "uno". O ponto das frequências se fala "decimal": 118.1 é "uno uno oito decimal uno".</p>
+        </div>
+
+        <div class="card rd__spell">
+          <label class="label" for="rdSpell">Soletre como no rádio</label>
+          <input class="search" id="rdSpell" type="text" value="PR-HGE" autocomplete="off" spellcheck="false" placeholder="Matrícula, frequência ou código">
+          <p class="rd__spellout mono" id="rdSpellOut" aria-live="polite"></p>
+        </div>
+
+        <div class="rd__pair">
+          <div class="card">
+            <span class="label">Cotejamento: o que sempre se repete</span>
+            <ul class="rd__list">
+              <li>Autorizações para entrar, cruzar, decolar, pousar ou livrar uma pista, sempre com a pista</li>
+              <li>Pista em uso e instruções de táxi</li>
+              <li>Ajuste do altímetro</li>
+              <li>Código do transponder</li>
+              <li>Altitudes, níveis, proas e velocidades</li>
+              <li>Frequências novas</li>
+            </ul>
+            <p class="small">Vento e informações gerais não precisam voltar: basta "ciente". O indicativo do avião vai no fim do cotejamento.</p>
+          </div>
+          <div class="card">
+            <span class="label">Emergência no rádio</span>
+            <dl class="rd__emg">
+              <div><dt>MAYDAY MAYDAY MAYDAY</dt><dd>Perigo grave e iminente: precisa de ajuda imediata (fogo, falha de motor).</dd></div>
+              <div><dt>PAN PAN, PAN PAN, PAN PAN</dt><dd>Urgência: problema sério, mas sem perigo imediato.</dd></div>
+              <div><dt>7700</dt><dd>Transponder em emergência.</dd></div>
+              <div><dt>7600</dt><dd>Transponder em falha de comunicação: o rádio parou.</dd></div>
+              <div><dt>7500</dt><dd>Transponder em interferência ilícita (sequestro).</dd></div>
+              <div><dt>121.5</dt><dd>Frequência internacional de emergência, sempre escutada.</dd></div>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- E · GLOSSÁRIO -->
     <section class="view" id="view-glossario" data-view="glossario" hidden>
       <div class="view__head">
@@ -809,13 +875,14 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=82"></script>
-  <script src="catalogo747.js?v=82"></script>
-  <script src="cockpit747.js?v=82"></script>
-  <script src="motor3d.js?v=82"></script>
-  <script src="motor747.js?v=82"></script>
-  <script src="meteo.js?v=82"></script>
-  <script src="app.js?v=82"></script>
+  <script src="avioes.js?v=83"></script>
+  <script src="catalogo747.js?v=83"></script>
+  <script src="cockpit747.js?v=83"></script>
+  <script src="motor3d.js?v=83"></script>
+  <script src="motor747.js?v=83"></script>
+  <script src="meteo.js?v=83"></script>
+  <script src="radio.js?v=83"></script>
+  <script src="app.js?v=83"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
