@@ -13,9 +13,53 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=74">
+  <link rel="stylesheet" href="style.css?v=75">
 </head>
 <body>
+  <!-- Intro: o avião decola pela pista iluminada e aparece o nome do app (toque para pular) -->
+  <div class="intro" id="intro" aria-hidden="true">
+    <svg class="intro__scene" viewBox="0 0 360 640" preserveAspectRatio="xMidYMax slice">
+      <defs>
+        <linearGradient id="introTrail" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#eef2ef" stop-opacity="0"/><stop offset="1" stop-color="#eef2ef" stop-opacity=".55"/></linearGradient>
+      </defs>
+      <path class="intro__runway" d="M150 640 L176 220 L184 220 L210 640 Z"/>
+      <line class="intro__center" x1="180" y1="640" x2="180" y2="230"/>
+        <circle class="intro__light" cx="140.8" cy="590.0" r="3.31" style="animation-delay:0.00s"/>
+        <circle class="intro__light" cx="219.2" cy="590.0" r="3.31" style="animation-delay:0.00s"/>
+        <circle class="intro__light" cx="142.9" cy="562.0" r="3.15" style="animation-delay:0.07s"/>
+        <circle class="intro__light" cx="217.1" cy="562.0" r="3.15" style="animation-delay:0.07s"/>
+        <circle class="intro__light" cx="145.1" cy="534.0" r="2.99" style="animation-delay:0.14s"/>
+        <circle class="intro__light" cx="214.9" cy="534.0" r="2.99" style="animation-delay:0.14s"/>
+        <circle class="intro__light" cx="147.2" cy="506.0" r="2.83" style="animation-delay:0.21s"/>
+        <circle class="intro__light" cx="212.8" cy="506.0" r="2.83" style="animation-delay:0.21s"/>
+        <circle class="intro__light" cx="149.3" cy="478.0" r="2.67" style="animation-delay:0.28s"/>
+        <circle class="intro__light" cx="210.7" cy="478.0" r="2.67" style="animation-delay:0.28s"/>
+        <circle class="intro__light" cx="151.5" cy="450.0" r="2.51" style="animation-delay:0.35s"/>
+        <circle class="intro__light" cx="208.5" cy="450.0" r="2.51" style="animation-delay:0.35s"/>
+        <circle class="intro__light" cx="153.6" cy="422.0" r="2.35" style="animation-delay:0.42s"/>
+        <circle class="intro__light" cx="206.4" cy="422.0" r="2.35" style="animation-delay:0.42s"/>
+        <circle class="intro__light" cx="155.7" cy="394.0" r="2.19" style="animation-delay:0.49s"/>
+        <circle class="intro__light" cx="204.3" cy="394.0" r="2.19" style="animation-delay:0.49s"/>
+        <circle class="intro__light" cx="157.9" cy="366.0" r="2.03" style="animation-delay:0.56s"/>
+        <circle class="intro__light" cx="202.1" cy="366.0" r="2.03" style="animation-delay:0.56s"/>
+        <circle class="intro__light" cx="160.0" cy="338.0" r="1.87" style="animation-delay:0.63s"/>
+        <circle class="intro__light" cx="200.0" cy="338.0" r="1.87" style="animation-delay:0.63s"/>
+        <circle class="intro__light" cx="162.1" cy="310.0" r="1.71" style="animation-delay:0.70s"/>
+        <circle class="intro__light" cx="197.9" cy="310.0" r="1.71" style="animation-delay:0.70s"/>
+        <circle class="intro__light" cx="164.3" cy="282.0" r="1.55" style="animation-delay:0.77s"/>
+        <circle class="intro__light" cx="195.7" cy="282.0" r="1.55" style="animation-delay:0.77s"/>
+        <circle class="intro__light" cx="166.4" cy="254.0" r="1.39" style="animation-delay:0.84s"/>
+        <circle class="intro__light" cx="193.6" cy="254.0" r="1.39" style="animation-delay:0.84s"/>
+      <line class="intro__trail" x1="166" y1="560" x2="174" y2="300"/>
+      <line class="intro__trail" x1="194" y1="560" x2="186" y2="300"/>
+      <g class="intro__plane"><path d="M32 10 L35.5 26 L54 33 L54 38 L35.5 34.5 L34.5 47 L40.5 52 L40.5 55 L32 53 L23.5 55 L23.5 52 L29.5 47 L28.5 34.5 L10 38 L10 33 L28.5 26 Z" transform="translate(148 520)"/></g>
+    </svg>
+    <div class="intro__text">
+      <p class="intro__title">HANGAR ESCOLA</p>
+      <p class="intro__sub">Aprenda aviação, peça por peça</p>
+    </div>
+    <p class="intro__skip">Toque para pular</p>
+  </div>
   <header class="top">
     <div class="wrap top__row">
       <a class="brand" href="#pecas" data-tab="pecas">
@@ -789,13 +833,13 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=74"></script>
-  <script src="catalogo747.js?v=74"></script>
-  <script src="cockpit747.js?v=74"></script>
-  <script src="motor3d.js?v=74"></script>
-  <script src="motor747.js?v=74"></script>
-  <script src="meteo.js?v=74"></script>
-  <script src="app.js?v=74"></script>
+  <script src="avioes.js?v=75"></script>
+  <script src="catalogo747.js?v=75"></script>
+  <script src="cockpit747.js?v=75"></script>
+  <script src="motor3d.js?v=75"></script>
+  <script src="motor747.js?v=75"></script>
+  <script src="meteo.js?v=75"></script>
+  <script src="app.js?v=75"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());

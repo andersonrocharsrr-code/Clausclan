@@ -1224,4 +1224,17 @@ selPart = 'aileron'; setCraft('c172');
 renderProgress(); renderModules(); renderLesson();
 setCockpit('c172'); updateLab(); renderGloss();
 showTab(location.hash.slice(1) || 'pecas');
+
+// Intro: some sozinha depois da decolagem; um toque pula
+(() => {
+  const intro = $('#intro');
+  if (!intro) return;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Na tela deitada a pista inteira cabe (meet); em pé ela preenche a tela (slice)
+  if (innerWidth > innerHeight) intro.querySelector('.intro__scene')?.setAttribute('preserveAspectRatio', 'xMidYMax meet');
+  let gone = false;
+  const done = () => { if (gone) return; gone = true; intro.classList.add('is-out'); setTimeout(() => intro.remove(), 500); };
+  const t = setTimeout(done, reduce ? 900 : 3300);
+  intro.addEventListener('click', () => { clearTimeout(t); done(); });
+})();
 })();
