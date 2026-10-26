@@ -165,44 +165,24 @@ function drawCloud(c, id, w, h, t = 0) {
 
 /* ---------- Atlas: todas as nuvens por altitude ---------- */
 let atlas = null, sel = 'cb';
-const ATLAS_X = { ci: 0.36, cc: 0.56, cs: 0.74, ac: 0.24, as: 0.52, ns: 0.85, st: 0.34, sc: 0.52, cu: 0.65, cb: 0.9 };
-function drawAtlas(t) {
-  const { c, w, h } = atlas, top = 48000, Y = (ft) => h - 14 - ft / top * (h - 30);
-  sky(c, w, h, false);
-  c.fillStyle = '#557a4c'; c.fillRect(0, h - 14, w, 14);
-  // faixas de altitude
-  c.font = `600 11px ${getComputedStyle(document.documentElement).getPropertyValue('--mono') || 'monospace'}`;
-  for (const [ft, txt] of [[6500, '6.500 ft'], [20000, '20.000 ft'], [36000, '36.000 ft · cruzeiro']]) {
-    c.strokeStyle = 'rgba(255,255,255,.55)'; c.setLineDash([5, 5]); c.beginPath(); c.moveTo(0, Y(ft)); c.lineTo(w, Y(ft)); c.stroke(); c.setLineDash([]);
-    c.fillStyle = 'rgba(255,255,255,.9)'; c.textAlign = 'left'; c.fillText(txt, 6, Y(ft) - 4);
+// Ilustração das nuvens por altitude (com os nomes já desenhados). Cada nuvem tem uma área de toque.
+const ATLAS_IMG = new Image(); ATLAS_IMG.src = 'assets/nuvens-atlas.webp';
+ATLAS_IMG.onload = () => { atlasDirty = true; };
+// [id, x0, y0, x1, y1] em fração da imagem; as menores primeiro (o CB por último, por ser o maior)
+const ATLAS_HIT = [['cc', 0.03, 0.06, 0.37, 0.17], ['ci', 0.39, 0.11, 0.62, 0.3], ['cs', 0.01, 0.2, 0.4, 0.32], ['ac', 0.06, 0.36, 0.39, 0.49],
+  ['as', 0.03, 0.48, 0.55, 0.59], ['sc', 0.05, 0.62, 0.28, 0.73], ['st', 0.04, 0.76, 0.31, 0.83], ['ns', 0.28, 0.6, 0.46, 0.79],
+  ['cu', 0.39, 0.7, 0.6, 0.85], ['cb', 0.54, 0.05, 0.99, 0.87]];
+function drawAtlas() {
+  const { c, w, h } = atlas;
+  c.fillStyle = '#cfe0ea'; c.fillRect(0, 0, w, h);
+  if (!ATLAS_IMG.complete || !ATLAS_IMG.naturalWidth) return;
+  c.drawImage(ATLAS_IMG, 0, 0, w, h);
+  atlas.hits = ATLAS_HIT.map(([id, x0, y0, x1, y1]) => ({ id, x0: x0 * w, y0: y0 * h, x1: x1 * w, y1: y1 * h }));
+  const s = atlas.hits.find((q) => q.id === sel);
+  if (s) {
+    c.save(); c.strokeStyle = '#c2185b'; c.lineWidth = 3; c.setLineDash([8, 5]);
+    c.beginPath(); c.roundRect ? c.roundRect(s.x0, s.y0, s.x1 - s.x0, s.y1 - s.y0, 12) : c.rect(s.x0, s.y0, s.x1 - s.x0, s.y1 - s.y0); c.stroke(); c.restore();
   }
-  atlas.hits = [];
-  for (const cl of CLOUDS) {
-    const x = ATLAS_X[cl.id] * w, y0 = Y(cl.base), y1 = Y(cl.top), cw = Math.min(w * 0.22, 140);
-    c.save();
-    if (sel && sel !== cl.id) c.globalAlpha = 0.55;
-    if (cl.id === 'cb') cumulonimbus(c, x - cw * 0.1, y0, cw * 1.1, y0 - y1, 61, t);
-    else if (cl.id === 'cu') cumulus(c, x, y0, cw * 0.45, y0 - y1, 41, 0);
-    else if (cl.id === 'ci') cirrus(c, x, (y0 + y1) / 2, cw * 1.2, y0 - y1, 11);
-    else if (cl.id === 'cc') flecks(c, x, (y0 + y1) / 2, cw * 1.2, y0 - y1, 12);
-    else if (cl.id === 'ac') flecks(c, x, (y0 + y1) / 2, cw * 1.1, y0 - y1, 13, 1);
-    else if (cl.id === 'cs') stratus(c, x, (y0 + y1) / 2, cw * 1.4, (y0 - y1) * 0.8, 17, 'rgba(255,255,255,.7)', 'rgba(255,255,255,.2)');
-    else if (cl.id === 'sc') { for (let i = 0; i < 3; i++) cumulus(c, x + (i - 1) * cw * 0.32, y0, cw * 0.38, y0 - y1, 30 + i, 0.4, '#eceff2'); }
-    else stratus(c, x, (y0 + y1) / 2, cw * 1.3, Math.max(14, y0 - y1), 14 + cl.id.length, cl.id === 'ns' ? '#6f7984' : '#b8c0c8', cl.id === 'ns' ? '#4b545e' : '#8d97a1');
-    c.restore();
-    const ly = cl.id === 'cb' ? Y(30000) : (y0 + y1) / 2;
-    const on = sel === cl.id, tw = c.measureText(cl.sigla).width + 14;
-    c.fillStyle = on ? '#c2185b' : 'rgba(16,22,28,.75)'; c.beginPath(); c.roundRect ? c.roundRect(x - tw / 2, ly - 10, tw, 20, 10) : c.rect(x - tw / 2, ly - 10, tw, 20); c.fill();
-    c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(cl.sigla, x, ly + 0.5); c.textBaseline = 'alphabetic';
-    atlas.hits.push({ id: cl.id, x0: x - cw / 2, x1: x + cw / 2, y0: Math.min(y1, ly - 12), y1: Math.max(y0, ly + 12) });
-  }
-  // Nome das faixas por cima de tudo, à esquerda (embaixo de cada linha de altitude)
-  c.textAlign = 'left'; c.textBaseline = 'middle';
-  for (const [ft, txt] of [[3800, 'NUVENS BAIXAS'], [17000, 'NUVENS MÉDIAS'], [33000, 'NUVENS ALTAS']]) {
-    const tw = c.measureText(txt).width + 12; c.fillStyle = 'rgba(16,22,28,.55)'; c.fillRect(4, Y(ft) - 9, tw, 18);
-    c.fillStyle = '#fff'; c.fillText(txt, 10, Y(ft) + 0.5);
-  }
-  c.textBaseline = 'alphabetic';
 }
 
 /* ---------- Radar meteorológico ---------- */
@@ -406,7 +386,7 @@ function setCanvas(cv, hgt) {
 }
 function size() {
   if (!$('#metAtlas')) return;
-  atlas = { ...setCanvas($('#metAtlas'), (w) => Math.round(clamp(w * 0.6, 300, 460))), hits: [] };
+  atlas = { ...setCanvas($('#metAtlas'), (w) => Math.round(w * 1792 / 2400)), hits: [] };
   const S = 500, off = document.createElement('canvas'); off.width = Math.round(S * 1.8); off.height = S;
   radar = { ...setCanvas($('#metNd'), (w) => Math.round(clamp(w * 0.8, 320, 600))), off, S };
   prof = setCanvas($('#metProf'), (w) => Math.round(clamp(w * 0.36, 150, 230)));
@@ -418,7 +398,7 @@ function frame(t) {
   if (!active()) { raf = 0; return; }
   const dt = Math.min(0.05, (t - (last || t)) / 1000); last = t; time += dt;
   // O atlas e os cartões são desenhos parados (com desfoque, pesados): só redesenham quando algo muda
-  if (atlasDirty) { drawAtlas(0); atlasDirty = false; }
+  if (atlasDirty && ATLAS_IMG.complete) { drawAtlas(); atlasDirty = false; }
   drawND(time);
   if (profDirty) { drawProfile(); profDirty = false; }
   raf = requestAnimationFrame(frame);
