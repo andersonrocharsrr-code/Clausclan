@@ -108,8 +108,8 @@ button, input { font: inherit; color: inherit; }
 .intro__rose text { stroke: none; font-size: 12px; }
 /* Só transform e opacidade animam: rodam na GPU mesmo com o app carregando por trás */
 .intro__wpt { opacity: 0; will-change: opacity; animation: introFade .4s ease-out var(--d) both; }
-/* O radar não mostra linha de varredura: os ecos aparecem fracos e firmam na varredura seguinte */
-.intro__wx { opacity: 0; will-change: opacity; animation: introWx 1s linear var(--d) both; }
+/* O radar não mostra linha de varredura: cada eco surge de uma vez, já na cor final */
+.intro__wx { opacity: 0; will-change: opacity; animation: introFade .25s ease-out var(--d) both; }
 .intro__rose { transform-origin: var(--nd-o); will-change: transform; animation: introTurn 2.2s cubic-bezier(.3,.6,.3,1) both; }
 .intro__route { clip-path: inset(100% 0 0 0); animation: introReveal 1.6s ease-out .5s both; }
 .intro__text { align-self: start; justify-self: center; text-align: center; margin-top: calc(13vh + env(safe-area-inset-top, 0px)); padding: 0 16px; color: #eef2ef; position: relative; }
@@ -117,7 +117,6 @@ button, input { font: inherit; color: inherit; }
 .intro__sub { margin: 6px 0 0; font-size: clamp(14px, 4vw, 18px); color: #f06aae; letter-spacing: .02em; opacity: 0; animation: introIn .8s ease-out 2.8s both; }
 .intro__skip { position: absolute; left: 0; right: 0; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); margin: 0; text-align: center; font: 500 12px var(--mono); color: rgba(238,242,239,.45); letter-spacing: .08em; text-transform: uppercase; }
 @keyframes introReveal { to { clip-path: inset(0 0 0 0); } }
-@keyframes introWx { 0%, 45% { opacity: 0; } 46%, 95% { opacity: .55; } 100% { opacity: 1; } }
 @keyframes introFade { to { opacity: 1; } }
 @keyframes introTurn { from { transform: rotate(40deg); } to { transform: none; } }
 @keyframes introIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
