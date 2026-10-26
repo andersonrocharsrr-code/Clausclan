@@ -183,7 +183,7 @@ function drawAtlas() {
   const chip = (txt, x, y, right) => { const tw = c.measureText(txt).width + fs; const x0 = right ? x - tw : x; c.fillStyle = 'rgba(30,46,62,.78)'; c.fillRect(x0, y - fs * 0.8, tw, fs * 1.6); c.fillStyle = '#fff'; c.textAlign = 'left'; c.fillText(txt, x0 + fs / 2, y + 0.5); };
   const wide = w >= 520;
   // Altitudes à direita, logo abaixo de cada linha (sobre o corpo do CB, onde não há nomes); faixas à esquerda só em telas largas
-  for (const [fy, alt, band] of [[0.185, wide ? '36.000 ft · cruzeiro' : '36.000 ft', null], [0.325, '20.000 ft', 'NUVENS MÉDIAS'], [0.6, '6.500 ft', 'NUVENS BAIXAS']]) {
+  for (const [fy, alt, band] of [[0.172, wide ? '36.000 ft · cruzeiro' : '36.000 ft', null], [0.325, '20.000 ft', 'NUVENS MÉDIAS'], [0.6, '6.500 ft', 'NUVENS BAIXAS']]) {
     const y = fy * h;
     c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = 1.5; c.setLineDash([6, 5]);
     c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke(); c.setLineDash([]);
