@@ -177,6 +177,21 @@ function drawAtlas() {
   c.fillStyle = '#cfe0ea'; c.fillRect(0, 0, w, h);
   if (!ATLAS_IMG.complete || !ATLAS_IMG.naturalWidth) return;
   c.drawImage(ATLAS_IMG, 0, 0, w, h);
+  // Medidas por cima da ilustração: as linhas de altitude seguem as faixas do desenho (altas, médias e baixas)
+  const fs = Math.round(clamp(w * 0.016, 8, 12)), mono = getComputedStyle(document.documentElement).getPropertyValue('--mono') || 'monospace';
+  c.font = `600 ${fs}px ${mono}`; c.textBaseline = 'middle';
+  const chip = (txt, x, y, right) => { const tw = c.measureText(txt).width + fs; const x0 = right ? x - tw : x; c.fillStyle = 'rgba(30,46,62,.78)'; c.fillRect(x0, y - fs * 0.8, tw, fs * 1.6); c.fillStyle = '#fff'; c.textAlign = 'left'; c.fillText(txt, x0 + fs / 2, y + 0.5); };
+  const wide = w >= 520;
+  // Altitudes à direita, logo abaixo de cada linha (sobre o corpo do CB, onde não há nomes); faixas à esquerda só em telas largas
+  for (const [fy, alt, band] of [[0.185, wide ? '36.000 ft · cruzeiro' : '36.000 ft', null], [0.325, '20.000 ft', 'NUVENS MÉDIAS'], [0.6, '6.500 ft', 'NUVENS BAIXAS']]) {
+    const y = fy * h;
+    c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = 1.5; c.setLineDash([6, 5]);
+    c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke(); c.setLineDash([]);
+    chip(alt, w - 4, y + fs * 1.1, true);
+    if (wide && band) chip(band, 4, y + fs * 1.1, false); // o nome da faixa fica logo abaixo do limite de cima dela
+  }
+  if (wide) chip('NUVENS ALTAS', 4, fs * 1.1, false);
+  c.textBaseline = 'alphabetic';
   atlas.hits = ATLAS_HIT.map(([id, x0, y0, x1, y1]) => ({ id, x0: x0 * w, y0: y0 * h, x1: x1 * w, y1: y1 * h }));
   const s = atlas.hits.find((q) => q.id === sel);
   if (s) {
