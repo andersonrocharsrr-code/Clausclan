@@ -396,8 +396,16 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
       const k = e.target.dataset.k;
       if (k && K_DINHEIRO.includes(k)) e.target.value = rasc[k] ? brl(rasc[k]) : '';
     });
-    const lancar = () => {
+    const lancar = async () => {
       if (nome === 'feitas' && modo === 'rascunho' && !rasc.tipo) { toast('Escolha Ab ou Rp.'); return; }
+      // Gasto do Pila: a foto do recibo é obrigatória (fica no aparelho, como o comprovante do depósito).
+      if (nome === 'pila' && modo === 'rascunho') {
+        if (!rasc._foto) { toast('Tire a foto do recibo (📷 Câmera ou 🖼 Galeria).'); return; }
+        const id = uid();
+        try { await fotoSalvar(id, rasc._foto); } catch { toast('Não deu para guardar a foto. Tente de novo.'); return; }
+        rasc.fotoId = id;
+        delete rasc._foto;
+      }
       document.activeElement?.blur();
       rasc.conferir = false;
       if (modo === 'rascunho') { st[nome].push(rasc); delete rascunhos[nome]; } else aplicarEdicao(nome, item, rasc);
@@ -420,15 +428,39 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
       }, 150));
     }
   }
-  // Depósito: ver o comprovante (ou anexar, nos antigos sem foto).
-  if (nome === 'depositos' && modo === 'travada') {
+  // Depósito e Pila: ver o comprovante/recibo (ou anexar, nos antigos sem foto).
+  if ((nome === 'depositos' || nome === 'pila') && modo === 'travada') {
+    const doc = nome === 'pila' ? 'recibo' : 'comprovante';
     const f = document.createElement('div');
     f.className = 'item__comprov';
-    f.innerHTML = item.fotoId ? '<button type="button" class="item__verFoto">📎 Ver comprovante</button>'
-      : '<label class="item__anexar">📷 Anexar comprovante<input type="file" accept="image/*" hidden></label>';
+    f.innerHTML = item.fotoId ? `<button type="button" class="item__verFoto">📎 Ver ${doc}</button>`
+      : `<label class="item__anexar">📷 Anexar ${doc}<input type="file" accept="image/*" hidden></label>`;
     row.append(f);
-    f.querySelector('.item__verFoto')?.addEventListener('click', () => verComprovante(item));
-    f.querySelector('input')?.addEventListener('change', (e) => { const fl = e.target.files?.[0]; if (fl) anexarComprovante(item, fl); });
+    f.querySelector('.item__verFoto')?.addEventListener('click', () => verComprovante(item, nome));
+    f.querySelector('input')?.addEventListener('change', (e) => { const fl = e.target.files?.[0]; if (fl) anexarComprovante(item, fl, nome); });
+  }
+  // Gasto novo do Pila: escolher a foto do recibo antes de lançar.
+  if (nome === 'pila' && modo === 'rascunho') {
+    const f = document.createElement('div');
+    f.className = 'item__recibo';
+    f.innerHTML = `<span class="item__rot">Foto do recibo <small>(obrigatória)</small></span>
+      <div class="item__reciboLinha">
+        <img class="item__reciboImg" alt="Recibo" hidden>
+        <label class="btn">📷 Câmera<input type="file" accept="image/*" capture="environment" hidden></label>
+        <label class="btn btn--sec">🖼 Galeria<input type="file" accept="image/*" hidden></label>
+      </div>`;
+    row.querySelector('.item__acoes').before(f);
+    const img = f.querySelector('img');
+    const mostrar = () => { img.hidden = !rasc._foto; img.src = rasc._foto || ''; };
+    mostrar();
+    f.querySelectorAll('input').forEach((inp) => inp.addEventListener('change', async () => {
+      const fl = inp.files?.[0];
+      inp.value = '';
+      if (!fl) return;
+      try { rasc._foto = await fotoComprovante(fl); item._foto = rasc._foto; } catch { toast('Não deu para abrir a foto.'); }
+      mostrar();
+    }));
+    img.addEventListener('click', () => { $('#fotoTitulo').textContent = 'Recibo'; $('#fotoImg').src = rasc._foto; $('#dlgFoto').showModal(); });
   }
   row.querySelector('.item__mover')?.addEventListener('click', () => {
     const outra = nome === 'notas25' ? 'notas4050' : 'notas25';
@@ -567,22 +599,23 @@ async function fotoLer(id) {
 async function fotoComprovante(file) {
   return 'data:image/jpeg;base64,' + (await prepararFotoMax(file, 1400, 0.72));
 }
-async function verComprovante(dep) {
+async function verComprovante(dep, nome = 'depositos') {
   const url = dep.fotoId ? await fotoLer(dep.fotoId).catch(() => null) : null;
-  if (!url) { toast('A foto deste comprovante não está neste aparelho.'); return; }
-  $('#fotoTitulo').textContent = `Comprovante · ${R$(dep.valor)} · ${fmtDia(dep.data)} · ${ONDE_CURTO[dep.onde] || ''}`;
+  if (!url) { toast('A foto não está neste aparelho.'); return; }
+  $('#fotoTitulo').textContent = nome === 'pila' ? `Recibo · ${dep.tipo || 'Pila'} · ${R$(dep.valor)}`
+    : `Comprovante · ${R$(dep.valor)} · ${fmtDia(dep.data)} · ${ONDE_CURTO[dep.onde] || ''}`;
   $('#fotoImg').src = url;
   $('#dlgFoto').showModal();
 }
 // Depósito antigo sem foto: dá para anexar depois.
-async function anexarComprovante(dep, file) {
+async function anexarComprovante(dep, file, nome = 'depositos') {
   try {
     const url = await fotoComprovante(file);
     const id = dep.fotoId || uid();
     await fotoSalvar(id, url);
     dep.fotoId = id;
-    salvarAtual(); pintarLista('depositos');
-    toast('Comprovante anexado ✓');
+    salvarAtual(); pintarLista(nome);
+    toast(nome === 'pila' ? 'Recibo anexado ✓' : 'Comprovante anexado ✓');
   } catch { toast('Não deu para guardar a foto.'); }
 }
 
