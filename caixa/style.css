@@ -378,3 +378,7 @@ body{overflow-x:clip}
 .item__reciboLinha .btn{padding:8px 12px;font-size:14px}
 .item__reciboImg{width:56px;height:56px;object-fit:cover;border-radius:10px;border:1px solid var(--line);cursor:zoom-in}
 .item__reciboImg[hidden]{display:none}
+/* Pila: despesa em cima; dia e valor lado a lado; refeição: Almoço/Janta */
+.item--pila{grid-template-columns:1fr 1fr}
+.item--pila .item__tipo{grid-column:1/-1}
+.item__refeicao{grid-column:1/-1;display:flex;flex-direction:column;gap:4px}

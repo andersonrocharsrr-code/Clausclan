@@ -94,7 +94,7 @@ const LISTAS = {
   notas25: [['cliente', 'Cliente'], ['valor', 'Valor recebido'], ['devolucao', 'Devolução']],
   notas4050: [['cliente', 'Cliente'], ['valor', 'Valor recebido'], ['devolucao', 'Devolução']],
   extras: [['numero', 'Nº'], ['vendedora', 'Vendedora/cliente'], ['cidade', 'Cidade'], ['valor', 'Valor']],
-  pila: [['tipo', 'Despesa'], ['valor', 'Valor']],
+  pila: [['tipo', 'Despesa'], ['data', 'Dia', 'date'], ['valor', 'Valor']],
   depositos: [['data', 'Data', 'date'], ['onde', 'Onde', 'select'], ['valor', 'Valor']],
   outros: [['desc', 'Descrição'], ['valor', 'Valor']],
   // Cada nota antecipada com o nome; o total vai para "Antecipados".
@@ -348,7 +348,7 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
   const rasc = { ...item };
   const row = document.createElement('div');
   row.className = 'item' + (item.conferir ? ' item--conferir' : '') + (cols.length === 2 ? ' item--2' : '') + (nome.startsWith('notas') ? ' item--nota' : '')
-    + (nome === 'depositos' ? ' item--dep' : '') + (nome === 'feitas' ? ' item--feitas' : '') + (nome === 'parciais' ? ' item--parcial' : '')
+    + (nome === 'depositos' ? ' item--dep' : '') + (nome === 'feitas' ? ' item--feitas' : '') + (nome === 'parciais' ? ' item--parcial' : '') + (nome === 'pila' ? ' item--pila' : '')
     + (edita ? ' item--editando' : ' item--travada');
   const acr = (item.acrescimos || []).map((a) => `+ ${fmtDia(a.data)}: ${[a.ab ? `${a.ab} Ab` : '', a.rp ? `${a.rp} Rp` : '', a.valor ? R$(a.valor) : ''].filter(Boolean).join(' · ')}`);
   // Ab/Rp: no rascunho escolhe; depois de lançada a nota mostra só "1 Ab" (ou "1 Rp") e não muda mais.
@@ -400,6 +400,7 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
       if (nome === 'feitas' && modo === 'rascunho' && !rasc.tipo) { toast('Escolha Ab ou Rp.'); return; }
       // Gasto do Pila: a foto do recibo é obrigatória (fica no aparelho, como o comprovante do depósito).
       if (nome === 'pila' && modo === 'rascunho') {
+        if (/^refei/i.test(rasc.tipo || '')) { toast('Escolha Almoço ou Janta.'); return; }
         if (!rasc._foto) { toast('Tire a foto do recibo (📷 Câmera ou 🖼 Galeria).'); return; }
         const id = uid();
         try { await fotoSalvar(id, rasc._foto); } catch { toast('Não deu para guardar a foto. Tente de novo.'); return; }
@@ -438,6 +439,19 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
     row.append(f);
     f.querySelector('.item__verFoto')?.addEventListener('click', () => verComprovante(item, nome));
     f.querySelector('input')?.addEventListener('change', (e) => { const fl = e.target.files?.[0]; if (fl) anexarComprovante(item, fl, nome); });
+  }
+  // Refeição: escolher Almoço ou Janta (vira o nome da despesa).
+  if (nome === 'pila' && modo === 'rascunho' && /^(refei|almo|janta)/i.test(rasc.tipo || '')) {
+    const ref = document.createElement('div');
+    ref.className = 'item__refeicao';
+    ref.innerHTML = `<span class="item__rot">Refeição</span><span class="tipo-sel" role="radiogroup">${['Almoço', 'Janta'].map((t) =>
+      `<label class="tipo-op"><input type="radio" name="ref-${item.id}" value="${t}" ${rasc.tipo === t ? 'checked' : ''}><span>${t}</span></label>`).join('')}</span>`;
+    row.querySelector('.item__acoes').before(ref);
+    ref.querySelectorAll('input').forEach((r) => r.addEventListener('change', () => {
+      rasc.tipo = r.value; item.tipo = r.value;
+      const campo = row.querySelector('[data-k="tipo"]');
+      if (campo) campo.value = r.value;
+    }));
   }
   // Gasto novo do Pila: escolher a foto do recibo antes de lançar.
   if (nome === 'pila' && modo === 'rascunho') {
@@ -563,7 +577,7 @@ $$('[data-f]').forEach((el) => {
 });
 
 $$('[data-pila]').forEach((b) => b.addEventListener('click', () => {
-  rascunhos.pila = { id: uid(), tipo: b.dataset.pila, valor: 0 };
+  rascunhos.pila = { id: uid(), tipo: b.dataset.pila, data: hoje(), valor: 0 };
   abrirLista('pila');
   pintarLista('pila');
   const rows = $$('[data-lista="pila"] .item');
