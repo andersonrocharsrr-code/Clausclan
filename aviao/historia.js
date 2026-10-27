@@ -39,6 +39,7 @@ const CAPS = [
     texto: ['William Edward Boeing nasceu em 1º de outubro de 1881. O pai, Wilhelm Böing, era um imigrante alemão que chegou aos Estados Unidos sem dinheiro e fez fortuna com terras de madeira e minas de ferro. A mãe, Marie Ortmann, era austríaca.',
       'Quando William tinha 8 anos, o pai morreu. O menino cresceu numa família rica, mas aprendeu cedo que terra, madeira e trabalho podiam virar um império.'],
     sabia: 'O sobrenome da família era Böing. Wilhelm mudou a grafia para Boeing ao se estabelecer nos Estados Unidos.',
+    foto: { src: 'assets/historia-1881.webp', legenda: 'Rua comercial de uma cidade americana no fim do século 19, como a Detroit em que Boeing nasceu (imagem ilustrativa)' },
     cena: () => `${ground(150)}<g class="hs-rise">${[[20, 70], [52, 92], [80, 60], [118, 84], [150, 66], [190, 90], [222, 72], [258, 88], [286, 62]].map(([x, y], i) => `<rect x="${x}" y="${y}" width="${26 + (i % 2) * 6}" height="${150 - y}" class="hs-fill-city"/>${[0, 1, 2, 3].map((k) => `<rect x="${x + 5}" y="${y + 8 + k * 14}" width="5" height="6" class="hs-win" style="animation-delay:${(i * 3 + k) * 0.13}s"/>`).join('')}`).join('')}</g>
       <rect x="90" y="40" width="7" height="22" class="hs-fill-ink"/><g class="hs-smoke"><circle cx="94" cy="34" r="5"/><circle cx="99" cy="24" r="7"/><circle cx="106" cy="12" r="9"/></g>
       <rect x="232" y="50" width="7" height="24" class="hs-fill-ink"/><g class="hs-smoke" style="animation-delay:1s"><circle cx="236" cy="44" r="5"/><circle cx="241" cy="34" r="7"/><circle cx="248" cy="22" r="9"/></g>` },
@@ -212,7 +213,9 @@ function render(dir = 0) {
   const tx = $('#hsText'); tx.innerHTML = '';
   c.texto.forEach((t) => { const p = document.createElement('p'); p.textContent = t; tx.appendChild(p); });
   $('#hsFact').textContent = c.sabia;
-  $('#hsScene').innerHTML = `<svg viewBox="0 0 320 180" role="img" aria-label="Ilustração: ${c.titulo}"><rect width="320" height="180" class="hs-sky"/>${c.cena()}</svg>`;
+  $('#hsScene').innerHTML = c.foto
+    ? `<figure class="hs-photo"><div class="hs-photo__frame"><img src="${c.foto.src}" alt="${c.foto.legenda}" draggable="false"></div><figcaption>${c.foto.legenda}</figcaption></figure>`
+    : `<svg viewBox="0 0 320 180" role="img" aria-label="Ilustração: ${c.titulo}"><rect width="320" height="180" class="hs-sky"/>${c.cena()}</svg>`;
   $('#hsCount').textContent = `Capítulo ${cap + 1} de ${CAPS.length}`;
   $('#hsPrev').disabled = cap === 0;
   $('#hsNext').textContent = cap === CAPS.length - 1 ? 'Recomeçar' : 'Próximo capítulo';
