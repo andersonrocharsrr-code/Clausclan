@@ -285,7 +285,7 @@ const GLOSS = [
 ];
 
 /* ---------------- Abas ---------------- */
-const TABS = ['pecas', 'escola', 'cockpit', 'lab', 'meteo', 'radio', 'glossario', 'catalogo'];
+const TABS = ['pecas', 'escola', 'historia', 'cockpit', 'lab', 'meteo', 'radio', 'glossario', 'catalogo'];
 let current = null;
 function showTab(id, push) {
   if (typeof hideHint === 'function') hideHint();
@@ -302,6 +302,7 @@ function showTab(id, push) {
   if (id === 'lab') startLab();
   if (id === 'meteo') window.Meteo?.start();
   if (id === 'radio') window.Radio?.start();
+  if (id === 'historia') window.Historia?.start();
   window.scrollTo({ top: 0 });
 }
 // Explorar: a aba abre a lista das seções
@@ -345,6 +346,7 @@ function initMotor() {
 }
 window.Meteo?.init({ active: () => current === 'meteo' });
 window.Radio?.init();
+window.Historia?.init();
 
 /* ---------------- A · Explorador ---------------- */
 // O Cessna é desenhado à mão no HTML; os jatos vêm de avioes.js, gerados a partir das medidas reais.

@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=84">
+  <link rel="stylesheet" href="style.css?v=85">
 </head>
 <body>
   <!-- Intro: o avião decola pela pista iluminada e aparece o nome do app (toque para pular) -->
@@ -59,6 +59,7 @@
           <button type="button" class="tab tab--drop" id="exploreBtn" role="tab" aria-haspopup="menu" aria-expanded="false" aria-controls="exploreMenu"><span class="tab__key">A</span>Explorar<span class="tab__sub" id="exploreSub">Peças</span><span class="tab__caret" aria-hidden="true"></span></button>
           <div class="tabmenu" id="exploreMenu" role="menu" hidden>
             <a role="menuitem" href="#pecas" data-tab="pecas" data-short="Peças"><b>Peças do avião</b><span>Toque nas peças, raio-X e as vistas do 747</span></a>
+            <a role="menuitem" href="#historia" data-tab="historia" data-short="História"><b>Modo história</b><span>Como William Boeing começou na aviação</span></a>
             <a role="menuitem" href="#cockpit" data-tab="cockpit"><b>Cockpit</b><span>Comandos na prática, PFD, ND e EICAS</span></a>
             <a role="menuitem" href="#lab" data-tab="lab"><b>Laboratório</b><span>Túnel de vento e o motor GEnx-2B em 3D</span></a>
             <a role="menuitem" href="#meteo" data-tab="meteo"><b>Meteorologia</b><span>Tipos de nuvens e o radar meteorológico no ND</span></a>
@@ -746,6 +747,33 @@
       </div>
     </section>
 
+    <!-- HISTÓRIA -->
+    <section class="view" id="view-historia" data-view="historia" hidden>
+      <div class="view__head">
+        <p class="eyebrow">Explorar · Modo história</p>
+        <h1>William Boeing: do estaleiro ao céu</h1>
+        <p class="lede">Como um comerciante de madeira que nunca tinha voado fundou uma das maiores fabricantes de aviões do mundo. Uma história em 12 capítulos.</p>
+      </div>
+      <div class="card hs" id="hsCard">
+        <div class="hs__line" id="hsLine" role="group" aria-label="Linha do tempo"></div>
+        <div class="hs__grid">
+          <div class="hs__scene" id="hsScene"></div>
+          <div class="hs__body">
+            <span class="label" id="hsCount"></span>
+            <div class="hs__when"><b id="hsYear"></b><span id="hsPlace"></span></div>
+            <h2 id="hsTitle"></h2>
+            <p id="hsText"></p>
+            <p class="hs__fact"><b>Você sabia?</b> <span id="hsFact"></span></p>
+            <div class="hs__nav">
+              <button type="button" class="btn-ghost" id="hsPrev">Capítulo anterior</button>
+              <button type="button" class="btn" id="hsNext">Próximo capítulo</button>
+            </div>
+          </div>
+        </div>
+        <p class="small hs__src">Fontes: Museum of Flight (Seattle), HistoryLink.org, Smithsonian National Postal Museum e o histórico oficial da Boeing.</p>
+      </div>
+    </section>
+
     <!-- RÁDIO -->
     <section class="view" id="view-radio" data-view="radio" hidden>
       <div class="view__head">
@@ -880,14 +908,15 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=84"></script>
-  <script src="catalogo747.js?v=84"></script>
-  <script src="cockpit747.js?v=84"></script>
-  <script src="motor3d.js?v=84"></script>
-  <script src="motor747.js?v=84"></script>
-  <script src="meteo.js?v=84"></script>
-  <script src="radio.js?v=84"></script>
-  <script src="app.js?v=84"></script>
+  <script src="avioes.js?v=85"></script>
+  <script src="catalogo747.js?v=85"></script>
+  <script src="cockpit747.js?v=85"></script>
+  <script src="motor3d.js?v=85"></script>
+  <script src="motor747.js?v=85"></script>
+  <script src="meteo.js?v=85"></script>
+  <script src="radio.js?v=85"></script>
+  <script src="historia.js?v=85"></script>
+  <script src="app.js?v=85"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
