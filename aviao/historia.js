@@ -44,9 +44,11 @@ const CAPS = [
       <rect x="90" y="40" width="7" height="22" class="hs-fill-ink"/><g class="hs-smoke"><circle cx="94" cy="34" r="5"/><circle cx="99" cy="24" r="7"/><circle cx="106" cy="12" r="9"/></g>
       <rect x="232" y="50" width="7" height="24" class="hs-fill-ink"/><g class="hs-smoke" style="animation-delay:1s"><circle cx="236" cy="44" r="5"/><circle cx="241" cy="34" r="7"/><circle cx="248" cy="22" r="9"/></g>` },
   { parte: 0, ano: '1903', lugar: 'Suíça e Yale', titulo: 'Estudos e uma escolha',
-    texto: ['Estudou na Suíça e depois na Escola Científica Sheffield, da Universidade Yale, onde fez engenharia.',
+    texto: ['A mãe se casou de novo, e William não se dava bem com o padrasto. Ainda menino, foi mandado para um internato na Suíça: o Institution Sillig, em Vevey, às margens do lago Léman, com os Alpes ao fundo. Lá ganhou o jeito formal e reservado que manteve a vida toda.',
+      'De volta aos Estados Unidos, entrou na Escola Científica Sheffield, da Universidade Yale, onde estudou engenharia.',
       'Por volta de 1903, saiu sem terminar o curso e foi para o Noroeste dos Estados Unidos seguir o ramo da família: a madeira.'],
-    sabia: 'Na Suíça, Boeing estudou na cidade de Vevey, às margens do lago Léman.',
+    sabia: 'O arquivo do Museum of Flight guarda uma foto de 1894 do jovem Boeing com os colegas do Institution Sillig. O banqueiro J. P. Morgan tinha estudado na mesma escola cerca de 30 anos antes.',
+    foto: { src: 'assets/historia-vevey.webp', legenda: 'Um internato à beira do lago Léman, em Vevey, na Suíça, como o Institution Sillig onde Boeing estudou (imagem ilustrativa)' },
     cena: () => `${ground(150)}<path d="M120 150 V70 H200 V150Z" class="hs-fill-city"/><path d="M146 70 V38 H174 V70" class="hs-fill-city"/><path d="M146 38 L160 20 L174 38Z" class="hs-fill-ink"/>
       ${[0, 1, 2].map((k) => `<path d="M${132 + k * 22} 150 V112 a8 8 0 0 1 16 0 V150" class="hs-fill-paper"/>`).join('')}<circle cx="160" cy="52" r="7" class="hs-fill-paper"/><path d="M160 52 L160 47 M160 52 L164 54" class="hs-line hs-clock"/>
       <g class="hs-bob"><rect x="30" y="112" width="46" height="8" class="hs-fill-accent"/><rect x="34" y="104" width="40" height="8" class="hs-fill-blue"/><rect x="28" y="96" width="44" height="8" class="hs-fill-ink"/></g>
