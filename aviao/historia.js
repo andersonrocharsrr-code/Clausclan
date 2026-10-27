@@ -57,6 +57,7 @@ const CAPS = [
     texto: ['No estado de Washington, comprou florestas em Grays Harbor e prosperou vendendo madeira. Depois se mudou para Seattle.',
       'Em 1910 comprou o estaleiro Heath, às margens do rio Duwamish, onde estava sendo construído o seu iate. Ninguém imaginava, mas aquele galpão de madeira seria a primeira fábrica de aviões da Boeing.'],
     sabia: 'O galpão ficou conhecido como Red Barn (Celeiro Vermelho). Ele foi preservado e hoje faz parte do Museum of Flight, em Seattle.',
+    foto: { src: 'assets/historia-serraria.webp', legenda: 'Serraria à beira de um rio no Noroeste dos Estados Unidos, no começo do século 20, como as do negócio de madeira de Boeing (imagem ilustrativa)' },
     cena: () => `${mountain()}${water(140)}${tree(26, 140, 1.1)}${tree(54, 140, .8)}${tree(80, 140, 1.2)}${tree(106, 140, .9)}
       <g class="hs-float"><rect x="150" y="136" width="70" height="6" rx="3" class="hs-fill-log"/><rect x="176" y="130" width="60" height="6" rx="3" class="hs-fill-log"/></g>${barn(250, 140)}` },
 
