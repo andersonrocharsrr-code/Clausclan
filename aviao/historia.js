@@ -66,6 +66,7 @@ const CAPS = [
     texto: ['Em janeiro de 1910, Boeing foi ao primeiro grande encontro aéreo dos Estados Unidos, no campo de Dominguez, perto de Los Angeles. Multidões viram aviões e balões de perto pela primeira vez.',
       'Ele pediu carona a quase todos os pilotos. Só o francês Louis Paulhan aceitou, mas foi embora antes de levá-lo. Boeing voltou para casa sem voar e com uma ideia fixa.'],
     sabia: 'No encontro de Dominguez, Paulhan bateu o recorde de altitude da época: pouco mais de 1.200 metros.',
+    foto: { src: 'assets/historia-dominguez.webp', legenda: 'Multidão na arquibancada vendo um biplano passar num encontro aéreo do começo da aviação, como o de Dominguez (imagem ilustrativa)' },
     cena: () => `${sun(268, 36)}${cloud(60, 36, 1, 0)}${cloud(200, 54, .8, 3)}${ground(148)}
       <path d="M10 148 V126 H150 V148" class="hs-fill-city"/><path d="M10 126 L20 116 H140 L150 126" class="hs-fill-ink"/>${[30, 60, 90, 120].map((x, i) => flag(x, 116, i * .3)).join('')}
       ${Array.from({ length: 22 }, (_, i) => `<circle cx="${18 + i * 6}" cy="${140 - (i % 3) * 3}" r="2.4" class="hs-fill-ink hs-cheer" style="animation-delay:${(i % 5) * .15}s"/>`).join('')}
