@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=85">
+  <link rel="stylesheet" href="style.css?v=86">
 </head>
 <body>
   <!-- Intro: o avião decola pela pista iluminada e aparece o nome do app (toque para pular) -->
@@ -752,17 +752,18 @@
       <div class="view__head">
         <p class="eyebrow">Explorar · Modo história</p>
         <h1>William Boeing: do estaleiro ao céu</h1>
-        <p class="lede">Como um comerciante de madeira que nunca tinha voado fundou uma das maiores fabricantes de aviões do mundo. Uma história em 12 capítulos.</p>
+        <p class="lede">Como um comerciante de madeira que nunca tinha voado fundou uma das maiores fabricantes de aviões do mundo, com asas costuradas à mão, e como um escândalo no Senado o tirou da aviação. Seis partes, 20 capítulos.</p>
       </div>
       <div class="card hs" id="hsCard">
+        <div class="hs__parts" id="hsParts" role="group" aria-label="Partes da história"></div>
         <div class="hs__line" id="hsLine" role="group" aria-label="Linha do tempo"></div>
         <div class="hs__grid">
           <div class="hs__scene" id="hsScene"></div>
           <div class="hs__body">
-            <span class="label" id="hsCount"></span>
+            <div class="hs__meta"><span class="label hs__part" id="hsPart"></span><span class="small" id="hsCount"></span></div>
             <div class="hs__when"><b id="hsYear"></b><span id="hsPlace"></span></div>
             <h2 id="hsTitle"></h2>
-            <p id="hsText"></p>
+            <div class="hs__text" id="hsText"></div>
             <p class="hs__fact"><b>Você sabia?</b> <span id="hsFact"></span></p>
             <div class="hs__nav">
               <button type="button" class="btn-ghost" id="hsPrev">Capítulo anterior</button>
@@ -770,7 +771,7 @@
             </div>
           </div>
         </div>
-        <p class="small hs__src">Fontes: Museum of Flight (Seattle), HistoryLink.org, Smithsonian National Postal Museum e o histórico oficial da Boeing.</p>
+        <p class="small hs__src">Fontes: Museum of Flight (Seattle), HistoryLink.org, Smithsonian National Postal Museum, San Diego Air &amp; Space Museum, Flying Magazine e o histórico oficial da Boeing.</p>
       </div>
     </section>
 
@@ -908,15 +909,15 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=85"></script>
-  <script src="catalogo747.js?v=85"></script>
-  <script src="cockpit747.js?v=85"></script>
-  <script src="motor3d.js?v=85"></script>
-  <script src="motor747.js?v=85"></script>
-  <script src="meteo.js?v=85"></script>
-  <script src="radio.js?v=85"></script>
-  <script src="historia.js?v=85"></script>
-  <script src="app.js?v=85"></script>
+  <script src="avioes.js?v=86"></script>
+  <script src="catalogo747.js?v=86"></script>
+  <script src="cockpit747.js?v=86"></script>
+  <script src="motor3d.js?v=86"></script>
+  <script src="motor747.js?v=86"></script>
+  <script src="meteo.js?v=86"></script>
+  <script src="radio.js?v=86"></script>
+  <script src="historia.js?v=86"></script>
+  <script src="app.js?v=86"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
