@@ -75,6 +75,7 @@ const CAPS = [
     texto: ['Com o amigo Conrad Westervelt, engenheiro da Marinha americana, Boeing finalmente voou: um passeio num hidroavião Curtiss sobre as águas de Seattle.',
       'Depois do voo, os dois examinaram o avião de perto. Acharam a estrutura frágil e mal resolvida. E chegaram a uma conclusão: dava para construir um melhor.'],
     sabia: 'O passeio foi com um aviador que fazia voos de exibição pela região, cobrando dos curiosos que queriam conhecer o céu.',
+    foto: { src: 'assets/historia-curtiss.webp', legenda: 'Hidroavião de casco dos anos 1910 num lago do estado de Washington, com o monte Rainier ao fundo, como o Curtiss do primeiro voo de Boeing (imagem ilustrativa)' },
     cena: () => `${mountain()}${cloud(70, 40, 1, 1)}${water(146)}<g class="hs-takeoff">${seaplane(1)}</g>` },
   { parte: 1, ano: '1915', lugar: 'Los Angeles e Seattle', titulo: 'Aprendendo a voar',
     texto: ['Boeing fez aulas de voo numa escola em Los Angeles e comprou o próprio hidroavião, um Martin TA, levado de volta para Seattle.',
