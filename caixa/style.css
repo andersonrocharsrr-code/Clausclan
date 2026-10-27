@@ -390,9 +390,3 @@ body{overflow-x:clip}
 .item--pila{grid-template-columns:1fr 1fr}
 .item--pila .item__tipo{grid-column:1/-1}
 .item__refeicao{grid-column:1/-1;display:flex;flex-direction:column;gap:4px}
-/* Vendedor em ajuda de custo: cabeçalho que abre/fecha a seção */
-.ac-abrir{width:100%;background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.ac-abrir h2{display:flex;align-items:center;gap:8px}
-#acSeta{color:var(--accent);font-size:.9em;width:1em}
-#acCorpo[hidden]{display:none}
-.ac-obs{margin:10px 0 12px;padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.4;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:var(--ink)}
