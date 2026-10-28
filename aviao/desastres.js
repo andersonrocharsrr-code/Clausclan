@@ -216,24 +216,37 @@ function atualizarBarra() {
   $('#dzrPrev').disabled = pag === 0;
   $('#dzrNext').hidden = pag === n - 1;
 }
+// Folha de papel com frente e verso que gira presa na lombada, como num livro
+function folha(conteudo, scroll, sentido) {
+  const f = document.createElement('div');
+  f.className = `dzr-sheet ${sentido}`;
+  f.innerHTML = `<div class="dzr-face dzr-front"><div class="dzr-page__in">${conteudo}</div><i class="dzr-shade"></i></div><div class="dzr-face dzr-back"><i class="dzr-shade"></i></div>`;
+  f.querySelector('.dzr-page__in').scrollTop = scroll;
+  return f;
+}
 function virar(dir) {
   const alvo = pag + dir;
   if (virando || alvo < 0 || alvo >= paginas()) return;
-  const st = $('#dzrStage'), velha = st.querySelector('.dzr-page:last-child'), nova = novaPagina(alvo);
+  const st = $('#dzrStage'), velha = st.querySelector('.dzr-page'), nova = novaPagina(alvo);
   const reduz = matchMedia('(prefers-reduced-motion: reduce)').matches;
   pag = alvo; atualizarBarra();
   if (reduz || !velha) { st.innerHTML = ''; st.appendChild(nova); return; }
   virando = true;
+  const sombra = document.createElement('i'); sombra.className = `dzr-cast ${dir > 0 ? 'next' : 'prev'}`;
+  let f;
   if (dir > 0) {
-    // a página atual vira para a esquerda e revela a próxima por baixo
-    st.insertBefore(nova, velha);
-    velha.classList.add('is-turn-out');
+    // a página atual vira a folha: sai girando para a esquerda e revela a próxima por baixo
+    f = folha(velha.querySelector('.dzr-page__in').innerHTML, velha.querySelector('.dzr-page__in').scrollTop, 'next');
+    st.innerHTML = ''; st.append(nova, sombra, f);
   } else {
-    // a página anterior volta virando por cima da atual
-    nova.classList.add('is-turn-in');
-    st.appendChild(nova);
+    // a folha anterior volta da esquerda e cobre a página atual
+    f = folha(nova.querySelector('.dzr-page__in').innerHTML, 0, 'prev');
+    st.append(sombra, f);
   }
-  setTimeout(() => { st.querySelectorAll('.dzr-page').forEach((p) => { if (p !== nova) p.remove(); }); nova.classList.remove('is-turn-in'); virando = false; nova.querySelector('.dzr-page__in').scrollTop = 0; }, 720);
+  setTimeout(() => {
+    st.innerHTML = ''; st.appendChild(nova);
+    virando = false;
+  }, 900);
 }
 function abrir(i = 0) {
   pag = i;
