@@ -882,6 +882,48 @@ html.dzr-open, html.dzr-open body { overflow: hidden; }
 .dzr__nav button { min-width: 130px; padding: 12px 18px; }
 .dzr__nav button:disabled { opacity: .35; cursor: default; }
 .dzr-end .btn { background: var(--magenta); color: #fff; }
+/* Relato dos desastres em capítulos ilustrados */
+:root { --px-dusk: #f3c9a6; --px-night: #0f1a2a; --px-cabin: #e7ecef; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --px-dusk: #3b2c30; --px-cabin: #1b242c; } }
+:root[data-theme="dark"] { --px-dusk: #3b2c30; --px-cabin: #1b242c; }
+.px-dusk { fill: var(--px-dusk); } .px-cabin { fill: var(--px-cabin); } .px-seat { fill: var(--hs-metal); }
+.px-tube { stroke: var(--ink); stroke-width: 1; } .px-maskcup { fill: #f2c230; stroke: var(--ink); stroke-width: .6; }
+.px-mask { animation: pxSwing 1.6s ease-in-out infinite alternate; }
+.px-fog { opacity: .55; animation: pxFog 4s ease-in-out infinite alternate; }
+.px-panel { fill: #1f2a33; } .px-gauge { fill: #0c1218; stroke: #56636e; stroke-width: 2; } .px-arc { fill: none; stroke: #5fe08a; stroke-width: 3; }
+.px-needle-l { stroke: #fff; stroke-width: 2.4; stroke-linecap: round; } .px-needle { animation: pxNeedle 3.2s ease-in forwards; }
+.px-gtxt { font: 600 8px var(--mono); fill: #cfd8de; text-anchor: middle; letter-spacing: .06em; }
+.px-warn { fill: #e5322d; animation: pxBlink .8s steps(1) infinite; }
+.px-radio { font: 700 14px var(--mono); fill: #ffd76a; text-anchor: middle; animation: pxBlink 1.2s steps(1) infinite; }
+.px-pedestal { fill: #2b3640; } .px-knob { fill: #d9dee2; } .px-lever { animation: pxLever 2.2s ease-in-out infinite alternate; }
+.px-ridge { fill: #3a4752; } .px-pullup { font: 700 16px var(--mono); fill: #e5322d; text-anchor: middle; animation: pxBlink .6s steps(1) infinite; }
+.px-gtxt--ink { fill: var(--ink); } .px-c130 { fill: #cfd8de; }
+.px-paperbg { fill: var(--hs-ground); } .px-note { fill: #fbfaf5; stroke: #cfc6b0; } .px-ink { fill: none; stroke: #3b4a8c; stroke-width: 1.1; }
+.px-night { fill: var(--px-night); } .px-star { fill: #fff; animation: hsTwinkle 1.4s ease-in-out infinite alternate; } .px-ridge-n { fill: #0a1018; }
+.px-glow { fill: #ff8a3d; opacity: .5; animation: pxFlick .3s ease-in-out infinite alternate; } .px-flame { fill: #ffcf5a; animation: pxFlick .25s infinite alternate; }
+.px-dome { fill: var(--hs-metal); stroke: var(--ink); } .px-rib { stroke: var(--ink); stroke-width: 1; opacity: .45; } .px-plate { fill: #d1b46a; stroke: var(--ink); }
+.px-crack { fill: none; stroke: var(--bad); stroke-width: 2; stroke-dasharray: 40; stroke-dashoffset: 40; animation: hsDraw 3s ease-in forwards; }
+.px-climb { animation: pxClimb 9s linear infinite; }
+.px-boom { transform-box: fill-box; transform-origin: center; animation: pxBoom 3s ease-out infinite; } .px-burst { fill: #ffd76a; opacity: .8; }
+.px-finoff { transform-box: fill-box; transform-origin: 50% 100%; animation: pxFin 3s ease-in infinite; }
+@keyframes pxSwing { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+@keyframes pxFog { from { opacity: .3; } to { opacity: .75; } }
+@keyframes pxNeedle { from { transform: rotate(40deg); } to { transform: rotate(-125deg); } }
+@keyframes pxBlink { 50% { opacity: .2; } }
+@keyframes pxLever { from { transform: translateY(0); } to { transform: translateY(34px); } }
+@keyframes pxFlick { from { opacity: .45; transform: scaleY(.9); } to { opacity: 1; transform: scaleY(1.1); } }
+@keyframes pxClimb { from { transform: translate(-80px, 150px) rotate(-10deg); } to { transform: translate(400px, 40px) rotate(-10deg); } }
+@keyframes pxBoom { 0% { transform: scale(.2); opacity: 1; } 40% { transform: scale(1.5); opacity: 0; } 100% { opacity: 0; } }
+@keyframes pxFin { 0%, 8% { transform: none; opacity: 1; } 70% { transform: translate(-40px, -46px) rotate(-70deg); opacity: .35; } 100% { transform: translate(-50px, -60px) rotate(-90deg); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { [class^="px-"] { animation: none !important; } .px-climb { transform: translate(160px, 90px) rotate(-10deg); } }
+.px-gtxt--ink { fill: var(--ink); } .px-c130 { fill: #cfd8de; }
+.px-lens { fill: rgba(134,172,242,.18); stroke: var(--ink); stroke-width: 3; } .px-handle { stroke: var(--ink); stroke-width: 6; stroke-linecap: round; }
+.px-scan { animation: pxScan 5s ease-in-out infinite alternate; }
+.px-trail { fill: none; stroke: var(--hs-ground); stroke-width: 3; stroke-dasharray: 2 5; }
+.px-lantern { fill: #3a2c22; } .px-lamp { fill: #ffcf7a; animation: pxFlick 1.4s ease-in-out infinite alternate; }
+@keyframes pxScan { from { transform: translateX(-20px); } to { transform: translateX(34px); } }
+.dzh { display: grid; gap: 16px; scroll-margin-top: 120px; }
+.dzh__head h3 { margin: 2px 0 0; font: 600 26px/1.1 var(--display); }
 .dz__fail { display: grid; gap: 10px; scroll-margin-top: 120px; }
 .dz__read { scroll-margin-top: 120px; }
 .dz__failsvg { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; max-width: 720px; }

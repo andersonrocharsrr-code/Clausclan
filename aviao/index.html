@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=98">
+  <link rel="stylesheet" href="style.css?v=99">
 </head>
 <body>
   <!-- Intro: o avião decola pela pista iluminada e aparece o nome do app (toque para pular) -->
@@ -806,12 +806,24 @@
             <dl class="dz__ficha" id="dzFicha"></dl>
           </div>
 
-          <div class="dz__read">
-            <div class="dz__readhead">
-              <div><span class="label">O relato</span><h3>Leia a história completa</h3><p class="small" id="dzReadInfo"></p></div>
-              <button type="button" class="btn dz__readbtn" id="dzReadBtn">Ler a história</button>
+          <div class="card hs dzh" id="dzhCard">
+            <div class="dzh__head"><span class="label">O relato</span><h3>A história, capítulo por capítulo</h3></div>
+            <div class="hs__parts" id="dzhParts" role="group" aria-label="Partes do relato"></div>
+            <div class="hs__line" id="dzhLine" role="group" aria-label="Linha do tempo do relato"></div>
+            <div class="hs__grid">
+              <div class="hs__scene" id="dzhScene"></div>
+              <div class="hs__body">
+                <div class="hs__meta"><span class="label hs__part" id="dzhPart"></span><span class="small" id="dzhCount"></span></div>
+                <div class="hs__when"><b id="dzhYear"></b><span id="dzhPlace"></span></div>
+                <h2 id="dzhTitle"></h2>
+                <div class="hs__text" id="dzhText"></div>
+                <p class="hs__fact"><b>Você sabia?</b> <span id="dzhFact"></span></p>
+                <div class="hs__nav">
+                  <button type="button" class="btn-ghost" id="dzhPrev">Capítulo anterior</button>
+                  <button type="button" class="btn" id="dzhNext">Próximo capítulo</button>
+                </div>
+              </div>
             </div>
-            <ol class="dz__toc" id="dzToc"></ol>
           </div>
 
           <div class="dz__fail" id="dzFailBox">
@@ -834,19 +846,6 @@
         </article>
       </div>
     </section>
-
-    <div class="dzr" id="dzReader" hidden role="dialog" aria-modal="true" aria-label="Leitura do relato">
-      <div class="dzr__top">
-        <span class="dzr__count" id="dzrCount"></span>
-        <div class="dzr__bar"><i id="dzrBar"></i></div>
-        <button type="button" class="dzr__close" id="dzrClose" aria-label="Fechar a leitura">✕</button>
-      </div>
-      <div class="dzr__stage" id="dzrStage"></div>
-      <div class="dzr__nav">
-        <button type="button" class="btn-ghost" id="dzrPrev">‹ Anterior</button>
-        <button type="button" class="btn" id="dzrNext">Próxima ›</button>
-      </div>
-    </div>
 
     <!-- RÁDIO -->
     <section class="view" id="view-radio" data-view="radio" hidden>
@@ -982,16 +981,16 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=98"></script>
-  <script src="catalogo747.js?v=98"></script>
-  <script src="cockpit747.js?v=98"></script>
-  <script src="motor3d.js?v=98"></script>
-  <script src="motor747.js?v=98"></script>
-  <script src="meteo.js?v=98"></script>
-  <script src="radio.js?v=98"></script>
-  <script src="historia.js?v=98"></script>
-  <script src="desastres.js?v=98"></script>
-  <script src="app.js?v=98"></script>
+  <script src="avioes.js?v=99"></script>
+  <script src="catalogo747.js?v=99"></script>
+  <script src="cockpit747.js?v=99"></script>
+  <script src="motor3d.js?v=99"></script>
+  <script src="motor747.js?v=99"></script>
+  <script src="meteo.js?v=99"></script>
+  <script src="radio.js?v=99"></script>
+  <script src="historia.js?v=99"></script>
+  <script src="desastres.js?v=99"></script>
+  <script src="app.js?v=99"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
