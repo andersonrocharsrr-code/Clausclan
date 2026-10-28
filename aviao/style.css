@@ -809,8 +809,14 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 .dz-plane rect { fill: #c9d2da; }
 .dz-plane .dz-plane-hump { fill: #dfe6ec; stroke: none; }
 .dz-plane-halo { fill: #ffffff; opacity: .28; animation: dzHalo 1.6s ease-in-out infinite alternate; }
-.dz-mark circle { fill: none; stroke: none; }
-.dz-mark.is-on circle { fill: none; stroke: none; }
+.dz-mark circle { fill: #fff; stroke: #1b2630; stroke-width: 4; opacity: 0; transition: opacity .4s; }
+.dz-mark.is-on circle { opacity: 1; }
+.dz-route-dash { fill: none; stroke: #fff; stroke-width: 6; stroke-dasharray: 26 14 4 14; stroke-linecap: round; }
+.dz-labels text { font: 600 46px var(--body); fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.55); stroke-width: 6px; stroke-linejoin: round; }
+.dz-labels .dz-lbl-s { font-size: 36px; }
+.dz-labels .dz-lbl-w { fill: #cfe0ef; }
+.dz-dot { fill: #fff; stroke: #1b2630; stroke-width: 3; }
+.dz-x { fill: none; stroke: #ff5a52; stroke-width: 12; stroke-linecap: round; }
 .dz__linehead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin: 12px 0 6px; }
 .dz__line { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; border-left: 2px solid var(--line); }
 .dz__line button { display: grid; grid-template-columns: 54px 1fr; gap: 10px; width: 100%; text-align: left; border: 0; background: none; color: var(--muted); padding: 7px 10px; font: inherit; font-size: 14px; cursor: pointer; border-radius: 0 8px 8px 0; position: relative; }

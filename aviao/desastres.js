@@ -21,8 +21,21 @@ function mapaJal123() {
     <defs><filter id="dzGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
       <filter id="dzShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="10" dy="14" stdDeviation="6" flood-color="#000" flood-opacity=".55"/></filter></defs>
     <image href="assets/jal123-mapa.webp" x="0" y="0" width="1493" height="2000" preserveAspectRatio="xMidYMid slice"/>
+    <mask id="dzReveal" maskUnits="userSpaceOnUse" x="0" y="0" width="1493" height="2000"><path id="dzRevealPath" d="${JAL123_ROTA}" fill="none" stroke="#fff" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/></mask>
     <path id="dzPath" d="${JAL123_ROTA}" class="dz-route"/>
+    <path d="${JAL123_ROTA}" class="dz-route-dash" mask="url(#dzReveal)"/>
+    <g class="dz-labels">
+      <text x="1150" y="1010" text-anchor="middle">Haneda</text><text x="1150" y="1048" text-anchor="middle" class="dz-lbl-s">(Tóquio)</text>
+      <text x="1400" y="1330" text-anchor="middle" class="dz-lbl-w">Baía de Tóquio</text>
+      <text x="820" y="1680" text-anchor="middle" class="dz-lbl-w">Baía de Sagami</text>
+      <text x="440" y="1760" text-anchor="middle">Península de Izu</text>
+      <text x="250" y="1230" text-anchor="middle">Monte Fuji</text>
+      <circle cx="706" cy="842" r="12" class="dz-dot"/><text x="690" y="855" text-anchor="end">Base de Yokota</text>
+      <text x="300" y="480" text-anchor="middle">Montanhas de Gunma</text>
+      <text x="240" y="170" text-anchor="middle">Cume Osutaka</text>
+    </g>
     <g id="dzMarks"></g>
+    <path d="M206 196 l48 48 M254 196 l-48 48" class="dz-x"/>
     <g id="dzPlane"><circle r="62" class="dz-plane-halo"/><g transform="scale(1.9)" filter="url(#dzShadow)">${AVIAO_TOPO}</g></g>
   </svg>`;
 }
@@ -195,7 +208,7 @@ function mostrar() {
   // Marcas dos eventos sobre a rota
   const path = $('#dzPath'), L = path.getTotalLength();
   a.fr = a.linha.map(([, , v]) => fracDe(path, v));
-  $('#dzMarks').innerHTML = a.fr.map((f, i) => { const p = path.getPointAtLength(L * f); return `<g class="dz-mark" data-i="${i}"><circle cx="${p.x}" cy="${p.y}" r="16"/></g>`; }).join('');
+  $('#dzMarks').innerHTML = a.fr.map((f, i) => { const p = path.getPointAtLength(L * f); return `<g class="dz-mark" data-i="${i}"><circle cx="${p.x}" cy="${p.y}" r="15"/></g>`; }).join('');
   $('#dzLine').innerHTML = a.linha.map(([h, t], i) => `<li><button type="button" data-i="${i}"><b>${h}</b><span>${esc(t)}</span></button></li>`).join('');
   irPara(a.linha.length - 1, false);
 }
@@ -219,7 +232,7 @@ function irPara(i, animar = true) {
     const p = path.getPointAtLength(L * f), q = path.getPointAtLength(Math.min(L, L * f + 6)), r = path.getPointAtLength(Math.max(0, L * f - 6));
     const ang = Math.atan2(q.y - r.y, q.x - r.x) * 180 / Math.PI + 90;
     plane.setAttribute('transform', `translate(${p.x} ${p.y}) rotate(${ang})`); plane.dataset.f = f;
-    path.style.strokeDasharray = `${L * f} ${L}`;
+    const rv = $('#dzRevealPath'); if (rv) rv.style.strokeDasharray = `${L * f} ${L + 100}`;
     if (k < 1) tocando = requestAnimationFrame(frame);
   };
   tocando = requestAnimationFrame(frame);
