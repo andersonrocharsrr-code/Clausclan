@@ -123,6 +123,16 @@
       atribui(r, regra[1], v);
       if (regra[1]) ultimo = regra[1];
     });
+    return completarBranco(r);
+  }
+
+  // Começo da semana: nada pago, nada parcial e nada recebido, mas "Notas em branco: 00".
+  // Aí todas as notas estão em branco e valem o valor a cobrar (ex.: 31 notas · 31.211,00).
+  function completarBranco(r) {
+    if (v(r.notas) > 0 && v(r.cobrar) > 0 && !v(r.branco.q) && !v(r.branco.v) &&
+        !v(r.pgTotal) && !v(r.parcialTotal.q) && !v(r.recebidoTotal)) {
+      r.branco = { q: r.notas, v: r.cobrar };
+    }
     return r;
   }
 
@@ -429,7 +439,7 @@
     ].join('\n');
   }
 
-  const api = { lerRelatorio, separar, conferir, consolidar, textoEquipe, textoSemana, lerEquipe, numero, dinheiro, dataISO, brl, dois, MESES,
+  const api = { lerRelatorio, completarBranco, separar, conferir, consolidar, textoEquipe, textoSemana, lerEquipe, numero, dinheiro, dataISO, brl, dois, MESES,
     CAIXA_NUM, caixaVazio, lerCaixaTexto, separarCaixas, recebidoCaixa, conferirCaixa, contasCaixa, fechamento, textoFechamento, pct };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else raiz.Relat = api;
