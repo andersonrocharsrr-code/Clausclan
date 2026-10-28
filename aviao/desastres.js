@@ -141,7 +141,9 @@ function mostrar() {
   $('#dzSub').textContent = a.resumo;
   $('#dzNums').innerHTML = a.numeros.map(([n, l]) => `<div><b>${esc(n)}</b><span>${esc(l)}</span></div>`).join('');
   $('#dzFicha').innerHTML = a.ficha.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('');
-  $('#dzStory').innerHTML = a.secoes.map((s, i) => `<section class="dz-sec"><h3><span>${String(i + 1).padStart(2, '0')}</span>${esc(s.t)}</h3>${s.p.map((p) => `<p>${esc(p)}</p>`).join('')}</section>`).join('');
+  $('#dzToc').innerHTML = a.secoes.map((s, i) => `<li><button type="button" data-cap="${i + 1}"><span>${String(i + 1).padStart(2, '0')}</span>${esc(s.t)}</button></li>`).join('');
+  const palavras = a.secoes.reduce((n, s) => n + s.p.join(' ').split(/\s+/).length, 0);
+  $('#dzReadInfo').textContent = `${a.secoes.length} capítulos · cerca de ${Math.max(1, Math.round(palavras / 200))} minutos de leitura`;
   $('#dzMap').innerHTML = a.mapa();
   $('#dzFail').innerHTML = a.esquema();
   $('#dzFailTxt').textContent = a.falha;
@@ -189,12 +191,90 @@ function seguir() {
   if (passo < atual.linha.length - 1) { irPara(passo + 1); if (passo < atual.linha.length - 1) auto = setTimeout(seguir, 3200); }
 }
 
+
+/* ---------- Leitura em tela cheia, como um livro ---------- */
+let pag = 0, virando = false;
+const paginas = () => atual.secoes.length + 2; // capa + capítulos + fim
+function paginaHtml(i) {
+  const a = atual, n = a.secoes.length;
+  if (i === 0) return `<div class="dzr-cover"><span class="label">Desastres aéreos · ${esc(a.data)}</span><h2 id="dzrTitle">${esc(a.titulo)}</h2><p class="dzr-cover__sub">${esc(a.sub)}</p><p>${esc(a.resumo)}</p><p class="small">Em memória das ${esc(a.numeros[1][0])} pessoas que morreram.</p><p class="dzr-hint">Toque em Próxima ou arraste a página para o lado para começar.</p></div>`;
+  if (i === n + 1) return `<div class="dzr-end"><span class="label">Fim do relato</span><h2>${esc(a.titulo)}</h2><p>${esc(a.memoria)}</p><button type="button" class="btn" data-fim>Ver o que falhou e o que mudou</button></div>`;
+  const s = a.secoes[i - 1];
+  return `<span class="dzr-num">Capítulo ${String(i).padStart(2, '0')}</span><h2>${esc(s.t)}</h2>${s.p.map((p) => `<p>${esc(p)}</p>`).join('')}<span class="dzr-folio">${i}</span>`;
+}
+function novaPagina(i) {
+  const d = document.createElement('article');
+  d.className = 'dzr-page' + (i === 0 ? ' is-cover' : '');
+  d.innerHTML = `<div class="dzr-page__in">${paginaHtml(i)}</div>`;
+  d.querySelector('[data-fim]')?.addEventListener('click', () => fechar(true));
+  return d;
+}
+function atualizarBarra() {
+  const n = paginas();
+  $('#dzrCount').textContent = pag === 0 ? 'Capa' : pag === n - 1 ? 'Fim' : `Capítulo ${pag} de ${n - 2}`;
+  $('#dzrBar').style.width = `${(pag / (n - 1)) * 100}%`;
+  $('#dzrPrev').disabled = pag === 0;
+  $('#dzrNext').hidden = pag === n - 1;
+}
+function virar(dir) {
+  const alvo = pag + dir;
+  if (virando || alvo < 0 || alvo >= paginas()) return;
+  const st = $('#dzrStage'), velha = st.querySelector('.dzr-page:last-child'), nova = novaPagina(alvo);
+  const reduz = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  pag = alvo; atualizarBarra();
+  if (reduz || !velha) { st.innerHTML = ''; st.appendChild(nova); return; }
+  virando = true;
+  if (dir > 0) {
+    // a página atual vira para a esquerda e revela a próxima por baixo
+    st.insertBefore(nova, velha);
+    velha.classList.add('is-turn-out');
+  } else {
+    // a página anterior volta virando por cima da atual
+    nova.classList.add('is-turn-in');
+    st.appendChild(nova);
+  }
+  setTimeout(() => { st.querySelectorAll('.dzr-page').forEach((p) => { if (p !== nova) p.remove(); }); nova.classList.remove('is-turn-in'); virando = false; nova.querySelector('.dzr-page__in').scrollTop = 0; }, 720);
+}
+function abrir(i = 0) {
+  pag = i;
+  const r = $('#dzReader'), st = $('#dzrStage');
+  st.innerHTML = ''; st.appendChild(novaPagina(pag));
+  r.hidden = false; document.documentElement.classList.add('dzr-open');
+  atualizarBarra();
+  try { history.pushState({ dzr: 1 }, ''); } catch {}
+  $('#dzrNext').focus({ preventScroll: true });
+}
+function fechar(irParaFalha = false, doHistorico = false) {
+  const r = $('#dzReader');
+  if (r.hidden) return;
+  r.hidden = true; document.documentElement.classList.remove('dzr-open');
+  if (!doHistorico) { try { if (history.state?.dzr) history.back(); } catch {} }
+  const alvo = irParaFalha ? $('#dzFailBox') : $('#dzReadBtn');
+  setTimeout(() => alvo?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+}
+function initLeitor() {
+  $('#dzReadBtn').addEventListener('click', () => abrir(0));
+  $('#dzToc').addEventListener('click', (e) => { const b = e.target.closest('[data-cap]'); if (b) abrir(+b.dataset.cap); });
+  $('#dzrNext').addEventListener('click', () => virar(1));
+  $('#dzrPrev').addEventListener('click', () => virar(-1));
+  $('#dzrClose').addEventListener('click', () => fechar());
+  window.addEventListener('popstate', () => fechar(false, true));
+  document.addEventListener('keydown', (e) => {
+    if ($('#dzReader').hidden) return;
+    if (e.key === 'ArrowRight') virar(1); else if (e.key === 'ArrowLeft') virar(-1); else if (e.key === 'Escape') fechar();
+  });
+  let sx = null, sy = null;
+  const st = $('#dzrStage');
+  st.addEventListener('pointerdown', (e) => { sx = e.clientX; sy = e.clientY; });
+  st.addEventListener('pointerup', (e) => { if (sx === null) return; const dx = e.clientX - sx, dy = e.clientY - sy; sx = null; if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) virar(dx < 0 ? 1 : -1); });
+}
 function init() {
   if (!$('#dzList')) return;
   lista();
   $('#dzList').addEventListener('click', (e) => { const b = e.target.closest('[data-dz]'); if (!b) return; atual = ACIDENTES.find((a) => a.id === b.dataset.dz) || atual; lista(); mostrar(); $('#dzCase').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
   $('#dzLine').addEventListener('click', (e) => { const b = e.target.closest('button[data-i]'); if (b) { clearTimeout(auto); irPara(+b.dataset.i); } });
   $('#dzPlay').addEventListener('click', reproduzir);
+  initLeitor();
 }
 let pronto = false;
 function start() { if (!pronto) { pronto = true; mostrar(); } }
