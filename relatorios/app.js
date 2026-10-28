@@ -24,7 +24,8 @@
   // ---------- Dados ----------
   const CFG_PADRAO = () => ({ equipe: '', produto: 'ENXOVAL', vendedores: [], semanas: {}, semanasCaixa: {}, usarUltimo: false });
   // reports: relatórios diários; caixas: folhas CAIXA (fechamento da semana) de cada vendedor.
-  const montarDb = (d) => ({ reports: d.reports || [], caixas: d.caixas || [], cfg: Object.assign(CFG_PADRAO(), d.cfg) });
+  // Relatórios já salvos também passam pela regra das notas em branco do começo da semana.
+  const montarDb = (d) => ({ reports: (d.reports || []).map((r) => (r && r.branco ? R.completarBranco(r) : r)), caixas: d.caixas || [], cfg: Object.assign(CFG_PADRAO(), d.cfg) });
   let db = montarDb({});
   try {
     const salvo = JSON.parse(localStorage.getItem(CHAVE));
