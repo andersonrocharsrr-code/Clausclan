@@ -797,18 +797,20 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 .dz__nums b { font: 700 30px/1 var(--display); font-variant-numeric: tabular-nums; }
 .dz__nums span { font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
 .dz__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 22px; align-items: start; }
-.dz__map { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.dz__map { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #1d2b22; max-width: 560px; }
 .dz__map svg, .dz__failsvg svg { display: block; width: 100%; height: auto; }
 .dz-map-t { font: 500 8px var(--mono); fill: var(--ink); }
 .dz-map-s { font: 500 6.5px var(--mono); fill: var(--muted); }
 .dz-map-crash { fill: var(--bad); font-weight: 700; }
 .dz-route-bg { fill: none; stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 3; opacity: .35; }
-.dz-route { fill: none; stroke: var(--magenta); stroke-width: 2.4; stroke-linecap: round; }
+.dz-route { fill: none; stroke: #ff5fae; stroke-width: 14; stroke-linecap: round; stroke-linejoin: round; }
 .dz-x { fill: none; stroke: var(--bad); stroke-width: 2.4; stroke-linecap: round; }
-.dz-plane { fill: var(--hs-plane); stroke: var(--ink); stroke-width: .8; }
-.dz-plane-halo { fill: var(--magenta); opacity: .25; animation: dzHalo 1.6s ease-in-out infinite alternate; }
-.dz-mark circle { fill: var(--panel); stroke: var(--muted); stroke-width: 1.2; }
-.dz-mark.is-on circle { fill: var(--magenta); stroke: var(--magenta); }
+.dz-plane path, .dz-plane rect { fill: #fbfcfd; stroke: #1b2630; stroke-width: 1; stroke-linejoin: round; }
+.dz-plane rect { fill: #c9d2da; }
+.dz-plane .dz-plane-hump { fill: #dfe6ec; stroke: none; }
+.dz-plane-halo { fill: #ff5fae; opacity: .3; animation: dzHalo 1.6s ease-in-out infinite alternate; }
+.dz-mark circle { fill: rgba(255,255,255,.85); stroke: #1b2630; stroke-width: 4; }
+.dz-mark.is-on circle { fill: #ff5fae; stroke: #fff; }
 .dz__linehead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin: 12px 0 6px; }
 .dz__line { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; border-left: 2px solid var(--line); }
 .dz__line button { display: grid; grid-template-columns: 54px 1fr; gap: 10px; width: 100%; text-align: left; border: 0; background: none; color: var(--muted); padding: 7px 10px; font: inherit; font-size: 14px; cursor: pointer; border-radius: 0 8px 8px 0; position: relative; }

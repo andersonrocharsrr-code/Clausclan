@@ -7,23 +7,23 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 
 /* ---------- Ilustrações do JAL 123 ---------- */
 // Mapa esquemático da região de Tóquio (fora de escala), viewBox 360x240
-const JAL123_ROTA = 'M296 128 C286 150 268 176 240 190 C226 196 214 184 206 168 C198 150 202 126 214 112 C228 98 250 96 256 108 C262 122 238 128 222 118 C206 108 196 92 188 78 C180 64 166 56 150 48';
+// Mapa da rota sobre imagem de satélite da região de Tóquio (coordenadas da imagem, 1493x2000)
+const JAL123_ROTA = 'M1210 1068 C1200 1200 1120 1400 1010 1500 C920 1575 830 1598 755 1595 C660 1590 590 1550 545 1470 C505 1400 488 1340 490 1290 C492 1180 560 1020 668 898 C720 860 830 840 905 848 C960 856 975 910 940 960 C900 1005 820 1010 760 985 C700 960 670 930 660 880 C640 770 610 640 560 520 C510 410 420 320 330 270 L272 238';
+// Avião visto de cima (747: quatro motores, asa enflechada), nariz para cima
+const AVIAO_TOPO = `<g class="dz-plane">
+  <path d="M0 -34 C3.6 -34 5 -27 5 -20 L5 22 L3 31 L0 34 L-3 31 L-5 22 L-5 -20 C-5 -27 -3.6 -34 0 -34Z"/>
+  <path d="M5 -6 L36 12 L36 17 L5 8Z M-5 -6 L-36 12 L-36 17 L-5 8Z"/>
+  <path d="M3 22 L15 30 L15 33 L3 30Z M-3 22 L-15 30 L-15 33 L-3 30Z"/>
+  <rect x="11" y="0" width="4" height="9" rx="2"/><rect x="22" y="6" width="4" height="9" rx="2"/><rect x="-15" y="0" width="4" height="9" rx="2"/><rect x="-26" y="6" width="4" height="9" rx="2"/>
+  <path d="M-2.6 -27 C-1.5 -30 1.5 -30 2.6 -27 L2.6 -16 L-2.6 -16Z" class="dz-plane-hump"/></g>`;
 function mapaJal123() {
-  return `<svg viewBox="0 0 360 240" role="img" aria-label="Mapa esquemático da rota do voo JAL 123">
-    <rect width="360" height="240" class="hs-fill-water"/>
-    <path d="M0 0 H360 V112 L330 118 L306 112 L300 126 L310 140 L296 150 L282 162 L262 166 L246 174 L232 168 L222 182 L216 214 L208 212 L200 186 L190 176 L176 182 L150 186 L110 196 L60 206 L0 214Z" class="hs-fill-ground"/>
-    <path d="M170 150 L156 132 L164 124 L176 124 L184 132Z" class="hs-fill-mount"/><path d="M164 124 L170 118 L176 124 L172 127 L168 125Z" class="hs-fill-snow"/>
-    <text x="146" y="158" class="dz-map-t">Monte Fuji</text>
-    <circle cx="296" cy="128" r="4" class="hs-fill-accent"/><text x="300" y="146" class="dz-map-t" text-anchor="middle">Haneda (Tóquio)</text>
-    <circle cx="265" cy="100" r="3" class="hs-fill-blue"/><text x="272" y="98" class="dz-map-t">Base de Yokota</text>
-    <text x="250" y="212" class="dz-map-t">Baía de Sagami</text><text x="196" y="230" class="dz-map-t">Península de Izu</text>
-    <text x="64" y="26" class="dz-map-t">Gunma (montanhas)</text>
-    <path d="M30 222 L40 230" class="hs-line"/><text x="12" y="236" class="dz-map-s">Esquema fora de escala</text>
-    <path d="${JAL123_ROTA}" class="dz-route-bg"/>
-    <path id="dzPath" d="${JAL123_ROTA}" class="dz-route"/>
+  return `<svg viewBox="0 0 1493 2000" role="img" aria-label="Mapa da rota do voo JAL 123 sobre a região de Tóquio">
+    <defs><filter id="dzGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id="dzShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="10" dy="14" stdDeviation="6" flood-color="#000" flood-opacity=".55"/></filter></defs>
+    <image href="assets/jal123-mapa.webp" x="0" y="0" width="1493" height="2000" preserveAspectRatio="xMidYMid slice"/>
+    <path id="dzPath" d="${JAL123_ROTA}" class="dz-route" filter="url(#dzGlow)"/>
     <g id="dzMarks"></g>
-    <path d="M144 42 l6 6 l6 -6 M144 54 l6 -6 l6 6" class="dz-x"/><text x="100" y="40" class="dz-map-t dz-map-crash">Cume Osutaka</text>
-    <g id="dzPlane"><circle r="9" class="dz-plane-halo"/><path d="M0 -7 L2 -2 L8 1 L8 3 L2 2 L1.5 6 L4 8 L4 9 L0 8 L-4 9 L-4 8 L-1.5 6 L-2 2 L-8 3 L-8 1 L-2 -2Z" class="dz-plane"/></g>
+    <g id="dzPlane"><circle r="62" class="dz-plane-halo"/><g transform="scale(1.9)" filter="url(#dzShadow)">${AVIAO_TOPO}</g></g>
   </svg>`;
 }
 // Esquema do 747 de lado: antepara de pressão traseira, estabilizador vertical e as quatro linhas hidráulicas
@@ -151,9 +151,9 @@ const ACIDENTES = [
   { t: "As consequências", parte: 4, hora: "1985", lugar: "Tóquio", sabia: "Desde 2006, funcionários da JAL visitam o Centro de Promoção da Segurança, onde estão a antepara rompida e partes do JA8119, para nunca esquecer o que aconteceu.", cena: CENAS.memoria,
     p: ["O presidente da Japan Air Lines, Yasumoto Takagi, assumiu publicamente a responsabilidade, pediu perdão às famílias, visitou parentes das vítimas e renunciou ao cargo poucas semanas depois do acidente.", "O peso da tragédia caiu também sobre quem cuidava da manutenção. Hiroo Tominaga, gerente de manutenção da JAL, tirou a própria vida e deixou um bilhete dizendo que se redimia com a morte. O reparo de 1978 em si tinha sido feito pela equipe da Boeing, não por ele.", "A Boeing reconheceu que o erro era dela. A JAL pagou indenizações e \"dinheiro de condolências\" às famílias, como manda a tradição japonesa.", "O voo 123 mudou a forma como a aviação trata um conserto na estrutura: ele passou a ser visto como uma peça nova do avião, que precisa ser conferida e acompanhada pelo resto da vida dele."] },
     ],
-    linha: [['18:12', 'Decolagem de Haneda, Tóquio.', 0], ['18:24', 'Estrondo a cerca de 24.000 pés: a antepara traseira se rompe e o avião perde a deriva e os quatro sistemas hidráulicos.', .24],
-      ['18:25', 'Código 7700 de emergência. A tripulação pede para voltar a Haneda.', .36], ['18:40', 'O trem de pouso é baixado por gravidade e ajuda a amortecer as oscilações.', .58],
-      ['18:47', 'A base de Yokota oferece pouso, mas o avião segue quase sem controle rumo às montanhas.', .76], ['18:56', 'Queda perto do Cume Osutaka, em Gunma.', 1]],
+    linha: [['18:12', 'Decolagem de Haneda, Tóquio.', [1210, 1068]], ['18:24', 'Estrondo a cerca de 24.000 pés sobre a baía de Sagami: a antepara traseira se rompe e o avião perde a deriva e os quatro sistemas hidráulicos.', [755, 1595]],
+      ['18:25', 'Código 7700 de emergência. A tripulação pede para voltar a Haneda.', [640, 1580]], ['18:40', 'O trem de pouso é baixado por gravidade e ajuda a amortecer as oscilações.', [490, 1290]],
+      ['18:47', 'A base de Yokota oferece pouso, mas o avião, quase sem controle, dá uma volta e segue rumo às montanhas.', [668, 898]], ['18:56', 'Queda perto do Cume Osutaka, em Gunma.', [272, 238]]],
     falha: 'Ponto de partida: a antepara rompida deixou o ar pressurizado da cabine invadir a cauda. A pressão arrancou a deriva e cortou as quatro linhas hidráulicas de uma vez.',
     mudou: ['A Boeing modificou o 747: instalou uma tampa que impede o ar da cabine de entrar na cauda se a antepara falhar e válvulas que seguram o fluido hidráulico se as linhas da cauda forem cortadas.',
       'Reparos estruturais passaram a ser vistos como pontos críticos de inspeção, verificados de novo ao longo da vida do avião.',
@@ -194,21 +194,29 @@ function mostrar() {
   $('#dzSrc').innerHTML = a.fontes.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener">${esc(n)}</a>`).join(' · ');
   // Marcas dos eventos sobre a rota
   const path = $('#dzPath'), L = path.getTotalLength();
-  $('#dzMarks').innerHTML = a.linha.map(([h, , f], i) => { const p = path.getPointAtLength(L * f); return `<g class="dz-mark" data-i="${i}"><circle cx="${p.x}" cy="${p.y}" r="3.2"/></g>`; }).join('');
+  a.fr = a.linha.map(([, , v]) => fracDe(path, v));
+  $('#dzMarks').innerHTML = a.fr.map((f, i) => { const p = path.getPointAtLength(L * f); return `<g class="dz-mark" data-i="${i}"><circle cx="${p.x}" cy="${p.y}" r="16"/></g>`; }).join('');
   $('#dzLine').innerHTML = a.linha.map(([h, t], i) => `<li><button type="button" data-i="${i}"><b>${h}</b><span>${esc(t)}</span></button></li>`).join('');
   irPara(a.linha.length - 1, false);
 }
 
 // Move o avião no mapa até o evento i da linha do tempo
+// Posição de um evento ao longo da rota (0 a 1): número pronto ou o ponto [x, y] mais próximo do traçado
+function fracDe(path, v) {
+  if (typeof v === 'number') return v;
+  const L = path.getTotalLength(); let melhor = 0, dmin = Infinity;
+  for (let k = 0; k <= 600; k++) { const q = path.getPointAtLength(L * k / 600), d = (q.x - v[0]) ** 2 + (q.y - v[1]) ** 2; if (d < dmin) { dmin = d; melhor = k / 600; } }
+  return melhor;
+}
 function irPara(i, animar = true) {
   passo = i;
   const a = atual, path = $('#dzPath'), L = path.getTotalLength(), plane = $('#dzPlane');
-  const alvo = a.linha[i][2], de = animar ? (Number(plane.dataset.f) || 0) : alvo;
+  const alvo = a.fr[i], de = animar ? (Number(plane.dataset.f) || 0) : alvo;
   cancelAnimationFrame(tocando);
   const t0 = performance.now(), dur = animar ? 900 + Math.abs(alvo - de) * 1800 : 0;
   const frame = (now) => {
     const k = dur ? Math.min(1, (now - t0) / dur) : 1, e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2, f = de + (alvo - de) * e;
-    const p = path.getPointAtLength(L * f), q = path.getPointAtLength(Math.min(L, L * f + 1)), r = path.getPointAtLength(Math.max(0, L * f - 1));
+    const p = path.getPointAtLength(L * f), q = path.getPointAtLength(Math.min(L, L * f + 6)), r = path.getPointAtLength(Math.max(0, L * f - 6));
     const ang = Math.atan2(q.y - r.y, q.x - r.x) * 180 / Math.PI + 90;
     plane.setAttribute('transform', `translate(${p.x} ${p.y}) rotate(${ang})`); plane.dataset.f = f;
     path.style.strokeDasharray = `${L * f} ${L}`;
