@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=91">
+  <link rel="stylesheet" href="style.css?v=92">
 </head>
 <body>
   <!-- Intro: o avião decola pela pista iluminada e aparece o nome do app (toque para pular) -->
@@ -60,6 +60,7 @@
           <div class="tabmenu" id="exploreMenu" role="menu" hidden>
             <a role="menuitem" href="#pecas" data-tab="pecas" data-short="Peças"><b>Peças do avião</b><span>Toque nas peças, raio-X e as vistas do 747</span></a>
             <a role="menuitem" href="#historia" data-tab="historia" data-short="História"><b>Modo história</b><span>Como William Boeing começou na aviação</span></a>
+            <a role="menuitem" href="#desastres" data-tab="desastres" data-short="Desastres"><b>Desastres aéreos</b><span>Os acidentes da história e o que mudou depois</span></a>
             <a role="menuitem" href="#cockpit" data-tab="cockpit"><b>Cockpit</b><span>Comandos na prática, PFD, ND e EICAS</span></a>
             <a role="menuitem" href="#lab" data-tab="lab"><b>Laboratório</b><span>Túnel de vento e o motor GEnx-2B em 3D</span></a>
             <a role="menuitem" href="#meteo" data-tab="meteo"><b>Meteorologia</b><span>Tipos de nuvens e o radar meteorológico no ND</span></a>
@@ -775,6 +776,53 @@
       </div>
     </section>
 
+    <!-- DESASTRES AÉREOS -->
+    <section class="view" id="view-desastres" data-view="desastres" hidden>
+      <div class="view__head">
+        <p class="eyebrow">Explorar · Desastres aéreos</p>
+        <h1>Desastres aéreos</h1>
+        <p class="lede">Cada regra de segurança da aviação tem uma história por trás. Aqui contamos os acidentes que marcaram a aviação, com respeito às vítimas, o que deu errado e o que mudou depois.</p>
+      </div>
+      <div class="dz">
+        <div class="card dz__pick">
+          <span class="label">Acidentes</span>
+          <div class="dz__list" id="dzList"></div>
+        </div>
+
+        <article class="card dz__case" id="dzCase">
+          <header class="dz__hero">
+            <span class="label" id="dzDate"></span>
+            <h2 id="dzTitle"></h2>
+            <p id="dzSub"></p>
+            <div class="dz__nums" id="dzNums"></div>
+          </header>
+
+          <div class="dz__grid">
+            <div class="dz__mapbox">
+              <div class="dz__map" id="dzMap"></div>
+              <div class="dz__linehead"><span class="label">Linha do tempo · horário de Tóquio, alguns aproximados</span><button type="button" class="btn-ghost" id="dzPlay">Reproduzir o voo</button></div>
+              <ol class="dz__line" id="dzLine"></ol>
+            </div>
+            <dl class="dz__ficha" id="dzFicha"></dl>
+          </div>
+
+          <div class="dz__story" id="dzStory"></div>
+
+          <div class="dz__fail">
+            <span class="label">O que falhou</span>
+            <div class="dz__failsvg" id="dzFail"></div>
+            <p id="dzFailTxt"></p>
+          </div>
+
+          <div class="dz__after">
+            <div><span class="label">O que mudou depois</span><ul id="dzChanged"></ul></div>
+            <div class="dz__memory"><span class="label">Memória</span><p id="dzMemory"></p></div>
+          </div>
+          <p class="small dz__src">Fontes: <span id="dzSrc"></span></p>
+        </article>
+      </div>
+    </section>
+
     <!-- RÁDIO -->
     <section class="view" id="view-radio" data-view="radio" hidden>
       <div class="view__head">
@@ -909,15 +957,16 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=91"></script>
-  <script src="catalogo747.js?v=91"></script>
-  <script src="cockpit747.js?v=91"></script>
-  <script src="motor3d.js?v=91"></script>
-  <script src="motor747.js?v=91"></script>
-  <script src="meteo.js?v=91"></script>
-  <script src="radio.js?v=91"></script>
-  <script src="historia.js?v=91"></script>
-  <script src="app.js?v=91"></script>
+  <script src="avioes.js?v=92"></script>
+  <script src="catalogo747.js?v=92"></script>
+  <script src="cockpit747.js?v=92"></script>
+  <script src="motor3d.js?v=92"></script>
+  <script src="motor747.js?v=92"></script>
+  <script src="meteo.js?v=92"></script>
+  <script src="radio.js?v=92"></script>
+  <script src="historia.js?v=92"></script>
+  <script src="desastres.js?v=92"></script>
+  <script src="app.js?v=92"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
