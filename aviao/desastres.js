@@ -216,13 +216,53 @@ function atualizarBarra() {
   $('#dzrPrev').disabled = pag === 0;
   $('#dzrNext').hidden = pag === n - 1;
 }
-// Folha de papel com frente e verso que gira presa na lombada, como num livro
-function folha(conteudo, scroll, sentido) {
-  const f = document.createElement('div');
-  f.className = `dzr-sheet ${sentido}`;
-  f.innerHTML = `<div class="dzr-face dzr-front"><div class="dzr-page__in">${conteudo}</div><i class="dzr-shade"></i></div><div class="dzr-face dzr-back"><i class="dzr-shade"></i></div>`;
-  f.querySelector('.dzr-page__in').scrollTop = scroll;
-  return f;
+// Virada de página como papel de verdade: a folha dobra numa linha que anda da direita para a lombada.
+// Do lado esquerdo da dobra fica a frente da folha; o pedaço que já virou aparece espelhado (o verso),
+// com o brilho curvo da "barriga" do papel, e a folha joga sombra na página de baixo.
+function montarDobra(st, conteudo, scroll) {
+  const W = st.clientWidth, H = st.clientHeight;
+  const camada = (cls, html = '') => { const d = document.createElement('div'); d.className = cls; d.style.width = W + 'px'; d.style.height = H + 'px'; d.innerHTML = html; return d; };
+  const corpo = `<div class="dzr-page__in dzr-page__in--flat" style="transform:translateY(${-scroll}px)">${conteudo}</div>`;
+  const sombra = camada('dzr-fold-cast');
+  const frente = camada('dzr-fold-front', corpo + '<i class="dzr-fold-shade"></i>');
+  const verso = camada('dzr-fold-back', `<div class="dzr-fold-ghost">${corpo}</div><i class="dzr-fold-shade"></i>`);
+  const hl = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fold-hl')) || .5;
+  return { W, H, hl, sombra, frente, verso };
+}
+function desenharDobra(d, p) {
+  const { W, H } = d;
+  // linha da dobra: anda de W até 0; inclina um pouco (o canto de baixo vai na frente), como quem vira pela ponta
+  const xf = W * (1 - p), incl = W * 0.14 * Math.sin(Math.PI * p);
+  const xt = xf + incl, xb = xf - incl;
+  const poli = (pts) => `polygon(${pts.map(([x, y]) => `${x.toFixed(1)}px ${y.toFixed(1)}px`).join(',')})`;
+  d.frente.style.clipPath = poli([[0, 0], [xt, 0], [xb, H], [0, H]]);
+  const direita = poli([[xt, 0], [W + 2, 0], [W + 2, H], [xb, H]]);
+  d.sombra.style.clipPath = direita;
+  d.verso.style.clipPath = direita;
+  // espelha o pedaço da direita sobre a linha da dobra
+  const ux0 = xb - xt, uy0 = H, n = Math.hypot(ux0, uy0), ux = ux0 / n, uy = uy0 / n;
+  const a = ux * ux - uy * uy, b = 2 * ux * uy, c = b, dd = uy * uy - ux * ux;
+  const e = xt - (a * xt + c * 0), f = 0 - (b * xt + dd * 0);
+  d.verso.style.transform = `matrix(${a},${b},${c},${dd},${e},${f})`;
+  // luz e sombra: o verso tem o brilho da curva junto da dobra e escurece para a ponta;
+  // a frente escurece um pouco antes da dobra (o relevo); a página de baixo recebe a sombra
+  const fold = ((xt + xb) / 2) / W * 100, larg = Math.max(1, 100 - fold);
+  const ang = 90 - Math.atan2(xt - xb, H) * 180 / Math.PI;
+  const hl = d.hl;
+  d.verso.querySelector('.dzr-fold-shade').style.background = `linear-gradient(${ang}deg, rgba(0,0,0,0) ${fold}%, rgba(255,255,255,${hl}) ${fold + larg * .06}%, rgba(255,255,255,${hl * .22}) ${fold + larg * .3}%, rgba(0,0,0,.10) ${fold + larg * .75}%, rgba(0,0,0,.22) 100%)`;
+  d.frente.querySelector('.dzr-fold-shade').style.background = `linear-gradient(${ang}deg, rgba(0,0,0,0) ${Math.max(0, fold - 14)}%, rgba(0,0,0,.10) ${Math.max(0, fold - 4)}%, rgba(0,0,0,.24) ${fold}%, rgba(0,0,0,0) ${fold + .1}%)`;
+  const forca = Math.sin(Math.PI * Math.min(1, p * 1.2)) * .5;
+  d.sombra.style.background = `linear-gradient(${ang}deg, rgba(0,0,0,0) ${fold}%, rgba(0,0,0,${forca}) ${fold + .2}%, rgba(0,0,0,0) ${fold + 22}%)`;
+}
+function animarDobra(d, dir, dur, fim) {
+  const ease = (k) => k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+  const t0 = performance.now();
+  const passo = (now) => {
+    const k = Math.min(1, (now - t0) / dur), p = dir > 0 ? ease(k) : 1 - ease(k);
+    desenharDobra(d, p);
+    if (k < 1) requestAnimationFrame(passo); else fim();
+  };
+  requestAnimationFrame(passo);
 }
 function virar(dir) {
   const alvo = pag + dir;
@@ -232,21 +272,22 @@ function virar(dir) {
   pag = alvo; atualizarBarra();
   if (reduz || !velha) { st.innerHTML = ''; st.appendChild(nova); return; }
   virando = true;
-  const sombra = document.createElement('i'); sombra.className = `dzr-cast ${dir > 0 ? 'next' : 'prev'}`;
-  let f;
+  let d;
   if (dir > 0) {
-    // a página atual vira a folha: sai girando para a esquerda e revela a próxima por baixo
-    f = folha(velha.querySelector('.dzr-page__in').innerHTML, velha.querySelector('.dzr-page__in').scrollTop, 'next');
-    st.innerHTML = ''; st.append(nova, sombra, f);
+    // a página atual dobra e vira, revelando a próxima por baixo
+    const inn = velha.querySelector('.dzr-page__in');
+    d = montarDobra(st, inn.innerHTML, inn.scrollTop);
+    st.innerHTML = ''; st.append(nova, d.sombra, d.frente, d.verso);
   } else {
-    // a folha anterior volta da esquerda e cobre a página atual
-    f = folha(nova.querySelector('.dzr-page__in').innerHTML, 0, 'prev');
-    st.append(sombra, f);
+    // a folha anterior volta, desdobrando por cima da página atual
+    d = montarDobra(st, nova.querySelector('.dzr-page__in').innerHTML, 0);
+    st.append(d.sombra, d.frente, d.verso);
   }
-  setTimeout(() => {
+  desenharDobra(d, dir > 0 ? 0 : 1);
+  animarDobra(d, dir, 950, () => {
     st.innerHTML = ''; st.appendChild(nova);
     virando = false;
-  }, 900);
+  });
 }
 function abrir(i = 0) {
   pag = i;
