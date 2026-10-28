@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=92">
+  <link rel="stylesheet" href="style.css?v=93">
 </head>
 <body>
   <!-- Intro: o avião decola pela pista iluminada e aparece o nome do app (toque para pular) -->
@@ -814,6 +814,12 @@
             <p id="dzFailTxt"></p>
           </div>
 
+          <div class="dz__fail" id="dzPhugBox">
+            <span class="label">A fugoide: subindo e descendo sem controle</span>
+            <div class="dz__failsvg" id="dzPhug"></div>
+            <p id="dzPhugTxt"></p>
+          </div>
+
           <div class="dz__after">
             <div><span class="label">O que mudou depois</span><ul id="dzChanged"></ul></div>
             <div class="dz__memory"><span class="label">Memória</span><p id="dzMemory"></p></div>
@@ -957,16 +963,16 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=92"></script>
-  <script src="catalogo747.js?v=92"></script>
-  <script src="cockpit747.js?v=92"></script>
-  <script src="motor3d.js?v=92"></script>
-  <script src="motor747.js?v=92"></script>
-  <script src="meteo.js?v=92"></script>
-  <script src="radio.js?v=92"></script>
-  <script src="historia.js?v=92"></script>
-  <script src="desastres.js?v=92"></script>
-  <script src="app.js?v=92"></script>
+  <script src="avioes.js?v=93"></script>
+  <script src="catalogo747.js?v=93"></script>
+  <script src="cockpit747.js?v=93"></script>
+  <script src="motor3d.js?v=93"></script>
+  <script src="motor747.js?v=93"></script>
+  <script src="meteo.js?v=93"></script>
+  <script src="radio.js?v=93"></script>
+  <script src="historia.js?v=93"></script>
+  <script src="desastres.js?v=93"></script>
+  <script src="app.js?v=93"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());

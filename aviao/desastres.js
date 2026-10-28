@@ -49,31 +49,60 @@ function falhaJal123() {
   </svg>`;
 }
 
+// A fugoide: o avião troca altura por velocidade em ondas longas que ninguém consegue amortecer
+function fugoideJal123() {
+  const onda = 'M10 80 C40 30 70 30 100 80 S160 130 190 80 S250 30 280 80 S340 130 370 80';
+  return `<svg viewBox="0 0 360 150" role="img" aria-label="Oscilação fugoide: o avião sobe perdendo velocidade e desce ganhando velocidade, em ondas">
+    <rect width="360" height="150" class="hs-sky"/>
+    <path d="M0 80 H360" class="dz-axis"/><text x="6" y="74" class="dz-map-s">altitude média</text>
+    <path d="${onda}" class="dz-wave"/>
+    <text x="40" y="22" class="dz-map-t">sobe: perde velocidade</text><text x="148" y="142" class="dz-map-t">desce: ganha velocidade</text>
+    <path d="M55 26 v10 M175 128 v-10" class="hs-line-accent"/>
+    <g><path d="M0 -6 L2 -2 L8 1 L8 3 L2 2 L1.5 6 L4 8 L4 9 L0 8 L-4 9 L-4 8 L-1.5 6 L-2 2 L-8 3 L-8 1 L-2 -2Z" transform="rotate(90)" class="dz-plane"/>
+      <animateMotion dur="7s" repeatCount="indefinite" rotate="auto" path="${onda}"/></g>
+  </svg>`;
+}
 /* ---------- Os acidentes ---------- */
 const ACIDENTES = [
   {
     id: 'jal123', ano: 1985, data: '12 de agosto de 1985', titulo: 'Japan Air Lines 123', sub: 'O pior acidente com um único avião da história',
-    resumo: 'Um Boeing 747 perdeu o estabilizador vertical e todos os comandos hidráulicos. A tripulação lutou por 32 minutos, só com os motores, antes de cair nas montanhas de Gunma.',
+    resumo: 'Um Boeing 747 lotado perde a cauda e todos os comandos sobre o Japão. Por 32 minutos, três pilotos tentam o impossível: voar só com os motores, enquanto o avião sobe, despenca e balança sem parar.',
     ficha: [['Avião', 'Boeing 747SR-46'], ['Matrícula', 'JA8119'], ['Rota', 'Tóquio (Haneda) → Osaka (Itami)'], ['Local', 'Cume Osutaka, Gunma, Japão'],
       ['A bordo', '524 (509 passageiros e 15 tripulantes)'], ['Mortos', '520'], ['Sobreviventes', '4'], ['Causa', 'Reparo malfeito na antepara de pressão traseira']],
     numeros: [['524', 'a bordo'], ['520', 'mortos'], ['4', 'sobreviventes'], ['32 min', 'de luta sem comandos']],
     secoes: [
-      { t: 'O voo', p: ['Era fim de tarde de 12 de agosto de 1985, véspera do Obon, o feriado em que os japoneses visitam a família. O voo 123 da Japan Air Lines ia de Tóquio a Osaka, uma ponte aérea curta, de cerca de uma hora. O Boeing 747 estava quase lotado: 509 passageiros e 15 tripulantes.',
-        'Na cabine, o primeiro-oficial Yutaka Sasaki, em treinamento para comandante, pilotava do assento da esquerda. O comandante Masami Takahama, instrutor, estava na direita. O engenheiro de voo era Hiroshi Fukuda. O avião decolou de Haneda às 18h12.'] },
-      { t: 'O estrondo', p: ['Às 18h24, subindo a cerca de 24.000 pés (7.300 m) sobre a baía de Sagami, houve um estrondo na parte de trás do avião. A cabine se encheu de névoa, sinal de descompressão, e as máscaras de oxigênio caíram.',
-        'A antepara de pressão traseira, a parede em forma de cúpula que fecha a cabine pressurizada na cauda, tinha se rompido. O ar pressurizado da cabine invadiu a cauda, que não foi feita para aguentar essa pressão, e arrancou a maior parte do estabilizador vertical.',
-        'Pior: as linhas dos quatro sistemas hidráulicos do 747 passavam pela cauda. Todas foram rompidas, e o fluido vazou em poucos minutos. Sem hidráulico, o manche, os pedais e os comandos de voo não respondiam mais.'] },
-      { t: '32 minutos sem comandos', p: ['Sem deriva e sem comandos, o avião entrou em oscilações violentas: subia e descia em ondas (fugoide) e balançava de um lado para o outro, o chamado dutch roll.',
-        'A tripulação acionou o código de emergência 7700, pediu para voltar a Haneda e tentou controlar o avião usando só a potência dos quatro motores: mais potência para subir, menos para descer, diferença entre os lados para virar. Era uma técnica que nenhum manual ensinava.',
-        'Por volta das 18h40, baixaram o trem de pouso pelo sistema alternativo, por gravidade, e isso ajudou a amortecer as oscilações. A base aérea americana de Yokota se ofereceu para recebê-los. Mas o avião continuava praticamente incontrolável e foi sendo levado para as montanhas.',
-        'A gravação da cabine registrou a luta até o fim. Em certo momento, o comandante disse: "Isto pode não ter jeito". Mesmo assim, os três continuaram tentando até o último segundo.'] },
-      { t: 'A queda', p: ['Às 18h56, depois de 32 minutos, o 747 bateu numa crista perto do Cume Osutaka, na província de Gunma, a cerca de 100 km de Tóquio, e pegou fogo.',
-        'Durante a descida, alguns passageiros escreveram bilhetes de despedida para a família. Muitos foram encontrados nos destroços e se tornaram um dos símbolos da tragédia. Entre as vítimas estava o cantor Kyu Sakamoto, de "Ue o Muite Arukō", conhecida no mundo como "Sukiyaki".'] },
-      { t: 'O resgate que demorou', p: ['Cerca de 20 minutos depois da queda, um avião C-130 da Força Aérea americana, da base de Yokota, localizou os destroços em chamas e informou a posição. Um helicóptero americano chegou a ser mandado, mas a ajuda não foi aceita, e as equipes japonesas só chegaram ao local na manhã seguinte, mais de 12 horas depois.',
-        'Foram encontradas quatro sobreviventes, todas mulheres: entre elas uma comissária da própria JAL que viajava de folga e uma menina de 12 anos. Elas contaram que ouviram outras pessoas vivas durante a noite. Médicos disseram depois que mais gente poderia ter sobrevivido se o resgate tivesse chegado antes.'] },
-      { t: 'A causa', p: ['Sete anos antes, em 2 de junho de 1978, esse mesmo avião bateu a cauda na pista ao pousar em Osaka, e a antepara traseira foi danificada. O reparo foi feito por técnicos da própria Boeing.',
-        'A emenda deveria ser feita com uma placa de reforço inteira, presa por duas fileiras de rebites. Foi feita com duas placas separadas, e num trecho a junção ficou segura por uma fileira só. A peça passou a ter só cerca de 70% da resistência à fadiga prevista.',
-        'A cada voo, a cabine era pressurizada e despressurizada, e pequenas rachaduras foram crescendo, escondidas, por mais de 12.000 voos. Em 12 de agosto de 1985, a antepara cedeu. A Boeing reconheceu o erro no reparo.'] },
+      { t: 'Véspera do Obon', p: ['Segunda-feira, 12 de agosto de 1985. O Japão inteiro estava pegando a estrada para o Obon, o feriado em que as famílias voltam às cidades natais para honrar os antepassados. No aeroporto de Haneda, em Tóquio, o voo 123 da Japan Air Lines para Osaka estava praticamente lotado: 509 passageiros, entre eles executivos, famílias com crianças pequenas e gente que voltava para casa depois de meses fora.',
+        'Era uma das rotas mais curtas e rotineiras do país, cerca de uma hora de voo. O avião era um Boeing 747SR, versão de "curto alcance" feita para o Japão, reforçada para fazer muitas decolagens e pousos por dia. Aquele, o JA8119, já tinha feito mais de 18.000 voos.',
+        'Na cabine, três homens experientes. O primeiro-oficial Yutaka Sasaki, em treinamento para comandante, pilotava do assento da esquerda. Ao lado dele, o comandante Masami Takahama, instrutor, com mais de 12.000 horas de voo. Atrás, o engenheiro de voo Hiroshi Fukuda. Às 18h12, com 12 minutos de atraso, o 747 decolou rumo ao pôr do sol.'] },
+      { t: '18h24: o estrondo', p: ['Doze minutos depois, o avião subia a cerca de 24.000 pés (7.300 m) sobre a baía de Sagami, ao sul de Tóquio. Os comissários se preparavam para servir as bebidas. Então veio um estrondo seco, vindo de trás.',
+        'Em um instante a cabine se encheu de uma névoa branca. Não era fumaça: quando a pressão cai de repente, o ar esfria e a umidade vira neblina. Os ouvidos doeram, papéis voaram e as máscaras amarelas de oxigênio caíram do teto. Uma voz gravada começou a repetir, em japonês e em inglês, que era uma emergência.',
+        'Lá atrás, a antepara de pressão traseira, a "tampa" em forma de cúpula que fecha a cabine na cauda, tinha se partido. O ar da cabine, mais pressurizado que o ar lá fora, explodiu para dentro da cauda, que não era feita para aguentar aquilo. Em frações de segundo, a maior parte do estabilizador vertical, a grande barbatana da cauda, foi arrancada e caiu no mar.'] },
+      { t: 'Na cabine de passageiros', p: ['Os comissários correram pelos corredores ajudando as pessoas a colocar as máscaras, mostrando como apertar o cinto e como se curvar para a frente, a posição de impacto. Muita gente achou que era um susto que ia passar. O avião, afinal, continuava voando.',
+        'Mas logo o 747 começou a se mexer de um jeito que ninguém ali tinha sentido: balançava de um lado para o outro e subia e descia em ondas longas, como um barco num mar agitado. Segundo uma das sobreviventes, uma comissária da JAL que viajava de folga, uma parte do teto perto dos banheiros do fundo tinha se aberto.',
+        'Um passageiro chegou a fotografar a cabine com as máscaras penduradas e as pessoas sentadas, assustadas mas quietas. As fotos foram encontradas anos depois, no filme da câmera dele, e estão entre as imagens mais impressionantes da história da aviação.'] },
+      { t: '"Uncontrollable"', p: ['Na cabine de comando, os alarmes tocavam. Os pilotos primeiro pensaram que uma das portas do fundo tinha se aberto. Acionaram o código 7700 de emergência e pediram ao controle de Tóquio para voltar a Haneda.',
+        'Foi então que o engenheiro de voo leu os mostradores e deu a pior notícia possível: a pressão hidráulica estava caindo. Os quatro sistemas hidráulicos do 747, os "músculos" que movem os lemes, os ailerons e os profundores, tinham as linhas passando pela cauda. Todas foram cortadas, e o fluido vazou em poucos minutos.',
+        'O comandante girava o manche e nada acontecia. O avião simplesmente não obedecia. Quando o controlador pediu para virarem, a resposta pelo rádio foi uma palavra só: "Uncontrollable". Incontrolável.',
+        'Percebendo a situação, o controlador fez algo raro: liberou a tripulação para falar em japonês em vez do inglês padrão da aviação, para que eles não perdessem nenhum segundo traduzindo. Os outros aviões foram afastados da frequência.',
+        'A investigação observou depois que os pilotos não colocaram as próprias máscaras de oxigênio. A 24.000 pés, a falta de ar pode ter atrapalhado o raciocínio nos primeiros minutos, justamente os mais críticos.'] },
+      { t: 'A montanha-russa: fugoide e dutch roll', p: ['Sem a deriva e sem comandos, o 747 entrou em dois movimentos que normalmente o próprio avião e os pilotos corrigem sem que ninguém perceba.',
+        'O primeiro foi a fugoide. Funciona como uma gangorra entre altura e velocidade: o nariz sobe, o avião ganha altura mas perde velocidade; com menos velocidade, as asas sustentam menos e o nariz cai; descendo, ele ganha velocidade, a sustentação volta e o nariz sobe de novo. O ciclo se repete, e cada onda pode levar mais de um minuto. Num avião normal, os profundores amortecem isso. No JAL 123, sem hidráulico, ninguém conseguia parar a gangorra. Por dentro, era como estar num elevador que sobe e despenca sem parar.',
+        'O segundo foi o dutch roll: o avião guinava para um lado, inclinava as asas, guinava para o outro, num balanço em forma de "S" deitado. Quem amortece esse movimento é justamente o estabilizador vertical, e ele não existia mais.',
+        'Os dois movimentos juntos faziam o avião subir, cair e balançar ao mesmo tempo. Para os passageiros, eram 30 minutos de enjoo, medo e incerteza.'] },
+      { t: 'Pilotando com os motores', p: ['Sem nenhum comando, sobrava uma única ferramenta: os quatro motores. A tripulação começou a mexer nas manetes de um jeito que nenhum manual ensinava. Mais potência para o nariz subir, menos potência para descer, mais força de um lado que do outro para tentar virar.',
+        'Funcionou, em parte. Era como dirigir um carro sem volante, usando só o acelerador e a diferença de força entre as rodas. Às 18h40, baixaram o trem de pouso pelo sistema alternativo, que solta as rodas pela gravidade. O arrasto das rodas ajudou a amortecer as oscilações e deixou o avião um pouco mais estável.',
+        'A base aérea americana de Yokota, a oeste de Tóquio, avisou que estava pronta para recebê-los. Mas fazer um 747 sem comandos acertar uma pista era quase impossível, e o avião foi sendo levado para o noroeste, em direção às montanhas de Gunma.'] },
+      { t: 'Os últimos minutos', p: ['O avião perdeu milhares de pés numa descida longa e chegou perto de montanhas mais altas que ele. Com os motores no máximo, a tripulação conseguiu fazê-lo subir de novo. Na gravação da cabine, ouve-se o comandante repetindo para levantar o nariz, a voz cada vez mais tensa.',
+        'Em certo momento ele disse: "Isto pode não ter jeito". Mesmo assim, os três não pararam. Ajustavam as manetes, liam os instrumentos e trocavam informações até o último segundo.',
+        'Nos minutos finais, o alarme de proximidade do solo começou a gritar "pull up", "pull up". Às 18h56, depois de 32 minutos sem comandos, a ponta da asa direita tocou as árvores de uma crista, o avião virou e bateu no terreno perto do Cume Osutaka, na província de Gunma, a cerca de 100 km de Tóquio. Ele se partiu e pegou fogo.'] },
+      { t: 'Bilhetes de despedida', p: ['Durante aquela meia hora, alguns passageiros entenderam o que estava acontecendo e escreveram mensagens para quem ficava. Em agendas, cartões e no verso de envelopes, com a letra tremida pelo balanço do avião.',
+        'Um pai escreveu aos filhos pedindo que fossem bons e cuidassem da mãe. Outros só deixaram "obrigado" e "adeus". Os bilhetes foram encontrados nos destroços e entregues às famílias. Até hoje são lembrados no Japão como o retrato mais humano da tragédia.',
+        'Entre as 520 vítimas estava Kyu Sakamoto, cantor de "Ue o Muite Arukō", a música conhecida no mundo como "Sukiyaki", que em 1963 chegou ao primeiro lugar nos Estados Unidos.'] },
+      { t: 'A noite na montanha', p: ['Cerca de 20 minutos depois da queda, a tripulação de um avião C-130 da Força Aérea americana, da base de Yokota, viu os destroços em chamas na encosta e passou a posição. Um helicóptero americano chegou a ser mandado, mas a ajuda não foi aceita. As equipes japonesas só chegaram ao local na manhã seguinte, mais de 12 horas depois.',
+        'Lá encontraram quatro sobreviventes, todas mulheres, entre elas a comissária de folga e uma menina de 12 anos. Elas contaram que, durante a noite, ouviram outras pessoas vivas chamando e gemendo nos destroços, vozes que foram se calando até o amanhecer. Médicos disseram depois que mais gente poderia ter sido salva se o resgate tivesse chegado antes.'] },
+      { t: 'Um erro de sete anos antes', p: ['Em 2 de junho de 1978, sete anos antes, o JA8119 bateu a cauda na pista ao pousar em Osaka, e a antepara traseira foi danificada. O conserto foi feito por uma equipe da própria Boeing.',
+        'Para unir a parte velha à nova, a emenda deveria usar uma placa de reforço inteira, presa por duas fileiras de rebites. Foi feita com duas placas separadas, e num trecho a junção ficou presa por uma fileira só. A peça passou a ter só cerca de 70% da resistência à fadiga prevista. E, escondido dentro da cauda, o erro não aparecia nas inspeções comuns.',
+        'A cada voo a cabine era pressurizada e despressurizada, como um balão que enche e esvazia. Pequenas rachaduras foram crescendo em volta dos rebites, voo após voo, por mais de 12.000 voos. Em 12 de agosto de 1985, a antepara cedeu. A Boeing reconheceu o erro no reparo.'] },
     ],
     linha: [['18:12', 'Decolagem de Haneda, Tóquio.', 0], ['18:24', 'Estrondo a cerca de 24.000 pés: a antepara traseira se rompe e o avião perde a deriva e os quatro sistemas hidráulicos.', .24],
       ['18:25', 'Código 7700 de emergência. A tripulação pede para voltar a Haneda.', .36], ['18:40', 'O trem de pouso é baixado por gravidade e ajuda a amortecer as oscilações.', .58],
@@ -86,7 +115,8 @@ const ACIDENTES = [
     memoria: 'Todo dia 12 de agosto, familiares das vítimas sobem a trilha até o Cume Osutaka para lembrar os 520 que morreram. A JAL deixou de usar o número 123 nos seus voos.',
     fontes: [['Wikipedia: Japan Air Lines Flight 123', 'https://en.wikipedia.org/wiki/Japan_Air_Lines_Flight_123'], ['Britannica: Japan Airlines flight 123', 'https://www.britannica.com/event/Mount-Osutaka-airline-disaster'],
       ['Nippon.com: Japan’s Deadliest Air Disaster', 'https://www.nippon.com/en/guide-to-japan/cs00019/'], ['Admiral Cloudberg: Fire on the Mountain', 'https://admiralcloudberg.medium.com/fire-on-the-mountain-the-crash-of-japan-airlines-flight-123-dadebd321224']],
-    mapa: mapaJal123, esquema: falhaJal123,
+    mapa: mapaJal123, esquema: falhaJal123, fugoide: fugoideJal123,
+    fugoideTxt: 'Sem os profundores, cada subida custava velocidade e cada descida a devolvia. O 747 ficou preso nessa gangorra, subindo e descendo centenas de metros por vez, enquanto o dutch roll o balançava de lado.',
   },
 ];
 
@@ -110,6 +140,8 @@ function mostrar() {
   $('#dzMap').innerHTML = a.mapa();
   $('#dzFail').innerHTML = a.esquema();
   $('#dzFailTxt').textContent = a.falha;
+  $('#dzPhugBox').hidden = !a.fugoide;
+  if (a.fugoide) { $('#dzPhug').innerHTML = a.fugoide(); $('#dzPhugTxt').textContent = a.fugoideTxt; }
   $('#dzChanged').innerHTML = a.mudou.map((m) => `<li>${esc(m)}</li>`).join('');
   $('#dzMemory').textContent = a.memoria;
   $('#dzSrc').innerHTML = a.fontes.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener">${esc(n)}</a>`).join(' · ');
