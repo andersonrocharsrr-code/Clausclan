@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=104">
+  <link rel="stylesheet" href="style.css?v=105">
 </head>
 <body>
   <!-- Intro: o avião decola pela pista iluminada e aparece o nome do app (toque para pular) -->
@@ -806,7 +806,9 @@
             <dl class="dz__ficha" id="dzFicha"></dl>
           </div>
 
-          <div class="card hs dzh" id="dzhCard">
+        </article>
+
+        <div class="card hs dzh" id="dzhCard">
             <div class="dzh__head"><span class="label">O relato</span><h3>A história, capítulo por capítulo</h3></div>
             <div class="hs__parts" id="dzhParts" role="group" aria-label="Partes do relato"></div>
             <div class="hs__line" id="dzhLine" role="group" aria-label="Linha do tempo do relato"></div>
@@ -826,6 +828,7 @@
             </div>
           </div>
 
+        <article class="card dz__case dz__case--after">
           <div class="dz__fail" id="dzFailBox">
             <span class="label">O que falhou</span>
             <div class="dz__failsvg" id="dzFail"></div>
@@ -981,16 +984,16 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=104"></script>
-  <script src="catalogo747.js?v=104"></script>
-  <script src="cockpit747.js?v=104"></script>
-  <script src="motor3d.js?v=104"></script>
-  <script src="motor747.js?v=104"></script>
-  <script src="meteo.js?v=104"></script>
-  <script src="radio.js?v=104"></script>
-  <script src="historia.js?v=104"></script>
-  <script src="desastres.js?v=104"></script>
-  <script src="app.js?v=104"></script>
+  <script src="avioes.js?v=105"></script>
+  <script src="catalogo747.js?v=105"></script>
+  <script src="cockpit747.js?v=105"></script>
+  <script src="motor3d.js?v=105"></script>
+  <script src="motor747.js?v=105"></script>
+  <script src="meteo.js?v=105"></script>
+  <script src="radio.js?v=105"></script>
+  <script src="historia.js?v=105"></script>
+  <script src="desastres.js?v=105"></script>
+  <script src="app.js?v=105"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());

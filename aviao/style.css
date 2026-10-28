@@ -930,7 +930,11 @@ html.dzr-open, html.dzr-open body { overflow: hidden; }
 .px-trail { fill: none; stroke: var(--hs-ground); stroke-width: 3; stroke-dasharray: 2 5; }
 .px-lantern { fill: #3a2c22; } .px-lamp { fill: #ffcf7a; animation: pxFlick 1.4s ease-in-out infinite alternate; }
 @keyframes pxScan { from { transform: translateX(-20px); } to { transform: translateX(34px); } }
-.dzh { display: grid; gap: 16px; scroll-margin-top: 120px; }
+.dzh { display: grid; gap: 18px; scroll-margin-top: 120px; padding: clamp(20px, 4.5vw, 32px); }
+.dzh .hs__text p { font-size: 17px; line-height: 1.7; }
+.dzh .hs__body h2 { font-size: clamp(28px, 6.5vw, 36px); }
+.dzh .hs__fact { font-size: 15px; }
+.dzh .hs__scene { border-radius: 12px; }
 .dzh__head h3 { margin: 2px 0 0; font: 600 26px/1.1 var(--display); }
 .dz__fail { display: grid; gap: 10px; scroll-margin-top: 120px; }
 .dz__read { scroll-margin-top: 120px; }
