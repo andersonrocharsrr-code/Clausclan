@@ -26,7 +26,7 @@ function mapaJal123() {
     <path d="${JAL123_ROTA}" class="dz-route-dash" mask="url(#dzReveal)"/>
     <g class="dz-labels">
       <text x="1150" y="1010" text-anchor="middle">Haneda</text><text x="1150" y="1048" text-anchor="middle" class="dz-lbl-s">(Tóquio)</text>
-      <text x="1400" y="1330" text-anchor="middle" class="dz-lbl-w">Baía de Tóquio</text>
+      <text x="1470" y="1380" text-anchor="end" class="dz-lbl-w">Baía de Tóquio</text>
       <text x="820" y="1680" text-anchor="middle" class="dz-lbl-w">Baía de Sagami</text>
       <text x="440" y="1760" text-anchor="middle">Península de Izu</text>
       <text x="250" y="1230" text-anchor="middle">Monte Fuji</text>
