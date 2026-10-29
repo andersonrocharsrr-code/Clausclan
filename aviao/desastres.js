@@ -153,6 +153,13 @@ function estolAf447() {
     <text x="10" y="142" class="dz-map-s">queda de cerca de 10.000 pés por minuto</text>
   </svg>`;
 }
+/* ---------- Caudas com as cores das empresas (fundo dos cartões da lista) ---------- */
+const DERIVA = 'M18 120 L62 8 H96 L104 120Z';
+const caudaJal = () => `<svg viewBox="0 0 120 120" aria-hidden="true"><defs><clipPath id="dzFinJal"><path d="${DERIVA}"/></clipPath></defs>
+  <path d="${DERIVA}" class="dz-fin-body"/><g clip-path="url(#dzFinJal)"><circle cx="76" cy="48" r="21" fill="#d7262e"/>
+  <path d="M60 50 C66 38 74 36 78 44 C82 36 90 36 94 44" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/><path d="M74 50 q4 8 2 14" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g></svg>`;
+const caudaAf = () => `<svg viewBox="0 0 120 120" aria-hidden="true"><defs><clipPath id="dzFinAf"><path d="${DERIVA}"/></clipPath></defs>
+  <path d="${DERIVA}" class="dz-fin-body"/><g clip-path="url(#dzFinAf)" transform="rotate(-62 70 64)"><rect x="-20" y="46" width="200" height="16" fill="#0b2d8f"/><rect x="-20" y="64" width="200" height="5" fill="#fff"/><rect x="-20" y="71" width="200" height="8" fill="#e1251b"/></g></svg>`;
 /* ---------- Ilustrações dos capítulos (viewBox 320x180) ---------- */
 const water = (y = 150) => `<g class="hs-water"><path d="M0 ${y} Q20 ${y - 4} 40 ${y} T80 ${y} T120 ${y} T160 ${y} T200 ${y} T240 ${y} T280 ${y} T320 ${y} V180 H0Z" class="hs-fill-water"/><path class="hs-wave" d="M-40 ${y + 10} q10 -3 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0"/></g>`;
 const ground = (y = 150) => `<path d="M0 ${y} H320 V180 H0Z" class="hs-fill-ground"/>`;
@@ -318,7 +325,7 @@ const ACIDENTES = [
     memoria: 'Todo dia 12 de agosto, familiares das vítimas sobem a trilha até o Cume Osutaka para lembrar os 520 que morreram. A JAL deixou de usar o número 123 nos seus voos.',
     fontes: [['Wikipedia: Japan Air Lines Flight 123', 'https://en.wikipedia.org/wiki/Japan_Air_Lines_Flight_123'], ['Britannica: Japan Airlines flight 123', 'https://www.britannica.com/event/Mount-Osutaka-airline-disaster'],
       ['Nippon.com: Japan’s Deadliest Air Disaster', 'https://www.nippon.com/en/guide-to-japan/cs00019/'], ['Admiral Cloudberg: Fire on the Mountain', 'https://admiralcloudberg.medium.com/fire-on-the-mountain-the-crash-of-japan-airlines-flight-123-dadebd321224']],
-    mapa: mapaJal123, esquema: falhaJal123, fugoide: fugoideJal123,
+    cauda: caudaJal, mapa: mapaJal123, esquema: falhaJal123, fugoide: fugoideJal123,
     fuso: 'Linha do tempo · horário de Tóquio, alguns aproximados', fugoideTit: 'A fugoide: subindo e descendo sem controle',
     fugoideTxt: 'Sem os profundores, cada subida custava velocidade e cada descida a devolvia. O 747 ficou preso nessa gangorra, subindo e descendo centenas de metros por vez, enquanto o dutch roll o balançava de lado.',
   },
@@ -376,7 +383,7 @@ const ACIDENTES = [
     fontes: [['BEA: relatório final do AF 447 (2012)', 'https://bea.aero/en/investigation-reports/notified-events/detail/accident-to-the-airbus-a330-203-registered-f-gzcp-and-operated-by-air-france-occurred-on-06-01-2009-in-the-atlantic-ocean/'],
       ['Wikipedia: Air France Flight 447', 'https://en.wikipedia.org/wiki/Air_France_Flight_447'], ['Al Jazeera: condenação em 2026', 'https://www.aljazeera.com/news/2026/5/21/french-court-finds-airbus-air-france-guilty-of-manslaughter-in-2009-crash'],
       ['CNN: a transcrição da cabine', 'https://www.cnn.com/2011/10/14/world/americas/af447-transcript']],
-    mapa: mapaAf447, esquema: falhaAf447, fugoide: estolAf447,
+    cauda: caudaAf, mapa: mapaAf447, esquema: falhaAf447, fugoide: estolAf447,
     fugoideTit: 'O estol: nariz para cima, avião caindo',
     fugoideTxt: 'O nariz apontava para cima, o que dava a sensação de que o avião subia. Na verdade, ele caía quase reto, de barriga. Para sair do estol era preciso fazer o contrário do que parecia certo: baixar o nariz, mergulhar e ganhar velocidade.',
   },
@@ -387,7 +394,7 @@ let atual = ACIDENTES[0], passo = ACIDENTES[0].linha.length - 1, tocando = 0;
 
 function lista() {
   $('#dzList').innerHTML = [...ACIDENTES].sort((x, y) => x.ano - y.ano).map((a) => `<button type="button" class="dz-item" data-dz="${a.id}" aria-pressed="${a === atual}">
-      <span class="dz-item__year">${a.ano}</span><b>${esc(a.titulo)}</b><span>${esc(a.sub)}</span><i>${a.numeros[1][0]} mortos · ${a.numeros[2][0] === '0' ? 'nenhum sobrevivente' : a.numeros[2][0] + ' sobreviventes'}</i></button>`).join('')
+      ${a.cauda ? `<span class="dz-item__fin">${a.cauda()}</span>` : ''}<span class="dz-item__year">${a.ano}</span><b>${esc(a.titulo)}</b><span>${esc(a.sub)}</span><i>${a.numeros[1][0]} mortos · ${a.numeros[2][0] === '0' ? 'nenhum sobrevivente' : a.numeros[2][0] + ' sobreviventes'}</i></button>`).join('')
     + '<p class="dz-soon small">Novos acidentes serão adicionados aqui, dos primeiros anos da aviação até hoje.</p>';
 }
 
