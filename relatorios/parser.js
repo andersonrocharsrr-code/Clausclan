@@ -170,7 +170,21 @@
 
   /* Conferência de um relatório: as contas de dentro dele e, se houver, contra o relatório anterior
      do mesmo vendedor na mesma semana (total de hoje = total de ontem + o do dia). */
-  function conferir(r, anterior) {
+  // Quanto o vendedor já tinha de 25% e 40% (pagas dos dias somadas) nos relatórios anteriores da semana, do mais antigo
+  // ao mais novo. Cada relatório pode vir com os do dia ou já somados (= pagas total).
+  function acumulado2540(semana) {
+    let a = null;
+    semana.forEach((x) => {
+      if (x.p25 == null && x.p40 == null) return;
+      const s = v(x.p25) + v(x.p40);
+      const somado = a && x.pgTotal != null && s === v(x.pgTotal) && s !== v(x.pgDia);
+      a = somado ? { p25: v(x.p25), p40: v(x.p40) } : { p25: (a ? a.p25 : 0) + v(x.p25), p40: (a ? a.p40 : 0) + v(x.p40) };
+      a.dt = x.data ? x.data.split('-').reverse().slice(0, 2).join('/') : 'ontem';
+    });
+    return a;
+  }
+
+  function conferir(r, anterior, semana) {
     const av = [];
     const falta = [];
     if (!r.nome) falta.push('nome');
@@ -179,8 +193,24 @@
     if (r.feitaTotal.v == null) falta.push('valor das notas feitas total');
     if (falta.length) av.push(`Não achei: ${falta.join(', ')}.`);
 
-    if (r.pgDia != null && (r.p25 != null || r.p40 != null) && v(r.p25) + v(r.p40) !== v(r.pgDia))
-      av.push(`Notas pagas do dia (${v(r.pgDia)}) ≠ 25% (${v(r.p25)}) + 40% (${v(r.p40)}).`);
+    // 25% + 40% são as pagas do dia; tem vendedor que escreve somando com os dias anteriores (= pagas total).
+    // Os dois jeitos valem. Quando vem somado, confere com os relatórios anteriores da semana se o que entrou hoje
+    // em cada um (25% de hoje − 25% até ontem, idem 40%) dá as pagas do dia.
+    const p2540 = v(r.p25) + v(r.p40);
+    if (r.pgDia != null && (r.p25 != null || r.p40 != null) && p2540 !== v(r.pgDia)) {
+      const antes = acumulado2540(semana || []);
+      if (r.pgTotal == null || p2540 !== v(r.pgTotal))
+        av.push(`25% (${v(r.p25)}) + 40% (${v(r.p40)}) = ${p2540}, mas as notas pagas são ${v(r.pgDia)} no dia e ${v(r.pgTotal)} no total.`);
+      else if (antes) {
+        const d25 = v(r.p25) - antes.p25, d40 = v(r.p40) - antes.p40;
+        const caiu = [[d25, '25%', antes.p25, r.p25], [d40, '40%', antes.p40, r.p40]].filter((x) => x[0] < 0)
+          .map(([, n, a, h]) => `o ${n} caiu de ${a} para ${v(h)}`);
+        if (caiu.length)
+          av.push(`25% (${v(r.p25)}) e 40% (${v(r.p40)}) vieram somados com os dias anteriores, mas ${caiu.join(' e ')} (até ${antes.dt}); somado não pode diminuir.`);
+        else if (d25 + d40 !== v(r.pgDia))
+          av.push(`25% (${v(r.p25)}) e 40% (${v(r.p40)}) vieram somados com os dias anteriores, mas não batem: até ${antes.dt} eram 25% ${antes.p25} e 40% ${antes.p40}, então hoje seriam 25% ${d25} + 40% ${d40} = ${d25 + d40}, e as notas pagas do dia são ${v(r.pgDia)}.`);
+      }
+    }
     if (r.feitaDia.q != null && (r.ab != null || r.rp != null) && v(r.ab) + v(r.rp) !== v(r.feitaDia.q))
       av.push(`Notas feitas do dia (${v(r.feitaDia.q)}) ≠ Ab (${v(r.ab)}) + Rp (${v(r.rp)}).`);
     if (r.notas != null && r.pgTotal != null && r.branco.q != null) {
