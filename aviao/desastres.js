@@ -75,6 +75,86 @@ function fugoideJal123() {
       <animateMotion dur="7s" repeatCount="indefinite" rotate="auto" path="${onda}"/></g>
   </svg>`;
 }
+/* ---------- Ilustrações do AF 447 ---------- */
+// A330 de lado, nariz para a direita: dois motores, sem a corcova do 747
+const a330 = (cls = 'hs-fill-paper2') => `<g><path d="M-70 4 C-60 -5 -40 -6 -10 -6 H40 C52 -6 58 -2 62 4 C58 8 50 10 40 10 H-60 C-66 10 -70 8 -70 4Z" class="${cls}"/>
+  <path d="M-6 6 L-30 24 H-20 L12 6Z" class="hs-fill-ink"/><rect x="-16" y="10" width="18" height="7" rx="3.5" class="hs-fill-metal"/><path d="M-58 -2 L-70 -26 H-62 L-46 -5Z" class="hs-fill-blue"/><path d="M-63 -14 L-66 -20 H-63 L-60 -14Z" class="hs-fill-accent"/><path d="M-60 6 L-76 12 H-68 L-50 6Z" class="hs-fill-ink"/>
+  ${[-40, -28, -16, -4, 8, 20, 32].map((x) => `<rect x="${x}" y="-2" width="5" height="4" rx="1" class="hs-fill-ink"/>`).join('')}<path d="M50 -1 h6 l3 3 h-9z" class="hs-fill-ink"/></g>`;
+// Mapa do Atlântico Sul em projeção simples: 29 px por grau, de 48°O a 14°O e de 26°S a 16°N
+const AF = (lat, lon) => [Math.round((lon + 48) * 29), Math.round((16 - lat) * 29)];
+const AF_COSTA = [[-26.5, -48.6], [-25, -48.1], [-24, -46.5], [-23.4, -45], [-23, -43.6], [-22.9, -42], [-22, -41], [-20.6, -40.3], [-18.5, -39.7], [-16, -38.9], [-13.5, -38.9], [-12.6, -38], [-11, -37], [-9.6, -35.7], [-8, -34.85], [-6.5, -34.95], [-5.2, -35.5], [-4.8, -36.9], [-3.7, -38.5], [-2.9, -39.9], [-2.8, -41.6], [-2.5, -43.4], [-1.6, -44.7], [-1, -46.2], [-0.7, -47.6], [-0.4, -48.6]];
+const AF_AFRICA = [[17, -16.3], [15.5, -16.6], [14.7, -17.5], [13.6, -16.7], [12.3, -16.75], [11, -15.4], [10, -14]];
+const pts = (l) => l.map(([a, b]) => AF(a, b).join(' ')).join(' L');
+const AF447_ROTA = 'M138 1125 C190 990 300 800 371 640 L440 503 L505 378';
+const AVIAO_A330 = `<g class="dz-plane">
+  <path d="M0 -34 C3.4 -34 4.6 -27 4.6 -20 L4.6 22 L3 31 L0 34 L-3 31 L-4.6 22 L-4.6 -20 C-4.6 -27 -3.4 -34 0 -34Z"/>
+  <path d="M4.6 -6 L36 13 L36 17 L4.6 8Z M-4.6 -6 L-36 13 L-36 17 L-4.6 8Z"/>
+  <path d="M3 22 L15 30 L15 33 L3 30Z M-3 22 L-15 30 L-15 33 L-3 30Z"/>
+  <rect x="12" y="1" width="4.6" height="10" rx="2.3"/><rect x="-16.6" y="1" width="4.6" height="10" rx="2.3"/></g>`;
+function mapaAf447() {
+  const [nx, ny] = AF(-3.85, -32.42), [dx, dy] = AF(14.7, -17.45), [rx, ry] = AF(-8.05, -34.9), [tx, ty] = AF(-5.8, -35.2);
+  return `<svg viewBox="0 0 986 1218" role="img" aria-label="Mapa da rota do voo AF 447 sobre o Atlântico Sul" class="dz-map--af">
+    <defs><linearGradient id="dzSea" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a2238"/><stop offset="1" stop-color="#123b5e"/></linearGradient>
+      <radialGradient id="dzStorm"><stop offset="0" stop-color="#e9eef5" stop-opacity=".55"/><stop offset=".6" stop-color="#b9c6d6" stop-opacity=".25"/><stop offset="1" stop-color="#b9c6d6" stop-opacity="0"/></radialGradient>
+      <filter id="dzShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="7" dy="10" stdDeviation="4" flood-color="#000" flood-opacity=".55"/></filter></defs>
+    <rect width="986" height="1218" fill="url(#dzSea)"/>
+    <path d="M0 1218 L${pts(AF_COSTA)} L0 ${AF(-0.4, -48.6)[1]}Z" class="dz-land"/>
+    <path d="M${pts(AF_AFRICA)} L986 0 L${AF(17, -16.3)[0]} 0Z" class="dz-land"/>
+    <path d="M0 464 H986" class="dz-eq"/>
+    <g class="dz-storms">${[[470, 430, 70], [540, 380, 90], [610, 330, 70], [500, 330, 55], [650, 410, 60], [430, 370, 50]].map(([x, y, r], i) => `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#dzStorm)"/><path d="M${x - 6} ${y - 18} l-8 16 h9 l-7 16" class="dz-bolt" style="animation-delay:${i * .7}s"/>`).join('')}</g>
+    <mask id="dzReveal" maskUnits="userSpaceOnUse" x="0" y="0" width="986" height="1218"><path id="dzRevealPath" d="${AF447_ROTA}" fill="none" stroke="#fff" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/></mask>
+    <path d="M505 378 L522 348 L600 150 L640 0" class="dz-route-plan"/>
+    <path id="dzPath" d="${AF447_ROTA}" class="dz-route"/>
+    <path d="${AF447_ROTA}" class="dz-route-dash" mask="url(#dzReveal)"/>
+    <g class="dz-labels">
+      <circle cx="138" cy="1125" r="9" class="dz-dot"/><text x="160" y="1120">Rio de Janeiro</text><text x="160" y="1150" class="dz-lbl-s">(Galeão)</text>
+      <circle cx="${rx}" cy="${ry}" r="7" class="dz-dot"/><text x="${rx - 16}" y="${ry + 10}" text-anchor="end">Recife</text>
+      <circle cx="${tx}" cy="${ty}" r="7" class="dz-dot"/><text x="${tx - 16}" y="${ty + 10}" text-anchor="end">Natal</text>
+      <circle cx="${nx}" cy="${ny}" r="6" class="dz-dot"/><text x="${nx + 16}" y="${ny + 10}">Fernando de Noronha</text>
+      <text x="456" y="515" class="dz-lbl-s">INTOL</text><text x="540" y="336" class="dz-lbl-s">TASIL</text>
+      <text x="612" y="120" class="dz-lbl-s">rota prevista até Paris</text>
+      <circle cx="${dx}" cy="${dy}" r="7" class="dz-dot"/><text x="${dx - 14}" y="${dy + 46}" text-anchor="end">Dakar</text>
+      <text x="200" y="830" text-anchor="middle" class="dz-lbl-big">BRASIL</text>
+      <text x="760" y="820" text-anchor="middle" class="dz-lbl-w">Oceano Atlântico</text>
+      <text x="976" y="454" text-anchor="end" class="dz-lbl-s dz-lbl-w">Linha do Equador</text>
+      <text x="720" y="250" text-anchor="middle" class="dz-lbl-s dz-lbl-w">tempestades da Zona de</text><text x="720" y="280" text-anchor="middle" class="dz-lbl-s dz-lbl-w">Convergência Intertropical</text>
+      <text x="478" y="372" text-anchor="end" class="dz-lbl-s">Última posição</text>
+    </g>
+    <g id="dzMarks"></g>
+    <path d="M490 363 l30 30 M520 363 l-30 30" class="dz-x"/>
+    <g id="dzPlane"><circle r="30" class="dz-plane-halo"/><g transform="scale(.95)" filter="url(#dzShadow)">${AVIAO_A330}</g></g>
+    <text x="16" y="1204" class="dz-map-note">Rota aproximada</text>
+  </svg>`;
+}
+// As sondas pitot no nariz do A330 entupidas por cristais de gelo: a velocidade indicada despenca
+function falhaAf447() {
+  return `<svg viewBox="0 0 360 160" role="img" aria-label="Esquema da falha: cristais de gelo entopem as sondas pitot, a velocidade indicada cai e o piloto automático se desliga">
+    <rect width="360" height="160" class="px-night"/>
+    <path d="M360 54 H170 C128 54 96 70 82 92 C96 112 128 120 170 120 H360Z" class="hs-fill-paper2"/>
+    <path d="M110 74 L126 66 H146 L146 76 H116Z" class="hs-fill-ink"/>
+    ${[[160, 120], [196, 120], [178, 54]].map(([x, y], i) => `<path d="M${x} ${y} v${i === 2 ? -8 : 8} h-14" class="dz-pitot"/><circle cx="${x - 14}" cy="${y + (i === 2 ? -8 : 8)}" r="2.4" class="dz-pitot-ice"/>`).join('')}
+    <g class="dz-ice">${Array.from({ length: 22 }, (_, i) => `<path d="M${(i * 37) % 120 - 10} ${20 + (i * 53) % 130} l3 -3 l3 3 l-3 3z" class="dz-crystal" style="animation-delay:${(i % 7) * .3}s"/>`).join('')}</g>
+    <rect x="232" y="10" width="118" height="34" rx="4" class="px-panel"/>
+    <text x="240" y="24" class="dz-spd-l">VELOCIDADE</text><text x="342" y="38" text-anchor="end" class="dz-spd dz-spd--a">275 nós</text><text x="342" y="38" text-anchor="end" class="dz-spd dz-spd--b">60 nós</text>
+    <text x="300" y="140" text-anchor="middle" class="dz-apoff">AP OFF</text>
+    <text x="14" y="150" class="dz-map-t" style="fill:#e9eef5">3 sondas pitot · cristais de gelo · cerca de 1 minuto</text>
+  </svg>`;
+}
+// O estol: o nariz aponta para cima, mas o avião cai; o ângulo entre os dois passa de 40°
+function estolAf447() {
+  return `<svg viewBox="0 0 360 150" role="img" aria-label="Estol: o nariz do avião aponta para cima enquanto ele cai quase reto, com ângulo de ataque acima de 40 graus">
+    <rect width="360" height="150" class="hs-sky"/>
+    <g class="dz-fall"><g transform="translate(150 50) rotate(-15)"><g transform="scale(.9)">${a330()}</g></g>
+      <path d="M150 50 L250 -8" class="dz-axis"/><path d="M150 50 L196 134" class="dz-vec"/><path d="M190 120 l6 14 l4 -15" class="dz-vec"/>
+      <path d="M206 18 A64 64 0 0 1 182 105" class="hs-line-accent"/>
+      ${[0, 1, 2].map((i) => `<path d="M${118 + i * 12} ${66 + i * 4} q6 6 0 12 q-6 6 0 12" class="dz-turb" style="animation-delay:${i * .2}s"/>`).join('')}</g>
+    <text x="236" y="22" class="dz-map-t">nariz para cima (~15°)</text>
+    <text x="208" y="74" class="dz-map-t dz-map-crash">ângulo de ataque &gt; 40°</text>
+    <text x="206" y="134" class="dz-map-t">trajetória: para baixo</text>
+    <text x="10" y="18" class="dz-map-t">a asa perde a sustentação</text>
+    <text x="10" y="142" class="dz-map-s">queda de cerca de 10.000 pés por minuto</text>
+  </svg>`;
+}
 /* ---------- Ilustrações dos capítulos (viewBox 320x180) ---------- */
 const water = (y = 150) => `<g class="hs-water"><path d="M0 ${y} Q20 ${y - 4} 40 ${y} T80 ${y} T120 ${y} T160 ${y} T200 ${y} T240 ${y} T280 ${y} T320 ${y} V180 H0Z" class="hs-fill-water"/><path class="hs-wave" d="M-40 ${y + 10} q10 -3 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0"/></g>`;
 const ground = (y = 150) => `<path d="M0 ${y} H320 V180 H0Z" class="hs-fill-ground"/>`;
@@ -126,6 +206,71 @@ const CENAS = {
     <path d="M40 180 C90 150 140 140 180 120 S240 100 270 96" class="px-trail"/>
     ${[[70, 160], [110, 146], [150, 132], [190, 118], [228, 106], [262, 98]].map(([x, y], i) => `<g><rect x="${x - 4}" y="${y - 12}" width="8" height="12" rx="2" class="px-lantern"/><circle cx="${x}" cy="${y - 6}" r="5" class="px-lamp" style="animation-delay:${i * .25}s"/></g>`).join('')}
     <text x="160" y="24" class="px-gtxt px-gtxt--ink">520 VIDAS · 12 DE AGOSTO DE 1985</text>`,
+  // AF 447
+  galeao: () => `<rect width="320" height="180" class="px-night"/>${[[24, 18], [70, 30], [140, 12], [200, 26], [292, 16]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="1.3" class="px-star" style="animation-delay:${i * .3}s"/>`).join('')}
+    <path d="M150 140 C160 84 176 70 190 76 C200 82 204 110 212 140Z M200 140 C210 108 222 100 232 108 C240 116 244 128 248 140Z" class="px-ridge-n"/><path d="M30 140 C50 96 74 86 96 96 C110 104 118 120 126 140Z" class="px-ridge-n"/>
+    <path d="M70 86 v-14 M64 78 h12" class="px-cristo"/>
+    ${water(150)}${Array.from({ length: 26 }, (_, i) => `<circle cx="${8 + i * 12}" cy="${144 - (i % 3) * 3}" r="1.6" class="px-lights" style="animation-delay:${(i % 5) * .3}s"/>`).join('')}
+    <g transform="translate(250 60) rotate(-8) scale(.55)">${a330()}</g><circle cx="284" cy="56" r="2" class="px-nav"/>`,
+  decolagemRio: () => `<rect width="320" height="180" class="px-night"/>${water(140)}${Array.from({ length: 30 }, (_, i) => `<circle cx="${i * 11}" cy="${136 - (i % 4) * 2}" r="1.4" class="px-lights" style="animation-delay:${(i % 6) * .25}s"/>`).join('')}
+    <circle cx="270" cy="34" r="12" class="px-moon"/><g class="px-climb">${a330()}<circle cx="-68" cy="2" r="2" class="px-nav"/></g>`,
+  oceano: () => `<rect width="320" height="180" class="px-night"/>${[[20, 20], [60, 44], [110, 16], [170, 38], [230, 12], [300, 40], [260, 60]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="1.3" class="px-star" style="animation-delay:${i * .3}s"/>`).join('')}
+    <circle cx="66" cy="34" r="10" class="px-moon"/><path d="M0 150 H320 V180 H0Z" class="px-sea"/><path d="M40 156 h30 M120 162 h44 M210 154 h24 M260 166 h40" class="px-glint"/>
+    ${cloud(250, 120, 1.6, 0)}<g class="px-cruise"><g transform="scale(.55)">${a330()}</g><circle cx="-38" cy="1" r="1.6" class="px-nav"/></g>`,
+  tempestade: () => `<rect width="320" height="180" class="px-night"/><path d="M0 150 H320 V180 H0Z" class="px-sea"/>
+    <g class="px-cb"><ellipse cx="200" cy="96" rx="110" ry="46"/><ellipse cx="230" cy="58" rx="70" ry="36"/><ellipse cx="170" cy="66" rx="58" ry="30"/><path d="M120 46 Q220 0 320 40 V60 H120Z"/></g>
+    <path d="M214 80 l-12 24 h12 l-10 26" class="px-bolt"/><path d="M262 64 l-8 16 h8 l-6 18" class="px-bolt" style="animation-delay:1.3s"/>
+    <g class="px-rain">${Array.from({ length: 14 }, (_, i) => `<path d="M${130 + i * 12} ${120 + (i % 3) * 6} l-4 12" class="hs-line-w"/>`).join('')}</g>
+    <g transform="translate(70 92) scale(.5)">${a330()}</g><text x="70" y="128" text-anchor="middle" class="px-gtxt">CURVA DE 12° À ESQUERDA</text>`,
+  cabineNoite: () => `<rect width="320" height="180" class="px-cabin"/><path d="M0 20 H320" class="hs-line"/>
+    ${[0, 1, 2, 3, 4].map((r) => [0, 1, 2, 3, 4, 5].map((c) => `<g transform="translate(${20 + c * 52 + r * 4} ${70 + r * 18})"><rect x="0" y="0" width="36" height="34" rx="6" class="px-seat"/><circle cx="${18 + ((c + r) % 3 - 1) * 4}" cy="-3" r="7" class="hs-fill-ink"/></g>`).join('')).join('')}
+    <rect width="320" height="180" class="px-dim"/>${[50, 154, 258].map((x, i) => `<circle cx="${x}" cy="26" r="3" class="px-lamp" style="animation-delay:${i * .4}s"/>`).join('')}
+    <g class="hs-shake" style="transform-origin:160px 90px"><text x="160" y="16" class="px-gtxt">TURBULÊNCIA À FRENTE</text></g>`,
+  pitot: () => `<rect width="320" height="180" class="px-night"/><path d="M320 60 H150 C108 60 76 76 62 98 C76 120 108 128 150 128 H320Z" class="hs-fill-paper2"/>
+    <path d="M92 80 L108 72 H130 L130 82 H98Z" class="hs-fill-ink"/>
+    ${[150, 186].map((x) => `<path d="M${x} 128 v10 h-18" class="dz-pitot"/><circle cx="${x - 18}" cy="138" r="3" class="dz-pitot-ice"/>`).join('')}
+    <g class="dz-ice">${Array.from({ length: 26 }, (_, i) => `<path d="M${(i * 41) % 130 - 10} ${16 + (i * 47) % 150} l3 -3 l3 3 l-3 3z" class="dz-crystal" style="animation-delay:${(i % 7) * .3}s"/>`).join('')}</g>
+    <text x="240" y="40" text-anchor="middle" class="px-gtxt">CRISTAIS DE GELO · -40 °C</text>`,
+  alarme: () => `<rect width="320" height="180" class="px-panel"/><rect x="40" y="22" width="150" height="120" rx="6" class="px-gauge"/>
+    <path d="M40 82 H190" class="px-horizon"/><rect x="48" y="30" width="30" height="104" class="px-tape"/>
+    <text x="63" y="86" text-anchor="middle" class="dz-spd dz-spd--a" style="font-size:10px">275</text><text x="63" y="86" text-anchor="middle" class="dz-spd dz-spd--b" style="font-size:10px">60</text>
+    <text x="255" y="50" text-anchor="middle" class="dz-apoff">AP OFF</text><text x="255" y="78" text-anchor="middle" class="px-amber">ALTN LAW</text>
+    <text x="255" y="112" text-anchor="middle" class="px-pullup">STALL</text><text x="160" y="168" class="px-gtxt">23h10 · O PILOTO AUTOMÁTICO SE DESLIGA</text>`,
+  subida: () => `${cloud(60, 140, 1.2, 0)}${cloud(240, 150, 1, 1)}<g transform="translate(160 96) rotate(-16) scale(1.05)">${a330()}</g>
+    <path d="M250 150 V40 M240 52 l10 -14 l10 14" class="hs-line-accent"/><text x="250" y="30" text-anchor="middle" class="dz-map-t">38.000 pés</text>
+    <text x="250" y="166" text-anchor="middle" class="dz-map-s">subindo 7.000 pés por minuto</text>`,
+  estol: () => `${cloud(70, 40, 1, 0)}${cloud(260, 70, .9, 1)}<g class="px-fall"><g transform="translate(160 70) rotate(-15)">${a330()}</g></g>
+    <path d="M40 30 V150 M30 138 l10 14 l10 -14" class="hs-line-accent"/><text x="240" y="168" text-anchor="middle" class="px-pullup" style="font-size:12px">STALL STALL</text>`,
+  manches: () => `<rect width="320" height="180" class="px-panel"/>
+    <g><rect x="40" y="110" width="70" height="40" rx="6" class="px-pedestal"/><g class="px-stick" style="transform-origin:75px 112px"><path d="M75 112 V62" class="px-stick-l"/><rect x="64" y="46" width="22" height="26" rx="8" class="px-knob"/></g><text x="75" y="166" class="px-gtxt">ROBERT · ESQUERDA</text></g>
+    <g><rect x="210" y="110" width="70" height="40" rx="6" class="px-pedestal"/><g style="transform:rotate(-24deg);transform-origin:245px 112px"><path d="M245 112 V62" class="px-stick-l"/><rect x="234" y="46" width="22" height="26" rx="8" class="px-knob"/></g><text x="245" y="166" class="px-gtxt">BONIN · DIREITA</text></g>
+    <text x="160" y="34" text-anchor="middle" class="px-pullup" style="font-size:13px">DUAL INPUT</text><text x="160" y="96" text-anchor="middle" class="px-gtxt">CADA UM SÓ SENTE O SEU</text>`,
+  queda: () => `<rect width="320" height="180" class="px-night"/><path d="M0 150 H320 V180 H0Z" class="px-sea"/>
+    <g class="px-fall"><g transform="translate(160 64) rotate(-16) scale(.9)">${a330()}</g></g>
+    <text x="160" y="28" text-anchor="middle" class="px-pullup" style="font-size:13px">SINK RATE · PULL UP</text>`,
+  painelParis: () => `<rect width="320" height="180" class="px-panel"/><rect x="20" y="24" width="280" height="130" rx="4" class="px-board"/>
+    <text x="34" y="44" class="px-btxt">ARRIVÉES · CHARLES DE GAULLE</text>
+    ${[['· · ·', '· · · · · ·', '· · ·'], ['AF 447', 'RIO DE JANEIRO', 'RETARDÉ'], ['· · ·', '· · · · · ·', '· · ·'], ['· · ·', '· · · · · ·', '· · ·']].map(([v, c, s], i) => `<g class="${i === 1 ? 'px-hl' : ''}"><text x="34" y="${70 + i * 22}" class="px-btxt">${v}</text><text x="96" y="${70 + i * 22}" class="px-btxt">${c}</text><text x="286" y="${70 + i * 22}" text-anchor="end" class="px-btxt">${s}</text></g>`).join('')}
+    <text x="160" y="172" class="px-gtxt">PARIS · MANHÃ DE 1º DE JUNHO</text>`,
+  busca: () => `<rect width="320" height="180" class="px-dusk"/>${water(120)}
+    <g class="hs-float"><path d="M60 124 L76 92 H92 L84 124Z" class="px-finw"/><path d="M78 98 L82 92 H86 L80 104Z" class="hs-fill-blue"/><path d="M76 108 L80 100 H84 L78 112Z" class="hs-fill-accent"/></g>
+    ${[[130, 128], [160, 132], [190, 126]].map(([x, y], i) => `<rect x="${x}" y="${y}" width="${10 + i * 4}" height="4" rx="1" class="hs-fill-paper hs-float" style="animation-delay:${i * .4}s"/>`).join('')}
+    <g transform="translate(250 112)"><path d="M-40 0 H40 L30 14 H-30Z" class="px-ship"/><rect x="-14" y="-16" width="26" height="16" class="px-ship"/><path d="M0 -16 V-30" class="hs-line"/></g>
+    <g class="px-cruise"><g transform="scale(.35)">${jumbo(false, 'px-c130')}</g></g>`,
+  fundo: () => `<rect width="320" height="180" class="px-deep"/><path d="M0 160 C60 150 120 166 180 156 S280 150 320 160 V180 H0Z" class="px-floor"/>
+    ${[[60, 156, 30, 8], [130, 160, 18, 6], [210, 154, 40, 10]].map(([x, y, w, h]) => `<rect x="${x}" y="${y - h}" width="${w}" height="${h}" rx="2" class="hs-fill-metal"/>`).join('')}
+    <g class="px-auv"><path d="M120 70 L80 150 H200 Z" class="px-beam"/><rect x="96" y="60" width="54" height="14" rx="7" class="px-orange"/><path d="M96 67 l-10 -6 v12z" class="px-orange"/></g>
+    <text x="262" y="24" class="px-gtxt">3.900 METROS</text>`,
+  caixas: () => `<rect width="320" height="180" class="px-deep"/>${[[70, 'FDR', 'DADOS'], [190, 'CVR', 'VOZES']].map(([x, n, l], i) => `<g class="hs-bob" style="animation-delay:${i * .5}s"><rect x="${x}" y="54" width="70" height="52" rx="6" class="px-orange"/><rect x="${x}" y="54" width="70" height="12" rx="4" class="px-stripe"/><circle cx="${x + 56}" cy="92" r="7" class="hs-fill-ink"/><text x="${x + 28}" y="92" text-anchor="middle" class="px-btxt" style="fill:#1b1b1b">${n}</text><text x="${x + 35}" y="126" text-anchor="middle" class="px-gtxt">${l}</text></g>`).join('')}
+    ${[40, 150, 280].map((x, i) => `<circle cx="${x}" cy="150" r="3" class="px-bubble" style="animation-delay:${i * .6}s"/>`).join('')}<text x="160" y="168" class="px-gtxt">MAIO DE 2011 · 23 MESES NO FUNDO DO MAR</text>`,
+  relatorio: () => `<rect width="320" height="180" class="px-paperbg"/><g transform="rotate(-4 160 90)"><rect x="96" y="12" width="128" height="140" rx="3" class="px-note"/>
+    <text x="110" y="32" class="px-btxt" style="fill:#1b2630">RELATÓRIO FINAL</text>${[48, 60, 72, 84, 96, 108, 120, 132].map((y, i) => `<path d="M110 ${y} H${i % 3 === 2 ? 180 : 210}" class="${i === 3 || i === 4 ? 'px-hlline' : 'px-ink'}"/>`).join('')}</g>
+    <text x="160" y="176" class="px-gtxt px-gtxt--ink">5 DE JULHO DE 2012</text>`,
+  sondas: () => `<rect width="320" height="180" class="px-panel"/>${[[70, 'THALES AA', 1], [160, 'THALES AA', 1], [250, 'GOODRICH', 0]].map(([x, n, ruim]) => `<g><path d="M${x} 50 V100 H${x - 36}" class="px-probe"/><circle cx="${x - 36}" cy="100" r="4" class="hs-fill-metal"/><text x="${x - 8}" y="130" text-anchor="middle" class="px-gtxt">${n}</text>${ruim ? `<path d="M${x - 40} 76 l40 40 M${x} 76 l-40 40" class="px-xred"/>` : ''}</g>`).join('')}
+    <text x="160" y="164" class="px-gtxt">DEPOIS DO ACIDENTE, A TROCA VIROU OBRIGATÓRIA</text>`,
+  tribunal: () => `<rect width="320" height="180" class="px-paperbg"/><path d="M160 30 V150 M120 150 H200 M90 50 H230" class="px-scale"/>
+    <g class="px-tilt" style="transform-origin:160px 50px"><path d="M90 50 l-20 40 h40z M230 50 l-20 40 h40z" class="px-scale"/><path d="M70 90 a20 8 0 0 0 40 0 M210 90 a20 8 0 0 0 40 0" class="px-scale"/></g>
+    <text x="160" y="172" class="px-gtxt px-gtxt--ink">PARIS · 2023: ABSOLVIDAS · 2026: CONDENADAS</text>`,
 };
 /* ---------- Os acidentes ---------- */
 const ACIDENTES = [
@@ -176,7 +321,66 @@ const ACIDENTES = [
     fontes: [['Wikipedia: Japan Air Lines Flight 123', 'https://en.wikipedia.org/wiki/Japan_Air_Lines_Flight_123'], ['Britannica: Japan Airlines flight 123', 'https://www.britannica.com/event/Mount-Osutaka-airline-disaster'],
       ['Nippon.com: Japan’s Deadliest Air Disaster', 'https://www.nippon.com/en/guide-to-japan/cs00019/'], ['Admiral Cloudberg: Fire on the Mountain', 'https://admiralcloudberg.medium.com/fire-on-the-mountain-the-crash-of-japan-airlines-flight-123-dadebd321224']],
     mapa: mapaJal123, esquema: falhaJal123, fugoide: fugoideJal123,
+    fuso: 'Linha do tempo · horário de Tóquio, alguns aproximados', fugoideTit: 'A fugoide: subindo e descendo sem controle',
     fugoideTxt: 'Sem os profundores, cada subida custava velocidade e cada descida a devolvia. O 747 ficou preso nessa gangorra, subindo e descendo centenas de metros por vez, enquanto o dutch roll o balançava de lado.',
+  },
+  {
+    id: 'af447', ano: 2009, data: '31 de maio de 2009 (1º de junho em Paris)', titulo: 'Air France 447', sub: 'O voo Rio–Paris que caiu no meio do Atlântico',
+    resumo: 'Um Airbus A330 moderno, três pilotos experientes e um avião sem nenhum defeito grave. Uma pane de um minuto nos medidores de velocidade, no meio de uma noite de tempestades, vira 4 minutos e 23 segundos de confusão que terminam no mar.',
+    ficha: [['Avião', 'Airbus A330-203'], ['Matrícula', 'F-GZCP'], ['Rota', 'Rio de Janeiro (Galeão) → Paris (Charles de Gaulle)'], ['Local', 'Oceano Atlântico, perto do Equador, a cerca de 1.100 km de Natal'],
+      ['A bordo', '228 (216 passageiros e 12 tripulantes)'], ['Mortos', '228'], ['Sobreviventes', 'Nenhum'], ['Causa', 'Sondas pitot congeladas e um estol que a tripulação não reconheceu']],
+    numeros: [['228', 'a bordo'], ['228', 'mortos'], ['0', 'sobreviventes'], ['4 min 23 s', 'do alarme ao mar']],
+    fuso: 'Linha do tempo · horário de Brasília (UTC−3)',
+    partes: ['Antes do voo', 'A noite sobre o oceano', '4 minutos e 23 segundos', 'A busca', 'Causas e consequências'],
+    secoes: [
+  { t: "O último voo de domingo", parte: 0, hora: "Fim de tarde", lugar: "Aeroporto do Galeão, Rio de Janeiro", sabia: "O AF 447 saía do Rio todas as noites e chegava a Paris na manhã seguinte. Era um voo noturno típico: jantar, luzes apagadas e quase onze horas de viagem.", cena: CENAS.galeao,
+    p: ["Domingo, 31 de maio de 2009. Fim de tarde no Rio de Janeiro, o céu já escuro e o ar ainda morno de outono. No saguão do Galeão, a fila do balcão da Air France para Paris tinha de tudo: executivos voltando para a Europa depois de uma semana de reuniões, casais encerrando as férias, famílias inteiras, estudantes, gente que ia visitar parentes.", "Eram 216 passageiros de 32 países, a maioria franceses, brasileiros e alemães. Havia 126 homens, 82 mulheres, sete crianças e um bebê. Entre eles estavam o príncipe Pedro Luís de Orléans e Bragança, de 26 anos, da antiga família imperial brasileira, e o maestro Silvio Barbato.", "Também ia a bordo a esposa de um dos pilotos. Era comum: familiares de tripulantes aproveitavam lugares livres para acompanhar a viagem.", "Para quase todos, era só mais um voo noturno. Jantar, um filme, dormir um pouco e acordar sobre a Europa, com o café da manhã."] },
+  { t: "Decolagem do Galeão", parte: 0, hora: "19h29", lugar: "Rio de Janeiro", sabia: "Em voos longos, a lei exige três pilotos. Eles se revezam: enquanto dois ficam nos comandos, o terceiro descansa numa pequena cabine com beliche, logo atrás da cabine de comando.", cena: CENAS.decolagemRio,
+    p: ["O avião era um Airbus A330-203 de matrícula F-GZCP, entregue à Air France em 2005. Moderno, com comandos eletrônicos (o famoso fly-by-wire) e sem nenhum defeito registrado que impedisse o voo.", "Na cabine iam três pilotos. O comandante Marc Dubois, de 58 anos, tinha quase 11.000 horas de voo e muita experiência em rotas para a América do Sul. O copiloto David Robert, de 37, tinha cerca de 6.500 horas. O mais novo, Pierre-Cédric Bonin, de 32, tinha perto de 3.000.", "Às 19h29, o A330 decolou com 228 pessoas a bordo. Pelas janelas do lado direito, a cidade virou um tapete de luzes: a orla, os morros, a baía de Guanabara. Em poucos minutos, só restava o escuro.", "O avião subiu até 35.000 pés (cerca de 10.700 metros) e apontou para o nordeste, seguindo a costa do Brasil rumo a Natal. Na cabine de passageiros, os comissários começaram a servir o jantar."] },
+  { t: "Para além do radar", parte: 1, hora: "22h35", lugar: "Sobre o Atlântico, perto do ponto INTOL", sabia: "Sobre o meio do oceano não há radar. Os aviões informam a posição pelo rádio de alta frequência ou por mensagens de dados, e o controle acompanha esses relatos.", cena: CENAS.oceano,
+    p: ["Três horas depois, o avião deixou a costa brasileira para trás. Às 22h33 passou pelo ponto INTOL, e às 22h35 fez o último contato com o controle de Recife, o Atlântico. Dali em diante, ficaria fora do alcance dos radares, numa faixa de oceano sem nada embaixo além de água.", "O próximo contato seria com o controle de Dakar, no Senegal, do outro lado do oceano. Esse contato nunca aconteceu.", "Na cabine de passageiros, o jantar já tinha sido recolhido e as luzes foram baixadas. Muitos dormiam, encolhidos sob os cobertores; outros assistiam a filmes nas telinhas dos encostos.", "Lá na frente, os pilotos conversavam sobre o que vinha pela frente: a Zona de Convergência Intertropical, a faixa perto do Equador onde os ventos dos dois hemisférios se encontram e formam tempestades enormes, com nuvens que sobem mais alto do que os aviões voam. Comentaram que o ar estava mais quente que o normal, o que impedia o avião de subir para uma altitude acima do mau tempo."] },
+  { t: "O comandante vai descansar", parte: 1, hora: "23h01", lugar: "Atlântico, perto do Equador", sabia: "Os relatórios mostram que, ao sair, o comandante não disse com clareza quem ficaria no comando. Bonin pilotava, mas Robert era o mais experiente dos dois.", cena: CENAS.tempestade,
+    p: ["Às 23h01, o comandante Dubois levantou-se para o seu turno de descanso, como estava previsto. David Robert, que tinha descansado antes, assumiu a cadeira da esquerda. Bonin continuou na da direita, pilotando.", "O comandante saiu sem dar instruções detalhadas sobre a tempestade à frente nem deixar claro quem decidia o quê. Era uma passagem rotineira, numa noite que parecia rotineira.", "Minutos depois, o avião entrou nas nuvens. Começou a balançar. Os pilotos sentiram um cheiro diferente, como de eletricidade, e notaram que lá fora o ar estava estranhamente quente. Às 23h06, Bonin avisou os comissários de que iam entrar numa área de turbulência.", "Robert olhou o radar meteorológico e sugeriu desviar. Às 23h08, o avião fez uma curva de 12 graus para a esquerda, contornando a pior parte. Também reduziram um pouco a velocidade, como se faz em turbulência. Tudo estava sob controle. Faltavam dois minutos."] },
+  { t: "23h10: os velocímetros enlouquecem", parte: 2, hora: "23h10", lugar: "35.000 pés, dentro das nuvens", sabia: "A sonda pitot é um tubinho no nariz do avião que mede a pressão do ar que entra nele. Dessa pressão sai a velocidade. Se o tubo entope, a velocidade mostrada fica errada.", cena: CENAS.pitot,
+    p: ["A 35.000 pés, a temperatura lá fora era de mais de 40 graus abaixo de zero. Dentro das nuvens de tempestade, o ar estava cheio de minúsculos cristais de gelo. Eles começaram a se acumular dentro das sondas pitot, os tubinhos que medem a velocidade.", "Às 23h10min05, as sondas entupiram. Em segundos, a velocidade mostrada nos painéis despencou de cerca de 275 nós para perto de 60. Os computadores perceberam que os números não faziam sentido. O piloto automático se desligou com um alarme, e logo depois o controle automático dos motores também.", "Bonin pôs a mão no manche lateral e disse: “Eu tenho os comandos.” Robert respondeu: “Ok.”", "O avião estava perfeito. Os motores funcionavam, as asas estavam intactas, a altitude e a atitude (a posição do nariz) continuavam sendo mostradas corretamente. Só a velocidade estava errada, e só por um tempo. Bastava manter o nariz na mesma posição e esperar o gelo derreter. Mas ninguém na cabine estava esperando por aquilo."] },
+  { t: "O nariz para cima", parte: 2, hora: "23h10", lugar: "Subindo de 35.000 para 38.000 pés", sabia: "Sem o piloto automático e com a velocidade inválida, o A330 entra em \"lei alternada\": muitas proteções automáticas que impedem o avião de passar dos limites deixam de funcionar.", cena: CENAS.alarme,
+    p: ["Na turbulência, o avião inclinou para a direita. Bonin corrigiu com o manche, mas exagerou nos movimentos, para um lado e para o outro. E puxou o manche para trás. O nariz subiu.", "Dois avisos curtos soaram na cabine, uma voz sintética dizendo “STALL, STALL” (estol, em inglês). Duraram um instante e pararam. Robert leu os alarmes no painel: “Perdemos as velocidades... lei alternada.”", "O avião começou a subir rápido, a 7.000 pés por minuto. Robert percebeu: “Olha a velocidade... Você está subindo. Desce, desce!” Bonin baixou um pouco o nariz, mas não o suficiente. O avião continuou subindo e perdendo velocidade, como uma bola jogada para o alto.", "Robert apertou várias vezes a campainha que chama o comandante. “Ele vem ou não vem?”, perguntou, nervoso. Em menos de um minuto, o gelo derreteu e as velocidades voltaram ao normal. O problema que tinha começado tudo já não existia. Mas o avião agora estava indo para um problema muito maior."] },
+  { t: "O estol", parte: 2, hora: "23h10min51", lugar: "38.000 pés", sabia: "Estol é quando a asa inclina demais em relação ao vento e o ar se descola dela. A asa deixa de sustentar o avião, não importa quanta força os motores façam.", cena: CENAS.estol,
+    p: ["Perto dos 38.000 pés, o ar é rarefeito e o avião não tem mais velocidade para continuar subindo. Às 23h10min51, o alarme de estol voltou. Desta vez não parou: tocou sem interrupção por 54 segundos.", "O avião tremia inteiro, um chacoalhar que os pilotos chamam de buffet: o ar se descolando das asas. Bonin fez o que tinha aprendido para uma situação perto do chão: motores na potência máxima e nariz para cima. A 38.000 pés, isso não funciona. Sem velocidade, a asa simplesmente não sustenta.", "O A330 parou de voar e começou a cair. O nariz continuava apontado para cima, a cerca de 15 graus, mas o avião descia quase reto, de barriga, a uma velocidade que chegou a 10.000 pés por minuto, mais de 180 km/h para baixo. O ângulo entre a asa e o vento passou de 40 graus.", "Era noite fechada, dentro das nuvens. Não havia horizonte lá fora para mostrar o que estava acontecendo. Nos painéis, os números de altitude giravam para baixo cada vez mais rápido."] },
+  { t: "“O que vocês estão fazendo?”", parte: 2, hora: "23h11min42", lugar: "Caindo, abaixo de 35.000 pés", sabia: "Quando a velocidade medida fica abaixo de 60 nós, os computadores do A330 a consideram inválida e o alarme de estol se cala, justamente quando o estol está pior.", cena: CENAS.cabineNoite,
+    p: ["Às 23h11min42, o comandante Dubois entrou na cabine. Tinha passado só um minuto e meio desde o desligamento do piloto automático. “O que vocês estão fazendo?”, perguntou.", "“Perdemos o controle do avião, não estamos entendendo nada, já tentamos de tudo”, respondeu Robert. O comandante sentou-se na cadeira de trás, atrás dos dois, olhando os instrumentos. Não reassumiu os comandos.", "Os painéis mostravam um quadro confuso. O avião caía, mas o nariz estava alto. A velocidade era tão baixa que os computadores passaram a considerá-la inválida, e o alarme de estol parou de tocar. Quando Bonin empurrava o manche para a frente, o certo a fazer, a velocidade subia, voltava a ser válida e o alarme tocava de novo. Era como se o avião punisse a manobra certa.", "Na cabine de passageiros, ninguém recebeu nenhum aviso. Não há gravação de lá. Pelos dados, o avião sacudia como numa turbulência forte, inclinado para trás, balançando de um lado para o outro. As máscaras de oxigênio não caíram, porque a cabine continuava pressurizada. Talvez muitos nem tenham entendido que o avião estava caindo."] },
+  { t: "Dois manches, duas ordens", parte: 2, hora: "23h13min40", lugar: "Menos de 10.000 pés acima do mar", sabia: "Nos Airbus, os dois manches laterais não são ligados entre si: um piloto não sente o que o outro está fazendo. Se os dois mexem ao mesmo tempo, os comandos se somam e soa o alarme \"DUAL INPUT\".", cena: CENAS.manches,
+    p: ["Durante quase três minutos, os três tentaram entender o que estava acontecendo. Falavam de altitude, de potência, de inclinação. Ninguém disse a palavra estol.", "Às 23h13min40, Bonin disse a frase que mudaria tudo, se tivesse vindo antes: “Mas eu estou com o manche todo para trás faz tempo!”", "O comandante reagiu na hora: “Não, não, não, não suba!” Robert: “Então desce. Me dá os comandos, os comandos para mim!” Robert apertou o botão que dá prioridade ao manche dele e empurrou o nariz para baixo. Pela primeira vez, a saída estava sendo tentada.", "Mas já era tarde. A essa altura, para sair do estol, o avião precisaria baixar muito o nariz e mergulhar, ganhando velocidade, e não havia mais altura para isso. Segundos depois, Bonin voltou a puxar o manche, e o alarme \"DUAL INPUT\" soou: cada um mandava o avião para um lado."] },
+  { t: "Os últimos segundos", parte: 2, hora: "23h14min28", lugar: "Oceano Atlântico", sabia: "As falas dos pilotos foram gravadas em francês pelo gravador de voz da cabine (CVR) e publicadas pelo BEA, o órgão francês de investigação. As frases aqui estão traduzidas.", cena: CENAS.queda,
+    p: ["O alarme de proximidade do solo começou a gritar: “SINK RATE, PULL UP” (descida rápida, puxe para cima). O avião estava a cerca de 2.000 pés do mar, que ninguém via no escuro.", "“Vamos bater!”, disse Bonin. “Não é possível! Mas o que está acontecendo?”", "As últimas palavras gravadas foram do comandante, lendo o instrumento: “Dez graus de atitude.”", "Às 23h14min28, o A330 tocou a água de barriga, com o nariz 16 graus para cima, descendo a quase 11.000 pés por minuto e com pouca velocidade para a frente. O impacto foi violento demais para qualquer um sobreviver. Desde que o piloto automático desligou, tinham passado 4 minutos e 23 segundos. Todas as 228 pessoas a bordo morreram."] },
+  { t: "O avião que não chegou", parte: 3, hora: "1º de junho", lugar: "Dakar, Paris e Rio de Janeiro", sabia: "Entre 23h10 e 23h14, o avião mandou sozinho 24 mensagens automáticas de manutenção (ACARS) para a Air France. Elas foram as primeiras pistas do que tinha falhado.", cena: CENAS.painelParis,
+    p: ["O controle de Dakar esperava o contato do AF 447, que não veio. No começo, achou-se que fosse só um problema de rádio, algo que acontece sobre o oceano. As horas passaram, e o avião nunca chegou ao espaço aéreo seguinte.", "Na manhã de 1º de junho, em Paris, o painel de chegadas do aeroporto Charles de Gaulle mostrava o voo de Rio como atrasado. Parentes e amigos esperavam no saguão. Até que funcionários da Air France os levaram para uma sala reservada. No Rio, cenas parecidas aconteciam no Galeão.", "Nos computadores da Air France havia uma sequência de mensagens automáticas que o avião tinha enviado nos seus últimos minutos: velocidades incoerentes, piloto automático desligado, proteções perdidas. A última chegou às 23h14.", "O presidente francês, Nicolas Sarkozy, foi ao aeroporto encontrar as famílias. No Brasil, a Força Aérea e a Marinha começaram a varrer o oceano perto do Equador."] },
+  { t: "Destroços no Atlântico", parte: 3, hora: "Junho de 2009", lugar: "Oceano Atlântico, perto do Equador", sabia: "O estabilizador vertical, a cauda do avião, foi achado boiando quase inteiro. Ele foi uma das provas de que o A330 caiu inteiro, de barriga, e não se partiu no ar.", cena: CENAS.busca,
+    p: ["Em 2 de junho, um avião da Força Aérea Brasileira avistou os primeiros destroços boiando no mar, a centenas de quilômetros da costa. Nos dias seguintes, navios da Marinha do Brasil e da França recolheram pedaços do avião, poltronas, bagagens e coletes salva-vidas que nunca foram usados.", "Em 6 de junho foram encontrados os primeiros corpos. Ao todo, 50 vítimas foram resgatadas naquele mês. As autópsias e os destroços indicavam que o avião bateu de barriga, com enorme força vertical.", "O que faltava eram as caixas-pretas. Elas tinham afundado com o resto do avião, num fundo de oceano montanhoso, a quase 4.000 metros de profundidade. Os sinalizadores que ajudam a encontrá-las têm bateria para cerca de 30 dias.", "Os 30 dias passaram. Submarino, navios com sonar e robôs procuraram em vão. Sem as caixas-pretas, ninguém podia dizer com certeza o que tinha acontecido."] },
+  { t: "Quase dois anos no escuro", parte: 3, hora: "2009–2011", lugar: "Fundo do Atlântico, 3.900 metros", sabia: "Os robôs REMUS 6000, usados para achar o avião, são do Instituto Oceanográfico Woods Hole, dos Estados Unidos. Eles vasculham o fundo do mar sozinhos, por horas, com sonar.", cena: CENAS.fundo,
+    p: ["Por quase dois anos, o AF 447 foi um mistério. Houve três campanhas de busca no fundo do mar, sem sucesso. Surgiram teorias de todo tipo, de bomba a raio. As famílias viviam sem respostas.", "Em 2011 começou a quarta busca, com robôs submarinos autônomos que varriam o fundo com sonar. Em abril, depois de uma semana de trabalho, um deles encontrou um campo de destroços a cerca de 3.900 metros de profundidade: motores, pedaços da fuselagem, o trem de pouso.", "Em 1º de maio, um robô controlado de um navio francês trouxe à superfície o gravador de dados de voo. No dia seguinte, o gravador de voz da cabine. Depois de 23 meses a 3.900 metros de profundidade, as memórias estavam intactas.", "Naquela campanha, mais 104 corpos foram retirados do fundo do mar. Outras 74 vítimas nunca foram recuperadas e continuam no Atlântico."] },
+  { t: "O que as caixas-pretas contaram", parte: 4, hora: "2011–2012", lugar: "BEA, Paris", sabia: "Uma das descobertas que mais chocaram os investigadores: em nenhum momento dos últimos minutos alguém na cabine disse que o avião estava em estol.", cena: CENAS.relatorio,
+    p: ["Em 5 de julho de 2012, o BEA, órgão francês de investigação de acidentes aéreos, publicou o relatório final. A conclusão foi dura: não houve uma única causa, e sim uma corrente de falhas.", "Primeiro elo: as sondas pitot congelaram por cerca de um minuto, e o piloto automático se desligou. Segundo: o piloto fez movimentos exagerados e puxou o nariz para cima, sem que a tripulação aplicasse o procedimento de velocidade não confiável, que mandava manter a posição do nariz e a potência.", "Terceiro: os pilotos não perceberam a aproximação do estol, não reconheceram o estol quando ele aconteceu e por isso nunca fizeram a manobra de recuperação, que é baixar o nariz. O alarme que parava e voltava, a falta de um indicador de ângulo de ataque e os manches que não se sentem um ao outro ajudaram a confundir.", "E havia algo mais profundo: os pilotos eram treinados quase só para voar com a automação ligada. Quase nenhum treino ensinava a pilotar à mão, na altitude de cruzeiro, um avião que de repente fica sem as suas proteções. O comandante, ao sair, também não deixou claro quem mandava. Pilotos competentes, num avião sem defeito grave, se perderam em quatro minutos."] },
+  { t: "As sondas que já davam problema", parte: 4, hora: "2007–2009", lugar: "Airbus, Air France e EASA", sabia: "A EASA é a agência de segurança da aviação da União Europeia, equivalente à ANAC no Brasil e à FAA nos Estados Unidos.", cena: CENAS.sondas,
+    p: ["O congelamento das sondas não era novidade. Antes do acidente, vários aviões A330 e A340 já tinham tido perdas de velocidade parecidas ao atravessar tempestades em grande altitude. Em todos esses casos, as tripulações conseguiram manter o avião sob controle.", "O F-GZCP usava sondas do modelo Thales AA. A Airbus tinha recomendado um modelo mais novo, mas sem tornar a troca obrigatória. A Air France, preocupada com os casos, tinha começado a substituí-las. As primeiras peças novas chegaram poucos dias antes do acidente, e o avião do AF 447 ainda não as tinha recebido.", "Depois do acidente, a EASA tornou obrigatório trocar as sondas Thales AA nos A330 e A340 e instalar modelos mais resistentes ao gelo.", "Para o BEA, as sondas foram o gatilho, mas não a causa da queda. Um minuto de velocidade errada não deveria derrubar um avião. O que derrubou foi o que aconteceu depois."] },
+  { t: "Na Justiça", parte: 4, hora: "2009–2026", lugar: "Tribunais de Paris", sabia: "Na França, empresas podem responder criminalmente por um acidente. A multa de 225.000 euros era a pena máxima prevista para esse crime.", cena: CENAS.tribunal,
+    p: ["Famílias das vítimas, reunidas em associações na França e no Brasil, lutaram por anos para que alguém fosse responsabilizado. A Airbus e a Air France foram acusadas de homicídio culposo, sem intenção de matar.", "Em 2019, os juízes de instrução arquivaram o caso. As famílias recorreram, e em 2021 a Justiça mandou as duas empresas a julgamento. Em abril de 2023, depois de um julgamento de dois meses, elas foram absolvidas: o tribunal apontou falhas da Airbus e da Air France, mas disse que não era possível provar com certeza que elas causaram o acidente.", "A promotoria recorreu. Em 21 de maio de 2026, o Tribunal de Apelação de Paris inverteu a decisão e condenou a Airbus e a Air France por homicídio culposo, com multa de 225.000 euros cada uma.", "Para muitas famílias, o valor foi simbólico, poucos minutos de faturamento das duas empresas. As duas anunciaram recurso ao Tribunal de Cassação, a última instância, que não julga de novo os fatos, só se a lei foi bem aplicada. Dezessete anos depois, o caso ainda não terminou."] },
+    ],
+    linha: [['19:29', 'Decolagem do Galeão, Rio de Janeiro, com 228 pessoas a bordo.', [138, 1125]], ['22:35', 'Último contato por rádio com o controle de Recife, perto do ponto INTOL. Dali em diante, sem radar.', [440, 503]],
+      ['23:01', 'O comandante sai para descansar. O avião se aproxima das tempestades perto do Equador.', [484, 418]], ['23:10', 'As sondas pitot congelam, o piloto automático se desliga e o avião sobe até entrar em estol.', [499, 387]],
+      ['23:14', 'Queda no Atlântico, 4 minutos e 23 segundos depois do desligamento do piloto automático.', [505, 378]]],
+    falha: 'Ponto de partida: cristais de gelo entupiram as sondas pitot por cerca de um minuto. A velocidade mostrada despencou, o piloto automático se desligou e o avião ficou nas mãos dos pilotos, sem as proteções de sempre.',
+    mudou: ['A EASA tornou obrigatória a troca das sondas pitot Thales AA nos A330 e A340 por modelos mais resistentes ao gelo.',
+      'O treinamento mudou no mundo inteiro: a recuperação de estol passou a priorizar baixar o nariz, mesmo perdendo altura, e o treino de prevenção e recuperação de atitudes anormais (UPRT) virou obrigatório na Europa e nos Estados Unidos.',
+      'Os pilotos passaram a treinar mais o voo manual em grande altitude e o procedimento de velocidade não confiável.',
+      'Os sinalizadores das caixas-pretas passaram a ter bateria para 90 dias, em vez de 30, e a OACI criou regras para que aviões em apuros sobre o oceano transmitam sua posição automaticamente.'],
+    memoria: 'Em Paris, um memorial no cemitério Père-Lachaise lembra as 228 vítimas. No Brasil e na França, as associações de famílias mantêm viva a memória do voo e seguem acompanhando o processo na Justiça.',
+    fontes: [['BEA: relatório final do AF 447 (2012)', 'https://bea.aero/en/investigation-reports/notified-events/detail/accident-to-the-airbus-a330-203-registered-f-gzcp-and-operated-by-air-france-occurred-on-06-01-2009-in-the-atlantic-ocean/'],
+      ['Wikipedia: Air France Flight 447', 'https://en.wikipedia.org/wiki/Air_France_Flight_447'], ['Al Jazeera: condenação em 2026', 'https://www.aljazeera.com/news/2026/5/21/french-court-finds-airbus-air-france-guilty-of-manslaughter-in-2009-crash'],
+      ['CNN: a transcrição da cabine', 'https://www.cnn.com/2011/10/14/world/americas/af447-transcript']],
+    mapa: mapaAf447, esquema: falhaAf447, fugoide: estolAf447,
+    fugoideTit: 'O estol: nariz para cima, avião caindo',
+    fugoideTxt: 'O nariz apontava para cima, o que dava a sensação de que o avião subia. Na verdade, ele caía quase reto, de barriga. Para sair do estol era preciso fazer o contrário do que parecia certo: baixar o nariz, mergulhar e ganhar velocidade.',
   },
 ];
 
@@ -184,8 +388,8 @@ const ACIDENTES = [
 let atual = ACIDENTES[0], passo = ACIDENTES[0].linha.length - 1, tocando = 0;
 
 function lista() {
-  $('#dzList').innerHTML = ACIDENTES.map((a) => `<button type="button" class="dz-item" data-dz="${a.id}" aria-pressed="${a === atual}">
-      <span class="dz-item__year">${a.ano}</span><b>${esc(a.titulo)}</b><span>${esc(a.sub)}</span><i>${a.numeros[1][0]} mortos · ${a.numeros[2][0]} sobreviventes</i></button>`).join('')
+  $('#dzList').innerHTML = [...ACIDENTES].sort((x, y) => x.ano - y.ano).map((a) => `<button type="button" class="dz-item" data-dz="${a.id}" aria-pressed="${a === atual}">
+      <span class="dz-item__year">${a.ano}</span><b>${esc(a.titulo)}</b><span>${esc(a.sub)}</span><i>${a.numeros[1][0]} mortos · ${a.numeros[2][0] === '0' ? 'nenhum sobrevivente' : a.numeros[2][0] + ' sobreviventes'}</i></button>`).join('')
     + '<p class="dz-soon small">Novos acidentes serão adicionados aqui, dos primeiros anos da aviação até hoje.</p>';
 }
 
@@ -201,7 +405,8 @@ function mostrar() {
   $('#dzFail').innerHTML = a.esquema();
   $('#dzFailTxt').textContent = a.falha;
   $('#dzPhugBox').hidden = !a.fugoide;
-  if (a.fugoide) { $('#dzPhug').innerHTML = a.fugoide(); $('#dzPhugTxt').textContent = a.fugoideTxt; }
+  if (a.fugoide) { $('#dzPhug').innerHTML = a.fugoide(); $('#dzPhugTit').textContent = a.fugoideTit; $('#dzPhugTxt').textContent = a.fugoideTxt; }
+  $('#dzFuso').textContent = a.fuso;
   $('#dzChanged').innerHTML = a.mudou.map((m) => `<li>${esc(m)}</li>`).join('');
   $('#dzMemory').textContent = a.memoria;
   $('#dzSrc').innerHTML = a.fontes.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener">${esc(n)}</a>`).join(' · ');

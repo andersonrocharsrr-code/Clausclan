@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=107">
+  <link rel="stylesheet" href="style.css?v=108">
 </head>
 <body>
   <!-- Intro: o avião decola pela pista iluminada e aparece o nome do app (toque para pular) -->
@@ -785,7 +785,7 @@
       </div>
       <div class="dz">
         <div class="card dz__pick">
-          <span class="label">Acidentes</span>
+          <span class="label">Escolha um acidente</span>
           <div class="dz__list" id="dzList"></div>
         </div>
 
@@ -800,7 +800,7 @@
           <div class="dz__grid">
             <div class="dz__mapbox">
               <div class="dz__map" id="dzMap"></div>
-              <div class="dz__linehead"><span class="label">Linha do tempo · horário de Tóquio, alguns aproximados</span><button type="button" class="btn-ghost" id="dzPlay">Reproduzir o voo</button></div>
+              <div class="dz__linehead"><span class="label" id="dzFuso">Linha do tempo</span><button type="button" class="btn-ghost" id="dzPlay">Reproduzir o voo</button></div>
               <ol class="dz__line" id="dzLine"></ol>
             </div>
             <dl class="dz__ficha" id="dzFicha"></dl>
@@ -836,7 +836,7 @@
           </div>
 
           <div class="dz__fail" id="dzPhugBox">
-            <span class="label">A fugoide: subindo e descendo sem controle</span>
+            <span class="label" id="dzPhugTit"></span>
             <div class="dz__failsvg" id="dzPhug"></div>
             <p id="dzPhugTxt"></p>
           </div>
@@ -984,16 +984,16 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=107"></script>
-  <script src="catalogo747.js?v=107"></script>
-  <script src="cockpit747.js?v=107"></script>
-  <script src="motor3d.js?v=107"></script>
-  <script src="motor747.js?v=107"></script>
-  <script src="meteo.js?v=107"></script>
-  <script src="radio.js?v=107"></script>
-  <script src="historia.js?v=107"></script>
-  <script src="desastres.js?v=107"></script>
-  <script src="app.js?v=107"></script>
+  <script src="avioes.js?v=108"></script>
+  <script src="catalogo747.js?v=108"></script>
+  <script src="cockpit747.js?v=108"></script>
+  <script src="motor3d.js?v=108"></script>
+  <script src="motor747.js?v=108"></script>
+  <script src="meteo.js?v=108"></script>
+  <script src="radio.js?v=108"></script>
+  <script src="historia.js?v=108"></script>
+  <script src="desastres.js?v=108"></script>
+  <script src="app.js?v=108"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());

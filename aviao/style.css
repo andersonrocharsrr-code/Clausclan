@@ -1081,3 +1081,63 @@ html.dzr-open, html.dzr-open body { overflow: hidden; }
 .lesson__dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--line); }
 .lesson__dots i.on { background: var(--magenta); }
 body.drawer-lock { overflow: hidden; }
+
+/* Desastres: AF 447 (mapa do Atlântico, esquemas e cenas) */
+.dz-land { fill: #2d4434; stroke: #6f8f68; stroke-width: 2; }
+.dz-eq { stroke: #9fc1de; stroke-width: 2; stroke-dasharray: 10 10; opacity: .6; }
+.dz-bolt { fill: none; stroke: #fff6b0; stroke-width: 3; stroke-linejoin: round; opacity: 0; animation: hsFlash 4.2s infinite; }
+.dz-route-plan { fill: none; stroke: #fff; stroke-width: 3; stroke-dasharray: 4 12; stroke-linecap: round; opacity: .45; }
+.dz-map--af .dz-labels text { font-size: 30px; stroke-width: 5px; }
+.dz-map--af .dz-labels .dz-lbl-s { font-size: 23px; }
+.dz-map--af .dz-labels .dz-lbl-big { font-size: 44px; letter-spacing: .2em; fill: #d9e6d4; opacity: .8; }
+.dz-map--af .dz-mark circle { r: 10; stroke-width: 3; }
+.dz-map--af .dz-route-dash { stroke-width: 4.5; stroke-dasharray: 18 10 3 10; }
+.dz-map--af .dz-x { stroke-width: 8; }
+.dz-map-note { font: 500 20px var(--mono); fill: #cfe0ef; opacity: .7; }
+.dz-pitot { fill: none; stroke: #c9d2da; stroke-width: 3; stroke-linecap: round; }
+.dz-pitot-ice { fill: #e8f6ff; animation: hsPulse 1s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+.dz-crystal { fill: #e8f6ff; opacity: .85; animation: dzIce 2.2s linear infinite; }
+.dz-spd-l { font: 600 7px var(--mono); fill: #9fb0bd; letter-spacing: .08em; }
+.dz-spd { font: 700 14px var(--mono); fill: #5fe08a; }
+.dz-spd--a { animation: dzSpdA 3s steps(1) infinite; } .dz-spd--b { fill: #ffb84a; animation: dzSpdB 3s steps(1) infinite; }
+.dz-apoff { font: 700 13px var(--mono); fill: #e5322d; animation: pxBlink .7s steps(1) infinite; }
+.dz-fall { animation: dzFall 4s ease-in infinite; }
+.dz-vec { fill: none; stroke: var(--bad); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.dz-turb { fill: none; stroke: var(--muted); stroke-width: 1.4; animation: hsSway .4s ease-in-out infinite alternate; }
+@keyframes dzIce { from { transform: translateX(0); } to { transform: translateX(90px); opacity: 0; } }
+@keyframes dzSpdA { 0% { opacity: 1; } 40% { opacity: 0; } }
+@keyframes dzSpdB { 0% { opacity: 0; } 40% { opacity: 1; } }
+@keyframes dzFall { from { transform: translateY(-12px); } to { transform: translateY(18px); } }
+.px-cristo { fill: none; stroke: #e9eef5; stroke-width: 2; stroke-linecap: round; }
+.px-lights { fill: #ffd27a; animation: hsTwinkle 1.2s ease-in-out infinite alternate; }
+.px-nav { fill: #ff4b4b; animation: pxBlink 1s steps(1) infinite; }
+.px-moon { fill: #f4f1e4; opacity: .9; }
+.px-sea { fill: #0b2033; } .px-glint { stroke: #6f8aa3; stroke-width: 1.2; opacity: .6; }
+.px-cruise { animation: pxCruise 14s linear infinite; }
+@keyframes pxCruise { from { transform: translate(-60px, 92px); } to { transform: translate(380px, 80px); } }
+.px-cb ellipse, .px-cb path { fill: #3b4652; }
+.px-bolt { fill: none; stroke: #fff6b0; stroke-width: 2.4; stroke-linejoin: round; opacity: 0; animation: hsFlash 3.4s infinite; }
+.px-rain { animation: hsRain .6s linear infinite; opacity: .5; }
+.px-dim { fill: #050a12; opacity: .45; }
+.px-horizon { stroke: #f2b33a; stroke-width: 2; } .px-tape { fill: #26323c; }
+.px-amber { font: 700 12px var(--mono); fill: #ffb84a; }
+.px-fall { animation: dzFall 3s ease-in infinite; }
+.px-stick { animation: pxStick 1.6s ease-in-out infinite alternate; }
+.px-stick-l { stroke: #9aa7b1; stroke-width: 6; stroke-linecap: round; }
+@keyframes pxStick { from { transform: rotate(-20deg); } to { transform: rotate(18deg); } }
+.px-board { fill: #0b1015; stroke: #3a4752; }
+.px-btxt { font: 600 9px var(--mono); fill: #f2c94c; letter-spacing: .06em; }
+.px-hl .px-btxt { animation: pxBlink 1.2s steps(1) infinite; }
+.px-ship { fill: #46545f; stroke: #1b2630; }
+.px-deep { fill: #030b14; } .px-floor { fill: #1e2a2a; }
+.px-auv { animation: hsFloat 5s ease-in-out infinite alternate; }
+.px-beam { fill: #cfe8ff; opacity: .12; }
+.px-orange { fill: #f07b1d; stroke: #1b1b1b; stroke-width: .8; } .px-stripe { fill: #f5f2ea; opacity: .85; }
+.px-bubble { fill: none; stroke: #8fb6d6; stroke-width: 1; animation: hsRise 3s ease-out infinite; }
+.px-hlline { fill: none; stroke: #f2c94c; stroke-width: 5; opacity: .7; }
+.px-probe { fill: none; stroke: #c9d2da; stroke-width: 5; stroke-linecap: round; }
+.px-xred { stroke: #e5322d; stroke-width: 4; stroke-linecap: round; }
+.px-scale { fill: none; stroke: var(--ink); stroke-width: 2.4; stroke-linejoin: round; }
+.px-tilt { animation: hsSway 3s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) { .dz-bolt, .dz-crystal, .dz-spd--a, .dz-spd--b, .dz-apoff, .dz-fall, .dz-turb, .dz-pitot-ice { animation: none !important; } .dz-bolt { opacity: .6; } .dz-spd--a { opacity: 0; } }
+.px-finw { fill: #f3f5f7; stroke: #1b2630; }
