@@ -1150,11 +1150,11 @@ body.drawer-lock { overflow: hidden; }
 .dz-map--af .dz-labels .dz-lbl-big { font-size: 52px; }
 .dz-map-note { font-size: 22px; }
 @media (prefers-reduced-motion: reduce) { .dz-storm-drift { animation: none !important; } }
-/* Cauda do avião com as cores da empresa, bem clara, no fundo de cada cartão da lista */
+/* Foto da cauda do avião, com as cores da empresa, no fundo de cada cartão da lista; o texto fica por cima, sem transparência */
 .dz-item { position: relative; overflow: hidden; isolation: isolate; }
-.dz-item__fin { position: absolute; right: -24px; bottom: -22px; width: 138px; height: 138px; opacity: .2; z-index: -1; pointer-events: none; transition: opacity .3s; }
-.dz-item__fin svg { width: 100%; height: 100%; display: block; }
-.dz-item[aria-pressed="true"] .dz-item__fin { opacity: .32; }
-.dz-fin-body { fill: #f4f6f8; }
-@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .dz-item__fin { opacity: .28; } :root:not([data-theme="dark"]) .dz-fin-body { fill: #fff; stroke: #c9d0d6; stroke-width: 1.5; } }
-:root[data-theme="light"] .dz-item__fin { opacity: .28; } :root[data-theme="light"] .dz-fin-body { fill: #fff; stroke: #c9d0d6; stroke-width: 1.5; }
+.dz-item__fin { position: absolute; top: 0; right: 0; height: 100%; width: 62%; object-fit: cover; object-position: 70% 40%; z-index: -1; pointer-events: none; opacity: .55;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 70%); mask-image: linear-gradient(to right, transparent 0%, #000 70%); transition: opacity .3s; }
+.dz-item[aria-pressed="true"] .dz-item__fin { opacity: .7; }
+.dz-item b, .dz-item span, .dz-item i { text-shadow: 0 0 6px var(--paper), 0 0 2px var(--paper); }
+.dz-item span { color: var(--ink); opacity: .9; }
+.dz-item i { color: var(--bad); font-weight: 700; }
