@@ -651,9 +651,9 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 .hs__scene svg { display: block; width: 100%; height: auto; }
 .hs-photo { margin: 0; }
 .hs-photo__frame { overflow: hidden; aspect-ratio: 16 / 9; background: #1b1814; }
-.hs-photo img { display: block; width: 100%; height: 100%; object-fit: cover; transform-origin: 60% 55%; animation: hsKen 18s ease-in-out infinite alternate; user-select: none; -webkit-user-drag: none; }
+/* Foto parada, sem zoom: vale para o Modo história e para os desastres */
+.hs-photo img { display: block; width: 100%; height: 100%; object-fit: cover; user-select: none; -webkit-user-drag: none; }
 .hs-photo figcaption { padding: 8px 12px; font-size: 12.5px; color: var(--muted); background: var(--panel); border-top: 1px solid var(--line); }
-@keyframes hsKen { from { transform: scale(1.02) translate(0, 0); } to { transform: scale(1.14) translate(-2%, -1.5%); } }
 .hs__body { display: grid; gap: 10px; align-content: start; min-width: 0; }
 .hs__when { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
 .hs__when b { font: 700 56px/1 var(--display); color: var(--magenta); letter-spacing: .02em; }
@@ -773,7 +773,6 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
   .hs .hs-cruise { animation: none !important; transform: translate(160px, 90px); }
   .hs .hs-walk { animation: none !important; transform: translateX(260px); }
   .hs .hs-ask, .hs .hs-flash { animation: none !important; opacity: 1; }
-  .hs .hs-photo img { animation: none !important; }
 }
 /* Desastres aéreos */
 .dz { display: grid; gap: 20px; margin-top: 18px; }
