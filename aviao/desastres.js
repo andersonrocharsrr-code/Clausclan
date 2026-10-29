@@ -507,10 +507,10 @@ function capitulo(dir = 0) {
   });
   $('#dzhLine').style.setProperty('--hs-p', a.secoes.length > 1 ? cap / (a.secoes.length - 1) : 0);
 }
-// Rola a página para que a linha de pontinhos dos capítulos fique logo abaixo do cabeçalho fixo
-function rolarAteLinha(el) {
+// Rola a página para que o elemento (a linha de pontinhos, ou o começo do acidente) fique logo abaixo do cabeçalho fixo
+function rolarAteLinha(el, folga = 16) {
   const cab = document.querySelector('.top')?.getBoundingClientRect().bottom || 0;
-  const y = el.getBoundingClientRect().top + window.scrollY - cab - 16;
+  const y = el.getBoundingClientRect().top + window.scrollY - cab - folga;
   if (Math.abs(y - window.scrollY) > 4) window.scrollTo({ top: y, behavior: 'smooth' });
 }
 function irCap(i) {
@@ -523,7 +523,7 @@ function initCap() {
   $('#dzhParts').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) irCap(atual.secoes.findIndex((c) => c.parte === [...b.parentNode.children].indexOf(b))); });
   $('#dzhLine').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) irCap([...b.parentNode.children].indexOf(b)); });
   $('#dzhPrev').addEventListener('click', () => irCap(cap - 1));
-  $('#dzhNext').addEventListener('click', () => { if (cap === atual.secoes.length - 1) $('#dzFailBox').scrollIntoView({ behavior: 'smooth', block: 'start' }); else irCap(cap + 1); });
+  $('#dzhNext').addEventListener('click', () => { if (cap === atual.secoes.length - 1) rolarAteLinha($('#dzFailBox')); else irCap(cap + 1); });
   let sx = null;
   const sc = $('#dzhScene');
   sc.addEventListener('pointerdown', (e) => { sx = e.clientX; });
@@ -532,7 +532,7 @@ function initCap() {
 function init() {
   if (!$('#dzList')) return;
   lista();
-  $('#dzList').addEventListener('click', (e) => { const b = e.target.closest('[data-dz]'); if (!b) return; atual = ACIDENTES.find((a) => a.id === b.dataset.dz) || atual; lista(); mostrar(); $('#dzCase').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  $('#dzList').addEventListener('click', (e) => { const b = e.target.closest('[data-dz]'); if (!b) return; atual = ACIDENTES.find((a) => a.id === b.dataset.dz) || atual; lista(); mostrar(); rolarAteLinha($('#dzCase'), 8); });
   $('#dzLine').addEventListener('click', (e) => { const b = e.target.closest('button[data-i]'); if (b) { clearTimeout(auto); irPara(+b.dataset.i); } });
   $('#dzPlay').addEventListener('click', reproduzir);
   initCap();
