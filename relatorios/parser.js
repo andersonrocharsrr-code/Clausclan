@@ -179,8 +179,11 @@
     if (r.feitaTotal.v == null) falta.push('valor das notas feitas total');
     if (falta.length) av.push(`Não achei: ${falta.join(', ')}.`);
 
-    if (r.pgDia != null && (r.p25 != null || r.p40 != null) && v(r.p25) + v(r.p40) !== v(r.pgDia))
-      av.push(`Notas pagas do dia (${v(r.pgDia)}) ≠ 25% (${v(r.p25)}) + 40% (${v(r.p40)}).`);
+    // 25% + 40% são as pagas do dia; tem vendedor que escreve somando com os dias anteriores (= pagas total).
+    // Os dois jeitos valem: só avisa quando não bate com nenhum.
+    const p2540 = v(r.p25) + v(r.p40);
+    if (r.pgDia != null && (r.p25 != null || r.p40 != null) && p2540 !== v(r.pgDia) && (r.pgTotal == null || p2540 !== v(r.pgTotal)))
+      av.push(`25% (${v(r.p25)}) + 40% (${v(r.p40)}) = ${p2540}, mas as notas pagas são ${v(r.pgDia)} no dia e ${v(r.pgTotal)} no total.`);
     if (r.feitaDia.q != null && (r.ab != null || r.rp != null) && v(r.ab) + v(r.rp) !== v(r.feitaDia.q))
       av.push(`Notas feitas do dia (${v(r.feitaDia.q)}) ≠ Ab (${v(r.ab)}) + Rp (${v(r.rp)}).`);
     if (r.notas != null && r.pgTotal != null && r.branco.q != null) {
