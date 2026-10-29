@@ -488,12 +488,17 @@ function capitulo(dir = 0) {
   });
   $('#dzhLine').style.setProperty('--hs-p', a.secoes.length > 1 ? cap / (a.secoes.length - 1) : 0);
 }
+// Rola a página para que a linha de pontinhos dos capítulos fique logo abaixo do cabeçalho fixo
+function rolarAteLinha(el) {
+  const cab = document.querySelector('.top')?.getBoundingClientRect().bottom || 0;
+  const y = el.getBoundingClientRect().top + window.scrollY - cab - 16;
+  if (Math.abs(y - window.scrollY) > 4) window.scrollTo({ top: y, behavior: 'smooth' });
+}
 function irCap(i) {
   const n = atual.secoes.length;
   if (i < 0 || i >= n) return;
   const d = Math.sign(i - cap); cap = i; capitulo(d || 1);
-  const topo = $('#dzhCard').getBoundingClientRect().top;
-  if (topo < 0) $('#dzhCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  rolarAteLinha($('#dzhLine'));
 }
 function initCap() {
   $('#dzhParts').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) irCap(atual.secoes.findIndex((c) => c.parte === [...b.parentNode.children].indexOf(b))); });

@@ -231,6 +231,12 @@ function render(dir = 0) {
   });
   $('#hsLine').style.setProperty('--hs-p', CAPS.length > 1 ? cap / (CAPS.length - 1) : 0);
 }
+// Rola a página para que a linha de pontinhos dos capítulos fique logo abaixo do cabeçalho fixo
+function rolarAteLinha(el) {
+  const cab = document.querySelector('.top')?.getBoundingClientRect().bottom || 0;
+  const y = el.getBoundingClientRect().top + window.scrollY - cab - 16;
+  if (Math.abs(y - window.scrollY) > 4) window.scrollTo({ top: y, behavior: 'smooth' });
+}
 function ir(i) { const d = Math.sign(i - cap); cap = (i + CAPS.length) % CAPS.length; render(d || 1); }
 
 function init() {
@@ -240,8 +246,8 @@ function init() {
   $('#hsLine').innerHTML = CAPS.map((c, i) => `<button type="button" aria-label="Capítulo ${i + 1}: ${c.ano}, ${c.titulo}"><span>${c.ano}</span></button>`).join('');
   $('#hsLine').style.gridTemplateColumns = `repeat(${CAPS.length}, minmax(0, 1fr))`;
   $('#hsLine').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) ir([...b.parentNode.children].indexOf(b)); });
-  $('#hsPrev').addEventListener('click', () => cap > 0 && ir(cap - 1));
-  $('#hsNext').addEventListener('click', () => ir(cap === CAPS.length - 1 ? 0 : cap + 1));
+  $('#hsPrev').addEventListener('click', () => { if (cap > 0) { ir(cap - 1); rolarAteLinha($('#hsLine')); } });
+  $('#hsNext').addEventListener('click', () => { ir(cap === CAPS.length - 1 ? 0 : cap + 1); rolarAteLinha($('#hsLine')); });
   // Arrastar a ilustração para o lado troca de capítulo
   let sx = null;
   const sc = $('#hsScene');
