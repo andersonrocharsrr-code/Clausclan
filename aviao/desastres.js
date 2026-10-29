@@ -318,7 +318,7 @@ const ACIDENTES = [
     memoria: 'Todo dia 12 de agosto, familiares das vítimas sobem a trilha até o Cume Osutaka para lembrar os 520 que morreram. A JAL deixou de usar o número 123 nos seus voos.',
     fontes: [['Wikipedia: Japan Air Lines Flight 123', 'https://en.wikipedia.org/wiki/Japan_Air_Lines_Flight_123'], ['Britannica: Japan Airlines flight 123', 'https://www.britannica.com/event/Mount-Osutaka-airline-disaster'],
       ['Nippon.com: Japan’s Deadliest Air Disaster', 'https://www.nippon.com/en/guide-to-japan/cs00019/'], ['Admiral Cloudberg: Fire on the Mountain', 'https://admiralcloudberg.medium.com/fire-on-the-mountain-the-crash-of-japan-airlines-flight-123-dadebd321224']],
-    cauda: 'assets/cauda-jal.webp', mapa: mapaJal123, esquema: falhaJal123, fugoide: fugoideJal123,
+    cauda: 'assets/cauda-jal.webp', mapaImg: 'assets/jal123-mapa.webp', mapa: mapaJal123, esquema: falhaJal123, fugoide: fugoideJal123,
     fuso: 'Linha do tempo · horário de Tóquio, alguns aproximados', fugoideTit: 'A fugoide: subindo e descendo sem controle',
     fugoideTxt: 'Sem os profundores, cada subida custava velocidade e cada descida a devolvia. O 747 ficou preso nessa gangorra, subindo e descendo centenas de metros por vez, enquanto o dutch roll o balançava de lado.',
   },
@@ -376,7 +376,7 @@ const ACIDENTES = [
     fontes: [['BEA: relatório final do AF 447 (2012)', 'https://bea.aero/en/investigation-reports/notified-events/detail/accident-to-the-airbus-a330-203-registered-f-gzcp-and-operated-by-air-france-occurred-on-06-01-2009-in-the-atlantic-ocean/'],
       ['Wikipedia: Air France Flight 447', 'https://en.wikipedia.org/wiki/Air_France_Flight_447'], ['Al Jazeera: condenação em 2026', 'https://www.aljazeera.com/news/2026/5/21/french-court-finds-airbus-air-france-guilty-of-manslaughter-in-2009-crash'],
       ['CNN: a transcrição da cabine', 'https://www.cnn.com/2011/10/14/world/americas/af447-transcript']],
-    cauda: 'assets/cauda-af.webp', mapa: mapaAf447, esquema: falhaAf447, fugoide: estolAf447,
+    cauda: 'assets/cauda-af.webp', mapaImg: 'assets/af447-mapa.webp', mapa: mapaAf447, esquema: falhaAf447, fugoide: estolAf447,
     fugoideTit: 'O estol: nariz para cima, avião caindo',
     fugoideTxt: 'O nariz apontava para cima, o que dava a sensação de que o avião subia. Na verdade, ele caía quase reto, de barriga. Para sair do estol era preciso fazer o contrário do que parecia certo: baixar o nariz, mergulhar e ganhar velocidade.',
   },
@@ -399,7 +399,6 @@ function mostrar() {
   $('#dzNums').innerHTML = a.numeros.map(([n, l]) => `<div><b>${esc(n)}</b><span>${esc(l)}</span></div>`).join('');
   $('#dzFicha').innerHTML = a.ficha.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('');
   cap = 0; montarCapitulos();
-  $('#dzMap').innerHTML = a.mapa();
   $('#dzFail').innerHTML = a.esquema();
   $('#dzFailTxt').textContent = a.falha;
   $('#dzPhugBox').hidden = !a.fugoide;
@@ -408,11 +407,30 @@ function mostrar() {
   $('#dzChanged').innerHTML = a.mudou.map((m) => `<li>${esc(m)}</li>`).join('');
   $('#dzMemory').textContent = a.memoria;
   $('#dzSrc').innerHTML = a.fontes.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener">${esc(n)}</a>`).join(' · ');
-  // Marcas dos eventos sobre a rota
-  const path = $('#dzPath'), L = path.getTotalLength();
-  a.fr = a.linha.map(([, , v]) => fracDe(path, v));
-  $('#dzMarks').innerHTML = a.fr.map((f, i) => { const p = path.getPointAtLength(L * f); return `<g class="dz-mark" data-i="${i}"><circle cx="${p.x}" cy="${p.y}" r="15"/></g>`; }).join('');
   $('#dzLine').innerHTML = a.linha.map(([h, t], i) => `<li><button type="button" data-i="${i}"><b>${h}</b><span>${esc(t)}</span></button></li>`).join('');
+  // O mapa só entra quando a imagem de satélite já está decodificada, para não aparecer vazio e depois "piscar"
+  if (pronta[a.mapaImg] === true) montarMapa(a);
+  else { $('#dzMap').classList.add('is-loading'); carregar(a.mapaImg).then(() => { if (atual === a) montarMapa(a); }); }
+}
+
+// Imagens já baixadas e decodificadas; ficam guardadas para a troca de acidente ser instantânea
+const pronta = {};
+function carregar(src) {
+  if (!src) return Promise.resolve();
+  if (!pronta[src]) {
+    const im = new Image(); im.decoding = 'async'; im.src = src;
+    pronta[src] = im.decode().catch(() => {}).then(() => { pronta[src] = true; imgsGuardadas.push(im); });
+  }
+  return pronta[src] === true ? Promise.resolve() : pronta[src];
+}
+const imgsGuardadas = [];
+function montarMapa(a) {
+  $('#dzMap').innerHTML = a.mapa();
+  $('#dzMap').classList.remove('is-loading');
+  // Marcas dos eventos sobre a rota (as posições são calculadas uma vez só por acidente)
+  const path = $('#dzPath'), L = path.getTotalLength();
+  if (!a.fr) a.fr = a.linha.map(([, , v]) => fracDe(path, v));
+  $('#dzMarks').innerHTML = a.fr.map((f, i) => { const p = path.getPointAtLength(L * f); return `<g class="dz-mark" data-i="${i}"><circle cx="${p.x}" cy="${p.y}" r="15"/></g>`; }).join('');
   irPara(a.linha.length - 1, false);
 }
 
@@ -426,6 +444,7 @@ function fracDe(path, v) {
 }
 function irPara(i, animar = true) {
   passo = i;
+  if (!atual.fr || !$('#dzPath')) return;
   const a = atual, path = $('#dzPath'), L = path.getTotalLength(), plane = $('#dzPlane');
   const alvo = a.fr[i], de = animar ? (Number(plane.dataset.f) || 0) : alvo;
   cancelAnimationFrame(tocando);
@@ -519,6 +538,12 @@ function init() {
   initCap();
 }
 let pronto = false;
-function start() { if (!pronto) { pronto = true; mostrar(); } }
+function start() {
+  if (pronto) return;
+  pronto = true;
+  // Baixa já os mapas e as caudas de todos os acidentes, para a troca entre eles não ter espera
+  ACIDENTES.forEach((a) => { carregar(a.mapaImg); carregar(a.cauda); });
+  mostrar();
+}
 window.Desastres = { init, start };
 })();

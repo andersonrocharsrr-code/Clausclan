@@ -1157,3 +1157,4 @@ body.drawer-lock { overflow: hidden; }
 .dz-item b, .dz-item span, .dz-item i { text-shadow: 0 0 6px var(--paper), 0 0 2px var(--paper); }
 .dz-item span { color: var(--ink); opacity: .9; }
 .dz-item i { color: var(--bad); font-weight: 700; }
+.dz__map.is-loading { opacity: .55; transition: opacity .2s; }
