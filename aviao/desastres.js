@@ -80,50 +80,22 @@ function fugoideJal123() {
 const a330 = (cls = 'hs-fill-paper2') => `<g><path d="M-70 4 C-60 -5 -40 -6 -10 -6 H40 C52 -6 58 -2 62 4 C58 8 50 10 40 10 H-60 C-66 10 -70 8 -70 4Z" class="${cls}"/>
   <path d="M-6 6 L-30 24 H-20 L12 6Z" class="hs-fill-ink"/><rect x="-16" y="10" width="18" height="7" rx="3.5" class="hs-fill-metal"/><path d="M-58 -2 L-70 -26 H-62 L-46 -5Z" class="hs-fill-blue"/><path d="M-63 -14 L-66 -20 H-63 L-60 -14Z" class="hs-fill-accent"/><path d="M-60 6 L-76 12 H-68 L-50 6Z" class="hs-fill-ink"/>
   ${[-40, -28, -16, -4, 8, 20, 32].map((x) => `<rect x="${x}" y="-2" width="5" height="4" rx="1" class="hs-fill-ink"/>`).join('')}<path d="M50 -1 h6 l3 3 h-9z" class="hs-fill-ink"/></g>`;
-// Mapa do Atlântico Sul em projeção simples: 29 px por grau, de 48°O a 14°O e de 26°S a 16°N
-const AF = (lat, lon) => [Math.round((lon + 48) * 29), Math.round((16 - lat) * 29)];
-const AF_COSTA = [[-26.5, -48.6], [-25, -48.1], [-24, -46.5], [-23.4, -45], [-23, -43.6], [-22.9, -42], [-22, -41], [-20.6, -40.3], [-18.5, -39.7], [-16, -38.9], [-13.5, -38.9], [-12.6, -38], [-11, -37], [-9.6, -35.7], [-8, -34.85], [-6.5, -34.95], [-5.2, -35.5], [-4.8, -36.9], [-3.7, -38.5], [-2.9, -39.9], [-2.8, -41.6], [-2.5, -43.4], [-1.6, -44.7], [-1, -46.2], [-0.7, -47.6], [-0.4, -48.6]];
-const AF_AFRICA = [[17, -16.3], [15.5, -16.6], [14.7, -17.5], [13.6, -16.7], [12.3, -16.75], [11, -15.4], [10, -14]];
-const pts = (l) => l.map(([a, b]) => AF(a, b).join(' ')).join(' L');
-const AF447_ROTA = 'M138 1125 C190 990 300 800 371 640 L440 503 L505 378';
+// Rota sobre a imagem de satélite do Atlântico Sul (coordenadas da imagem, 944x1109)
+const AF447_ROTA = 'M192 1000 L453 464 L490 391';
 const AVIAO_A330 = `<g class="dz-plane">
   <path d="M0 -34 C3.4 -34 4.6 -27 4.6 -20 L4.6 22 L3 31 L0 34 L-3 31 L-4.6 22 L-4.6 -20 C-4.6 -27 -3.4 -34 0 -34Z"/>
   <path d="M4.6 -6 L36 13 L36 17 L4.6 8Z M-4.6 -6 L-36 13 L-36 17 L-4.6 8Z"/>
   <path d="M3 22 L15 30 L15 33 L3 30Z M-3 22 L-15 30 L-15 33 L-3 30Z"/>
   <rect x="12" y="1" width="4.6" height="10" rx="2.3"/><rect x="-16.6" y="1" width="4.6" height="10" rx="2.3"/></g>`;
 function mapaAf447() {
-  const [nx, ny] = AF(-3.85, -32.42), [dx, dy] = AF(14.7, -17.45), [rx, ry] = AF(-8.05, -34.9), [tx, ty] = AF(-5.8, -35.2);
-  return `<svg viewBox="0 0 986 1218" role="img" aria-label="Mapa da rota do voo AF 447 sobre o Atlântico Sul" class="dz-map--af">
-    <defs><linearGradient id="dzSea" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a2238"/><stop offset="1" stop-color="#123b5e"/></linearGradient>
-      <radialGradient id="dzStorm"><stop offset="0" stop-color="#e9eef5" stop-opacity=".55"/><stop offset=".6" stop-color="#b9c6d6" stop-opacity=".25"/><stop offset="1" stop-color="#b9c6d6" stop-opacity="0"/></radialGradient>
-      <filter id="dzShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="7" dy="10" stdDeviation="4" flood-color="#000" flood-opacity=".55"/></filter></defs>
-    <rect width="986" height="1218" fill="url(#dzSea)"/>
-    <path d="M0 1218 L${pts(AF_COSTA)} L0 ${AF(-0.4, -48.6)[1]}Z" class="dz-land"/>
-    <path d="M${pts(AF_AFRICA)} L986 0 L${AF(17, -16.3)[0]} 0Z" class="dz-land"/>
-    <path d="M0 464 H986" class="dz-eq"/>
-    <g class="dz-storms">${[[470, 430, 70], [540, 380, 90], [610, 330, 70], [500, 330, 55], [650, 410, 60], [430, 370, 50]].map(([x, y, r], i) => `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#dzStorm)"/><path d="M${x - 6} ${y - 18} l-8 16 h9 l-7 16" class="dz-bolt" style="animation-delay:${i * .7}s"/>`).join('')}</g>
-    <mask id="dzReveal" maskUnits="userSpaceOnUse" x="0" y="0" width="986" height="1218"><path id="dzRevealPath" d="${AF447_ROTA}" fill="none" stroke="#fff" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/></mask>
-    <path d="M505 378 L522 348 L600 150 L640 0" class="dz-route-plan"/>
+  return `<svg viewBox="0 0 944 1109" role="img" aria-label="Mapa da rota do voo AF 447 sobre o Atlântico Sul" class="dz-map--af">
+    <defs><filter id="dzShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="7" dy="10" stdDeviation="4" flood-color="#000" flood-opacity=".55"/></filter></defs>
+    <image href="assets/af447-mapa.webp" x="0" y="0" width="944" height="1109" preserveAspectRatio="xMidYMid slice"/>
+    <mask id="dzReveal" maskUnits="userSpaceOnUse" x="0" y="0" width="944" height="1109"><path id="dzRevealPath" d="${AF447_ROTA}" fill="none" stroke="#fff" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/></mask>
     <path id="dzPath" d="${AF447_ROTA}" class="dz-route"/>
     <path d="${AF447_ROTA}" class="dz-route-dash" mask="url(#dzReveal)"/>
-    <g class="dz-labels">
-      <circle cx="138" cy="1125" r="9" class="dz-dot"/><text x="160" y="1120">Rio de Janeiro</text><text x="160" y="1150" class="dz-lbl-s">(Galeão)</text>
-      <circle cx="${rx}" cy="${ry}" r="7" class="dz-dot"/><text x="${rx - 16}" y="${ry + 10}" text-anchor="end">Recife</text>
-      <circle cx="${tx}" cy="${ty}" r="7" class="dz-dot"/><text x="${tx - 16}" y="${ty + 10}" text-anchor="end">Natal</text>
-      <circle cx="${nx}" cy="${ny}" r="6" class="dz-dot"/><text x="${nx + 16}" y="${ny + 10}">Fernando de Noronha</text>
-      <text x="456" y="515" class="dz-lbl-s">INTOL</text><text x="540" y="336" class="dz-lbl-s">TASIL</text>
-      <text x="612" y="120" class="dz-lbl-s">rota prevista até Paris</text>
-      <circle cx="${dx}" cy="${dy}" r="7" class="dz-dot"/><text x="${dx - 14}" y="${dy + 46}" text-anchor="end">Dakar</text>
-      <text x="200" y="830" text-anchor="middle" class="dz-lbl-big">BRASIL</text>
-      <text x="760" y="820" text-anchor="middle" class="dz-lbl-w">Oceano Atlântico</text>
-      <text x="976" y="454" text-anchor="end" class="dz-lbl-s dz-lbl-w">Linha do Equador</text>
-      <text x="720" y="250" text-anchor="middle" class="dz-lbl-s dz-lbl-w">tempestades da Zona de</text><text x="720" y="280" text-anchor="middle" class="dz-lbl-s dz-lbl-w">Convergência Intertropical</text>
-      <text x="478" y="372" text-anchor="end" class="dz-lbl-s">Última posição</text>
-    </g>
     <g id="dzMarks"></g>
-    <path d="M490 363 l30 30 M520 363 l-30 30" class="dz-x"/>
-    <g id="dzPlane"><circle r="30" class="dz-plane-halo"/><g transform="scale(.95)" filter="url(#dzShadow)">${AVIAO_A330}</g></g>
-    <text x="16" y="1204" class="dz-map-note">Rota aproximada</text>
+    <g id="dzPlane"><circle r="28" class="dz-plane-halo"/><g transform="scale(.85)" filter="url(#dzShadow)">${AVIAO_A330}</g></g>
   </svg>`;
 }
 // As sondas pitot no nariz do A330 entupidas por cristais de gelo: a velocidade indicada despenca
@@ -333,13 +305,13 @@ const ACIDENTES = [
     fuso: 'Linha do tempo · horário de Brasília (UTC−3)',
     partes: ['Antes do voo', 'A noite sobre o oceano', '4 minutos e 23 segundos', 'A busca', 'Causas e consequências'],
     secoes: [
-  { t: "O último voo de domingo", parte: 0, hora: "Fim de tarde", lugar: "Aeroporto do Galeão, Rio de Janeiro", sabia: "O AF 447 saía do Rio todas as noites e chegava a Paris na manhã seguinte. Era um voo noturno típico: jantar, luzes apagadas e quase onze horas de viagem.", cena: CENAS.galeao,
+  { t: "O último voo de domingo", foto: { src: "assets/af447-galeao.webp", legenda: "Um A330 da Air France no pátio do Galeão ao entardecer, com as montanhas do Rio ao fundo (imagem ilustrativa)" }, parte: 0, hora: "Fim de tarde", lugar: "Aeroporto do Galeão, Rio de Janeiro", sabia: "O AF 447 saía do Rio todas as noites e chegava a Paris na manhã seguinte. Era um voo noturno típico: jantar, luzes apagadas e quase onze horas de viagem.", cena: CENAS.galeao,
     p: ["Domingo, 31 de maio de 2009. Fim de tarde no Rio de Janeiro, o céu já escuro e o ar ainda morno de outono. No saguão do Galeão, a fila do balcão da Air France para Paris tinha de tudo: executivos voltando para a Europa depois de uma semana de reuniões, casais encerrando as férias, famílias inteiras, estudantes, gente que ia visitar parentes.", "Eram 216 passageiros de 32 países, a maioria franceses, brasileiros e alemães. Havia 126 homens, 82 mulheres, sete crianças e um bebê. Entre eles estavam o príncipe Pedro Luís de Orléans e Bragança, de 26 anos, da antiga família imperial brasileira, e o maestro Silvio Barbato.", "Também ia a bordo a esposa de um dos pilotos. Era comum: familiares de tripulantes aproveitavam lugares livres para acompanhar a viagem.", "Para quase todos, era só mais um voo noturno. Jantar, um filme, dormir um pouco e acordar sobre a Europa, com o café da manhã."] },
-  { t: "Decolagem do Galeão", parte: 0, hora: "19h29", lugar: "Rio de Janeiro", sabia: "Em voos longos, a lei exige três pilotos. Eles se revezam: enquanto dois ficam nos comandos, o terceiro descansa numa pequena cabine com beliche, logo atrás da cabine de comando.", cena: CENAS.decolagemRio,
+  { t: "Decolagem do Galeão", foto: { src: "assets/af447-decolagem.webp", legenda: "Um A330 da Air France decolando à noite no Rio de Janeiro (imagem ilustrativa)" }, parte: 0, hora: "19h29", lugar: "Rio de Janeiro", sabia: "Em voos longos, a lei exige três pilotos. Eles se revezam: enquanto dois ficam nos comandos, o terceiro descansa numa pequena cabine com beliche, logo atrás da cabine de comando.", cena: CENAS.decolagemRio,
     p: ["O avião era um Airbus A330-203 de matrícula F-GZCP, entregue à Air France em 2005. Moderno, com comandos eletrônicos (o famoso fly-by-wire) e sem nenhum defeito registrado que impedisse o voo.", "Na cabine iam três pilotos. O comandante Marc Dubois, de 58 anos, tinha quase 11.000 horas de voo e muita experiência em rotas para a América do Sul. O copiloto David Robert, de 37, tinha cerca de 6.500 horas. O mais novo, Pierre-Cédric Bonin, de 32, tinha perto de 3.000.", "Às 19h29, o A330 decolou com 228 pessoas a bordo. Pelas janelas do lado direito, a cidade virou um tapete de luzes: a orla, os morros, a baía de Guanabara. Em poucos minutos, só restava o escuro.", "O avião subiu até 35.000 pés (cerca de 10.700 metros) e apontou para o nordeste, seguindo a costa do Brasil rumo a Natal. Na cabine de passageiros, os comissários começaram a servir o jantar."] },
-  { t: "Para além do radar", parte: 1, hora: "22h35", lugar: "Sobre o Atlântico, perto do ponto INTOL", sabia: "Sobre o meio do oceano não há radar. Os aviões informam a posição pelo rádio de alta frequência ou por mensagens de dados, e o controle acompanha esses relatos.", cena: CENAS.oceano,
+  { t: "Para além do radar", foto: { src: "assets/af447-lua.webp", legenda: "Um A330 sobre o Atlântico à noite, entre nuvens, a caminho do Equador (imagem ilustrativa)" }, parte: 1, hora: "22h35", lugar: "Sobre o Atlântico, perto do ponto INTOL", sabia: "Sobre o meio do oceano não há radar. Os aviões informam a posição pelo rádio de alta frequência ou por mensagens de dados, e o controle acompanha esses relatos.", cena: CENAS.oceano,
     p: ["Três horas depois, o avião deixou a costa brasileira para trás. Às 22h33 passou pelo ponto INTOL, e às 22h35 fez o último contato com o controle de Recife, o Atlântico. Dali em diante, ficaria fora do alcance dos radares, numa faixa de oceano sem nada embaixo além de água.", "O próximo contato seria com o controle de Dakar, no Senegal, do outro lado do oceano. Esse contato nunca aconteceu.", "Na cabine de passageiros, o jantar já tinha sido recolhido e as luzes foram baixadas. Muitos dormiam, encolhidos sob os cobertores; outros assistiam a filmes nas telinhas dos encostos.", "Lá na frente, os pilotos conversavam sobre o que vinha pela frente: a Zona de Convergência Intertropical, a faixa perto do Equador onde os ventos dos dois hemisférios se encontram e formam tempestades enormes, com nuvens que sobem mais alto do que os aviões voam. Comentaram que o ar estava mais quente que o normal, o que impedia o avião de subir para uma altitude acima do mau tempo."] },
-  { t: "O comandante vai descansar", parte: 1, hora: "23h01", lugar: "Atlântico, perto do Equador", sabia: "Os relatórios mostram que, ao sair, o comandante não disse com clareza quem ficaria no comando. Bonin pilotava, mas Robert era o mais experiente dos dois.", cena: CENAS.tempestade,
+  { t: "O comandante vai descansar", foto: { src: "assets/af447-tempestade.webp", legenda: "Recriação do A330 contornando uma tempestade da Zona de Convergência Intertropical (imagem ilustrativa)", tag: "Curva de 12° à esquerda" }, parte: 1, hora: "23h01", lugar: "Atlântico, perto do Equador", sabia: "Os relatórios mostram que, ao sair, o comandante não disse com clareza quem ficaria no comando. Bonin pilotava, mas Robert era o mais experiente dos dois.", cena: CENAS.tempestade,
     p: ["Às 23h01, o comandante Dubois levantou-se para o seu turno de descanso, como estava previsto. David Robert, que tinha descansado antes, assumiu a cadeira da esquerda. Bonin continuou na da direita, pilotando.", "O comandante saiu sem dar instruções detalhadas sobre a tempestade à frente nem deixar claro quem decidia o quê. Era uma passagem rotineira, numa noite que parecia rotineira.", "Minutos depois, o avião entrou nas nuvens. Começou a balançar. Os pilotos sentiram um cheiro diferente, como de eletricidade, e notaram que lá fora o ar estava estranhamente quente. Às 23h06, Bonin avisou os comissários de que iam entrar numa área de turbulência.", "Robert olhou o radar meteorológico e sugeriu desviar. Às 23h08, o avião fez uma curva de 12 graus para a esquerda, contornando a pior parte. Também reduziram um pouco a velocidade, como se faz em turbulência. Tudo estava sob controle. Faltavam dois minutos."] },
   { t: "23h10: os velocímetros enlouquecem", parte: 2, hora: "23h10", lugar: "35.000 pés, dentro das nuvens", sabia: "A sonda pitot é um tubinho no nariz do avião que mede a pressão do ar que entra nele. Dessa pressão sai a velocidade. Se o tubo entope, a velocidade mostrada fica errada.", cena: CENAS.pitot,
     p: ["A 35.000 pés, a temperatura lá fora era de mais de 40 graus abaixo de zero. Dentro das nuvens de tempestade, o ar estava cheio de minúsculos cristais de gelo. Eles começaram a se acumular dentro das sondas pitot, os tubinhos que medem a velocidade.", "Às 23h10min05, as sondas entupiram. Em segundos, a velocidade mostrada nos painéis despencou de cerca de 275 nós para perto de 60. Os computadores perceberam que os números não faziam sentido. O piloto automático se desligou com um alarme, e logo depois o controle automático dos motores também.", "Bonin pôs a mão no manche lateral e disse: “Eu tenho os comandos.” Robert respondeu: “Ok.”", "O avião estava perfeito. Os motores funcionavam, as asas estavam intactas, a altitude e a atitude (a posição do nariz) continuavam sendo mostradas corretamente. Só a velocidade estava errada, e só por um tempo. Bastava manter o nariz na mesma posição e esperar o gelo derreter. Mas ninguém na cabine estava esperando por aquilo."] },
@@ -366,9 +338,9 @@ const ACIDENTES = [
   { t: "Na Justiça", parte: 4, hora: "2009–2026", lugar: "Tribunais de Paris", sabia: "Na França, empresas podem responder criminalmente por um acidente. A multa de 225.000 euros era a pena máxima prevista para esse crime.", cena: CENAS.tribunal,
     p: ["Famílias das vítimas, reunidas em associações na França e no Brasil, lutaram por anos para que alguém fosse responsabilizado. A Airbus e a Air France foram acusadas de homicídio culposo, sem intenção de matar.", "Em 2019, os juízes de instrução arquivaram o caso. As famílias recorreram, e em 2021 a Justiça mandou as duas empresas a julgamento. Em abril de 2023, depois de um julgamento de dois meses, elas foram absolvidas: o tribunal apontou falhas da Airbus e da Air France, mas disse que não era possível provar com certeza que elas causaram o acidente.", "A promotoria recorreu. Em 21 de maio de 2026, o Tribunal de Apelação de Paris inverteu a decisão e condenou a Airbus e a Air France por homicídio culposo, com multa de 225.000 euros cada uma.", "Para muitas famílias, o valor foi simbólico, poucos minutos de faturamento das duas empresas. As duas anunciaram recurso ao Tribunal de Cassação, a última instância, que não julga de novo os fatos, só se a lei foi bem aplicada. Dezessete anos depois, o caso ainda não terminou."] },
     ],
-    linha: [['19:29', 'Decolagem do Galeão, Rio de Janeiro, com 228 pessoas a bordo.', [138, 1125]], ['22:35', 'Último contato por rádio com o controle de Recife, perto do ponto INTOL. Dali em diante, sem radar.', [440, 503]],
-      ['23:01', 'O comandante sai para descansar. O avião se aproxima das tempestades perto do Equador.', [484, 418]], ['23:10', 'As sondas pitot congelam, o piloto automático se desliga e o avião sobe até entrar em estol.', [499, 387]],
-      ['23:14', 'Queda no Atlântico, 4 minutos e 23 segundos depois do desligamento do piloto automático.', [505, 378]]],
+    linha: [['19:29', 'Decolagem do Galeão, Rio de Janeiro, com 228 pessoas a bordo.', [192, 1000]], ['22:35', 'Último contato por rádio com o controle de Recife, perto do ponto INTOL. Dali em diante, sem radar.', [453, 464]],
+      ['23:01', 'O comandante sai para descansar. O avião se aproxima das tempestades perto do Equador.', [472, 428]], ['23:10', 'As sondas pitot congelam, o piloto automático se desliga e o avião sobe até entrar em estol.', [484, 404]],
+      ['23:14', 'Queda no Atlântico, 4 minutos e 23 segundos depois do desligamento do piloto automático.', [490, 391]]],
     falha: 'Ponto de partida: cristais de gelo entupiram as sondas pitot por cerca de um minuto. A velocidade mostrada despencou, o piloto automático se desligou e o avião ficou nas mãos dos pilotos, sem as proteções de sempre.',
     mudou: ['A EASA tornou obrigatória a troca das sondas pitot Thales AA nos A330 e A340 por modelos mais resistentes ao gelo.',
       'O treinamento mudou no mundo inteiro: a recuperação de estol passou a priorizar baixar o nariz, mesmo perdendo altura, e o treino de prevenção e recuperação de atitudes anormais (UPRT) virou obrigatório na Europa e nos Estados Unidos.',
@@ -479,7 +451,7 @@ function capitulo(dir = 0) {
   $('#dzhText').innerHTML = c.p.map((p) => `<p>${esc(p)}</p>`).join('');
   $('#dzhFact').textContent = c.sabia;
   $('#dzhScene').innerHTML = c.foto
-    ? `<figure class="hs-photo"><div class="hs-photo__frame"><img src="${c.foto.src}" alt="${esc(c.foto.legenda)}" draggable="false"></div><figcaption>${esc(c.foto.legenda)}</figcaption></figure>`
+    ? `<figure class="hs-photo"><div class="hs-photo__frame"><img src="${c.foto.src}" alt="${esc(c.foto.legenda)}" draggable="false">${c.foto.tag ? `<span class="hs-photo__tag">${esc(c.foto.tag)}</span>` : ''}</div><figcaption>${esc(c.foto.legenda)}</figcaption></figure>`
     : `<svg viewBox="0 0 320 180" role="img" aria-label="Ilustração: ${esc(c.t)}"><rect width="320" height="180" class="hs-sky"/>${c.cena()}</svg>`;
   $('#dzhPrev').disabled = cap === 0;
   $('#dzhNext').textContent = cap === a.secoes.length - 1 ? 'Ver o que falhou e o que mudou' : 'Próximo capítulo';

@@ -1141,3 +1141,5 @@ body.drawer-lock { overflow: hidden; }
 .px-tilt { animation: hsSway 3s ease-in-out infinite alternate; }
 @media (prefers-reduced-motion: reduce) { .dz-bolt, .dz-crystal, .dz-spd--a, .dz-spd--b, .dz-apoff, .dz-fall, .dz-turb, .dz-pitot-ice { animation: none !important; } .dz-bolt { opacity: .6; } .dz-spd--a { opacity: 0; } }
 .px-finw { fill: #f3f5f7; stroke: #1b2630; }
+.hs-photo__frame { position: relative; }
+.hs-photo__tag { position: absolute; left: 12px; bottom: 12px; padding: 5px 9px; border-radius: 6px; font: 600 11.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: #fff; background: rgba(8, 14, 22, .72); border: 1px solid rgba(255, 255, 255, .25); }
