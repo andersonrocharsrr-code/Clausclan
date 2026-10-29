@@ -125,17 +125,26 @@ function mapaAf447() {
   </svg>`;
 }
 // As sondas pitot no nariz do A330 entupidas por cristais de gelo: a velocidade indicada despenca
+// Sonda pitot real (foto de um A330, lado do copiloto) com as animações por cima: cristais de gelo vindo
+// de frente, gelo crescendo na entrada do tubo e a velocidade caindo. A ponta do tubo fica em (400, 163) na foto (600x567).
+const PITOT_FOTO = 'assets/af447-pitot.webp';
+function pitotFoto(w, h, y0, extra = '') {
+  const k = 600 / w, tx = 400 / k, ty = (163 - y0) / k;
+  const cristais = Array.from({ length: 26 }, (_, i) => `<path d="M${tx + 18 + (i * 37) % (w - tx)} ${ty - 46 + (i * 29) % 92} l2.4 -2.4 l2.4 2.4 l-2.4 2.4z" class="pt-crystal" style="animation-delay:-${((i * 13) % 30) / 10}s;animation-duration:${2 + (i % 4) * .4}s"/>`).join('');
+  return `<image href="${PITOT_FOTO}" x="0" y="${-y0 / k}" width="${w}" height="${567 / k}" preserveAspectRatio="none"/>
+    <rect width="${w}" height="${h}" class="pt-night"/>
+    <ellipse cx="${tx - 26}" cy="${ty}" rx="30" ry="6" class="pt-heat"/>
+    <g>${cristais}</g>
+    <g transform="translate(${tx} ${ty}) scale(1.3)"><g class="pt-ice"><path d="M-1 -4.8 L6 -4.6 L11 -2.2 L12.5 .6 L9.5 3.8 L4 4.8 L-1 4.4Z" class="pt-ice-b"/><path d="M3 -4 l2 3.6 l-2 3.6 M8 -3 l1.6 3 l-1.6 3" class="pt-ice-l"/></g></g>
+    <g class="pt-call"><path d="M${tx + 4} ${ty - 6} L${tx + 26} ${ty - 30} H${tx + 70}" class="pt-call-l"/><text x="${tx + 28}" y="${ty - 34}" class="pt-call-t">entrada de ar</text></g>
+    ${extra}`;
+}
 function falhaAf447() {
-  return `<svg viewBox="0 0 360 160" role="img" aria-label="Esquema da falha: cristais de gelo entopem as sondas pitot, a velocidade indicada cai e o piloto automático se desliga">
-    <rect width="360" height="160" class="px-night"/>
-    <path d="M360 54 H170 C128 54 96 70 82 92 C96 112 128 120 170 120 H360Z" class="hs-fill-paper2"/>
-    <path d="M110 74 L126 66 H146 L146 76 H116Z" class="hs-fill-ink"/>
-    ${[[160, 120], [196, 120], [178, 54]].map(([x, y], i) => `<path d="M${x} ${y} v${i === 2 ? -8 : 8} h-14" class="dz-pitot"/><circle cx="${x - 14}" cy="${y + (i === 2 ? -8 : 8)}" r="2.4" class="dz-pitot-ice"/>`).join('')}
-    <g class="dz-ice">${Array.from({ length: 22 }, (_, i) => `<path d="M${(i * 37) % 120 - 10} ${20 + (i * 53) % 130} l3 -3 l3 3 l-3 3z" class="dz-crystal" style="animation-delay:${(i % 7) * .3}s"/>`).join('')}</g>
-    <rect x="232" y="10" width="118" height="34" rx="4" class="px-panel"/>
-    <text x="240" y="24" class="dz-spd-l">VELOCIDADE</text><text x="342" y="38" text-anchor="end" class="dz-spd dz-spd--a">275 nós</text><text x="342" y="38" text-anchor="end" class="dz-spd dz-spd--b">60 nós</text>
-    <text x="300" y="140" text-anchor="middle" class="dz-apoff">AP OFF</text>
-    <text x="14" y="150" class="dz-map-t" style="fill:#e9eef5">3 sondas pitot · cristais de gelo · cerca de 1 minuto</text>
+  return `<svg viewBox="0 0 360 160" role="img" aria-label="Esquema da falha: cristais de gelo entopem a sonda pitot, a velocidade indicada cai e o piloto automático se desliga">
+    ${pitotFoto(360, 160, 40, `<rect x="8" y="8" width="104" height="34" rx="5" class="pt-chip"/><text x="15" y="21" class="dz-spd-l">VELOCIDADE</text>
+      <text x="104" y="36" text-anchor="end" class="dz-spd pt-spd-a">275 nós</text><text x="104" y="36" text-anchor="end" class="dz-spd dz-spd--b pt-spd-b">60 nós</text>
+      <text x="300" y="146" text-anchor="middle" class="dz-apoff pt-apoff">AP OFF</text>
+      <rect x="8" y="136" width="262" height="17" rx="4" class="pt-chip"/><text x="14" y="148" class="dz-map-t" style="fill:#e9eef5">3 sondas pitot · cristais de gelo · cerca de 1 minuto</text>`)}
   </svg>`;
 }
 // O estol: o nariz aponta para cima, mas o avião cai; o ângulo entre os dois passa de 40°
@@ -224,11 +233,9 @@ const CENAS = {
     ${[0, 1, 2, 3, 4].map((r) => [0, 1, 2, 3, 4, 5].map((c) => `<g transform="translate(${20 + c * 52 + r * 4} ${70 + r * 18})"><rect x="0" y="0" width="36" height="34" rx="6" class="px-seat"/><circle cx="${18 + ((c + r) % 3 - 1) * 4}" cy="-3" r="7" class="hs-fill-ink"/></g>`).join('')).join('')}
     <rect width="320" height="180" class="px-dim"/>${[50, 154, 258].map((x, i) => `<circle cx="${x}" cy="26" r="3" class="px-lamp" style="animation-delay:${i * .4}s"/>`).join('')}
     <g class="hs-shake" style="transform-origin:160px 90px"><text x="160" y="16" class="px-gtxt">TURBULÊNCIA À FRENTE</text></g>`,
-  pitot: () => `<rect width="320" height="180" class="px-night"/><path d="M320 60 H150 C108 60 76 76 62 98 C76 120 108 128 150 128 H320Z" class="hs-fill-paper2"/>
-    <path d="M92 80 L108 72 H130 L130 82 H98Z" class="hs-fill-ink"/>
-    ${[150, 186].map((x) => `<path d="M${x} 128 v10 h-18" class="dz-pitot"/><circle cx="${x - 18}" cy="138" r="3" class="dz-pitot-ice"/>`).join('')}
-    <g class="dz-ice">${Array.from({ length: 26 }, (_, i) => `<path d="M${(i * 41) % 130 - 10} ${16 + (i * 47) % 150} l3 -3 l3 3 l-3 3z" class="dz-crystal" style="animation-delay:${(i % 7) * .3}s"/>`).join('')}</g>
-    <text x="240" y="40" text-anchor="middle" class="px-gtxt">CRISTAIS DE GELO · -40 °C</text>`,
+  pitot: () => pitotFoto(320, 180, 20, `<rect x="8" y="8" width="92" height="30" rx="5" class="pt-chip"/><text x="14" y="19" class="dz-spd-l">VELOCIDADE</text>
+    <text x="94" y="33" text-anchor="end" class="dz-spd pt-spd-a" style="font-size:12px">275 nós</text><text x="94" y="33" text-anchor="end" class="dz-spd dz-spd--b pt-spd-b" style="font-size:12px">60 nós</text>
+    <rect x="8" y="156" width="150" height="18" rx="4" class="pt-chip"/><text x="83" y="168" class="px-gtxt">CRISTAIS DE GELO · -40 °C</text>`),
   alarme: () => `<rect width="320" height="180" class="px-panel"/><rect x="40" y="22" width="150" height="120" rx="6" class="px-gauge"/>
     <path d="M40 82 H190" class="px-horizon"/><rect x="48" y="30" width="30" height="104" class="px-tape"/>
     <text x="63" y="86" text-anchor="middle" class="dz-spd dz-spd--a" style="font-size:10px">275</text><text x="63" y="86" text-anchor="middle" class="dz-spd dz-spd--b" style="font-size:10px">60</text>
