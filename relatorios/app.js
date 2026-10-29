@@ -44,12 +44,18 @@
 
   const mesmo = (a, b) => norm(a.nome) === norm(b.nome) && a.data === b.data;
 
-  // Relatório anterior do mesmo vendedor, na mesma semana (até 6 dias antes).
-  function anteriorDe(r) {
+  // Todos os relatórios anteriores do vendedor na mesma semana, do mais antigo ao mais novo.
+  function semanaAntesDe(r) {
     return db.reports
       .filter((x) => norm(x.nome) === norm(r.nome) && x.data < r.data && difDias(r.data, x.data) <= 6 &&
         (r.semana == null || x.semana == null || x.semana === r.semana))
-      .sort((a, b) => (a.data < b.data ? 1 : -1))[0] || null;
+      .sort((a, b) => (a.data < b.data ? -1 : 1));
+  }
+
+  // Relatório anterior do mesmo vendedor, na mesma semana (até 6 dias antes).
+  function anteriorDe(r) {
+    const s = semanaAntesDe(r);
+    return s[s.length - 1] || null;
   }
 
   function lembrarVendedor(nome) {
@@ -97,7 +103,7 @@
     const el = $('#previa');
     if (!lidos.length) { el.innerHTML = ''; return; }
     el.innerHTML = lidos.map((r, i) => {
-      const avisos = R.conferir(r, anteriorDe(r));
+      const avisos = R.conferir(r, anteriorDe(r), semanaAntesDe(r));
       const existe = db.reports.some((x) => mesmo(x, r));
       return `<div class="card">
         <div class="rel">
@@ -243,7 +249,7 @@
     // Tabela por vendedor
     $('#qtVend').textContent = `(${dados.lista.length})`;
     const avisosPorId = new Map();
-    dados.lista.forEach((r) => avisosPorId.set(r, R.conferir(r, anteriorDe(r))));
+    dados.lista.forEach((r) => avisosPorId.set(r, R.conferir(r, anteriorDe(r), semanaAntesDe(r))));
     if (!dados.lista.length) {
       $('#tabela').innerHTML = '<tbody><tr><td class="muted">Nenhum relatório neste dia. Cole na aba Colar.</td></tr></tbody>';
     } else {
@@ -338,7 +344,7 @@
   function abrirRelatorio(r) {
     aberto = r;
     $('#dlgTitulo').textContent = `${r.nome} · ${dataCurta(r.data)}`;
-    $('#dlgAvisos').innerHTML = avisosHTML(R.conferir(r, anteriorDe(r)));
+    $('#dlgAvisos').innerHTML = avisosHTML(R.conferir(r, anteriorDe(r), semanaAntesDe(r)));
     $('#dlgResumo').innerHTML = resumoHTML(r);
     $('#dlgTexto').value = r.raw || '';
     $('#dlgDetalhe').open = false;
@@ -391,7 +397,7 @@
     let html = ''; let dia = null;
     lista.forEach((r) => {
       if (r.data !== dia) { dia = r.data; html += `<div class="grupo-dia">${r.data ? diaSemana(r.data) : 'Sem data'}</div>`; }
-      const n = R.conferir(r, anteriorDe(r)).length;
+      const n = R.conferir(r, anteriorDe(r), semanaAntesDe(r)).length;
       html += `<button type="button" class="item" data-id="${db.reports.indexOf(r)}"><div class="rel">
         <div><div class="rel__nome">${esc(r.nome)}${n ? `<span class="tag tag--warn">⚠ ${n}</span>` : '<span class="tag tag--ok">✓</span>'}</div>
         <div class="rel__sub">${r.semana ? r.semana + 'ª semana' : ''}${r.cidade ? ' · ' + esc(r.cidade) : ''}</div></div>
