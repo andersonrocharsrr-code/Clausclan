@@ -311,6 +311,8 @@ function setExplore(open) {
   const m = $('#exploreMenu'), b = $('#exploreBtn');
   if (!m) return;
   m.hidden = !open; b.setAttribute('aria-expanded', String(open));
+  // Com o menu aberto, a página de trás não rola: só a lista do menu se mexe
+  document.documentElement.classList.toggle('menu-lock', open);
   if (open) (m.querySelector('[aria-current]') || m.querySelector('a')).focus({ preventScroll: true });
 }
 $('#exploreBtn').addEventListener('click', (e) => { e.stopPropagation(); setExplore($('#exploreMenu').hidden); });

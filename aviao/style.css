@@ -1272,3 +1272,19 @@ body.drawer-lock { overflow: hidden; }
 .mh-ausl { font: 700 9px var(--mono); letter-spacing: .14em; fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.6); stroke-width: 2.5px; }
 /* Mortos e sobreviventes sempre numa linha só no cartão da lista */
 .dz-item i { white-space: nowrap; font-size: min(11.5px, 2.75vw); letter-spacing: 0; }
+
+/* Explorar aberto: a página de trás fica parada e só o menu rola */
+html.menu-lock, html.menu-lock body { overflow: hidden; overscroll-behavior: none; }
+.tabmenu { max-height: calc(100dvh - 140px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+
+/* Seletor de acidentes: um cartão com o escolhido e a lista que abre embaixo */
+.dz__pick { display: grid; gap: 10px; }
+.dz-pick__btn { padding-right: 44px; }
+.dz-pick__caret { position: absolute; right: 14px; top: 50%; width: 22px; height: 22px; margin-top: -11px; border-radius: 50%; background: var(--panel); border: 1px solid var(--line); z-index: 1; }
+.dz-pick__caret::before { content: ""; position: absolute; left: 50%; top: 50%; width: 7px; height: 7px; border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink); transform: translate(-50%, -70%) rotate(45deg); transition: transform .2s; }
+.dz__pick.is-open .dz-pick__caret::before { transform: translate(-50%, -30%) rotate(-135deg); }
+.dz__pick .dz__list { margin-top: 0; grid-template-columns: minmax(0, 1fr); max-height: min(60vh, 520px); overflow-y: auto; overscroll-behavior: contain; padding: 2px; border-top: 1px solid var(--line); padding-top: 10px; }
+.dz__pick .dz__list[hidden] { display: none; }
+.dz-item[aria-selected="true"] { border-color: var(--magenta); box-shadow: 0 0 0 1px var(--magenta); }
+.dz-item[aria-selected="true"] .dz-item__year { color: var(--magenta); }
+.dz-pick__btn .dz-item__year { color: var(--magenta); }

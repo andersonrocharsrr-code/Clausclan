@@ -617,10 +617,20 @@ const ACIDENTES = [
 /* ---------- Tela ---------- */
 let atual = ACIDENTES[0], passo = ACIDENTES[0].linha.length - 1, tocando = 0;
 
+// Seletor de acidentes: fechado, mostra só o acidente escolhido; ao tocar, abre a lista (que rola quando houver muitos)
+function cartao(a, extra = '') {
+  return `${a.cauda ? `<img class="dz-item__fin" src="${a.cauda}" alt="" draggable="false">` : ''}<span class="dz-item__year">${a.ano}</span><b>${esc(a.titulo)}</b><span>${esc(a.sub)}</span><i>${a.numeros[1][0]} mortos · ${a.numeros[2][0] === '0' ? 'nenhum sobrevivente' : a.numeros[2][0] + ' sobreviventes'}</i>${extra}`;
+}
 function lista() {
-  $('#dzList').innerHTML = [...ACIDENTES].sort((x, y) => x.ano - y.ano).map((a) => `<button type="button" class="dz-item" data-dz="${a.id}" aria-pressed="${a === atual}">
-      ${a.cauda ? `<img class="dz-item__fin" src="${a.cauda}" alt="" draggable="false">` : ''}<span class="dz-item__year">${a.ano}</span><b>${esc(a.titulo)}</b><span>${esc(a.sub)}</span><i>${a.numeros[1][0]} mortos · ${a.numeros[2][0] === '0' ? 'nenhum sobrevivente' : a.numeros[2][0] + ' sobreviventes'}</i></button>`).join('')
+  $('#dzPickBtn').innerHTML = cartao(atual, '<span class="dz-pick__caret" aria-hidden="true"></span>');
+  $('#dzList').innerHTML = [...ACIDENTES].sort((x, y) => x.ano - y.ano).map((a) => `<button type="button" class="dz-item" role="option" data-dz="${a.id}" aria-selected="${a === atual}">${cartao(a)}</button>`).join('')
     + '<p class="dz-soon small">Novos acidentes serão adicionados aqui, dos primeiros anos da aviação até hoje.</p>';
+}
+function abrirLista(abrir) {
+  $('#dzList').hidden = !abrir;
+  $('#dzPickBtn').setAttribute('aria-expanded', String(abrir));
+  $('#dzPick').classList.toggle('is-open', abrir);
+  if (abrir) $('#dzList').querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
 }
 
 function mostrar() {
@@ -764,7 +774,16 @@ function initCap() {
 function init() {
   if (!$('#dzList')) return;
   lista();
-  $('#dzList').addEventListener('click', (e) => { const b = e.target.closest('[data-dz]'); if (!b) return; atual = ACIDENTES.find((a) => a.id === b.dataset.dz) || atual; lista(); mostrar(); rolarAteLinha($('#dzCase'), 8); });
+  $('#dzPickBtn').addEventListener('click', (e) => { e.stopPropagation(); abrirLista($('#dzList').hidden); });
+  $('#dzList').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-dz]'); if (!b) return;
+    const novo = ACIDENTES.find((a) => a.id === b.dataset.dz) || atual;
+    abrirLista(false);
+    if (novo !== atual) { atual = novo; lista(); mostrar(); }
+    rolarAteLinha($('#dzCase'), 8);
+  });
+  document.addEventListener('click', (e) => { if (!$('#dzList').hidden && !e.target.closest('#dzPick')) abrirLista(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#dzList').hidden) { abrirLista(false); $('#dzPickBtn').focus(); } });
   $('#dzLine').addEventListener('click', (e) => { const b = e.target.closest('button[data-i]'); if (b) { clearTimeout(auto); irPara(+b.dataset.i); } });
   $('#dzPlay').addEventListener('click', reproduzir);
   initCap();
