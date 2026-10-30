@@ -1202,10 +1202,9 @@ body.drawer-lock { overflow: hidden; }
 .es-arc { fill: none; stroke: #ff5fae; stroke-width: 2.4; stroke-linecap: round; }
 .es-vec { fill: none; stroke: #ff6b5b; stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
 .es-path { animation: esPulse 1.8s ease-in-out infinite; }
-.es-turb { fill: none; stroke: #cfd8de; stroke-width: 1.4; opacity: .8; animation: hsSway .4s ease-in-out infinite alternate; }
 .es-t { font: 600 9px var(--mono); fill: #f2f5f7; paint-order: stroke; stroke: rgba(0,0,0,.65); stroke-width: 3px; stroke-linejoin: round; }
 .es-red { fill: #ff8a7a; }
 .es-s { font: 500 7.5px var(--mono); fill: #cfd8de; paint-order: stroke; stroke: rgba(0,0,0,.6); stroke-width: 2.5px; }
 .es-ilus { font: 500 6px var(--mono); fill: #cfd8de; opacity: .8; }
 @keyframes esPulse { 0%, 100% { opacity: .55; transform: translate(0, 0); } 50% { opacity: 1; transform: translate(2px, 1.5px); } }
-@media (prefers-reduced-motion: reduce) { .es-path, .es-turb { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .es-path { animation: none !important; } }

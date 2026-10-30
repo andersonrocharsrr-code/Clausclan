@@ -155,7 +155,6 @@ function estolAf447() {
     <path d="M179 84 L336 48" class="es-nose"/>
     <path d="M227.8 72.9 A50 50 0 0 1 220 112.7" class="es-arc"/>
     <g class="es-path"><path d="M179 84 L253 136" class="es-vec"/><path d="M239.7 134 L253 136 L246.6 124.2" class="es-vec"/></g>
-    ${[0, 1, 2].map((i) => `<path d="M${166 + i * 12} ${102 + i * 3} q5 5 0 10 q-5 5 0 10" class="es-turb" style="animation-delay:${i * .2}s"/>`).join('')}
     <text x="10" y="18" class="es-t">a asa perde a sustentação</text>
     <text x="350" y="30" text-anchor="end" class="es-t">nariz para cima (~15°)</text>
     <text x="232" y="98" class="es-t es-red">ângulo de ataque &gt; 40°</text>
