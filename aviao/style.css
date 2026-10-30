@@ -1270,3 +1270,5 @@ body.drawer-lock { overflow: hidden; }
 @keyframes cvDraw { 0% { stroke-dashoffset: 100; } 70%, 100% { stroke-dashoffset: 0; } }
 @media (prefers-reduced-motion: reduce) { .cv-path, .cv-last { animation: none !important; stroke-dashoffset: 0; } }
 .mh-ausl { font: 700 9px var(--mono); letter-spacing: .14em; fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.6); stroke-width: 2.5px; }
+/* Mortos e sobreviventes sempre numa linha só no cartão da lista */
+.dz-item i { white-space: nowrap; font-size: min(11.5px, 2.75vw); letter-spacing: 0; }
