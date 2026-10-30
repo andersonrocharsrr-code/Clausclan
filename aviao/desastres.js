@@ -163,6 +163,101 @@ function estolAf447() {
     <text x="350" y="188" text-anchor="end" class="es-ilus">imagem ilustrativa</text>
   </svg>`;
 }
+/* ---------- Ilustrações do MH370 ---------- */
+// Mapa do Sudeste Asiático e do Oceano Índico em projeção simples: 18 px por grau, de 88°L a 120°L e de 14°N a 42°S
+const MH = (lat, lon) => [Math.round((lon - 88) * 18), Math.round((14 - lat) * 18)];
+const mhPts = (l) => l.map(([a, b]) => MH(a, b).join(' ')).join(' L');
+const MH_TERRAS = [
+  // Tailândia, Malásia continental e Indochina
+  [[14, 98], [10, 98.5], [8, 98.3], [6.5, 100], [5, 100.4], [3, 101.3], [1.3, 103.5], [1.5, 104.2], [3, 103.4], [5.5, 102.6], [6.9, 101.9], [8.4, 100.5], [10, 99.2], [12.5, 100], [13.4, 100.9], [12.5, 102.2], [10.5, 104.5], [8.7, 104.8], [10.3, 106.7], [11.5, 109.2], [14, 109.3]],
+  // Sumatra
+  [[5.6, 95.3], [5.2, 97.5], [3.8, 98.7], [2, 100.5], [1, 102.5], [-1, 104.3], [-3, 106], [-5.8, 105.8], [-5.9, 104.5], [-4, 102.3], [-2, 100.8], [0, 99.2], [2, 97.8], [4, 96.2]],
+  // Java
+  [[-6, 105.8], [-6.2, 108], [-6.8, 111], [-7, 113], [-7.7, 114.5], [-8.7, 114.5], [-8.2, 111], [-7.8, 108.5], [-7, 106], [-6.8, 105.4]],
+  // Bornéu
+  [[1.5, 109.3], [4, 113.3], [7, 116.8], [5, 119], [1, 119], [-3, 116.2], [-4, 114.5], [-3.3, 111.5], [-2.9, 110.2], [0, 109.1]],
+];
+// Costa oeste da Austrália, fechando na borda direita do mapa
+const MH_AUSTRALIA = [[-19.5, 120], [-20.3, 118.8], [-20.8, 116.8], [-21.8, 114.2], [-24, 113.5], [-26.5, 113.3], [-28.8, 114.6], [-32, 115.7], [-34.3, 115.1], [-35, 116.5], [-35, 118], [-34, 120]];
+// 7º arco: pontos a cerca de 44° do satélite Inmarsat (sobre 64,5°L, no equador)
+const MH_ARCO = [[-12, 107.4], [-15, 106.3], [-20, 104.5], [-25, 101.9], [-30, 98.3], [-35, 93], [-38, 88.5]];
+// Rota: Kuala Lumpur → IGARI → volta sobre a península → Penang → último radar → trajeto estimado até o 7º arco
+const MH370_ROTA = 'M245 203 L279 127 C272 128 264 132 256 142 C244 150 232 156 220 157 L173 131 C140 128 112 150 100 190 C90 240 110 380 120 480 C125 620 100 780 86 891';
+function mapaMh370() {
+  const [px, py] = MH(5.3, 100.3), [kx, ky] = MH(2.75, 101.7), [ix, iy] = MH(6.93, 103.58), [rx, ry] = MH(6.7, 97.6), [pex, pey] = MH(-31.95, 115.86);
+  return `<svg viewBox="0 0 576 1008" role="img" aria-label="Mapa do voo MH370: de Kuala Lumpur ao ponto IGARI, a volta sobre a Malásia e o trajeto estimado até o sul do Oceano Índico" class="dz-map--mh">
+    <defs><linearGradient id="mhSea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d2a44"/><stop offset="1" stop-color="#081a2c"/></linearGradient>
+      <filter id="dzShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="6" dy="9" stdDeviation="4" flood-color="#000" flood-opacity=".55"/></filter></defs>
+    <rect width="576" height="1008" fill="url(#mhSea)"/>
+    ${MH_TERRAS.map((t, i) => `<path d="M${mhPts(t)}${i === 0 ? ' L' + MH(14, 109.3).join(' ') + ' L' + MH(14, 98).join(' ') : ''}Z" class="dz-land"/>`).join('')}
+    <path d="M${mhPts(MH_AUSTRALIA)} L576 1008 L576 ${MH(-19.5, 120)[1]}Z" class="dz-land"/>
+    <path d="M0 ${MH(0, 88)[1]} H576" class="dz-eq"/>
+    <path d="M${mhPts(MH_ARCO)}" class="mh-arc"/>
+    <path d="M${mhPts([[-25, 101.9], [-30, 98.3], [-35, 93], [-38.5, 87.8]])}" class="mh-search"/>
+    <path d="M279 127 L380 0" class="dz-route-plan"/>
+    <mask id="dzReveal" maskUnits="userSpaceOnUse" x="0" y="0" width="576" height="1008"><path id="dzRevealPath" d="${MH370_ROTA}" fill="none" stroke="#fff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/></mask>
+    <path id="dzPath" d="${MH370_ROTA}" class="dz-route"/>
+    <path d="${MH370_ROTA}" class="dz-route-dash" mask="url(#dzReveal)"/>
+    <g class="dz-labels">
+      <circle cx="${kx}" cy="${ky}" r="6" class="dz-dot"/><text x="${kx + 10}" y="${ky + 18}">Kuala Lumpur</text>
+      <circle cx="${px}" cy="${py}" r="5" class="dz-dot"/><text x="${px - 10}" y="${py + 20}" text-anchor="end">Penang</text>
+      <text x="${ix + 10}" y="${iy + 4}" class="dz-lbl-s">IGARI</text>
+      <text x="${rx - 6}" y="${ry - 12}" text-anchor="end" class="dz-lbl-s">último radar</text>
+      <text x="390" y="22" class="dz-lbl-s">rota planejada até Pequim</text>
+      <text x="420" y="110" text-anchor="middle" class="dz-lbl-w">Mar da China</text><text x="420" y="132" text-anchor="middle" class="dz-lbl-w">Meridional</text>
+      <text x="40" y="70" class="dz-lbl-s dz-lbl-w">Mar de Andamão</text>
+      <text x="200" y="262" text-anchor="middle" class="dz-lbl-big" transform="rotate(-48 200 262)">SUMATRA</text>
+      <text x="400" y="402" text-anchor="middle" class="dz-lbl-big">JAVA</text>
+      <text x="470" y="230" text-anchor="middle" class="dz-lbl-big">BORNÉU</text>
+      <text x="484" y="700" text-anchor="middle" class="dz-lbl-big">AUSTRÁLIA</text>
+      <circle cx="${pex}" cy="${pey}" r="5" class="dz-dot"/><text x="${pex - 10}" y="${pey + 4}" text-anchor="end">Perth</text>
+      <text x="300" y="560" text-anchor="middle" class="dz-lbl-w">Oceano Índico</text>
+      <text x="566" y="${MH(0, 88)[1] - 8}" text-anchor="end" class="dz-lbl-s dz-lbl-w">Linha do Equador</text>
+      <text x="${MH(-20, 104.5)[0] + 14}" y="${MH(-20, 104.5)[1]}" class="dz-lbl-s mh-arc-t">7º arco</text>
+      <text x="${MH(-31, 97.5)[0] + 16}" y="${MH(-31, 97.5)[1]}" class="dz-lbl-s">áreas já vasculhadas</text>
+      <text x="150" y="430" class="dz-lbl-s">trajeto estimado</text><text x="150" y="452" class="dz-lbl-s">(dados de satélite)</text>
+    </g>
+    <g id="dzMarks"></g>
+    <g id="dzPlane"><circle r="24" class="dz-plane-halo"/><g transform="scale(.7)" filter="url(#dzShadow)">${AVIAO_A330}</g></g>
+    <text x="12" y="996" class="dz-map-note">Rota aproximada · o local da queda nunca foi encontrado</text>
+  </svg>`;
+}
+// O que falhou: o rastreamento. Sobrou só o "aperto de mão" de hora em hora com um satélite, que dava a distância e não a direção
+function falhaMh370() {
+  const aneis = [60, 78, 96, 114, 132, 150, 168];
+  return `<svg viewBox="0 0 360 170" role="img" aria-label="Esquema: o satélite Inmarsat só media a distância até o avião, formando arcos; o último deles é o 7º arco">
+    <rect width="360" height="170" class="px-night"/>
+    <defs><clipPath id="mhClip"><rect x="0" y="40" width="360" height="130"/></clipPath></defs>
+    <g clip-path="url(#mhClip)">${aneis.map((r, i) => `<circle cx="180" cy="-10" r="${r}" class="mh-ring${i === 6 ? ' mh-ring--7' : ''}" style="animation-delay:${i * .35}s"/>`).join('')}</g>
+    <g transform="translate(180 18)"><rect x="-8" y="-6" width="16" height="12" rx="2" class="mh-sat"/><rect x="-34" y="-3" width="22" height="6" class="mh-panel"/><rect x="12" y="-3" width="22" height="6" class="mh-panel"/></g>
+    <text x="196" y="14" class="dz-map-t" style="fill:#e9eef5">satélite Inmarsat</text>
+    <g transform="translate(276 128) rotate(-125) scale(.28)" class="mh-plane-dim">${AVIAO_A330}</g>
+    <text x="354" y="150" text-anchor="end" class="dz-map-t dz-map-crash">7º arco · 08:19</text>
+    <rect x="6" y="48" width="122" height="46" rx="4" class="pt-chip"/><text x="12" y="61" class="dz-map-t" style="fill:#e9eef5">transponder: desligado</text>
+    <text x="12" y="75" class="dz-map-t" style="fill:#e9eef5">ACARS: em silêncio</text>
+    <text x="12" y="89" class="dz-map-t" style="fill:#e9eef5">radar: fora de alcance</text>
+    <rect x="6" y="152" width="214" height="13" rx="3" class="pt-chip"/><text x="12" y="161" class="dz-map-s" style="fill:#cfd8de">7 "apertos de mão" entre 02:25 e 08:19 · só a distância</text>
+  </svg>`;
+}
+// A deriva dos destroços: as correntes do Índico levaram as peças do 7º arco até a África. 4 px por grau, de 30°L a 120°L
+const MI = (lat, lon) => [Math.round((lon - 30) * 4), Math.round(-lat * 4)];
+const miPts = (l) => l.map(([a, b]) => MI(a, b).join(' ')).join(' L');
+function derivaMh370() {
+  const achados = [[[-21.1, 55.5], 'Reunião · flaperon (2015)'], [[-5.2, 39.8], 'Tanzânia'], [[-22, 35.3], 'Moçambique'], [[-20.2, 57.5], 'Maurício'], [[-17, 49.9], 'Madagascar']];
+  return `<svg viewBox="0 0 360 180" role="img" aria-label="Deriva dos destroços: correntes do Oceano Índico levaram peças do MH370 para Reunião, Madagascar, Moçambique, Tanzânia e Maurício">
+    <rect width="360" height="180" class="mh-sea"/>
+    <path d="M${miPts([[0, 42.5], [-5, 39.3], [-10, 40.3], [-15, 40.7], [-20, 35], [-25, 33], [-30, 31], [-34, 26], [-36, 20]])} L0 180 L0 0Z" class="mh-land"/>
+    <path d="M${miPts([[-12, 49.3], [-16, 50], [-25, 47], [-25.5, 45], [-21, 43.5], [-16, 44.5]])}Z" class="mh-land"/>
+    <path d="M${miPts([[-19.5, 120], [-20.3, 118.8], [-21.8, 114.2], [-26.5, 113.3], [-32, 115.7], [-35, 117.5], [-35, 120]])} L360 180 L360 70Z" class="mh-land"/>
+    <path d="M${miPts([[0, 99], [-3, 101.5], [-5.9, 104.6], [-5.8, 106.2], [-3, 106], [0, 104]])}Z" class="mh-land"/>
+    <path d="M${miPts(MH_ARCO)}" class="mh-arc" style="stroke-width:2"/>
+    ${[['M250 142 C200 160 150 140 104 92', 0], ['M280 118 C230 110 170 96 120 84', .8], ['M262 130 C210 150 120 150 82 120', 1.6], ['M290 104 C240 70 150 50 50 24', 2.4]].map(([d, t]) => `<path d="${d}" class="mh-drift" style="animation-delay:${t}s"/>`).join('')}
+    ${achados.map(([[la, lo], n], i) => { const [x, y] = MI(la, lo); return `<circle cx="${x}" cy="${y}" r="3" class="mh-find"/><text x="${x + 5}" y="${y + (i === 3 ? 9 : -4)}" class="dz-map-t" style="fill:#e9eef5">${n}</text>`; }).join('')}
+    <text x="300" y="60" class="dz-map-t mh-arc-t">7º arco</text>
+    <text x="320" y="170" text-anchor="end" class="dz-map-t" style="fill:#e9eef5">Austrália</text>
+    <text x="10" y="172" class="dz-map-s" style="fill:#cfd8de">as correntes levaram as peças para oeste, por meses</text>
+  </svg>`;
+}
 /* ---------- Ilustrações dos capítulos (viewBox 320x180) ---------- */
 const water = (y = 150) => `<g class="hs-water"><path d="M0 ${y} Q20 ${y - 4} 40 ${y} T80 ${y} T120 ${y} T160 ${y} T200 ${y} T240 ${y} T280 ${y} T320 ${y} V180 H0Z" class="hs-fill-water"/><path class="hs-wave" d="M-40 ${y + 10} q10 -3 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0"/></g>`;
 const ground = (y = 150) => `<path d="M0 ${y} H320 V180 H0Z" class="hs-fill-ground"/>`;
@@ -284,6 +379,72 @@ const CENAS = {
   tribunal: () => `<rect width="320" height="180" class="px-paperbg"/><path d="M160 30 V150 M120 150 H200 M90 50 H230" class="px-scale"/>
     <g class="px-tilt" style="transform-origin:160px 50px"><path d="M90 50 l-20 40 h40z M230 50 l-20 40 h40z" class="px-scale"/><path d="M70 90 a20 8 0 0 0 40 0 M210 90 a20 8 0 0 0 40 0" class="px-scale"/></g>
     <text x="160" y="172" class="px-gtxt px-gtxt--ink">PARIS · 2023: ABSOLVIDAS · 2026: CONDENADAS</text>`,
+  // MH370
+  klia: () => `<rect width="320" height="180" class="px-night"/>${ground(150)}<rect x="0" y="70" width="320" height="80" class="mh-terminal"/>
+    ${Array.from({ length: 14 }, (_, i) => `<rect x="${8 + i * 22}" y="80" width="16" height="44" class="hs-win" style="animation-delay:${i * .15}s"/>`).join('')}
+    <path d="M0 70 Q160 40 320 70" class="mh-roof"/>${[40, 70, 100, 200, 230].map((x, i) => person(x, 146, i % 2 === 1, i % 2 ? 'hs-fill-blue' : 'hs-fill-ink', i * .2)).join('')}
+    <g transform="translate(150 150) scale(.5)">${a330()}</g><text x="314" y="20" text-anchor="end" class="px-gtxt" style="text-anchor:end">KLIA · 7 DE MARÇO, NOITE</text>`,
+  decolagemKL: () => `<rect width="320" height="180" class="px-night"/>${[[30, 20], [90, 36], [170, 14], [230, 30], [290, 18]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="1.3" class="px-star" style="animation-delay:${i * .3}s"/>`).join('')}
+    <g class="mh-towers"><path d="M56 160 V96 l5 -14 l5 14 V160Z M80 160 V96 l5 -14 l5 14 V160Z"/><rect x="66" y="118" width="14" height="4"/><path d="M61 82 V70 M85 82 V70" class="mh-spire"/></g>
+    <path d="M0 160 H320 V180 H0Z" class="px-sea"/>${Array.from({ length: 28 }, (_, i) => `<circle cx="${i * 12}" cy="${156 - (i % 4) * 2}" r="1.3" class="px-lights" style="animation-delay:${(i % 6) * .25}s"/>`).join('')}
+    <g class="px-climb">${a330()}<circle cx="-68" cy="2" r="2" class="px-nav"/></g>`,
+  boaNoite: () => `<rect width="320" height="180" class="px-panel"/><rect x="40" y="40" width="240" height="90" rx="8" class="px-gauge"/>
+    ${[0, 1, 2].map((i) => `<path d="M${70 + i * 10} 85 a${14 + i * 12} ${14 + i * 12} 0 0 1 0 ${-(28 + i * 24) / 2}" class="mh-wave" style="animation-delay:${i * .3}s"/>`).join('')}
+    <text x="160" y="76" text-anchor="middle" class="mh-radio">"GOOD NIGHT,</text><text x="160" y="94" text-anchor="middle" class="mh-radio">MALAYSIAN THREE SEVEN ZERO"</text>
+    <text x="160" y="160" class="px-gtxt">01:19:30 · A ÚLTIMA VOZ</text>`,
+  igari: () => `<rect width="320" height="180" class="px-panel"/><circle cx="160" cy="90" r="74" class="mh-scope"/>${[24, 48, 72].map((r) => `<circle cx="160" cy="90" r="${r}" class="mh-scope-l"/>`).join('')}<path d="M86 90 H234 M160 16 V164" class="mh-scope-l"/>
+    <g class="mh-sweep" style="transform-origin:160px 90px"><path d="M160 90 L160 16 A74 74 0 0 1 212 38Z" class="mh-sweep-f"/></g>
+    <g class="mh-blip"><circle cx="196" cy="58" r="3.4" class="mh-dot"/><text x="203" y="52" class="mh-tag">MH370</text><text x="203" y="62" class="mh-tag">FL350</text></g>
+    <text x="160" y="176" class="px-gtxt">01:21:13 · O SINAL DO TRANSPONDER SOME</text>`,
+  curva: () => `<rect width="320" height="180" class="mh-sea"/><path d="M90 0 L118 40 L150 70 L162 110 L190 150 L200 180 H120 L110 140 L90 100 L70 60 L60 0Z" class="mh-land"/>
+    <path d="M150 180 L176 120 L232 34 C220 40 205 52 196 66 C180 84 160 96 132 104 L70 80" class="mh-path"/>
+    <circle cx="232" cy="34" r="4" class="mh-find"/><text x="240" y="30" class="px-gtxt" style="text-anchor:start">IGARI</text>
+    <circle cx="132" cy="104" r="3" class="dz-dot" style="stroke-width:1"/><text x="122" y="118" class="px-gtxt" style="text-anchor:end">PENANG</text>
+    <text x="300" y="172" class="px-gtxt" style="text-anchor:end">A VOLTA SOBRE A MALÁSIA</text>`,
+  ultimoEco: () => `<rect width="320" height="180" class="px-panel"/><circle cx="160" cy="90" r="74" class="mh-scope"/>${[24, 48, 72].map((r) => `<circle cx="160" cy="90" r="${r}" class="mh-scope-l"/>`).join('')}
+    <g class="mh-sweep" style="transform-origin:160px 90px"><path d="M160 90 L160 16 A74 74 0 0 1 212 38Z" class="mh-sweep-f"/></g>
+    ${[[180, 120], [168, 104], [150, 92], [134, 78], [118, 66]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="2.6" class="mh-dot" style="opacity:${.25 + i * .15}"/>`).join('')}<g class="mh-blip"><circle cx="104" cy="56" r="3.4" class="mh-dot"/></g>
+    <text x="160" y="176" class="px-gtxt">02:22 · O ÚLTIMO ECO NO RADAR MILITAR</text>`,
+  satelite: () => `<rect width="320" height="180" class="px-night"/>${[[20, 20], [60, 50], [280, 30], [250, 60], [300, 90]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="1.2" class="px-star" style="animation-delay:${i * .3}s"/>`).join('')}
+    <path d="M-40 200 Q160 110 360 200Z" class="mh-earth"/>
+    <g transform="translate(160 40)"><rect x="-10" y="-8" width="20" height="16" rx="3" class="mh-sat"/><rect x="-44" y="-4" width="30" height="8" class="mh-panel"/><rect x="14" y="-4" width="30" height="8" class="mh-panel"/></g>
+    ${[0, 1, 2].map((i) => `<circle cx="160" cy="40" r="20" class="mh-ping" style="animation-delay:${i}s"/>`).join('')}
+    <g transform="translate(236 128) rotate(-20) scale(.34)">${a330()}</g>
+    <text x="160" y="176" class="px-gtxt">UM "APERTO DE MÃO" POR HORA</text>`,
+  arco7: () => `<rect width="320" height="180" class="mh-sea"/>${[0, 1, 2, 3, 4, 5, 6].map((i) => `<path d="M${-20 + i * 26} 180 A${200 + i * 20} ${200 + i * 20} 0 0 1 ${120 + i * 34} 0" class="mh-ring${i === 6 ? ' mh-ring--7' : ''}"/>`).join('')}
+    <g class="mh-fade"><g transform="translate(250 96) rotate(170) scale(.32)">${AVIAO_A330}</g></g>
+    <text x="160" y="22" class="px-gtxt" style="fill:#ff8a7a">08:19 · O ÚLTIMO SINAL</text><text x="160" y="172" class="px-gtxt">7º ARCO · SUL DO OCEANO ÍNDICO</text>`,
+  buscaMar: () => `<rect width="320" height="180" class="px-dusk"/>${water(120)}
+    <g transform="translate(90 112)"><path d="M-40 0 H40 L30 14 H-30Z" class="px-ship"/><rect x="-14" y="-16" width="26" height="16" class="px-ship"/></g>
+    <g transform="translate(240 116) scale(.8)"><path d="M-40 0 H40 L30 14 H-30Z" class="px-ship"/><rect x="-14" y="-16" width="26" height="16" class="px-ship"/></g>
+    <g class="px-cruise"><g transform="scale(.4)">${a330('px-c130')}</g></g><text x="160" y="22" class="px-gtxt" style="fill:#1b2630">26 PAÍSES NA BUSCA</text>`,
+  anuncio: () => `<rect width="320" height="180" class="px-panel"/><rect x="110" y="96" width="100" height="70" rx="4" class="mh-podium"/>
+    ${[120, 140, 160, 180, 200].map((x, i) => `<path d="M${x} 96 L${150 + (i - 2) * 4} 78" class="mh-mic"/><circle cx="${150 + (i - 2) * 4}" cy="76" r="3" class="mh-mic-h"/>`).join('')}
+    ${[30, 60, 260, 290].map((x, i) => `<circle cx="${x}" cy="${40 + (i % 2) * 20}" r="4" class="mh-flash" style="animation-delay:${i * .5}s"/>`).join('')}
+    <text x="160" y="30" class="px-gtxt">24 DE MARÇO DE 2014</text><text x="160" y="134" class="px-gtxt">"SUL DO OCEANO ÍNDICO"</text>`,
+  pinger: () => `<rect width="320" height="180" class="px-deep"/>${[0, 1, 2].map((i) => `<circle cx="80" cy="120" r="10" class="mh-ping" style="animation-delay:${i * .9}s"/>`).join('')}
+    <g transform="translate(220 70)"><path d="M-40 0 H40 L30 14 H-30Z" class="px-ship"/></g><path d="M220 84 C220 100 200 110 180 118" class="mh-cable"/>
+    <g transform="translate(172 116)"><rect x="-12" y="-4" width="24" height="8" rx="4" class="px-orange"/></g>
+    <text x="80" y="150" class="px-gtxt">SINAL?</text><text x="160" y="176" class="px-gtxt">ABRIL DE 2014 · NÃO ERA O MH370</text>`,
+  sonarMar: () => `<rect width="320" height="180" class="px-deep"/><path d="M0 150 C60 140 120 158 180 146 S280 140 320 150 V180 H0Z" class="px-floor"/>
+    <g transform="translate(60 24)"><path d="M-40 0 H40 L30 14 H-30Z" class="px-ship"/></g><path d="M70 38 C110 60 150 90 180 110" class="mh-cable"/>
+    <g class="mh-tow"><rect x="172" y="104" width="22" height="8" rx="4" class="px-orange"/><path d="M183 112 L130 150 H236Z" class="mh-sonar"/></g>
+    ${Array.from({ length: 8 }, (_, i) => `<path d="M${10 + i * 38} 166 h30" class="mh-stripe"/>`).join('')}<text x="160" y="176" class="px-gtxt">120.000 KM² DE FUNDO DO MAR</text>`,
+  flaperon: () => `<rect width="320" height="180" class="px-dusk"/><path d="M0 110 Q80 102 160 110 T320 108 V180 H0Z" class="hs-fill-water"/><path d="M0 132 Q100 124 200 134 T320 130 V180 H0Z" class="mh-sand"/>
+    <g transform="rotate(-6 160 140)"><path d="M100 140 L230 132 L236 146 L104 154Z" class="px-finw"/><path d="M104 150 L232 142" class="hs-line"/></g>
+    <path class="hs-wave" d="M-40 124 q10 -3 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0"/>
+    <text x="160" y="24" class="px-gtxt" style="fill:#1b2630">ILHA DA REUNIÃO · 29 DE JULHO DE 2015</text>`,
+  oceanInfinity: () => `<rect width="320" height="180" class="px-deep"/><rect width="320" height="60" class="mh-sea"/>
+    <g transform="translate(160 54)"><path d="M-60 0 H60 L46 16 H-46Z" class="px-ship"/><rect x="-24" y="-18" width="44" height="18" class="px-ship"/></g>
+    ${[60, 130, 200, 270].map((x, i) => `<g class="px-auv" style="animation-delay:${i * .6}s"><rect x="${x - 14}" y="${110 + (i % 2) * 14}" width="28" height="8" rx="4" class="px-orange"/><path d="M${x} ${118 + (i % 2) * 14} L${x - 22} 170 H${x + 22}Z" class="px-beam"/></g>`).join('')}
+    <text x="160" y="16" class="px-gtxt">"SE NÃO ACHAR, NÃO COBRA"</text>`,
+  relatorioMy: () => `<rect width="320" height="180" class="px-paperbg"/><g transform="rotate(-4 160 90)"><rect x="96" y="12" width="128" height="140" rx="3" class="px-note"/>
+    <text x="110" y="32" class="px-btxt" style="fill:#1b2630">RELATÓRIO · MH370</text>${[48, 60, 72, 84, 96, 108, 120, 132].map((y, i) => `<path d="M110 ${y} H${i % 3 === 2 ? 180 : 210}" class="${i === 3 ? 'px-hlline' : 'px-ink'}"/>`).join('')}</g>
+    <text x="160" y="176" class="px-gtxt px-gtxt--ink">30 DE JULHO DE 2018 · CAUSA: INDETERMINADA</text>`,
+  rastreio: () => `<rect width="320" height="180" class="px-night"/><path d="M-40 200 Q160 120 360 200Z" class="mh-earth"/>
+    <g transform="translate(160 36)"><rect x="-10" y="-8" width="20" height="16" rx="3" class="mh-sat"/><rect x="-44" y="-4" width="30" height="8" class="mh-panel"/><rect x="14" y="-4" width="30" height="8" class="mh-panel"/></g>
+    <g transform="translate(160 112)">${[0, 1].map((i) => `<circle r="12" class="mh-ping" style="animation-delay:${i * 1.2}s"/>`).join('')}<g transform="rotate(90) scale(.3)">${AVIAO_A330}</g></g>
+    <path d="M160 100 L160 52" class="mh-link"/><text x="160" y="176" class="px-gtxt">POSIÇÃO A CADA 15 MINUTOS · OU A CADA MINUTO EM PERIGO</text>`,
 };
 /* ---------- Os acidentes ---------- */
 const ACIDENTES = [
@@ -395,6 +556,64 @@ const ACIDENTES = [
     fugoideTit: 'O estol: nariz para cima, avião caindo',
     fugoideTxt: 'O nariz apontava para cima, o que dava a sensação de que o avião subia. Na verdade, ele caía quase reto, de barriga. Para sair do estol era preciso fazer o contrário do que parecia certo: baixar o nariz, mergulhar e ganhar velocidade.',
   },
+  {
+    id: 'mh370', ano: 2014, data: '8 de março de 2014', titulo: 'Malaysia Airlines 370', sub: 'O avião que desapareceu',
+    resumo: 'Um Boeing 777 sai de Kuala Lumpur para Pequim com 239 pessoas. Quarenta minutos depois, some dos radares, dá meia-volta no escuro e voa por mais de seis horas sem falar com ninguém. Até hoje, ninguém sabe exatamente por quê, nem onde ele está.',
+    ficha: [['Avião', 'Boeing 777-200ER'], ['Matrícula', '9M-MRO'], ['Rota', 'Kuala Lumpur → Pequim'], ['Local', 'Desconhecido · provavelmente no sul do Oceano Índico'],
+      ['A bordo', '239 (227 passageiros e 12 tripulantes)'], ['Mortos', '239 (presumidos)'], ['Sobreviventes', 'Nenhum'], ['Causa', 'Desconhecida']],
+    numeros: [['239', 'a bordo'], ['239', 'mortos'], ['0', 'sobreviventes'], ['7 h 37 min', 'da decolagem ao último sinal']],
+    fuso: 'Linha do tempo · horário da Malásia (UTC+8)',
+    partes: ['Antes do voo', 'Silêncio no radar', 'Sete horas no escuro', 'A maior busca da história', 'O que se sabe e o que mudou'],
+    secoes: [
+  { t: "Uma noite em Kuala Lumpur", parte: 0, hora: "7 de março", lugar: "Aeroporto Internacional de Kuala Lumpur", sabia: "O MH370 era um voo noturno: sairia de Kuala Lumpur pouco depois da meia-noite e chegaria a Pequim às 06:30, depois de cerca de seis horas de viagem.", cena: CENAS.klia,
+    p: ["Sexta-feira, 7 de março de 2014, fim de noite no aeroporto de Kuala Lumpur, na Malásia. No portão do voo MH370 da Malaysia Airlines, com destino a Pequim, as pessoas se acomodavam nas cadeiras para esperar o embarque, marcado para pouco depois da meia-noite.", "Eram 227 passageiros, a maioria chineses: 153, entre eles um bebê. Havia também 38 malaios e gente de mais de uma dezena de outros países. Um grupo de artistas chineses, calígrafos e pintores, voltava de uma exposição na Malásia. Vinte funcionários de uma mesma empresa de tecnologia viajavam a trabalho.", "Havia casais em lua de mel, famílias com crianças pequenas, gente voltando para casa depois das férias. Entre os passageiros, dois jovens iranianos viajavam com passaportes roubados. Mais tarde, a polícia concluiu que eles só queriam chegar à Europa para pedir refúgio, sem ligação com terrorismo.", "Os 12 tripulantes eram todos malaios. Para quase todos a bordo, era só mais um voo noturno: embarcar, dormir e acordar em Pequim."] },
+  { t: "Rumo a Pequim", parte: 0, hora: "00:42", lugar: "Kuala Lumpur", sabia: "O 9M-MRO estava na Malaysia Airlines desde 2002. O Boeing 777 era considerado um dos aviões mais seguros do mundo e, até 2013, nunca tinha tido um acidente com mortes.", cena: CENAS.decolagemKL,
+    p: ["O avião era um Boeing 777-200ER, de matrícula 9M-MRO, com dois grandes motores e capacidade para voar mais de 14 horas sem parar. Naquela noite, ele levava combustível para cerca de sete horas e meia de voo, o normal para uma viagem até Pequim com reserva.", "No comando estava Zaharie Ahmad Shah, de 53 anos, piloto da Malaysia Airlines desde 1981, com 18.365 horas de voo. Ao lado dele, o copiloto Fariq Abdul Hamid, de 27 anos, com 2.763 horas, que estava na empresa desde 2007.", "Às 00:42 de 8 de março, o MH370 decolou. Pelas janelas, as luzes de Kuala Lumpur e as Torres Petronas foram ficando para trás. O avião apontou para o nordeste, rumo ao Mar da China Meridional e ao Vietnã.", "À 01:01, chegou aos 35.000 pés, a altitude de cruzeiro. À 01:07, o sistema de mensagens automáticas do avião, o ACARS, mandou um relatório de rotina para a empresa. Seria o último."] },
+  { t: "“Boa noite”", parte: 1, hora: "01:19:30 seg", lugar: "Mar da China Meridional", sabia: "Na passagem de um controle para outro, o piloto troca a frequência do rádio e se apresenta ao próximo controlador. É uma das tarefas mais rotineiras de um voo.", cena: CENAS.boaNoite,
+    p: ["O avião se aproximava do ponto IGARI, no meio do mar, entre a Malásia e o Vietnã. Ali terminava a área do controle de Kuala Lumpur e começava a do controle de Ho Chi Minh, no Vietnã.", "À 01:19, o controlador de Kuala Lumpur fez a passagem de rotina: mandou o MH370 chamar Ho Chi Minh na frequência 120,9 e se despediu com um boa-noite.", "Da cabine, uma voz calma respondeu, em inglês: “Good night, Malaysian three seven zero.” Boa noite, Malaysian três sete zero.", "Foram as últimas palavras ouvidas do MH370. O avião nunca chamou o controle de Ho Chi Minh."] },
+  { t: "O ponto IGARI", parte: 1, hora: "01:21:13 seg", lugar: "Perto do ponto IGARI", sabia: "O transponder é o aparelho que responde ao radar dos controladores com a identificação, a altitude e a velocidade do avião. Sem ele, o avião vira só um ponto sem nome, e só os radares militares conseguem vê-lo.", cena: CENAS.igari,
+    p: ["Menos de dois minutos depois, à 01:21:13 seg, o sinal do transponder do MH370 desapareceu das telas de controle, logo depois de o avião passar pelo ponto IGARI. A etiqueta com o nome do voo simplesmente sumiu do radar.", "Ninguém deu o alarme na hora. Em Ho Chi Minh, o controle esperava o contato do avião, que não veio. Só à 01:38 os vietnamitas ligaram para Kuala Lumpur perguntando pelo MH370.", "Seguiram-se horas de confusão. Os controladores dos dois países trocavam ligações, a empresa chegou a informar que o avião parecia estar sobre o Camboja, e um avião da própria Malaysia Airlines que passava pela região tentou chamar o MH370 pelo rádio. O piloto disse ter ouvido apenas chiado e algo parecido com um murmúrio.", "O centro de busca e salvamento só foi acionado às 05:30, mais de quatro horas depois do sumiço. O relatório oficial apontaria, anos depois, falhas dos controles de tráfego aéreo nessa noite."] },
+  { t: "A volta no escuro", parte: 1, hora: "01:22", lugar: "Sobre a península da Malásia", sabia: "O radar militar é um radar primário: ele enxerga o eco de qualquer objeto grande no céu, com ou sem transponder, mas não sabe quem é.", cena: CENAS.curva,
+    p: ["Enquanto os controles procuravam o avião, os radares militares da Malásia registravam um eco sem identificação. Logo depois do ponto IGARI, o MH370 fez uma curva fechada para a esquerda e deu meia-volta, para o sudoeste.", "O avião atravessou de volta a península da Malásia, passou perto de Kota Bharu e seguiu em direção à ilha de Penang, na costa oeste. Por volta da 01:52, passou ao sul de Penang, a cidade natal do comandante.", "Os militares viram o eco, mas não reagiram. Consideraram que era um avião civil, sem ameaça, e ninguém mandou caças para olhar de perto.", "A investigação concluiria que a curva muito provavelmente foi feita com o avião sendo pilotado à mão, e não pelo piloto automático. Quem pilotava, e por quê, continua sem resposta."] },
+  { t: "O último eco", parte: 1, hora: "02:22", lugar: "Mar de Andamão", sabia: "Depois de Penang, o avião seguiu pelo Estreito de Malaca, uma das rotas de navios mais movimentadas do mundo, entre a Malásia e a ilha de Sumatra.", cena: CENAS.ultimoEco,
+    p: ["Depois de Penang, o eco seguiu para o noroeste, sobre o Estreito de Malaca, em direção ao Mar de Andamão. O avião continuava em silêncio: sem rádio, sem transponder, sem mensagens.", "Às 02:22, o radar militar registrou o último eco do MH370, cerca de 200 milhas náuticas a noroeste de Penang. Depois disso, o avião saiu do alcance de todos os radares.", "Ninguém sabe o que acontecia lá dentro. Não se sabe se os passageiros perceberam a mudança de rumo, se estavam dormindo, se estavam conscientes. Nenhum telefone, nenhuma mensagem, nenhum pedido de socorro saiu do avião.", "Para o mundo, o MH370 tinha desaparecido. Mas ainda havia alguém escutando."] },
+  { t: "O satélite que continuou ouvindo", parte: 2, hora: "02:25", lugar: "Algum lugar sobre o Oceano Índico", sabia: "Os dados do MH370 foram analisados pela empresa britânica Inmarsat. Foi a primeira vez que esse tipo de sinal foi usado para tentar descobrir a rota de um avião.", cena: CENAS.satelite,
+    p: ["Às 02:25, três minutos depois do último eco no radar, o terminal de comunicação por satélite do avião voltou a se conectar sozinho. Ele tinha sido desligado e religado, por um motivo que ninguém sabe explicar.", "O avião estava ligado a um satélite da empresa Inmarsat, parado sobre o Oceano Índico. A cada hora, mais ou menos, a estação em terra mandava um sinal perguntando se o avião ainda estava lá, e o terminal respondia sozinho. Era só um “aperto de mão”, sem posição, sem mensagem.", "Às 02:39 e às 07:13, a Malaysia Airlines ligou para o avião por esse satélite. O telefone tocou na cabine e ninguém atendeu.", "Mas os apertos de mão guardavam uma pista. Pelo tempo que o sinal levava para ir e voltar, dava para saber a que distância o avião estava do satélite. Cada resposta virava um arco sobre o mapa: o avião estava em algum ponto daquela linha."] },
+  { t: "08:19", parte: 2, hora: "08:19", lugar: "Sul do Oceano Índico", sabia: "Pela análise de pequenas variações na frequência do sinal, os especialistas concluíram que o avião voou para o sul, e não para o norte, em direção à Ásia Central.", cena: CENAS.arco7,
+    p: ["Às 06:30, o MH370 deveria pousar em Pequim. No aeroporto, famílias esperavam no saguão de desembarque. O painel mostrava o voo como atrasado. Às 07:24, a Malaysia Airlines anunciou que tinha perdido o contato com o avião.", "Enquanto isso, o 777 seguia voando sozinho, para o sul, sobre o oceano, havia horas. Às 08:11, respondeu a mais um aperto de mão.", "Às 08:19, o terminal mandou um último sinal, incompleto. Os especialistas acreditam que foi o momento em que o combustível acabou e os motores pararam: sem energia, o sistema reiniciou e tentou se conectar uma última vez. Esse sinal deu origem ao famoso 7º arco.", "Às 09:15, o satélite chamou de novo. Não houve resposta. O MH370 tinha caído em algum ponto do sul do Oceano Índico, um dos lugares mais remotos e profundos do planeta, quase sete horas e meia depois da decolagem."] },
+  { t: "Procurando no lugar errado", parte: 3, hora: "Março de 2014", lugar: "Mar da China Meridional", sabia: "Quatro meses depois, em julho de 2014, outro avião da Malaysia Airlines, o MH17, foi derrubado por um míssil sobre a Ucrânia, com 298 pessoas a bordo.", cena: CENAS.buscaMar,
+    p: ["Nos primeiros dias, navios e aviões de vários países procuraram o MH370 no Mar da China Meridional, onde ele tinha sumido do radar civil. Manchas de óleo e objetos boiando foram examinados. Nada era do avião.", "Só alguns dias depois os militares malaios revelaram que tinham visto o eco voltando sobre a península. A busca se espalhou pelo Estreito de Malaca e pelo Mar de Andamão. Chegou a envolver 26 países.", "Em Pequim, as famílias passavam os dias num hotel, esperando notícias que não chegavam. As informações desencontradas do governo malaio e da empresa provocaram revolta.", "Em 15 de março, o primeiro-ministro da Malásia, Najib Razak, anunciou que as comunicações do avião tinham sido desligadas de forma deliberada e que ele tinha voado por horas depois de sumir do radar."] },
+  { t: "“No sul do Oceano Índico”", parte: 3, hora: "24 de março", lugar: "Kuala Lumpur", sabia: "Em janeiro de 2015, as autoridades da Malásia declararam oficialmente o desaparecimento do MH370 um acidente, e todos a bordo foram considerados mortos.", cena: CENAS.anuncio,
+    p: ["Com a análise dos sinais do satélite, a Inmarsat e os investigadores britânicos concluíram que o avião tinha voado para o sul até ficar sem combustível, longe de qualquer pista de pouso.", "Em 24 de março de 2014, Najib Razak foi à televisão e anunciou: o voo MH370 terminou no sul do Oceano Índico. Pouco antes, a Malaysia Airlines tinha mandado mensagens de texto a parte das famílias dizendo que não havia sobreviventes.", "A notícia, e a forma como foi dada, causou desespero e raiva. Em Pequim, familiares protestaram em frente à embaixada da Malásia. Muitos não aceitaram a conclusão sem nenhum destroço como prova.", "A busca mudou de lugar: milhares de quilômetros ao sul, a oeste da Austrália, que passou a coordenar a operação."] },
+  { t: "Os sinais que não eram", parte: 3, hora: "Abril de 2014", lugar: "Oceano Índico, a oeste de Perth", sabia: "As caixas-pretas têm um sinalizador que emite batidas sonoras debaixo d'água por cerca de 30 dias, até a bateria acabar.", cena: CENAS.pinger,
+    p: ["No começo de abril, o navio australiano Ocean Shield, arrastando um detector de sinais, captou batidas que pareciam vir dos sinalizadores das caixas-pretas. A notícia correu o mundo: parecia que o avião tinha sido encontrado.", "Um pequeno submarino robô, o Bluefin-21, mergulhou repetidas vezes para vasculhar o fundo naquela área. Não encontrou nada.", "Mais tarde, os investigadores concluíram que os sinais não vinham do MH370. As baterias dos sinalizadores acabaram sem que ninguém chegasse perto do avião.", "A busca na superfície, com aviões e navios de vários países, foi encerrada no fim de abril de 2014. Não se achou nem um pedaço do avião boiando."] },
+  { t: "120 mil quilômetros quadrados", parte: 3, hora: "2014–2017", lugar: "Fundo do Oceano Índico", sabia: "Durante a busca, os navios encontraram por acaso dois navios naufragados no século 19, a milhares de metros de profundidade.", cena: CENAS.sonarMar,
+    p: ["Em outubro de 2014 começou a busca no fundo do mar, coordenada pela Austrália, com dinheiro da Malásia, da Austrália e da China. Navios arrastavam sonares bem perto do fundo, a 4.000 ou 5.000 metros de profundidade, numa área onde o mar é dos mais bravos do mundo.", "Antes, foi preciso mapear o fundo do oceano naquela região, que era praticamente desconhecido: montanhas, vales e penhascos submarinos que ninguém tinha visto.", "Por quase três anos, os navios vasculharam faixa por faixa uma área de 120.000 km² ao longo do 7º arco, uma área maior que o estado de Pernambuco. Custou cerca de 200 milhões de dólares australianos.", "Em 17 de janeiro de 2017, a busca foi suspensa. O MH370 não estava ali."] },
+  { t: "Uma peça na praia", parte: 3, hora: "29 de julho de 2015", lugar: "Ilha da Reunião, Oceano Índico", sabia: "O flaperon é uma superfície móvel na parte de trás da asa que funciona ao mesmo tempo como flap, para voar devagar, e como aileron, para inclinar o avião.", cena: CENAS.flaperon,
+    p: ["Em 29 de julho de 2015, funcionários que limpavam uma praia da Ilha da Reunião, território francês perto de Madagascar, encontraram uma peça de avião coberta de cracas. Era um flaperon, uma parte da asa de um Boeing 777.", "Os investigadores franceses compararam os números de série e confirmaram: a peça era do MH370. Era a primeira prova física de que o avião tinha caído no Oceano Índico, quase 4.000 km a oeste do 7º arco, levada pelas correntes durante mais de um ano.", "Nos anos seguintes, outros pedaços apareceram em praias de Moçambique, da Tanzânia, de Madagascar, de Maurício e da África do Sul, muitos achados por voluntários. Três foram confirmados como do 9M-MRO e vários outros foram considerados quase certamente dele.", "As peças mostraram que o avião se partiu ao cair no mar. Mas não diziam exatamente onde."] },
+  { t: "Se não achar, não cobra", parte: 3, hora: "2018–2026", lugar: "Sul do Oceano Índico", sabia: "Nos contratos da Ocean Infinity, a empresa só recebe se encontrar o avião. O valor combinado com a Malásia em 2025 era de 70 milhões de dólares.", cena: CENAS.oceanInfinity,
+    p: ["Em 2018, a empresa de exploração do fundo do mar Ocean Infinity propôs à Malásia um acordo diferente: faria a busca por conta própria e só seria paga se encontrasse o avião. Com vários robôs submarinos trabalhando ao mesmo tempo, vasculhou mais de 100.000 km² em poucos meses, ao norte da área anterior. Não encontrou nada.", "Em 2025, onze anos depois do desaparecimento, a Malásia assinou um novo contrato com a empresa, numa nova área considerada provável. As buscas começaram no início de 2025, foram interrompidas pelo mau tempo e recomeçaram no fim de dezembro.", "Em 23 de janeiro de 2026, o navio deixou a área. Em 8 de março de 2026, no 12º aniversário do desaparecimento, a empresa anunciou que tinha vasculhado cerca de metade da área combinada, sem encontrar o avião. “Ele não está onde procuramos”, disse o diretor da empresa.", "Em junho de 2026, o governo da Malásia prorrogou o contrato por mais um ano. A busca pelo MH370 continua."] },
+  { t: "O que o relatório disse", parte: 4, hora: "30 de julho de 2018", lugar: "Kuala Lumpur", sabia: "A investigação de segurança segue as regras internacionais da aviação: o objetivo é evitar novos acidentes, e não apontar culpados.", cena: CENAS.relatorioMy,
+    p: ["Em 30 de julho de 2018, a equipe de investigação da Malásia publicou o relatório de segurança sobre o MH370. A conclusão principal: não foi possível determinar a causa real do desaparecimento.", "O relatório disse que a meia-volta muito provavelmente foi feita com o avião sendo pilotado à mão, que não havia sinal de pane que explicasse a mudança de rota e que não dava para descartar a interferência de uma terceira pessoa. Também não encontrou nada de anormal na vida, na saúde ou no treinamento dos pilotos.", "Investigações paralelas tinham levantado pontos como os dados apagados do simulador de voo caseiro do comandante, com uma rota simulada para o sul do Índico, e a carga, que incluía baterias de lítio. Nenhum desses pontos foi considerado prova do que aconteceu.", "O relatório criticou os controles de tráfego aéreo de Kuala Lumpur e de Ho Chi Minh pela demora em agir naquela noite e fez 19 recomendações de segurança. Para muitas famílias, foi uma decepção: depois de quatro anos, nenhuma resposta."] },
+  { t: "O que mudou", parte: 4, hora: "2014–2026", lugar: "No mundo inteiro", sabia: "As famílias das vítimas se organizaram em grupos como o Voice370 e, até hoje, cobram que a busca continue.", cena: CENAS.rastreio,
+    p: ["O MH370 mostrou que, em 2014, um avião de passageiros moderno podia simplesmente sumir. Sobre os oceanos, longe dos radares, ninguém sabia com certeza onde cada avião estava.", "Depois do desaparecimento, a OACI, a organização da aviação civil da ONU, criou novas regras: as empresas passaram a ter de acompanhar a posição dos aviões sobre o oceano pelo menos a cada 15 minutos, e os aviões novos precisam transmitir a posição sozinhos, a cada minuto, quando estão em perigo.", "As caixas-pretas também mudaram: os sinalizadores passaram a ter bateria para 90 dias, em vez de 30, e o gravador de voz dos aviões novos passou a guardar 25 horas de conversa, e não só as últimas duas.", "Mais de doze anos depois, o MH370 continua sendo o maior mistério da aviação moderna. Para as famílias das 239 pessoas a bordo, a espera ainda não terminou."] },
+    ],
+    linha: [['00:42', 'Decolagem de Kuala Lumpur rumo a Pequim, com 239 pessoas a bordo.', [245, 203]], ['01:19', 'Última voz: “Good night, Malaysian three seven zero.”', [272, 142]],
+      ['01:21', 'Perto do ponto IGARI, o transponder some e o avião desaparece do radar civil.', [279, 127]], ['01:52', 'Depois de dar meia-volta, o avião passa ao sul de Penang, visto só pelo radar militar.', [220, 157]],
+      ['02:22', 'Último eco no radar militar, sobre o Mar de Andamão.', [173, 131]], ['08:19', 'Último sinal ao satélite, no 7º arco, no sul do Oceano Índico. O local exato nunca foi encontrado.', [86, 891]]],
+    falha: 'Não se sabe o que levou ao desvio. O que falhou com certeza foi o rastreamento: o transponder e o ACARS pararam de transmitir, o avião saiu do alcance dos radares e só sobrou um sinal automático de hora em hora com um satélite, que dava a distância, mas não a direção.',
+    mudou: ['A OACI passou a exigir que as empresas acompanhem a posição dos aviões sobre o oceano pelo menos a cada 15 minutos.',
+      'Aviões novos precisam transmitir sozinhos a posição, a cada minuto, quando estão em perigo.',
+      'Os sinalizadores das caixas-pretas passaram a durar 90 dias, e o gravador de voz dos aviões novos passou a guardar 25 horas.',
+      'Os procedimentos entre controles de tráfego aéreo de países vizinhos foram revistos, para que o alerta de um avião sumido seja dado bem mais rápido.'],
+    memoria: 'Todo dia 8 de março, famílias na China, na Malásia e em outros países se reúnem para lembrar as 239 pessoas do MH370 e pedir que a busca continue.',
+    fontes: [['Wikipedia: Malaysia Airlines Flight 370', 'https://en.wikipedia.org/wiki/Malaysia_Airlines_Flight_370'], ['Australian Aviation: relatório de 2018', 'https://australianaviation.com.au/?p=63677'],
+      ['Malay Mail: fim da busca de 2026', 'https://www.malaymail.com/news/malaysia/2026/03/09/ocean-infinity-ends-latest-mh370-hunt-after-151-days-at-sea-mapping-140000-sq-km-with-no-new-clues/211959'],
+      ['The Vibes: contrato prorrogado em 2026', 'https://www.thevibes.com/articles/news/124469/govt-extends-mh370-search-contract-with-ocean-infinity-for-another-year'], ['ATSB: destroços do MH370', 'https://atsb.gov.au/node/690']],
+    mapa: mapaMh370, esquema: falhaMh370, fugoide: derivaMh370,
+    fugoideTit: 'A deriva: como os destroços chegaram à África',
+    fugoideTxt: 'Se o avião caiu perto do 7º arco, as correntes do Oceano Índico, que giram no sentido anti-horário, levariam os destroços para oeste. Foi o que aconteceu: mais de um ano depois, pedaços começaram a aparecer na Ilha da Reunião e no litoral leste da África.',
+  },
 ];
 
 /* ---------- Tela ---------- */
@@ -424,7 +643,7 @@ function mostrar() {
   $('#dzSrc').innerHTML = a.fontes.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener">${esc(n)}</a>`).join(' · ');
   $('#dzLine').innerHTML = a.linha.map(([h, t], i) => `<li><button type="button" data-i="${i}"><b>${h}</b><span>${esc(t)}</span></button></li>`).join('');
   // O mapa só entra quando a imagem de satélite já está decodificada, para não aparecer vazio e depois "piscar"
-  if (pronta[a.mapaImg] === true) montarMapa(a);
+  if (!a.mapaImg || pronta[a.mapaImg] === true) montarMapa(a);
   else { $('#dzMap').classList.add('is-loading'); carregar(a.mapaImg).then(() => { if (atual === a) montarMapa(a); }); }
 }
 

@@ -1208,3 +1208,47 @@ body.drawer-lock { overflow: hidden; }
 .es-ilus { font: 500 6px var(--mono); fill: #cfd8de; opacity: .8; }
 @keyframes esPulse { 0%, 100% { opacity: .55; transform: translate(0, 0); } 50% { opacity: 1; transform: translate(2px, 1.5px); } }
 @media (prefers-reduced-motion: reduce) { .es-path { animation: none !important; } }
+
+/* Desastres: MH370 (mapa do Índico, satélite, radar e deriva) */
+.dz-map--mh .dz-labels text { font-size: 19px; stroke-width: 4px; }
+.dz-map--mh .dz-labels .dz-lbl-s { font-size: 15px; }
+.dz-map--mh .dz-labels .dz-lbl-big { font-size: 22px; letter-spacing: .18em; fill: #d9e6d4; opacity: .7; }
+.dz-map--mh .dz-mark circle { r: 7; stroke-width: 2.5; }
+.dz-map--mh .dz-route-dash { stroke-width: 3.5; stroke-dasharray: 14 8 3 8; }
+.dz-map--mh .dz-map-note { font-size: 14px; }
+.mh-arc { fill: none; stroke: #ffb84a; stroke-width: 3; stroke-dasharray: 6 5; }
+.mh-arc-t { fill: #ffd27a !important; }
+.mh-search { fill: none; stroke: #ffb84a; stroke-width: 26; stroke-linecap: round; opacity: .22; }
+.mh-sea { fill: #0b2033; } .mh-land { fill: #2d4434; stroke: #6f8f68; stroke-width: 1; }
+.mh-ring { fill: none; stroke: #8fc3e6; stroke-width: 1.4; stroke-dasharray: 4 4; opacity: .55; }
+.mh-ring--7 { stroke: #ffb84a; stroke-width: 2.4; opacity: 1; stroke-dasharray: none; animation: pxBlink 1.6s ease-in-out infinite; }
+.mh-sat { fill: #d9dee2; stroke: #1b2630; } .mh-panel { fill: #3b6aa8; stroke: #9cc0e6; stroke-width: .6; }
+.mh-plane-dim path, .mh-plane-dim rect { fill: #cfd8de; stroke: none; }
+.mh-drift { fill: none; stroke: #8fc3e6; stroke-width: 1.6; stroke-dasharray: 3 6; opacity: .8; animation: mhDrift 4s linear infinite; }
+.mh-find { fill: #ff6b5b; stroke: #fff; stroke-width: .8; }
+.mh-terminal { fill: #1c2a36; } .mh-roof { fill: none; stroke: #4a5a68; stroke-width: 3; }
+.mh-towers path, .mh-towers rect { fill: #1d2833; stroke: #6d7a86; stroke-width: .8; } .mh-spire { stroke: #9fb0bd; stroke-width: 1.2; }
+.mh-wave { fill: none; stroke: #5fe08a; stroke-width: 2; animation: pxBlink 1.2s ease-in-out infinite; }
+.mh-radio { font: 700 11px var(--mono); fill: #ffd76a; letter-spacing: .04em; }
+.mh-scope { fill: #04140c; stroke: #2b6a44; stroke-width: 2; } .mh-scope-l { fill: none; stroke: #1f5a36; stroke-width: .8; }
+.mh-sweep { animation: hsSpin 4s linear infinite; } .mh-sweep-f { fill: #3ddc84; opacity: .16; }
+.mh-dot { fill: #6dff9f; } .mh-tag { font: 600 7px var(--mono); fill: #6dff9f; }
+.mh-blip { animation: mhBlip 4s steps(1) infinite; }
+.mh-path { fill: none; stroke: #fff; stroke-width: 2; stroke-dasharray: 6 5; animation: mhDash 3s linear infinite; }
+.mh-earth { fill: #12304d; stroke: #3b6aa8; stroke-width: 1; }
+.mh-ping { fill: none; stroke: #8fc3e6; stroke-width: 1.4; transform-box: fill-box; transform-origin: center; animation: mhPing 3s ease-out infinite; }
+.mh-link { stroke: #8fc3e6; stroke-width: 1.2; stroke-dasharray: 3 4; animation: mhDash 1.5s linear infinite; }
+.mh-fade { animation: mhFade 5s ease-in-out infinite; }
+.mh-fade path, .mh-fade rect { fill: #cfd8de; stroke: none; }
+.mh-podium { fill: #2b3640; stroke: #4a5a68; } .mh-mic { stroke: #1b1b1b; stroke-width: 2; } .mh-mic-h { fill: #3a3a3a; }
+.mh-flash { fill: #fff; opacity: 0; animation: hsFlash 2.6s infinite; }
+.mh-cable { fill: none; stroke: #c9d2da; stroke-width: 1; }
+.mh-tow { animation: hsFloat 5s ease-in-out infinite alternate; } .mh-sonar { fill: #6fd0ff; opacity: .14; }
+.mh-stripe { stroke: #6fd0ff; stroke-width: 3; opacity: .35; }
+.mh-sand { fill: #d8c49a; }
+@keyframes mhDrift { to { stroke-dashoffset: -36; } }
+@keyframes mhDash { to { stroke-dashoffset: -22; } }
+@keyframes mhBlip { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0; } }
+@keyframes mhPing { from { transform: scale(.4); opacity: 1; } to { transform: scale(3.2); opacity: 0; } }
+@keyframes mhFade { 0%, 40% { opacity: 1; } 70%, 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { [class^="mh-"] { animation: none !important; } .mh-flash { opacity: .6; } }
