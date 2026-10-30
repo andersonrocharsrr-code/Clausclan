@@ -148,17 +148,20 @@ function falhaAf447() {
 }
 // O estol: o nariz aponta para cima, mas o avião cai; o ângulo entre os dois passa de 40°
 function estolAf447() {
-  return `<svg viewBox="0 0 360 150" role="img" aria-label="Estol: o nariz do avião aponta para cima enquanto ele cai quase reto, com ângulo de ataque acima de 40 graus">
-    <rect width="360" height="150" class="hs-sky"/>
-    <g class="dz-fall"><g transform="translate(150 50) rotate(-15)"><g transform="scale(.9)">${a330()}</g></g>
-      <path d="M150 50 L250 -8" class="dz-axis"/><path d="M150 50 L196 134" class="dz-vec"/><path d="M190 120 l6 14 l4 -15" class="dz-vec"/>
-      <path d="M206 18 A64 64 0 0 1 182 105" class="hs-line-accent"/>
-      ${[0, 1, 2].map((i) => `<path d="M${118 + i * 12} ${66 + i * 4} q6 6 0 12 q-6 6 0 12" class="dz-turb" style="animation-delay:${i * .2}s"/>`).join('')}</g>
-    <text x="236" y="22" class="dz-map-t">nariz para cima (~15°)</text>
-    <text x="208" y="74" class="dz-map-t dz-map-crash">ângulo de ataque &gt; 40°</text>
-    <text x="206" y="134" class="dz-map-t">trajetória: para baixo</text>
-    <text x="10" y="18" class="dz-map-t">a asa perde a sustentação</text>
-    <text x="10" y="142" class="dz-map-s">queda de cerca de 10.000 pés por minuto</text>
+  // Foto do A330 de nariz para cima (imagem ilustrativa) com as setas do estol por cima. Centro do avião em (179, 84)
+  return `<svg viewBox="0 0 360 196" role="img" aria-label="Estol: o nariz do avião aponta para cima enquanto ele cai, com ângulo de ataque acima de 40 graus">
+    <image href="assets/af447-estol-diagrama.webp" x="0" y="0" width="360" height="196" preserveAspectRatio="xMidYMid slice"/>
+    <rect width="360" height="196" class="es-dim"/>
+    <path d="M179 84 L336 48" class="es-nose"/>
+    <path d="M227.8 72.9 A50 50 0 0 1 220 112.7" class="es-arc"/>
+    <g class="es-path"><path d="M179 84 L253 136" class="es-vec"/><path d="M239.7 134 L253 136 L246.6 124.2" class="es-vec"/></g>
+    ${[0, 1, 2].map((i) => `<path d="M${166 + i * 12} ${102 + i * 3} q5 5 0 10 q-5 5 0 10" class="es-turb" style="animation-delay:${i * .2}s"/>`).join('')}
+    <text x="10" y="18" class="es-t">a asa perde a sustentação</text>
+    <text x="350" y="30" text-anchor="end" class="es-t">nariz para cima (~15°)</text>
+    <text x="232" y="98" class="es-t es-red">ângulo de ataque &gt; 40°</text>
+    <text x="350" y="150" text-anchor="end" class="es-t">trajetória: para baixo</text>
+    <text x="10" y="186" class="es-s">queda de cerca de 10.000 pés por minuto</text>
+    <text x="350" y="188" text-anchor="end" class="es-ilus">imagem ilustrativa</text>
   </svg>`;
 }
 /* ---------- Ilustrações dos capítulos (viewBox 320x180) ---------- */
