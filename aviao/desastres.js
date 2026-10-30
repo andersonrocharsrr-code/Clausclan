@@ -243,6 +243,75 @@ function derivaMh370() {
     <text x="10" y="172" class="dz-map-s" style="fill:#cfd8de">as correntes levaram as peças para oeste, por meses</text>
   </svg>`;
 }
+/* ---------- Ilustrações do Gol 1907 ---------- */
+// Jato executivo Legacy de lado, nariz para a direita: motores na traseira e cauda em T
+const legacy = (cls = 'hs-fill-paper2') => `<g><path d="M-44 3 C-38 -3 -26 -4 -8 -4 H26 C34 -4 38 -1 41 3 C38 6 32 7 26 7 H-38 C-42 7 -44 5 -44 3Z" class="${cls}"/>
+  <path d="M-34 -3 L-42 -20 H-37 L-26 -3Z" class="hs-fill-blue"/><path d="M-46 -20 H-33" class="hs-line"/><rect x="-30" y="-6" width="12" height="5" rx="2.5" class="hs-fill-metal"/>
+  <path d="M-4 4 L-18 14 H-12 L6 4Z" class="hs-fill-ink"/>${[-14, -6, 2, 10, 18].map((x) => `<circle cx="${x}" cy="0" r="1.4" class="hs-fill-ink"/>`).join('')}</g>`;
+// Mapa do Brasil em projeção simples: 20 px por grau, de 75°O a 33°O e de 6°N a 34°S
+const GB = (lat, lon) => [Math.round((lon + 75) * 20), Math.round((6 - lat) * 20)];
+const gbPts = (l) => l.map(([a, b]) => GB(a, b).join(' ')).join(' L');
+const GB_BRASIL = [[5.2, -60.7], [4.3, -59.5], [2.2, -56.5], [2.5, -54], [4.4, -51.5], [1.5, -50], [-1, -48.5], [-0.8, -46.5], [-2.5, -44.3], [-2.9, -41.5], [-3.7, -38.5], [-5.2, -35.5], [-8, -34.9], [-9.7, -35.7], [-13, -38.5], [-15.5, -39], [-18, -39.6], [-20.3, -40.3], [-22.9, -42], [-23, -43.6], [-23.5, -45], [-24, -46.4], [-25.5, -48.5], [-27.6, -48.5], [-30, -50.2], [-33.7, -53.4], [-31.5, -55.5], [-30.2, -57.6], [-27.3, -55.5], [-25.5, -54.6], [-24, -54.3], [-22.2, -57.9], [-19.8, -58.1], [-17.5, -58], [-16.3, -60.2], [-15, -60.3], [-13.5, -61.8], [-12.4, -64.5], [-11, -65.3], [-9.8, -66.6], [-10.9, -68.8], [-10, -70.6], [-9.4, -72.7], [-7.5, -73.8], [-4.4, -70], [-1.3, -69.4], [1, -69.8], [1.8, -67], [1.2, -64.5], [4.3, -64], [3.5, -62]];
+const [GB_MAO, GB_BSB, GB_SJC, GB_CHOQUE, GB_CAC] = [GB(-3.1, -60), GB(-15.8, -47.9), GB(-23.2, -45.9), GB(-10.4, -53), GB(-9.33, -54.97)];
+// Rota do Gol: de Manaus para o sudeste, até o ponto do choque. O Legacy vinha no sentido contrário
+const GOL1907_ROTA = `M${GB_MAO.join(' ')} L${GB_CHOQUE.join(' ')}`;
+function mapaGol1907() {
+  const [rx, ry] = GB(-22.9, -43.2);
+  return `<svg viewBox="0 0 840 800" role="img" aria-label="Mapa do voo Gol 1907: de Manaus rumo a Brasília; o Legacy vinha de São José dos Campos no sentido oposto, na mesma altitude" class="dz-map--gol">
+    <defs><linearGradient id="gbSea" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d2a44"/><stop offset="1" stop-color="#081a2c"/></linearGradient>
+      <filter id="dzShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="6" dy="9" stdDeviation="4" flood-color="#000" flood-opacity=".55"/></filter></defs>
+    <rect width="840" height="800" fill="url(#gbSea)"/>
+    <path d="M${gbPts(GB_BRASIL)}Z" class="gb-brasil"/>
+    <path d="M${GB_SJC.join(' ')} L${GB_BSB.join(' ')} L${GB_CHOQUE.join(' ')} L${GB_CAC.join(' ')}" class="gb-legacy"/>
+    <path d="M${GB_CHOQUE.join(' ')} L${GB_BSB.join(' ')}" class="dz-route-plan"/>
+    <mask id="dzReveal" maskUnits="userSpaceOnUse" x="0" y="0" width="840" height="800"><path id="dzRevealPath" d="${GOL1907_ROTA}" fill="none" stroke="#fff" stroke-width="28" stroke-linecap="round"/></mask>
+    <path id="dzPath" d="${GOL1907_ROTA}" class="dz-route"/>
+    <path d="${GOL1907_ROTA}" class="dz-route-dash" mask="url(#dzReveal)"/>
+    <g class="dz-labels">
+      <circle cx="${GB_MAO[0]}" cy="${GB_MAO[1]}" r="8" class="dz-dot"/><text x="${GB_MAO[0] + 14}" y="${GB_MAO[1] - 12}">Manaus</text>
+      <circle cx="${GB_BSB[0]}" cy="${GB_BSB[1]}" r="8" class="dz-dot"/><text x="${GB_BSB[0] + 14}" y="${GB_BSB[1] + 8}">Brasília</text>
+      <circle cx="${GB_SJC[0]}" cy="${GB_SJC[1]}" r="7" class="dz-dot"/><text x="${GB_SJC[0] - 12}" y="${GB_SJC[1] + 28}" text-anchor="end">São José dos Campos</text>
+      <circle cx="${rx}" cy="${ry}" r="6" class="dz-dot"/><text x="${rx + 12}" y="${ry + 6}" class="dz-lbl-s">Rio</text>
+      <circle cx="${GB_CAC[0]}" cy="${GB_CAC[1]}" r="7" class="gb-cac"/><text x="${GB_CAC[0] - 12}" y="${GB_CAC[1] - 10}" text-anchor="end" class="dz-lbl-s">Base do Cachimbo</text>
+      <text x="${GB_CHOQUE[0] + 22}" y="${GB_CHOQUE[1] + 8}" class="dz-lbl-s gb-red">colisão · 37.000 pés</text>
+      <text x="${GB_BSB[0] - 40}" y="${GB_BSB[1] + 70}" text-anchor="end" class="dz-lbl-s gb-or">Legacy N600XL</text>
+      <text x="${GB_MAO[0] + 34}" y="${GB_MAO[1] + 92}" text-anchor="end" class="dz-lbl-s">Gol 1907</text>
+      <text x="240" y="420" text-anchor="middle" class="dz-lbl-big">BRASIL</text>
+      <text x="${GB(-13.5, -55.5)[0]}" y="${GB(-13.5, -55.5)[1]}" text-anchor="middle" class="dz-lbl-w dz-lbl-s">Mato Grosso</text>
+      <text x="760" y="560" text-anchor="middle" class="dz-lbl-w">Oceano</text><text x="760" y="586" text-anchor="middle" class="dz-lbl-w">Atlântico</text>
+    </g>
+    <g id="dzMarks"></g>
+    <path d="M${GB_CHOQUE[0] - 13} ${GB_CHOQUE[1] - 13} l26 26 M${GB_CHOQUE[0] + 13} ${GB_CHOQUE[1] - 13} l-26 26" class="dz-x"/>
+    <g id="dzPlane"><circle r="26" class="dz-plane-halo"/><g transform="scale(.8)" filter="url(#dzShadow)">${AVIAO_A330}</g></g>
+    <text x="16" y="788" class="dz-map-note">Rotas aproximadas · mapa fora de escala</text>
+  </svg>`;
+}
+// O que falhou: dois aviões na mesma altitude, em sentidos opostos, e um deles invisível para o TCAS
+function falhaGol1907() {
+  return `<svg viewBox="0 0 360 170" role="img" aria-label="Esquema: o Boeing da Gol e o Legacy voavam a 37.000 pés na mesma aerovia, em sentidos opostos; o Legacy deveria estar a 36.000">
+    <rect width="360" height="170" class="hs-sky"/>
+    <path d="M0 64 H360" class="gb-fl"/><text x="6" y="58" class="dz-map-t">37.000 pés</text>
+    <path d="M0 104 H360" class="gb-fl gb-fl--ok"/><text x="6" y="98" class="dz-map-t">36.000 pés (onde o Legacy deveria estar)</text>
+    <g class="gb-ida"><g transform="translate(70 64) scale(.6)">${a330()}</g></g>
+    <g class="gb-volta"><g transform="translate(290 64) scale(-.75 .75)">${legacy()}</g></g>
+    <path d="M290 72 V100" class="gb-arrow"/><path d="M285 94 l5 8 l5 -8" class="gb-arrow"/>
+    <text x="70" y="42" text-anchor="middle" class="dz-map-t">Gol 1907 → Brasília</text>
+    <text x="290" y="42" text-anchor="middle" class="dz-map-t gb-or-t">← Legacy (transponder parado)</text>
+    <text x="180" y="150" text-anchor="middle" class="dz-map-t dz-map-crash">mesma aerovia · mesma altitude · sentidos opostos</text>
+  </svg>`;
+}
+// Por que o TCAS não avisou: ele só "vê" quem responde com o transponder
+function tcasGol1907() {
+  return `<svg viewBox="0 0 360 160" role="img" aria-label="TCAS: o anticolisão do Boeing não recebia resposta do Legacy, que estava com o transponder parado, e por isso não deu alerta">
+    <rect width="360" height="160" class="px-night"/>
+    <g transform="translate(90 80)">${[0, 1, 2].map((i) => `<circle r="14" class="gb-ping" style="animation-delay:${i}s"/>`).join('')}<g transform="rotate(90) scale(.42)">${AVIAO_A330}</g></g>
+    <g transform="translate(270 80)" class="gb-ghost"><g transform="rotate(-90) scale(.36)">${AVIAO_A330}</g></g>
+    <path d="M118 80 H240" class="gb-ask"/><text x="180" y="70" text-anchor="middle" class="dz-map-t" style="fill:#e9eef5">“quem está aí?”</text>
+    <text x="180" y="98" text-anchor="middle" class="dz-map-t dz-map-crash">sem resposta</text>
+    <text x="90" y="134" text-anchor="middle" class="dz-map-t" style="fill:#e9eef5">TCAS do Boeing</text><text x="270" y="134" text-anchor="middle" class="dz-map-t" style="fill:#e9eef5">Legacy: transponder parado</text>
+    <text x="10" y="154" class="dz-map-s" style="fill:#cfd8de">sem transponder, o TCAS dos dois aviões ficou cego</text>
+  </svg>`;
+}
 /* ---------- Ilustrações dos capítulos (viewBox 320x180) ---------- */
 const water = (y = 150) => `<g class="hs-water"><path d="M0 ${y} Q20 ${y - 4} 40 ${y} T80 ${y} T120 ${y} T160 ${y} T200 ${y} T240 ${y} T280 ${y} T320 ${y} V180 H0Z" class="hs-fill-water"/><path class="hs-wave" d="M-40 ${y + 10} q10 -3 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0"/></g>`;
 const ground = (y = 150) => `<path d="M0 ${y} H320 V180 H0Z" class="hs-fill-ground"/>`;
@@ -443,6 +512,56 @@ const CENAS = {
     <g transform="translate(160 36)"><rect x="-10" y="-8" width="20" height="16" rx="3" class="mh-sat"/><rect x="-44" y="-4" width="30" height="8" class="mh-panel"/><rect x="14" y="-4" width="30" height="8" class="mh-panel"/></g>
     <g transform="translate(160 112)">${[0, 1].map((i) => `<circle r="12" class="mh-ping" style="animation-delay:${i * 1.2}s"/>`).join('')}<g transform="rotate(90) scale(.3)">${AVIAO_A330}</g></g>
     <path d="M160 100 L160 52" class="mh-link"/><text x="160" y="176" class="px-gtxt">POSIÇÃO A CADA 15 MINUTOS · OU A CADA MINUTO EM PERIGO</text>`,
+  // Gol 1907
+  sjc: () => `${sun(262, 46)}${cloud(70, 40, 1, 0)}${ground(150)}<rect x="10" y="100" width="140" height="50" class="hs-fill-city"/><path d="M10 100 L80 82 L150 100Z" class="hs-fill-metal"/>
+    <text x="80" y="128" text-anchor="middle" class="px-gtxt" style="fill:#e9eef5">EMBRAER</text>${[200, 228].map((x, i) => person(x, 150, i === 1, 'hs-fill-ink', i * .2)).join('')}
+    <g transform="translate(250 138) scale(.95)">${legacy()}</g><text x="250" y="168" text-anchor="middle" class="px-gtxt px-gtxt--ink">N600XL · NOVINHO</text>`,
+  manaus: () => `${sun(60, 40)}${cloud(250, 36, 1, 1)}<path d="M0 150 H320 V180 H0Z" class="mh-sea"/><path d="M0 132 C60 124 120 140 180 130 S280 122 320 132 V150 H0Z" class="gb-mata"/>
+    ${[20, 50, 90, 130, 170, 210, 250, 290].map((x, i) => `<circle cx="${x}" cy="${128 - (i % 3) * 3}" r="${10 + (i % 2) * 4}" class="gb-arvore"/>`).join('')}
+    <g class="px-climb">${a330()}</g><text x="300" y="172" class="px-gtxt" style="text-anchor:end">MANAUS · 15:35</text>`,
+  fl370: () => `${cloud(60, 140, 1.2, 0)}${cloud(250, 150, 1, 1)}<path d="M0 80 H320" class="gb-fl"/><text x="8" y="72" class="dz-map-t">37.000 pés</text>
+    <g class="px-cruise"><g transform="scale(.6)">${legacy()}</g></g><text x="160" y="24" text-anchor="middle" class="px-gtxt px-gtxt--ink">SOBRE BRASÍLIA · NENHUMA ORDEM PARA DESCER</text>`,
+  transponder: () => `<rect width="320" height="180" class="px-panel"/><rect x="70" y="40" width="180" height="80" rx="8" class="px-gauge"/>
+    <text x="160" y="70" text-anchor="middle" class="gb-xpdr">XPDR</text><text x="160" y="100" text-anchor="middle" class="gb-xpdr gb-xpdr--off">STBY</text>
+    <circle cx="232" cy="58" r="5" class="gb-led"/><text x="160" y="152" class="px-gtxt">16:02 · O TRANSPONDER PARA DE RESPONDER</text>`,
+  telaControle: () => `<rect width="320" height="180" class="px-panel"/><circle cx="160" cy="86" r="70" class="mh-scope"/>${[24, 48].map((r) => `<circle cx="160" cy="86" r="${r}" class="mh-scope-l"/>`).join('')}
+    <g class="mh-sweep" style="transform-origin:160px 86px"><path d="M160 86 L160 16 A70 70 0 0 1 210 36Z" class="mh-sweep-f"/></g>
+    <circle cx="190" cy="60" r="3.4" class="mh-dot"/><text x="198" y="56" class="mh-tag">N600XL</text><text x="198" y="66" class="mh-tag gb-blink">360 ?</text>
+    <text x="160" y="172" class="px-gtxt">NA TELA: 36.000 PÉS · NO CÉU: 37.000</text>`,
+  chamadas: () => `<rect width="320" height="180" class="px-panel"/>${[0, 1, 2].map((i) => `<path d="M${70 + i * 10} 90 a${12 + i * 12} ${12 + i * 12} 0 0 1 0 ${-(24 + i * 24) / 2}" class="mh-wave" style="animation-delay:${i * .3}s"/>`).join('')}
+    <text x="180" y="72" text-anchor="middle" class="mh-radio">"N600XL,</text><text x="180" y="90" text-anchor="middle" class="mh-radio">BRASÍLIA..."</text><text x="180" y="120" text-anchor="middle" class="px-gtxt gb-blink">SEM RESPOSTA</text>
+    <text x="160" y="164" class="px-gtxt">CHAMADAS DOS DOIS LADOS · NENHUMA SE COMPLETA</text>`,
+  rumoContrario: () => `${cloud(160, 150, 1.4, 0)}<path d="M0 80 H320" class="gb-fl"/>
+    <g class="gb-ida"><g transform="translate(40 80) scale(.55)">${a330()}</g></g><g class="gb-volta"><g transform="translate(280 80) scale(-.7 .7)">${legacy()}</g></g>
+    <text x="160" y="40" text-anchor="middle" class="px-gtxt px-gtxt--ink">MESMA AEROVIA · MESMA ALTITUDE</text><text x="160" y="56" text-anchor="middle" class="px-gtxt px-gtxt--ink">MAIS DE 1.600 KM/H DE APROXIMAÇÃO</text>`,
+  choque: () => `${cloud(60, 40, 1, 0)}${cloud(250, 150, .9, 2)}<g transform="translate(150 90) scale(1.1)">${a330()}</g>
+    <g class="gb-pass"><g transform="translate(200 84) scale(-.7 .7)">${legacy()}</g></g><g class="px-boom"><circle cx="146" cy="104" r="12" class="px-burst"/></g>
+    <text x="160" y="170" text-anchor="middle" class="px-gtxt px-gtxt--ink">16:56:54 · O LEGACY CORTA A ASA DO BOEING</text>`,
+  espiral: () => `<rect width="320" height="180" class="px-dusk"/>${cloud(70, 40, 1, 0)}<path d="M0 150 C80 140 160 156 240 146 S310 140 320 146 V180 H0Z" class="gb-mata"/>
+    <g class="gb-spin" style="transform-origin:160px 80px"><g transform="translate(160 80) rotate(-30) scale(.6)">${a330()}</g></g>
+    <text x="160" y="24" text-anchor="middle" class="px-pullup" style="font-size:12px">SEM PARTE DA ASA ESQUERDA</text>`,
+  cachimbo: () => `${sun(262, 40)}${ground(150)}<rect x="0" y="140" width="320" height="10" class="gb-pista"/>${[20, 70, 120, 170, 220, 270].map((x) => `<rect x="${x}" y="144" width="24" height="2" class="hs-fill-paper"/>`).join('')}
+    <g transform="translate(150 132) scale(.9)">${legacy()}</g><path d="M118 112 l-6 -6 M116 120 l-8 -2" class="hs-line-accent"/>
+    <text x="160" y="24" text-anchor="middle" class="px-gtxt px-gtxt--ink">BASE AÉREA DO CACHIMBO · 7 A BORDO, TODOS VIVOS</text>`,
+  painelBsb: () => `<rect width="320" height="180" class="px-panel"/><rect x="20" y="24" width="280" height="130" rx="4" class="px-board"/>
+    <text x="34" y="44" class="px-btxt">CHEGADAS · BRASÍLIA</text>
+    ${[['· · ·', '· · · · ·', '· · ·'], ['G3 1907', 'MANAUS', 'ATRASADO'], ['· · ·', '· · · · ·', '· · ·'], ['· · ·', '· · · · ·', '· · ·']].map(([v, c, st], i) => `<g class="${i === 1 ? 'px-hl' : ''}"><text x="34" y="${70 + i * 22}" class="px-btxt">${v}</text><text x="110" y="${70 + i * 22}" class="px-btxt">${c}</text><text x="286" y="${70 + i * 22}" text-anchor="end" class="px-btxt">${st}</text></g>`).join('')}
+    <text x="160" y="172" class="px-gtxt">29 DE SETEMBRO, FIM DE TARDE</text>`,
+  selva: () => `<rect width="320" height="180" class="px-dusk"/><path d="M0 120 H320 V180 H0Z" class="gb-mata"/>${Array.from({ length: 14 }, (_, i) => `<circle cx="${10 + i * 23}" cy="${118 + (i % 3) * 4}" r="${14 + (i % 2) * 5}" class="gb-arvore"/>`).join('')}
+    <path d="M140 126 l20 -6 l14 4 l-10 8Z" class="hs-fill-metal"/><g class="px-cruise"><g transform="scale(.4)"><path d="M-30 0 H30 L36 -6 H44 L40 4 H-30Z M-6 -8 H6 V-4 H-6Z M-40 -10 H40" class="px-ship" style="stroke-width:2"/></g></g>
+    <text x="160" y="24" text-anchor="middle" class="px-gtxt px-gtxt--ink">MATA FECHADA · ÁRVORES DE 40 METROS</text>`,
+  memoriaGol: () => `<rect width="320" height="180" class="px-night"/>${[[40, 20], [120, 30], [200, 14], [280, 34]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="1.3" class="px-star" style="animation-delay:${i * .3}s"/>`).join('')}
+    <path d="M0 140 H320 V180 H0Z" class="gb-mata"/>${Array.from({ length: 9 }, (_, i) => `<g><rect x="${26 + i * 32}" y="${128}" width="8" height="12" rx="2" class="px-lantern"/><circle cx="${30 + i * 32}" cy="134" r="5" class="px-lamp" style="animation-delay:${i * .25}s"/></g>`).join('')}
+    <text x="160" y="80" text-anchor="middle" class="px-gtxt">154 VIDAS · 29 DE SETEMBRO DE 2006</text>`,
+  relatorioGol: () => `<rect width="320" height="180" class="px-paperbg"/><g transform="rotate(-4 160 90)"><rect x="96" y="12" width="128" height="140" rx="3" class="px-note"/>
+    <text x="110" y="32" class="px-btxt" style="fill:#1b2630">CENIPA · RELATÓRIO</text>${[48, 60, 72, 84, 96, 108, 120, 132].map((y, i) => `<path d="M110 ${y} H${i % 3 === 2 ? 180 : 210}" class="${i === 2 || i === 5 ? 'px-hlline' : 'px-ink'}"/>`).join('')}</g>
+    <text x="160" y="176" class="px-gtxt px-gtxt--ink">DEZEMBRO DE 2008</text>`,
+  apagao: () => `${ground(150)}<rect x="0" y="70" width="320" height="80" class="mh-terminal"/>${[30, 55, 80, 110, 140, 170, 200, 230, 260, 290].map((x, i) => person(x, 146, i % 2 === 1, i % 3 ? 'hs-fill-blue' : 'hs-fill-ink', i * .15)).join('')}
+    <rect x="70" y="80" width="180" height="40" rx="3" class="px-board"/><text x="160" y="98" text-anchor="middle" class="px-btxt gb-blink">ATRASADO · ATRASADO</text><text x="160" y="112" text-anchor="middle" class="px-btxt">CANCELADO</text>
+    <text x="160" y="24" text-anchor="middle" class="px-gtxt px-gtxt--ink">O "APAGÃO AÉREO" · 2006–2007</text>`,
+  justica: () => `<rect width="320" height="180" class="px-paperbg"/><path d="M160 30 V150 M120 150 H200 M90 50 H230" class="px-scale"/>
+    <g class="px-tilt" style="transform-origin:160px 50px"><path d="M90 50 l-20 40 h40z M230 50 l-20 40 h40z" class="px-scale"/><path d="M70 90 a20 8 0 0 0 40 0 M210 90 a20 8 0 0 0 40 0" class="px-scale"/></g>
+    <text x="160" y="172" class="px-gtxt px-gtxt--ink">PILOTOS CONDENADOS · CONTROLADORES ABSOLVIDOS</text>`,
 };
 /* ---------- Os acidentes ---------- */
 const ACIDENTES = [
@@ -611,6 +730,62 @@ const ACIDENTES = [
     cauda: 'assets/cauda-mh.webp', mapaImg: 'assets/mh370-mapa.webp', mapa: mapaMh370, esquema: falhaMh370, fugoide: derivaMh370,
     fugoideTit: 'A deriva: como os destroços chegaram à África',
     fugoideTxt: 'Se o avião caiu perto do 7º arco, as correntes do Oceano Índico, que giram no sentido anti-horário, levariam os destroços para oeste. Foi o que aconteceu: mais de um ano depois, pedaços começaram a aparecer na Ilha da Reunião e no litoral leste da África.',
+  },
+  {
+    id: 'gol1907', ano: 2006, data: '29 de setembro de 2006', titulo: 'Gol 1907', sub: 'A colisão no céu da Amazônia',
+    resumo: 'Um Boeing 737 novinho da Gol e um jato executivo recém-saído da fábrica voam um na direção do outro, na mesma aerovia e na mesma altitude, sobre a floresta. Os controladores não sabem, os pilotos não veem, e os sistemas que deviam avisar estão em silêncio.',
+    ficha: [['Avião', 'Boeing 737-8EH (Gol) e Embraer Legacy 600 (ExcelAire)'], ['Matrículas', 'PR-GTD e N600XL'], ['Rota', 'Manaus → Brasília → Rio de Janeiro'], ['Local', 'Perto de Peixoto de Azevedo, Mato Grosso'],
+      ['A bordo do Boeing', '154 (148 passageiros e 6 tripulantes)'], ['Mortos', '154'], ['Sobreviventes', 'Nenhum no Boeing · os 7 do Legacy, ilesos'], ['Causa', 'Colisão em voo: falhas do controle de tráfego aéreo e transponder do Legacy desligado']],
+    numeros: [['154', 'a bordo'], ['154', 'mortos'], ['0', 'sobreviventes'], ['37.000 pés', 'a altitude dos dois aviões']],
+    fuso: 'Linha do tempo · horário de Brasília',
+    partes: ['Antes do voo', 'O desencontro', 'O choque', 'Na floresta', 'Causas e consequências'],
+    secoes: [
+  { t: "Um jato saído da fábrica", parte: 0, hora: "14:51", lugar: "São José dos Campos, São Paulo", sabia: "O Legacy 600 é um jato executivo da Embraer derivado de um avião de passageiros regional. Leva até 13 pessoas com conforto e cruza o continente sem parar.", cena: CENAS.sjc,
+    p: ["Sexta-feira, 29 de setembro de 2006. No aeroporto da Embraer, em São José dos Campos, um jato executivo Legacy 600 novinho, de matrícula americana N600XL, estava pronto para ser entregue. O dono era a ExcelAire, uma empresa de táxi aéreo de Nova York.", "No comando iam dois pilotos americanos experientes, Joseph Lepore, de 42 anos, e Jan Paul Paladino, de 34. Era a primeira vez que voavam aquele modelo fora dos treinamentos, e nenhum dos dois conhecia o espaço aéreo brasileiro. Atrás, cinco passageiros, entre eles executivos da empresa e um jornalista americano que ia escrever sobre a viagem.", "O plano era simples: levar o avião até Manaus, dormir lá e no dia seguinte seguir para os Estados Unidos. O plano de voo dizia: subir a 37.000 pés até Brasília, descer para 36.000 depois de passar a cidade e subir de novo para 38.000 mais à frente.", "Às 14:51, o Legacy decolou. Na cabine, os pilotos ainda aprendiam a mexer nos sistemas do avião novo."] },
+  { t: "O voo 1907", parte: 0, hora: "15:35", lugar: "Aeroporto Eduardo Gomes, Manaus", sabia: "O 737-800 da Gol era um modelo para pistas curtas (SFP). Tinha sido entregue à empresa havia só 17 dias e acumulava pouco mais de 230 horas de voo.", cena: CENAS.manaus,
+    p: ["Quase ao mesmo tempo, em Manaus, embarcavam os passageiros do voo 1907 da Gol, rumo a Brasília e depois ao Rio de Janeiro. Era sexta-feira, fim de tarde, e o avião estava cheio: 148 passageiros, gente voltando para casa no fim de semana, gente indo trabalhar, famílias inteiras.", "O avião era um Boeing 737-800 de matrícula PR-GTD, tão novo que ainda tinha cheiro de fábrica. No comando, o comandante Décio Chaves Júnior, de 44 anos, e o copiloto Thiago Jordão Cruso, de 29. Na cabine, quatro comissários.", "Por volta das 15:35, o 737 decolou e subiu sobre a floresta. Lá embaixo, o encontro dos rios Negro e Solimões, a cidade espalhada à beira d'água e depois só o verde, até onde a vista alcança.", "O voo seguiu pela aerovia que liga Manaus a Brasília, uma linha reta sobre a Amazônia, a 37.000 pés. Para os passageiros, era um voo tranquilo, com céu limpo e serviço de bordo começando."] },
+  { t: "Nenhuma ordem para descer", parte: 1, hora: "15:55", lugar: "Sobre Brasília, 37.000 pés", sabia: "Nas aerovias, aviões em sentidos opostos voam em altitudes diferentes. No trecho de Brasília para Manaus, quem ia para o norte devia voar em níveis pares, como 36.000 pés.", cena: CENAS.fl370,
+    p: ["Quando o Legacy decolou de São José dos Campos, a autorização passada pelo controle dizia apenas para subir a 37.000 pés e seguir até Manaus. Não falava das mudanças de altitude previstas no plano de voo. Os pilotos entenderam que deviam ficar a 37.000 pés, a menos que recebessem outra ordem.", "Às 15:55, o Legacy passou sobre Brasília. Pelo plano de voo, era ali que devia descer para 36.000 pés, porque dali em diante, na aerovia para Manaus, os 37.000 pés eram reservados a quem vinha no sentido contrário.", "A ordem para descer não veio. O controle de Brasília não chamou o avião e os pilotos não perguntaram. O Legacy seguiu a 37.000 pés, na mão errada da estrada do céu.", "Na mesma aerovia, também a 37.000 pés, vinha o 737 da Gol no sentido oposto. A partir dali, os dois aviões estavam na mesma linha, na mesma altura, indo um ao encontro do outro."] },
+  { t: "O transponder silencia", parte: 1, hora: "16:02", lugar: "Norte de Brasília", sabia: "O transponder responde aos radares com a identificação e a altitude do avião. É ele também que faz o TCAS, o sistema anticolisão, funcionar.", cena: CENAS.transponder,
+    p: ["Às 16:02, sete minutos depois de passar por Brasília, o transponder do Legacy parou de responder. Ninguém na cabine percebeu.", "A investigação concluiu que o aparelho foi deixado em modo de espera sem querer, provavelmente ao mexer em outros controles do painel. No Legacy, o aviso de transponder desligado era uma mensagem pequena na tela, sem alarme sonoro.", "Com o transponder parado, o TCAS do Legacy também deixou de funcionar. E o TCAS do Boeing da Gol, que depende de receber a resposta do transponder dos outros aviões, deixou de enxergar o Legacy.", "O jato continuava a 37.000 pés. Mas, para os sistemas que deviam evitar uma colisão, ele tinha simplesmente desaparecido."] },
+  { t: "O que a tela mostrava", parte: 1, hora: "16:02", lugar: "Centro de controle de Brasília", sabia: "O radar primário só enxerga o eco do avião e não sabe a altitude exata. Quem informa a altitude com precisão é o transponder.", cena: CENAS.telaControle,
+    p: ["No centro de controle de Brasília, o Legacy continuava aparecendo na tela, agora só pelo eco do radar primário, sem a resposta do transponder.", "Sem o dado real, a etiqueta do avião passou a mostrar a altitude prevista no plano de voo depois de Brasília: 36.000 pés. Para quem olhava a tela, parecia que o avião tinha descido, como devia.", "A perda do transponder ficou indicada na tela, mas não foi tratada como emergência. Houve troca de turno entre os controladores, e quem assumiu não recebeu a informação de que o Legacy estava sem transponder e na altitude errada.", "Os 37.000 pés reais do jato não apareciam para ninguém. Em pouco tempo, nem o radar primário conseguia acompanhar direito o avião, numa região com cobertura fraca sobre a floresta."] },
+  { t: "Chamadas sem resposta", parte: 1, hora: "16:26", lugar: "Entre Brasília e o Mato Grosso", sabia: "Sobre a Amazônia, as comunicações de rádio podiam ter falhas de cobertura. Em 2006, controladores e pilotos já reclamavam desses buracos no sistema.", cena: CENAS.chamadas,
+    p: ["Por volta das 16:26, o controle de Brasília tentou chamar o Legacy pelo rádio. Tentou de novo, e de novo. Nenhuma resposta clara.", "Na cabine do Legacy, os pilotos também tentaram falar com o controle várias vezes, mas não conseguiram estabelecer contato. Eles tinham recebido frequências que não funcionavam naquele trecho e chamaram em canais onde ninguém os ouviu bem.", "Os dois lados tentavam se comunicar, e as mensagens se perdiam. Ninguém sabia que o tempo estava acabando.", "Nem o controle, nem os pilotos, nem o 737 da Gol imaginavam que dois aviões estavam na mesma altitude, a poucos minutos um do outro."] },
+  { t: "Um na direção do outro", parte: 1, hora: "Minutos antes", lugar: "Sobre o Mato Grosso", sabia: "Somadas, as velocidades dos dois aviões passavam de 1.600 km/h. A cada segundo, a distância entre eles diminuía em quase meio quilômetro.", cena: CENAS.rumoContrario,
+    p: ["Pouco antes das 16:57, o 737 da Gol e o Legacy estavam a poucos minutos um do outro, sobre o norte do Mato Grosso. Lá embaixo, a floresta fechada e quase nenhuma estrada.", "Os dois voavam na mesma linha imaginária no céu, com uma precisão impressionante. Os aviões modernos, guiados por GPS e piloto automático, seguem o centro da aerovia quase sem desvio. Isso, que deveria ser uma segurança, deixou os dois exatamente no mesmo caminho.", "Na cabine do Boeing, os pilotos não tinham motivo nenhum para desconfiar. O TCAS estava em silêncio. O controle não tinha dito nada. O céu à frente parecia vazio.", "A essa velocidade, um avião que aparece no horizonte vira um ponto e em poucos segundos já está do lado. Não havia tempo para ver e desviar."] },
+  { t: "16:56:54 seg", parte: 2, hora: "16:56:54 seg", lugar: "37.000 pés, sobre Peixoto de Azevedo", sabia: "A ponta da asa do Legacy tem um winglet, uma pequena aleta voltada para cima. Foi ele que atingiu a asa esquerda do 737.", cena: CENAS.choque,
+    p: ["Às 16:56:54 seg, os dois aviões se cruzaram. Não de frente, mas lado a lado, por questão de poucos metros.", "A ponta da asa esquerda do Legacy, com seu winglet, cortou a asa esquerda do Boeing da Gol como uma lâmina, arrancando um grande pedaço dela. No Legacy, a pancada também danificou o estabilizador horizontal da cauda.", "Os pilotos do Legacy sentiram um solavanco forte e não entenderam o que tinha acontecido. Não viram o outro avião. Só perceberam o dano na asa e lutaram para manter o jato no ar.", "No Boeing, o avião girou na mesma hora para a esquerda, sem parte da asa. Os pilotos não tiveram nenhuma chance."] },
+  { t: "A queda", parte: 2, hora: "16:57", lugar: "Sobre a floresta", sabia: "O gravador de voz do Boeing registrou os últimos segundos na cabine. Os pilotos lutaram com os comandos até o fim.", cena: CENAS.espiral,
+    p: ["Sem boa parte da asa esquerda, o 737 entrou em parafuso, girando e mergulhando. A velocidade aumentou muito rápido, além do limite que a estrutura aguenta.", "Durante a queda, o avião se partiu ainda no ar. Os pedaços caíram sobre a mata fechada, numa área de difícil acesso perto de Peixoto de Azevedo, no norte do Mato Grosso.", "Do impacto até o chão foram cerca de dois minutos. As 154 pessoas a bordo morreram.", "Foi, naquele momento, o pior acidente aéreo da história do Brasil."] },
+  { t: "O pouso na base militar", parte: 2, hora: "Depois do choque", lugar: "Base Aérea do Cachimbo, Pará", sabia: "A Serra do Cachimbo abriga uma base da Força Aérea no meio da floresta, com uma pista longa usada em operações militares e testes.", cena: CENAS.cachimbo,
+    p: ["No Legacy, os pilotos declararam emergência e procuraram uma pista. A mais próxima era a da Base Aérea do Cachimbo, uma base da Força Aérea Brasileira no meio da floresta, no sul do Pará.", "Com a asa e a cauda danificadas, eles conseguiram pousar cerca de meia hora depois da colisão. As sete pessoas a bordo saíram ilesas.", "Só em terra eles souberam que tinham batido em outro avião. Nos primeiros momentos, acharam que poderia ter sido algo menor.", "Logo chegou a notícia: um Boeing da Gol tinha desaparecido dos radares na mesma região. Os pilotos tiveram os passaportes retidos e ficaram no Brasil por mais de dois meses, enquanto a polícia e a investigação começavam o trabalho."] },
+  { t: "O avião que não chegou", parte: 3, hora: "29 de setembro", lugar: "Aeroportos de Brasília e do Rio", sabia: "A Gol tinha cinco anos de operação e nunca tinha sofrido um acidente com mortes.", cena: CENAS.painelBsb,
+    p: ["O voo 1907 deveria pousar em Brasília no fim da tarde. No painel de chegadas, o voo apareceu como atrasado. Parentes e amigos esperavam no saguão.", "Aos poucos, a notícia se espalhou pela televisão: um Boeing da Gol tinha desaparecido dos radares sobre o Mato Grosso e um jato executivo tinha feito um pouso de emergência na mesma região.", "No aeroporto de Brasília e no do Rio, as famílias foram levadas para salas reservadas, à espera de notícias. Muitos passaram a noite ali.", "Na madrugada, aviões da Força Aérea já sobrevoavam a floresta procurando qualquer sinal do 737."] },
+  { t: "Na mata", parte: 3, hora: "30 de setembro", lugar: "Terra indígena Capoto/Jarina, Mato Grosso", sabia: "A região do acidente fica numa terra indígena, perto do Parque do Xingu. Os destroços caíram numa área de floresta sem estradas.", cena: CENAS.selva,
+    p: ["No dia seguinte, 30 de setembro, uma equipe da Força Aérea avistou os destroços no meio da floresta, perto de Peixoto de Azevedo, dentro de uma terra indígena.", "As árvores chegavam a 40 metros de altura, e não havia onde pousar. Militares da Força Aérea e do Exército desceram de helicóptero por cordas até o chão da mata e abriram clareiras a facão e motosserra.", "O trabalho foi duríssimo, com calor, chuva e mata fechada. A esperança de sobreviventes acabou logo: o avião tinha se partido no ar e os pedaços estavam espalhados.", "A operação de resgate e recolhimento dos corpos durou semanas. Foi uma das maiores e mais difíceis já feitas pela Força Aérea na Amazônia."] },
+  { t: "O que o relatório encontrou", parte: 4, hora: "Dezembro de 2008", lugar: "CENIPA, Brasília", sabia: "O CENIPA é o órgão da Aeronáutica que investiga acidentes aéreos no Brasil. Como em todo o mundo, o objetivo é prevenir novos acidentes, e não punir.", cena: CENAS.relatorioGol,
+    p: ["Em dezembro de 2008, o CENIPA publicou o relatório final, com a participação do NTSB americano. A conclusão: não houve uma única causa, e sim uma série de falhas que se somaram.", "Do lado do controle de tráfego aéreo: a autorização incompleta dada ao Legacy, a falta de ordem para descer depois de Brasília, a perda do transponder que não foi tratada como problema sério, a passagem de turno sem a informação e as falhas de comunicação por rádio.", "Do lado do Legacy: o transponder desligado sem que os pilotos percebessem, a pouca familiaridade com o avião novo e com o espaço aéreo brasileiro e a demora em perceber que estavam sem contato com o controle.", "O NTSB concordou com a maior parte, mas deu mais peso às falhas do controle de tráfego aéreo e ao projeto do aviso de transponder no Legacy, que era fácil de não perceber."] },
+  { t: "O apagão aéreo", parte: 4, hora: "2006–2007", lugar: "Aeroportos do Brasil", sabia: "Em julho de 2007, menos de um ano depois, o acidente do voo 3054 da TAM em Congonhas, com 199 mortos, passou a ser o pior da história do Brasil.", cena: CENAS.apagao,
+    p: ["O acidente expôs os problemas do controle de tráfego aéreo no Brasil: falta de controladores, jornadas pesadas, equipamentos antigos e buracos na cobertura de rádio e radar.", "Logo depois, os controladores, que eram em sua maioria militares, começaram a trabalhar estritamente pelas regras, reduzindo o número de aviões que aceitavam ao mesmo tempo. Foi o início do chamado apagão aéreo.", "Por meses, os aeroportos do país viveram atrasos enormes, cancelamentos e saguões lotados. Em março de 2007, controladores chegaram a fazer um protesto que parou boa parte dos voos.", "O governo investiu em equipamentos, contratou e formou mais controladores e revisou os procedimentos. A crise só foi se acalmar em 2008."] },
+  { t: "Na Justiça", parte: 4, hora: "2007–2015", lugar: "Justiça Federal e Justiça Militar", sabia: "Os dois pilotos do Legacy voltaram aos Estados Unidos em dezembro de 2006 e responderam ao processo de lá.", cena: CENAS.justica,
+    p: ["O Ministério Público Federal denunciou os dois pilotos do Legacy e quatro controladores de voo por atentado contra a segurança do transporte aéreo.", "Os pilotos Joseph Lepore e Jan Paul Paladino foram condenados pela Justiça Federal em 2011. Depois de recursos, o STJ fixou a pena em três anos, um mês e dez dias, convertida em serviços à comunidade. Eles vivem nos Estados Unidos e nunca cumpriram a pena no Brasil.", "Na Justiça comum, os controladores foram absolvidos, decisão mantida pelo STJ. Na Justiça Militar, um dos controladores foi condenado em 2010 a um ano e dois meses de detenção, por não ter repassado a informação de que o Legacy estava sem transponder.", "Para muitas famílias, ficou a sensação de que ninguém foi de fato responsabilizado. As associações de parentes continuam lembrando a data todo ano."] },
+  { t: "O que mudou", parte: 4, hora: "2006–hoje", lugar: "No Brasil e no mundo", sabia: "Até hoje, o voo 1907 é estudado em cursos de controle de tráfego aéreo e de pilotagem como exemplo de como pequenas falhas se somam até virar uma tragédia.", cena: CENAS.memoriaGol,
+    p: ["O controle de tráfego aéreo brasileiro passou por uma grande reforma: mais controladores, mais treinamento em inglês, melhor cobertura de rádio sobre a Amazônia e regras mais claras para autorizações e trocas de turno.", "O aviso de transponder desligado na cabine passou a ser visto como um ponto fraco a ser melhorado, para que chame mais atenção dos pilotos.", "No mundo todo, a perda do sinal do transponder de um avião passou a ser tratada com mais urgência pelos controladores.", "No local do acidente, em Mato Grosso, e em cidades de onde vinham as vítimas, há memoriais com os nomes das 154 pessoas do voo 1907."] },
+    ],
+    linha: [['15:35', 'O Boeing da Gol decola de Manaus rumo a Brasília, com 154 pessoas a bordo.', 0], ['16:02', 'Do outro lado da rota, o transponder do Legacy para de responder. O TCAS dos dois aviões fica cego.', .33],
+      ['16:26', 'O controle de Brasília tenta, sem sucesso, falar com o Legacy, que segue a 37.000 pés.', .62], ['16:56', 'Colisão a 37.000 pés sobre o norte do Mato Grosso. O Boeing cai na floresta; o Legacy pousa na Base do Cachimbo.', 1]],
+    falha: 'Os dois aviões estavam na mesma aerovia, na mesma altitude e em sentidos opostos. O Legacy devia ter descido para 36.000 pés depois de Brasília, mas a ordem não veio, e o transponder parado escondeu a altitude real dele do controle e do TCAS.',
+    mudou: ['O controle de tráfego aéreo brasileiro foi reformado: mais controladores, mais treinamento, inclusive em inglês, e melhor cobertura de rádio e radar sobre a Amazônia.',
+      'As autorizações de voo e as passagens de turno entre controladores ganharam regras mais claras, para que nenhuma informação importante se perca.',
+      'O aviso de transponder desligado na cabine passou a ser revisto, para que os pilotos não deixem de perceber.',
+      'A perda do sinal do transponder passou a ser tratada como alerta sério pelos controladores, no Brasil e em outros países.'],
+    memoria: 'Todo 29 de setembro, famílias das 154 vítimas se reúnem para lembrar o voo 1907. Há memoriais em Mato Grosso e em cidades de onde vinham os passageiros.',
+    fontes: [['Wikipedia: Gol Transportes Aéreos Flight 1907', 'https://en.wikipedia.org/wiki/Gol_Transportes_A%C3%A9reos_Flight_1907'], ['OACI: síntese do relatório do CENIPA', 'https://icao.int/safety/airnavigation/AIG/Documents/Safety%20Recommendations%20to%20ICAO/Synopsis/06003860_Synopsis.pdf'],
+      ['Exame: STJ mantém pena dos pilotos', 'https://exame.com/brasil/stj-mantem-pena-de-pilotos-envolvidos-em-acidente-da-gol'], ['Conjur: Justiça Militar condena controlador', 'https://www.conjur.com.br/2010-out-26/justica-militar-condena-controlador-voo-acidente-gol//?print=1']],
+    mapa: mapaGol1907, esquema: falhaGol1907, fugoide: tcasGol1907,
+    fugoideTit: 'Por que o TCAS não avisou',
+    fugoideTxt: 'O TCAS, o sistema anticolisão, pergunta pelo rádio “quem está aí?” e espera a resposta do transponder dos outros aviões. Com o transponder do Legacy parado, ninguém respondeu: o TCAS do Boeing não viu o jato, e o do Legacy, que depende do próprio transponder, estava desligado.',
   },
 ];
 

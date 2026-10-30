@@ -1299,3 +1299,35 @@ html.menu-lock, html.menu-lock body { overflow: hidden; overscroll-behavior: non
 .dz__pick .dz__list:not([hidden]) { animation: dzListIn .22s ease-out; }
 @keyframes dzListIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .dz__pick .dz__list:not([hidden]) { animation: none; } }
+
+/* Desastres: Gol 1907 (mapa do Brasil, as duas rotas e o TCAS) */
+.gb-brasil { fill: #2d4434; stroke: #8fb087; stroke-width: 2.5; }
+.gb-legacy { fill: none; stroke: #ffb84a; stroke-width: 4; stroke-dasharray: 12 8; stroke-linecap: round; stroke-linejoin: round; }
+.gb-cac { fill: #ffb84a; stroke: #fff; stroke-width: 3; }
+.dz-map--gol .dz-labels text { font-size: 24px; stroke-width: 5px; }
+.dz-map--gol .dz-labels .dz-lbl-s { font-size: 19px; }
+.dz-map--gol .dz-labels .dz-lbl-big { font-size: 40px; letter-spacing: .2em; fill: #e3eedf; opacity: .55; }
+.dz-map--gol .dz-labels .gb-red { fill: #ff8a7a; } .dz-map--gol .dz-labels .gb-or { fill: #ffd27a; }
+.dz-map--gol .dz-mark circle { r: 9; stroke-width: 3; }
+.dz-map--gol .dz-route-dash { stroke-width: 4.5; stroke-dasharray: 18 10 3 10; }
+.dz-map--gol .dz-x { stroke-width: 7; }
+.dz-map--gol .dz-map-note { font-size: 16px; }
+.gb-fl { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 4 4; } .gb-fl--ok { stroke: #5fbf7a; }
+.gb-or-t { fill: #c77a10; }
+.gb-arrow { fill: none; stroke: #5fbf7a; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.gb-ida { animation: gbIda 4s ease-in-out infinite; } .gb-volta { animation: gbVolta 4s ease-in-out infinite; }
+@keyframes gbIda { 0% { transform: translateX(-20px); } 100% { transform: translateX(70px); } }
+@keyframes gbVolta { 0% { transform: translateX(20px); } 100% { transform: translateX(-70px); } }
+.gb-ping { fill: none; stroke: #8fc3e6; stroke-width: 1.4; transform-box: fill-box; transform-origin: center; animation: mhPing 3s ease-out infinite; }
+.gb-ghost { opacity: .35; } .gb-ghost path, .gb-ghost rect { fill: #cfd8de; stroke: none; }
+.gb-ask { stroke: #8fc3e6; stroke-width: 1.4; stroke-dasharray: 4 5; animation: mhDash 1.5s linear infinite; }
+.gb-mata { fill: #24452c; } .gb-arvore { fill: #2f5a37; }
+.gb-xpdr { font: 700 20px var(--mono); fill: #5fe08a; letter-spacing: .1em; } .gb-xpdr--off { fill: #ffb84a; animation: pxBlink 1.2s steps(1) infinite; }
+.gb-led { fill: #3a3a3a; stroke: #6d7a86; }
+.gb-blink { animation: pxBlink 1s steps(1) infinite; }
+.gb-pass { animation: gbPass 3s ease-in infinite; }
+@keyframes gbPass { 0% { transform: translateX(60px); opacity: 0; } 20% { opacity: 1; } 60%, 100% { transform: translateX(-120px); opacity: 0; } }
+.gb-spin { animation: gbSpin 3s linear infinite; }
+@keyframes gbSpin { from { transform: rotate(0deg) translateY(0); } to { transform: rotate(360deg) translateY(0); } }
+.gb-pista { fill: #3a4148; }
+@media (prefers-reduced-motion: reduce) { [class^="gb-"] { animation: none !important; } }
