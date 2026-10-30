@@ -164,62 +164,47 @@ function estolAf447() {
   </svg>`;
 }
 /* ---------- Ilustrações do MH370 ---------- */
-// Mapa do Sudeste Asiático e do Oceano Índico em projeção simples: 18 px por grau, de 88°L a 120°L e de 14°N a 42°S
-const MH = (lat, lon) => [Math.round((lon - 88) * 18), Math.round((14 - lat) * 18)];
-const mhPts = (l) => l.map(([a, b]) => MH(a, b).join(' ')).join(' L');
-const MH_TERRAS = [
-  // Tailândia, Malásia continental e Indochina
-  [[14, 98], [10, 98.5], [8, 98.3], [6.5, 100], [5, 100.4], [3, 101.3], [1.3, 103.5], [1.5, 104.2], [3, 103.4], [5.5, 102.6], [6.9, 101.9], [8.4, 100.5], [10, 99.2], [12.5, 100], [13.4, 100.9], [12.5, 102.2], [10.5, 104.5], [8.7, 104.8], [10.3, 106.7], [11.5, 109.2], [14, 109.3]],
-  // Sumatra
-  [[5.6, 95.3], [5.2, 97.5], [3.8, 98.7], [2, 100.5], [1, 102.5], [-1, 104.3], [-3, 106], [-5.8, 105.8], [-5.9, 104.5], [-4, 102.3], [-2, 100.8], [0, 99.2], [2, 97.8], [4, 96.2]],
-  // Java
-  [[-6, 105.8], [-6.2, 108], [-6.8, 111], [-7, 113], [-7.7, 114.5], [-8.7, 114.5], [-8.2, 111], [-7.8, 108.5], [-7, 106], [-6.8, 105.4]],
-  // Bornéu
-  [[1.5, 109.3], [4, 113.3], [7, 116.8], [5, 119], [1, 119], [-3, 116.2], [-4, 114.5], [-3.3, 111.5], [-2.9, 110.2], [0, 109.1]],
-];
-// Costa oeste da Austrália, fechando na borda direita do mapa
-const MH_AUSTRALIA = [[-19.5, 120], [-20.3, 118.8], [-20.8, 116.8], [-21.8, 114.2], [-24, 113.5], [-26.5, 113.3], [-28.8, 114.6], [-32, 115.7], [-34.3, 115.1], [-35, 116.5], [-35, 118], [-34, 120]];
-// 7º arco: pontos a cerca de 44° do satélite Inmarsat (sobre 64,5°L, no equador)
+// Mapa sobre imagem de satélite do Sudeste Asiático e do Oceano Índico (784x1366). A imagem tem a curvatura da Terra,
+// então os pontos foram medidos nela, um a um, e não calculados por latitude e longitude
+// 7º arco: pontos a cerca de 44° do satélite Inmarsat (sobre 64,5°L, no equador), já na posição da imagem
+const MH_ARCO_IMG = [[474, 628], [454, 694], [421, 804], [373, 914], [307, 1024], [210, 1134], [128, 1200]];
 const MH_ARCO = [[-12, 107.4], [-15, 106.3], [-20, 104.5], [-25, 101.9], [-30, 98.3], [-35, 93], [-38, 88.5]];
+const imgPts = (l) => l.map((p) => p.join(' ')).join(' L');
 // Rota: Kuala Lumpur → IGARI → volta sobre a península → Penang → último radar → trajeto estimado até o 7º arco
-const MH370_ROTA = 'M245 203 L279 127 C272 128 264 132 256 142 C244 150 232 156 220 157 L173 131 C140 128 112 150 100 190 C90 240 110 380 120 480 C125 620 100 780 86 891';
+const MH370_ROTA = 'M340 280 L392 151 C384 152 370 160 355 172 C340 186 322 200 307 205 L226 166 C190 150 150 180 140 240 C130 330 170 600 190 800 C200 950 205 1050 210 1134';
 function mapaMh370() {
-  const [px, py] = MH(5.3, 100.3), [kx, ky] = MH(2.75, 101.7), [ix, iy] = MH(6.93, 103.58), [rx, ry] = MH(6.7, 97.6), [pex, pey] = MH(-31.95, 115.86);
-  return `<svg viewBox="0 0 576 1008" role="img" aria-label="Mapa do voo MH370: de Kuala Lumpur ao ponto IGARI, a volta sobre a Malásia e o trajeto estimado até o sul do Oceano Índico" class="dz-map--mh">
-    <defs><linearGradient id="mhSea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d2a44"/><stop offset="1" stop-color="#081a2c"/></linearGradient>
-      <filter id="dzShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="6" dy="9" stdDeviation="4" flood-color="#000" flood-opacity=".55"/></filter></defs>
-    <rect width="576" height="1008" fill="url(#mhSea)"/>
-    ${MH_TERRAS.map((t, i) => `<path d="M${mhPts(t)}${i === 0 ? ' L' + MH(14, 109.3).join(' ') + ' L' + MH(14, 98).join(' ') : ''}Z" class="dz-land"/>`).join('')}
-    <path d="M${mhPts(MH_AUSTRALIA)} L576 1008 L576 ${MH(-19.5, 120)[1]}Z" class="dz-land"/>
-    <path d="M0 ${MH(0, 88)[1]} H576" class="dz-eq"/>
-    <path d="M${mhPts(MH_ARCO)}" class="mh-arc"/>
-    <path d="M${mhPts([[-25, 101.9], [-30, 98.3], [-35, 93], [-38.5, 87.8]])}" class="mh-search"/>
-    <path d="M279 127 L380 0" class="dz-route-plan"/>
-    <mask id="dzReveal" maskUnits="userSpaceOnUse" x="0" y="0" width="576" height="1008"><path id="dzRevealPath" d="${MH370_ROTA}" fill="none" stroke="#fff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/></mask>
+  return `<svg viewBox="0 0 784 1366" role="img" aria-label="Mapa do voo MH370: de Kuala Lumpur ao ponto IGARI, a volta sobre a Malásia e o trajeto estimado até o sul do Oceano Índico" class="dz-map--mh">
+    <defs><filter id="dzShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="6" dy="9" stdDeviation="4" flood-color="#000" flood-opacity=".55"/></filter></defs>
+    <image href="assets/mh370-mapa.webp" x="0" y="0" width="784" height="1366" preserveAspectRatio="xMidYMid slice"/>
+    <path d="M0 350 H784" class="dz-eq"/>
+    <path d="M${imgPts(MH_ARCO_IMG)}" class="mh-arc"/>
+    <path d="M${imgPts(MH_ARCO_IMG.slice(3, 7))}" class="mh-search"/>
+    <path d="M392 151 L470 0" class="dz-route-plan"/>
+    <mask id="dzReveal" maskUnits="userSpaceOnUse" x="0" y="0" width="784" height="1366"><path id="dzRevealPath" d="${MH370_ROTA}" fill="none" stroke="#fff" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/></mask>
     <path id="dzPath" d="${MH370_ROTA}" class="dz-route"/>
     <path d="${MH370_ROTA}" class="dz-route-dash" mask="url(#dzReveal)"/>
     <g class="dz-labels">
-      <circle cx="${kx}" cy="${ky}" r="6" class="dz-dot"/><text x="${kx + 10}" y="${ky + 18}">Kuala Lumpur</text>
-      <circle cx="${px}" cy="${py}" r="5" class="dz-dot"/><text x="${px - 10}" y="${py + 20}" text-anchor="end">Penang</text>
-      <text x="${ix + 10}" y="${iy + 4}" class="dz-lbl-s">IGARI</text>
-      <text x="${rx - 6}" y="${ry - 12}" text-anchor="end" class="dz-lbl-s">último radar</text>
-      <text x="390" y="22" class="dz-lbl-s">rota planejada até Pequim</text>
-      <text x="420" y="110" text-anchor="middle" class="dz-lbl-w">Mar da China</text><text x="420" y="132" text-anchor="middle" class="dz-lbl-w">Meridional</text>
-      <text x="40" y="70" class="dz-lbl-s dz-lbl-w">Mar de Andamão</text>
-      <text x="200" y="262" text-anchor="middle" class="dz-lbl-big" transform="rotate(-48 200 262)">SUMATRA</text>
-      <text x="400" y="402" text-anchor="middle" class="dz-lbl-big">JAVA</text>
-      <text x="470" y="230" text-anchor="middle" class="dz-lbl-big">BORNÉU</text>
-      <text x="484" y="700" text-anchor="middle" class="dz-lbl-big">AUSTRÁLIA</text>
-      <circle cx="${pex}" cy="${pey}" r="5" class="dz-dot"/><text x="${pex - 10}" y="${pey + 4}" text-anchor="end">Perth</text>
-      <text x="300" y="560" text-anchor="middle" class="dz-lbl-w">Oceano Índico</text>
-      <text x="566" y="${MH(0, 88)[1] - 8}" text-anchor="end" class="dz-lbl-s dz-lbl-w">Linha do Equador</text>
-      <text x="${MH(-20, 104.5)[0] + 14}" y="${MH(-20, 104.5)[1]}" class="dz-lbl-s mh-arc-t">7º arco</text>
-      <text x="${MH(-31, 97.5)[0] + 16}" y="${MH(-31, 97.5)[1]}" class="dz-lbl-s">áreas já vasculhadas</text>
-      <text x="150" y="430" class="dz-lbl-s">trajeto estimado</text><text x="150" y="452" class="dz-lbl-s">(dados de satélite)</text>
+      <circle cx="340" cy="280" r="7" class="dz-dot"/><text x="352" y="300">Kuala Lumpur</text>
+      <circle cx="307" cy="205" r="6" class="dz-dot"/><text x="296" y="226" text-anchor="end">Penang</text>
+      <text x="404" y="156" class="dz-lbl-s">IGARI</text>
+      <text x="222" y="150" text-anchor="end" class="dz-lbl-s">último radar</text>
+      <text x="480" y="24" class="dz-lbl-s">rota planejada até Pequim</text>
+      <text x="500" y="200" text-anchor="middle" class="dz-lbl-w">Mar da China</text><text x="500" y="226" text-anchor="middle" class="dz-lbl-w">Meridional</text>
+      <text x="30" y="110" class="dz-lbl-s dz-lbl-w">Mar de Andamão</text>
+      <text x="300" y="380" text-anchor="middle" class="dz-lbl-big" transform="rotate(-52 300 380)">SUMATRA</text>
+      <text x="520" y="590" text-anchor="middle" class="dz-lbl-big">JAVA</text>
+      <text x="610" y="360" text-anchor="middle" class="dz-lbl-big">BORNÉU</text>
+      <text x="700" y="960" text-anchor="middle" class="dz-lbl-big">AUSTRÁLIA</text>
+      <circle cx="626" cy="1045" r="6" class="dz-dot"/><text x="612" y="1050" text-anchor="end">Perth</text>
+      <text x="360" y="700" text-anchor="middle" class="dz-lbl-w">Oceano Índico</text>
+      <text x="774" y="340" text-anchor="end" class="dz-lbl-s dz-lbl-w">Linha do Equador</text>
+      <text x="436" y="810" class="dz-lbl-s mh-arc-t">7º arco</text>
+      <text x="296" y="1090" class="dz-lbl-s">áreas já vasculhadas</text>
+      <text x="24" y="470" class="dz-lbl-s">trajeto estimado</text><text x="24" y="494" class="dz-lbl-s">(dados de satélite)</text>
     </g>
     <g id="dzMarks"></g>
-    <g id="dzPlane"><circle r="24" class="dz-plane-halo"/><g transform="scale(.7)" filter="url(#dzShadow)">${AVIAO_A330}</g></g>
-    <text x="12" y="996" class="dz-map-note">Rota aproximada · o local da queda nunca foi encontrado</text>
+    <g id="dzPlane"><circle r="28" class="dz-plane-halo"/><g transform="scale(.85)" filter="url(#dzShadow)">${AVIAO_A330}</g></g>
+    <text x="16" y="1352" class="dz-map-note">Rota aproximada · o local da queda nunca foi encontrado</text>
   </svg>`;
 }
 // O que falhou: o rastreamento. Sobrou só o "aperto de mão" de hora em hora com um satélite, que dava a distância e não a direção
@@ -388,10 +373,13 @@ const CENAS = {
     <g class="mh-towers"><path d="M56 160 V96 l5 -14 l5 14 V160Z M80 160 V96 l5 -14 l5 14 V160Z"/><rect x="66" y="118" width="14" height="4"/><path d="M61 82 V70 M85 82 V70" class="mh-spire"/></g>
     <path d="M0 160 H320 V180 H0Z" class="px-sea"/>${Array.from({ length: 28 }, (_, i) => `<circle cx="${i * 12}" cy="${156 - (i % 4) * 2}" r="1.3" class="px-lights" style="animation-delay:${(i % 6) * .25}s"/>`).join('')}
     <g class="px-climb">${a330()}<circle cx="-68" cy="2" r="2" class="px-nav"/></g>`,
-  boaNoite: () => `<rect width="320" height="180" class="px-panel"/><rect x="40" y="40" width="240" height="90" rx="8" class="px-gauge"/>
-    ${[0, 1, 2].map((i) => `<path d="M${70 + i * 10} 85 a${14 + i * 12} ${14 + i * 12} 0 0 1 0 ${-(28 + i * 24) / 2}" class="mh-wave" style="animation-delay:${i * .3}s"/>`).join('')}
-    <text x="160" y="76" text-anchor="middle" class="mh-radio">"GOOD NIGHT,</text><text x="160" y="94" text-anchor="middle" class="mh-radio">MALAYSIAN THREE SEVEN ZERO"</text>
-    <text x="160" y="160" class="px-gtxt">01:19:30 · A ÚLTIMA VOZ</text>`,
+  // Foto da cabine de passageiros de fundo (imagem ilustrativa), com a última mensagem por cima
+  boaNoite: () => `<image href="assets/mh370-cinto.webp" x="0" y="0" width="320" height="180" preserveAspectRatio="xMidYMid slice"/><rect width="320" height="180" class="mh-dimfoto"/>
+    <rect x="34" y="52" width="252" height="62" rx="8" class="pt-chip"/>
+    ${[0, 1, 2].map((i) => `<path d="M${52 + i * 8} 92 a${10 + i * 9} ${10 + i * 9} 0 0 1 0 ${-(20 + i * 18) / 2}" class="mh-wave" style="animation-delay:${i * .3}s"/>`).join('')}
+    <text x="168" y="78" text-anchor="middle" class="mh-radio">"GOOD NIGHT,</text><text x="168" y="96" text-anchor="middle" class="mh-radio">MALAYSIAN THREE SEVEN ZERO"</text>
+    <rect x="86" y="150" width="148" height="18" rx="4" class="pt-chip"/><text x="160" y="162" class="px-gtxt">01:19:30 · A ÚLTIMA VOZ</text>
+    <text x="314" y="12" text-anchor="end" class="mn-ilus">imagem ilustrativa</text>`,
   igari: () => `<rect width="320" height="180" class="px-panel"/><circle cx="160" cy="90" r="74" class="mh-scope"/>${[24, 48, 72].map((r) => `<circle cx="160" cy="90" r="${r}" class="mh-scope-l"/>`).join('')}<path d="M86 90 H234 M160 16 V164" class="mh-scope-l"/>
     <g class="mh-sweep" style="transform-origin:160px 90px"><path d="M160 90 L160 16 A74 74 0 0 1 212 38Z" class="mh-sweep-f"/></g>
     <g class="mh-blip"><circle cx="196" cy="58" r="3.4" class="mh-dot"/><text x="203" y="52" class="mh-tag">MH370</text><text x="203" y="62" class="mh-tag">FL350</text></g>
@@ -565,13 +553,13 @@ const ACIDENTES = [
     fuso: 'Linha do tempo · horário da Malásia (UTC+8)',
     partes: ['Antes do voo', 'Silêncio no radar', 'Sete horas no escuro', 'A maior busca da história', 'O que se sabe e o que mudou'],
     secoes: [
-  { t: "Uma noite em Kuala Lumpur", parte: 0, hora: "7 de março", lugar: "Aeroporto Internacional de Kuala Lumpur", sabia: "O MH370 era um voo noturno: sairia de Kuala Lumpur pouco depois da meia-noite e chegaria a Pequim às 06:30, depois de cerca de seis horas de viagem.", cena: CENAS.klia,
+  { t: "Uma noite em Kuala Lumpur", foto: { src: "assets/mh370-klia.webp", legenda: "Um Boeing 777 da Malaysia Airlines no pátio do aeroporto de Kuala Lumpur, à noite (imagem ilustrativa)" }, parte: 0, hora: "7 de março", lugar: "Aeroporto Internacional de Kuala Lumpur", sabia: "O MH370 era um voo noturno: sairia de Kuala Lumpur pouco depois da meia-noite e chegaria a Pequim às 06:30, depois de cerca de seis horas de viagem.", cena: CENAS.klia,
     p: ["Sexta-feira, 7 de março de 2014, fim de noite no aeroporto de Kuala Lumpur, na Malásia. No portão do voo MH370 da Malaysia Airlines, com destino a Pequim, as pessoas se acomodavam nas cadeiras para esperar o embarque, marcado para pouco depois da meia-noite.", "Eram 227 passageiros, a maioria chineses: 153, entre eles um bebê. Havia também 38 malaios e gente de mais de uma dezena de outros países. Um grupo de artistas chineses, calígrafos e pintores, voltava de uma exposição na Malásia. Vinte funcionários de uma mesma empresa de tecnologia viajavam a trabalho.", "Havia casais em lua de mel, famílias com crianças pequenas, gente voltando para casa depois das férias. Entre os passageiros, dois jovens iranianos viajavam com passaportes roubados. Mais tarde, a polícia concluiu que eles só queriam chegar à Europa para pedir refúgio, sem ligação com terrorismo.", "Os 12 tripulantes eram todos malaios. Para quase todos a bordo, era só mais um voo noturno: embarcar, dormir e acordar em Pequim."] },
-  { t: "Rumo a Pequim", parte: 0, hora: "00:42", lugar: "Kuala Lumpur", sabia: "O 9M-MRO estava na Malaysia Airlines desde 2002. O Boeing 777 era considerado um dos aviões mais seguros do mundo e, até 2013, nunca tinha tido um acidente com mortes.", cena: CENAS.decolagemKL,
+  { t: "Rumo a Pequim", foto: { src: "assets/mh370-decolagem.webp", legenda: "Recriação do 9M-MRO decolando de Kuala Lumpur (imagem ilustrativa)" }, parte: 0, hora: "00:42", lugar: "Kuala Lumpur", sabia: "O 9M-MRO estava na Malaysia Airlines desde 2002. O Boeing 777 era considerado um dos aviões mais seguros do mundo e, até 2013, nunca tinha tido um acidente com mortes.", cena: CENAS.decolagemKL,
     p: ["O avião era um Boeing 777-200ER, de matrícula 9M-MRO, com dois grandes motores e capacidade para voar mais de 14 horas sem parar. Naquela noite, ele levava combustível para cerca de sete horas e meia de voo, o normal para uma viagem até Pequim com reserva.", "No comando estava Zaharie Ahmad Shah, de 53 anos, piloto da Malaysia Airlines desde 1981, com 18.365 horas de voo. Ao lado dele, o copiloto Fariq Abdul Hamid, de 27 anos, com 2.763 horas, que estava na empresa desde 2007.", "Às 00:42 de 8 de março, o MH370 decolou. Pelas janelas, as luzes de Kuala Lumpur e as Torres Petronas foram ficando para trás. O avião apontou para o nordeste, rumo ao Mar da China Meridional e ao Vietnã.", "À 01:01, chegou aos 35.000 pés, a altitude de cruzeiro. À 01:07, o sistema de mensagens automáticas do avião, o ACARS, mandou um relatório de rotina para a empresa. Seria o último."] },
   { t: "“Boa noite”", parte: 1, hora: "01:19:30 seg", lugar: "Mar da China Meridional", sabia: "Na passagem de um controle para outro, o piloto troca a frequência do rádio e se apresenta ao próximo controlador. É uma das tarefas mais rotineiras de um voo.", cena: CENAS.boaNoite,
     p: ["O avião se aproximava do ponto IGARI, no meio do mar, entre a Malásia e o Vietnã. Ali terminava a área do controle de Kuala Lumpur e começava a do controle de Ho Chi Minh, no Vietnã.", "À 01:19, o controlador de Kuala Lumpur fez a passagem de rotina: mandou o MH370 chamar Ho Chi Minh na frequência 120,9 e se despediu com um boa-noite.", "Da cabine, uma voz calma respondeu, em inglês: “Good night, Malaysian three seven zero.” Boa noite, Malaysian três sete zero.", "Foram as últimas palavras ouvidas do MH370. O avião nunca chamou o controle de Ho Chi Minh."] },
-  { t: "O ponto IGARI", parte: 1, hora: "01:21:13 seg", lugar: "Perto do ponto IGARI", sabia: "O transponder é o aparelho que responde ao radar dos controladores com a identificação, a altitude e a velocidade do avião. Sem ele, o avião vira só um ponto sem nome, e só os radares militares conseguem vê-lo.", cena: CENAS.igari,
+  { t: "O ponto IGARI", foto: { src: "assets/mh370-radar.webp", legenda: "Tela de radar (imagem ilustrativa). Sem o transponder, o MH370 sumiu das telas do controle civil", tag: "01:21:13 · o sinal do transponder some" }, parte: 1, hora: "01:21:13 seg", lugar: "Perto do ponto IGARI", sabia: "O transponder é o aparelho que responde ao radar dos controladores com a identificação, a altitude e a velocidade do avião. Sem ele, o avião vira só um ponto sem nome, e só os radares militares conseguem vê-lo.", cena: CENAS.igari,
     p: ["Menos de dois minutos depois, à 01:21:13 seg, o sinal do transponder do MH370 desapareceu das telas de controle, logo depois de o avião passar pelo ponto IGARI. A etiqueta com o nome do voo simplesmente sumiu do radar.", "Ninguém deu o alarme na hora. Em Ho Chi Minh, o controle esperava o contato do avião, que não veio. Só à 01:38 os vietnamitas ligaram para Kuala Lumpur perguntando pelo MH370.", "Seguiram-se horas de confusão. Os controladores dos dois países trocavam ligações, a empresa chegou a informar que o avião parecia estar sobre o Camboja, e um avião da própria Malaysia Airlines que passava pela região tentou chamar o MH370 pelo rádio. O piloto disse ter ouvido apenas chiado e algo parecido com um murmúrio.", "O centro de busca e salvamento só foi acionado às 05:30, mais de quatro horas depois do sumiço. O relatório oficial apontaria, anos depois, falhas dos controles de tráfego aéreo nessa noite."] },
   { t: "A volta no escuro", parte: 1, hora: "01:22", lugar: "Sobre a península da Malásia", sabia: "O radar militar é um radar primário: ele enxerga o eco de qualquer objeto grande no céu, com ou sem transponder, mas não sabe quem é.", cena: CENAS.curva,
     p: ["Enquanto os controles procuravam o avião, os radares militares da Malásia registravam um eco sem identificação. Logo depois do ponto IGARI, o MH370 fez uma curva fechada para a esquerda e deu meia-volta, para o sudoeste.", "O avião atravessou de volta a península da Malásia, passou perto de Kota Bharu e seguiu em direção à ilha de Penang, na costa oeste. Por volta da 01:52, passou ao sul de Penang, a cidade natal do comandante.", "Os militares viram o eco, mas não reagiram. Consideraram que era um avião civil, sem ameaça, e ninguém mandou caças para olhar de perto.", "A investigação concluiria que a curva muito provavelmente foi feita com o avião sendo pilotado à mão, e não pelo piloto automático. Quem pilotava, e por quê, continua sem resposta."] },
@@ -598,9 +586,9 @@ const ACIDENTES = [
   { t: "O que mudou", parte: 4, hora: "2014–2026", lugar: "No mundo inteiro", sabia: "As famílias das vítimas se organizaram em grupos como o Voice370 e, até hoje, cobram que a busca continue.", cena: CENAS.rastreio,
     p: ["O MH370 mostrou que, em 2014, um avião de passageiros moderno podia simplesmente sumir. Sobre os oceanos, longe dos radares, ninguém sabia com certeza onde cada avião estava.", "Depois do desaparecimento, a OACI, a organização da aviação civil da ONU, criou novas regras: as empresas passaram a ter de acompanhar a posição dos aviões sobre o oceano pelo menos a cada 15 minutos, e os aviões novos precisam transmitir a posição sozinhos, a cada minuto, quando estão em perigo.", "As caixas-pretas também mudaram: os sinalizadores passaram a ter bateria para 90 dias, em vez de 30, e o gravador de voz dos aviões novos passou a guardar 25 horas de conversa, e não só as últimas duas.", "Mais de doze anos depois, o MH370 continua sendo o maior mistério da aviação moderna. Para as famílias das 239 pessoas a bordo, a espera ainda não terminou."] },
     ],
-    linha: [['00:42', 'Decolagem de Kuala Lumpur rumo a Pequim, com 239 pessoas a bordo.', [245, 203]], ['01:19', 'Última voz: “Good night, Malaysian three seven zero.”', [272, 142]],
-      ['01:21', 'Perto do ponto IGARI, o transponder some e o avião desaparece do radar civil.', [279, 127]], ['01:52', 'Depois de dar meia-volta, o avião passa ao sul de Penang, visto só pelo radar militar.', [220, 157]],
-      ['02:22', 'Último eco no radar militar, sobre o Mar de Andamão.', [173, 131]], ['08:19', 'Último sinal ao satélite, no 7º arco, no sul do Oceano Índico. O local exato nunca foi encontrado.', [86, 891]]],
+    linha: [['00:42', 'Decolagem de Kuala Lumpur rumo a Pequim, com 239 pessoas a bordo.', [340, 280]], ['01:19', 'Última voz: “Good night, Malaysian three seven zero.”', [386, 163]],
+      ['01:21', 'Perto do ponto IGARI, o transponder some e o avião desaparece do radar civil.', [392, 151]], ['01:52', 'Depois de dar meia-volta, o avião passa ao sul de Penang, visto só pelo radar militar.', [307, 205]],
+      ['02:22', 'Último eco no radar militar, sobre o Mar de Andamão.', [226, 166]], ['08:19', 'Último sinal ao satélite, no 7º arco, no sul do Oceano Índico. O local exato nunca foi encontrado.', [210, 1134]]],
     falha: 'Não se sabe o que levou ao desvio. O que falhou com certeza foi o rastreamento: o transponder e o ACARS pararam de transmitir, o avião saiu do alcance dos radares e só sobrou um sinal automático de hora em hora com um satélite, que dava a distância, mas não a direção.',
     mudou: ['A OACI passou a exigir que as empresas acompanhem a posição dos aviões sobre o oceano pelo menos a cada 15 minutos.',
       'Aviões novos precisam transmitir sozinhos a posição, a cada minuto, quando estão em perigo.',
@@ -610,7 +598,7 @@ const ACIDENTES = [
     fontes: [['Wikipedia: Malaysia Airlines Flight 370', 'https://en.wikipedia.org/wiki/Malaysia_Airlines_Flight_370'], ['Australian Aviation: relatório de 2018', 'https://australianaviation.com.au/?p=63677'],
       ['Malay Mail: fim da busca de 2026', 'https://www.malaymail.com/news/malaysia/2026/03/09/ocean-infinity-ends-latest-mh370-hunt-after-151-days-at-sea-mapping-140000-sq-km-with-no-new-clues/211959'],
       ['The Vibes: contrato prorrogado em 2026', 'https://www.thevibes.com/articles/news/124469/govt-extends-mh370-search-contract-with-ocean-infinity-for-another-year'], ['ATSB: destroços do MH370', 'https://atsb.gov.au/node/690']],
-    mapa: mapaMh370, esquema: falhaMh370, fugoide: derivaMh370,
+    mapaImg: 'assets/mh370-mapa.webp', mapa: mapaMh370, esquema: falhaMh370, fugoide: derivaMh370,
     fugoideTit: 'A deriva: como os destroços chegaram à África',
     fugoideTxt: 'Se o avião caiu perto do 7º arco, as correntes do Oceano Índico, que giram no sentido anti-horário, levariam os destroços para oeste. Foi o que aconteceu: mais de um ano depois, pedaços começaram a aparecer na Ilha da Reunião e no litoral leste da África.',
   },

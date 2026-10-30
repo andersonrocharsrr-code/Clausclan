@@ -1210,15 +1210,16 @@ body.drawer-lock { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .es-path { animation: none !important; } }
 
 /* Desastres: MH370 (mapa do Índico, satélite, radar e deriva) */
-.dz-map--mh .dz-labels text { font-size: 19px; stroke-width: 4px; }
-.dz-map--mh .dz-labels .dz-lbl-s { font-size: 15px; }
-.dz-map--mh .dz-labels .dz-lbl-big { font-size: 22px; letter-spacing: .18em; fill: #d9e6d4; opacity: .7; }
-.dz-map--mh .dz-mark circle { r: 7; stroke-width: 2.5; }
-.dz-map--mh .dz-route-dash { stroke-width: 3.5; stroke-dasharray: 14 8 3 8; }
-.dz-map--mh .dz-map-note { font-size: 14px; }
+.dz-map--mh .dz-labels text { font-size: 25px; stroke-width: 5px; }
+.dz-map--mh .dz-labels .dz-lbl-s { font-size: 20px; }
+.dz-map--mh .dz-labels .dz-lbl-big { font-size: 30px; letter-spacing: .18em; fill: #e3eedf; opacity: .75; }
+.dz-map--mh .dz-mark circle { r: 8; stroke-width: 3; }
+.dz-map--mh .dz-route-dash { stroke-width: 4.5; stroke-dasharray: 18 10 3 10; }
+.dz-map--mh .dz-map-note { font-size: 18px; }
+.mh-dimfoto { fill: #06101c; opacity: .25; }
 .mh-arc { fill: none; stroke: #ffb84a; stroke-width: 3; stroke-dasharray: 6 5; }
 .mh-arc-t { fill: #ffd27a !important; }
-.mh-search { fill: none; stroke: #ffb84a; stroke-width: 26; stroke-linecap: round; opacity: .22; }
+.mh-search { fill: none; stroke: #ffb84a; stroke-width: 34; stroke-linecap: round; opacity: .22; }
 .mh-sea { fill: #0b2033; } .mh-land { fill: #2d4434; stroke: #6f8f68; stroke-width: 1; }
 .mh-ring { fill: none; stroke: #8fc3e6; stroke-width: 1.4; stroke-dasharray: 4 4; opacity: .55; }
 .mh-ring--7 { stroke: #ffb84a; stroke-width: 2.4; opacity: 1; stroke-dasharray: none; animation: pxBlink 1.6s ease-in-out infinite; }
