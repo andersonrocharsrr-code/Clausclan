@@ -125,18 +125,16 @@ function mapaAf447() {
   </svg>`;
 }
 // As sondas pitot no nariz do A330 entupidas por cristais de gelo: a velocidade indicada despenca
-// Sonda pitot real (lado do copiloto) com as animações por cima: cristais de gelo vindo de frente,
+// Sonda pitot real (lado do copiloto) com as animações por cima:
 // a foto da sonda congelada aparecendo aos poucos e a velocidade caindo. A ponta do tubo fica em (400, 163) na foto (600x567).
 const PITOT_FOTO = 'assets/af447-pitot.webp', PITOT_GELO = 'assets/af447-pitot-gelo.webp';
 function pitotFoto(w, h, y0, extra = '') {
   const k = 600 / w, tx = 400 / k, ty = (163 - y0) / k;
-  const cristais = Array.from({ length: 26 }, (_, i) => `<path d="M${tx + 18 + (i * 37) % (w - tx)} ${ty - 46 + (i * 29) % 92} l2.4 -2.4 l2.4 2.4 l-2.4 2.4z" class="pt-crystal" style="animation-delay:-${((i * 13) % 30) / 10}s;animation-duration:${2 + (i % 4) * .4}s"/>`).join('');
   const foto = (src, cls = '') => `<image href="${src}" x="0" y="${-y0 / k}" width="${w}" height="${567 / k}" preserveAspectRatio="none"${cls ? ` class="${cls}"` : ''}/>`;
   // A foto normal e a foto da mesma sonda congelada se alternam no ritmo da queda da velocidade
   return `${foto(PITOT_FOTO)}${foto(PITOT_GELO, 'pt-frozen')}
     <rect width="${w}" height="${h}" class="pt-night"/>
     <ellipse cx="${tx - 26}" cy="${ty}" rx="30" ry="6" class="pt-heat"/>
-    <g>${cristais}</g>
     <g class="pt-call"><path d="M${tx + 4} ${ty - 6} L${tx + 26} ${ty - 30} H${tx + 70}" class="pt-call-l"/><text x="${tx + 28}" y="${ty - 34}" class="pt-call-t">entrada de ar</text></g>
     ${extra}`;
 }
