@@ -270,7 +270,7 @@ function mapaGol1907() {
       <text x="${GB_CHOQUE[0] + 26}" y="${GB_CHOQUE[1] + 10}" class="dz-lbl-s gb-red">colisão · 37.000 pés</text>
       <text x="${GB_BSB[0] + 46}" y="${GB_BSB[1] + 110}" class="dz-lbl-s gb-or">Legacy N600XL</text>
       <text x="${GB_MAO[0] + 60}" y="${GB_MAO[1] + 100}" text-anchor="end" class="dz-lbl-s">Gol 1907</text>
-      <text x="420" y="640" text-anchor="middle" class="dz-lbl-big">BRASIL</text>
+      <text x="495" y="640" text-anchor="middle" class="dz-lbl-big">BRASIL</text>
       <text x="520" y="480" text-anchor="middle" class="dz-lbl-w dz-lbl-s">Mato Grosso</text>
       <text x="930" y="800" text-anchor="middle" class="dz-lbl-w">Oceano</text><text x="930" y="830" text-anchor="middle" class="dz-lbl-w">Atlântico</text>
     </g>
