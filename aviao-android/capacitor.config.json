@@ -1,0 +1,8 @@
+{
+  "appId": "io.github.andersonrocharsrr_code.hangar",
+  "appName": "Hangar Escola",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#0e151b"
+  }
+}
