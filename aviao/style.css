@@ -1288,3 +1288,14 @@ html.menu-lock, html.menu-lock body { overflow: hidden; overscroll-behavior: non
 .dz-item[aria-selected="true"] { border-color: var(--magenta); box-shadow: 0 0 0 1px var(--magenta); }
 .dz-item[aria-selected="true"] .dz-item__year { color: var(--magenta); }
 .dz-pick__btn .dz-item__year { color: var(--magenta); }
+/* Toque mais limpo no seletor de acidentes: sem o realce azul do navegador e sem atraso */
+.dz-pick__caret, .dz-pick__btn, .dz__list .dz-item { -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.dz-pick__caret:focus, .dz-pick__btn:focus, .dz__list .dz-item:focus { outline: none; }
+.dz-pick__caret:focus-visible, .dz-pick__btn:focus-visible, .dz__list .dz-item:focus-visible { outline: 2px solid var(--magenta); outline-offset: 2px; }
+.dz-pick__caret { transition: transform .15s ease, background .15s ease; }
+.dz-pick__caret:active { transform: scale(.9); background: var(--sel); }
+.dz-pick__btn, .dz__list .dz-item { transition: transform .12s ease; }
+.dz-pick__btn:active, .dz__list .dz-item:active { transform: scale(.985); }
+.dz__pick .dz__list:not([hidden]) { animation: dzListIn .22s ease-out; }
+@keyframes dzListIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .dz__pick .dz__list:not([hidden]) { animation: none; } }
