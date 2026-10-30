@@ -193,7 +193,7 @@ function mapaMh370() {
       <text x="30" y="110" class="dz-lbl-s dz-lbl-w">Mar de Andamão</text>
       <text x="300" y="380" text-anchor="middle" class="dz-lbl-big" transform="rotate(-52 300 380)">SUMATRA</text>
       <text x="520" y="590" text-anchor="middle" class="dz-lbl-big">JAVA</text>
-      <text x="610" y="360" text-anchor="middle" class="dz-lbl-big">BORNÉU</text>
+      <text x="612" y="412" text-anchor="middle" class="dz-lbl-big">BORNÉU</text>
       <text x="700" y="960" text-anchor="middle" class="dz-lbl-big">AUSTRÁLIA</text>
       <circle cx="626" cy="1045" r="6" class="dz-dot"/><text x="612" y="1050" text-anchor="end">Perth</text>
       <text x="360" y="700" text-anchor="middle" class="dz-lbl-w">Oceano Índico</text>

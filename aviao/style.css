@@ -1253,3 +1253,9 @@ body.drawer-lock { overflow: hidden; }
 @keyframes mhPing { from { transform: scale(.4); opacity: 1; } to { transform: scale(3.2); opacity: 0; } }
 @keyframes mhFade { 0%, 40% { opacity: 1; } 70%, 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { [class^="mh-"] { animation: none !important; } .mh-flash { opacity: .6; } }
+
+/* A data embaixo dos primeiros e dos últimos pontinhos fica alinhada pela borda, para não sair do cartão */
+@media (max-width: 900px) {
+  .hs__line button:nth-child(-n+3)[aria-current] span { left: 0; }
+  .hs__line button:nth-last-child(-n+3)[aria-current] span { right: 0; }
+}
