@@ -783,7 +783,7 @@ const ACIDENTES = [
     memoria: 'Todo 29 de setembro, famílias das 154 vítimas se reúnem para lembrar o voo 1907. Há memoriais em Mato Grosso e em cidades de onde vinham os passageiros.',
     fontes: [['Wikipedia: Gol Transportes Aéreos Flight 1907', 'https://en.wikipedia.org/wiki/Gol_Transportes_A%C3%A9reos_Flight_1907'], ['OACI: síntese do relatório do CENIPA', 'https://icao.int/safety/airnavigation/AIG/Documents/Safety%20Recommendations%20to%20ICAO/Synopsis/06003860_Synopsis.pdf'],
       ['Exame: STJ mantém pena dos pilotos', 'https://exame.com/brasil/stj-mantem-pena-de-pilotos-envolvidos-em-acidente-da-gol'], ['Conjur: Justiça Militar condena controlador', 'https://www.conjur.com.br/2010-out-26/justica-militar-condena-controlador-voo-acidente-gol//?print=1']],
-    mapa: mapaGol1907, esquema: falhaGol1907, fugoide: tcasGol1907,
+    cauda: 'assets/cauda-gol.webp', mapa: mapaGol1907, esquema: falhaGol1907, fugoide: tcasGol1907,
     fugoideTit: 'Por que o TCAS não avisou',
     fugoideTxt: 'O TCAS, o sistema anticolisão, pergunta pelo rádio “quem está aí?” e espera a resposta do transponder dos outros aviões. Com o transponder do Legacy parado, ninguém respondeu: o TCAS do Boeing não viu o jato, e o do Legacy, que depende do próprio transponder, estava desligado.',
   },
