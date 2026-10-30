@@ -622,15 +622,15 @@ function cartao(a, extra = '') {
   return `${a.cauda ? `<img class="dz-item__fin" src="${a.cauda}" alt="" draggable="false">` : ''}<span class="dz-item__year">${a.ano}</span><b>${esc(a.titulo)}</b><span>${esc(a.sub)}</span><i>${a.numeros[1][0]} mortos · ${a.numeros[2][0] === '0' ? 'nenhum sobrevivente' : a.numeros[2][0] + ' sobreviventes'}</i>${extra}`;
 }
 function lista() {
-  $('#dzPickBtn').innerHTML = cartao(atual, '<span class="dz-pick__caret" aria-hidden="true"></span>');
-  $('#dzList').innerHTML = [...ACIDENTES].sort((x, y) => x.ano - y.ano).map((a) => `<button type="button" class="dz-item" role="option" data-dz="${a.id}" aria-selected="${a === atual}">${cartao(a)}</button>`).join('')
+  $('#dzPickBtn').innerHTML = cartao(atual);
+  // A lista mostra só os outros acidentes: o escolhido já está no cartão de cima
+  $('#dzList').innerHTML = [...ACIDENTES].filter((a) => a !== atual).sort((x, y) => x.ano - y.ano).map((a) => `<button type="button" class="dz-item" role="option" data-dz="${a.id}" aria-selected="${a === atual}">${cartao(a)}</button>`).join('')
     + '<p class="dz-soon small">Novos acidentes serão adicionados aqui, dos primeiros anos da aviação até hoje.</p>';
 }
 function abrirLista(abrir) {
   $('#dzList').hidden = !abrir;
-  $('#dzPickBtn').setAttribute('aria-expanded', String(abrir));
+  $('#dzPickBtn').setAttribute('aria-expanded', String(abrir)); $('#dzPickToggle').setAttribute('aria-expanded', String(abrir));
   $('#dzPick').classList.toggle('is-open', abrir);
-  if (abrir) $('#dzList').querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
 }
 
 function mostrar() {
@@ -775,6 +775,7 @@ function init() {
   if (!$('#dzList')) return;
   lista();
   $('#dzPickBtn').addEventListener('click', (e) => { e.stopPropagation(); abrirLista($('#dzList').hidden); });
+  $('#dzPickToggle').addEventListener('click', (e) => { e.stopPropagation(); abrirLista($('#dzList').hidden); });
   $('#dzList').addEventListener('click', (e) => {
     const b = e.target.closest('[data-dz]'); if (!b) return;
     const novo = ACIDENTES.find((a) => a.id === b.dataset.dz) || atual;

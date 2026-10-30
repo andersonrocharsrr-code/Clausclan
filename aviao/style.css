@@ -1279,11 +1279,11 @@ html.menu-lock, html.menu-lock body { overflow: hidden; overscroll-behavior: non
 
 /* Seletor de acidentes: um cartão com o escolhido e a lista que abre embaixo */
 .dz__pick { display: grid; gap: 10px; }
-.dz-pick__btn { padding-right: 44px; }
-.dz-pick__caret { position: absolute; right: 14px; top: 50%; width: 22px; height: 22px; margin-top: -11px; border-radius: 50%; background: var(--panel); border: 1px solid var(--line); z-index: 1; }
+.dz-pick__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.dz-pick__caret { position: relative; flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); cursor: pointer; padding: 0; }
 .dz-pick__caret::before { content: ""; position: absolute; left: 50%; top: 50%; width: 7px; height: 7px; border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink); transform: translate(-50%, -70%) rotate(45deg); transition: transform .2s; }
 .dz__pick.is-open .dz-pick__caret::before { transform: translate(-50%, -30%) rotate(-135deg); }
-.dz__pick .dz__list { margin-top: 0; grid-template-columns: minmax(0, 1fr); max-height: min(60vh, 520px); overflow-y: auto; overscroll-behavior: contain; padding: 2px; border-top: 1px solid var(--line); padding-top: 10px; }
+.dz__pick .dz__list { margin-top: 0; grid-template-columns: minmax(0, 1fr); border-top: 1px solid var(--line); padding-top: 10px; }
 .dz__pick .dz__list[hidden] { display: none; }
 .dz-item[aria-selected="true"] { border-color: var(--magenta); box-shadow: 0 0 0 1px var(--magenta); }
 .dz-item[aria-selected="true"] .dz-item__year { color: var(--magenta); }
