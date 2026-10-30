@@ -1269,3 +1269,4 @@ body.drawer-lock { overflow: hidden; }
 .cv-t { font: 700 40px var(--mono); fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.7); stroke-width: 9px; stroke-linejoin: round; letter-spacing: .03em; }
 @keyframes cvDraw { 0% { stroke-dashoffset: 100; } 70%, 100% { stroke-dashoffset: 0; } }
 @media (prefers-reduced-motion: reduce) { .cv-path, .cv-last { animation: none !important; stroke-dashoffset: 0; } }
+.mh-ausl { font: 700 9px var(--mono); letter-spacing: .14em; fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.6); stroke-width: 2.5px; }
