@@ -1174,3 +1174,17 @@ body.drawer-lock { overflow: hidden; }
 @keyframes ptSpdB { 0% { opacity: 0; } 55% { opacity: 1; } }
 @keyframes ptApoff { 0% { opacity: 0; } 58% { opacity: 1; } 64% { opacity: .2; } 70% { opacity: 1; } 76% { opacity: .2; } 82% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .pt-frozen, .pt-spd-a, .pt-spd-b, .pt-apoff, .pt-heat, .pt-call { animation: none !important; } .pt-spd-a { opacity: 0; } .pt-spd-b, .pt-apoff, .pt-call, .pt-frozen { opacity: 1; } }
+/* Manches laterais do AF 447: foto com as ordens opostas de cada piloto */
+.mn-side { fill: #1f2a33; opacity: .92; }
+.mn-name { font: 700 10px var(--mono); fill: #f2f5f7; text-anchor: middle; letter-spacing: .06em; }
+.mn-sub { font: 600 7px var(--mono); fill: #b9c4cc; text-anchor: middle; letter-spacing: .06em; }
+.mn-arrow { fill: none; stroke: #5fe08a; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; paint-order: stroke; filter: drop-shadow(0 0 2px rgba(0,0,0,.7)); }
+.mn-arrow--b { stroke: #ffb84a; }
+.mn-push { animation: mnPush 1.6s ease-in-out infinite; } .mn-pull { animation: mnPull 1.6s ease-in-out infinite; }
+.mn-prio { fill: none; stroke: #ff4b4b; stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: mnPrio 1.4s ease-out infinite; }
+.mn-dual { font-size: 11px; }
+.mn-ilus { font: 500 6px var(--mono); fill: #cfd8de; opacity: .8; }
+@keyframes mnPush { 0%, 100% { transform: translateY(4px); opacity: .5; } 50% { transform: translateY(-4px); opacity: 1; } }
+@keyframes mnPull { 0%, 100% { transform: translateY(-4px); opacity: .5; } 50% { transform: translateY(4px); opacity: 1; } }
+@keyframes mnPrio { from { transform: scale(.6); opacity: 1; } to { transform: scale(2); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .mn-push, .mn-pull, .mn-prio { animation: none !important; } }

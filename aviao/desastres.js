@@ -245,10 +245,17 @@ const CENAS = {
     <text x="250" y="166" text-anchor="middle" class="dz-map-s">subindo 7.000 pés por minuto</text>`,
   estol: () => `${cloud(70, 40, 1, 0)}${cloud(260, 70, .9, 1)}<g class="px-fall"><g transform="translate(160 70) rotate(-15)">${a330()}</g></g>
     <path d="M40 30 V150 M30 138 l10 14 l10 -14" class="hs-line-accent"/><text x="240" y="168" text-anchor="middle" class="px-pullup" style="font-size:12px">STALL STALL</text>`,
-  manches: () => `<rect width="320" height="180" class="px-panel"/>
-    <g><rect x="40" y="110" width="70" height="40" rx="6" class="px-pedestal"/><g class="px-stick" style="transform-origin:75px 112px"><path d="M75 112 V62" class="px-stick-l"/><rect x="64" y="46" width="22" height="26" rx="8" class="px-knob"/></g><text x="75" y="166" class="px-gtxt">ROBERT · ESQUERDA</text></g>
-    <g><rect x="210" y="110" width="70" height="40" rx="6" class="px-pedestal"/><g style="transform:rotate(-24deg);transform-origin:245px 112px"><path d="M245 112 V62" class="px-stick-l"/><rect x="234" y="46" width="22" height="26" rx="8" class="px-knob"/></g><text x="245" y="166" class="px-gtxt">BONIN · DIREITA</text></g>
-    <text x="160" y="34" text-anchor="middle" class="px-pullup" style="font-size:13px">DUAL INPUT</text><text x="160" y="96" text-anchor="middle" class="px-gtxt">CADA UM SÓ SENTE O SEU</text>`,
+  // Foto dos dois manches laterais (imagem ilustrativa) com as informações por cima: cada piloto manda o avião para um lado
+  manches: () => `<rect width="320" height="180" fill="#6d747c"/><image href="assets/af447-manches.webp" x="57" y="-91.4" width="206.4" height="367.7" preserveAspectRatio="none"/>
+    <rect x="0" y="0" width="60" height="180" class="mn-side"/><rect x="260" y="0" width="60" height="180" class="mn-side"/>
+    <text x="30" y="80" class="mn-name">ROBERT</text><text x="30" y="92" class="mn-sub">ESQUERDA</text><text x="30" y="104" class="mn-sub">empurra</text>
+    <text x="290" y="80" class="mn-name">BONIN</text><text x="290" y="92" class="mn-sub">DIREITA</text><text x="290" y="104" class="mn-sub">puxa</text>
+    <g class="mn-push"><path d="M84 92 V60 M78 68 l6 -9 l6 9" class="mn-arrow"/></g>
+    <g class="mn-pull"><path d="M236 60 V92 M230 84 l6 9 l6 -9" class="mn-arrow mn-arrow--b"/></g>
+    <circle cx="135.8" cy="26.1" r="6" class="mn-prio"/>
+    <rect x="104" y="4" width="112" height="17" rx="4" class="pt-chip"/><text x="160" y="16.5" text-anchor="middle" class="px-pullup mn-dual">DUAL INPUT</text>
+    <rect x="86" y="156" width="148" height="18" rx="4" class="pt-chip"/><text x="160" y="168" class="px-gtxt">CADA UM SÓ SENTE O SEU</text>
+    <text x="316" y="176" text-anchor="end" class="mn-ilus">imagem ilustrativa</text>`,
   queda: () => `<rect width="320" height="180" class="px-night"/><path d="M0 150 H320 V180 H0Z" class="px-sea"/>
     <g class="px-fall"><g transform="translate(160 64) rotate(-16) scale(.9)">${a330()}</g></g>
     <text x="160" y="28" text-anchor="middle" class="px-pullup" style="font-size:13px">SINK RATE · PULL UP</text>`,
