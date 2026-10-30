@@ -1163,17 +1163,16 @@ body.drawer-lock { overflow: hidden; }
 .pt-chip { fill: #0d141b; opacity: .86; }
 .pt-heat { fill: #ff8a3d; opacity: 0; filter: blur(3px); animation: ptHeat 7s ease-in-out infinite; }
 .pt-crystal { fill: #dff2ff; stroke: #2f6f9f; stroke-width: .8; opacity: 0; animation: ptCrystal 2.4s linear infinite; }
-.pt-ice { transform-box: fill-box; transform-origin: 0% 50%; animation: ptIce 7s ease-in infinite; }
-.pt-ice-b { fill: #f3fbff; stroke: #6fa9d3; stroke-width: .5; } .pt-ice-l { fill: none; stroke: #8fc3e6; stroke-width: .45; }
+.pt-frozen { opacity: 0; animation: ptFrozen 7s ease-in-out infinite; }
 .pt-call { animation: ptCall 7s ease-in-out infinite; }
 .pt-call-l { fill: none; stroke: #0d141b; stroke-width: 1; } .pt-call-t { font: 600 8px var(--mono); fill: #0d141b; letter-spacing: .04em; }
 .pt-spd-a { animation: ptSpdA 7s steps(1) infinite; } .pt-spd-b { animation: ptSpdB 7s steps(1) infinite; }
 .pt-apoff { animation: ptApoff 7s steps(1) infinite; }
 @keyframes ptCrystal { 0% { transform: translateX(0); opacity: 0; } 12% { opacity: .95; } 80% { opacity: .8; } 100% { transform: translateX(-130px); opacity: 0; } }
-@keyframes ptIce { 0%, 6% { transform: scale(0); opacity: 0; } 12% { opacity: 1; } 55% { transform: scale(1); } 88% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1.15); opacity: 0; } }
+@keyframes ptFrozen { 0%, 12% { opacity: 0; } 55%, 88% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes ptHeat { 0%, 100% { opacity: 0; } 20%, 45% { opacity: .35; } 60% { opacity: .1; } }
 @keyframes ptCall { 0%, 4% { opacity: 0; } 10%, 40% { opacity: 1; } 50%, 100% { opacity: 0; } }
 @keyframes ptSpdA { 0% { opacity: 1; } 55% { opacity: 0; } }
 @keyframes ptSpdB { 0% { opacity: 0; } 55% { opacity: 1; } }
 @keyframes ptApoff { 0% { opacity: 0; } 58% { opacity: 1; } 64% { opacity: .2; } 70% { opacity: 1; } 76% { opacity: .2; } 82% { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .pt-crystal, .pt-ice, .pt-spd-a, .pt-spd-b, .pt-apoff, .pt-heat, .pt-call { animation: none !important; } .pt-crystal { opacity: .6; } .pt-spd-a { opacity: 0; } .pt-spd-b, .pt-apoff, .pt-call { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .pt-crystal, .pt-frozen, .pt-spd-a, .pt-spd-b, .pt-apoff, .pt-heat, .pt-call { animation: none !important; } .pt-crystal { opacity: .6; } .pt-spd-a { opacity: 0; } .pt-spd-b, .pt-apoff, .pt-call, .pt-frozen { opacity: 1; } }

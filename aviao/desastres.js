@@ -125,17 +125,18 @@ function mapaAf447() {
   </svg>`;
 }
 // As sondas pitot no nariz do A330 entupidas por cristais de gelo: a velocidade indicada despenca
-// Sonda pitot real (foto de um A330, lado do copiloto) com as animações por cima: cristais de gelo vindo
-// de frente, gelo crescendo na entrada do tubo e a velocidade caindo. A ponta do tubo fica em (400, 163) na foto (600x567).
-const PITOT_FOTO = 'assets/af447-pitot.webp';
+// Sonda pitot real (lado do copiloto) com as animações por cima: cristais de gelo vindo de frente,
+// a foto da sonda congelada aparecendo aos poucos e a velocidade caindo. A ponta do tubo fica em (400, 163) na foto (600x567).
+const PITOT_FOTO = 'assets/af447-pitot.webp', PITOT_GELO = 'assets/af447-pitot-gelo.webp';
 function pitotFoto(w, h, y0, extra = '') {
   const k = 600 / w, tx = 400 / k, ty = (163 - y0) / k;
   const cristais = Array.from({ length: 26 }, (_, i) => `<path d="M${tx + 18 + (i * 37) % (w - tx)} ${ty - 46 + (i * 29) % 92} l2.4 -2.4 l2.4 2.4 l-2.4 2.4z" class="pt-crystal" style="animation-delay:-${((i * 13) % 30) / 10}s;animation-duration:${2 + (i % 4) * .4}s"/>`).join('');
-  return `<image href="${PITOT_FOTO}" x="0" y="${-y0 / k}" width="${w}" height="${567 / k}" preserveAspectRatio="none"/>
+  const foto = (src, cls = '') => `<image href="${src}" x="0" y="${-y0 / k}" width="${w}" height="${567 / k}" preserveAspectRatio="none"${cls ? ` class="${cls}"` : ''}/>`;
+  // A foto normal e a foto da mesma sonda congelada se alternam no ritmo da queda da velocidade
+  return `${foto(PITOT_FOTO)}${foto(PITOT_GELO, 'pt-frozen')}
     <rect width="${w}" height="${h}" class="pt-night"/>
     <ellipse cx="${tx - 26}" cy="${ty}" rx="30" ry="6" class="pt-heat"/>
     <g>${cristais}</g>
-    <g transform="translate(${tx} ${ty}) scale(1.3)"><g class="pt-ice"><path d="M-1 -4.8 L6 -4.6 L11 -2.2 L12.5 .6 L9.5 3.8 L4 4.8 L-1 4.4Z" class="pt-ice-b"/><path d="M3 -4 l2 3.6 l-2 3.6 M8 -3 l1.6 3 l-1.6 3" class="pt-ice-l"/></g></g>
     <g class="pt-call"><path d="M${tx + 4} ${ty - 6} L${tx + 26} ${ty - 30} H${tx + 70}" class="pt-call-l"/><text x="${tx + 28}" y="${ty - 34}" class="pt-call-t">entrada de ar</text></g>
     ${extra}`;
 }
@@ -550,6 +551,7 @@ function start() {
   pronto = true;
   // Baixa já os mapas e as caudas de todos os acidentes, para a troca entre eles não ter espera
   ACIDENTES.forEach((a) => { carregar(a.mapaImg); carregar(a.cauda); });
+  carregar(PITOT_FOTO); carregar(PITOT_GELO);
   mostrar();
 }
 window.Desastres = { init, start };
