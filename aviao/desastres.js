@@ -557,7 +557,7 @@ const ACIDENTES = [
     fugoideTxt: 'O nariz apontava para cima, o que dava a sensação de que o avião subia. Na verdade, ele caía quase reto, de barriga. Para sair do estol era preciso fazer o contrário do que parecia certo: baixar o nariz, mergulhar e ganhar velocidade.',
   },
   {
-    id: 'mh370', ano: 2014, data: '8 de março de 2014', titulo: 'Malaysia Airlines 370', sub: 'O avião que desapareceu',
+    id: 'mh370', ano: 2014, data: '8 de março de 2014', titulo: 'Malaysia Airlines MH370', sub: 'O avião que desapareceu',
     resumo: 'Um Boeing 777 sai de Kuala Lumpur para Pequim com 239 pessoas. Quarenta minutos depois, some dos radares, dá meia-volta no escuro e voa por mais de seis horas sem falar com ninguém. Até hoje, ninguém sabe exatamente por quê, nem onde ele está.',
     ficha: [['Avião', 'Boeing 777-200ER'], ['Matrícula', '9M-MRO'], ['Rota', 'Kuala Lumpur → Pequim'], ['Local', 'Desconhecido · provavelmente no sul do Oceano Índico'],
       ['A bordo', '239 (227 passageiros e 12 tripulantes)'], ['Mortos', '239 (presumidos)'], ['Sobreviventes', 'Nenhum'], ['Causa', 'Desconhecida']],
