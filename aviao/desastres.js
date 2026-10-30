@@ -598,7 +598,7 @@ const ACIDENTES = [
     fontes: [['Wikipedia: Malaysia Airlines Flight 370', 'https://en.wikipedia.org/wiki/Malaysia_Airlines_Flight_370'], ['Australian Aviation: relatório de 2018', 'https://australianaviation.com.au/?p=63677'],
       ['Malay Mail: fim da busca de 2026', 'https://www.malaymail.com/news/malaysia/2026/03/09/ocean-infinity-ends-latest-mh370-hunt-after-151-days-at-sea-mapping-140000-sq-km-with-no-new-clues/211959'],
       ['The Vibes: contrato prorrogado em 2026', 'https://www.thevibes.com/articles/news/124469/govt-extends-mh370-search-contract-with-ocean-infinity-for-another-year'], ['ATSB: destroços do MH370', 'https://atsb.gov.au/node/690']],
-    mapaImg: 'assets/mh370-mapa.webp', mapa: mapaMh370, esquema: falhaMh370, fugoide: derivaMh370,
+    cauda: 'assets/cauda-mh.webp', mapaImg: 'assets/mh370-mapa.webp', mapa: mapaMh370, esquema: falhaMh370, fugoide: derivaMh370,
     fugoideTit: 'A deriva: como os destroços chegaram à África',
     fugoideTxt: 'Se o avião caiu perto do 7º arco, as correntes do Oceano Índico, que giram no sentido anti-horário, levariam os destroços para oeste. Foi o que aconteceu: mais de um ano depois, pedaços começaram a aparecer na Ilha da Reunião e no litoral leste da África.',
   },
