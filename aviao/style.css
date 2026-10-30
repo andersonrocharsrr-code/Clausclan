@@ -1259,3 +1259,13 @@ body.drawer-lock { overflow: hidden; }
   .hs__line button:nth-child(-n+3)[aria-current] span { left: 0; }
   .hs__line button:nth-last-child(-n+3)[aria-current] span { right: 0; }
 }
+
+/* MH370, capítulo 5: a volta desenhada sobre a foto de satélite */
+.cv-shadow { fill: none; stroke: rgba(0,0,0,.45); stroke-width: 16; stroke-linecap: round; stroke-linejoin: round; }
+.cv-path { fill: none; stroke: #fff; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 100; stroke-dashoffset: 100; animation: cvDraw 6s ease-in-out infinite; }
+.cv-dot { fill: #fff; stroke: #1b2630; stroke-width: 5; }
+.cv-igari { fill: #ff6b5b; stroke: #fff; stroke-width: 5; }
+.cv-last { fill: #ffb84a; stroke: #fff; stroke-width: 5; animation: pxBlink 1.2s ease-in-out infinite; }
+.cv-t { font: 700 40px var(--mono); fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.7); stroke-width: 9px; stroke-linejoin: round; letter-spacing: .03em; }
+@keyframes cvDraw { 0% { stroke-dashoffset: 100; } 70%, 100% { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .cv-path, .cv-last { animation: none !important; stroke-dashoffset: 0; } }

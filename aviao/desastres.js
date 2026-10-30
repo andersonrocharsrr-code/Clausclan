@@ -384,11 +384,16 @@ const CENAS = {
     <g class="mh-sweep" style="transform-origin:160px 90px"><path d="M160 90 L160 16 A74 74 0 0 1 212 38Z" class="mh-sweep-f"/></g>
     <g class="mh-blip"><circle cx="196" cy="58" r="3.4" class="mh-dot"/><text x="203" y="52" class="mh-tag">MH370</text><text x="203" y="62" class="mh-tag">FL350</text></g>
     <text x="160" y="176" class="px-gtxt">01:21:13 · O SINAL DO TRANSPONDER SOME</text>`,
-  curva: () => `<rect width="320" height="180" class="mh-sea"/><path d="M90 0 L118 40 L150 70 L162 110 L190 150 L200 180 H120 L110 140 L90 100 L70 60 L60 0Z" class="mh-land"/>
-    <path d="M150 180 L176 120 L232 34 C220 40 205 52 196 66 C180 84 160 96 132 104 L70 80" class="mh-path"/>
-    <circle cx="232" cy="34" r="4" class="mh-find"/><text x="240" y="30" class="px-gtxt" style="text-anchor:start">IGARI</text>
-    <circle cx="132" cy="104" r="3" class="dz-dot" style="stroke-width:1"/><text x="122" y="118" class="px-gtxt" style="text-anchor:end">PENANG</text>
-    <text x="300" y="172" class="px-gtxt" style="text-anchor:end">A VOLTA SOBRE A MALÁSIA</text>`,
+  // Foto de satélite da península da Malásia (imagem 1912x1076, desenhada em escala) com a volta do MH370 se desenhando por cima
+  curva: () => `<image href="assets/mh370-peninsula.webp" x="0" y="0" width="320" height="180" preserveAspectRatio="xMidYMid slice"/>
+    <g transform="scale(.16736)">
+      <path d="M1070 705 L1300 270 C1250 250 1100 262 1000 320 C930 362 900 410 882 440 C840 420 760 340 700 262" class="cv-shadow"/>
+      <path d="M1070 705 L1300 270 C1250 250 1100 262 1000 320 C930 362 900 410 882 440 C840 420 760 340 700 262" class="cv-path" pathLength="100"/>
+      <circle cx="1070" cy="705" r="16" class="cv-dot"/><circle cx="1300" cy="270" r="18" class="cv-igari"/><circle cx="885" cy="412" r="14" class="cv-dot"/><circle cx="700" cy="262" r="16" class="cv-last"/>
+      <text x="1100" y="740" class="cv-t">KUALA LUMPUR</text><text x="1335" y="262" class="cv-t">IGARI · 01:21</text>
+      <text x="850" y="405" text-anchor="end" class="cv-t">PENANG · 01:52</text><text x="680" y="225" text-anchor="end" class="cv-t">ÚLTIMO RADAR · 02:22</text>
+    </g>
+    <rect x="94" y="160" width="222" height="16" rx="4" class="pt-chip"/><text x="205" y="171" class="px-gtxt">A VOLTA SOBRE A MALÁSIA · ROTA APROXIMADA</text>`,
   ultimoEco: () => `<rect width="320" height="180" class="px-panel"/><circle cx="160" cy="90" r="74" class="mh-scope"/>${[24, 48, 72].map((r) => `<circle cx="160" cy="90" r="${r}" class="mh-scope-l"/>`).join('')}
     <g class="mh-sweep" style="transform-origin:160px 90px"><path d="M160 90 L160 16 A74 74 0 0 1 212 38Z" class="mh-sweep-f"/></g>
     ${[[180, 120], [168, 104], [150, 92], [134, 78], [118, 66]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="2.6" class="mh-dot" style="opacity:${.25 + i * .15}"/>`).join('')}<g class="mh-blip"><circle cx="104" cy="56" r="3.4" class="mh-dot"/></g>
