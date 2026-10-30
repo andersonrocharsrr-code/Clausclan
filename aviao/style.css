@@ -1304,9 +1304,9 @@ html.menu-lock, html.menu-lock body { overflow: hidden; overscroll-behavior: non
 .gb-brasil { fill: #2d4434; stroke: #8fb087; stroke-width: 2.5; }
 .gb-legacy { fill: none; stroke: #ffb84a; stroke-width: 4; stroke-dasharray: 12 8; stroke-linecap: round; stroke-linejoin: round; }
 .gb-cac { fill: #ffb84a; stroke: #fff; stroke-width: 3; }
-.dz-map--gol .dz-labels text { font-size: 24px; stroke-width: 5px; }
-.dz-map--gol .dz-labels .dz-lbl-s { font-size: 19px; }
-.dz-map--gol .dz-labels .dz-lbl-big { font-size: 40px; letter-spacing: .2em; fill: #e3eedf; opacity: .55; }
+.dz-map--gol .dz-labels text { font-size: 30px; stroke-width: 6px; }
+.dz-map--gol .dz-labels .dz-lbl-s { font-size: 24px; }
+.dz-map--gol .dz-labels .dz-lbl-big { font-size: 48px; letter-spacing: .22em; fill: #f2f6ef; opacity: .7; }
 .dz-map--gol .dz-labels .gb-red { fill: #ff8a7a; } .dz-map--gol .dz-labels .gb-or { fill: #ffd27a; }
 .dz-map--gol .dz-mark circle { r: 9; stroke-width: 3; }
 .dz-map--gol .dz-route-dash { stroke-width: 4.5; stroke-dasharray: 18 10 3 10; }

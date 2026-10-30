@@ -248,42 +248,36 @@ function derivaMh370() {
 const legacy = (cls = 'hs-fill-paper2') => `<g><path d="M-44 3 C-38 -3 -26 -4 -8 -4 H26 C34 -4 38 -1 41 3 C38 6 32 7 26 7 H-38 C-42 7 -44 5 -44 3Z" class="${cls}"/>
   <path d="M-34 -3 L-42 -20 H-37 L-26 -3Z" class="hs-fill-blue"/><path d="M-46 -20 H-33" class="hs-line"/><rect x="-30" y="-6" width="12" height="5" rx="2.5" class="hs-fill-metal"/>
   <path d="M-4 4 L-18 14 H-12 L6 4Z" class="hs-fill-ink"/>${[-14, -6, 2, 10, 18].map((x) => `<circle cx="${x}" cy="0" r="1.4" class="hs-fill-ink"/>`).join('')}</g>`;
-// Mapa do Brasil em projeção simples: 20 px por grau, de 75°O a 33°O e de 6°N a 34°S
-const GB = (lat, lon) => [Math.round((lon + 75) * 20), Math.round((6 - lat) * 20)];
-const gbPts = (l) => l.map(([a, b]) => GB(a, b).join(' ')).join(' L');
-const GB_BRASIL = [[5.2, -60.7], [4.3, -59.5], [2.2, -56.5], [2.5, -54], [4.4, -51.5], [1.5, -50], [-1, -48.5], [-0.8, -46.5], [-2.5, -44.3], [-2.9, -41.5], [-3.7, -38.5], [-5.2, -35.5], [-8, -34.9], [-9.7, -35.7], [-13, -38.5], [-15.5, -39], [-18, -39.6], [-20.3, -40.3], [-22.9, -42], [-23, -43.6], [-23.5, -45], [-24, -46.4], [-25.5, -48.5], [-27.6, -48.5], [-30, -50.2], [-33.7, -53.4], [-31.5, -55.5], [-30.2, -57.6], [-27.3, -55.5], [-25.5, -54.6], [-24, -54.3], [-22.2, -57.9], [-19.8, -58.1], [-17.5, -58], [-16.3, -60.2], [-15, -60.3], [-13.5, -61.8], [-12.4, -64.5], [-11, -65.3], [-9.8, -66.6], [-10.9, -68.8], [-10, -70.6], [-9.4, -72.7], [-7.5, -73.8], [-4.4, -70], [-1.3, -69.4], [1, -69.8], [1.8, -67], [1.2, -64.5], [4.3, -64], [3.5, -62]];
-const [GB_MAO, GB_BSB, GB_SJC, GB_CHOQUE, GB_CAC] = [GB(-3.1, -60), GB(-15.8, -47.9), GB(-23.2, -45.9), GB(-10.4, -53), GB(-9.33, -54.97)];
+// Mapa sobre imagem de satélite do Brasil (1054x1008). Pontos medidos na própria imagem, a partir de Belém, Natal e do Rio
+const [GB_MAO, GB_BSB, GB_SJC, GB_RIO, GB_CHOQUE, GB_CAC] = [[318, 222], [657, 549], [714, 743], [790, 733], [511, 407], [455, 379]];
 // Rota do Gol: de Manaus para o sudeste, até o ponto do choque. O Legacy vinha no sentido contrário
 const GOL1907_ROTA = `M${GB_MAO.join(' ')} L${GB_CHOQUE.join(' ')}`;
 function mapaGol1907() {
-  const [rx, ry] = GB(-22.9, -43.2);
-  return `<svg viewBox="0 0 840 800" role="img" aria-label="Mapa do voo Gol 1907: de Manaus rumo a Brasília; o Legacy vinha de São José dos Campos no sentido oposto, na mesma altitude" class="dz-map--gol">
-    <defs><linearGradient id="gbSea" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d2a44"/><stop offset="1" stop-color="#081a2c"/></linearGradient>
-      <filter id="dzShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="6" dy="9" stdDeviation="4" flood-color="#000" flood-opacity=".55"/></filter></defs>
-    <rect width="840" height="800" fill="url(#gbSea)"/>
-    <path d="M${gbPts(GB_BRASIL)}Z" class="gb-brasil"/>
+  return `<svg viewBox="0 0 1054 1008" role="img" aria-label="Mapa do voo Gol 1907: de Manaus rumo a Brasília; o Legacy vinha de São José dos Campos no sentido oposto, na mesma altitude" class="dz-map--gol">
+    <defs><filter id="dzShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="6" dy="9" stdDeviation="4" flood-color="#000" flood-opacity=".55"/></filter></defs>
+    <image href="assets/gol1907-mapa.webp" x="0" y="0" width="1054" height="1008" preserveAspectRatio="xMidYMid slice"/>
     <path d="M${GB_SJC.join(' ')} L${GB_BSB.join(' ')} L${GB_CHOQUE.join(' ')} L${GB_CAC.join(' ')}" class="gb-legacy"/>
     <path d="M${GB_CHOQUE.join(' ')} L${GB_BSB.join(' ')}" class="dz-route-plan"/>
-    <mask id="dzReveal" maskUnits="userSpaceOnUse" x="0" y="0" width="840" height="800"><path id="dzRevealPath" d="${GOL1907_ROTA}" fill="none" stroke="#fff" stroke-width="28" stroke-linecap="round"/></mask>
+    <mask id="dzReveal" maskUnits="userSpaceOnUse" x="0" y="0" width="1054" height="1008"><path id="dzRevealPath" d="${GOL1907_ROTA}" fill="none" stroke="#fff" stroke-width="32" stroke-linecap="round"/></mask>
     <path id="dzPath" d="${GOL1907_ROTA}" class="dz-route"/>
     <path d="${GOL1907_ROTA}" class="dz-route-dash" mask="url(#dzReveal)"/>
     <g class="dz-labels">
-      <circle cx="${GB_MAO[0]}" cy="${GB_MAO[1]}" r="8" class="dz-dot"/><text x="${GB_MAO[0] + 14}" y="${GB_MAO[1] - 12}">Manaus</text>
-      <circle cx="${GB_BSB[0]}" cy="${GB_BSB[1]}" r="8" class="dz-dot"/><text x="${GB_BSB[0] + 14}" y="${GB_BSB[1] + 8}">Brasília</text>
-      <circle cx="${GB_SJC[0]}" cy="${GB_SJC[1]}" r="7" class="dz-dot"/><text x="${GB_SJC[0] - 12}" y="${GB_SJC[1] + 28}" text-anchor="end">São José dos Campos</text>
-      <circle cx="${rx}" cy="${ry}" r="6" class="dz-dot"/><text x="${rx + 12}" y="${ry + 6}" class="dz-lbl-s">Rio</text>
-      <circle cx="${GB_CAC[0]}" cy="${GB_CAC[1]}" r="7" class="gb-cac"/><text x="${GB_CAC[0] - 12}" y="${GB_CAC[1] - 10}" text-anchor="end" class="dz-lbl-s">Base do Cachimbo</text>
-      <text x="${GB_CHOQUE[0] + 22}" y="${GB_CHOQUE[1] + 8}" class="dz-lbl-s gb-red">colisão · 37.000 pés</text>
-      <text x="${GB_BSB[0] - 40}" y="${GB_BSB[1] + 70}" text-anchor="end" class="dz-lbl-s gb-or">Legacy N600XL</text>
-      <text x="${GB_MAO[0] + 34}" y="${GB_MAO[1] + 92}" text-anchor="end" class="dz-lbl-s">Gol 1907</text>
-      <text x="240" y="420" text-anchor="middle" class="dz-lbl-big">BRASIL</text>
-      <text x="${GB(-13.5, -55.5)[0]}" y="${GB(-13.5, -55.5)[1]}" text-anchor="middle" class="dz-lbl-w dz-lbl-s">Mato Grosso</text>
-      <text x="760" y="560" text-anchor="middle" class="dz-lbl-w">Oceano</text><text x="760" y="586" text-anchor="middle" class="dz-lbl-w">Atlântico</text>
+      <circle cx="${GB_MAO[0]}" cy="${GB_MAO[1]}" r="9" class="dz-dot"/><text x="${GB_MAO[0] - 14}" y="${GB_MAO[1] - 14}" text-anchor="end">Manaus</text>
+      <circle cx="${GB_BSB[0]}" cy="${GB_BSB[1]}" r="9" class="dz-dot"/><text x="${GB_BSB[0] + 16}" y="${GB_BSB[1] + 10}">Brasília</text>
+      <circle cx="${GB_SJC[0]}" cy="${GB_SJC[1]}" r="8" class="dz-dot"/><text x="${GB_SJC[0] - 14}" y="${GB_SJC[1] + 34}" text-anchor="end">São José dos Campos</text>
+      <circle cx="${GB_RIO[0]}" cy="${GB_RIO[1]}" r="7" class="dz-dot"/><text x="${GB_RIO[0] + 14}" y="${GB_RIO[1] - 8}" class="dz-lbl-s">Rio</text>
+      <circle cx="${GB_CAC[0]}" cy="${GB_CAC[1]}" r="8" class="gb-cac"/><text x="${GB_CAC[0] - 14}" y="${GB_CAC[1] - 12}" text-anchor="end" class="dz-lbl-s">Base do Cachimbo</text>
+      <text x="${GB_CHOQUE[0] + 26}" y="${GB_CHOQUE[1] + 10}" class="dz-lbl-s gb-red">colisão · 37.000 pés</text>
+      <text x="${GB_BSB[0] - 50}" y="${GB_BSB[1] + 80}" text-anchor="end" class="dz-lbl-s gb-or">Legacy N600XL</text>
+      <text x="${GB_MAO[0] + 60}" y="${GB_MAO[1] + 100}" text-anchor="end" class="dz-lbl-s">Gol 1907</text>
+      <text x="470" y="680" text-anchor="middle" class="dz-lbl-big">BRASIL</text>
+      <text x="520" y="480" text-anchor="middle" class="dz-lbl-w dz-lbl-s">Mato Grosso</text>
+      <text x="930" y="800" text-anchor="middle" class="dz-lbl-w">Oceano</text><text x="930" y="830" text-anchor="middle" class="dz-lbl-w">Atlântico</text>
     </g>
     <g id="dzMarks"></g>
-    <path d="M${GB_CHOQUE[0] - 13} ${GB_CHOQUE[1] - 13} l26 26 M${GB_CHOQUE[0] + 13} ${GB_CHOQUE[1] - 13} l-26 26" class="dz-x"/>
-    <g id="dzPlane"><circle r="26" class="dz-plane-halo"/><g transform="scale(.8)" filter="url(#dzShadow)">${AVIAO_A330}</g></g>
-    <text x="16" y="788" class="dz-map-note">Rotas aproximadas · mapa fora de escala</text>
+    <path d="M${GB_CHOQUE[0] - 15} ${GB_CHOQUE[1] - 15} l30 30 M${GB_CHOQUE[0] + 15} ${GB_CHOQUE[1] - 15} l-30 30" class="dz-x"/>
+    <g id="dzPlane"><circle r="30" class="dz-plane-halo"/><g transform="scale(.9)" filter="url(#dzShadow)">${AVIAO_A330}</g></g>
+    <text x="16" y="994" class="dz-map-note">Rotas aproximadas</text>
   </svg>`;
 }
 // O que falhou: dois aviões na mesma altitude, em sentidos opostos, e um deles invisível para o TCAS
@@ -783,7 +777,7 @@ const ACIDENTES = [
     memoria: 'Todo 29 de setembro, famílias das 154 vítimas se reúnem para lembrar o voo 1907. Há memoriais em Mato Grosso e em cidades de onde vinham os passageiros.',
     fontes: [['Wikipedia: Gol Transportes Aéreos Flight 1907', 'https://en.wikipedia.org/wiki/Gol_Transportes_A%C3%A9reos_Flight_1907'], ['OACI: síntese do relatório do CENIPA', 'https://icao.int/safety/airnavigation/AIG/Documents/Safety%20Recommendations%20to%20ICAO/Synopsis/06003860_Synopsis.pdf'],
       ['Exame: STJ mantém pena dos pilotos', 'https://exame.com/brasil/stj-mantem-pena-de-pilotos-envolvidos-em-acidente-da-gol'], ['Conjur: Justiça Militar condena controlador', 'https://www.conjur.com.br/2010-out-26/justica-militar-condena-controlador-voo-acidente-gol//?print=1']],
-    cauda: 'assets/cauda-gol.webp', mapa: mapaGol1907, esquema: falhaGol1907, fugoide: tcasGol1907,
+    cauda: 'assets/cauda-gol.webp', mapaImg: 'assets/gol1907-mapa.webp', mapa: mapaGol1907, esquema: falhaGol1907, fugoide: tcasGol1907,
     fugoideTit: 'Por que o TCAS não avisou',
     fugoideTxt: 'O TCAS, o sistema anticolisão, pergunta pelo rádio “quem está aí?” e espera a resposta do transponder dos outros aviões. Com o transponder do Legacy parado, ninguém respondeu: o TCAS do Boeing não viu o jato, e o do Legacy, que depende do próprio transponder, estava desligado.',
   },
