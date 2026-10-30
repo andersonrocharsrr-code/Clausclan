@@ -404,9 +404,13 @@ const CENAS = {
     ${[0, 1, 2].map((i) => `<circle cx="160" cy="40" r="20" class="mh-ping" style="animation-delay:${i}s"/>`).join('')}
     <g transform="translate(236 128) rotate(-20) scale(.34)">${a330()}</g>
     <text x="160" y="176" class="px-gtxt">UM "APERTO DE MÃO" POR HORA</text>`,
-  arco7: () => `<rect width="320" height="180" class="mh-sea"/>${[0, 1, 2, 3, 4, 5, 6].map((i) => `<path d="M${-20 + i * 26} 180 A${200 + i * 20} ${200 + i * 20} 0 0 1 ${120 + i * 34} 0" class="mh-ring${i === 6 ? ' mh-ring--7' : ''}"/>`).join('')}
-    <g class="mh-fade"><g transform="translate(250 96) rotate(170) scale(.32)">${AVIAO_A330}</g></g>
-    <text x="160" y="22" class="px-gtxt" style="fill:#ff8a7a">08:19 · O ÚLTIMO SINAL</text><text x="160" y="172" class="px-gtxt">7º ARCO · SUL DO OCEANO ÍNDICO</text>`,
+  // Foto de satélite do sul do Índico (imagem ilustrativa) com os arcos do satélite e o último sinal por cima
+  arco7: () => `<image href="assets/mh370-oceano.webp" x="0" y="0" width="320" height="180" preserveAspectRatio="xMidYMid slice"/><rect width="320" height="180" class="mh-dimfoto"/>
+    ${[0, 1, 2, 3, 4, 5, 6].map((i) => `<path d="M${-20 + i * 26} 180 A${200 + i * 20} ${200 + i * 20} 0 0 1 ${120 + i * 34} 0" class="mh-ring${i === 6 ? ' mh-ring--7' : ''}"/>`).join('')}
+    <g class="mh-fade"><g transform="translate(188 92) rotate(200) scale(.32)">${AVIAO_A330}</g></g>
+    <rect x="96" y="10" width="128" height="17" rx="4" class="pt-chip"/><text x="160" y="22" class="px-gtxt" style="fill:#ff8a7a">08:19 · O ÚLTIMO SINAL</text>
+    <rect x="70" y="160" width="180" height="17" rx="4" class="pt-chip"/><text x="160" y="172" class="px-gtxt">7º ARCO · SUL DO OCEANO ÍNDICO</text>
+    <text x="314" y="154" text-anchor="end" class="mn-ilus">imagem ilustrativa</text>`,
   buscaMar: () => `<rect width="320" height="180" class="px-dusk"/>${water(120)}
     <g transform="translate(90 112)"><path d="M-40 0 H40 L30 14 H-30Z" class="px-ship"/><rect x="-14" y="-16" width="26" height="16" class="px-ship"/></g>
     <g transform="translate(240 116) scale(.8)"><path d="M-40 0 H40 L30 14 H-30Z" class="px-ship"/><rect x="-14" y="-16" width="26" height="16" class="px-ship"/></g>
