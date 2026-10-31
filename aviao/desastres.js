@@ -292,14 +292,13 @@ function falhaGol1907() {
 }
 // Por que o TCAS não avisou: ele só "vê" quem responde com o transponder
 function tcasGol1907() {
-  return `<svg viewBox="0 0 360 160" role="img" aria-label="TCAS: o anticolisão do Boeing não recebia resposta do Legacy, que estava com o transponder parado, e por isso não deu alerta">
-    <rect width="360" height="160" class="px-night"/>
-    <g transform="translate(90 80)">${[0, 1, 2].map((i) => `<circle r="14" class="gb-ping" style="animation-delay:${i}s"/>`).join('')}<g transform="rotate(90) scale(.42)">${AVIAO_A330}</g></g>
-    <g transform="translate(270 80)" class="gb-ghost"><g transform="rotate(-90) scale(.36)">${AVIAO_A330}</g></g>
-    <path d="M118 80 H240" class="gb-ask"/><text x="180" y="70" text-anchor="middle" class="dz-map-t" style="fill:#e9eef5">“quem está aí?”</text>
-    <text x="180" y="98" text-anchor="middle" class="dz-map-t dz-map-crash">sem resposta</text>
-    <text x="90" y="134" text-anchor="middle" class="dz-map-t" style="fill:#e9eef5">TCAS do Boeing</text><text x="270" y="134" text-anchor="middle" class="dz-map-t" style="fill:#e9eef5">Legacy: transponder parado</text>
-    <text x="10" y="154" class="dz-map-s" style="fill:#cfd8de">sem transponder, o TCAS dos dois aviões ficou cego</text>
+  // Foto dos dois aviões sobre a floresta (imagem ilustrativa) com o TCAS do Boeing perguntando e ninguém respondendo
+  return `<svg viewBox="0 0 1312 810" role="img" aria-label="TCAS: o anticolisão do Boeing da Gol pergunta pelo rádio e não recebe resposta do Legacy, que estava com o transponder parado">
+    <image href="assets/gol1907-tcas.webp" x="0" y="0" width="1312" height="810"/>
+    <g transform="translate(310 378)">${[0, 1, 2].map((i) => `<circle r="60" class="gt-ping" style="animation-delay:${i}s"/>`).join('')}</g>
+    <path d="M490 378 H870" class="gt-ask"/>
+    <text x="680" y="350" text-anchor="middle" class="gt-t">“quem está aí?”</text>
+    <text x="680" y="420" text-anchor="middle" class="gt-t gt-red">sem resposta</text>
   </svg>`;
 }
 /* ---------- Ilustrações dos capítulos (viewBox 320x180) ---------- */

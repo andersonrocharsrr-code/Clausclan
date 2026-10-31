@@ -1332,3 +1332,10 @@ html.menu-lock, html.menu-lock body { overflow: hidden; overscroll-behavior: non
 .gb-pista { fill: #3a4148; }
 @media (prefers-reduced-motion: reduce) { [class^="gb-"] { animation: none !important; } }
 .gf-tit { font: 700 24px var(--mono); fill: #f2c94c; } .gf-txt { font: 500 20px var(--mono); fill: #e9eef5; }
+.gt-ping { fill: none; stroke: #8fd3ff; stroke-width: 5; transform-box: fill-box; transform-origin: center; animation: gtPing 3s ease-out infinite; }
+@keyframes gtPing { from { transform: scale(.6); opacity: 1; } to { transform: scale(3.6); opacity: 0; } }
+.gt-ask { stroke: #e9f6ff; stroke-width: 5; stroke-dasharray: 18 14; fill: none; animation: gtDash 1.4s linear infinite; }
+@keyframes gtDash { to { stroke-dashoffset: -64; } }
+.gt-t { font: 600 34px var(--mono); fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.65); stroke-width: 8px; stroke-linejoin: round; }
+.gt-red { fill: #ff8a7a; }
+@media (prefers-reduced-motion: reduce) { .gt-ping, .gt-ask { animation: none !important; } }
