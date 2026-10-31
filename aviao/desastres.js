@@ -329,7 +329,7 @@ function mapaTk981() {
     <g class="dz-labels">
       <circle cx="${TK_ORLY[0]}" cy="${TK_ORLY[1]}" r="10" class="dz-dot"/><text x="${TK_ORLY[0] - 30}" y="${TK_ORLY[1] + 70}">← Orly</text>
       <path d="M300 410 V520" class="tk-seta"/><path d="M300 520 l-18 -26 M300 520 l18 -26" class="tk-seta"/>
-      <text x="40" y="330" class="dz-lbl-s">Charles de Gaulle</text><text x="40" y="384" class="dz-lbl-s tk-or">ainda ia ser inaugurado</text>
+      <text x="40" y="330" class="dz-lbl-s">Charles de Gaulle</text><text x="40" y="384" class="dz-lbl-s tk-or">inaugurado 5 dias depois</text>
       <text x="${TK_MEAUX[0]}" y="${TK_MEAUX[1] + 70}" text-anchor="middle" class="dz-lbl-s">Meaux · 12:40</text>
       <text x="${TK_SP[0] - 34}" y="${TK_SP[1] - 6}" text-anchor="end" class="dz-lbl-s">Saint-Pathus</text><text x="${TK_SP[0] - 34}" y="${TK_SP[1] + 46}" text-anchor="end" class="dz-lbl-s">a porta e 6 passageiros</text>
       <text x="${TK_ERM[0]}" y="${TK_ERM[1] - 52}" text-anchor="middle" class="dz-lbl-s tk-red">Floresta de Ermenonville · 12:41</text>
@@ -892,7 +892,7 @@ const ACIDENTES = [
     fugoideTxt: 'O TCAS, o sistema anticolisão, pergunta pelo rádio “quem está aí?” e espera a resposta do transponder dos outros aviões. Com o transponder do Legacy parado, ninguém respondeu: o TCAS do Boeing não viu o jato, e o do Legacy, que depende do próprio transponder, estava desligado.',
   },
   {
-    id: 'tk981', ano: 1974, data: '3 de março de 1974', titulo: 'Turkish Airlines 981', sub: '77 segundos até a floresta',
+    id: 'tk981', ano: 1974, data: '3 de março de 1974', titulo: 'Turkish Airlines 981', sub: 'O defeito que todos conheciam',
     resumo: 'Um DC-10 lotado sai de Paris para Londres num domingo. Dez minutos depois, a porta do porão traseiro se abre, o piso da cabine desaba e corta os comandos. Em 77 segundos, o avião mergulha numa floresta. O defeito era conhecido havia quase dois anos.',
     ficha: [['Avião', 'McDonnell Douglas DC-10-10'], ['Matrícula', 'TC-JAV ("Ankara")'], ['Rota', 'Istambul → Paris (Orly) → Londres (Heathrow)'], ['Local', 'Floresta de Ermenonville, perto de Paris'],
       ['A bordo', '346 (335 passageiros e 11 tripulantes)'], ['Mortos', '346'], ['Sobreviventes', 'Nenhum'], ['Causa', 'Porta do porão mal travada, por um defeito de projeto já conhecido']],
