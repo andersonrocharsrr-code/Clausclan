@@ -224,23 +224,27 @@ function falhaMh370() {
     <rect x="6" y="152" width="214" height="13" rx="3" class="pt-chip"/><text x="12" y="161" class="dz-map-s" style="fill:#cfd8de">7 "apertos de mão" entre 02:25 e 08:19 · só a distância</text>
   </svg>`;
 }
-// A deriva dos destroços: as correntes do Índico levaram as peças do 7º arco até a África. 4 px por grau, de 30°L a 120°L
-const MI = (lat, lon) => [Math.round((lon - 30) * 4), Math.round(-lat * 4)];
+// A deriva dos destroços sobre imagem de satélite do Índico (1390x695). Na imagem, 1 grau vale cerca de 15,5 px:
+// x = (lon - 30,35) × 15,54 e y = (−lat − 1,1) × 15,5, conferido em Madagascar, Reunião, Maurício e na costa da Austrália
+const MI = (lat, lon) => [Math.round((lon - 30.35) * 15.54) - 2, Math.round((-lat - 0.9) * 15.5) - 4];
 const miPts = (l) => l.map(([a, b]) => MI(a, b).join(' ')).join(' L');
 function derivaMh370() {
-  const achados = [[[-21.1, 55.5], 'Reunião · flaperon (2015)'], [[-5.2, 39.8], 'Tanzânia'], [[-22, 35.3], 'Moçambique'], [[-20.2, 57.5], 'Maurício'], [[-17, 49.9], 'Madagascar']];
-  return `<svg viewBox="0 0 360 180" role="img" aria-label="Deriva dos destroços: correntes do Oceano Índico levaram peças do MH370 para Reunião, Madagascar, Moçambique, Tanzânia e Maurício">
-    <rect width="360" height="180" class="mh-sea"/>
-    <path d="M${miPts([[0, 42.5], [-5, 39.3], [-10, 40.3], [-15, 40.7], [-20, 35], [-25, 33], [-30, 31], [-34, 26], [-36, 20]])} L0 180 L0 0Z" class="mh-land"/>
-    <path d="M${miPts([[-12, 49.3], [-16, 50], [-25, 47], [-25.5, 45], [-21, 43.5], [-16, 44.5]])}Z" class="mh-land"/>
-    <path d="M${miPts([[-19.5, 120], [-20.3, 118.8], [-21.8, 114.2], [-26.5, 113.3], [-32, 115.7], [-35, 117.5], [-35, 120]])} L360 180 L360 70Z" class="mh-land"/>
-    <path d="M${miPts([[0, 99], [-3, 101.5], [-5.9, 104.6], [-5.8, 106.2], [-3, 106], [0, 104]])}Z" class="mh-land"/>
-    <path d="M${miPts(MH_ARCO)}" class="mh-arc" style="stroke-width:2"/>
-    ${[['M250 142 C200 160 150 140 104 92', 0], ['M280 118 C230 110 170 96 120 84', .8], ['M262 130 C210 150 120 150 82 120', 1.6], ['M290 104 C240 70 150 50 50 24', 2.4]].map(([d, t]) => `<path d="${d}" class="mh-drift" style="animation-delay:${t}s"/>`).join('')}
-    ${achados.map(([[la, lo], n], i) => { const [x, y] = MI(la, lo); return `<circle cx="${x}" cy="${y}" r="3" class="mh-find"/><text x="${x + 5}" y="${y + (i === 3 ? 9 : -4)}" class="dz-map-t" style="fill:#e9eef5">${n}</text>`; }).join('')}
-    <text x="300" y="60" class="dz-map-t mh-arc-t">7º arco</text>
-    <text x="320" y="170" text-anchor="end" class="dz-map-t" style="fill:#e9eef5">Austrália</text>
-    <text x="10" y="172" class="dz-map-s" style="fill:#cfd8de">as correntes levaram as peças para oeste, por meses</text>
+  const achados = [[[-21.1, 55.5], 'Reunião · flaperon (2015)', -6, 34], [[-20.3, 58.4], 'Maurício', 14, -8], [[-17, 49.9], 'Madagascar', 14, -10], [[-22, 35.3], 'Moçambique', 14, 4], [[-5.2, 39.8], 'Tanzânia', 14, 6]];
+  const [ax, ay] = MI(-30, 98.3);
+  const rotas = achados.map(([[la, lo]], i) => { const [x, y] = MI(la, lo), mx = (ax + x) / 2, my = Math.max(ay, y) + 120 - i * 40; return `<path d="M${ax} ${ay} Q${mx} ${my} ${x} ${y}" class="mh-drift" style="animation-delay:${i * .6}s"/>`; }).join('');
+  const [px, py] = MI(-31.95, 115.86);
+  return `<svg viewBox="0 0 1390 695" role="img" aria-label="Deriva dos destroços: correntes do Oceano Índico levaram peças do MH370 do 7º arco até Reunião, Maurício, Madagascar, Moçambique e Tanzânia">
+    <image href="assets/mh370-deriva.webp" x="0" y="0" width="1390" height="695"/>
+    <path d="M${miPts(MH_ARCO)}" class="mh-arc md-arc"/>
+    ${rotas}
+    ${achados.map(([[la, lo], n, dx, dy]) => { const [x, y] = MI(la, lo); return `<circle cx="${x}" cy="${y}" r="9" class="mh-find md-find"/><text x="${x + dx}" y="${y + dy}" class="md-t">${n}</text>`; }).join('')}
+    <text x="${MI(-22, 100)[0]}" y="${MI(-22, 100)[1]}" class="md-t md-arc-t">7º arco</text>
+    <text x="${MI(-34, 70)[0]}" y="${MI(-34, 70)[1]}" text-anchor="middle" class="md-t md-big">Oceano Índico</text>
+    <text x="1376" y="${MI(-24, 116)[1]}" text-anchor="end" class="md-t">Austrália</text>
+    <circle cx="${px}" cy="${py}" r="7" class="dz-dot"/><text x="${px - 12}" y="${py + 7}" text-anchor="end" class="md-t md-s">Perth</text>
+    <text x="1376" y="30" text-anchor="end" class="md-t md-s">Sumatra · Java</text>
+    <text x="24" y="240" class="md-t md-s">África</text>
+    <text x="20" y="680" class="md-t md-s">as correntes levaram as peças para oeste, por mais de um ano</text>
   </svg>`;
 }
 /* ---------- Ilustrações do Gol 1907 ---------- */

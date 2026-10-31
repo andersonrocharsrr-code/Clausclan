@@ -1343,3 +1343,9 @@ html.menu-lock, html.menu-lock body { overflow: hidden; overscroll-behavior: non
 @media (max-width: 760px) {
   .dz__case .dz__failsvg { margin-inline: -12px; border-radius: 8px; max-width: none; }
 }
+/* MH370: a deriva sobre a foto de satélite do Índico */
+.md-arc { stroke-width: 6; stroke-dasharray: 16 10; }
+.dz__failsvg .mh-drift { stroke: #cfe8ff; stroke-width: 4; stroke-dasharray: 10 14; opacity: .9; }
+.md-find { stroke-width: 3; }
+.md-t { font: 600 30px var(--mono); fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.7); stroke-width: 6px; stroke-linejoin: round; }
+.md-s { font-size: 25px; } .md-big { font-size: 32px; letter-spacing: .12em; fill: #d8ecff; } .md-arc-t { fill: #ffd27a; }
