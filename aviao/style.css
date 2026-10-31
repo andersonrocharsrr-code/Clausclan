@@ -1349,3 +1349,28 @@ html.menu-lock, html.menu-lock body { overflow: hidden; overscroll-behavior: non
 .md-find { stroke-width: 3; }
 .md-t { font: 600 30px var(--mono); fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.7); stroke-width: 6px; stroke-linejoin: round; }
 .md-s { font-size: 25px; } .md-big { font-size: 32px; letter-spacing: .12em; fill: #d8ecff; } .md-arc-t { fill: #ffd27a; }
+
+/* Desastres: Turkish Airlines 981 (mapa de Paris, a porta e o piso) */
+.tk-campo { fill: #3c5a3a; } .tk-rio { fill: none; stroke: #4f86b8; stroke-width: 5; stroke-linecap: round; } .tk-rio--s { stroke-width: 3; }
+.tk-cidade { fill: #7d7a70; opacity: .55; } .tk-floresta { fill: #1f4126; stroke: #2f5a37; stroke-width: 2; }
+.tk-sp { stroke: #ffb84a; stroke-width: 2.4; stroke-linecap: round; }
+.dz-map--tk .dz-labels text { font-size: 12px; stroke-width: 3px; } .dz-map--tk .dz-labels .dz-lbl-s { font-size: 10px; }
+.dz-map--tk .dz-labels .dz-lbl-big { font-size: 14px; letter-spacing: .2em; fill: #f2f6ef; opacity: .8; }
+.dz-map--tk .dz-labels .tk-red { fill: #ff8a7a; } .dz-map--tk .dz-mark circle { r: 4; stroke-width: 1.5; }
+.dz-map--tk .dz-route-dash { stroke-width: 2.4; stroke-dasharray: 8 5 2 5; } .dz-map--tk .dz-x { stroke-width: 3.5; } .dz-map--tk .dz-map-note { font-size: 8px; }
+.tk-door { fill: #e8ecef; stroke: #1b2630; stroke-width: .8; } .tk-hole { fill: #0b1015; }
+.tk-floor { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linecap: round; } .tk-floor--down { stroke: var(--bad); stroke-dasharray: 4 3; }
+.tk-cable { fill: none; stroke-width: 1.6; }
+.tk-portaoff { transform-box: fill-box; transform-origin: center; animation: tkPorta 3s ease-in infinite; }
+@keyframes tkPorta { 0%, 15% { transform: none; opacity: 1; } 80% { transform: translate(30px, 40px) rotate(70deg); opacity: .3; } 100% { transform: translate(40px, 50px) rotate(90deg); opacity: 0; } }
+.tk-voa { transform-box: fill-box; transform-origin: center; animation: tkVoa 3s ease-in infinite; }
+@keyframes tkVoa { 0%, 10% { transform: none; opacity: 1; } 100% { transform: translate(-30px, 40px) rotate(-120deg); opacity: 0; } }
+.tk-doorbig { fill: #d9dee2; stroke: #3a4752; stroke-width: 2; } .tk-hook { fill: #5fe08a; stroke: #1b2630; } .tk-hook--bad { fill: #ff6b5b; }
+.tk-hook-l { stroke: #1b2630; stroke-width: 2.4; stroke-linecap: round; } .tk-hook-l--bad { stroke: #b0261d; }
+.tk-handle { fill: #3a4752; } .tk-handle--forced { fill: #c77a10; } .tk-peep { fill: #0b1015; stroke: #8fc3e6; stroke-width: 2; }
+.tk-forca { animation: tkForca 1.6s ease-in-out infinite alternate; } @keyframes tkForca { from { transform: translateY(-6px); } to { transform: translateY(4px); } }
+.tk-cede { animation: tkCede 2.6s ease-in infinite; } @keyframes tkCede { 0%, 30% { transform: none; } 100% { transform: translateY(14px); } }
+.tk-trilha { stroke: #6b4a2f; stroke-width: 10; stroke-linecap: round; opacity: .8; } .tk-sulco { stroke: #4d6b3f; stroke-width: 1.4; }
+.tk-bomb { fill: #c8202a; } .tk-giro { fill: #4fa3ff; animation: pxBlink .6s steps(1) infinite; }
+.tk-carimbo { fill: none; stroke: #c8202a; stroke-width: 3; opacity: .8; } .tk-carimbo-t { font: 700 12px var(--mono); fill: #c8202a; }
+@media (prefers-reduced-motion: reduce) { [class^="tk-"] { animation: none !important; } }

@@ -306,6 +306,73 @@ function tcasGol1907() {
     <text x="680" y="420" text-anchor="middle" class="gt-t gt-red">sem resposta</text>
   </svg>`;
 }
+/* ---------- Ilustrações do Turkish Airlines 981 ---------- */
+// DC-10 de lado, nariz para a direita: três motores, o do meio na cauda
+const dc10 = (cls = 'hs-fill-paper2', semPorta = false) => `<g><path d="M-74 4 C-64 -6 -44 -8 -12 -8 H44 C56 -8 62 -2 66 4 C62 9 54 11 44 11 H-62 C-70 11 -74 8 -74 4Z" class="${cls}"/>
+  <path d="M-64 -4 L-76 -28 H-66 L-52 -6Z" class="hs-fill-accent"/><rect x="-78" y="-26" width="18" height="7" rx="3.5" class="hs-fill-metal"/>
+  <path d="M-4 6 L-32 26 H-20 L16 6Z" class="hs-fill-ink"/><rect x="-14" y="12" width="18" height="7" rx="3.5" class="hs-fill-metal"/><path d="M-62 6 L-78 13 H-70 L-52 6Z" class="hs-fill-ink"/>
+  ${[-42, -30, -18, -6, 6, 18, 30].map((x) => `<rect x="${x}" y="-3" width="5" height="4" rx="1" class="hs-fill-ink"/>`).join('')}
+  ${semPorta ? '<rect x="-52" y="1" width="10" height="8" class="tk-hole"/>' : '<rect x="-52" y="1" width="10" height="8" rx="1" class="tk-door"/>'}</g>`;
+// Mapa da região de Paris, fora de escala: de Orly ao leste, a curva para o norte e a floresta de Ermenonville
+const TK = (lat, lon) => [Math.round((lon - 1.9) * 300), Math.round((49.4 - lat) * 450)];
+const [TK_ORLY, TK_PARIS, TK_MEAUX, TK_SP, TK_ERM, TK_CDG] = [TK(48.72, 2.38), TK(48.86, 2.35), TK(48.96, 2.88), TK(49.07, 2.8), TK(49.15, 2.63), TK(49.01, 2.55)];
+const TK981_ROTA = `M${TK_ORLY.join(' ')} C${TK_ORLY[0] + 70} ${TK_ORLY[1] - 4} ${TK_MEAUX[0] + 20} ${TK_MEAUX[1] + 60} ${TK_MEAUX[0]} ${TK_MEAUX[1]} C${TK_MEAUX[0] - 8} ${TK_MEAUX[1] - 30} ${TK_SP[0] + 16} ${TK_SP[1] + 16} ${TK_SP[0]} ${TK_SP[1]} L${TK_ERM.join(' ')}`;
+function mapaTk981() {
+  return `<svg viewBox="0 0 420 360" role="img" aria-label="Mapa do voo 981: decolagem de Orly, subida para o leste, curva para o norte e queda na floresta de Ermenonville" class="dz-map--tk">
+    <defs><filter id="dzShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="3" dy="4" stdDeviation="2" flood-color="#000" flood-opacity=".5"/></filter></defs>
+    <rect width="420" height="360" class="tk-campo"/>
+    <path d="M0 230 C60 236 110 250 150 246 S230 262 300 222 S380 214 420 230" class="tk-rio"/><path d="M300 222 C320 200 340 190 420 186" class="tk-rio tk-rio--s"/>
+    <circle cx="${TK_PARIS[0]}" cy="${TK_PARIS[1]}" r="34" class="tk-cidade"/>
+    <ellipse cx="${TK_ERM[0] - 4}" cy="${TK_ERM[1] - 6}" rx="46" ry="26" class="tk-floresta"/>
+    <path d="M${TK_SP[0]} ${TK_SP[1]} m-8 -8 l16 16 m0 -16 l-16 16" class="tk-sp"/>
+    <mask id="dzReveal" maskUnits="userSpaceOnUse" x="0" y="0" width="420" height="360"><path id="dzRevealPath" d="${TK981_ROTA}" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round"/></mask>
+    <path d="M${TK_ERM.join(' ')} L${TK_ERM[0] - 40} 0" class="dz-route-plan"/>
+    <path id="dzPath" d="${TK981_ROTA}" class="dz-route"/>
+    <path d="${TK981_ROTA}" class="dz-route-dash" mask="url(#dzReveal)"/>
+    <g class="dz-labels">
+      <circle cx="${TK_ORLY[0]}" cy="${TK_ORLY[1]}" r="4" class="dz-dot"/><text x="${TK_ORLY[0]}" y="${TK_ORLY[1] + 18}" text-anchor="middle">Orly</text>
+      <text x="${TK_PARIS[0]}" y="${TK_PARIS[1] + 4}" text-anchor="middle" class="dz-lbl-big">PARIS</text>
+      <text x="${TK_MEAUX[0] + 8}" y="${TK_MEAUX[1] + 4}" class="dz-lbl-s">Meaux</text>
+      <text x="${TK_SP[0] + 12}" y="${TK_SP[1] + 4}" class="dz-lbl-s">Saint-Pathus</text>
+      <text x="${TK_ERM[0] - 4}" y="${TK_ERM[1] - 38}" text-anchor="middle" class="dz-lbl-s tk-red">Floresta de Ermenonville</text>
+      <circle cx="${TK_CDG[0]}" cy="${TK_CDG[1]}" r="3" class="dz-dot"/><text x="${TK_CDG[0] - 8}" y="${TK_CDG[1] - 8}" text-anchor="end" class="dz-lbl-s">Charles de Gaulle</text><text x="${TK_CDG[0] - 8}" y="${TK_CDG[1] + 6}" text-anchor="end" class="dz-lbl-s">(inaugurado 5 dias depois)</text>
+      <text x="410" y="16" text-anchor="end" class="dz-lbl-s">rota prevista até Londres</text>
+      <text x="400" y="244" text-anchor="end" class="dz-lbl-s dz-lbl-w">Marne</text>
+    </g>
+    <g id="dzMarks"></g>
+    <path d="M${TK_ERM[0] - 7} ${TK_ERM[1] - 7} l14 14 M${TK_ERM[0] + 7} ${TK_ERM[1] - 7} l-14 14" class="dz-x"/>
+    <g id="dzPlane"><circle r="14" class="dz-plane-halo"/><g transform="scale(.42)" filter="url(#dzShadow)">${AVIAO_TOPO}</g></g>
+    <text x="8" y="352" class="dz-map-note">Rota aproximada · mapa fora de escala</text>
+  </svg>`;
+}
+// O que falhou: a porta do porão traseiro se abre, o piso da cabine desaba e corta os cabos de comando
+function falhaTk981() {
+  return `<svg viewBox="0 0 360 170" role="img" aria-label="Esquema da falha: a porta do porão traseiro se abre, a cabine pressurizada empurra o piso para baixo e o piso corta os cabos que levam os comandos para a cauda">
+    <rect width="360" height="170" class="hs-sky"/>
+    <path d="M14 96 C16 82 32 74 56 72 H300 C318 72 332 78 342 92 L344 100 C330 110 312 114 296 114 H40 C26 114 16 108 14 96Z" class="hs-fill-paper2"/>
+    <path d="M300 74 L318 30 H334 L328 76Z" class="hs-fill-metal"/><rect x="306" y="36" width="30" height="10" rx="5" class="hs-fill-metal"/>
+    <path d="M56 92 H300" class="tk-floor"/><text x="70" y="88" class="dz-map-t">piso da cabine</text>
+    ${[0, 1, 2].map((i) => `<path d="M60 ${97 + i * 3} H${236 - i * 3} L248 ${112} M252 ${100 + i * 3} H322" class="tk-cable" style="stroke:${['#e5322d', '#2f8fdc', '#2fbf4a'][i]}"/>`).join('')}
+    <path d="M232 92 L256 106 L280 92" class="tk-floor tk-floor--down"/>
+    <g class="tk-portaoff"><rect x="252" y="100" width="22" height="14" rx="2" class="tk-door"/></g><rect x="252" y="100" width="22" height="14" class="tk-hole"/>
+    <g class="dz-air">${[0, 1, 2].map((i) => `<path d="M${258 + i * 6} ${118 + i * 4} v14 l-3 -4 m3 4 l3 -4" class="dz-arrow" style="animation-delay:${i * .12}s"/>`).join('')}</g>
+    <text x="236" y="162" class="dz-map-t dz-map-crash">porta do porão traseiro</text>
+    <text x="186" y="66" class="dz-map-t">a pressão empurra o piso para baixo</text>
+    <text x="14" y="150" class="dz-map-t">cabos dos comandos passam sob o piso</text>
+  </svg>`;
+}
+// A trava enganosa: a alavanca fechava mesmo com os ganchos da porta fora do lugar
+function portaTk981() {
+  return `<svg viewBox="0 0 360 160" role="img" aria-label="A porta do DC-10: a alavanca externa podia ser fechada à força sem que os ganchos da porta estivessem travados; pelo visor, os pinos não estavam no lugar">
+    <rect width="360" height="160" class="hs-sky"/>
+    <rect x="30" y="20" width="130" height="110" rx="6" class="tk-doorbig"/><text x="95" y="146" text-anchor="middle" class="dz-map-t">como devia ficar</text>
+    <rect x="200" y="20" width="130" height="110" rx="6" class="tk-doorbig"/><text x="265" y="146" text-anchor="middle" class="dz-map-t dz-map-crash">como ficou no 981</text>
+    ${[0, 1, 2, 3].map((i) => `<g><circle cx="${52 + i * 28}" cy="122" r="8" class="tk-hook"/><path d="M${52 + i * 28} 122 v-12" class="tk-hook-l"/></g><g><circle cx="${222 + i * 28}" cy="122" r="8" class="tk-hook tk-hook--bad"/><path d="M${222 + i * 28} 122 l8 -8" class="tk-hook-l tk-hook-l--bad"/></g>`).join('')}
+    <rect x="70" y="44" width="50" height="10" rx="5" class="tk-handle"/><rect x="240" y="44" width="50" height="10" rx="5" class="tk-handle tk-handle--forced"/>
+    <text x="95" y="76" text-anchor="middle" class="dz-map-s">ganchos travados</text><text x="265" y="76" text-anchor="middle" class="dz-map-s dz-map-crash">alavanca fechada à força</text>
+    <text x="265" y="90" text-anchor="middle" class="dz-map-s dz-map-crash">ganchos soltos</text>
+  </svg>`;
+}
 /* ---------- Ilustrações dos capítulos (viewBox 320x180) ---------- */
 const water = (y = 150) => `<g class="hs-water"><path d="M0 ${y} Q20 ${y - 4} 40 ${y} T80 ${y} T120 ${y} T160 ${y} T200 ${y} T240 ${y} T280 ${y} T320 ${y} V180 H0Z" class="hs-fill-water"/><path class="hs-wave" d="M-40 ${y + 10} q10 -3 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0"/></g>`;
 const ground = (y = 150) => `<path d="M0 ${y} H320 V180 H0Z" class="hs-fill-ground"/>`;
@@ -556,6 +623,51 @@ const CENAS = {
   justica: () => `<rect width="320" height="180" class="px-paperbg"/><path d="M160 30 V150 M120 150 H200 M90 50 H230" class="px-scale"/>
     <g class="px-tilt" style="transform-origin:160px 50px"><path d="M90 50 l-20 40 h40z M230 50 l-20 40 h40z" class="px-scale"/><path d="M70 90 a20 8 0 0 0 40 0 M210 90 a20 8 0 0 0 40 0" class="px-scale"/></g>
     <text x="160" y="172" class="px-gtxt px-gtxt--ink">PILOTOS CONDENADOS · CONTROLADORES ABSOLVIDOS</text>`,
+  // Turkish Airlines 981
+  orly: () => `${sun(60, 40)}${cloud(240, 36, 1, 1)}${ground(150)}<rect x="0" y="92" width="200" height="58" class="hs-fill-city"/>${[0, 1, 2, 3, 4, 5, 6].map((i) => `<rect x="${10 + i * 26}" y="100" width="18" height="30" class="hs-win" style="animation-delay:${i * .2}s"/>`).join('')}
+    ${[30, 60, 90, 120, 150].map((x, i) => person(x, 150, i % 2 === 1, i % 3 ? 'hs-fill-blue' : 'hs-fill-ink', i * .2)).join('')}
+    <g transform="translate(258 132) scale(.7)">${dc10()}</g><text x="314" y="20" class="px-gtxt px-gtxt--ink" style="text-anchor:end">ORLY · 3 DE MARÇO DE 1974</text>`,
+  dc10: () => `${cloud(70, 40, 1, 0)}${ground(150)}<g transform="translate(160 118) scale(1.25)">${dc10()}</g>
+    <text x="160" y="24" text-anchor="middle" class="px-gtxt px-gtxt--ink">DC-10 · TC-JAV "ANKARA"</text>`,
+  porta: () => `<rect width="320" height="180" class="px-panel"/><rect x="80" y="30" width="160" height="120" rx="6" class="tk-doorbig"/>
+    <g class="tk-forca"><rect x="130" y="62" width="60" height="12" rx="6" class="tk-handle tk-handle--forced"/></g>
+    ${[0, 1, 2, 3].map((i) => `<circle cx="${104 + i * 37}" cy="138" r="8" class="tk-hook tk-hook--bad"/>`).join('')}<circle cx="160" cy="104" r="9" class="tk-peep"/>
+    <text x="160" y="172" class="px-gtxt">A ALAVANCA FECHOU · OS GANCHOS, NÃO</text>`,
+  decolaOrly: () => `${sun(250, 40)}${ground(150)}<rect x="0" y="140" width="320" height="10" class="gb-pista"/><g class="px-climb">${dc10()}</g>
+    <text x="160" y="172" class="px-gtxt px-gtxt--ink">12:30 · RUMO A LONDRES</text>`,
+  estouro: () => `${cloud(60, 40, 1, 0)}${cloud(250, 150, .9, 2)}<g transform="translate(160 90) scale(1.3)">${dc10('hs-fill-paper2', true)}
+    <g class="px-boom"><circle cx="-47" cy="5" r="12" class="px-burst"/></g><g class="tk-voa"><rect x="-52" y="1" width="10" height="8" class="tk-door"/></g></g>
+    <g class="px-fog">${cloud(110, 120, 1.4, 0)}</g><text x="160" y="172" class="px-gtxt px-gtxt--ink">12:40 · A PORTA SE ABRE A 11.500 PÉS</text>`,
+  piso: () => `<rect width="320" height="180" class="px-cabin"/><path d="M0 100 H320" class="tk-floor"/>
+    <g class="tk-cede">${[60, 110, 160, 210, 260].map((x) => `<rect x="${x - 16}" y="70" width="32" height="30" rx="5" class="px-seat"/>`).join('')}<path d="M40 100 L160 128 L280 100" class="tk-floor tk-floor--down"/></g>
+    ${[0, 1, 2].map((i) => `<path d="M0 ${116 + i * 6} H130 l10 8 M180 ${124 + i * 6} H320" class="tk-cable" style="stroke:${['#e5322d', '#2f8fdc', '#2fbf4a'][i]}"/>`).join('')}
+    <text x="160" y="22" text-anchor="middle" class="px-pullup" style="font-size:12px">O PISO CEDE · OS CABOS SE ROMPEM</text>`,
+  mergulho: () => `${cloud(70, 30, 1, 0)}${cloud(250, 60, .9, 1)}<path d="M0 160 C80 150 160 166 240 156 S310 150 320 156 V180 H0Z" class="gb-mata"/>
+    <g class="px-fall"><g transform="translate(160 70) rotate(18)">${dc10('hs-fill-paper2', true)}</g></g>
+    <text x="160" y="24" text-anchor="middle" class="px-pullup" style="font-size:12px">77 SEGUNDOS · 430 NÓS</text>`,
+  floresta: () => `<rect width="320" height="180" class="px-dusk"/><path d="M0 120 H320 V180 H0Z" class="gb-mata"/>${Array.from({ length: 14 }, (_, i) => `<circle cx="${10 + i * 23}" cy="${118 + (i % 3) * 4}" r="${14 + (i % 2) * 5}" class="gb-arvore"/>`).join('')}
+    <path d="M60 128 L260 136" class="tk-trilha"/><text x="160" y="24" text-anchor="middle" class="px-gtxt px-gtxt--ink">12:41 · FLORESTA DE ERMENONVILLE</text>`,
+  campo: () => `${sun(260, 40)}<path d="M0 120 H320 V180 H0Z" class="tk-campo"/>${[0, 1, 2, 3, 4, 5].map((i) => `<path d="M0 ${130 + i * 9} H320" class="tk-sulco"/>`).join('')}
+    <rect x="140" y="132" width="40" height="22" rx="3" class="tk-door"/><text x="160" y="24" text-anchor="middle" class="px-gtxt px-gtxt--ink">SAINT-PATHUS · A PORTA E SEIS PASSAGEIROS</text>`,
+  socorro: () => `<rect width="320" height="180" class="px-dusk"/><path d="M0 130 H320 V180 H0Z" class="gb-mata"/>${[40, 110, 220, 280].map((x, i) => `<g transform="translate(${x} 128)"><rect x="-18" y="-14" width="36" height="14" rx="3" class="tk-bomb"/><circle cx="-10" cy="0" r="4" class="hs-fill-ink"/><circle cx="10" cy="0" r="4" class="hs-fill-ink"/><circle cx="0" cy="-17" r="3" class="tk-giro" style="animation-delay:${i * .3}s"/></g>`).join('')}
+    <text x="160" y="24" text-anchor="middle" class="px-gtxt px-gtxt--ink">BOMBEIROS E SOLDADOS NA MATA</text>`,
+  windsor: () => `<rect width="320" height="180" class="px-night"/>${[[30, 20], [90, 36], [200, 14], [280, 30]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="1.3" class="px-star" style="animation-delay:${i * .3}s"/>`).join('')}
+    <g transform="translate(160 90) scale(1.1)">${dc10('hs-fill-paper2', true)}</g><text x="160" y="164" class="px-gtxt">JUNHO DE 1972 · WINDSOR, CANADÁ · TODOS SOBREVIVEM</text>`,
+  memorando: () => `<rect width="320" height="180" class="px-paperbg"/><g transform="rotate(-3 160 90)"><rect x="90" y="12" width="140" height="150" rx="3" class="px-note"/>
+    <text x="104" y="34" class="px-btxt" style="fill:#1b2630">MEMORANDO · 27/6/1972</text>${[52, 64, 76, 88, 100, 112, 124, 136].map((y, i) => `<path d="M104 ${y} H${i % 3 === 2 ? 180 : 214}" class="${i === 3 ? 'px-hlline' : 'px-ink'}"/>`).join('')}</g>
+    <text x="160" y="176" class="px-gtxt px-gtxt--ink">"MAIS CEDO OU MAIS TARDE, UM DC-10 VAI CAIR"</text>`,
+  carimbos: () => `<rect width="320" height="180" class="px-paperbg"/><rect x="60" y="20" width="200" height="130" rx="3" class="px-note"/>
+    ${[0, 1, 2].map((i) => `<g transform="translate(${100 + i * 60} 90) rotate(${-8 + i * 6})"><circle r="20" class="tk-carimbo"/><text y="4" text-anchor="middle" class="tk-carimbo-t">OK</text></g>`).join('')}
+    <text x="160" y="172" class="px-gtxt px-gtxt--ink">O PAPEL DIZIA QUE A CORREÇÃO TINHA SIDO FEITA</text>`,
+  relatorioTk: () => `<rect width="320" height="180" class="px-paperbg"/><g transform="rotate(-4 160 90)"><rect x="96" y="12" width="128" height="140" rx="3" class="px-note"/>
+    <text x="110" y="32" class="px-btxt" style="fill:#1b2630">RELATÓRIO · TC-JAV</text>${[48, 60, 72, 84, 96, 108, 120, 132].map((y, i) => `<path d="M110 ${y} H${i % 3 === 2 ? 180 : 210}" class="${i === 2 ? 'px-hlline' : 'px-ink'}"/>`).join('')}</g>
+    <text x="160" y="176" class="px-gtxt px-gtxt--ink">COMISSÃO FRANCESA DE INVESTIGAÇÃO</text>`,
+  tribunalTk: () => `<rect width="320" height="180" class="px-paperbg"/><path d="M160 30 V150 M120 150 H200 M90 50 H230" class="px-scale"/>
+    <g class="px-tilt" style="transform-origin:160px 50px"><path d="M90 50 l-20 40 h40z M230 50 l-20 40 h40z" class="px-scale"/><path d="M70 90 a20 8 0 0 0 40 0 M210 90 a20 8 0 0 0 40 0" class="px-scale"/></g>
+    <text x="160" y="172" class="px-gtxt px-gtxt--ink">LOS ANGELES · ACORDOS COM AS FAMÍLIAS</text>`,
+  memoriaTk: () => `<rect width="320" height="180" class="px-night"/>${[[40, 20], [120, 30], [200, 14], [280, 34]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="1.3" class="px-star" style="animation-delay:${i * .3}s"/>`).join('')}
+    <path d="M0 140 H320 V180 H0Z" class="gb-mata"/>${Array.from({ length: 9 }, (_, i) => `<g><rect x="${26 + i * 32}" y="128" width="8" height="12" rx="2" class="px-lantern"/><circle cx="${30 + i * 32}" cy="134" r="5" class="px-lamp" style="animation-delay:${i * .25}s"/></g>`).join('')}
+    <text x="160" y="80" text-anchor="middle" class="px-gtxt">346 VIDAS · 3 DE MARÇO DE 1974</text>`,
 };
 /* ---------- Os acidentes ---------- */
 const ACIDENTES = [
@@ -780,6 +892,60 @@ const ACIDENTES = [
     cauda: 'assets/cauda-gol.webp', mapaImg: 'assets/gol1907-mapa.webp', mapa: mapaGol1907, esquema: falhaGol1907, fugoide: tcasGol1907,
     fugoideTit: 'Por que o TCAS não avisou',
     fugoideTxt: 'O TCAS, o sistema anticolisão, pergunta pelo rádio “quem está aí?” e espera a resposta do transponder dos outros aviões. Com o transponder do Legacy parado, ninguém respondeu: o TCAS do Boeing não viu o jato, e o do Legacy, que depende do próprio transponder, estava desligado.',
+  },
+  {
+    id: 'tk981', ano: 1974, data: '3 de março de 1974', titulo: 'Turkish Airlines 981', sub: 'A porta que já tinha avisado',
+    resumo: 'Um DC-10 lotado sai de Paris para Londres num domingo. Dez minutos depois, a porta do porão traseiro se abre, o piso da cabine desaba e corta os comandos. Em 77 segundos, o avião mergulha numa floresta. O defeito era conhecido havia quase dois anos.',
+    ficha: [['Avião', 'McDonnell Douglas DC-10-10'], ['Matrícula', 'TC-JAV ("Ankara")'], ['Rota', 'Istambul → Paris (Orly) → Londres (Heathrow)'], ['Local', 'Floresta de Ermenonville, perto de Paris'],
+      ['A bordo', '346 (335 passageiros e 11 tripulantes)'], ['Mortos', '346'], ['Sobreviventes', 'Nenhum'], ['Causa', 'Porta do porão mal travada, por um defeito de projeto já conhecido']],
+    numeros: [['346', 'a bordo'], ['346', 'mortos'], ['0', 'sobreviventes'], ['77 s', 'da porta ao chão']],
+    fuso: 'Linha do tempo · horário de Paris',
+    partes: ['Antes do voo', 'Os 77 segundos', 'Ermenonville', 'O aviso ignorado', 'Causas e consequências'],
+    secoes: [
+  { t: "Um domingo em Orly", parte: 0, hora: "3 de março", lugar: "Aeroporto de Orly, Paris", sabia: "Na véspera, França e Inglaterra tinham jogado em Paris pelo Torneio das Cinco Nações de rúgbi. Muitos torcedores ingleses estavam voltando para casa naquele domingo.", cena: CENAS.orly,
+    p: ["Domingo, 3 de março de 1974. O voo 981 da Turkish Airlines vinha de Istambul, fazia escala em Paris e seguia para Londres. Em Orly, era um voo que costumava sair com lugares vazios.", "Naquele dia, não. Uma greve de funcionários da British European Airways, em Londres, tinha cancelado muitos voos entre Paris e a Inglaterra. Centenas de pessoas procuravam qualquer jeito de atravessar o Canal da Mancha, e o DC-10 da Turkish, com mais de 300 lugares, de repente virou a solução.", "Entraram torcedores de rúgbi voltando do jogo da véspera, executivos, estudantes, turistas japoneses, famílias inteiras. Muitos tinham trocado de voo na última hora. Ao todo, 335 passageiros de mais de 20 países e 11 tripulantes.", "O avião ficou quase lotado. Para a maioria, era só uma ponte rápida de pouco mais de uma hora até Londres."] },
+  { t: "O DC-10", parte: 0, hora: "12:00", lugar: "Pátio de Orly", sabia: "O DC-10 era um dos primeiros jatos de fuselagem larga, junto com o Boeing 747 e o Lockheed TriStar. Tinha dois motores sob as asas e um terceiro na base da cauda.", cena: CENAS.dc10,
+    p: ["O avião era um McDonnell Douglas DC-10, de matrícula TC-JAV, batizado de \"Ankara\". Tinha sido entregue à Turkish Airlines pouco mais de um ano antes. Era moderno, grande e o orgulho da frota.", "Como todo avião de grande altitude, o DC-10 tinha a cabine pressurizada: o ar de dentro fica mais denso que o de fora, para que as pessoas possam respirar normalmente. Os porões de bagagem, embaixo do piso, também eram pressurizados.", "Na traseira, do lado esquerdo, ficava a porta do porão de carga de trás. Ela abria para fora, como a porta de um carro, e era fechada por ganchos movidos por um motor elétrico e travada por uma alavanca externa.", "Era esse detalhe, a porta que abria para fora, que guardava um segredo perigoso."] },
+  { t: "A porta que não travou", parte: 0, hora: "12:20", lugar: "Porão traseiro do DC-10", sabia: "Uma porta que abre para dentro funciona como uma rolha: a pressão da cabine a empurra contra o batente. Uma porta que abre para fora depende só das travas para não se soltar.", cena: CENAS.porta,
+    p: ["Antes da partida, um funcionário de terra de Orly fechou a porta do porão traseiro. Ele acionou o motor que movia os ganchos e depois baixou a alavanca externa que devia travar tudo.", "Havia um problema escondido. No DC-10, se os ganchos não girassem até o fim, ainda era possível baixar a alavanca à força. A alavanca ficava na posição certa, o aviso de porta aberta na cabine se apagava, mas os ganchos não estavam presos.", "Havia um pequeno visor na porta para conferir se os pinos estavam no lugar, e um aviso com instruções. O funcionário, porém, não tinha sido treinado para olhar o visor, e as instruções estavam escritas em inglês e turco, línguas que ele não lia.", "Ninguém da tripulação conferiu a porta. Na cabine, a luz de aviso estava apagada. Para todos, a porta estava fechada."] },
+  { t: "Rumo a Londres", parte: 0, hora: "12:30", lugar: "Pista de Orly", sabia: "Cinco dias depois do acidente, em 8 de março de 1974, foi inaugurado o aeroporto Charles de Gaulle, perto de onde o avião caiu.", cena: CENAS.decolaOrly,
+    p: ["Às 12:30, o DC-10 decolou de Orly. Subiu na direção leste, sobre o subúrbio de Paris, para depois fazer uma curva para o norte, rumo ao Canal da Mancha e a Londres.", "A subida era tranquila. Os passageiros soltavam os cintos de leve, olhavam as fazendas e cidadezinhas lá embaixo, conversavam sobre o fim de semana. Os comissários se preparavam para o serviço de bordo.", "A cada segundo de subida, a diferença entre a pressão de dentro e a de fora do avião aumentava. A porta traseira, segura apenas pela posição da alavanca, recebia cada vez mais força empurrando para fora.", "Ela aguentou dez minutos."] },
+  { t: "12:40: o estrondo", parte: 1, hora: "12:40", lugar: "Sobre Meaux, 11.500 pés", sabia: "A descompressão explosiva acontece em menos de um segundo: o ar da cabine sai com tanta força que arrasta tudo o que estiver solto perto da abertura.", cena: CENAS.estouro,
+    p: ["Às 12:40, a cerca de 11.500 pés (3.500 metros), perto da cidade de Meaux, os ganchos cederam. A porta do porão traseiro se abriu de uma vez e foi arrancada pelo vento.", "O porão perdeu a pressão em um instante. Mas a cabine, logo acima, continuava pressurizada. A diferença de pressão empurrou o piso da cabine para baixo com uma força enorme, e a parte de trás do piso desabou para dentro do porão.", "Duas fileiras de poltronas, com seis passageiros, foram sugadas para fora pelo buraco. Uma névoa tomou conta da cabine. Na cabine de comando, soou o alarme de pressurização.", "E houve o pior. Embaixo daquele piso passavam os cabos que levavam os comandos dos pilotos até a cauda: profundores, leme e o motor da cauda. Quando o piso desabou, os cabos foram esmagados e rompidos."] },
+  { t: "Sem comandos", parte: 1, hora: "12:40", lugar: "Sobre o Valois, ao norte de Paris", sabia: "O gravador de voz da cabine registrou o alarme de pressurização e os pilotos tentando entender o que acontecia. Uma das últimas falas foi a de que a velocidade estava alta demais.", cena: CENAS.piso,
+    p: ["No mesmo instante, o nariz do DC-10 baixou. O motor da cauda perdeu o comando e parou de responder. Os profundores, que fazem o avião subir e descer, não obedeciam mais aos manches.", "Os pilotos lutaram com o que restava. Puxavam os manches, mexiam nas manetes dos dois motores das asas. Mas, com os cabos rompidos, quase nada do que faziam chegava à cauda.", "O avião começou a mergulhar e a ganhar velocidade muito rápido. Na cabine de passageiros, a névoa, o vento e o barulho tomavam conta. Muitos provavelmente perceberam que estavam caindo.", "A velocidade passou dos 400 nós, mais de 750 km/h, muito acima do limite para aquela altitude. O chão chegava depressa."] },
+  { t: "Ermenonville", parte: 2, hora: "12:41", lugar: "Floresta de Ermenonville", sabia: "A floresta de Ermenonville é uma mata antiga perto de Senlis, a cerca de 40 km ao norte de Paris, com o parque onde o filósofo Jean-Jacques Rousseau viveu seus últimos dias.", cena: CENAS.floresta,
+    p: ["Às 12:41, cerca de 77 segundos depois de a porta se abrir, o DC-10 bateu nas árvores da floresta de Ermenonville, a cerca de 430 nós, perto de 800 km/h, levemente inclinado, com as asas quase niveladas.", "O avião se desfez completamente. Abriu uma faixa de destruição de centenas de metros na mata, derrubando árvores como se fossem palitos. Não sobrou nenhuma parte grande inteira.", "Todas as 346 pessoas a bordo morreram na hora.", "Foi o acidente aéreo mais mortal da história até então. Só seria superado em 1977, pelo choque de dois 747 em Tenerife."] },
+  { t: "Os seis de Saint-Pathus", parte: 2, hora: "3 de março", lugar: "Saint-Pathus", sabia: "A porta do porão foi encontrada inteira, longe da floresta. Foi a primeira grande pista de que o problema tinha começado na traseira do avião.", cena: CENAS.campo,
+    p: ["A cerca de 15 km da floresta, num campo perto do vilarejo de Saint-Pathus, moradores encontraram a porta do porão traseiro do DC-10 caída na terra.", "Perto dela estavam as duas fileiras de poltronas e os seis passageiros que tinham sido sugados para fora no momento da descompressão. Eles caíram ali, muito antes do resto do avião.", "Aqueles achados mostraram aos investigadores, logo nas primeiras horas, a ordem do que tinha acontecido: primeiro a porta, depois o piso, depois a queda.", "Era exatamente o mesmo tipo de falha que já tinha acontecido com outro DC-10, dois anos antes."] },
+  { t: "Na mata", parte: 2, hora: "Março de 1974", lugar: "Floresta de Ermenonville", sabia: "A identificação das vítimas levou meses e envolveu peritos de vários países, com fichas dentárias, documentos e objetos pessoais.", cena: CENAS.socorro,
+    p: ["Bombeiros, policiais e soldados franceses chegaram à floresta pouco depois. O que encontraram foi devastador: os destroços estavam reduzidos a pedaços pequenos, espalhados entre as árvores.", "A área foi isolada e o trabalho de recolher as vítimas durou dias. Por causa da violência do impacto, identificar cada pessoa foi um trabalho lento e difícil.", "Em vários países, famílias souberam pelo rádio e pela televisão que seus parentes estavam num voo para o qual tinham trocado de última hora, por causa da greve.", "Muitas das vítimas eram jovens. Entre elas, dezenas de torcedores de rúgbi que voltavam do jogo de Paris."] },
+  { t: "Windsor, 1972", parte: 3, hora: "12 de junho de 1972", lugar: "Sobre Windsor, Canadá", sabia: "No voo 96 da American Airlines, o avião estava quase vazio. Por isso o piso cedeu menos e alguns cabos continuaram funcionando.", cena: CENAS.windsor,
+    p: ["Menos de dois anos antes, em 12 de junho de 1972, um DC-10 da American Airlines, o voo 96, decolou de Detroit. Sobre Windsor, no Canadá, a porta do porão traseiro se abriu.", "Aconteceu tudo do mesmo jeito: descompressão, piso cedendo, cabos danificados. O leme travou e o motor da cauda deixou de responder. Mas o avião tinha poucos passageiros, e parte dos comandos continuou funcionando.", "O comandante Bryce McCormick, que tinha treinado por conta própria pilotar usando os motores, conseguiu voltar e pousar em Detroit. Todos sobreviveram.", "A causa ficou clara para todo mundo: a porta podia ser fechada sem travar. Era preciso consertar o projeto em todos os DC-10."] },
+  { t: "O memorando", parte: 3, hora: "27 de junho de 1972", lugar: "Convair, Califórnia", sabia: "A Convair fabricava a fuselagem e as portas do DC-10 para a McDonnell Douglas.", cena: CENAS.memorando,
+    p: ["Duas semanas depois de Windsor, um engenheiro da Convair, a empresa que fazia a fuselagem do DC-10, escreveu um memorando ao seu chefe. Seu nome era Dan Applegate.", "Ele avisava que o problema não era só a porta: era o piso, que não aguentava uma descompressão no porão e levava junto os comandos. E previa que, mais cedo ou mais tarde, uma porta ia se abrir de novo e um DC-10 ia cair.", "O memorando não mudou o rumo das coisas. Reforçar o piso de todos os aviões custaria caro e deixaria os DC-10 parados. As empresas envolvidas preferiram corrigir só a porta.", "A agência americana de aviação, a FAA, chegou a preparar uma ordem obrigatória de correção. Mas, em vez de publicá-la, aceitou que o fabricante resolvesse o problema por meio de boletins de serviço, mais lentos e sem a mesma força de lei."] },
+  { t: "A correção que ficou no papel", parte: 3, hora: "1972–1974", lugar: "Fábrica do DC-10", sabia: "O TC-JAV ainda estava na fábrica quando a correção da porta foi lançada. Por isso, devia ter saído de lá com a porta já modificada.", cena: CENAS.carimbos,
+    p: ["Uma das mudanças recomendadas depois de Windsor era instalar uma peça que impedisse a alavanca de ser fechada se os ganchos não estivessem no lugar, e um visor para conferir os pinos.", "Nos registros da fábrica, o TC-JAV aparecia com a correção feita. Havia carimbos de inspetores confirmando o trabalho.", "Depois do acidente, os investigadores examinaram a porta encontrada em Saint-Pathus. A modificação principal não estava completa: a peça de segurança não tinha sido ajustada como devia. Com ela, a alavanca não teria fechado à força.", "O papel dizia que estava tudo certo. A porta dizia o contrário."] },
+  { t: "O que a investigação concluiu", parte: 4, hora: "1976", lugar: "Comissão francesa de investigação", sabia: "O relatório final foi publicado pelas autoridades francesas e depois republicado pelo órgão britânico de investigação de acidentes aéreos.", cena: CENAS.relatorioTk,
+    p: ["A comissão francesa de investigação concluiu que a porta do porão traseiro não estava travada quando o avião decolou, e que o projeto permitia que a alavanca fosse fechada mesmo assim.", "Com a porta solta, a pressão a arrancou em voo. A descompressão do porão derrubou o piso da cabine, que rompeu os cabos de comando. A partir daí, a tripulação não tinha como controlar o avião.", "O relatório apontou que a falha já era conhecida desde Windsor e que as correções recomendadas não tinham sido feitas por completo nesse avião.", "O funcionário que fechou a porta não foi considerado culpado: ele fez o que tinha sido ensinado, numa porta que deixava ser fechada do jeito errado."] },
+  { t: "Na Justiça", parte: 4, hora: "1974–1976", lugar: "Tribunais dos Estados Unidos", sabia: "Os processos das famílias foram reunidos num só tribunal em Los Angeles, perto de onde o DC-10 era fabricado.", cena: CENAS.tribunalTk,
+    p: ["Famílias de vítimas de vários países processaram a McDonnell Douglas, a Convair, a Turkish Airlines e a agência americana de aviação.", "O memorando de Dan Applegate se tornou uma das provas mais fortes: mostrava que o risco era conhecido antes do acidente.", "O caso terminou em acordos de indenização. Na época, foi um dos maiores processos da história da aviação civil.", "Ninguém foi condenado criminalmente pela tragédia."] },
+  { t: "O que mudou", parte: 4, hora: "1974–hoje", lugar: "No mundo inteiro", sabia: "Em 1979, outro DC-10 caiu em Chicago, por outro motivo. O modelo ficou com fama de avião azarado, mas voou com segurança por muitos anos depois das correções.", cena: CENAS.memoriaTk,
+    p: ["Depois de Ermenonville, a FAA publicou ordens obrigatórias: todas as portas de porão dos DC-10 tiveram de ser corrigidas, com travas que não deixam a alavanca fechar sem os ganchos no lugar e visores fáceis de conferir.", "Os aviões ganharam aberturas de alívio no piso, para que uma descompressão no porão não derrube o piso da cabine. Os projetos novos passaram a ser pensados para continuar controláveis mesmo se o piso ceder.", "O caso virou um exemplo estudado até hoje em escolas de engenharia: o perigo de saber de um defeito e corrigi-lo pela metade.", "Na floresta de Ermenonville, um memorial lembra as 346 pessoas do voo 981."] },
+    ],
+    linha: [['12:30', 'Decolagem de Orly, em Paris, rumo a Londres, com 346 pessoas a bordo.', 0], ['12:40', 'Perto de Meaux, a 11.500 pés, a porta do porão traseiro se abre. O piso cede e corta os comandos.', .58],
+      ['12:40', 'A porta e seis passageiros caem perto de Saint-Pathus.', .82], ['12:41', 'Cerca de 77 segundos depois, o DC-10 cai na floresta de Ermenonville.', 1]],
+    falha: 'A porta do porão traseiro abria para fora e podia ser fechada sem que os ganchos travassem. Quando ela se abriu em voo, a cabine pressurizada empurrou o piso para baixo, e o piso esmagou os cabos que levavam os comandos até a cauda.',
+    mudou: ['A FAA tornou obrigatória a correção das portas de porão do DC-10, com travas que impedem a alavanca de fechar sem os ganchos no lugar.',
+      'Os pisos ganharam aberturas de alívio, para que uma descompressão no porão não derrube o piso da cabine nem rompa os comandos.',
+      'Projetos novos passaram a exigir que o avião continue controlável mesmo com o piso danificado.',
+      'O caso virou exemplo, nas escolas de engenharia, do risco de corrigir um defeito conhecido pela metade.'],
+    memoria: 'Na floresta de Ermenonville, um memorial com os nomes das vítimas lembra as 346 pessoas de mais de 20 países que estavam no voo 981.',
+    fontes: [['Wikipedia: Turkish Airlines Flight 981', 'https://en.wikipedia.org/wiki/Turkish_Airlines_Flight_981'], ['BEA: o acidente do TC-JAV', 'https://bea.aero/en/investigation-reports/notified-events/detail/accident-to-the-mcdonnell-douglas-dc10-registered-tc-jav-operated-by-turkish-airlines-on-03-03-1974-at-ermenonville/'],
+      ['AAIB: relatório 8/1976', 'https://www.gov.uk/aaib-reports/8-1976-turkish-airlines-dc-10-tc-jav-3-march-1974'], ['Wikipedia: Dan Applegate', 'https://en.wikipedia.org/wiki/Dan_Applegate'], ['Wikipedia: American Airlines Flight 96', 'https://en.wikipedia.org/wiki/American_Airlines_Flight_96']],
+    mapa: mapaTk981, esquema: falhaTk981, fugoide: portaTk981,
+    fugoideTit: 'A trava enganosa',
+    fugoideTxt: 'Na porta do DC-10, a alavanca externa podia ser baixada à força mesmo com os ganchos fora do lugar. A alavanca parecia travada e o aviso da cabine se apagava, mas a porta estava presa só pela posição da alavanca, e a pressão do voo acabou arrancando-a.',
   },
 ];
 
