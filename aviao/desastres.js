@@ -282,16 +282,12 @@ function mapaGol1907() {
 }
 // O que falhou: dois aviões na mesma altitude, em sentidos opostos, e um deles invisível para o TCAS
 function falhaGol1907() {
-  return `<svg viewBox="0 0 360 170" role="img" aria-label="Esquema: o Boeing da Gol e o Legacy voavam a 37.000 pés na mesma aerovia, em sentidos opostos; o Legacy deveria estar a 36.000">
-    <rect width="360" height="170" class="hs-sky"/>
-    <path d="M0 64 H360" class="gb-fl"/><text x="6" y="58" class="dz-map-t">37.000 pés</text>
-    <path d="M0 104 H360" class="gb-fl gb-fl--ok"/><text x="6" y="98" class="dz-map-t">36.000 pés (onde o Legacy deveria estar)</text>
-    <g class="gb-ida"><g transform="translate(70 64) scale(.6)">${a330()}</g></g>
-    <g class="gb-volta"><g transform="translate(290 64) scale(-.75 .75)">${legacy()}</g></g>
-    <path d="M290 72 V100" class="gb-arrow"/><path d="M285 94 l5 8 l5 -8" class="gb-arrow"/>
-    <text x="70" y="42" text-anchor="middle" class="dz-map-t">Gol 1907 → Brasília</text>
-    <text x="290" y="42" text-anchor="middle" class="dz-map-t gb-or-t">← Legacy (transponder parado)</text>
-    <text x="180" y="150" text-anchor="middle" class="dz-map-t dz-map-crash">mesma aerovia · mesma altitude · sentidos opostos</text>
+  // Esquema da colisão sobre a imagem; o quadro do TCAS foi corrigido: no voo 1907 ele não deu nenhum alerta
+  return `<svg viewBox="0 0 1464 720" role="img" aria-label="Esquema: o Boeing da Gol e o Legacy voavam a 37.000 pés na mesma aerovia, em sentidos opostos; o Legacy deveria estar a 36.000 pés e estava com o transponder parado, e o TCAS do Boeing não deu alerta">
+    <image href="assets/gol1907-falha.webp" x="0" y="0" width="1464" height="720"/>
+    <rect x="214" y="494" width="340" height="84" fill="#1a2430"/>
+    <text x="224" y="522" class="gf-tit">TCAS: em silêncio</text>
+    <text x="224" y="550" class="gf-txt">Sem resposta do transponder</text><text x="224" y="574" class="gf-txt">do Legacy, nenhum alarme soou.</text>
   </svg>`;
 }
 // Por que o TCAS não avisou: ele só "vê" quem responde com o transponder
