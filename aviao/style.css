@@ -1195,3 +1195,139 @@ body.drawer-lock { overflow: hidden; }
   .card.hs .hs__scene { margin-inline: calc(6px - var(--pad)); border-radius: 8px; }
   .dzh .hs__scene { border-radius: 8px; }
 }
+
+/* O estol do AF 447: foto com as setas por cima */
+.es-dim { fill: #06101c; opacity: .18; }
+.es-nose { stroke: #e9eef5; stroke-width: 1.4; stroke-dasharray: 5 4; fill: none; opacity: .85; }
+.es-arc { fill: none; stroke: #ff5fae; stroke-width: 2.4; stroke-linecap: round; }
+.es-vec { fill: none; stroke: #ff6b5b; stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
+.es-path { animation: esPulse 1.8s ease-in-out infinite; }
+.es-t { font: 600 9px var(--mono); fill: #f2f5f7; paint-order: stroke; stroke: rgba(0,0,0,.65); stroke-width: 3px; stroke-linejoin: round; }
+.es-red { fill: #ff8a7a; }
+.es-s { font: 500 7.5px var(--mono); fill: #cfd8de; paint-order: stroke; stroke: rgba(0,0,0,.6); stroke-width: 2.5px; }
+.es-ilus { font: 500 6px var(--mono); fill: #cfd8de; opacity: .8; }
+@keyframes esPulse { 0%, 100% { opacity: .55; transform: translate(0, 0); } 50% { opacity: 1; transform: translate(2px, 1.5px); } }
+@media (prefers-reduced-motion: reduce) { .es-path { animation: none !important; } }
+
+/* Desastres: MH370 (mapa do Índico, satélite, radar e deriva) */
+.dz-map--mh .dz-labels text { font-size: 25px; stroke-width: 5px; }
+.dz-map--mh .dz-labels .dz-lbl-s { font-size: 20px; }
+.dz-map--mh .dz-labels .dz-lbl-big { font-size: 30px; letter-spacing: .18em; fill: #e3eedf; opacity: .75; }
+.dz-map--mh .dz-mark circle { r: 8; stroke-width: 3; }
+.dz-map--mh .dz-route-dash { stroke-width: 4.5; stroke-dasharray: 18 10 3 10; }
+.dz-map--mh .dz-map-note { font-size: 18px; }
+.mh-dimfoto { fill: #06101c; opacity: .25; }
+.mh-arc { fill: none; stroke: #ffb84a; stroke-width: 3; stroke-dasharray: 6 5; }
+.mh-arc-t { fill: #ffd27a !important; }
+.mh-search { fill: none; stroke: #ffb84a; stroke-width: 34; stroke-linecap: round; opacity: .22; }
+.mh-sea { fill: #0b2033; } .mh-land { fill: #2d4434; stroke: #6f8f68; stroke-width: 1; }
+.mh-ring { fill: none; stroke: #8fc3e6; stroke-width: 1.4; stroke-dasharray: 4 4; opacity: .55; }
+.mh-ring--7 { stroke: #ffb84a; stroke-width: 2.4; opacity: 1; stroke-dasharray: none; animation: pxBlink 1.6s ease-in-out infinite; }
+.mh-sat { fill: #d9dee2; stroke: #1b2630; } .mh-panel { fill: #3b6aa8; stroke: #9cc0e6; stroke-width: .6; }
+.mh-plane-dim path, .mh-plane-dim rect { fill: #cfd8de; stroke: none; }
+.mh-drift { fill: none; stroke: #8fc3e6; stroke-width: 1.6; stroke-dasharray: 3 6; opacity: .8; animation: mhDrift 4s linear infinite; }
+.mh-find { fill: #ff6b5b; stroke: #fff; stroke-width: .8; }
+.mh-terminal { fill: #1c2a36; } .mh-roof { fill: none; stroke: #4a5a68; stroke-width: 3; }
+.mh-towers path, .mh-towers rect { fill: #1d2833; stroke: #6d7a86; stroke-width: .8; } .mh-spire { stroke: #9fb0bd; stroke-width: 1.2; }
+.mh-wave { fill: none; stroke: #5fe08a; stroke-width: 2; animation: pxBlink 1.2s ease-in-out infinite; }
+.mh-radio { font: 700 11px var(--mono); fill: #ffd76a; letter-spacing: .04em; }
+.mh-scope { fill: #04140c; stroke: #2b6a44; stroke-width: 2; } .mh-scope-l { fill: none; stroke: #1f5a36; stroke-width: .8; }
+.mh-sweep { animation: hsSpin 4s linear infinite; } .mh-sweep-f { fill: #3ddc84; opacity: .16; }
+.mh-dot { fill: #6dff9f; } .mh-tag { font: 600 7px var(--mono); fill: #6dff9f; }
+.mh-blip { animation: mhBlip 4s steps(1) infinite; }
+.mh-path { fill: none; stroke: #fff; stroke-width: 2; stroke-dasharray: 6 5; animation: mhDash 3s linear infinite; }
+.mh-earth { fill: #12304d; stroke: #3b6aa8; stroke-width: 1; }
+.mh-ping { fill: none; stroke: #8fc3e6; stroke-width: 1.4; transform-box: fill-box; transform-origin: center; animation: mhPing 3s ease-out infinite; }
+.mh-link { stroke: #8fc3e6; stroke-width: 1.2; stroke-dasharray: 3 4; animation: mhDash 1.5s linear infinite; }
+.mh-fade { animation: mhFade 5s ease-in-out infinite; }
+.mh-fade path, .mh-fade rect { fill: #cfd8de; stroke: none; }
+.mh-podium { fill: #2b3640; stroke: #4a5a68; } .mh-mic { stroke: #1b1b1b; stroke-width: 2; } .mh-mic-h { fill: #3a3a3a; }
+.mh-flash { fill: #fff; opacity: 0; animation: hsFlash 2.6s infinite; }
+.mh-cable { fill: none; stroke: #c9d2da; stroke-width: 1; }
+.mh-tow { animation: hsFloat 5s ease-in-out infinite alternate; } .mh-sonar { fill: #6fd0ff; opacity: .14; }
+.mh-stripe { stroke: #6fd0ff; stroke-width: 3; opacity: .35; }
+.mh-sand { fill: #d8c49a; }
+@keyframes mhDrift { to { stroke-dashoffset: -36; } }
+@keyframes mhDash { to { stroke-dashoffset: -22; } }
+@keyframes mhBlip { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0; } }
+@keyframes mhPing { from { transform: scale(.4); opacity: 1; } to { transform: scale(3.2); opacity: 0; } }
+@keyframes mhFade { 0%, 40% { opacity: 1; } 70%, 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { [class^="mh-"] { animation: none !important; } .mh-flash { opacity: .6; } }
+
+/* A data embaixo dos primeiros e dos últimos pontinhos fica alinhada pela borda, para não sair do cartão */
+@media (max-width: 900px) {
+  .hs__line button:nth-child(-n+3)[aria-current] span { left: 0; }
+  .hs__line button:nth-last-child(-n+3)[aria-current] span { right: 0; }
+}
+
+/* MH370, capítulo 5: a volta desenhada sobre a foto de satélite */
+.cv-shadow { fill: none; stroke: rgba(0,0,0,.45); stroke-width: 16; stroke-linecap: round; stroke-linejoin: round; }
+.cv-path { fill: none; stroke: #fff; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 100; stroke-dashoffset: 100; animation: cvDraw 6s ease-in-out infinite; }
+.cv-dot { fill: #fff; stroke: #1b2630; stroke-width: 5; }
+.cv-igari { fill: #ff6b5b; stroke: #fff; stroke-width: 5; }
+.cv-last { fill: #ffb84a; stroke: #fff; stroke-width: 5; animation: pxBlink 1.2s ease-in-out infinite; }
+.cv-t { font: 700 40px var(--mono); fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.7); stroke-width: 9px; stroke-linejoin: round; letter-spacing: .03em; }
+@keyframes cvDraw { 0% { stroke-dashoffset: 100; } 70%, 100% { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .cv-path, .cv-last { animation: none !important; stroke-dashoffset: 0; } }
+.mh-ausl { font: 700 9px var(--mono); letter-spacing: .14em; fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.6); stroke-width: 2.5px; }
+/* Mortos e sobreviventes sempre numa linha só no cartão da lista */
+.dz-item i { white-space: nowrap; font-size: min(11.5px, 2.75vw); letter-spacing: 0; }
+
+/* Explorar aberto: a página de trás fica parada e só o menu rola */
+html.menu-lock, html.menu-lock body { overflow: hidden; overscroll-behavior: none; }
+.tabmenu { max-height: calc(100dvh - 140px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+
+/* Seletor de acidentes: um cartão com o escolhido e a lista que abre embaixo */
+.dz__pick { display: grid; gap: 10px; }
+.dz-pick__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.dz-pick__caret { position: relative; flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); cursor: pointer; padding: 0; }
+.dz-pick__caret::before { content: ""; position: absolute; left: 50%; top: 50%; width: 7px; height: 7px; border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink); transform: translate(-50%, -70%) rotate(45deg); transition: transform .2s; }
+.dz__pick.is-open .dz-pick__caret::before { transform: translate(-50%, -30%) rotate(-135deg); }
+.dz__pick .dz__list { margin-top: 0; grid-template-columns: minmax(0, 1fr); border-top: 1px solid var(--line); padding-top: 10px; }
+.dz__pick .dz__list[hidden] { display: none; }
+.dz-item[aria-selected="true"] { border-color: var(--magenta); box-shadow: 0 0 0 1px var(--magenta); }
+.dz-item[aria-selected="true"] .dz-item__year { color: var(--magenta); }
+.dz-pick__btn .dz-item__year { color: var(--magenta); }
+/* Toque mais limpo no seletor de acidentes: sem o realce azul do navegador e sem atraso */
+.dz-pick__caret, .dz-pick__btn, .dz__list .dz-item { -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.dz-pick__caret:focus, .dz-pick__btn:focus, .dz__list .dz-item:focus { outline: none; }
+.dz-pick__caret:focus-visible, .dz-pick__btn:focus-visible, .dz__list .dz-item:focus-visible { outline: 2px solid var(--magenta); outline-offset: 2px; }
+.dz-pick__caret { transition: transform .15s ease, background .15s ease; }
+.dz-pick__caret:active { transform: scale(.9); background: var(--sel); }
+.dz-pick__btn, .dz__list .dz-item { transition: transform .12s ease; }
+.dz-pick__btn:active, .dz__list .dz-item:active { transform: scale(.985); }
+.dz__pick .dz__list:not([hidden]) { animation: dzListIn .22s ease-out; }
+@keyframes dzListIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .dz__pick .dz__list:not([hidden]) { animation: none; } }
+
+/* Desastres: Gol 1907 (mapa do Brasil, as duas rotas e o TCAS) */
+.gb-brasil { fill: #2d4434; stroke: #8fb087; stroke-width: 2.5; }
+.gb-legacy { fill: none; stroke: #ffb84a; stroke-width: 4; stroke-dasharray: 12 8; stroke-linecap: round; stroke-linejoin: round; }
+.gb-cac { fill: #ffb84a; stroke: #fff; stroke-width: 3; }
+.dz-map--gol .dz-labels text { font-size: 30px; stroke-width: 6px; }
+.dz-map--gol .dz-labels .dz-lbl-s { font-size: 24px; }
+.dz-map--gol .dz-labels .dz-lbl-big { font-size: 48px; letter-spacing: .22em; fill: #f2f6ef; opacity: .7; }
+.dz-map--gol .dz-labels .gb-red { fill: #ff8a7a; } .dz-map--gol .dz-labels .gb-or { fill: #ffd27a; }
+.dz-map--gol .dz-mark circle { r: 9; stroke-width: 3; }
+.dz-map--gol .dz-route-dash { stroke-width: 4.5; stroke-dasharray: 18 10 3 10; }
+.dz-map--gol .dz-x { stroke-width: 7; }
+.dz-map--gol .dz-map-note { font-size: 16px; }
+.gb-fl { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 4 4; } .gb-fl--ok { stroke: #5fbf7a; }
+.gb-or-t { fill: #c77a10; }
+.gb-arrow { fill: none; stroke: #5fbf7a; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.gb-ida { animation: gbIda 4s ease-in-out infinite; } .gb-volta { animation: gbVolta 4s ease-in-out infinite; }
+@keyframes gbIda { 0% { transform: translateX(-20px); } 100% { transform: translateX(70px); } }
+@keyframes gbVolta { 0% { transform: translateX(20px); } 100% { transform: translateX(-70px); } }
+.gb-ping { fill: none; stroke: #8fc3e6; stroke-width: 1.4; transform-box: fill-box; transform-origin: center; animation: mhPing 3s ease-out infinite; }
+.gb-ghost { opacity: .35; } .gb-ghost path, .gb-ghost rect { fill: #cfd8de; stroke: none; }
+.gb-ask { stroke: #8fc3e6; stroke-width: 1.4; stroke-dasharray: 4 5; animation: mhDash 1.5s linear infinite; }
+.gb-mata { fill: #24452c; } .gb-arvore { fill: #2f5a37; }
+.gb-xpdr { font: 700 20px var(--mono); fill: #5fe08a; letter-spacing: .1em; } .gb-xpdr--off { fill: #ffb84a; animation: pxBlink 1.2s steps(1) infinite; }
+.gb-led { fill: #3a3a3a; stroke: #6d7a86; }
+.gb-blink { animation: pxBlink 1s steps(1) infinite; }
+.gb-pass { animation: gbPass 3s ease-in infinite; }
+@keyframes gbPass { 0% { transform: translateX(60px); opacity: 0; } 20% { opacity: 1; } 60%, 100% { transform: translateX(-120px); opacity: 0; } }
+.gb-spin { animation: gbSpin 3s linear infinite; }
+@keyframes gbSpin { from { transform: rotate(0deg) translateY(0); } to { transform: rotate(360deg) translateY(0); } }
+.gb-pista { fill: #3a4148; }
+@media (prefers-reduced-motion: reduce) { [class^="gb-"] { animation: none !important; } }
