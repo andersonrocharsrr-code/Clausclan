@@ -1353,11 +1353,11 @@ html.menu-lock, html.menu-lock body { overflow: hidden; overscroll-behavior: non
 /* Desastres: Turkish Airlines 981 (mapa de Paris, a porta e o piso) */
 .tk-campo { fill: #3c5a3a; } .tk-rio { fill: none; stroke: #4f86b8; stroke-width: 5; stroke-linecap: round; } .tk-rio--s { stroke-width: 3; }
 .tk-cidade { fill: #7d7a70; opacity: .55; } .tk-floresta { fill: #1f4126; stroke: #2f5a37; stroke-width: 2; }
-.tk-sp { stroke: #ffb84a; stroke-width: 2.4; stroke-linecap: round; }
-.dz-map--tk .dz-labels text { font-size: 12px; stroke-width: 3px; } .dz-map--tk .dz-labels .dz-lbl-s { font-size: 10px; }
+.tk-sp { stroke: #ffb84a; stroke-width: 6; stroke-linecap: round; }
+.dz-map--tk .dz-labels text { font-size: 60px; stroke-width: 10px; } .dz-map--tk .dz-labels .dz-lbl-s { font-size: 46px; }
 .dz-map--tk .dz-labels .dz-lbl-big { font-size: 14px; letter-spacing: .2em; fill: #f2f6ef; opacity: .8; }
-.dz-map--tk .dz-labels .tk-red { fill: #ff8a7a; } .dz-map--tk .dz-mark circle { r: 4; stroke-width: 1.5; }
-.dz-map--tk .dz-route-dash { stroke-width: 2.4; stroke-dasharray: 8 5 2 5; } .dz-map--tk .dz-x { stroke-width: 3.5; } .dz-map--tk .dz-map-note { font-size: 8px; }
+.dz-map--tk .dz-labels .tk-red { fill: #ff8a7a; } .dz-map--tk .dz-mark circle { r: 12; stroke-width: 4; }
+.dz-map--tk .dz-route-dash { stroke-width: 6; stroke-dasharray: 22 12 4 12; } .dz-map--tk .dz-x { stroke-width: 9; } .dz-map--tk .dz-map-note { font-size: 32px; }
 .tk-door { fill: #e8ecef; stroke: #1b2630; stroke-width: .8; } .tk-hole { fill: #0b1015; }
 .tk-floor { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linecap: round; } .tk-floor--down { stroke: var(--bad); stroke-dasharray: 4 3; }
 .tk-cable { fill: none; stroke-width: 1.6; }

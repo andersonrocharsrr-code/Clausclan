@@ -313,36 +313,32 @@ const dc10 = (cls = 'hs-fill-paper2', semPorta = false) => `<g><path d="M-74 4 C
   <path d="M-4 6 L-32 26 H-20 L16 6Z" class="hs-fill-ink"/><rect x="-14" y="12" width="18" height="7" rx="3.5" class="hs-fill-metal"/><path d="M-62 6 L-78 13 H-70 L-52 6Z" class="hs-fill-ink"/>
   ${[-42, -30, -18, -6, 6, 18, 30].map((x) => `<rect x="${x}" y="-3" width="5" height="4" rx="1" class="hs-fill-ink"/>`).join('')}
   ${semPorta ? '<rect x="-52" y="1" width="10" height="8" class="tk-hole"/>' : '<rect x="-52" y="1" width="10" height="8" rx="1" class="tk-door"/>'}</g>`;
-// Mapa da região de Paris, fora de escala: de Orly ao leste, a curva para o norte e a floresta de Ermenonville
-const TK = (lat, lon) => [Math.round((lon - 1.9) * 300), Math.round((49.4 - lat) * 450)];
-const [TK_ORLY, TK_PARIS, TK_MEAUX, TK_SP, TK_ERM, TK_CDG] = [TK(48.72, 2.38), TK(48.86, 2.35), TK(48.96, 2.88), TK(49.07, 2.8), TK(49.15, 2.63), TK(49.01, 2.55)];
-const TK981_ROTA = `M${TK_ORLY.join(' ')} C${TK_ORLY[0] + 70} ${TK_ORLY[1] - 4} ${TK_MEAUX[0] + 20} ${TK_MEAUX[1] + 60} ${TK_MEAUX[0]} ${TK_MEAUX[1]} C${TK_MEAUX[0] - 8} ${TK_MEAUX[1] - 30} ${TK_SP[0] + 16} ${TK_SP[1] + 16} ${TK_SP[0]} ${TK_SP[1]} L${TK_ERM.join(' ')}`;
+// Mapa sobre imagem de satélite da região a leste de Paris (1672x941, imagem ilustrativa, fora de escala):
+// o aeroporto à esquerda faz o papel de Orly, o rio o do Marne e a mata de cima o da floresta de Ermenonville
+const [TK_ORLY, TK_MEAUX, TK_SP, TK_ERM] = [[300, 600], [1190, 640], [1300, 300], [930, 190]];
+const TK981_ROTA = `M${TK_ORLY.join(' ')} C520 640 900 680 ${TK_MEAUX.join(' ')} C1330 610 1380 420 ${TK_SP.join(' ')} C1220 210 1060 170 ${TK_ERM.join(' ')}`;
 function mapaTk981() {
-  return `<svg viewBox="0 0 420 360" role="img" aria-label="Mapa do voo 981: decolagem de Orly, subida para o leste, curva para o norte e queda na floresta de Ermenonville" class="dz-map--tk">
-    <defs><filter id="dzShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="3" dy="4" stdDeviation="2" flood-color="#000" flood-opacity=".5"/></filter></defs>
-    <rect width="420" height="360" class="tk-campo"/>
-    <path d="M0 230 C60 236 110 250 150 246 S230 262 300 222 S380 214 420 230" class="tk-rio"/><path d="M300 222 C320 200 340 190 420 186" class="tk-rio tk-rio--s"/>
-    <circle cx="${TK_PARIS[0]}" cy="${TK_PARIS[1]}" r="34" class="tk-cidade"/>
-    <ellipse cx="${TK_ERM[0] - 4}" cy="${TK_ERM[1] - 6}" rx="46" ry="26" class="tk-floresta"/>
-    <path d="M${TK_SP[0]} ${TK_SP[1]} m-8 -8 l16 16 m0 -16 l-16 16" class="tk-sp"/>
-    <mask id="dzReveal" maskUnits="userSpaceOnUse" x="0" y="0" width="420" height="360"><path id="dzRevealPath" d="${TK981_ROTA}" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round"/></mask>
-    <path d="M${TK_ERM.join(' ')} L${TK_ERM[0] - 40} 0" class="dz-route-plan"/>
+  return `<svg viewBox="0 0 1672 941" role="img" aria-label="Mapa do voo 981: decolagem de Orly, subida para o leste ao longo do Marne, curva para o norte e queda na floresta de Ermenonville" class="dz-map--tk">
+    <defs><filter id="dzShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="6" dy="9" stdDeviation="4" flood-color="#000" flood-opacity=".55"/></filter></defs>
+    <image href="assets/tk981-mapa.webp" x="0" y="0" width="1672" height="941" preserveAspectRatio="xMidYMid slice"/>
+    <path d="M${TK_SP[0]} ${TK_SP[1]} m-16 -16 l32 32 m0 -32 l-32 32" class="tk-sp"/>
+    <mask id="dzReveal" maskUnits="userSpaceOnUse" x="0" y="0" width="1672" height="941"><path id="dzRevealPath" d="${TK981_ROTA}" fill="none" stroke="#fff" stroke-width="36" stroke-linecap="round"/></mask>
+    <path d="M${TK_ERM.join(' ')} L700 0" class="dz-route-plan"/>
     <path id="dzPath" d="${TK981_ROTA}" class="dz-route"/>
     <path d="${TK981_ROTA}" class="dz-route-dash" mask="url(#dzReveal)"/>
     <g class="dz-labels">
-      <circle cx="${TK_ORLY[0]}" cy="${TK_ORLY[1]}" r="4" class="dz-dot"/><text x="${TK_ORLY[0]}" y="${TK_ORLY[1] + 18}" text-anchor="middle">Orly</text>
-      <text x="${TK_PARIS[0]}" y="${TK_PARIS[1] + 4}" text-anchor="middle" class="dz-lbl-big">PARIS</text>
-      <text x="${TK_MEAUX[0] + 8}" y="${TK_MEAUX[1] + 4}" class="dz-lbl-s">Meaux</text>
-      <text x="${TK_SP[0] + 12}" y="${TK_SP[1] + 4}" class="dz-lbl-s">Saint-Pathus</text>
-      <text x="${TK_ERM[0] - 4}" y="${TK_ERM[1] - 38}" text-anchor="middle" class="dz-lbl-s tk-red">Floresta de Ermenonville</text>
-      <circle cx="${TK_CDG[0]}" cy="${TK_CDG[1]}" r="3" class="dz-dot"/><text x="${TK_CDG[0] - 8}" y="${TK_CDG[1] - 8}" text-anchor="end" class="dz-lbl-s">Charles de Gaulle</text><text x="${TK_CDG[0] - 8}" y="${TK_CDG[1] + 6}" text-anchor="end" class="dz-lbl-s">(inaugurado 5 dias depois)</text>
-      <text x="410" y="16" text-anchor="end" class="dz-lbl-s">rota prevista até Londres</text>
-      <text x="400" y="244" text-anchor="end" class="dz-lbl-s dz-lbl-w">Marne</text>
+      <circle cx="${TK_ORLY[0]}" cy="${TK_ORLY[1]}" r="10" class="dz-dot"/><text x="${TK_ORLY[0]}" y="${TK_ORLY[1] + 48}" text-anchor="middle">Orly</text>
+      <text x="${TK_MEAUX[0]}" y="${TK_MEAUX[1] + 70}" text-anchor="middle" class="dz-lbl-s">Meaux · 12:40</text>
+      <text x="${TK_SP[0] - 34}" y="${TK_SP[1] - 6}" text-anchor="end" class="dz-lbl-s">Saint-Pathus</text><text x="${TK_SP[0] - 34}" y="${TK_SP[1] + 46}" text-anchor="end" class="dz-lbl-s">a porta e 6 passageiros</text>
+      <text x="${TK_ERM[0]}" y="${TK_ERM[1] - 52}" text-anchor="middle" class="dz-lbl-s tk-red">Floresta de Ermenonville · 12:41</text>
+      <text x="760" y="610" text-anchor="middle" class="dz-lbl-s dz-lbl-w">rio Marne</text>
+      <text x="20" y="56" class="dz-lbl-s">← Paris</text>
+      <text x="730" y="56" class="dz-lbl-s">rota prevista até Londres ↑</text>
     </g>
     <g id="dzMarks"></g>
-    <path d="M${TK_ERM[0] - 7} ${TK_ERM[1] - 7} l14 14 M${TK_ERM[0] + 7} ${TK_ERM[1] - 7} l-14 14" class="dz-x"/>
-    <g id="dzPlane"><circle r="14" class="dz-plane-halo"/><g transform="scale(.42)" filter="url(#dzShadow)">${AVIAO_TOPO}</g></g>
-    <text x="8" y="352" class="dz-map-note">Rota aproximada · mapa fora de escala</text>
+    <path d="M${TK_ERM[0] - 18} ${TK_ERM[1] - 18} l36 36 M${TK_ERM[0] + 18} ${TK_ERM[1] - 18} l-36 36" class="dz-x"/>
+    <g id="dzPlane"><circle r="36" class="dz-plane-halo"/><g transform="scale(1.05)" filter="url(#dzShadow)">${AVIAO_TOPO}</g></g>
+    <text x="16" y="926" class="dz-map-note">Imagem ilustrativa · rota aproximada, fora de escala</text>
   </svg>`;
 }
 // O que falhou: a porta do porão traseiro se abre, o piso da cabine desaba e corta os cabos de comando
@@ -933,8 +929,8 @@ const ACIDENTES = [
   { t: "O que mudou", parte: 4, hora: "1974–hoje", lugar: "No mundo inteiro", sabia: "Em 1979, outro DC-10 caiu em Chicago, por outro motivo. O modelo ficou com fama de avião azarado, mas voou com segurança por muitos anos depois das correções.", cena: CENAS.memoriaTk,
     p: ["Depois de Ermenonville, a FAA publicou ordens obrigatórias: todas as portas de porão dos DC-10 tiveram de ser corrigidas, com travas que não deixam a alavanca fechar sem os ganchos no lugar e visores fáceis de conferir.", "Os aviões ganharam aberturas de alívio no piso, para que uma descompressão no porão não derrube o piso da cabine. Os projetos novos passaram a ser pensados para continuar controláveis mesmo se o piso ceder.", "O caso virou um exemplo estudado até hoje em escolas de engenharia: o perigo de saber de um defeito e corrigi-lo pela metade.", "Na floresta de Ermenonville, um memorial lembra as 346 pessoas do voo 981."] },
     ],
-    linha: [['12:30', 'Decolagem de Orly, em Paris, rumo a Londres, com 346 pessoas a bordo.', 0], ['12:40', 'Perto de Meaux, a 11.500 pés, a porta do porão traseiro se abre. O piso cede e corta os comandos.', .58],
-      ['12:40', 'A porta e seis passageiros caem perto de Saint-Pathus.', .82], ['12:41', 'Cerca de 77 segundos depois, o DC-10 cai na floresta de Ermenonville.', 1]],
+    linha: [['12:30', 'Decolagem de Orly, em Paris, rumo a Londres, com 346 pessoas a bordo.', [300, 600]], ['12:40', 'Perto de Meaux, a 11.500 pés, a porta do porão traseiro se abre. O piso cede e corta os comandos.', [1190, 640]],
+      ['12:40', 'A porta e seis passageiros caem perto de Saint-Pathus.', [1300, 300]], ['12:41', 'Cerca de 77 segundos depois, o DC-10 cai na floresta de Ermenonville.', [930, 190]]],
     falha: 'A porta do porão traseiro abria para fora e podia ser fechada sem que os ganchos travassem. Quando ela se abriu em voo, a cabine pressurizada empurrou o piso para baixo, e o piso esmagou os cabos que levavam os comandos até a cauda.',
     mudou: ['A FAA tornou obrigatória a correção das portas de porão do DC-10, com travas que impedem a alavanca de fechar sem os ganchos no lugar.',
       'Os pisos ganharam aberturas de alívio, para que uma descompressão no porão não derrube o piso da cabine nem rompa os comandos.',
@@ -943,7 +939,7 @@ const ACIDENTES = [
     memoria: 'Na floresta de Ermenonville, um memorial com os nomes das vítimas lembra as 346 pessoas de mais de 20 países que estavam no voo 981.',
     fontes: [['Wikipedia: Turkish Airlines Flight 981', 'https://en.wikipedia.org/wiki/Turkish_Airlines_Flight_981'], ['BEA: o acidente do TC-JAV', 'https://bea.aero/en/investigation-reports/notified-events/detail/accident-to-the-mcdonnell-douglas-dc10-registered-tc-jav-operated-by-turkish-airlines-on-03-03-1974-at-ermenonville/'],
       ['AAIB: relatório 8/1976', 'https://www.gov.uk/aaib-reports/8-1976-turkish-airlines-dc-10-tc-jav-3-march-1974'], ['Wikipedia: Dan Applegate', 'https://en.wikipedia.org/wiki/Dan_Applegate'], ['Wikipedia: American Airlines Flight 96', 'https://en.wikipedia.org/wiki/American_Airlines_Flight_96']],
-    mapa: mapaTk981, esquema: falhaTk981, fugoide: portaTk981,
+    cauda: 'assets/cauda-tk.webp', mapaImg: 'assets/tk981-mapa.webp', mapa: mapaTk981, esquema: falhaTk981, fugoide: portaTk981,
     fugoideTit: 'A trava enganosa',
     fugoideTxt: 'Na porta do DC-10, a alavanca externa podia ser baixada à força mesmo com os ganchos fora do lugar. A alavanca parecia travada e o aviso da cabine se apagava, mas a porta estava presa só pela posição da alavanca, e a pressão do voo acabou arrancando-a.',
   },
