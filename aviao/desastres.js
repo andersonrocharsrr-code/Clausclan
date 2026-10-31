@@ -230,8 +230,9 @@ const MI = (lat, lon) => [Math.round((lon - 30.35) * 15.54) - 2, Math.round((-la
 const miPts = (l) => l.map(([a, b]) => MI(a, b).join(' ')).join(' L');
 function derivaMh370() {
   const achados = [[[-21.1, 55.5], 'Reunião · flaperon (2015)', -6, 34], [[-20.3, 58.4], 'Maurício', 14, -8], [[-17, 49.9], 'Madagascar', 14, -10], [[-22, 35.3], 'Moçambique', 14, 4], [[-5.2, 39.8], 'Tanzânia', 14, 6]];
-  const [ax, ay] = MI(-30, 98.3);
-  const rotas = achados.map(([[la, lo]], i) => { const [x, y] = MI(la, lo), mx = (ax + x) / 2, my = Math.max(ay, y) + 120 - i * 40; return `<path d="M${ax} ${ay} Q${mx} ${my} ${x} ${y}" class="mh-drift" style="animation-delay:${i * .6}s"/>`; }).join('');
+  // Cada linha sai de um ponto diferente do 7º arco e faz sua própria curva até a praia onde a peça foi achada, para não se encostarem
+  const rotas = [[[-22, 103.4], [-21.1, 55.5], [-30, 80]], [[-17, 105.6], [-20.3, 58.4], [-24, 82]], [[-14, 106.6], [-17, 49.9], [-15, 78]], [[-34, 94.5], [-22, 35.3], [-42, 62]], [[-11, 107.6], [-5.2, 39.8], [-6, 72]]]
+    .map(([de, para, ctrl], i) => { const [x0, y0] = MI(...de), [x1, y1] = MI(...para), [cx, cy] = MI(...ctrl); return `<path d="M${x0} ${y0} Q${cx} ${cy} ${x1} ${y1}" class="mh-drift" style="animation-delay:${i * .6}s"/>`; }).join('');
   const [px, py] = MI(-31.95, 115.86);
   return `<svg viewBox="0 0 1390 695" role="img" aria-label="Deriva dos destroços: correntes do Oceano Índico levaram peças do MH370 do 7º arco até Reunião, Maurício, Madagascar, Moçambique e Tanzânia">
     <image href="assets/mh370-deriva.webp" x="0" y="0" width="1390" height="695"/>
@@ -239,7 +240,7 @@ function derivaMh370() {
     ${rotas}
     ${achados.map(([[la, lo], n, dx, dy]) => { const [x, y] = MI(la, lo); return `<circle cx="${x}" cy="${y}" r="9" class="mh-find md-find"/><text x="${x + dx}" y="${y + dy}" class="md-t">${n}</text>`; }).join('')}
     <text x="${MI(-22, 100)[0]}" y="${MI(-22, 100)[1]}" class="md-t md-arc-t">7º arco</text>
-    <text x="${MI(-34, 70)[0]}" y="${MI(-34, 70)[1]}" text-anchor="middle" class="md-t md-big">Oceano Índico</text>
+    <text x="${MI(-41, 74)[0]}" y="${MI(-41, 74)[1]}" text-anchor="middle" class="md-t md-big">Oceano Índico</text>
     <text x="1376" y="${MI(-24, 116)[1]}" text-anchor="end" class="md-t">Austrália</text>
     <circle cx="${px}" cy="${py}" r="7" class="dz-dot"/><text x="${px - 12}" y="${py + 7}" text-anchor="end" class="md-t md-s">Perth</text>
     <text x="1376" y="30" text-anchor="end" class="md-t md-s">Sumatra · Java</text>
