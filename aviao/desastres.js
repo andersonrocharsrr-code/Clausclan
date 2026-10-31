@@ -285,7 +285,7 @@ function falhaGol1907() {
   // Esquema da colisão sobre a imagem; o quadro do TCAS foi corrigido: no voo 1907 ele não deu nenhum alerta
   return `<svg viewBox="0 0 1464 720" role="img" aria-label="Esquema: o Boeing da Gol e o Legacy voavam a 37.000 pés na mesma aerovia, em sentidos opostos; o Legacy deveria estar a 36.000 pés e estava com o transponder parado, e o TCAS do Boeing não deu alerta">
     <image href="assets/gol1907-falha.webp" x="0" y="0" width="1464" height="720"/>
-    <rect x="214" y="494" width="340" height="84" fill="#1a2430"/>
+    <rect x="214" y="494" width="340" height="84" fill="#1c2b2e"/>
     <text x="224" y="522" class="gf-tit">TCAS: em silêncio</text>
     <text x="224" y="550" class="gf-txt">Sem resposta do transponder</text><text x="224" y="574" class="gf-txt">do Legacy, nenhum alarme soou.</text>
   </svg>`;
