@@ -231,7 +231,7 @@ const miPts = (l) => l.map(([a, b]) => MI(a, b).join(' ')).join(' L');
 function derivaMh370() {
   const achados = [[[-21.1, 55.5], 'Reunião · flaperon (2015)', -6, 34], [[-20.3, 58.4], 'Maurício', 14, -8], [[-17, 49.9], 'Madagascar', 14, -10], [[-22, 35.3], 'Moçambique', 14, 4], [[-5.2, 39.8], 'Tanzânia', 14, 6]];
   // Cada linha sai de um ponto diferente do 7º arco e faz sua própria curva até a praia onde a peça foi achada, para não se encostarem
-  const rotas = [[[-22, 103.4], [-21.1, 55.5], [-30, 80]], [[-17, 105.6], [-20.3, 58.4], [-24, 82]], [[-14, 106.6], [-17, 49.9], [-15, 78]], [[-34, 94.5], [-22, 35.3], [-42, 62]], [[-11, 107.6], [-5.2, 39.8], [-6, 72]]]
+  const rotas = [[[-22, 103.4], [-21.1, 55.5], [-30, 80]], [[-17, 105.6], [-20.3, 58.4], [-24, 82]], [[-14, 106.6], [-17, 49.9], [-15, 78]], [[-34, 94.5], [-22, 35.3], [-42, 62]], [[-12.6, 107.2], [-5.2, 39.8], [-6, 72]]]
     .map(([de, para, ctrl], i) => { const [x0, y0] = MI(...de), [x1, y1] = MI(...para), [cx, cy] = MI(...ctrl); return `<path d="M${x0} ${y0} Q${cx} ${cy} ${x1} ${y1}" class="mh-drift" style="animation-delay:${i * .6}s"/>`; }).join('');
   const [px, py] = MI(-31.95, 115.86);
   return `<svg viewBox="0 0 1390 695" role="img" aria-label="Deriva dos destroços: correntes do Oceano Índico levaram peças do MH370 do 7º arco até Reunião, Maurício, Madagascar, Moçambique e Tanzânia">
