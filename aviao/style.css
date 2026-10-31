@@ -1374,3 +1374,5 @@ html.menu-lock, html.menu-lock body { overflow: hidden; overscroll-behavior: non
 .tk-bomb { fill: #c8202a; } .tk-giro { fill: #4fa3ff; animation: pxBlink .6s steps(1) infinite; }
 .tk-carimbo { fill: none; stroke: #c8202a; stroke-width: 3; opacity: .8; } .tk-carimbo-t { font: 700 12px var(--mono); fill: #c8202a; }
 @media (prefers-reduced-motion: reduce) { [class^="tk-"] { animation: none !important; } }
+.tk-seta { fill: none; stroke: #ffd27a; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 4px rgba(0,0,0,.7)); }
+.dz-map--tk .dz-labels .tk-or { fill: #ffd27a; }

@@ -314,9 +314,9 @@ const dc10 = (cls = 'hs-fill-paper2', semPorta = false) => `<g><path d="M-74 4 C
   ${[-42, -30, -18, -6, 6, 18, 30].map((x) => `<rect x="${x}" y="-3" width="5" height="4" rx="1" class="hs-fill-ink"/>`).join('')}
   ${semPorta ? '<rect x="-52" y="1" width="10" height="8" class="tk-hole"/>' : '<rect x="-52" y="1" width="10" height="8" rx="1" class="tk-door"/>'}</g>`;
 // Mapa sobre imagem de satélite da região a leste de Paris (1672x941, imagem ilustrativa, fora de escala):
-// o aeroporto à esquerda faz o papel de Orly, o rio o do Marne e a mata de cima o da floresta de Ermenonville
-const [TK_ORLY, TK_MEAUX, TK_SP, TK_ERM] = [[300, 600], [1190, 640], [1300, 300], [930, 190]];
-const TK981_ROTA = `M${TK_ORLY.join(' ')} C520 640 900 680 ${TK_MEAUX.join(' ')} C1330 610 1380 420 ${TK_SP.join(' ')} C1220 210 1060 170 ${TK_ERM.join(' ')}`;
+// Orly fica fora da imagem, à esquerda; o aeroporto da imagem é o de Charles de Gaulle, ainda por inaugurar; o rio é o Marne
+const [TK_ORLY, TK_MEAUX, TK_SP, TK_ERM] = [[60, 760], [1190, 640], [1300, 300], [930, 190]];
+const TK981_ROTA = `M${TK_ORLY.join(' ')} C400 730 900 690 ${TK_MEAUX.join(' ')} C1330 610 1380 420 ${TK_SP.join(' ')} C1220 210 1060 170 ${TK_ERM.join(' ')}`;
 function mapaTk981() {
   return `<svg viewBox="0 0 1672 941" role="img" aria-label="Mapa do voo 981: decolagem de Orly, subida para o leste ao longo do Marne, curva para o norte e queda na floresta de Ermenonville" class="dz-map--tk">
     <defs><filter id="dzShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="6" dy="9" stdDeviation="4" flood-color="#000" flood-opacity=".55"/></filter></defs>
@@ -327,7 +327,9 @@ function mapaTk981() {
     <path id="dzPath" d="${TK981_ROTA}" class="dz-route"/>
     <path d="${TK981_ROTA}" class="dz-route-dash" mask="url(#dzReveal)"/>
     <g class="dz-labels">
-      <circle cx="${TK_ORLY[0]}" cy="${TK_ORLY[1]}" r="10" class="dz-dot"/><text x="${TK_ORLY[0]}" y="${TK_ORLY[1] + 48}" text-anchor="middle">Orly</text>
+      <circle cx="${TK_ORLY[0]}" cy="${TK_ORLY[1]}" r="10" class="dz-dot"/><text x="${TK_ORLY[0] - 30}" y="${TK_ORLY[1] + 70}">← Orly</text>
+      <path d="M300 410 V520" class="tk-seta"/><path d="M300 520 l-18 -26 M300 520 l18 -26" class="tk-seta"/>
+      <text x="40" y="330" class="dz-lbl-s">Charles de Gaulle</text><text x="40" y="384" class="dz-lbl-s tk-or">ainda ia ser inaugurado</text>
       <text x="${TK_MEAUX[0]}" y="${TK_MEAUX[1] + 70}" text-anchor="middle" class="dz-lbl-s">Meaux · 12:40</text>
       <text x="${TK_SP[0] - 34}" y="${TK_SP[1] - 6}" text-anchor="end" class="dz-lbl-s">Saint-Pathus</text><text x="${TK_SP[0] - 34}" y="${TK_SP[1] + 46}" text-anchor="end" class="dz-lbl-s">a porta e 6 passageiros</text>
       <text x="${TK_ERM[0]}" y="${TK_ERM[1] - 52}" text-anchor="middle" class="dz-lbl-s tk-red">Floresta de Ermenonville · 12:41</text>
@@ -890,7 +892,7 @@ const ACIDENTES = [
     fugoideTxt: 'O TCAS, o sistema anticolisão, pergunta pelo rádio “quem está aí?” e espera a resposta do transponder dos outros aviões. Com o transponder do Legacy parado, ninguém respondeu: o TCAS do Boeing não viu o jato, e o do Legacy, que depende do próprio transponder, estava desligado.',
   },
   {
-    id: 'tk981', ano: 1974, data: '3 de março de 1974', titulo: 'Turkish Airlines 981', sub: 'A porta que já tinha avisado',
+    id: 'tk981', ano: 1974, data: '3 de março de 1974', titulo: 'Turkish Airlines 981', sub: '77 segundos até a floresta',
     resumo: 'Um DC-10 lotado sai de Paris para Londres num domingo. Dez minutos depois, a porta do porão traseiro se abre, o piso da cabine desaba e corta os comandos. Em 77 segundos, o avião mergulha numa floresta. O defeito era conhecido havia quase dois anos.',
     ficha: [['Avião', 'McDonnell Douglas DC-10-10'], ['Matrícula', 'TC-JAV ("Ankara")'], ['Rota', 'Istambul → Paris (Orly) → Londres (Heathrow)'], ['Local', 'Floresta de Ermenonville, perto de Paris'],
       ['A bordo', '346 (335 passageiros e 11 tripulantes)'], ['Mortos', '346'], ['Sobreviventes', 'Nenhum'], ['Causa', 'Porta do porão mal travada, por um defeito de projeto já conhecido']],
@@ -929,7 +931,7 @@ const ACIDENTES = [
   { t: "O que mudou", parte: 4, hora: "1974–hoje", lugar: "No mundo inteiro", sabia: "Em 1979, outro DC-10 caiu em Chicago, por outro motivo. O modelo ficou com fama de avião azarado, mas voou com segurança por muitos anos depois das correções.", cena: CENAS.memoriaTk,
     p: ["Depois de Ermenonville, a FAA publicou ordens obrigatórias: todas as portas de porão dos DC-10 tiveram de ser corrigidas, com travas que não deixam a alavanca fechar sem os ganchos no lugar e visores fáceis de conferir.", "Os aviões ganharam aberturas de alívio no piso, para que uma descompressão no porão não derrube o piso da cabine. Os projetos novos passaram a ser pensados para continuar controláveis mesmo se o piso ceder.", "O caso virou um exemplo estudado até hoje em escolas de engenharia: o perigo de saber de um defeito e corrigi-lo pela metade.", "Na floresta de Ermenonville, um memorial lembra as 346 pessoas do voo 981."] },
     ],
-    linha: [['12:30', 'Decolagem de Orly, em Paris, rumo a Londres, com 346 pessoas a bordo.', [300, 600]], ['12:40', 'Perto de Meaux, a 11.500 pés, a porta do porão traseiro se abre. O piso cede e corta os comandos.', [1190, 640]],
+    linha: [['12:30', 'Decolagem de Orly, em Paris, rumo a Londres, com 346 pessoas a bordo.', [60, 760]], ['12:40', 'Perto de Meaux, a 11.500 pés, a porta do porão traseiro se abre. O piso cede e corta os comandos.', [1190, 640]],
       ['12:40', 'A porta e seis passageiros caem perto de Saint-Pathus.', [1300, 300]], ['12:41', 'Cerca de 77 segundos depois, o DC-10 cai na floresta de Ermenonville.', [930, 190]]],
     falha: 'A porta do porão traseiro abria para fora e podia ser fechada sem que os ganchos travassem. Quando ela se abriu em voo, a cabine pressurizada empurrou o piso para baixo, e o piso esmagou os cabos que levavam os comandos até a cauda.',
     mudou: ['A FAA tornou obrigatória a correção das portas de porão do DC-10, com travas que impedem a alavanca de fechar sem os ganchos no lugar.',
