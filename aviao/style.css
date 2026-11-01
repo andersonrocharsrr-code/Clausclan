@@ -1376,3 +1376,4 @@ html.menu-lock, html.menu-lock body { overflow: hidden; overscroll-behavior: non
 @media (prefers-reduced-motion: reduce) { [class^="tk-"] { animation: none !important; } }
 .tk-seta { fill: none; stroke: #ffd27a; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 4px rgba(0,0,0,.7)); }
 .dz-map--tk .dz-labels .tk-or { fill: #ffd27a; }
+.hs-photo__tag--top { top: 12px; bottom: auto; }
