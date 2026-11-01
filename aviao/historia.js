@@ -260,6 +260,7 @@ const CAPS_DOUGLAS = [
       'O MB-1 ficou pronto quando a guerra já estava acabando e quase não lutou. Mas mostrou que Douglas sabia projetar aviões grandes, pesados e confiáveis, coisa que poucos no mundo conseguiam.',
       'Ele trabalhava sem parar, mas sentia que estava construindo o sonho de outra pessoa. Começou a pensar em ter a própria fábrica, num lugar com tempo bom para voar o ano inteiro.'],
     sabia: 'William Boeing também passou por Glenn Martin: foi dele que Boeing comprou o seu primeiro avião, em 1915.',
+    foto: { src: 'assets/douglas-mb1.webp', legenda: 'Recriação do bombardeiro Martin MB-1, projetado por Douglas, diante do hangar da Glenn L. Martin Company em 1918 (imagem ilustrativa)' },
     cena: () => `${sun(260, 40)}${cloud(70, 40, 1, 0)}${ground(150)}<g transform="translate(160 96)"><g class="hs-bob">${biplane(1.4)}</g></g>` },
   { parte: 1, ano: '1920', lugar: 'Los Angeles, Califórnia', titulo: 'Os fundos de uma barbearia',
     texto: ['Em 1920, Douglas pediu demissão, pegou a esposa, Charlotte, e os filhos pequenos e atravessou o país de trem até Los Angeles. Tinha cerca de 600 dólares no bolso e nenhum cliente.',
