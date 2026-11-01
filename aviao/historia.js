@@ -240,6 +240,7 @@ const CAPS_DOUGLAS = [
       'Os superiores não gostavam nada daquilo. Os colegas achavam graça. E ele começou a perceber que a Marinha daquela época não tinha lugar para quem queria projetar aviões.',
       'Em 1912, depois de três anos, Douglas tomou a decisão mais difícil da juventude: deixou a Academia. Queria aprender, de verdade, como os aviões voavam.'],
     sabia: 'Na época, quase não existiam cursos de aviação no mundo. Aprender a projetar aviões era um caminho incerto e sem garantia de emprego.',
+    foto: { src: 'assets/douglas-annapolis.webp', legenda: 'Recriação de um cadete da Academia Naval montando aviõezinhos no quarto, por volta de 1910 (imagem ilustrativa)' },
     cena: () => `${ground(150)}<rect x="40" y="70" width="240" height="80" class="hs-fill-city"/>${[60, 100, 140, 180, 220, 250].map((x, i) => `<rect x="${x}" y="88" width="16" height="24" class="hs-win" style="animation-delay:${i * .2}s"/>`).join('')}${flag(160, 70)}
       <g class="hs-fly-arc" style="animation-duration:5s">${biplane(.35)}</g>` },
   { parte: 0, ano: '1914', lugar: 'MIT, Massachusetts', titulo: 'Quatro anos em dois',
