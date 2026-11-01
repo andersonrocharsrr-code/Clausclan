@@ -249,6 +249,7 @@ const CAPS_DOUGLAS = [
       'No MIT, trabalhou como assistente do professor Jerome Hunsaker, um dos pioneiros da engenharia aeronáutica no país. Os dois ajudaram a montar um túnel de vento, uma espécie de corredor onde um ventilador sopra ar sobre modelos de asas.',
       'Ali, Douglas aprendeu algo que levaria para a vida toda: avião não se faz no improviso. Faz-se com medições, testes e números, um detalhe de cada vez.'],
     sabia: 'O túnel de vento sopra ar sobre um modelo parado. Assim os engenheiros medem a sustentação e o arrasto de uma asa sem precisar voar.',
+    foto: { src: 'assets/douglas-mit.webp', legenda: 'Recriação de um laboratório de aeronáutica com túnel de vento de madeira, como o que Douglas ajudou a montar no MIT por volta de 1914 (imagem ilustrativa)' },
     cena: () => `<rect width="320" height="180" class="hs-fill-floor"/><rect x="40" y="60" width="240" height="60" rx="8" class="hs-fill-metal"/><rect x="70" y="72" width="180" height="36" class="hs-sky"/>
       <path d="M140 92 C150 84 170 84 180 92 C170 96 150 96 140 92Z" class="hs-fill-ink"/>${[0, 1, 2, 3].map((i) => `<path d="M${76 + i * 6} ${80 + i * 6} H${120 + i * 4}" class="hs-line-accent" style="opacity:.6"/>`).join('')}
       ${person(290, 150, false, 'hs-fill-ink', 0)}` },
