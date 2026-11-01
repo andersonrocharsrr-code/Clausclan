@@ -1377,3 +1377,9 @@ html.menu-lock, html.menu-lock body { overflow: hidden; overscroll-behavior: non
 .tk-seta { fill: none; stroke: #ffd27a; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 4px rgba(0,0,0,.7)); }
 .dz-map--tk .dz-labels .tk-or { fill: #ffd27a; }
 .hs-photo__tag--top { top: 12px; bottom: auto; }
+
+/* Modo história: seletor de histórias (usa o mesmo cartão dos desastres) e animações do Douglas */
+.hs-pick { margin-top: 18px; }
+.hs-pick .dz-pick__caret, .hs-pick .dz-pick__btn, .hs-pick .dz__list .dz-item { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.hs-spin-slow { animation: hsSpin 14s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .hs-spin-slow { animation: none !important; } }

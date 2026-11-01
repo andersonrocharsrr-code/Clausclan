@@ -204,10 +204,152 @@ const CAPS = [
       ${ground(160)}<g class="hs-ghost">${barn(240, 160)}</g>` },
 ];
 
+/* ---------- Donald Douglas ---------- */
+// DC-3 de lado, nariz para a direita: asa baixa, dois motores e bequilha na cauda
+const dc3 = (s = 1, cls = 'hs-fill-paper2') => `<g transform="scale(${s})"><path d="M-62 2 C-54 -6 -30 -8 0 -8 H36 C48 -8 56 -4 60 2 C56 7 46 9 34 9 H-50 C-58 9 -62 6 -62 2Z" class="${cls}"/>
+  <path d="M-56 -2 L-66 -20 H-58 L-46 -4Z" class="hs-fill-accent"/><path d="M-58 4 L-72 8 H-62 L-50 4Z" class="hs-fill-ink"/>
+  <path d="M-10 6 L-26 12 H34 L26 6Z" class="hs-fill-ink"/><rect x="10" y="2" width="16" height="9" rx="4" class="hs-fill-metal"/>
+  ${[-36, -26, -16, -6, 4, 14, 24].map((x) => `<rect x="${x}" y="-4" width="5" height="4" rx="1" class="hs-fill-ink"/>`).join('')}<path d="M44 -6 l8 4 h-10z" class="hs-fill-ink"/>
+  <path d="M16 11 V18 M-58 8 V12" class="hs-line"/><circle cx="16" cy="19" r="3" class="hs-fill-ink"/><circle cx="-58" cy="13" r="2" class="hs-fill-ink"/>
+  <g class="hs-prop"><path d="M28 0 V14" class="hs-line-b"/></g></g>`;
+// Os Douglas World Cruisers: biplano com flutuadores
+const cruiser = (s = 1, d = 0) => `<g class="hs-bob" style="animation-delay:${d}s">${seaplane(s)}</g>`;
+const PARTES_DOUGLAS = ['Origens', 'Os primeiros aviões', 'A volta ao mundo', 'O DC-3', 'Guerra e jatos', 'Legado'];
+const CAPS_DOUGLAS = [
+  { parte: 0, ano: '1892', lugar: 'Brooklyn, Nova York', titulo: 'Nasce Donald Wills Douglas',
+    texto: ['Donald Wills Douglas nasceu em 6 de abril de 1892, no Brooklyn, em Nova York. O pai era caixa de banco e a família vivia uma vida confortável de classe média.',
+      'Desde menino, Donald era fascinado por barcos e pelo mar. Quando os jornais começaram a falar das primeiras máquinas voadoras, esse fascínio ganhou uma nova direção: o céu.'],
+    sabia: 'Douglas nasceu menos de 12 anos antes do primeiro voo dos irmãos Wright, em 1903.',
+    cena: () => `${ground(150)}${[[20, 80], [70, 66], [130, 84], [190, 70], [250, 86]].map(([x, y], i) => `<rect x="${x}" y="${y}" width="44" height="${150 - y}" class="hs-fill-city"/>${[0, 1, 2].map((k) => `<rect x="${x + 8}" y="${y + 10 + k * 18}" width="8" height="8" class="hs-win" style="animation-delay:${(i + k) * .3}s"/><rect x="${x + 26}" y="${y + 10 + k * 18}" width="8" height="8" class="hs-win" style="animation-delay:${(i + k) * .4}s"/>`).join('')}`).join('')}
+      ${water(156)}<g transform="translate(250 150) scale(.6)"><path d="M-40 0 H40 L30 12 H-30Z" class="hs-fill-ink"/><path d="M-4 0 V-34 L22 -4Z" class="hs-fill-paper"/></g>` },
+  { parte: 0, ano: '1908', lugar: 'Fort Myer, Virgínia', titulo: 'Orville Wright no céu',
+    texto: ['Em setembro de 1908, aos 16 anos, Donald foi com a mãe a Fort Myer, perto de Washington, assistir às demonstrações do avião dos irmãos Wright para o Exército americano.',
+      'Ele viu Orville Wright subir e dar voltas sobre o campo, diante de uma multidão boquiaberta. Para o garoto, foi uma revelação: era aquilo que ele queria fazer da vida.',
+      'Nos dias seguintes, Donald só falava de aviões. Começou a construir modelos e a estudar tudo o que encontrava sobre o assunto.'],
+    sabia: 'Naquelas demonstrações, em 17 de setembro de 1908, um acidente com o avião de Orville matou o tenente Thomas Selfridge, a primeira pessoa a morrer num acidente de avião motorizado.',
+    cena: () => `${sun(260, 40)}${ground(150)}${[30, 50, 70, 90, 220, 240, 260, 280].map((x, i) => person(x, 150, i % 3 === 1, 'hs-fill-ink', i * .15)).join('')}<g class="hs-fly-arc">${biplane(.9)}</g>` },
+  { parte: 0, ano: '1909', lugar: 'Academia Naval, Annapolis', titulo: 'Aviões no quarto de cadete',
+    texto: ['Em 1909, Douglas entrou na Academia Naval dos Estados Unidos, em Annapolis, para seguir a carreira de oficial da Marinha, como queria a família.',
+      'Mas a cabeça estava no céu. No quarto de cadete, ele passava as horas livres desenhando e montando modelos de aviões, que testava nos corredores e no campo da escola.',
+      'Em 1912, decidiu largar a Marinha. Queria estudar a sério como os aviões voavam, num lugar onde isso fosse levado a sério.'],
+    sabia: 'Os colegas de Annapolis lembravam de Douglas como o cadete que vivia lançando aviõezinhos pelas janelas.',
+    cena: () => `${ground(150)}<rect x="40" y="70" width="240" height="80" class="hs-fill-city"/>${[60, 100, 140, 180, 220, 250].map((x, i) => `<rect x="${x}" y="88" width="16" height="24" class="hs-win" style="animation-delay:${i * .2}s"/>`).join('')}${flag(160, 70)}
+      <g class="hs-fly-arc" style="animation-duration:5s">${biplane(.35)}</g>` },
+  { parte: 0, ano: '1914', lugar: 'MIT, Massachusetts', titulo: 'Quatro anos em dois',
+    texto: ['Douglas foi para o Instituto de Tecnologia de Massachusetts, o MIT, um dos poucos lugares do mundo que já ensinavam engenharia aeronáutica.',
+      'Estudou com tanta dedicação que completou o curso de quatro anos em apenas dois, formando-se em 1914. Foi um dos primeiros engenheiros aeronáuticos formados nos Estados Unidos.',
+      'Ficou no MIT como assistente do professor Jerome Hunsaker, ajudando a montar um dos primeiros túneis de vento do país para testar asas.'],
+    sabia: 'O túnel de vento sopra ar sobre um modelo parado. Assim os engenheiros medem a sustentação e o arrasto de uma asa sem precisar voar.',
+    cena: () => `<rect width="320" height="180" class="hs-fill-floor"/><rect x="40" y="60" width="240" height="60" rx="8" class="hs-fill-metal"/><rect x="70" y="72" width="180" height="36" class="hs-sky"/>
+      <path d="M140 92 C150 84 170 84 180 92 C170 96 150 96 140 92Z" class="hs-fill-ink"/>${[0, 1, 2, 3].map((i) => `<path d="M${76 + i * 6} ${80 + i * 6} H${120 + i * 4}" class="hs-line-accent" style="opacity:.6"/>`).join('')}
+      ${person(290, 150, false, 'hs-fill-ink', 0)}` },
+  { parte: 1, ano: '1915', lugar: 'Companhia Glenn L. Martin', titulo: 'O engenheiro-chefe de 23 anos',
+    texto: ['Em 1915, com apenas 23 anos, Douglas virou engenheiro-chefe da empresa de Glenn L. Martin, um dos pioneiros da aviação americana.',
+      'Durante a Primeira Guerra Mundial, desenhou o Martin MB-1, um bombardeiro bimotor grande para a época, encomendado pelo Exército americano.',
+      'O trabalho deu fama a Douglas como um dos melhores projetistas do país. Mas ele tinha outro sonho: ter a própria fábrica, longe do frio do Leste.'],
+    sabia: 'William Boeing também passou por Glenn Martin: foi dele que Boeing comprou o seu primeiro avião, em 1915.',
+    cena: () => `${sun(260, 40)}${cloud(70, 40, 1, 0)}${ground(150)}<g class="hs-fly-arc">${biplane(1.3)}</g>` },
+  { parte: 1, ano: '1920', lugar: 'Los Angeles, Califórnia', titulo: 'Os fundos de uma barbearia',
+    texto: ['Em 1920, Douglas se mudou com a família para Los Angeles. Tinha pouco dinheiro, cerca de 600 dólares, e muita vontade.',
+      'O primeiro escritório foi uma sala nos fundos de uma barbearia, onde ele desenhava aviões em cima de uma prancheta enquanto, do outro lado da parede, os fregueses cortavam o cabelo.',
+      'Um milionário apaixonado por aviação, David R. Davis, queria ser o primeiro a cruzar os Estados Unidos sem escalas e topou financiar o projeto. Nasceu a empresa Davis-Douglas.'],
+    sabia: 'A Califórnia atraía os fabricantes de aviões pelo tempo bom o ano inteiro, que permitia voar e testar quase todos os dias.',
+    cena: () => `${sun(260, 40)}${ground(150)}<rect x="40" y="70" width="200" height="80" class="hs-fill-city"/><rect x="60" y="90" width="60" height="60" class="hs-win"/>
+      <g transform="translate(140 72)">${[0, 1, 2, 3].map((i) => `<rect x="${i * 6}" y="0" width="3" height="40" class="${i % 2 ? 'hs-fill-accent' : 'hs-fill-paper'}"/>`).join('')}</g>
+      <rect x="170" y="96" width="50" height="30" class="hs-fill-paper"/><path d="M176 104 H214 M176 112 H206 M176 120 H210" class="hs-line"/>${person(196, 150, false, 'hs-fill-ink', 0)}` },
+  { parte: 1, ano: '1921', lugar: 'Santa Mônica, Califórnia', titulo: 'O Cloudster',
+    texto: ['O primeiro avião de Douglas foi o Cloudster, um biplano grande e bonito, pensado para voar de costa a costa sem parar.',
+      'A tentativa de travessia terminou com uma pane no motor, no Texas. Mas o Cloudster entrou para a história por outro motivo: foi o primeiro avião a levantar uma carga útil maior que o próprio peso.',
+      'Davis perdeu o interesse e deixou a sociedade. Douglas seguiu sozinho e, em 1921, fundou a Douglas Company. O primeiro grande cliente foi a Marinha, que encomendou aviões torpedeiros baseados no Cloudster.'],
+    sabia: 'A fábrica da Douglas foi para Santa Mônica, onde funcionou por décadas ao lado do campo de pouso Clover Field, hoje o Aeroporto de Santa Mônica.',
+    cena: () => `${cloud(70, 40, 1, 0)}${cloud(240, 60, .9, 1)}${ground(150)}<g transform="translate(160 100)">${mailplane(1.6)}</g>` },
+  { parte: 2, ano: '1924', lugar: 'Seattle, Washington', titulo: 'Quatro aviões, uma volta ao mundo',
+    texto: ['Em 1923, o Exército americano quis provar que um avião podia dar a volta ao mundo. Encomendou à Douglas quatro aviões especiais, os Douglas World Cruisers.',
+      'Eram biplanos robustos, que podiam trocar as rodas por flutuadores para pousar na água. Cada um levava dois tripulantes, que se revezavam entre pilotar e consertar o avião.',
+      'Em 6 de abril de 1924, os quatro decolaram de Seattle: o Seattle, o Chicago, o Boston e o New Orleans. Pela frente, mais de 40 mil quilômetros por oceanos, desertos e montanhas.'],
+    sabia: 'A largada foi no dia do aniversário de 32 anos de Donald Douglas.',
+    cena: () => `${water(140)}${cloud(80, 40, 1, 0)}${[[60, 110, 0], [130, 96, .4], [200, 112, .8], [270, 100, 1.2]].map(([x, y, d]) => `<g transform="translate(${x} ${y})">${cruiser(.7, d)}</g>`).join('')}` },
+  { parte: 2, ano: '1924', lugar: 'Ao redor do mundo', titulo: '175 dias',
+    texto: ['A viagem foi uma aventura. O Seattle, avião do comandante, bateu numa montanha coberta de neblina no Alasca; a tripulação sobreviveu e caminhou dias pela neve até achar ajuda.',
+      'O Boston caiu no mar perto das Ilhas Faroé, no Atlântico Norte. Os aviões restantes atravessaram a Ásia, o Oriente Médio e a Europa, trocando motores e peças pelo caminho.',
+      'Em 28 de setembro de 1924, depois de 175 dias, o Chicago e o New Orleans pousaram de volta em Seattle. Foi a primeira volta ao mundo de avião da história.',
+      'A Douglas adotou um lema que usaria por décadas: \"Primeiros a dar a volta ao mundo\".'],
+    sabia: 'Os dois aviões que completaram a volta estão em museus: o Chicago, no Museu Nacional do Ar e do Espaço, em Washington.',
+    cena: () => `<rect width="320" height="180" class="hs-sky"/><circle cx="160" cy="92" r="70" class="hs-fill-water"/><path d="M110 70 C130 60 150 66 160 80 C170 70 190 64 206 76 M120 110 C140 104 170 120 196 108" class="hs-fill-ground" style="stroke:var(--ink);stroke-width:.6"/>
+      <g style="transform-origin:160px 92px" class="hs-spin-slow"><g transform="translate(160 14)">${cruiser(.45)}</g></g>` },
+  { parte: 3, ano: '1932', lugar: 'Santa Mônica', titulo: 'Uma carta da TWA',
+    texto: ['No começo dos anos 1930, a Boeing lançou o 247, um avião moderno de metal. Mas todos os primeiros 247 foram reservados para a United Airlines, que pertencia ao mesmo grupo da Boeing.',
+      'As outras empresas ficaram sem avião para competir. Em agosto de 1932, Jack Frye, da TWA, mandou uma carta a vários fabricantes pedindo um avião de três motores, de metal, para 12 passageiros.',
+      'Douglas e seus engenheiros responderam com uma ideia ousada: um avião com só dois motores, mas mais rápido e mais seguro do que o pedido. Em 1º de julho de 1933, voou o DC-1, \"Douglas Commercial 1\".'],
+    sabia: 'Só foi construído um DC-1. Ele serviu de base para tudo o que viria depois.',
+    cena: () => `<rect width="320" height="180" class="px-paperbg"/><g transform="rotate(-4 160 90)"><rect x="80" y="20" width="160" height="130" rx="3" class="px-note"/>
+      <text x="96" y="42" class="px-btxt" style="fill:#1b2630">TWA · AGOSTO DE 1932</text>${[60, 72, 84, 96, 108, 120, 132].map((y, i) => `<path d="M96 ${y} H${i % 3 === 2 ? 180 : 224}" class="px-ink"/>`).join('')}</g>` },
+  { parte: 3, ano: '1934', lugar: 'De Londres a Melbourne', titulo: 'O DC-2 e a corrida',
+    texto: ['O DC-1 virou o DC-2, um pouco maior, que começou a voar pela TWA em 1934. Era tão superior aos concorrentes que logo empresas da Europa também quiseram o seu.',
+      'Em outubro de 1934, um DC-2 da companhia holandesa KLM, o Uiver, participou de uma corrida aérea de Londres até Melbourne, na Austrália. Levando passageiros e correio, chegou em segundo lugar, atrás apenas de um avião de corrida feito só para aquilo.',
+      'O mundo percebeu que um avião comum de passageiros, com conforto, podia ser quase tão rápido quanto uma máquina de corrida.'],
+    sabia: 'O Boeing 247 também correu e chegou depois do DC-2.',
+    cena: () => `${sun(260, 40)}${cloud(80, 40, 1, 0)}${cloud(220, 70, .8, 1)}${ground(150)}<g class="hs-fly-mail">${dc3(.8)}</g>` },
+  { parte: 3, ano: '1935', lugar: 'Santa Mônica', titulo: 'Nasce o DC-3',
+    texto: ['C. R. Smith, presidente da American Airlines, ligou para Douglas pedindo um avião com camas, para voos noturnos de costa a costa. A ligação, dizem, durou duas horas, até Douglas aceitar.',
+      'O resultado foi o DST, um DC-2 mais largo e mais comprido. Ele voou em 17 de dezembro de 1935, exatamente 32 anos depois do primeiro voo dos irmãos Wright.',
+      'A versão com poltronas, para 21 passageiros, ganhou o nome que ficaria famoso: DC-3.'],
+    sabia: 'DST queria dizer \"Douglas Sleeper Transport\", o transporte com camas da Douglas.',
+    cena: () => `${sun(60, 40)}${ground(150)}<rect x="0" y="140" width="320" height="10" class="hs-fill-ink" style="opacity:.6"/><g class="px-climb">${dc3(1)}</g>` },
+  { parte: 3, ano: '1936', lugar: 'Estados Unidos', titulo: 'O avião que deu lucro',
+    texto: ['Até então, as companhias aéreas só sobreviviam graças ao dinheiro do correio. Passageiros sozinhos não pagavam a viagem.',
+      'O DC-3 mudou isso. Rápido, confiável e confortável para a época, foi o primeiro avião que deu lucro levando apenas passageiros.',
+      'Em poucos anos, quase todas as grandes empresas americanas voavam de DC-3. No fim da década de 1930, ele fazia a maior parte dos voos de passageiros dos Estados Unidos.'],
+    sabia: 'O DC-3 cruzava os Estados Unidos em cerca de 15 horas, com três paradas, quando antes a viagem levava mais de um dia.',
+    cena: () => `${cloud(70, 40, 1, 0)}${cloud(240, 70, .9, 1)}${ground(150)}${[[60, 70, 0], [180, 50, 2], [260, 100, 4]].map(([x, y, d]) => `<g transform="translate(${x} ${y})"><g class="hs-bob" style="animation-delay:${d * .2}s">${dc3(.55)}</g></g>`).join('')}` },
+  { parte: 4, ano: '1941', lugar: 'Fábricas da Douglas', titulo: 'O avião que foi à guerra',
+    texto: ['Quando os Estados Unidos entraram na Segunda Guerra Mundial, a Douglas virou uma das maiores fábricas de aviões do mundo. Milhares de mulheres foram trabalhar nas linhas de montagem.',
+      'O DC-3 ganhou uniforme: virou o C-47 Skytrain, que levava tropas, paraquedistas, feridos e carga. Os ingleses o chamavam de Dakota. Foram construídos mais de 10 mil.',
+      'A Douglas também fez o bombardeiro de mergulho SBD Dauntless, que teve papel decisivo na batalha de Midway, em 1942.'],
+    sabia: 'O general Eisenhower citou o C-47 entre as ferramentas que mais ajudaram os Aliados a vencer a guerra.',
+    cena: () => `<rect width="320" height="180" class="hs-fill-floor"/>${[0, 1, 2].map((i) => `<g transform="translate(${70 + i * 90} 100)">${dc3(.7, 'hs-fill-metal')}</g>`).join('')}${[40, 130, 220, 290].map((x, i) => person(x, 170, i % 2 === 0, i % 2 ? 'hs-fill-ink' : 'hs-fill-accent', i * .2)).join('')}` },
+  { parte: 4, ano: '1958', lugar: 'Long Beach, Califórnia', titulo: 'Atrasado para a era do jato',
+    texto: ['Depois da guerra, a Douglas continuou fazendo aviões de hélice cada vez maiores: o DC-4, o DC-6 e o DC-7. Eram os favoritos das companhias aéreas.',
+      'Mas Donald Douglas desconfiava dos jatos e demorou a entrar na corrida. A Boeing apostou antes e lançou o 707 em 1958.',
+      'O jato da Douglas, o DC-8, só começou a voar em 1959. Era um ótimo avião, mas chegou depois e nunca alcançou o 707 em vendas.'],
+    sabia: 'O DC-7 foi o último grande avião de passageiros com motores a pistão. Os jatos o tornaram obsoleto em poucos anos.',
+    cena: () => `${sun(260, 40)}${cloud(80, 40, 1, 0)}${ground(150)}<g class="hs-jumbo"><g transform="scale(1.2)"><path d="M-70 4 C-60 -6 -40 -8 -10 -8 H40 C52 -8 58 -2 62 4 C58 8 50 10 40 10 H-60 C-66 10 -70 8 -70 4Z" class="hs-fill-paper2"/>
+      <path d="M-6 6 L-34 26 H-22 L14 6Z" class="hs-fill-ink"/><path d="M-58 -2 L-70 -24 H-62 L-46 -6Z" class="hs-fill-accent"/>${[-40, -28, -16, -4, 8, 20].map((x) => `<rect x="${x}" y="-3" width="5" height="4" rx="1" class="hs-fill-ink"/>`).join('')}</g></g>` },
+  { parte: 4, ano: '1967', lugar: 'Santa Mônica', titulo: 'McDonnell Douglas',
+    texto: ['Nos anos 1960, a Douglas lançou o DC-9, um jato menor que fez enorme sucesso. Mas a empresa vendia mais do que conseguia produzir no prazo e com lucro, e as dívidas cresceram.',
+      'Em 1967, para salvar a empresa, a Douglas se juntou à McDonnell Aircraft, fabricante de caças militares de St. Louis. Nasceu a McDonnell Douglas.',
+      'Donald Douglas, já com 75 anos, ficou como presidente honorário. O nome que ele tinha criado nos fundos de uma barbearia continuava no céu.'],
+    sabia: 'A McDonnell Douglas fez depois o DC-10, o avião do capítulo sobre o voo 981 da Turkish Airlines na aba de desastres, e o MD-11.',
+    cena: () => `<rect width="320" height="180" class="px-paperbg"/>${[['DOUGLAS', 90], ['McDONNELL', 230]].map(([n, x]) => `<g><rect x="${x - 60}" y="60" width="120" height="40" rx="6" class="px-note"/><text x="${x}" y="86" text-anchor="middle" class="px-btxt" style="fill:#1b2630">${n}</text></g>`).join('')}
+      <path d="M150 80 H170" class="hs-line-b"/><text x="160" y="140" class="px-gtxt px-gtxt--ink">McDONNELL DOUGLAS · 1967</text>` },
+  { parte: 5, ano: '1981', lugar: 'Palm Springs, Califórnia', titulo: 'O fim de uma vida no ar',
+    texto: ['Donald Douglas morreu em 1º de fevereiro de 1981, aos 88 anos, em Palm Springs, na Califórnia.',
+      'Tinha começado com 600 dólares e uma prancheta nos fundos de uma barbearia. Deixou uma das maiores fabricantes de aviões do mundo e o DC-3, considerado por muitos o avião mais importante da história.'],
+    sabia: 'Douglas nunca foi piloto profissional. Era, antes de tudo, um engenheiro que sabia montar equipes brilhantes.',
+    cena: () => `<rect width="320" height="180" class="px-dusk"/>${ground(150)}<g transform="translate(160 100)">${dc3(1.1)}</g>` },
+  { parte: 5, ano: '1997', lugar: 'Seattle e Long Beach', titulo: 'As duas histórias se juntam',
+    texto: ['Em 1997, a McDonnell Douglas foi comprada pela sua maior rival: a Boeing. As duas empresas que tinham disputado o céu por 70 anos viraram uma só.',
+      'A antiga fábrica da Douglas em Long Beach continuou produzindo aviões com o nome Boeing até 2006, quando saiu da linha o último Boeing 717, derivado do DC-9.',
+      'Hoje, quase um século depois do primeiro voo, ainda há DC-3 voando em vários cantos do mundo.'],
+    sabia: 'A história de William Boeing também está no Modo história. As duas trajetórias se cruzaram em 1915, em 1934 e, por fim, em 1997.',
+    cena: () => `${sun(260, 40)}${cloud(70, 40, 1, 0)}${ground(150)}<g transform="translate(110 96)"><g class="hs-bob">${dc3(.8)}</g></g><g class="hs-ghost">${barn(220, 150)}</g>` },
+];
+
+/* ---------- As histórias ---------- */
+const HISTORIAS = [
+  { id: 'boeing', ano: '1881–1956', titulo: 'William Boeing', sub: 'Do estaleiro ao céu', h1: 'William Boeing: do estaleiro ao céu',
+    lede: 'Como um comerciante de madeira que nunca tinha voado fundou uma das maiores fabricantes de aviões do mundo, com asas costuradas à mão, e como um escândalo no Senado o tirou da aviação. Seis partes, 20 capítulos.',
+    fontes: 'Fontes: Museum of Flight (Seattle), HistoryLink.org, Smithsonian National Postal Museum, San Diego Air & Space Museum, Flying Magazine e o histórico oficial da Boeing.', partes: PARTES, caps: CAPS },
+  { id: 'douglas', ano: '1892–1981', titulo: 'Donald Douglas', sub: 'Da barbearia ao DC-3', h1: 'Donald Douglas: da barbearia ao DC-3',
+    lede: 'Como um cadete da Marinha apaixonado por aviões começou com 600 dólares nos fundos de uma barbearia, fez a primeira volta ao mundo de avião e criou o DC-3, o avião que tornou a aviação comercial possível. Seis partes, 18 capítulos.',
+    fontes: 'Fontes: San Diego Air & Space Museum, Museum of Flight, Smithsonian National Air and Space Museum, Air & Space Forces Magazine, UPI e o histórico oficial da Boeing.', partes: PARTES_DOUGLAS, caps: CAPS_DOUGLAS },
+];
+let hist = HISTORIAS[0];
+
 /* ---------- Tela ---------- */
 let cap = 0;
 function render(dir = 0) {
-  const c = CAPS[cap];
+  const CAPS = hist.caps, PARTES = hist.partes, c = CAPS[cap];
   const card = $('#hsCard');
   card.classList.remove('is-next', 'is-prev'); void card.offsetWidth;
   if (dir) card.classList.add(dir > 0 ? 'is-next' : 'is-prev');
@@ -237,28 +379,58 @@ function rolarAteLinha(el) {
   const y = el.getBoundingClientRect().top + window.scrollY - cab - 16;
   if (Math.abs(y - window.scrollY) > 4) window.scrollTo({ top: y, behavior: 'smooth' });
 }
-function ir(i) { const d = Math.sign(i - cap); cap = (i + CAPS.length) % CAPS.length; render(d || 1); }
+function ir(i) { const n = hist.caps.length, d = Math.sign(i - cap); cap = (i + n) % n; render(d || 1); }
 
+// Monta as partes, a linha do tempo e os textos da história escolhida
+function montar() {
+  const { caps, partes } = hist;
+  $('#hsParts').innerHTML = partes.map((p, i) => `<button type="button" aria-pressed="false"><b>${i + 1}</b>${p}</button>`).join('');
+  $('#hsLine').innerHTML = caps.map((c, i) => `<button type="button" aria-label="Capítulo ${i + 1}: ${c.ano}, ${c.titulo}"><span>${c.ano}</span></button>`).join('');
+  $('#hsLine').style.gridTemplateColumns = `repeat(${caps.length}, minmax(0, 1fr))`;
+  $('#hsH1').textContent = hist.h1;
+  $('#hsLede').textContent = hist.lede;
+  $('#hsSrc').textContent = hist.fontes;
+  cap = 0; render();
+}
+// Seletor de histórias: fechado, mostra a escolhida; aberto, lista as outras
+function cartaoHs(h) { return `<span class="dz-item__year">${h.ano.slice(0, 4)}</span><b>${h.titulo}</b><span>${h.sub}</span><i>${h.ano} · ${h.caps.length} capítulos</i>`; }
+function listaHs() {
+  $('#hsPickBtn').innerHTML = cartaoHs(hist);
+  $('#hsList').innerHTML = HISTORIAS.filter((h) => h !== hist).map((h) => `<button type="button" class="dz-item" role="option" data-hs="${h.id}">${cartaoHs(h)}</button>`).join('')
+    + '<p class="dz-soon small">Novas histórias serão adicionadas aqui.</p>';
+}
+function abrirHs(abrir) {
+  $('#hsList').hidden = !abrir;
+  $('#hsPickBtn').setAttribute('aria-expanded', String(abrir)); $('#hsPickToggle').setAttribute('aria-expanded', String(abrir));
+  $('#hsPick').classList.toggle('is-open', abrir);
+}
 function init() {
   if (!$('#hsCard')) return;
-  $('#hsParts').innerHTML = PARTES.map((p, i) => `<button type="button" aria-pressed="false"><b>${i + 1}</b>${p}</button>`).join('');
-  $('#hsParts').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) ir(CAPS.findIndex((c) => c.parte === [...b.parentNode.children].indexOf(b))); });
-  $('#hsLine').innerHTML = CAPS.map((c, i) => `<button type="button" aria-label="Capítulo ${i + 1}: ${c.ano}, ${c.titulo}"><span>${c.ano}</span></button>`).join('');
-  $('#hsLine').style.gridTemplateColumns = `repeat(${CAPS.length}, minmax(0, 1fr))`;
+  $('#hsParts').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) ir(hist.caps.findIndex((c) => c.parte === [...b.parentNode.children].indexOf(b))); });
   $('#hsLine').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) ir([...b.parentNode.children].indexOf(b)); });
   $('#hsPrev').addEventListener('click', () => { if (cap > 0) { ir(cap - 1); rolarAteLinha($('#hsLine')); } });
-  $('#hsNext').addEventListener('click', () => { ir(cap === CAPS.length - 1 ? 0 : cap + 1); rolarAteLinha($('#hsLine')); });
+  $('#hsNext').addEventListener('click', () => { const n = hist.caps.length; ir(cap === n - 1 ? 0 : cap + 1); rolarAteLinha($('#hsLine')); });
+  $('#hsPickBtn').addEventListener('click', (e) => { e.stopPropagation(); abrirHs($('#hsList').hidden); });
+  $('#hsPickToggle').addEventListener('click', (e) => { e.stopPropagation(); abrirHs($('#hsList').hidden); });
+  $('#hsList').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-hs]'); if (!b) return;
+    hist = HISTORIAS.find((h) => h.id === b.dataset.hs) || hist;
+    abrirHs(false); listaHs(); montar(); rolarAteLinha($('#hsCard'));
+  });
+  document.addEventListener('click', (e) => { if (!$('#hsList').hidden && !e.target.closest('#hsPick')) abrirHs(false); });
   // Arrastar a ilustração para o lado troca de capítulo
   let sx = null;
   const sc = $('#hsScene');
   sc.addEventListener('pointerdown', (e) => { sx = e.clientX; });
-  sc.addEventListener('pointerup', (e) => { if (sx === null) return; const dx = e.clientX - sx; sx = null; if (Math.abs(dx) > 50) { if (dx < 0 && cap < CAPS.length - 1) ir(cap + 1); else if (dx > 0 && cap > 0) ir(cap - 1); } });
+  sc.addEventListener('pointerup', (e) => { if (sx === null) return; const dx = e.clientX - sx, n = hist.caps.length; sx = null; if (Math.abs(dx) > 50) { if (dx < 0 && cap < n - 1) ir(cap + 1); else if (dx > 0 && cap > 0) ir(cap - 1); } });
   document.addEventListener('keydown', (e) => {
     if ($('#view-historia')?.hidden || /INPUT|TEXTAREA/.test(document.activeElement?.tagName)) return;
-    if (e.key === 'ArrowRight' && cap < CAPS.length - 1) ir(cap + 1);
+    const n = hist.caps.length;
+    if (e.key === 'ArrowRight' && cap < n - 1) ir(cap + 1);
     if (e.key === 'ArrowLeft' && cap > 0) ir(cap - 1);
+    if (e.key === 'Escape' && !$('#hsList').hidden) abrirHs(false);
   });
-  render();
+  listaHs(); montar();
 }
 function start() { render(); }
 window.Historia = { init, start };

@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=192">
+  <link rel="stylesheet" href="style.css?v=193">
 </head>
 <body>
   <!-- Intro: o avião decola pela pista iluminada e aparece o nome do app (toque para pular) -->
@@ -756,8 +756,13 @@
     <section class="view" id="view-historia" data-view="historia" hidden>
       <div class="view__head">
         <p class="eyebrow">Explorar · Modo história</p>
-        <h1>William Boeing: do estaleiro ao céu</h1>
-        <p class="lede">Como um comerciante de madeira que nunca tinha voado fundou uma das maiores fabricantes de aviões do mundo, com asas costuradas à mão, e como um escândalo no Senado o tirou da aviação. Seis partes, 20 capítulos.</p>
+        <h1 id="hsH1">William Boeing: do estaleiro ao céu</h1>
+        <p class="lede" id="hsLede">Como um comerciante de madeira que nunca tinha voado fundou uma das maiores fabricantes de aviões do mundo, com asas costuradas à mão, e como um escândalo no Senado o tirou da aviação. Seis partes, 20 capítulos.</p>
+      </div>
+      <div class="card dz__pick hs-pick" id="hsPick">
+        <div class="dz-pick__head"><span class="label">Escolha uma história</span><button type="button" class="dz-pick__caret" id="hsPickToggle" aria-label="Ver as outras histórias" aria-expanded="false" aria-controls="hsList"></button></div>
+        <button type="button" class="dz-item dz-pick__btn" id="hsPickBtn" aria-haspopup="listbox" aria-expanded="false" aria-controls="hsList"></button>
+        <div class="dz__list" id="hsList" role="listbox" aria-label="Histórias" hidden></div>
       </div>
       <div class="card hs" id="hsCard">
         <div class="hs__parts" id="hsParts" role="group" aria-label="Partes da história"></div>
@@ -776,7 +781,7 @@
             </div>
           </div>
         </div>
-        <p class="small hs__src">Fontes: Museum of Flight (Seattle), HistoryLink.org, Smithsonian National Postal Museum, San Diego Air &amp; Space Museum, Flying Magazine e o histórico oficial da Boeing.</p>
+        <p class="small hs__src" id="hsSrc">Fontes: Museum of Flight (Seattle), HistoryLink.org, Smithsonian National Postal Museum, San Diego Air &amp; Space Museum, Flying Magazine e o histórico oficial da Boeing.</p>
       </div>
     </section>
 
@@ -989,16 +994,16 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=192"></script>
-  <script src="catalogo747.js?v=192"></script>
-  <script src="cockpit747.js?v=192"></script>
-  <script src="motor3d.js?v=192"></script>
-  <script src="motor747.js?v=192"></script>
-  <script src="meteo.js?v=192"></script>
-  <script src="radio.js?v=192"></script>
-  <script src="historia.js?v=192"></script>
-  <script src="desastres.js?v=192"></script>
-  <script src="app.js?v=192"></script>
+  <script src="avioes.js?v=193"></script>
+  <script src="catalogo747.js?v=193"></script>
+  <script src="cockpit747.js?v=193"></script>
+  <script src="motor3d.js?v=193"></script>
+  <script src="motor747.js?v=193"></script>
+  <script src="meteo.js?v=193"></script>
+  <script src="radio.js?v=193"></script>
+  <script src="historia.js?v=193"></script>
+  <script src="desastres.js?v=193"></script>
+  <script src="app.js?v=193"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
