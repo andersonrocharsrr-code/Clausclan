@@ -232,6 +232,7 @@ const CAPS_DOUGLAS = [
       'O garoto ficou paralisado. Anos depois, ele contaria que, naquele dia, soube exatamente o que queria fazer da vida. Voltou para casa e passou a construir modelos de aviões com varetas, papel e elásticos, testando cada um no quintal.',
       'Mas os testes também mostraram o perigo daquela nova máquina. Poucos dias depois, o avião de Orville caiu durante um voo, ferindo o inventor e matando o passageiro. Douglas nunca esqueceu: avião bom era, antes de tudo, avião seguro.'],
     sabia: 'O passageiro que morreu em Fort Myer, em 17 de setembro de 1908, era o tenente Thomas Selfridge. Ele foi a primeira pessoa a morrer num acidente de avião com motor.',
+    foto: { src: 'assets/douglas-fortmyer.webp', legenda: 'Recriação das demonstrações do avião dos irmãos Wright para o Exército em Fort Myer, em 1908, com a torre de lançamento à esquerda (imagem ilustrativa)' },
     cena: () => `${sun(260, 40)}${ground(150)}${[30, 50, 70, 90, 220, 240, 260, 280].map((x, i) => person(x, 150, i % 3 === 1, 'hs-fill-ink', i * .15)).join('')}<g class="hs-fly-arc">${biplane(.9)}</g>` },
   { parte: 0, ano: '1909', lugar: 'Academia Naval, Annapolis', titulo: 'Aviões no quarto de cadete',
     texto: ['Em 1909, Douglas entrou na Academia Naval dos Estados Unidos, em Annapolis, a escola que forma os oficiais da Marinha. Era o caminho que a família esperava dele.',
