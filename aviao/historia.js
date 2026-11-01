@@ -223,6 +223,7 @@ const CAPS_DOUGLAS = [
       'O que mais encantava o menino era o mar. Ele passava horas olhando os navios no porto de Nova York, desenhava barcos nas margens dos cadernos e sonhava em ser oficial da Marinha.',
       'Nenhum ser humano tinha ainda voado num avião com motor. Mas, em poucos anos, uma notícia vinda da Carolina do Norte ia mudar os sonhos daquele garoto para sempre.'],
     sabia: 'Douglas nasceu menos de 12 anos antes do primeiro voo dos irmãos Wright, em 17 de dezembro de 1903.',
+    foto: { src: 'assets/douglas-brooklyn.webp', legenda: 'Uma rua do Brooklyn no começo da década de 1890, com bondes puxados a cavalo e o porto ao fundo (imagem ilustrativa)' },
     cena: () => `${ground(150)}${[[20, 80], [70, 66], [130, 84], [190, 70], [250, 86]].map(([x, y], i) => `<rect x="${x}" y="${y}" width="44" height="${150 - y}" class="hs-fill-city"/>${[0, 1, 2].map((k) => `<rect x="${x + 8}" y="${y + 10 + k * 18}" width="8" height="8" class="hs-win" style="animation-delay:${(i + k) * .3}s"/><rect x="${x + 26}" y="${y + 10 + k * 18}" width="8" height="8" class="hs-win" style="animation-delay:${(i + k) * .4}s"/>`).join('')}`).join('')}
       ${water(156)}<g transform="translate(250 150) scale(.6)"><path d="M-40 0 H40 L30 12 H-30Z" class="hs-fill-ink"/><path d="M-4 0 V-34 L22 -4Z" class="hs-fill-paper"/></g>` },
   { parte: 0, ano: '1908', lugar: 'Fort Myer, Virgínia', titulo: 'Orville Wright no céu',
