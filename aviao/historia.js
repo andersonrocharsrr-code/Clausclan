@@ -268,6 +268,7 @@ const CAPS_DOUGLAS = [
       'Faltava dinheiro para tudo. Então apareceu David R. Davis, um jovem milionário apaixonado por aviação. Davis queria ser o primeiro a atravessar os Estados Unidos de costa a costa sem escalas e topou pagar pelo avião.',
       'Assim nasceu a Davis-Douglas Company. O avião seria construído no andar de cima de uma marcenaria e montado num velho galpão de filmes, perto do mar.'],
     sabia: 'A Califórnia atraía os fabricantes de aviões pelo tempo bom o ano inteiro, que permitia voar e testar quase todos os dias.',
+    foto: { src: 'assets/douglas-barbearia.webp', legenda: 'Recriação da barbearia de Los Angeles em 1920: na frente, os fregueses; nos fundos, as pranchetas onde nasceu o primeiro avião de Douglas (imagem ilustrativa)' },
     cena: () => `${sun(260, 40)}${ground(150)}<rect x="40" y="70" width="200" height="80" class="hs-fill-city"/><rect x="60" y="90" width="60" height="60" class="hs-win"/>
       <g transform="translate(140 72)">${[0, 1, 2, 3].map((i) => `<rect x="${i * 6}" y="0" width="3" height="40" class="${i % 2 ? 'hs-fill-accent' : 'hs-fill-paper'}"/>`).join('')}</g>
       <rect x="170" y="96" width="50" height="30" class="hs-fill-paper"/><path d="M176 104 H214 M176 112 H206 M176 120 H210" class="hs-line"/>${person(196, 150, false, 'hs-fill-ink', 0)}` },
