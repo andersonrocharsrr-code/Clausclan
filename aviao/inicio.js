@@ -22,7 +22,6 @@ function render() {
   const n = c.cap + 1, pct = Math.round(n / c.total * 100);
   const dz = window.Desastres?.resumo?.() || { total: 0 };
   const hs = window.Historia?.resumo?.() || { nomes: [], capa: '' };
-  const licoes = ($('#progressTxt')?.textContent || '').replace(' lições', '');
   const radioFeitas = ler('rdFeitas', []).length;
   $('#inHello').textContent = saudacao();
   $('#inCont').innerHTML = `
@@ -33,7 +32,7 @@ function render() {
   $('#inGrid').innerHTML = [
     ['desastres', `<img src="${esc(dz.foto || '')}" alt="">`, 'Desastres aéreos', `${dz.total} acidentes`],
     ['historia', `<img src="${esc(hs.capa || '')}" alt="">`, 'Histórias', hs.nomes.join(' · ')],
-    ['escola', '<span class="in-ico">A</span>', 'Escola de voo', `${licoes} lições`],
+    ['meteo', '<img src="assets/nuvem-cb.webp" alt="">', 'Meteorologia', 'Nuvens e radar'],
     ['radio', '<img src="assets/radio-gns430.webp" alt="">', 'Rádio', radioFeitas ? `${radioFeitas} conversas feitas` : 'Fale com a torre'],
   ].map(([tab, fig, t, s]) => `<a class="in-tile" href="#${tab}" data-tab="${tab}"><span class="in-tile__fig">${fig}</span><b>${t}</b><span>${esc(s)}</span></a>`).join('');
   // As outras seções, que não estão na barra de baixo nem nos blocos de cima
@@ -41,7 +40,6 @@ function render() {
 }
 const MAIS = [
   ['pecas', 'Peças do avião', 'Toque nas peças, raio-X e as vistas do 747', '<path d="M3 13 L10 11 L13 4 H15 L14 11 L21 12 V14 L14 14 L13 20 H11 L10 15 L3 15Z"/>'],
-  ['meteo', 'Meteorologia', 'Tipos de nuvens e o radar meteorológico', '<path d="M7 18 H17 A4 4 0 0 0 16.5 10 A5.5 5.5 0 0 0 6 11.5 A3.3 3.3 0 0 0 7 18Z"/>'],
   ['glossario', 'Glossário', 'Os termos em português e em inglês', '<path d="M5 4 H17 A2 2 0 0 1 19 6 V20 H7 A2 2 0 0 1 5 18Z"/><path d="M5 18 A2 2 0 0 1 7 16 H19"/><path d="M9 8 H15 M9 11 H13"/>'],
   ['catalogo', 'Catálogo 747', 'As categorias de peças do 747-8', '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>'],
 ];
