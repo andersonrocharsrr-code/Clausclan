@@ -285,7 +285,7 @@ const GLOSS = [
 ];
 
 /* ---------------- Abas ---------------- */
-const TABS = ['inicio', 'pecas', 'escola', 'historia', 'desastres', 'cockpit', 'lab', 'meteo', 'radio', 'glossario', 'catalogo'];
+const TABS = ['inicio', 'pecas', 'escola', 'historia', 'desastres', 'cockpit', 'lab', 'meteo', 'radio', 'glossario', 'catalogo', 'cartas'];
 let current = null;
 function showTab(id, push) {
   if (typeof hideHint === 'function') hideHint();
@@ -299,6 +299,7 @@ function showTab(id, push) {
   if (id === 'lab') startLab();
   if (id === 'meteo') window.Meteo?.start();
   if (id === 'radio') window.Radio?.start();
+  if (id === 'cartas') window.Cartas?.start();
   if (id === 'historia') window.Historia?.start();
   if (id === 'desastres') window.Desastres?.start();
   if (id === 'inicio') window.Inicio?.start();
