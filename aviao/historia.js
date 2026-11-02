@@ -286,6 +286,7 @@ const CAPS_DOUGLAS = [
       'Pela fábrica de Santa Mônica passaram engenheiros que ficariam famosos, como Jack Northrop, que mais tarde fundaria a própria empresa, e Arthur Raymond, que seria o cérebro por trás do DC-3.',
       'Donald era sério, reservado e exigente, e às vezes difícil. Mas os funcionários diziam que ele defendia a equipe e nunca aceitava um avião \"mais ou menos\".'],
     sabia: 'Os torpedeiros DT podiam trocar as rodas por flutuadores. Essa ideia seria essencial na aventura seguinte da Douglas.',
+    foto: { src: 'assets/douglas-dt.webp', legenda: 'Recriação de um torpedeiro Douglas DT da Marinha, sobre flutuadores e com o torpedo embaixo, diante da fábrica da Douglas em 1922 (imagem ilustrativa)' },
     cena: () => `${water(140)}${cloud(70, 40, 1, 0)}<g transform="translate(160 110)"><g class="hs-bob">${seaplane(1.4)}</g></g>` },
   /* ---- 3 · A volta ao mundo ---- */
   { parte: 2, ano: '1924', lugar: 'Seattle, Washington', titulo: 'Quatro aviões, uma volta ao mundo',
