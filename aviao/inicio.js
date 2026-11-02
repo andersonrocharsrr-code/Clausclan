@@ -32,7 +32,7 @@ function render() {
   $('#inGrid').innerHTML = [
     ['desastres', `<img src="${esc(dz.foto || '')}" alt="">`, 'Desastres aéreos', `${dz.total} acidentes`],
     ['historia', `<img src="${esc(hs.capa || '')}" alt="">`, 'Histórias', hs.nomes.join(' · ')],
-    ['meteo', '<img src="assets/nuvem-cb.webp" alt="">', 'Meteorologia', 'Nuvens e radar'],
+    ['meteo', '<img src="assets/meteo-radar.webp" alt="">', 'Meteorologia', 'Nuvens e radar'],
     ['radio', '<img src="assets/radio-gns430.webp" alt="">', 'Rádio', radioFeitas ? `${radioFeitas} conversas feitas` : 'Fale com a torre'],
   ].map(([tab, fig, t, s]) => `<a class="in-tile" href="#${tab}" data-tab="${tab}"><span class="in-tile__fig">${fig}</span><b>${t}</b><span>${esc(s)}</span></a>`).join('');
   // As outras seções, que não estão na barra de baixo nem nos blocos de cima
