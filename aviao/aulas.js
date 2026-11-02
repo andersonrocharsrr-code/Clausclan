@@ -351,9 +351,9 @@ function cenaFrente(cv, k) {
     R().chuva(c, 312, 420, 245, chao, { dens: 0.9 });
     N(c, s, 470, 180, 150, 70, [{ x: 540, y: 220, rx: 50, ry: 22 }, { x: 515, y: 210, rx: 26, ry: 20 }, { x: 560, y: 208, rx: 24, ry: 18 }], { topo: 190, base: 240 });
     R().terreno(c, 640, 330, chao, '#34452f', '#18211a', 2);
-    seta(c, 60, 250, 200, 250, '#9cc3ff'); rotulo(c, 40, 238, 'ar frio, pesado', '#cfe1ff');
-    seta(c, 500, 270, 445, 205, '#ffb3a8'); rotulo(c, 630, 312, 'ar quente e úmido sobe de repente', '#ffd2cc', 12, 'right');
-    rotulo(c, 430, 110, 'cumulonimbus', '#fff', 13);
+    seta(c, 60, 250, 200, 250, '#9cc3ff'); rotulo(c, 40, 238, 'ar frio, pesado', '#cfe1ff', 23);
+    seta(c, 500, 270, 445, 205, '#ffb3a8'); rotulo(c, 630, 312, 'ar quente e úmido sobe de repente', '#ffd2cc', 22, 'right');
+    rotulo(c, 430, 110, 'cumulonimbus', '#fff', 23);
   } else if (k === 'quente') {
     const g = c.createLinearGradient(0, 120, 0, chao); g.addColorStop(0, 'rgba(70,120,210,0)'); g.addColorStop(1, 'rgba(70,120,210,.3)');
     c.fillStyle = g; c.beginPath(); c.moveTo(110, chao); c.bezierCurveTo(300, 250, 480, 160, 640, 110); c.lineTo(640, chao); c.closePath(); c.fill();
@@ -363,22 +363,22 @@ function cenaFrente(cv, k) {
     N(c, s, 60, 150, 290, 110, [{ x: 200, y: 205, rx: 140, ry: 34 }, { x: 130, y: 210, rx: 70, ry: 28 }, { x: 270, y: 195, rx: 80, ry: 26 }], { topo: 160, base: 245, amp: 0.45, sombra: [70, 80, 94], baseCor: [52, 58, 68] });
     R().chuva(c, 80, 300, 235, chao, { dens: 0.6, inc: 0.05 });
     R().terreno(c, 640, 330, chao, '#3a4a33', '#1a221a', 5);
-    seta(c, 60, 270, 150, 222, '#ffb3a8'); rotulo(c, 20, 312, 'ar quente sobe devagar, numa rampa longa', '#ffd2cc', 12);
-    rotulo(c, 520, 36, 'cirrus', '#fff', 12); rotulo(c, 360, 104, 'altostratus', '#fff', 12); rotulo(c, 140, 146, 'nimbostratus', '#fff', 12); rotulo(c, 560, 270, 'ar frio', '#cfe1ff', 12);
+    seta(c, 60, 270, 150, 222, '#ffb3a8'); rotulo(c, 20, 312, 'ar quente sobe devagar, numa rampa longa', '#ffd2cc', 22);
+    rotulo(c, 520, 36, 'cirrus', '#fff', 22); rotulo(c, 360, 104, 'altostratus', '#fff', 22); rotulo(c, 140, 146, 'nimbostratus', '#fff', 22); rotulo(c, 630, 270, 'ar frio', '#cfe1ff', 22, 'right');
   } else if (k === 'oclusa') {
     const g = c.createLinearGradient(0, 150, 0, chao); g.addColorStop(0, 'rgba(70,120,210,0)'); g.addColorStop(1, 'rgba(70,120,210,.32)');
     c.fillStyle = g; c.fillRect(0, 150, 640, chao - 150);
     N(c, s, 90, 20, 480, 250, [{ x: 330, y: 190, rx: 190, ry: 40 }, { x: 300, y: 140, rx: 120, ry: 45 }, { x: 350, y: 95, rx: 70, ry: 50 }, { x: 345, y: 55, rx: 120, ry: 18 }, { x: 220, y: 175, rx: 90, ry: 30 }], { topo: 40, base: 235, amp: 0.5 });
     R().chuva(c, 170, 470, 225, chao, { dens: 0.75, inc: 0.07 });
     R().terreno(c, 640, 330, chao, '#34452f', '#18211a', 8);
-    seta(c, 330, 120, 330, 40, '#ffb3a8'); rotulo(c, 345, 24, 'ar quente levantado do chão', '#ffd2cc', 12);
-    rotulo(c, 20, 270, 'ar frio', '#cfe1ff', 12); rotulo(c, 560, 270, 'ar frio', '#cfe1ff', 12);
+    seta(c, 330, 120, 330, 40, '#ffb3a8'); rotulo(c, 320, 26, 'ar quente levantado do chão', '#ffd2cc', 22, 'center');
+    rotulo(c, 20, 270, 'ar frio', '#cfe1ff', 22); rotulo(c, 630, 270, 'ar frio', '#cfe1ff', 22, 'right');
   } else {
     c.fillStyle = 'rgba(70,120,210,.18)'; c.fillRect(0, 170, 320, chao - 170); c.fillStyle = 'rgba(220,90,70,.12)'; c.fillRect(320, 170, 320, chao - 170);
     N(c, s, 20, 130, 600, 110, [{ x: 320, y: 185, rx: 270, ry: 24 }, { x: 160, y: 190, rx: 110, ry: 20 }, { x: 470, y: 180, rx: 110, ry: 20 }], { topo: 160, base: 210, amp: 0.45, sombra: [96, 106, 118] });
     R().chuva(c, 120, 520, 205, chao, { dens: 0.35, inc: 0.02 });
     R().terreno(c, 640, 330, chao, '#3a4a33', '#1a221a', 11);
-    rotulo(c, 40, 270, 'ar frio', '#cfe1ff', 12); rotulo(c, 560, 270, 'ar quente', '#ffd2cc', 12); rotulo(c, 320, 130, 'a frente fica parada', '#fff', 12, 'center');
+    rotulo(c, 40, 270, 'ar frio', '#cfe1ff', 22); rotulo(c, 630, 270, 'ar quente', '#ffd2cc', 22, 'right'); rotulo(c, 320, 130, 'a frente fica parada', '#fff', 22, 'center');
   }
 }
 // Microexplosão: cena parada desenhada uma vez + partículas e avião animados por cima
@@ -409,7 +409,7 @@ function cenaMicro(cv, el) {
     // Pista à direita e a rampa
     o.fillStyle = '#4b5258'; o.fillRect(560, chao - 2, 80, 5); o.setLineDash([6, 5]); o.strokeStyle = 'rgba(120,230,150,.6)'; o.lineWidth = 1.5;
     o.beginPath(); o.moveTo(20, rampa(20)); o.lineTo(600, rampa(600)); o.stroke(); o.setLineDash([]);
-    rotulo(o, 24, rampa(20) - 8, 'rampa de 3°', '#bff0cc', 11);
+    rotulo(o, 24, rampa(20) - 8, 'rampa de 3°', '#bff0cc', 21);
     fundo = off;
   };
   const frame = (t) => {
@@ -429,7 +429,7 @@ function cenaMicro(cv, el) {
     R().jato(c, xa, ya(xa) - 4, 46, ang);
     const u = (xa - x0) / 170, fase = !voando ? 0 : u < -1 ? 0 : u < -0.35 ? 1 : u < 0.35 ? 2 : u < 1.4 ? 3 : 0;
     const txt = $('#mxTxt', el); if (txt) txt.textContent = ['Aproximação normal, na rampa', '1 · Vento de frente: velocidade sobe, avião sobe', '2 · Corrente descendente: avião afunda', '3 · Vento de cauda: velocidade despenca'][fase];
-    if (fase) rotulo(c, xa, ya(xa) - 22, ['', '+ velocidade', '↓ afunda', '− velocidade'][fase], fase === 1 ? '#bff0cc' : '#ffb3a8', 12, 'center');
+    if (fase) rotulo(c, xa, ya(xa) - 22, ['', '+ velocidade', '↓ afunda', '− velocidade'][fase], fase === 1 ? '#bff0cc' : '#ffb3a8', 22, 'center');
     if (p >= 1) voando = false;
     raf = requestAnimationFrame(frame);
   };
@@ -622,10 +622,10 @@ const tempo = {
     { t: 'Carta de tempo significativo', html: () => `<p>A carta SIGWX mostra, para uma faixa de altitudes, onde há tempestades, turbulência, gelo e corrente de jato. Esta é inventada. Toque nos símbolos da legenda:</p>
       <div class="au-fig" id="swFig">${svg('0 0 340 260', `<rect width="340" height="260" fill="#eef0e8"/>
         <path d="M20 30 Q90 10 150 40 T320 60" fill="none" stroke="#c9cfc3" stroke-width="18"/>
-        <g data-k="cb"><path d="M40 120 q10 -18 26 -8 q12 -16 28 -4 q18 -8 24 10 q16 8 6 24 q4 18 -16 20 q-8 16 -26 8 q-16 12 -28 -2 q-20 0 -18 -18 q-14 -14 4 -30Z" fill="rgba(179,38,30,.08)" stroke="#b3261e" stroke-width="2"/><text x="82" y="140" text-anchor="middle" fill="#b3261e" font-size="10" font-weight="800">ISOL EMBD CB</text><text x="82" y="152" text-anchor="middle" fill="#b3261e" font-size="9">XXX/FL080</text></g>
-        <g data-k="turb"><path d="M180 140 h110 v60 h-110Z" fill="none" stroke="#a86a00" stroke-width="2" stroke-dasharray="6 3"/><path d="M220 166 l8 -12 l8 12 M220 176 l8 -12 l8 12" fill="none" stroke="#a86a00" stroke-width="2"/><text x="246" y="172" fill="#a86a00" font-size="10" font-weight="800">FL240/FL180</text></g>
-        <g data-k="gelo"><path d="M200 70 h90 v40 h-90Z" fill="none" stroke="#1f4fa0" stroke-width="2" stroke-dasharray="6 3"/><path d="M208 84 q8 16 16 0 M216 80 v18" fill="none" stroke="#1f4fa0" stroke-width="2"/><text x="236" y="95" fill="#1f4fa0" font-size="10" font-weight="800">MOD · FL150/100</text></g>
-        <g data-k="jato"><path d="M20 220 Q120 190 220 210 T330 200" fill="none" stroke="#161616" stroke-width="3"/><path d="M322 194 l10 6 l-10 6Z" fill="#161616"/><text x="120" y="235" fill="#161616" font-size="10" font-weight="800">FL350 · 120 kt</text></g>
+        <g data-k="cb"><path d="M40 120 q10 -18 26 -8 q12 -16 28 -4 q18 -8 24 10 q16 8 6 24 q4 18 -16 20 q-8 16 -26 8 q-16 12 -28 -2 q-20 0 -18 -18 q-14 -14 4 -30Z" fill="rgba(179,38,30,.08)" stroke="#b3261e" stroke-width="2"/><text x="82" y="130" text-anchor="middle" fill="#b3261e" font-size="13" font-weight="800">ISOL EMBD</text><text x="82" y="145" text-anchor="middle" fill="#b3261e" font-size="13" font-weight="800">CB</text><text x="82" y="160" text-anchor="middle" fill="#b3261e" font-size="12">XXX/FL080</text></g>
+        <g data-k="turb"><path d="M180 140 h110 v60 h-110Z" fill="none" stroke="#a86a00" stroke-width="2" stroke-dasharray="6 3"/><path d="M220 166 l8 -12 l8 12 M220 176 l8 -12 l8 12" fill="none" stroke="#a86a00" stroke-width="2"/><text x="244" y="166" fill="#a86a00" font-size="13" font-weight="800">FL240</text><text x="244" y="184" fill="#a86a00" font-size="13" font-weight="800">FL180</text></g>
+        <g data-k="gelo"><path d="M200 70 h90 v40 h-90Z" fill="none" stroke="#1f4fa0" stroke-width="2" stroke-dasharray="6 3"/><path d="M208 84 q8 16 16 0 M216 80 v18" fill="none" stroke="#1f4fa0" stroke-width="2"/><text x="200" y="126" fill="#1f4fa0" font-size="14" font-weight="800">MOD · FL150/100</text></g>
+        <g data-k="jato"><path d="M20 220 Q120 190 220 210 T330 200" fill="none" stroke="#161616" stroke-width="3"/><path d="M322 194 l10 6 l-10 6Z" fill="#161616"/><text x="110" y="240" fill="#161616" font-size="14" font-weight="800">FL350 · 120 kt</text></g>
         <g data-k="frente"><path d="M10 80 Q60 70 120 90" fill="none" stroke="#1f6fff" stroke-width="3"/>${[20, 50, 80].map((x) => `<path d="M${x} ${78 + (x - 10) * 0.12} l7 -11 l7 10Z" fill="#1f6fff"/>`).join('')}</g>`, 'Carta de tempo significativo fictícia')}</div>
       <div class="au-legend" id="swLeg">${[['cb', 'Cumulonimbus', 'Linha recortada em volta: ISOL (isolados), OCNL (ocasionais), FRQ (frequentes); EMBD = escondidos em outras nuvens. XXX/FL080: do FL080 até acima da carta.'], ['turb', 'Turbulência', 'O chapéu de bruxa: um para moderada, dois para forte. Os números são o topo e a base (FL240 e FL180).'], ['gelo', 'Gelo', 'Um arco com um traço vertical no meio, com a intensidade (MOD = moderado, SEV = forte) e os níveis do topo e da base.'], ['jato', 'Corrente de jato', 'Seta grossa com o nível e a velocidade máxima do vento. Nas cartas reais, a velocidade vem também em barbelas: cada traço vale 10 kt e cada bandeirinha, 50 kt.'], ['frente', 'Frente', 'Os mesmos símbolos das cartas de superfície.']].map(([k, n, d]) => `<button type="button" data-k="${k}"><b>${n}</b><span>${d}</span></button>`).join('')}</div>`,
       init: (el) => destaque(el, '#swFig', '#swLeg') },
