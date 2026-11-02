@@ -278,7 +278,7 @@ const CAPS_DOUGLAS = [
       'Mas o Cloudster já tinha feito história de outro jeito: foi o primeiro avião a levantar do chão uma carga útil maior que o próprio peso. Engenheiros da Marinha repararam nisso e viram nele um ótimo avião para carregar torpedos.',
       'Para aceitar a encomenda, Douglas precisava de dinheiro para construir. Harry Chandler, dono do jornal Los Angeles Times, reuniu alguns empresários da cidade para garantir um empréstimo. Em julho de 1921, nasceu a Douglas Company.'],
     sabia: 'A fábrica da Douglas foi para Santa Mônica, onde funcionou por décadas ao lado do campo de pouso Clover Field, hoje o Aeroporto de Santa Mônica.',
-    foto: { src: 'assets/douglas-cloudster.webp', legenda: 'Recriação de um biplano de madeira do começo dos anos 1920 (imagem ilustrativa; o Cloudster real era bem maior, com asas muito mais longas e duas cabines abertas)' },
+    foto: { src: 'assets/douglas-cloudster.webp', legenda: 'O Cloudster, o primeiro avião de Douglas, numa foto real da época. As janelas na fuselagem foram abertas anos depois, quando ele foi adaptado para levar passageiros' },
     cena: () => `${cloud(70, 40, 1, 0)}${cloud(240, 60, .9, 1)}${ground(150)}<g transform="translate(160 100)">${mailplane(1.6)}</g>` },
   { parte: 1, ano: '1922', lugar: 'Santa Mônica', titulo: 'Os torpedeiros e a equipe',
     texto: ['O avião da Marinha, chamado Douglas DT, era um biplano capaz de levar um torpedo e de pousar na água com flutuadores. A Marinha gostou tanto que encomendou mais e mais unidades.',
