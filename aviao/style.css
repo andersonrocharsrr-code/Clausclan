@@ -1500,3 +1500,48 @@ main.wrap { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 .ct-q__res { font-size: 16px; margin: 6px 0 12px; } .ct-q__res b { font-size: 20px; color: var(--magenta); margin-right: 6px; }
 .ct__aviso { margin: 0; }
 @media (min-width: 900px) { .ct { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; } .ct__pick, .ct__aviso { grid-column: 1 / -1; } }
+
+/* ---------- Computador de voo ---------- */
+.fv { display: grid; gap: 16px; margin-top: 18px; }
+.fv-card h2 { margin: 2px 0 12px; }
+.fv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.fv-f { display: grid; gap: 4px; position: relative; font-size: 12.5px; color: var(--muted); }
+.fv-f input, .fv-f select, .fv-exrow input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 600 16px var(--mono, monospace); }
+.fv-f select { font: 600 14px var(--body, inherit); }
+.fv-f em { position: absolute; right: 11px; bottom: 11px; font-style: normal; font-size: 12px; color: var(--muted); pointer-events: none; }
+.fv-res { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.fv-res > div { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: grid; gap: 2px; }
+.fv-res > div span { font-size: 12px; color: var(--muted); }
+.fv-res > div b { font: 700 20px var(--mono, monospace); color: var(--magenta); }
+.fv-res .fv-note { grid-column: 1 / -1; }
+.fv-note { margin: 4px 0 10px; } .fv-note.is-bad { color: var(--bad); font-weight: 600; }
+.fv-draw svg { display: block; width: 100%; max-width: 420px; margin: 0 auto 8px; }
+.fv-svg { font-family: var(--body, Inter, sans-serif); }
+.fv-svg .fv-small { font-size: 9px; fill: var(--muted); }
+.fv-svg .fv-lbl { font-size: 10px; font-weight: 700; }
+.fv-guide { stroke: var(--line); stroke-dasharray: 4 4; }
+.fv-axis { stroke: var(--muted); fill: none; }
+.fv-air { stroke: var(--magenta); stroke-width: 2.5; fill: none; } .fv-air.fv-head { fill: var(--magenta); } .fv-air-t { fill: var(--magenta); }
+.fv-wind { stroke: var(--blue, #3b6fd1); stroke-width: 2.5; fill: none; } .fv-wind.fv-head { fill: var(--blue, #3b6fd1); } .fv-wind-t { fill: var(--blue, #3b6fd1); }
+.fv-gnd { stroke: var(--ok); stroke-width: 2.5; fill: none; } .fv-gnd.fv-head { fill: var(--ok); } .fv-gnd-t { fill: var(--ok); }
+.fv-env { fill: color-mix(in srgb, var(--ok) 18%, transparent); stroke: var(--ok); stroke-width: 1.5; }
+.fv-lim { stroke: var(--bad); stroke-dasharray: 4 3; }
+.fv-pt-ok { fill: var(--magenta); stroke: var(--panel); stroke-width: 2; } .fv-pt-bad { fill: var(--bad); stroke: var(--panel); stroke-width: 2; }
+.fv-tab { width: 100%; border-collapse: collapse; font-size: 14px; margin: 4px 0 8px; }
+.fv-tab th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; padding: 4px 6px; }
+.fv-tab td { padding: 6px; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.fv-tab td + td, .fv-tab th + th { text-align: right; }
+.fv-tab .fv-tot td { font-weight: 700; border-top: 2px solid var(--ink); }
+.fv-status { padding: 10px 12px; border-radius: 8px; font-weight: 600; margin: 6px 0 10px; }
+.fv-status.is-ok { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); }
+.fv-status.is-bad { background: color-mix(in srgb, var(--bad) 15%, transparent); color: var(--bad); }
+.fv-convres { font-size: 15px; margin: 0 0 12px; }
+.fv-exq { font-weight: 600; font-size: 16px; margin: 4px 0 12px; line-height: 1.45; }
+.fv-exrow { display: flex; gap: 8px; } .fv-exrow input { flex: 1; min-width: 0; }
+.fv-fb { margin: 12px 0 4px; line-height: 1.5; } .fv-fb.is-ok b { color: var(--ok); } .fv-fb.is-bad b { color: var(--bad); }
+.fv-exnav { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; } .fv-exnav button:disabled { opacity: .35; }
+#fvLevar { margin: 2px 0 10px; width: 100%; }
+.fv-aviso { margin: 0; }
+@media (min-width: 900px) { .fv { grid-template-columns: 1fr 1fr; align-items: start; } .fv-aviso { grid-column: 1 / -1; } }
+.fv-f input::-webkit-inner-spin-button, .fv-f input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.fv-f input[type="number"] { -moz-appearance: textfield; appearance: textfield; padding-right: 40px; }
