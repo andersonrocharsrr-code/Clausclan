@@ -295,6 +295,7 @@ const CAPS_DOUGLAS = [
       'Foram feitos quatro aviões, cada um com o nome de uma cidade americana: Seattle, Chicago, Boston e New Orleans. Cada um levava dois homens, um piloto e um mecânico, que se revezavam no comando e passavam as noites consertando motores.',
       'Em 6 de abril de 1924, os quatro decolaram do lago Washington, em Seattle, rumo ao Alasca. Pela frente, mais de 40 mil quilômetros por oceanos gelados, desertos, selvas e montanhas.'],
     sabia: 'A largada foi no dia do aniversário de 32 anos de Donald Douglas.',
+    foto: { src: 'assets/douglas-partida.webp', legenda: 'Recriação da partida dos quatro Douglas World Cruisers do lago Washington, em Seattle, em 6 de abril de 1924 (imagem ilustrativa)' },
     cena: () => `${water(140)}${cloud(80, 40, 1, 0)}${[[60, 110, 0], [130, 96, .4], [200, 112, .8], [270, 100, 1.2]].map(([x, y, d]) => `<g transform="translate(${x} ${y})"><g class="hs-bob" style="animation-delay:${d}s">${seaplane(.7)}</g></g>`).join('')}` },
   { parte: 2, ano: '1924', lugar: 'Alasca e Atlântico Norte', titulo: 'Neve, neblina e mar',
     texto: ['O primeiro golpe veio no Alasca. O Seattle, avião do comandante da expedição, o major Frederick Martin, bateu numa montanha escondida pela neblina. Martin e o mecânico Alva Harvey saíram vivos do acidente.',
