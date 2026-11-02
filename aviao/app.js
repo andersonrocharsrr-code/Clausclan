@@ -285,15 +285,15 @@ const GLOSS = [
 ];
 
 /* ---------------- Abas ---------------- */
-const TABS = ['pecas', 'escola', 'historia', 'desastres', 'cockpit', 'lab', 'meteo', 'radio', 'glossario', 'catalogo'];
+const TABS = ['inicio', 'pecas', 'escola', 'historia', 'desastres', 'cockpit', 'lab', 'meteo', 'radio', 'glossario', 'catalogo'];
 let current = null;
 function showTab(id, push) {
   if (typeof hideHint === 'function') hideHint();
-  if (!TABS.includes(id)) id = 'pecas';
+  if (!TABS.includes(id)) id = 'inicio';
   current = id;
   $$('.view').forEach((v) => { v.hidden = v.dataset.view !== id; });
   // Na barra de baixo: Início, Escola e Cockpit acendem na própria seção; Explorar acende nas outras
-  $$('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.id === 'exploreBtn' ? !['pecas', 'escola', 'cockpit'].includes(id) : t.dataset.tab === id)));
+  $$('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.id === 'exploreBtn' ? !['inicio', 'escola', 'cockpit'].includes(id) : t.dataset.tab === id)));
   const item = $(`#exploreMenu [data-tab="${id}"]`);
   $$('#exploreMenu [data-tab]').forEach((a) => { if (a === item) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   if (item) $('#exploreSub').textContent = item.dataset.short || item.querySelector('b').textContent;
@@ -305,6 +305,7 @@ function showTab(id, push) {
   if (id === 'radio') window.Radio?.start();
   if (id === 'historia') window.Historia?.start();
   if (id === 'desastres') window.Desastres?.start();
+  if (id === 'inicio') window.Inicio?.start();
   window.scrollTo({ top: 0 });
 }
 // Explorar: a aba abre a lista das seções
@@ -1231,7 +1232,7 @@ if (NATIVE) {
     if (!$('#lessonND').hidden && $('#sidePanel').classList.contains('is-open')) { panelMenu(); return; }
     if (closePanel()) return;
     if (current === 'pecas' && planeView !== 'top') { setPlaneView('top'); return; }
-    if (current !== 'pecas') { showTab('pecas', true); return; }
+    if (current !== 'inicio') { showTab('inicio', true); return; }
     AppPlugin.minimizeApp();
   });
 }
@@ -1239,7 +1240,8 @@ if (NATIVE) {
 selPart = 'aileron'; setCraft('c172');
 renderProgress(); renderModules(); renderLesson();
 setCockpit('c172'); updateLab(); renderGloss();
-showTab(location.hash.slice(1) || 'pecas');
+window.Inicio?.init();
+showTab(location.hash.slice(1) || 'inicio');
 
 // Intro: radar ND que some sozinho; um toque pula
 (() => {

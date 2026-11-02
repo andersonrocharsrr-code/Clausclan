@@ -424,6 +424,7 @@ let hist = HISTORIAS[0];
 let cap = 0;
 function render(dir = 0) {
   const CAPS = hist.caps, PARTES = hist.partes, c = CAPS[cap];
+  if (!document.getElementById('view-historia')?.hidden) try { localStorage.setItem('hgLeitura', JSON.stringify({ tipo: 'historia', id: hist.id, cap, total: CAPS.length, titulo: hist.h1, foto: c.foto?.src || hist.capa || '', em: Date.now() })); } catch {}
   const card = $('#hsCard');
   card.classList.remove('is-next', 'is-prev'); void card.offsetWidth;
   if (dir) card.classList.add(dir > 0 ? 'is-next' : 'is-prev');
@@ -506,6 +507,15 @@ function init() {
   });
   listaHs(); montar();
 }
-function start() { render(); }
-window.Historia = { init, start };
+let iniciado = false;
+function start() { if (iniciado) return; iniciado = true; render(); }
+// Abre uma história direto num capítulo (usado pelo "Continue lendo" da tela inicial)
+function abrir(id, n) {
+  const h = HISTORIAS.find((x) => x.id === id); if (!h) return;
+  if (h !== hist) { hist = h; listaHs(); montar(); }
+  iniciado = true; cap = Math.min(Math.max(n || 0, 0), hist.caps.length - 1); render(0);
+  setTimeout(() => rolarAteLinha($('#hsLine')), 60);
+}
+const resumo = () => ({ nomes: HISTORIAS.map((x) => x.titulo.split(' ').pop()), total: HISTORIAS.length, capa: HISTORIAS[0].capa });
+window.Historia = { init, start, abrir, resumo };
 })();

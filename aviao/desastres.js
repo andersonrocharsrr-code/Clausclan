@@ -1061,6 +1061,8 @@ function montarCapitulos() {
 }
 function capitulo(dir = 0) {
   const a = atual, c = a.secoes[cap], card = $('#dzhCard');
+  // Guarda onde a pessoa parou, para o "Continue lendo" da tela inicial
+  if (!document.getElementById('view-desastres')?.hidden) try { localStorage.setItem('hgLeitura', JSON.stringify({ tipo: 'desastres', id: a.id, cap, total: a.secoes.length, titulo: a.titulo, foto: c.foto?.src || a.secoes.find((x) => x.foto)?.foto.src || '', em: Date.now() })); } catch {}
   card.classList.remove('is-next', 'is-prev'); void card.offsetWidth;
   if (dir) card.classList.add(dir > 0 ? 'is-next' : 'is-prev');
   $('#dzhPart').textContent = `Parte ${c.parte + 1} · ${a.partes[c.parte]}`;
@@ -1131,5 +1133,14 @@ function start() {
   carregar(PITOT_FOTO); carregar(PITOT_GELO);
   mostrar();
 }
-window.Desastres = { init, start };
+// Abre um acidente direto num capítulo (usado pelo "Continue lendo" da tela inicial)
+function abrir(id, n) {
+  start();
+  const a = ACIDENTES.find((x) => x.id === id); if (!a) return;
+  if (a !== atual) { atual = a; lista(); mostrar(); }
+  cap = Math.min(Math.max(n || 0, 0), a.secoes.length - 1); capitulo(0);
+  setTimeout(() => rolarAteLinha($('#dzhLine')), 60);
+}
+const resumo = () => ({ total: ACIDENTES.length, foto: 'assets/gol1907-choque.webp' });
+window.Desastres = { init, start, abrir, resumo };
 })();

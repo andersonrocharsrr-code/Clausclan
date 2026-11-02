@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=211">
+  <link rel="stylesheet" href="style.css?v=212">
 </head>
 <body>
   <!-- Intro: o avião decola pela pista iluminada e aparece o nome do app (toque para pular) -->
@@ -60,6 +60,12 @@
   </header>
 
   <main class="wrap">
+    <!-- INÍCIO -->
+    <section class="view in" id="view-inicio" data-view="inicio" hidden>
+      <div class="in-hi"><p class="eyebrow" id="inHello">Olá</p><h1>O que vamos aprender hoje?</h1></div>
+      <button type="button" class="in-cont" id="inCont" aria-label="Continuar a leitura"></button>
+      <div class="in-grid" id="inGrid"></div>
+    </section>
     <!-- EXPLORAR · PEÇAS DO AVIÃO -->
     <section class="view" id="view-pecas" data-view="pecas">
       <div class="view__head">
@@ -951,7 +957,7 @@
   <div class="drawer-backdrop" id="panelBackdrop" hidden></div>
   <!-- Barra de navegação de baixo, como nos aplicativos de celular -->
   <nav class="bnav" aria-label="Seções">
-    <a class="tab bnav__it" href="#pecas" data-tab="pecas" id="bnInicio"><svg class="bnav__ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11 L12 4 L20 11 V20 H14 V14 H10 V20 H4Z"/></svg><span>Início</span></a>
+    <a class="tab bnav__it" href="#inicio" data-tab="inicio" id="bnInicio"><svg class="bnav__ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11 L12 4 L20 11 V20 H14 V14 H10 V20 H4Z"/></svg><span>Início</span></a>
     <div class="tabdrop bnav__drop">
       <button type="button" class="tab bnav__it" id="exploreBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="exploreMenu"><svg class="bnav__ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M15.5 8.5 L13.5 13.5 L8.5 15.5 L10.5 10.5Z"/></svg><span>Explorar</span><span id="exploreSub" hidden></span></button>
       <div class="tabmenu" id="exploreMenu" role="menu" hidden>
@@ -997,16 +1003,17 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=211"></script>
-  <script src="catalogo747.js?v=211"></script>
-  <script src="cockpit747.js?v=211"></script>
-  <script src="motor3d.js?v=211"></script>
-  <script src="motor747.js?v=211"></script>
-  <script src="meteo.js?v=211"></script>
-  <script src="radio.js?v=211"></script>
-  <script src="historia.js?v=211"></script>
-  <script src="desastres.js?v=211"></script>
-  <script src="app.js?v=211"></script>
+  <script src="avioes.js?v=212"></script>
+  <script src="catalogo747.js?v=212"></script>
+  <script src="cockpit747.js?v=212"></script>
+  <script src="motor3d.js?v=212"></script>
+  <script src="motor747.js?v=212"></script>
+  <script src="meteo.js?v=212"></script>
+  <script src="radio.js?v=212"></script>
+  <script src="historia.js?v=212"></script>
+  <script src="desastres.js?v=212"></script>
+  <script src="inicio.js?v=212"></script>
+  <script src="app.js?v=212"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
