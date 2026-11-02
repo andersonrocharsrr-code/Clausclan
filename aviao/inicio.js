@@ -40,6 +40,7 @@ function render() {
 }
 const MAIS = [
   ['pecas', 'Peças do avião', 'Toque nas peças, raio-X e as vistas do 747', '<path d="M3 13 L10 11 L13 4 H15 L14 11 L21 12 V14 L14 14 L13 20 H11 L10 15 L3 15Z"/>'],
+  ['cartas', 'Cartas aeronáuticas', 'Aprenda a ler o diagrama, a aproximação e a saída', '<path d="M4 5 L9 3 L15 5 L20 3 V19 L15 21 L9 19 L4 21Z"/><path d="M9 3 V19 M15 5 V21"/>'],
   ['glossario', 'Glossário', 'Os termos em português e em inglês', '<path d="M5 4 H17 A2 2 0 0 1 19 6 V20 H7 A2 2 0 0 1 5 18Z"/><path d="M5 18 A2 2 0 0 1 7 16 H19"/><path d="M9 8 H15 M9 11 H13"/>'],
   ['catalogo', 'Catálogo 747', 'As categorias de peças do 747-8', '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>'],
 ];

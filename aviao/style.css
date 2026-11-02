@@ -1446,3 +1446,57 @@ main.wrap { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .in-row { box-shadow: none; border: 1px solid var(--line); } }
 :root[data-theme="dark"] .in-row { box-shadow: none; border: 1px solid var(--line); }
 @media (min-width: 720px) { .bnav { width: 480px; } }
+
+/* ---------- Cartas aeronáuticas ---------- */
+.ct { display: grid; gap: 16px; margin-top: 18px; }
+.ct__pick { display: grid; grid-template-columns: repeat(3, 1fr); }
+.ct__pick button { display: grid; gap: 1px; padding: 8px 4px; }
+.ct__pick button b { font-family: var(--mono); font-size: 13px; }
+.ct__pick button span { font-size: 11.5px; opacity: .8; }
+.ct__head { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; margin-bottom: 12px; }
+.ct__head h2 { margin: 2px 0 0; }
+.ct__card { padding: 14px; }
+.ct__chart { border-radius: 6px; overflow: auto; background: #fbfbf7; border: 1px solid #c9c9bf; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+.ct__chart svg { display: block; width: 100%; height: auto; max-width: 560px; margin: 0 auto; }
+.ct__chart.is-zoom svg { width: 200%; max-width: none; }
+.ct-svg { font-family: Inter, Arial, sans-serif; font-size: 9px; fill: #161616; -webkit-user-select: none; user-select: none; }
+.ct-svg [data-k] { cursor: pointer; transition: opacity .2s; }
+.ct-paper { fill: #fbfbf7; }
+.ct-box { fill: none; stroke: #161616; stroke-width: 1; }
+.ct-k { fill: #161616; stroke: none; }
+.ct-o { fill: #fff; stroke: #161616; stroke-width: 1.2; }
+.ct-line { fill: none; stroke: #161616; stroke-width: 1.2; }
+.ct-thin { fill: none; stroke: #8a8a80; stroke-width: .6; stroke-dasharray: 2 2; }
+.ct-rwy { fill: #262626; }
+.ct-cl { stroke: #fff; stroke-width: 1; stroke-dasharray: 8 6; }
+.ct-twy { fill: #b9b9ad; }
+.ct-hold { stroke: #c79a00; stroke-width: 1.4; }
+.ct-apron { fill: #dcdcd2; stroke: #8a8a80; }
+.ct-bld { fill: #8a8a80; }
+.ct-bld + text, .ct-apron + text { fill: #161616; }
+.ct-final { fill: none; stroke: #161616; stroke-width: 2.2; }
+.ct-route { fill: none; stroke: #161616; stroke-width: 1.3; }
+.ct-miss { fill: none; stroke: #161616; stroke-width: 1.3; stroke-dasharray: 5 3; }
+.ct-dash { fill: none; stroke: #b3261e; stroke-width: 1.2; stroke-dasharray: 4 2; }
+.ct-dash2 { fill: none; stroke: #161616; stroke-width: 1; stroke-dasharray: 3 3; }
+.ct-svg.is-dim [data-k]:not(.is-on) { opacity: .25; }
+.ct-svg .is-on { filter: drop-shadow(0 0 1.5px #e0218a) drop-shadow(0 0 4px rgba(224, 33, 138, .55)); }
+.ct__step { margin-top: 14px; }
+.ct__stephead { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.ct__dots { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+.ct__dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
+.ct__dots i.on { background: var(--magenta); }
+.ct__step h3 { margin: 8px 0 4px; font-size: 17px; }
+.ct__step p { margin: 0; line-height: 1.55; }
+.ct__nav { display: flex; justify-content: space-between; gap: 10px; margin: 14px 0 6px; }
+.ct__nav button:disabled { opacity: .35; cursor: default; }
+.ct-q__t { font-weight: 600; font-size: 16px; margin: 4px 0 12px; }
+.ct-q__ops { display: grid; gap: 8px; }
+.ct-q__ops button { text-align: left; border: 1px solid var(--line); background: transparent; color: var(--ink); padding: 11px 13px; border-radius: 8px; font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.ct-q__ops button.is-ok { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 16%, transparent); }
+.ct-q__ops button.is-bad { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, transparent); }
+.ct-q__fb { margin: 12px 0; line-height: 1.5; }
+.ct-q__fb.is-ok b { color: var(--ok); } .ct-q__fb.is-bad b { color: var(--bad); }
+.ct-q__res { font-size: 16px; margin: 6px 0 12px; } .ct-q__res b { font-size: 20px; color: var(--magenta); margin-right: 6px; }
+.ct__aviso { margin: 0; }
+@media (min-width: 900px) { .ct { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; } .ct__pick, .ct__aviso { grid-column: 1 / -1; } }

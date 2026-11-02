@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=226">
+  <link rel="stylesheet" href="style.css?v=227">
 </head>
 <body>
   <!-- Intro: o avião decola pela pista iluminada e aparece o nome do app (toque para pular) -->
@@ -930,6 +930,34 @@
       </div>
     </section>
 
+    <!-- CARTAS AERONÁUTICAS -->
+    <section class="view" id="view-cartas" data-view="cartas" hidden>
+      <div class="view__head">
+        <p class="eyebrow">Cartas aeronáuticas</p>
+        <h1>Aprenda a ler cartas</h1>
+        <p class="lede">Antes de voar por instrumentos, o piloto estuda as cartas do aeroporto: o diagrama do aeródromo, a aproximação e a saída. Aqui elas são de Serra Azul, um aeródromo inventado pelo Hangar Escola, desenhado como as cartas de verdade.</p>
+      </div>
+      <div class="ct">
+        <div class="seg ct__pick" id="ctPick" role="group" aria-label="Escolha a carta"></div>
+        <div class="card ct__card">
+          <div class="ct__head"><div><span class="label">Carta</span><h2 id="ctTitle"></h2></div><button type="button" class="btn-ghost" id="ctZoom">Ampliar</button></div>
+          <div class="ct__chart" id="ctChart"></div>
+          <div class="ct__step" aria-live="polite">
+            <div class="ct__stephead"><span class="label" id="ctStepN"></span><div class="ct__dots" id="ctDots"></div></div>
+            <h3 id="ctStepT"></h3>
+            <p id="ctStepP"></p>
+            <div class="ct__nav"><button type="button" class="btn-ghost" id="ctPrev">‹ Anterior</button><button type="button" class="btn" id="ctNext">Próximo ›</button></div>
+          </div>
+          <p class="small">Toque numa parte da carta para ver a explicação dela.</p>
+        </div>
+        <div class="card ct__quiz">
+          <span class="label">Teste sua leitura</span>
+          <div id="ctQuiz"></div>
+        </div>
+        <p class="small ct__aviso">Serra Azul (XHSA), as frequências, os pontos e os procedimentos são fictícios, criados para o estudo. Não use estas cartas para navegação.</p>
+      </div>
+    </section>
+
     <!-- E · GLOSSÁRIO -->
     <section class="view" id="view-glossario" data-view="glossario" hidden>
       <div class="view__head">
@@ -1003,17 +1031,18 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=226"></script>
-  <script src="catalogo747.js?v=226"></script>
-  <script src="cockpit747.js?v=226"></script>
-  <script src="motor3d.js?v=226"></script>
-  <script src="motor747.js?v=226"></script>
-  <script src="meteo.js?v=226"></script>
-  <script src="radio.js?v=226"></script>
-  <script src="historia.js?v=226"></script>
-  <script src="desastres.js?v=226"></script>
-  <script src="inicio.js?v=226"></script>
-  <script src="app.js?v=226"></script>
+  <script src="avioes.js?v=227"></script>
+  <script src="catalogo747.js?v=227"></script>
+  <script src="cockpit747.js?v=227"></script>
+  <script src="motor3d.js?v=227"></script>
+  <script src="motor747.js?v=227"></script>
+  <script src="meteo.js?v=227"></script>
+  <script src="radio.js?v=227"></script>
+  <script src="historia.js?v=227"></script>
+  <script src="desastres.js?v=227"></script>
+  <script src="cartas.js?v=227"></script>
+  <script src="inicio.js?v=227"></script>
+  <script src="app.js?v=227"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
