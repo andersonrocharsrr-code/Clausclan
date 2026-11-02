@@ -269,7 +269,7 @@ const aero = {
   id: 'aero', eyebrow: 'Aerodinâmica avançada', titulo: 'Curvas, solo e turbulência',
   lede: 'O que acontece com o avião numa curva fechada, perto do chão e atrás de um avião grande. Os números usam o Hangar H-1, o avião fictício do Computador de voo, com estol a 50 kt em voo nivelado.',
   topicos: [
-    { t: 'Curva e fator de carga', html: () => `<div id="cvFig"></div>
+    { t: 'Curva e fator de carga', html: () => `<canvas id="cvCv" class="au-cv" aria-label="Avião em curva visto de trás, com as forças"></canvas>
       <label class="au-sl"><span>Inclinação <b id="cvBo"></b></span><input type="range" id="cvBank" min="0" max="75" value="45"></label>
       <label class="au-sl"><span>Velocidade <b id="cvVo"></b></span><input type="range" id="cvV" min="60" max="160" value="100"></label>
       <div class="au-tab" id="cvOut"></div>
@@ -279,47 +279,29 @@ const aero = {
           const b = +$('#cvBank', el).value, v = +$('#cvV', el).value, n = 1 / Math.cos(b * D2R), vs = 50 * Math.sqrt(n);
           const vms = v * 0.5144, r = b > 0.5 ? vms * vms / (9.81 * Math.tan(b * D2R)) : Infinity, taxa = b > 0.5 ? (9.81 * Math.tan(b * D2R) / vms) / D2R : 0;
           $('#cvBo', el).textContent = b + '°'; $('#cvVo', el).textContent = v + ' kt';
-          const L = 60 * n;
-          $('#cvFig', el).innerHTML = svg('0 0 320 200', `<rect width="320" height="200" fill="#13212e"/><path d="M0 170 H320" stroke="#2a3742"/>
-            <g transform="translate(160 120) rotate(${-b})"><rect x="-90" y="-3" width="180" height="6" rx="3" fill="#cfd6dd"/><circle r="12" fill="#cfd6dd"/><path d="M0 -12 V-24" stroke="#cfd6dd" stroke-width="4"/>
-              <path d="M0 0 V${-Math.min(110, L)}" stroke="#5fc48a" stroke-width="3"/><path d="M-6 ${-Math.min(110, L) + 8} L0 ${-Math.min(110, L)} L6 ${-Math.min(110, L) + 8}" fill="none" stroke="#5fc48a" stroke-width="3"/></g>
-            <path d="M160 120 V60" stroke="#86acf2" stroke-width="2.5" stroke-dasharray="5 3"/><path d="M160 120 V180" stroke="#ff8a80" stroke-width="3"/>
-            <text x="166" y="194" fill="#ff8a80" font-size="11" font-weight="700">peso</text><text x="${b > 20 ? 172 : 100}" y="50" fill="#86acf2" font-size="10">parte que segura o peso</text>
-            <text x="${160 + Math.sin(b * D2R) * Math.min(110, L) * -1 + (b > 20 ? -70 : 10)}" y="${120 - Math.cos(b * D2R) * Math.min(110, L) - 6}" fill="#5fc48a" font-size="11" font-weight="700">sustentação × ${nf(n, 2)}</text>`, 'Forças na curva');
+          cenaCurva($('#cvCv', el), b);
           $('#cvOut', el).innerHTML = `<div><span>Fator de carga</span><b>${nf(n, 2)} g</b></div><div><span>Estol nesta curva</span><b>${nf(vs)} kt</b></div><div><span>Raio da curva</span><b>${Number.isFinite(r) ? nf(r) + ' m' : '–'}</b></div><div><span>Volta de 360°</span><b>${taxa ? nf(360 / taxa) + ' s' : '–'}</b></div>`;
         };
-        $('#cvBank', el).addEventListener('input', up); $('#cvV', el).addEventListener('input', up); up();
+        $('#cvBank', el).addEventListener('input', up); $('#cvV', el).addEventListener('input', up); requestAnimationFrame(up);
       } },
-    { t: 'Efeito solo', html: () => `<div id="esFig"></div>
+    { t: 'Efeito solo', html: () => `<canvas id="esCv" class="au-cv" aria-label="Avião sobre a pista com os vórtices das pontas das asas"></canvas>
       <label class="au-sl"><span>Altura da asa sobre o chão <b id="esHo"></b></span><input type="range" id="esH" min="5" max="100" value="10"></label>
       <div class="au-tab" id="esOut"></div>
       <p class="small">Perto do chão, os vórtices das pontas das asas não têm espaço para se formar e o fluxo para baixo atrás da asa diminui. O arrasto induzido cai, e o avião parece "flutuar": quem chega rápido demais no pouso vai longe na pista. O efeito é forte abaixo de um quarto da envergadura e quase some a uma envergadura de altura. Valores aproximados dos publicados pela FAA: redução de 47,6% a 1/10 da envergadura, 23,5% a 1/4 e 1,4% a uma envergadura.</p>`,
       init: (el) => {
         const up = () => { const pct = +$('#esH', el).value, red = Math.min(70, 76.2 * Math.exp(-4.71 * pct / 100)), fi = 1 - red / 100;
           $('#esHo', el).textContent = `${pct}% da envergadura`;
-          const y = 160 - pct * 1.3;
-          $('#esFig', el).innerHTML = svg('0 0 320 180', `<rect width="320" height="180" fill="#13212e"/><rect y="160" width="320" height="20" fill="#1d2b1f"/>
-            <rect x="70" y="${y - 3}" width="180" height="6" rx="3" fill="#cfd6dd"/><circle cx="160" cy="${y}" r="10" fill="#cfd6dd"/>
-            ${[70, 250].map((x0) => `<ellipse cx="${x0}" cy="${y + 8}" rx="${6 + (70 - red) * 0.25}" ry="${4 + (70 - red) * 0.16}" fill="none" stroke="#86acf2" stroke-width="2" stroke-dasharray="3 3"/>`).join('')}
-            <text x="160" y="24" text-anchor="middle" fill="#86acf2" font-size="11" font-weight="700">vórtices ${red > 30 ? 'esmagados pelo chão' : red > 8 ? 'um pouco menores' : 'livres'}</text>`, 'Efeito solo');
           $('#esOut', el).innerHTML = `<div><span>Arrasto induzido</span><b>${nf(fi * 100)}% do normal</b></div><div><span>Redução</span><b>${nf(red)}%</b></div>`; };
-        $('#esH', el).addEventListener('input', up); up();
+        $('#esH', el).addEventListener('input', up); up(); animar($('#esCv', el), () => cenaSolo($('#esCv', el), +$('#esH', el).value));
       } },
-    { t: 'Esteira de turbulência', html: () => `${svg('0 0 320 200', `<rect width="320" height="200" fill="#13212e"/>
-        ${aviaoCima(60, 50, 90, '#cfd6dd', 1.4)}
-        ${[0, 1, 2, 3, 4].map((i) => `<ellipse cx="${100 + i * 46}" cy="${58 + i * 22}" rx="${10 + i * 2}" ry="${6 + i}" fill="none" stroke="#86acf2" stroke-width="2" opacity="${1 - i * 0.15}"/>`).join('')}
-        <path d="M90 40 L300 40" stroke="#5fc48a" stroke-width="2" stroke-dasharray="6 4"/><text x="200" y="32" fill="#5fc48a" font-size="11" font-weight="700" text-anchor="middle">fique acima da trajetória dele</text>
-        <text x="225" y="175" fill="#86acf2" font-size="11" font-weight="700" text-anchor="middle">os vórtices descem</text><text x="225" y="189" fill="#86acf2" font-size="10" text-anchor="middle">300–500 ft/min, até ~900 ft abaixo</text>`, 'Esteira de turbulência')}
+    { t: 'Esteira de turbulência', init: (el) => animar($('#etCv', el), () => cenaEsteira($('#etCv', el))), html: () => `<canvas id="etCv" class="au-cv" aria-label="Jato pesado deixando dois vórtices que descem"></canvas>
       <ul class="au-list">
         <li><b>O que é:</b> dois redemoinhos que saem das pontas das asas de todo avião. Nos grandes, são fortes o bastante para virar um avião pequeno.</li>
         <li><b>Piores quando o avião é</b> pesado, lento e está limpo (sem flaps): justamente na decolagem e no pouso.</li>
         <li><b>Categorias:</b> L (leve), M (média), H (pesada, "heavy") e J ("super", como o A380). O controle dá mais tempo de separação atrás dos maiores.</li>
         <li><b>Como evitar:</b> no pouso atrás de um avião grande, fique acima da rampa dele e toque depois do ponto onde ele tocou. Na decolagem, saia do chão antes do ponto onde ele saiu. Vento cruzado fraco pode deixar um vórtice parado sobre a pista.</li>
       </ul>` },
-    { t: 'Parafuso', html: () => `${svg('0 0 320 210', `<rect width="320" height="210" fill="#13212e"/>
-        <path d="M160 20 Q220 50 160 80 Q100 110 160 140 Q220 170 160 200" fill="none" stroke="#ff8a80" stroke-width="2" stroke-dasharray="5 4"/>
-        ${aviaoCima(190, 60, 140, '#ffd23f', 1)}${aviaoCima(130, 120, -40, '#ffd23f', 1)}${aviaoCima(190, 175, 140, '#ffd23f', 1)}
-        <text x="16" y="30" fill="#ff8a80" font-size="11" font-weight="700">as duas asas estoladas,</text><text x="16" y="44" fill="#ff8a80" font-size="11" font-weight="700">uma mais que a outra</text>`, 'Parafuso')}
+    { t: 'Parafuso', init: (el) => animar($('#pfCv', el), () => cenaParafuso($('#pfCv', el))), html: () => `<canvas id="pfCv" class="au-cv" aria-label="Avião em parafuso descendo em espiral"></canvas>
       <p>O parafuso começa num estol com o avião derrapando: uma asa estola mais fundo, perde mais sustentação e cai, e o avião gira em espiral, descendo, sem sair do estol.</p>
       <div class="card au-mini"><span class="label">Saída padrão (PARE): confira sempre no manual do avião</span><ol class="au-ordem">
         <li><b>P</b>otência: toda reduzida</li><li><b>A</b>ilerons: neutros</li><li><b>R</b>udder (leme): todo contra o giro</li><li><b>E</b>levator (profundor): para a frente, até sair do estol</li></ol>
@@ -460,6 +442,122 @@ function cumulus() {
   if (cumulusURL) return cumulusURL;
   const cv = R().nuvem(300, 150, [{ x: 150, y: 104, rx: 105, ry: 24 }, { x: 125, y: 80, rx: 46, ry: 38 }, { x: 170, y: 66, rx: 50, ry: 44 }, { x: 208, y: 90, rx: 38, ry: 28 }, { x: 92, y: 96, rx: 38, ry: 22 }], { topo: 20, base: 128, amp: 0.55 });
   cumulusURL = cv.toDataURL(); return cumulusURL;
+}
+
+// ---------- Cenas da Aerodinâmica avançada ----------
+function fundoAereo(cv, LW, LH, hz, seed, nuvens) {
+  // Céu, nuvens e o chão visto de cima; fica guardado numa tela fora da página
+  const off = document.createElement('canvas'), { s } = telaCena(cv, LW, LH); off.width = cv.width; off.height = cv.height;
+  const o = off.getContext('2d'); o.setTransform(s, 0, 0, s, 0, 0);
+  R().ceu(o, LW, LH, ['#1f4f86', '#4f86bd', '#a9c6dd', '#dbe6ee'], hz);
+  for (const [x, y, w, h, b] of nuvens) N(o, s, x, y, w, h, b, { topo: y + h * 0.2, base: y + h, amp: 0.6 });
+  R().campos(o, 0, hz, LW, LH - hz, seed, s);
+  const nev = o.createLinearGradient(0, hz - 18, 0, hz + 30); nev.addColorStop(0, 'rgba(220,232,240,0)'); nev.addColorStop(0.4, 'rgba(220,232,240,.7)'); nev.addColorStop(1, 'rgba(220,232,240,0)');
+  o.fillStyle = nev; o.fillRect(0, hz - 18, LW, 48);
+  return { off, s };
+}
+function cenaCurva(cv, b) {
+  const LW = 640, LH = 380;
+  if (!cv._f || cv._w !== cv.clientWidth) { cv._f = fundoAereo(cv, LW, LH, 250, 3, [[30, 60, 200, 80, [{ x: 130, y: 110, rx: 80, ry: 22 }, { x: 110, y: 92, rx: 36, ry: 28 }, { x: 150, y: 86, rx: 40, ry: 32 }]], [430, 120, 190, 70, [{ x: 525, y: 165, rx: 80, ry: 18 }, { x: 510, y: 148, rx: 34, ry: 24 }, { x: 545, y: 145, rx: 30, ry: 22 }]]]); cv._w = cv.clientWidth; }
+  const c = cv.getContext('2d'), { off, s } = cv._f; c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(off, 0, 0); c.setTransform(s, 0, 0, s, 0, 0);
+  const n = 1 / Math.cos(b * D2R), cx = 320, cy = 175, k = 70, L = Math.min(170, k * n), a = b * D2R;
+  R().leveTras(c, cx, cy, 1.45, b);
+  // Forças: sustentação inclinada, a parte vertical, a parte que puxa para dentro da curva e o peso
+  seta(c, cx, cy, cx - Math.sin(a) * L, cy - Math.cos(a) * L, '#4fe08a');
+  c.save(); c.setLineDash([6, 4]); seta(c, cx, cy, cx, cy - k, '#9cc3ff'); if (b > 3) seta(c, cx, cy, cx - Math.tan(a) * k, cy, '#ffb347'); c.restore();
+  seta(c, cx, cy, cx, cy + k, '#ff7a6e');
+  rotulo(c, Math.max(12, cx - Math.sin(a) * L - 10), Math.max(18, cy - Math.cos(a) * L - 10), `sustentação: ${nf(n, 2)} × o peso`, '#9ff5c1', 13, 'left');
+  rotulo(c, cx + 8, cy - k + 4, 'segura o peso', '#cfe1ff', 12);
+  if (b > 3) rotulo(c, Math.max(12, cx - Math.tan(a) * k), cy + 22, 'puxa para dentro da curva', '#ffd39a', 12, 'left');
+  rotulo(c, cx + 14, cy + k - 4, 'peso', '#ffb3a8', 13);
+  // Arco da inclinação
+  c.strokeStyle = 'rgba(255,255,255,.8)'; c.lineWidth = 1.5; c.beginPath(); c.arc(cx, cy, 120, -Math.PI / 2 - a, -Math.PI / 2, false); c.stroke();
+  rotulo(c, cx + 14, cy - 122, `${b}°`, '#fff', 14);
+}
+function cenaSolo(cv, pct) {
+  const LW = 640, LH = 360, hz = 120, chao = 340;
+  if (!cv._f || cv._w !== cv.clientWidth) {
+    const off = document.createElement('canvas'), { s } = telaCena(cv, LW, LH); off.width = cv.width; off.height = cv.height;
+    const o = off.getContext('2d'); o.setTransform(s, 0, 0, s, 0, 0);
+    R().ceu(o, LW, LH, ['#24364d', '#6a7f96', '#e6b98a', '#f3d2a6'], hz);
+    N(o, s, 380, 30, 240, 70, [{ x: 500, y: 78, rx: 100, ry: 14 }, { x: 470, y: 68, rx: 40, ry: 16 }], { topo: 45, base: 92, amp: 0.7, lit: [255, 226, 196], sombra: [120, 104, 112] });
+    R().campos(o, 0, hz, LW, LH - hz, 9, s);
+    // Pista em perspectiva com faixas e luzes
+    const P = (u, v) => [320 + (u - 0.5) * (40 + v * 520), hz + 6 + Math.pow(v, 1.6) * (LH - hz)];
+    o.fillStyle = '#3d4247'; o.beginPath(); o.moveTo(...P(0, 0)); o.lineTo(...P(1, 0)); o.lineTo(...P(1, 1)); o.lineTo(...P(0, 1)); o.closePath(); o.fill();
+    o.strokeStyle = 'rgba(255,255,255,.85)';
+    for (let v = 0.05; v < 1; v += 0.09) { const [x1, y1] = P(0.5, v), [x2, y2] = P(0.5, v + 0.04); o.lineWidth = 0.6 + v * 3; o.beginPath(); o.moveTo(x1, y1); o.lineTo(x2, y2); o.stroke(); }
+    for (const u of [0.04, 0.96]) { o.lineWidth = 1.2; o.beginPath(); o.moveTo(...P(u, 0)); o.lineTo(...P(u, 1)); o.stroke(); }
+    for (let v = 0.02; v < 1; v += 0.06) for (const u of [-0.02, 1.02]) { const [x, y] = P(u, v); o.fillStyle = 'rgba(255,240,200,.9)'; o.beginPath(); o.arc(x, y, 0.6 + v * 2, 0, 7); o.fill(); }
+    const nev = o.createLinearGradient(0, hz - 14, 0, hz + 24); nev.addColorStop(0, 'rgba(243,210,166,0)'); nev.addColorStop(0.45, 'rgba(243,210,166,.75)'); nev.addColorStop(1, 'rgba(243,210,166,0)'); o.fillStyle = nev; o.fillRect(0, hz - 14, LW, 38);
+    cv._f = { off, s }; cv._w = cv.clientWidth;
+  }
+  const c = cv.getContext('2d'), { off, s } = cv._f; c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(off, 0, 0); c.setTransform(s, 0, 0, s, 0, 0);
+  const sc = 1.15, span = 226 * sc, h = pct / 100 * span, yAsa = chao - 40 * sc - h, cx = 320;
+  // Sombra no chão, mais nítida quanto mais perto
+  c.save(); c.globalAlpha = Math.max(0.12, 0.5 - pct / 250); if ('filter' in c) c.filter = `blur(${2 + pct / 8}px)`; c.fillStyle = '#000';
+  c.beginPath(); c.ellipse(cx + 10, chao - 6, span * 0.5, 6, 0, 0, 7); c.fill(); c.restore();
+  // Vórtices nas pontas: giram (horário à esquerda, anti-horário à direita) e são achatados pelo chão
+  const red = Math.min(70, 76.2 * Math.exp(-4.71 * pct / 100)), Rv = 46 * (1 - red / 80), t = performance.now() / 1000;
+  for (const kk of [-1, 1]) {
+    const tx = cx + kk * span * 0.5, ty = yAsa - 8, ry = Math.min(Rv, Math.max(6, (chao - ty) * 0.75));
+    for (let i = 0; i < 90; i++) {
+      const r = (0.25 + R().hash2(i, kk + 5) * 0.75), th = R().hash2(i, kk + 9) * 6.283 + kk * -t * (3.2 / (0.3 + r));
+      const x = tx + kk * 6 + Math.cos(th) * Rv * r, y = ty + Math.sin(th) * ry * r, x2 = tx + kk * 6 + Math.cos(th + kk * 0.25) * Rv * r, y2 = ty + Math.sin(th + kk * 0.25) * ry * r;
+      c.strokeStyle = `rgba(225,238,255,${0.5 * (1 - r * 0.6)})`; c.lineWidth = 1.4; c.beginPath(); c.moveTo(x, y); c.lineTo(x2, y2); c.stroke();
+    }
+  }
+  R().leveTras(c, cx, yAsa, sc, 0, { sol: 1 });
+  rotulo(c, 320, 30, red > 30 ? 'vórtices esmagados pelo chão' : red > 8 ? 'vórtices um pouco menores' : 'vórtices livres', '#fff', 14, 'center');
+}
+function cenaEsteira(cv) {
+  const LW = 640, LH = 340, hz = 300;
+  if (!cv._f || cv._w !== cv.clientWidth) { cv._f = fundoAereo(cv, LW, LH, hz, 5, [[20, 20, 220, 80, [{ x: 120, y: 70, rx: 90, ry: 18 }, { x: 100, y: 55, rx: 40, ry: 24 }, { x: 140, y: 52, rx: 36, ry: 22 }]], [380, 180, 240, 90, [{ x: 500, y: 238, rx: 100, ry: 20 }, { x: 480, y: 222, rx: 44, ry: 26 }, { x: 525, y: 218, rx: 40, ry: 24 }]]]); cv._w = cv.clientWidth; }
+  const c = cv.getContext('2d'), { off, s } = cv._f; c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(off, 0, 0); c.setTransform(s, 0, 0, s, 0, 0);
+  const t = performance.now() / 1000, tx = 450, ty = 92;
+  // Dois tubos de vórtice saindo das pontas das asas, descendo para trás
+  for (const [dz, al] of [[-10, 0.45], [10, 0.8]]) {
+    // núcleo do tubo (névoa) e a espiral de partículas em volta
+    c.save(); if ('filter' in c) c.filter = 'blur(6px)';
+    const g = c.createLinearGradient(tx - 470, 0, tx - 40, 0); g.addColorStop(0, 'rgba(235,242,255,0)'); g.addColorStop(1, `rgba(235,242,255,${0.35 * al})`);
+    c.strokeStyle = g; c.lineWidth = 16; c.beginPath(); c.moveTo(tx - 40, ty + 6 + dz * 0.6); c.lineTo(tx - 470, ty + 6 + dz * 0.6 + 120); c.stroke(); c.restore();
+    for (let i = 0; i < 900; i++) {
+      const u = R().hash2(i, dz + 50), th = u * 80 + t * 6 + R().hash2(i, 7) * 6.283, rad = 6 + u * 18;
+      const px = tx - 40 - u * 430, py = ty + 6 + dz * 0.6 + u * 120 + Math.sin(th) * rad, z = Math.cos(th);
+      c.fillStyle = `rgba(240,246,255,${al * (1 - u * 0.9) * (0.35 + 0.45 * z)})`; c.beginPath(); c.arc(px + Math.cos(th) * 3, py, 1 + 0.7 * (z + 1) * 0.5, 0, 7); c.fill();
+    }
+  }
+  R().jato(c, tx, ty, 150, -0.05);
+  rotulo(c, tx + 10, ty - 30, 'avião pesado (H)', '#fff', 13);
+  // Trajetória segura acima e o avião leve em perigo atrás e abaixo
+  c.save(); c.setLineDash([8, 6]); c.strokeStyle = 'rgba(120,240,160,.9)'; c.lineWidth = 2; c.beginPath(); c.moveTo(30, 70); c.lineTo(390, 50); c.stroke(); c.restore();
+  rotulo(c, 40, 62, 'fique acima da trajetória dele', '#bff0cc', 12);
+  R().jato(c, 130, 205, 60, 0.02, '#ffe7a8');
+  rotulo(c, 92, 236, 'avião leve: perigo', '#ffb3a8', 12);
+  rotulo(c, 330, 250, 'os vórtices descem 300–500 ft/min', '#e2ecff', 12);
+}
+function cenaParafuso(cv) {
+  const LW = 640, LH = 380, hz = 70;
+  if (!cv._f || cv._w !== cv.clientWidth) {
+    const off = document.createElement('canvas'), { s } = telaCena(cv, LW, LH); off.width = cv.width; off.height = cv.height;
+    const o = off.getContext('2d'); o.setTransform(s, 0, 0, s, 0, 0);
+    R().ceu(o, LW, LH, ['#3a6fa6', '#9ec0da', '#e3ecf2'], hz); R().campos(o, 0, hz, LW, LH - hz, 13, s);
+    const nev = o.createLinearGradient(0, hz - 10, 0, hz + 40); nev.addColorStop(0, 'rgba(227,236,242,0)'); nev.addColorStop(0.3, 'rgba(227,236,242,.8)'); nev.addColorStop(1, 'rgba(227,236,242,0)'); o.fillStyle = nev; o.fillRect(0, hz - 10, LW, 50);
+    cv._f = { off, s }; cv._w = cv.clientWidth;
+  }
+  const c = cv.getContext('2d'), { off, s } = cv._f; c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(off, 0, 0); c.setTransform(s, 0, 0, s, 0, 0);
+  // Hélice de descida vista de cima e de lado: o avião gira em torno de um eixo vertical e desce
+  const T = (performance.now() / 1000) % 8, pos = (tt) => { const ph = tt * 2.2, y = 70 + tt / 8 * 250; return [320 + Math.cos(ph) * 110, y + Math.sin(ph) * 26, ph]; };
+  c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = 3; c.lineCap = 'round'; c.beginPath();
+  for (let tt = Math.max(0, T - 3); tt <= T; tt += 0.03) { const [x, y] = pos(tt); tt === Math.max(0, T - 3) ? c.moveTo(x, y) : c.lineTo(x, y); } c.stroke();
+  const [x, y, ph] = pos(T), esc = 1.0 + T / 8 * 0.8;
+  R().leveTopo(c, x, y, esc, (ph * 180 / Math.PI) % 360 + 90, { achatar: 0.62 });
+  rotulo(c, 20, 30, 'as duas asas estoladas, uma mais que a outra', '#fff', 13);
+  rotulo(c, 20, 48, 'o avião gira e desce em espiral', '#e2ecff', 12);
+}
+function animar(cv, desenhar) {
+  const f = () => { if (!document.contains(cv)) return; desenhar(); requestAnimationFrame(f); };
+  requestAnimationFrame(f);
 }
 
 // ======================================================================

@@ -89,5 +89,78 @@ function jato(c, x, y, s, ang = 0, cor = '#e9edf1') {
   c.fillStyle = '#2b3540'; for (let i = 0; i < 12; i++) c.fillRect((30 - i * 5.5) * k, -2.5 * k, 2 * k, 1.8 * k);
   c.restore();
 }
-window.Realismo = { nuvem, ceu, terreno, chuva, jato, fbm, hash2 };
+
+// ---------- Monomotor de asa baixa (o Hangar H-1) ----------
+function grad(c, x0, y0, x1, y1, stops) { const g = c.createLinearGradient(x0, y0, x1, y1); stops.forEach(([o, cor]) => g.addColorStop(o, cor)); return g; }
+// Visto de trás, centro da fuselagem em (x, y); envergadura ~ 220*s; incl em graus (positivo: asa esquerda baixa, curva à esquerda)
+function leveTras(c, x, y, s, incl = 0, o = {}) {
+  c.save(); c.translate(x, y); c.rotate(-incl * Math.PI / 180); c.scale(s, s);
+  const sol = o.sol ?? -1; // luz vindo da esquerda (-1) ou da direita (1)
+  // Disco da hélice (aparece em volta da fuselagem)
+  c.fillStyle = 'rgba(220,230,240,.10)'; c.beginPath(); c.arc(0, 0, 34, 0, 7); c.fill();
+  // Trem fixo
+  c.strokeStyle = '#3b434b'; c.lineWidth = 3;
+  for (const k of [-1, 1]) { c.beginPath(); c.moveTo(k * 8, 12); c.lineTo(k * 30, 34); c.stroke();
+    c.fillStyle = grad(c, k * 30 - 7, 0, k * 30 + 7, 0, [[0, '#2a2f34'], [0.5, '#4b535b'], [1, '#1b1f23']]); c.beginPath(); c.ellipse(k * 30, 37, 4, 7.5, 0, 0, 7); c.fill();
+    c.fillStyle = '#e9edf1'; c.beginPath(); c.ellipse(k * 30, 31, 6, 5, 0, Math.PI, 0); c.fill(); }
+  // Asas com diedro: de cima clara, de baixo sombreada
+  for (const k of [-1, 1]) {
+    const di = -0.09; // diedro: as pontas sobem
+    c.fillStyle = grad(c, 0, -6, 0, 6, [[0, '#fbfcfd'], [0.45, '#dfe5ea'], [0.55, '#a9b3bc'], [1, '#7d8792']]);
+    c.beginPath(); c.moveTo(k * 10, 0); c.lineTo(k * 112, 2 + 102 * di - 2.5); c.quadraticCurveTo(k * 118, 2 + 104 * di, k * 112, 2 + 102 * di + 3.5);
+    c.lineTo(k * 10, 12); c.closePath(); c.fill();
+    c.strokeStyle = 'rgba(40,48,56,.5)'; c.lineWidth = 0.8; c.stroke();
+    c.strokeStyle = 'rgba(70,80,90,.35)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(k * 70, 2 + 62 * di + 0.6); c.lineTo(k * 108, 2 + 98 * di + 0.6); c.stroke();
+    // luz de navegação na ponta e strobe
+    c.fillStyle = k < 0 ? '#ff3b30' : '#34d058'; c.beginPath(); c.arc(k * 113, 2 + 103 * di + 0.6, 1.8, 0, 7); c.fill();
+  }
+  // Fuselagem (seção quase circular) com luz lateral
+  c.fillStyle = (() => { const g = c.createRadialGradient(sol * 6, -8, 2, 0, 0, 22); g.addColorStop(0, '#ffffff'); g.addColorStop(0.6, '#d5dce2'); g.addColorStop(1, '#78838e'); return g; })();
+  c.beginPath(); c.ellipse(0, 0, 15, 17, 0, 0, 7); c.fill();
+  // Faixa rosa da pintura
+  c.strokeStyle = '#d63384'; c.lineWidth = 2.2; c.beginPath(); c.ellipse(0, 0, 15, 17, 0, Math.PI * 0.08, Math.PI * 0.92); c.stroke();
+  // Cabine (vidro escuro com reflexo)
+  c.fillStyle = grad(c, 0, -17, 0, -6, [[0, '#1d2a38'], [1, '#3c5266']]); c.beginPath(); c.ellipse(0, -9, 10, 8, 0, Math.PI, 0); c.fill();
+  c.strokeStyle = 'rgba(255,255,255,.45)'; c.lineWidth = 1; c.beginPath(); c.arc(-3, -9, 6, Math.PI * 1.15, Math.PI * 1.5); c.stroke();
+  // Profundor (estabilizador horizontal, mais perto de quem olha)
+  c.fillStyle = grad(c, 0, -5, 0, 3, [[0, '#ffffff'], [0.5, '#dfe5ea'], [1, '#8a95a0']]);
+  c.beginPath(); c.moveTo(-46, -3); c.quadraticCurveTo(-50, -1, -46, 1.5); c.lineTo(46, 1.5); c.quadraticCurveTo(50, -1, 46, -3); c.closePath(); c.fill();
+  // Leme e deriva
+  c.fillStyle = grad(c, -5, 0, 5, 0, [[0, sol < 0 ? '#ffffff' : '#9aa5b0'], [1, sol < 0 ? '#9aa5b0' : '#ffffff']]);
+  c.beginPath(); c.moveTo(-3.5, -12); c.lineTo(-2, -52); c.lineTo(2, -52); c.lineTo(3.5, -12); c.closePath(); c.fill();
+  c.fillStyle = '#d63384'; c.fillRect(-2.4, -50, 4.8, 9);
+  c.fillStyle = '#ff3b30'; c.beginPath(); c.arc(0, -53, 1.6, 0, 7); c.fill();
+  c.fillStyle = '#fff'; c.beginPath(); c.arc(0, -16.5, 1.2, 0, 7); c.fill();
+  c.restore();
+}
+// Visto de cima, nariz para cima (ang em graus, 0 = norte); comprimento ~ 80*s
+function leveTopo(c, x, y, s, ang = 0, o = {}) {
+  c.save(); c.translate(x, y); c.rotate(ang * Math.PI / 180); c.scale(s, s * (o.achatar ?? 1));
+  if (o.sombra) { c.save(); c.translate(o.sombra[0], o.sombra[1]); c.fillStyle = 'rgba(0,0,0,.25)'; c.beginPath(); c.ellipse(0, 0, 50, 10, 0, 0, 7); c.ellipse(0, 0, 8, 40, 0, 0, 7); c.fill(); c.restore(); }
+  c.fillStyle = 'rgba(230,236,242,.14)'; c.beginPath(); c.ellipse(0, -40, 13, 2.2, 0, 0, 7); c.fill(); // hélice girando
+  const asa = grad(c, -55, 0, 55, 0, [[0, '#c9d1d8'], [0.5, '#ffffff'], [1, '#c9d1d8']]);
+  c.fillStyle = asa; c.beginPath(); c.moveTo(-55, -10); c.lineTo(55, -10); c.quadraticCurveTo(58, -6, 55, 3); c.lineTo(-55, 3); c.quadraticCurveTo(-58, -6, -55, -10); c.fill();
+  c.strokeStyle = 'rgba(60,70,80,.35)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(-52, 0); c.lineTo(-30, 0); c.moveTo(30, 0); c.lineTo(52, 0); c.moveTo(-28, 0.5); c.lineTo(-8, 0.5); c.moveTo(8, 0.5); c.lineTo(28, 0.5); c.stroke();
+  c.fillStyle = '#ff3b30'; c.beginPath(); c.arc(-56, -4, 1.5, 0, 7); c.fill(); c.fillStyle = '#34d058'; c.beginPath(); c.arc(56, -4, 1.5, 0, 7); c.fill();
+  c.fillStyle = grad(c, -20, 0, 20, 0, [[0, '#c9d1d8'], [0.5, '#ffffff'], [1, '#c9d1d8']]);
+  c.beginPath(); c.moveTo(-20, 30); c.lineTo(20, 30); c.lineTo(19, 35); c.lineTo(-19, 35); c.closePath(); c.fill();
+  c.fillStyle = grad(c, -7, 0, 7, 0, [[0, '#aeb8c2'], [0.5, '#ffffff'], [1, '#aeb8c2']]);
+  c.beginPath(); c.moveTo(0, -40); c.quadraticCurveTo(7, -36, 6.5, -20); c.lineTo(5.5, 10); c.lineTo(2.5, 36); c.lineTo(-2.5, 36); c.lineTo(-5.5, 10); c.lineTo(-6.5, -20); c.quadraticCurveTo(-7, -36, 0, -40); c.fill();
+  c.fillStyle = '#d63384'; c.fillRect(-1.2, -2, 2.4, 36);
+  c.fillStyle = grad(c, 0, -22, 0, -4, [[0, '#24364a'], [1, '#476178']]); c.beginPath(); c.ellipse(0, -13, 4.6, 9, 0, 0, 7); c.fill();
+  c.strokeStyle = 'rgba(255,255,255,.5)'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(-2, -19); c.lineTo(-2.5, -10); c.stroke();
+  c.restore();
+}
+// Campo visto do alto: mosaico de plantações com ruído (para as cenas aéreas)
+function campos(c, x, y, w, h, seed = 1, esc = 1) {
+  const img = c.createImageData(Math.max(1, Math.round(w * esc)), Math.max(1, Math.round(h * esc))), d = img.data, W = img.width, H = img.height;
+  const pal = [[86, 112, 62], [120, 136, 74], [70, 96, 58], [140, 126, 82], [96, 120, 70], [60, 82, 52]];
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const p = Math.pow(j / H, 1.6) * 0.9 + 0.1, u = i / W * 18 / p + seed, v = j / H * 10 / p;
+    const cel = pal[Math.floor(hash2(Math.floor(u), Math.floor(v)) * pal.length)], n = 0.85 + fbm(u * 3, v * 3, 3) * 0.3, hz = 1 - Math.pow(1 - j / H, 3) * 0.55;
+    const k = (j * W + i) * 4; d[k] = mix(170, cel[0] * n, hz); d[k + 1] = mix(186, cel[1] * n, hz); d[k + 2] = mix(198, cel[2] * n, hz); d[k + 3] = 255;
+  }
+  const off = document.createElement('canvas'); off.width = W; off.height = H; off.getContext('2d').putImageData(img, 0, 0); c.drawImage(off, x, y, w, h);
+}
+window.Realismo = { nuvem, ceu, terreno, chuva, jato, fbm, hash2, leveTras, leveTopo, campos };
 })();
