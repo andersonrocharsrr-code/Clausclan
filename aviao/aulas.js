@@ -156,7 +156,7 @@ const espaco = {
         const show = (k) => { const v = VMC.find((x) => x[0] === k); $$('#vmPick button', el).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === k)));
           const livre = k === 'baixoG';
           $('#vmOut', el).innerHTML = `${svg('0 0 320 150', `<rect width="320" height="150" fill="#13212e"/>
-            <path d="M200 30 q10 -18 30 -10 q14 -16 34 -2 q22 -4 22 16 q18 6 6 22 h-102 q-14 -12 10 -26Z" fill="#c9d3dc"/>
+            <image href="${cumulus()}" x="176" y="-4" width="140" height="70" preserveAspectRatio="none"/>
             ${aviaoCima(livre ? 160 : 70, livre ? 70 : 100, 90, '#ffd23f', 0.9)}
             ${livre ? '<text x="160" y="110" text-anchor="middle" fill="#ffd23f" font-size="11" font-weight="700">fora de nuvem, chão à vista</text>' : `<path d="M90 100 H196" stroke="#ffd23f" stroke-dasharray="4 3"/><text x="140" y="94" text-anchor="middle" fill="#ffd23f" font-size="11" font-weight="700">1500 m</text><path d="M240 50 V100" stroke="#ffd23f" stroke-dasharray="4 3"/><text x="246" y="80" fill="#ffd23f" font-size="11" font-weight="700">1000 ft</text><path d="M200 100 H290" stroke="rgba(255,255,255,.2)"/>`}
             <rect y="130" width="320" height="20" fill="#1d2b1f"/>`, 'Distâncias mínimas das nuvens')}
@@ -336,6 +336,132 @@ const aero = {
   ],
 };
 
+// ---------- Cenas realistas (canvas) ----------
+const R = () => window.Realismo;
+function telaCena(cv, LW, LH) {
+  const d = Math.min(2, window.devicePixelRatio || 1), w = cv.clientWidth || 340, s = w * d / LW;
+  cv.width = Math.round(LW * s); cv.height = Math.round(LH * s); cv.style.height = Math.round(w * LH / LW) + 'px';
+  const c = cv.getContext('2d'); c.setTransform(s, 0, 0, s, 0, 0); return { c, s };
+}
+// Desenha uma nuvem no retângulo (x, y, w, h) da cena; as bolhas vêm em coordenadas da cena
+function N(c, s, x, y, w, h, bolhas, o = {}) {
+  const W = Math.max(8, Math.round(w * s)), H = Math.max(8, Math.round(h * s));
+  const bs = bolhas.map((b) => ({ x: (b.x - x) * s, y: (b.y - y) * s, rx: b.rx * s, ry: b.ry * s, k: b.k }));
+  const oo = { ...o, topo: o.topo != null ? (o.topo - y) * s : undefined, base: o.base != null ? (o.base - y) * s : undefined };
+  c.drawImage(R().nuvem(W, H, bs, oo), x, y, w, h);
+}
+function rotulo(c, x, y, txt, cor = '#fff', tam = 13, al = 'left') {
+  c.save(); c.font = `700 ${tam}px Inter, system-ui, sans-serif`; c.textAlign = al; c.shadowColor = 'rgba(0,0,0,.75)'; c.shadowBlur = 4; c.fillStyle = cor; c.fillText(txt, x, y); c.restore();
+}
+function seta(c, x0, y0, x1, y1, cor) {
+  c.save(); c.strokeStyle = cor; c.fillStyle = cor; c.lineWidth = 3; c.shadowColor = 'rgba(0,0,0,.5)'; c.shadowBlur = 3;
+  c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); const a = Math.atan2(y1 - y0, x1 - x0);
+  c.beginPath(); c.moveTo(x1, y1); c.lineTo(x1 - Math.cos(a - 0.45) * 11, y1 - Math.sin(a - 0.45) * 11); c.lineTo(x1 - Math.cos(a + 0.45) * 11, y1 - Math.sin(a + 0.45) * 11); c.closePath(); c.fill(); c.restore();
+}
+function cenaFrente(cv, k) {
+  const { c, s } = telaCena(cv, 640, 330), chao = 290;
+  R().ceu(c, 640, 330, k === 'fria' ? ['#2f4a68', '#6f8cab', '#b8c6d2'] : k === 'quente' ? ['#5b6d80', '#8f9fae', '#c3ccd3'] : ['#3c4b5c', '#7a8999', '#b3bdc6'], chao);
+  if (k === 'fria') {
+    // Cunha de ar frio entrando por baixo do quente
+    const g = c.createLinearGradient(0, 160, 0, chao); g.addColorStop(0, 'rgba(70,120,210,0)'); g.addColorStop(1, 'rgba(70,120,210,.35)');
+    c.fillStyle = g; c.beginPath(); c.moveTo(0, 150); c.bezierCurveTo(200, 160, 300, 220, 345, chao); c.lineTo(0, chao); c.closePath(); c.fill();
+    N(c, s, 180, 0, 460, 270, [{ x: 365, y: 215, rx: 85, ry: 40 }, { x: 350, y: 172, rx: 72, ry: 50 }, { x: 372, y: 128, rx: 66, ry: 48 }, { x: 368, y: 88, rx: 60, ry: 40 }, { x: 380, y: 58, rx: 70, ry: 26 }, { x: 405, y: 40, rx: 160, ry: 19, k: 1.1 }, { x: 490, y: 44, rx: 90, ry: 13 }, { x: 412, y: 190, rx: 55, ry: 42 }, { x: 318, y: 205, rx: 45, ry: 34 }], { topo: 20, base: 255, amp: 0.55 });
+    R().chuva(c, 312, 420, 245, chao, { dens: 0.9 });
+    N(c, s, 470, 180, 150, 70, [{ x: 540, y: 220, rx: 50, ry: 22 }, { x: 515, y: 210, rx: 26, ry: 20 }, { x: 560, y: 208, rx: 24, ry: 18 }], { topo: 190, base: 240 });
+    R().terreno(c, 640, 330, chao, '#34452f', '#18211a', 2);
+    seta(c, 60, 250, 200, 250, '#9cc3ff'); rotulo(c, 40, 238, 'ar frio, pesado', '#cfe1ff');
+    seta(c, 500, 270, 445, 205, '#ffb3a8'); rotulo(c, 630, 312, 'ar quente e úmido sobe de repente', '#ffd2cc', 12, 'right');
+    rotulo(c, 430, 110, 'cumulonimbus', '#fff', 13);
+  } else if (k === 'quente') {
+    const g = c.createLinearGradient(0, 120, 0, chao); g.addColorStop(0, 'rgba(70,120,210,0)'); g.addColorStop(1, 'rgba(70,120,210,.3)');
+    c.fillStyle = g; c.beginPath(); c.moveTo(110, chao); c.bezierCurveTo(300, 250, 480, 160, 640, 110); c.lineTo(640, chao); c.closePath(); c.fill();
+    // Cirrus finos ao longe, altostratus no meio, nimbostratus perto da frente
+    N(c, s, 430, 40, 210, 60, [{ x: 520, y: 70, rx: 90, ry: 7 }, { x: 600, y: 60, rx: 50, ry: 5 }], { amp: 0.9, escala: 0.06, alfa: 0.75, sombra: [190, 200, 212] });
+    N(c, s, 260, 110, 260, 70, [{ x: 390, y: 140, rx: 125, ry: 16 }, { x: 330, y: 146, rx: 70, ry: 14 }], { topo: 120, base: 165, amp: 0.5, alfa: 0.92 });
+    N(c, s, 60, 150, 290, 110, [{ x: 200, y: 205, rx: 140, ry: 34 }, { x: 130, y: 210, rx: 70, ry: 28 }, { x: 270, y: 195, rx: 80, ry: 26 }], { topo: 160, base: 245, amp: 0.45, sombra: [70, 80, 94], baseCor: [52, 58, 68] });
+    R().chuva(c, 80, 300, 235, chao, { dens: 0.6, inc: 0.05 });
+    R().terreno(c, 640, 330, chao, '#3a4a33', '#1a221a', 5);
+    seta(c, 60, 270, 150, 222, '#ffb3a8'); rotulo(c, 20, 312, 'ar quente sobe devagar, numa rampa longa', '#ffd2cc', 12);
+    rotulo(c, 520, 36, 'cirrus', '#fff', 12); rotulo(c, 360, 104, 'altostratus', '#fff', 12); rotulo(c, 140, 146, 'nimbostratus', '#fff', 12); rotulo(c, 560, 270, 'ar frio', '#cfe1ff', 12);
+  } else if (k === 'oclusa') {
+    const g = c.createLinearGradient(0, 150, 0, chao); g.addColorStop(0, 'rgba(70,120,210,0)'); g.addColorStop(1, 'rgba(70,120,210,.32)');
+    c.fillStyle = g; c.fillRect(0, 150, 640, chao - 150);
+    N(c, s, 90, 20, 480, 250, [{ x: 330, y: 190, rx: 190, ry: 40 }, { x: 300, y: 140, rx: 120, ry: 45 }, { x: 350, y: 95, rx: 70, ry: 50 }, { x: 345, y: 55, rx: 120, ry: 18 }, { x: 220, y: 175, rx: 90, ry: 30 }], { topo: 40, base: 235, amp: 0.5 });
+    R().chuva(c, 170, 470, 225, chao, { dens: 0.75, inc: 0.07 });
+    R().terreno(c, 640, 330, chao, '#34452f', '#18211a', 8);
+    seta(c, 330, 120, 330, 40, '#ffb3a8'); rotulo(c, 345, 24, 'ar quente levantado do chão', '#ffd2cc', 12);
+    rotulo(c, 20, 270, 'ar frio', '#cfe1ff', 12); rotulo(c, 560, 270, 'ar frio', '#cfe1ff', 12);
+  } else {
+    c.fillStyle = 'rgba(70,120,210,.18)'; c.fillRect(0, 170, 320, chao - 170); c.fillStyle = 'rgba(220,90,70,.12)'; c.fillRect(320, 170, 320, chao - 170);
+    N(c, s, 20, 130, 600, 110, [{ x: 320, y: 185, rx: 270, ry: 24 }, { x: 160, y: 190, rx: 110, ry: 20 }, { x: 470, y: 180, rx: 110, ry: 20 }], { topo: 160, base: 210, amp: 0.45, sombra: [96, 106, 118] });
+    R().chuva(c, 120, 520, 205, chao, { dens: 0.35, inc: 0.02 });
+    R().terreno(c, 640, 330, chao, '#3a4a33', '#1a221a', 11);
+    rotulo(c, 40, 270, 'ar frio', '#cfe1ff', 12); rotulo(c, 560, 270, 'ar quente', '#ffd2cc', 12); rotulo(c, 320, 130, 'a frente fica parada', '#fff', 12, 'center');
+  }
+}
+// Microexplosão: cena parada desenhada uma vez + partículas e avião animados por cima
+function cenaMicro(cv, el) {
+  const LW = 640, LH = 360, chao = 318, x0 = 330;
+  let fundo = null, sAtual = 0, t0 = 0, voando = false, raf = 0;
+  const P = Array.from({ length: 260 }, (_, i) => ({ s: R().hash2(i, 1), i: R().hash2(i, 2) * 2 - 1, v: 0.35 + R().hash2(i, 3) * 0.3 }));
+  const rampa = (x) => 112 + (x - 20) / (600) * (chao - 112);
+  const desv = (x) => { const u = (x - x0) / 170; return u < -1 ? 0 : u < -0.35 ? -20 * Math.sin((u + 1) / 0.65 * Math.PI / 2) : u < 0.5 ? -20 + (u + 0.35) / 0.85 * 52 : 32 + (u - 0.5) * 12; };
+  const linha = (p) => { // ponto na linha de corrente: desce pelo núcleo e se espalha rente ao chão
+    const lado = p.i < 0 ? -1 : 1, off = p.i * 46, s = p.s;
+    if (s < 0.62) return [x0 + off * (1 + s * 0.3), 150 + s / 0.62 * (chao - 205)];
+    const u = (s - 0.62) / 0.38, r = 60 + u * 230;
+    return [x0 + off * 1.2 + lado * r * u, chao - 55 + Math.sin(u * Math.PI * 0.5) * 45 - Math.max(0, u - 0.75) * 120];
+  };
+  const montarFundo = () => {
+    const off = document.createElement('canvas'); const { c, s } = telaCena(cv, LW, LH); sAtual = s;
+    off.width = cv.width; off.height = cv.height; const o = off.getContext('2d'); o.setTransform(s, 0, 0, s, 0, 0);
+    R().ceu(o, LW, LH, ['#1d2a3a', '#4a5b6e', '#8796a4'], chao);
+    // Cumulonimbus com bigorna, escuro embaixo
+    N(o, s, 40, 0, 600, 190, [{ x: 330, y: 135, rx: 160, ry: 30 }, { x: 322, y: 104, rx: 112, ry: 42 }, { x: 338, y: 72, rx: 92, ry: 38 }, { x: 340, y: 46, rx: 100, ry: 26 }, { x: 345, y: 28, rx: 235, ry: 17, k: 1.1 }, { x: 460, y: 33, rx: 120, ry: 12 }, { x: 225, y: 122, rx: 78, ry: 30 }, { x: 435, y: 126, rx: 78, ry: 28 }],
+      { topo: 10, base: 165, amp: 0.55, sombra: [70, 82, 98], baseCor: [36, 42, 52] });
+    R().chuva(o, x0 - 62, x0 + 62, 150, chao - 4, { dens: 1, inc: 0, cor: '150,165,185' });
+    R().terreno(o, LW, LH, chao, '#3c4733', '#171d15', 4);
+    // Poeira levantada pela rajada ao bater no chão
+    N(o, s, x0 - 260, chao - 70, 520, 74, [{ x: x0 - 150, y: chao - 18, rx: 95, ry: 20 }, { x: x0 + 150, y: chao - 18, rx: 95, ry: 20 }, { x: x0 - 220, y: chao - 30, rx: 40, ry: 26 }, { x: x0 + 220, y: chao - 30, rx: 40, ry: 26 }],
+      { lit: [196, 170, 132], sombra: [104, 86, 64], baseCor: [80, 66, 50], amp: 0.7, alfa: 0.7, topo: chao - 60, base: chao });
+    // Pista à direita e a rampa
+    o.fillStyle = '#4b5258'; o.fillRect(560, chao - 2, 80, 5); o.setLineDash([6, 5]); o.strokeStyle = 'rgba(120,230,150,.6)'; o.lineWidth = 1.5;
+    o.beginPath(); o.moveTo(20, rampa(20)); o.lineTo(600, rampa(600)); o.stroke(); o.setLineDash([]);
+    rotulo(o, 24, rampa(20) - 8, 'rampa de 3°', '#bff0cc', 11);
+    fundo = off;
+  };
+  const frame = (t) => {
+    if (!document.contains(cv)) return;
+    if (!fundo || Math.abs(cv.clientWidth * Math.min(2, window.devicePixelRatio || 1) - cv.width) > 2) montarFundo();
+    const c = cv.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(fundo, 0, 0); c.setTransform(sAtual, 0, 0, sAtual, 0, 0);
+    // Partículas da rajada: riscos curtos ao longo das linhas de corrente
+    c.lineCap = 'round';
+    for (const p of P) { p.s += p.v * 0.006; if (p.s > 1) p.s -= 1;
+      const a = linha(p), b = linha({ ...p, s: Math.max(0, p.s - 0.025) }), al = p.s < 0.62 ? 0.55 : 0.55 * (1 - (p.s - 0.62) / 0.38);
+      c.strokeStyle = p.s < 0.62 ? `rgba(200,215,235,${al})` : `rgba(210,190,160,${al})`; c.lineWidth = 1.6; c.beginPath(); c.moveTo(b[0], b[1]); c.lineTo(a[0], a[1]); c.stroke(); }
+    // Avião e o caminho percorrido
+    const p = voando ? Math.min(1, (t - t0) / 7000) : 0, xa = 20 + p * 560;
+    const ya = (x) => Math.min(chao - 3, rampa(x) + desv(x));
+    c.strokeStyle = 'rgba(255,210,63,.85)'; c.lineWidth = 2; c.beginPath(); for (let x = 20; x <= xa; x += 3) x === 20 ? c.moveTo(x, ya(x)) : c.lineTo(x, ya(x)); c.stroke();
+    const ang = Math.atan2(ya(xa + 2) - ya(xa - 2), 4);
+    R().jato(c, xa, ya(xa) - 4, 46, ang);
+    const u = (xa - x0) / 170, fase = !voando ? 0 : u < -1 ? 0 : u < -0.35 ? 1 : u < 0.35 ? 2 : u < 1.4 ? 3 : 0;
+    const txt = $('#mxTxt', el); if (txt) txt.textContent = ['Aproximação normal, na rampa', '1 · Vento de frente: velocidade sobe, avião sobe', '2 · Corrente descendente: avião afunda', '3 · Vento de cauda: velocidade despenca'][fase];
+    if (fase) rotulo(c, xa, ya(xa) - 22, ['', '+ velocidade', '↓ afunda', '− velocidade'][fase], fase === 1 ? '#bff0cc' : '#ffb3a8', 12, 'center');
+    if (p >= 1) voando = false;
+    raf = requestAnimationFrame(frame);
+  };
+  $('#mxPlay', el).addEventListener('click', () => { voando = true; t0 = performance.now(); });
+  raf = requestAnimationFrame(frame);
+}
+// Cumulus para o desenho dos mínimos VFR (imagem pronta, fundo transparente)
+let cumulusURL = '';
+function cumulus() {
+  if (cumulusURL) return cumulusURL;
+  const cv = R().nuvem(300, 150, [{ x: 150, y: 104, rx: 105, ry: 24 }, { x: 125, y: 80, rx: 46, ry: 38 }, { x: 170, y: 66, rx: 50, ry: 44 }, { x: 208, y: 90, rx: 38, ry: 28 }, { x: 92, y: 96, rx: 38, ry: 22 }], { topo: 20, base: 128, amp: 0.55 });
+  cumulusURL = cv.toDataURL(); return cumulusURL;
+}
+
 // ======================================================================
 // 5 · METEOROLOGIA PRÁTICA
 // ======================================================================
@@ -365,8 +491,8 @@ const tempo = {
     { t: 'Frentes', html: () => `<div class="au-seg" id="frPick">${Object.entries(FRENTES).map(([k, f]) => `<button type="button" data-f="${k}">${f[0]}</button>`).join('')}</div><div id="frOut"></div>`,
       init: (el) => {
         const show = (k) => { const f = FRENTES[k]; $$('#frPick button', el).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.f === k)));
-          $('#frOut', el).innerHTML = svg('0 0 320 180', `<rect width="320" height="180" fill="#13212e"/>${f[3]}<rect y="170" width="320" height="10" fill="#1d2b1f"/>`, `Corte de ${f[0]}`) +
-            `<p><b>Na carta:</b></p>${svg('0 0 300 44', `<rect width="300" height="44" fill="#eef0e8" rx="6"/>${simboloFrente(k)}`, `Símbolo de ${f[0]}`)}<p>${f[1]}</p>`; };
+          $('#frOut', el).innerHTML = `<canvas class="au-cv" id="frCv" aria-label="Corte de ${f[0]}"></canvas>` +
+            `<p><b>Na carta:</b></p>${svg('0 0 300 44', `<rect width="300" height="44" fill="#eef0e8" rx="6"/>${simboloFrente(k)}`, `Símbolo de ${f[0]}`)}<p>${f[1]}</p>`; requestAnimationFrame(() => cenaFrente($('#frCv', el), k)); };
         $('#frPick', el).addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if (b) show(b.dataset.f); }); show('fria');
       } },
     { t: 'Gelo', html: () => `<p>Gelo se forma quando o avião voa dentro de umidade visível (nuvem ou chuva) com a temperatura perto ou abaixo de 0 °C: as gotas estão super-resfriadas, ainda líquidas abaixo de zero, e congelam ao bater na asa.</p>
@@ -394,33 +520,7 @@ const tempo = {
       <div class="au-row"><button type="button" class="btn" id="mxPlay">Voar</button><span class="au-mx" id="mxTxt"></span></div>
       <ul class="au-list"><li><b>1 · Vento de frente aumenta:</b> a velocidade sobe e o avião sobe acima da rampa. Parece bom, e o piloto tende a reduzir a potência. É a armadilha.</li><li><b>2 · Corrente descendente:</b> o ar empurra o avião para baixo.</li><li><b>3 · Vento de cauda:</b> a velocidade cai de repente, logo depois de ter sido reduzida. O avião afunda abaixo da rampa, perto do chão.</li></ul>
       <p class="small">Saída: potência máxima, nariz para cima até o aviso de estol, sem recolher flaps e trem até ter certeza de que está subindo. Melhor ainda: não entre. Esperar 15 a 20 minutos a tempestade passar resolve.</p>`,
-      init: (el) => {
-        const cv = $('#mxCv', el); let t0 = 0, raf = 0;
-        const draw = (p) => {
-          if (!document.contains(cv)) return;
-          const d = Math.min(2, window.devicePixelRatio || 1), w = cv.clientWidth || 320, h = Math.round(w * 0.55);
-          if (cv.width !== Math.round(w * d)) { cv.width = w * d; cv.height = h * d; } cv.style.height = h + 'px';
-          const c = cv.getContext('2d'); c.setTransform(d, 0, 0, d, 0, 0);
-          c.fillStyle = '#13212e'; c.fillRect(0, 0, w, h); c.fillStyle = '#1d2b1f'; c.fillRect(0, h * 0.88, w, h * 0.12);
-          const cx = w * 0.5; c.fillStyle = '#5b6b7a'; c.beginPath(); c.ellipse(cx, h * 0.12, w * 0.22, h * 0.1, 0, 0, 7); c.fill();
-          c.strokeStyle = 'rgba(134,172,242,.7)'; c.lineWidth = 2;
-          for (let i = -2; i <= 2; i++) { c.beginPath(); c.moveTo(cx + i * 14, h * 0.2); c.lineTo(cx + i * 14, h * 0.7); c.quadraticCurveTo(cx + i * 14, h * 0.86, cx + Math.sign(i || 1) * (60 + Math.abs(i) * 30), h * 0.86); c.stroke(); }
-          c.setLineDash([5, 4]); c.strokeStyle = 'rgba(95,196,138,.6)'; c.beginPath(); c.moveTo(w * 0.04, h * 0.3); c.lineTo(w * 0.96, h * 0.86); c.stroke(); c.setLineDash([]);
-          // Trajetória: acima da rampa no trecho 1, afunda nos 2 e 3
-          const rampa = (x) => h * 0.3 + (x - w * 0.04) / (w * 0.92) * (h * 0.56);
-          const desv = (x) => { const u = (x - cx) / (w * 0.32); return u < -1 ? 0 : u < -0.35 ? -18 * Math.sin((u + 1) / 0.65 * Math.PI / 2) : u < 0.5 ? -18 + (u + 0.35) / 0.85 * 46 : 28 + (u - 0.5) * 10; };
-          c.strokeStyle = '#ffd23f'; c.lineWidth = 2; c.beginPath();
-          const xmax = w * 0.04 + p * w * 0.86;
-          for (let x = w * 0.04; x <= xmax; x += 3) { const y = Math.min(h * 0.86, rampa(x) + desv(x)); x === w * 0.04 ? c.moveTo(x, y) : c.lineTo(x, y); } c.stroke();
-          const yA = Math.min(h * 0.86, rampa(xmax) + desv(xmax)); c.fillStyle = '#ffd23f'; c.beginPath(); c.arc(xmax, yA, 5, 0, 7); c.fill();
-          const u = (xmax - cx) / (w * 0.32), fase = u < -1 ? 0 : u < -0.35 ? 1 : u < 0.35 ? 2 : u < 1.3 ? 3 : 0;
-          $('#mxTxt', el).textContent = ['Aproximação normal, na rampa', '1 · Vento de frente: velocidade sobe, avião sobe', '2 · Corrente descendente: avião afunda', '3 · Vento de cauda: velocidade despenca'][fase];
-          c.fillStyle = '#93a2ae'; c.font = '600 10px system-ui'; c.fillText('rampa', w * 0.08, h * 0.3 - 6);
-        };
-        const anim = (t) => { if (!t0) t0 = t; const p = Math.min(1, (t - t0) / 6000); draw(p); if (p < 1 && document.contains(cv)) raf = requestAnimationFrame(anim); };
-        $('#mxPlay', el).addEventListener('click', () => { cancelAnimationFrame(raf); t0 = 0; raf = requestAnimationFrame(anim); });
-        requestAnimationFrame(() => draw(0));
-      } },
+      init: (el) => requestAnimationFrame(() => cenaMicro($('#mxCv', el), el)) },
     { t: 'Carta de tempo significativo', html: () => `<p>A carta SIGWX mostra, para uma faixa de altitudes, onde há tempestades, turbulência, gelo e corrente de jato. Esta é inventada. Toque nos símbolos da legenda:</p>
       <div class="au-fig" id="swFig">${svg('0 0 340 260', `<rect width="340" height="260" fill="#eef0e8"/>
         <path d="M20 30 Q90 10 150 40 T320 60" fill="none" stroke="#c9cfc3" stroke-width="18"/>
