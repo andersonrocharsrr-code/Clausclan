@@ -1386,7 +1386,7 @@ html.menu-lock, html.menu-lock body { overflow: hidden; overscroll-behavior: non
 .hs-capa { width: 56%; object-position: 60% 35%; -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 38%); mask-image: linear-gradient(to right, transparent 0%, #000 38%); }
 
 /* Barra de navegação de baixo, no estilo dos aplicativos de celular, com o rosa do app */
-.bnav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(4, 1fr); align-items: stretch;
+.bnav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); align-items: stretch;
   padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px)); background: var(--panel); border-top: 1px solid var(--line); box-shadow: 0 -6px 24px rgba(0,0,0,.08); }
 .bnav__drop { position: static; display: grid; }
 .bnav__it { display: grid; justify-items: center; align-content: center; gap: 3px; min-height: 56px; padding: 4px 0; border: 0; background: none; color: var(--muted); font: 600 11px var(--body); text-decoration: none; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
@@ -1445,4 +1445,4 @@ main.wrap { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 .in-row__go { margin-left: auto; font-size: 26px; color: var(--muted); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .in-row { box-shadow: none; border: 1px solid var(--line); } }
 :root[data-theme="dark"] .in-row { box-shadow: none; border: 1px solid var(--line); }
-@media (min-width: 720px) { .bnav { width: 420px; } }
+@media (min-width: 720px) { .bnav { width: 480px; } }

@@ -293,7 +293,7 @@ function showTab(id, push) {
   current = id;
   $$('.view').forEach((v) => { v.hidden = v.dataset.view !== id; });
   // Na barra de baixo: Escola e Cockpit acendem na própria seção; Início acende na tela inicial e nas seções abertas a partir dela
-  $$('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.id === 'bnInicio' ? !['escola', 'cockpit'].includes(id) : t.dataset.tab === id)));
+  $$('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.id === 'bnInicio' ? !['escola', 'cockpit', 'lab'].includes(id) : t.dataset.tab === id)));
   if (push) { try { history.replaceState(null, '', '#' + id); } catch {} }
   if (id === 'cockpit') { sizeGauges(); startSim(); }
   if (id === 'lab') startLab();

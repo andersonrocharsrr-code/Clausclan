@@ -41,7 +41,6 @@ function render() {
 }
 const MAIS = [
   ['pecas', 'Peças do avião', 'Toque nas peças, raio-X e as vistas do 747', '<path d="M3 13 L10 11 L13 4 H15 L14 11 L21 12 V14 L14 14 L13 20 H11 L10 15 L3 15Z"/>'],
-  ['lab', 'Laboratório', 'Túnel de vento e o motor GEnx-2B em 3D', '<path d="M9 3 H15 M10 3 V9 L4.5 19 A1.5 1.5 0 0 0 6 21 H18 A1.5 1.5 0 0 0 19.5 19 L14 9 V3"/><path d="M7 15 H17"/>'],
   ['meteo', 'Meteorologia', 'Tipos de nuvens e o radar meteorológico', '<path d="M7 18 H17 A4 4 0 0 0 16.5 10 A5.5 5.5 0 0 0 6 11.5 A3.3 3.3 0 0 0 7 18Z"/>'],
   ['glossario', 'Glossário', 'Os termos em português e em inglês', '<path d="M5 4 H17 A2 2 0 0 1 19 6 V20 H7 A2 2 0 0 1 5 18Z"/><path d="M5 18 A2 2 0 0 1 7 16 H19"/><path d="M9 8 H15 M9 11 H13"/>'],
   ['catalogo', 'Catálogo 747', 'As categorias de peças do 747-8', '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>'],
