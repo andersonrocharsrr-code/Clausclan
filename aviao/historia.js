@@ -411,7 +411,7 @@ const CAPS_DOUGLAS = [
 
 /* ---------- As histórias ---------- */
 const HISTORIAS = [
-  { id: 'boeing', ano: '1881–1956', titulo: 'William Boeing', sub: 'Do estaleiro ao céu', h1: 'William Boeing: do estaleiro ao céu',
+  { id: 'boeing', capa: 'assets/capa-boeing.webp', ano: '1881–1956', titulo: 'William Boeing', sub: 'Do estaleiro ao céu', h1: 'William Boeing: do estaleiro ao céu',
     lede: 'Como um comerciante de madeira que nunca tinha voado fundou uma das maiores fabricantes de aviões do mundo, com asas costuradas à mão, e como um escândalo no Senado o tirou da aviação. Seis partes, 20 capítulos.',
     fontes: 'Fontes: Museum of Flight (Seattle), HistoryLink.org, Smithsonian National Postal Museum, San Diego Air & Space Museum, Flying Magazine e o histórico oficial da Boeing.', partes: PARTES, caps: CAPS },
   { id: 'douglas', ano: '1892–1981', titulo: 'Donald Douglas', sub: 'Da barbearia ao DC-3', h1: 'Donald Douglas: da barbearia ao DC-3',
@@ -467,7 +467,7 @@ function montar() {
   cap = 0; render();
 }
 // Seletor de histórias: fechado, mostra a escolhida; aberto, lista as outras
-function cartaoHs(h) { return `<span class="dz-item__year">${h.ano.slice(0, 4)}</span><b>${h.titulo}</b><span>${h.sub}</span><i>${h.ano} · ${h.caps.length} capítulos</i>`; }
+function cartaoHs(h) { return `${h.capa ? `<img class="dz-item__fin hs-capa" src="${h.capa}" alt="" draggable="false">` : ''}<span class="dz-item__year">${h.ano.slice(0, 4)}</span><b>${h.titulo}</b><span>${h.sub}</span><i>${h.ano} · ${h.caps.length} capítulos</i>`; }
 function listaHs() {
   $('#hsPickBtn').innerHTML = cartaoHs(hist);
   $('#hsList').innerHTML = HISTORIAS.filter((h) => h !== hist).map((h) => `<button type="button" class="dz-item" role="option" data-hs="${h.id}">${cartaoHs(h)}</button>`).join('')
