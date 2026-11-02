@@ -253,7 +253,8 @@ function colorOf(z) {
   return null;
 }
 const AW = 82; // a imagem vai até os cantos da tela, como no ND de verdade // meia abertura da varredura (graus)
-function buildRadar() {
+// Feito em pedaços (gerador): cada quadro calcula só um pouco, para a tela não travar ao abrir a aba
+function* buildRadarGen() {
   const { off, S } = radar, OW = off.width, oc = off.getContext('2d'), img = oc.createImageData(OW, S), cx = OW / 2, cy = S * 0.98, Rpx = S * 0.96;
   const NA = 360, NR = 190, grid = [];
   // Ao longo de cada raio: refletividade, eco de solo e a atenuação (o radar perde força atravessando chuva forte)
@@ -275,23 +276,30 @@ function buildRadar() {
       row.push([z, turb]);
     }
     grid.push(row);
+    if (!(ia % 3)) yield;
   }
-  for (let py = 0; py < S; py++) for (let px = 0; px < OW; px++) {
+  for (let py = 0; py < S; py++) { if (!(py % 6)) yield; for (let px = 0; px < OW; px++) {
     const dx = px - cx, dy = cy - py, r = Math.hypot(dx, dy) / Rpx, a = Math.atan2(dx, dy) / D2R;
     if (r > 1 || r <= 0 || Math.abs(a) > AW) continue;
     const ia = Math.round((a + AW) / (2 * AW) * (NA - 1)), ir = Math.min(NR - 1, Math.floor(r * NR)), [z, turb] = grid[ia][ir];
     const col = turb ? COL.m : colorOf(z);
     if (!col) continue;
     const k = (py * OW + px) * 4; img.data[k] = col[0]; img.data[k + 1] = col[1]; img.data[k + 2] = col[2]; img.data[k + 3] = 255;
-  }
+  } }
   oc.putImageData(img, 0, 0);
-  dirty = false;
+}
+let job = null;
+function stepRadar(budget) {
+  if (dirty) { job = buildRadarGen(); dirty = false; }
+  if (!job) return;
+  const t0 = performance.now();
+  while (performance.now() - t0 < budget) if (job.next().done) { job = null; break; }
 }
 // Tela no padrão de um ND de jato: fundo preto, rosa com os rumos, anéis de distância tracejados, avião amarelo embaixo
 const HDG = 290;
 function drawND(t) {
   const { c, w, h, off, S } = radar;
-  if (dirty) buildRadar();
+  stepRadar(8);
   // Moldura (o vidro dentro do painel)
   c.fillStyle = '#2b2f33'; c.fillRect(0, 0, w, h);
   const bz = Math.max(10, Math.round(w * 0.025));
@@ -362,16 +370,37 @@ function drawND(t) {
 }
 
 /* ---------- Corte de lado: o feixe atravessando as nuvens ---------- */
+// A fatia de nuvens do corte só muda com o cenário e o alcance: é calculada uma vez, em pedaços
+const PNX = 140, PNY = 70, PTOP = 50000;
+let pg = null, pgKey = '', pgJob = null;
+function* profGridGen() {
+  const out = new Float32Array(PNX * PNY);
+  for (let i = 0; i < PNX; i++) {
+    for (let j = 0; j < PNY; j++) {
+      const nm = (i + 0.5) / PNX * range, ft = (j + 0.5) / PNY * PTOP;
+      // A fatia junta o que está até 20 NM de cada lado da rota (é o que o feixe pode varrer)
+      let z = 0; for (let xo = -20; xo <= 20; xo += 4) z = Math.max(z, dbz(xo, nm, ft));
+      out[i * PNY + j] = z;
+    }
+    if (!(i % 4)) yield;
+  }
+  pg = out; profDirty = true;
+}
+function stepProf(budget) {
+  const key = sc + '|' + range;
+  if (key !== pgKey) { pgKey = key; pg = null; pgJob = profGridGen(); }
+  if (!pgJob) return;
+  const t0 = performance.now();
+  while (performance.now() - t0 < budget) if (pgJob.next().done) { pgJob = null; break; }
+}
 function drawProfile() {
   const { c, w, h } = prof, top = 50000, X = (nm) => 30 + nm / range * (w - 40), Y = (ft) => h - 16 - ft / top * (h - 30);
   const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#0d1a2b'); g.addColorStop(1, '#2a4566');
   c.fillStyle = g; c.fillRect(0, 0, w, h);
   // Fatia vertical das células ao longo da rota (x = 0, de 0 até o alcance)
-  const NX = 140, NY = 70, cw = (w - 40) / NX + 1, ch = (h - 30) / NY + 1;
-  for (let i = 0; i < NX; i++) for (let j = 0; j < NY; j++) {
-    const nm = (i + 0.5) / NX * range, ft = (j + 0.5) / NY * top;
-    // A fatia junta o que está até 20 NM de cada lado da rota (é o que o feixe pode varrer)
-    let z = 0; for (let xo = -20; xo <= 20; xo += 4) z = Math.max(z, dbz(xo, nm, ft));
+  const cw = (w - 40) / PNX + 1, ch = (h - 30) / PNY + 1;
+  if (pg) for (let i = 0; i < PNX; i++) for (let j = 0; j < PNY; j++) {
+    const nm = (i + 0.5) / PNX * range, ft = (j + 0.5) / PNY * PTOP, z = pg[i * PNY + j];
     if (z < 12) continue;
     const col = colorOf(z) || [150, 160, 170];
     c.fillStyle = `rgba(${col.join(',')},${z < 20 ? 0.25 : 0.75})`; c.fillRect(X(nm), Y(ft) - ch, cw, ch);
@@ -391,7 +420,7 @@ function drawProfile() {
 }
 
 /* ---------- Montagem ---------- */
-let raf = 0, active = () => false, last = 0, time = 0, cards = [], atlasDirty = true, profDirty = true;
+let sizeKey = '', offCv = null, raf = 0, active = () => false, last = 0, time = 0, cards = [], atlasDirty = true, profDirty = true;
 function setCanvas(cv, hgt) {
   const d = Math.min(2, window.devicePixelRatio || 1), w = cv.clientWidth || 320, h = typeof hgt === 'function' ? hgt(w) : hgt;
   cv.width = w * d; cv.height = h * d; cv.style.height = h + 'px';
@@ -400,12 +429,16 @@ function setCanvas(cv, hgt) {
 }
 function size() {
   if (!$('#metAtlas')) return;
+  // Mesma largura de antes: os desenhos continuam valendo, não refaz nada
+  const key = $('#metAtlas').clientWidth + 'x' + (window.devicePixelRatio || 1);
+  if (key === sizeKey && radar) return;
+  sizeKey = key;
   atlas = { ...setCanvas($('#metAtlas'), (w) => Math.round(w * 1792 / 2400)), hits: [] };
-  const S = 500, off = document.createElement('canvas'); off.width = Math.round(S * 1.8); off.height = S;
+  const S = 500; if (!offCv) { offCv = document.createElement('canvas'); offCv.width = Math.round(S * 1.8); offCv.height = S; } const off = offCv;
   radar = { ...setCanvas($('#metNd'), (w) => Math.round(clamp(w * 0.8, 320, 600))), off, S };
   prof = setCanvas($('#metProf'), (w) => Math.round(clamp(w * 0.36, 150, 230)));
   cards = [...document.querySelectorAll('#metCards canvas')].map((cv) => ({ id: cv.dataset.cl, ...setCanvas(cv, 120) }));
-  dirty = true; atlasDirty = true; profDirty = true;
+  atlasDirty = true; profDirty = true;
   cards.forEach((k) => drawCloud(k.c, k.id, k.w, k.h, 0));
 }
 function frame(t) {
@@ -414,6 +447,7 @@ function frame(t) {
   // O atlas e os cartões são desenhos parados (com desfoque, pesados): só redesenham quando algo muda
   if (atlasDirty && ATLAS_IMG.complete) { drawAtlas(); atlasDirty = false; }
   drawND(time);
+  stepProf(6);
   if (profDirty) { drawProfile(); profDirty = false; }
   raf = requestAnimationFrame(frame);
 }
