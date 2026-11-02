@@ -132,87 +132,147 @@ function desenharMapa() {
   c.beginPath(); c.moveTo(0, -9); c.lineTo(2, -2); c.lineTo(9, 2); c.lineTo(2, 2); c.lineTo(1.5, 6); c.lineTo(4, 8); c.lineTo(-4, 8); c.lineTo(-1.5, 6); c.lineTo(-2, 2); c.lineTo(-9, 2); c.lineTo(-2, -2); c.closePath(); c.fill(); c.restore();
   c.fillStyle = COR.cinza; c.font = '600 10px system-ui'; c.textAlign = 'left'; c.fillText('N ↑   grade de 5 NM', 8, h - 8);
 }
-function rosa(c, cx, cy, R, hdg, rotar) {
-  // Rosa dos ventos: gira com a proa (HSI e ADF de cartão móvel) ou fica parada com o norte em cima
-  c.save(); c.translate(cx, cy); if (rotar) c.rotate(-hdg * D2R);
-  c.strokeStyle = COR.branco; c.fillStyle = COR.branco; c.textAlign = 'center'; c.textBaseline = 'middle';
+// ---------- Instrumentos no estilo dos mecânicos de painel (caixa, aro, vidro, botões) ----------
+function caixa(c, w) {
+  // Caixa quadrada de metal com 4 parafusos
+  const g = c.createLinearGradient(0, 0, 0, w); g.addColorStop(0, '#34393e'); g.addColorStop(1, '#1b1e21');
+  c.fillStyle = '#0d0f11'; c.fillRect(0, 0, w, w);
+  c.fillStyle = g; c.beginPath(); c.roundRect ? c.roundRect(2, 2, w - 4, w - 4, w * 0.06) : c.rect(2, 2, w - 4, w - 4); c.fill();
+  for (const [x, y] of [[0.075, 0.075], [0.925, 0.075], [0.075, 0.925], [0.925, 0.925]]) {
+    const px = x * w, py = y * w, r = w * 0.028, sg = c.createRadialGradient(px - r * 0.3, py - r * 0.3, 0, px, py, r);
+    sg.addColorStop(0, '#8a9097'); sg.addColorStop(1, '#3b4045'); c.fillStyle = sg; c.beginPath(); c.arc(px, py, r, 0, 7); c.fill();
+    c.strokeStyle = '#1a1c1e'; c.lineWidth = r * 0.3; c.beginPath(); c.moveTo(px - r * 0.7, py - r * 0.35); c.lineTo(px + r * 0.7, py + r * 0.35); c.stroke();
+  }
+  // Aro e mostrador
+  const cx = w / 2, cy = w / 2, Rb = w * 0.425, R = Rb - w * 0.028;
+  const ag = c.createLinearGradient(0, cy - Rb, 0, cy + Rb); ag.addColorStop(0, '#53595f'); ag.addColorStop(0.5, '#202326'); ag.addColorStop(1, '#0c0d0e');
+  c.fillStyle = ag; c.beginPath(); c.arc(cx, cy, Rb, 0, 7); c.fill();
+  const fg = c.createRadialGradient(cx, cy - R * 0.3, R * 0.1, cx, cy, R); fg.addColorStop(0, '#1b1d1f'); fg.addColorStop(1, '#060607');
+  c.fillStyle = fg; c.beginPath(); c.arc(cx, cy, R, 0, 7); c.fill();
+  return { cx, cy, R };
+}
+function vidro(c, cx, cy, R) {
+  // Reflexo do vidro e sombra interna do aro
+  c.save(); c.beginPath(); c.arc(cx, cy, R, 0, 7); c.clip();
+  const sh = c.createRadialGradient(cx, cy, R * 0.82, cx, cy, R); sh.addColorStop(0, 'rgba(0,0,0,0)'); sh.addColorStop(1, 'rgba(0,0,0,.55)');
+  c.fillStyle = sh; c.fillRect(cx - R, cy - R, R * 2, R * 2);
+  const gl = c.createLinearGradient(cx - R, cy - R, cx + R * 0.2, cy + R * 0.2); gl.addColorStop(0, 'rgba(255,255,255,.13)'); gl.addColorStop(0.45, 'rgba(255,255,255,.04)'); gl.addColorStop(0.46, 'rgba(255,255,255,0)');
+  c.fillStyle = gl; c.beginPath(); c.ellipse(cx - R * 0.25, cy - R * 0.35, R * 0.95, R * 0.6, -0.6, 0, 7); c.fill();
+  c.restore();
+}
+function botao(c, x, y, r, rotulo, icone) {
+  // Botão serrilhado
+  c.save(); c.translate(x, y);
+  c.fillStyle = '#0a0b0c'; c.beginPath(); c.arc(0, 0, r * 1.08, 0, 7); c.fill();
+  const g = c.createRadialGradient(-r * 0.3, -r * 0.35, 0, 0, 0, r); g.addColorStop(0, '#4a4f55'); g.addColorStop(1, '#151719');
+  c.fillStyle = g; c.beginPath(); c.arc(0, 0, r, 0, 7); c.fill();
+  c.strokeStyle = 'rgba(0,0,0,.6)'; c.lineWidth = 1;
+  for (let a = 0; a < 360; a += 12) { c.beginPath(); c.moveTo(Math.cos(a * D2R) * r * 0.78, Math.sin(a * D2R) * r * 0.78); c.lineTo(Math.cos(a * D2R) * r, Math.sin(a * D2R) * r); c.stroke(); }
+  if (icone) { c.fillStyle = icone; c.beginPath(); c.moveTo(0, -r * 0.45); c.lineTo(-r * 0.28, r * 0.25); c.lineTo(r * 0.28, r * 0.25); c.closePath(); c.fill(); }
+  c.restore();
+  c.fillStyle = '#d9dde0'; c.font = `700 ${Math.round(r * 0.55)}px system-ui`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(rotulo, x, y - r * 1.55);
+}
+function cartao(c, cx, cy, R, giro, fonte) {
+  // Rosa dos ventos: marcas a cada 5°, números a cada 30° (N 3 6 E 12 15 S 21 24 W 30 33)
+  c.save(); c.translate(cx, cy); c.rotate(-giro * D2R);
+  c.strokeStyle = '#f4f4f0'; c.fillStyle = '#f4f4f0'; c.textAlign = 'center'; c.textBaseline = 'middle';
   for (let a = 0; a < 360; a += 5) {
-    const L = a % 30 === 0 ? 11 : a % 10 === 0 ? 8 : 5; c.lineWidth = a % 10 === 0 ? 1.6 : 1;
+    const L = a % 10 ? R * 0.06 : R * 0.11; c.lineWidth = a % 10 ? 1 : 1.8;
     c.beginPath(); c.moveTo(Math.sin(a * D2R) * R, -Math.cos(a * D2R) * R); c.lineTo(Math.sin(a * D2R) * (R - L), -Math.cos(a * D2R) * (R - L)); c.stroke();
-    if (a % 30 === 0) { c.save(); c.translate(Math.sin(a * D2R) * (R - 21), -Math.cos(a * D2R) * (R - 21)); c.rotate(a * D2R); c.font = `700 ${a % 90 ? 12 : 14}px system-ui`; c.fillText(a % 90 ? String(a / 10) : 'NESW'[a / 90], 0, 0); c.restore(); }
+    if (a % 30 === 0) {
+      c.save(); c.translate(Math.sin(a * D2R) * (R * 0.75), -Math.cos(a * D2R) * (R * 0.75)); c.rotate(a * D2R);
+      c.font = `700 ${Math.round(fonte * (a % 90 ? 0.9 : 1.08))}px "Barlow Condensed", "Arial Narrow", system-ui`; c.fillText(a % 90 ? String(a / 10) : 'NESW'[a / 90], 0, 0); c.restore();
+    }
   }
   c.restore();
 }
-function moldura(c, w, h) {
-  const R = Math.min(w, h) / 2 - 4, cx = w / 2, cy = h / 2;
-  c.fillStyle = '#1b232b'; c.fillRect(0, 0, w, h);
-  c.fillStyle = '#05080b'; c.beginPath(); c.arc(cx, cy, R, 0, 7); c.fill();
-  c.strokeStyle = '#3a4652'; c.lineWidth = 3; c.stroke();
-  return { R: R - 6, cx, cy };
+function indice(c, cx, cy, R, cor = '#ff8a1f') {
+  // Marca fixa no topo (lubber) e as marcas de 45° no aro
+  c.fillStyle = cor; c.beginPath(); c.moveTo(cx, cy - R + R * 0.12); c.lineTo(cx - R * 0.06, cy - R - R * 0.02); c.lineTo(cx + R * 0.06, cy - R - R * 0.02); c.closePath(); c.fill();
 }
-function pontos(c, cx, cy, esp, vertical) {
-  c.strokeStyle = COR.branco; c.lineWidth = 1.5;
-  for (let i = -5; i <= 5; i++) { if (!i) continue; const p = i * esp; c.beginPath(); c.arc(vertical ? cx : cx + p, vertical ? cy + p : cy, 3, 0, 7); c.stroke(); }
+function bandeira(c, x, y, w, h, txt) {
+  // Bandeira de alarme listrada vermelha e branca
+  c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip();
+  c.fillStyle = '#e8e8e2'; c.fillRect(x, y, w, h); c.fillStyle = '#d12a20';
+  for (let i = -h; i < w + h; i += 10) { c.beginPath(); c.moveTo(x + i, y + h); c.lineTo(x + i + 5, y + h); c.lineTo(x + i + 5 + h, y); c.lineTo(x + i + h, y); c.closePath(); c.fill(); }
+  c.restore();
+  c.fillStyle = '#111'; c.font = `900 ${Math.round(h * 0.62)}px system-ui`; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.strokeStyle = '#e8e8e2'; c.lineWidth = 3; c.strokeText(txt, x + w / 2, y + h / 2 + 0.5); c.fillText(txt, x + w / 2, y + h / 2 + 0.5);
+}
+function agulha(c, x0, y0, x1, y1, larg, cor = '#f4f4f0') {
+  // Agulha com sombra, como as mecânicas
+  c.save(); c.lineCap = 'round';
+  c.strokeStyle = 'rgba(0,0,0,.55)'; c.lineWidth = larg + 2; c.beginPath(); c.moveTo(x0 + 2, y0 + 2); c.lineTo(x1 + 2, y1 + 2); c.stroke();
+  c.strokeStyle = cor; c.lineWidth = larg; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); c.restore();
+}
+function pontos(c, cx, cy, esp, n, vertical, r) {
+  c.strokeStyle = '#f4f4f0'; c.lineWidth = 1.6;
+  for (let i = -n; i <= n; i++) { if (!i) continue; c.beginPath(); c.arc(vertical ? cx : cx + i * esp, vertical ? cy + i * esp : cy, r, 0, 7); c.stroke(); }
+}
+function toFrom(c, x, y, s, from, off) {
+  // Janela TO/FROM do CDI
+  c.fillStyle = '#000'; c.fillRect(x - s * 1.3, y - s * 0.75, s * 2.6, s * 1.5);
+  c.strokeStyle = '#3a3f44'; c.lineWidth = 1; c.strokeRect(x - s * 1.3, y - s * 0.75, s * 2.6, s * 1.5);
+  if (off) return;
+  c.fillStyle = '#f4f4f0'; c.font = `800 ${Math.round(s * 0.95)}px system-ui`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(from ? 'FR' : 'TO', x, y + 1);
 }
 function desenharInstrumento() {
-  const { c, w, h } = prep($('#nvInst')), { R, cx, cy } = moldura(c, w, h), m = M.modo;
-  if (m === 'cdi') {
-    // OBS: o curso selecionado fica no topo (a rosa gira com o botão)
-    c.save(); c.translate(cx, cy); c.rotate(-st.obs * D2R); rosa(c, 0, 0, R, 0, false); c.restore();
-    c.fillStyle = '#05080b'; c.beginPath(); c.arc(cx, cy, R - 30, 0, 7); c.fill();
-    c.fillStyle = COR.amar; c.beginPath(); c.moveTo(cx, cy - R + 1); c.lineTo(cx - 6, cy - R - 8); c.lineTo(cx + 6, cy - R - 8); c.closePath(); c.fill();
-    const esp = (R - 40) / 5.5; pontos(c, cx, cy + 22, esp, false);
-    // Agulha: 2° por ponto, 10° de fundo de escala
-    const off = L.cone ? Math.sin(performance.now() / 300) * 3 : clamp(L.dev / 2, -5, 5);
-    c.strokeStyle = COR.branco; c.lineWidth = 3.5; c.beginPath(); c.moveTo(cx + off * esp, cy - R * 0.55); c.lineTo(cx + off * esp, cy + R * 0.6); c.stroke();
-    c.beginPath(); c.arc(cx, cy + 22, 6, 0, 7); c.stroke();
-    // Bandeira TO/FROM
-    const txt = L.cone || L.flag ? 'OFF' : L.from ? 'FROM' : 'TO';
-    c.fillStyle = txt === 'OFF' ? '#d9342b' : '#e9edf0'; c.fillRect(cx + 16, cy - 30, 46, 20);
-    c.fillStyle = txt === 'OFF' ? '#fff' : '#111'; c.font = '800 12px system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(txt, cx + 39, cy - 20);
-    c.fillStyle = COR.amar; c.font = '800 13px system-ui'; c.textAlign = 'left'; c.textBaseline = 'alphabetic'; c.fillText(`OBS ${rumo(st.obs)}`, 8, h - 10);
+  const cv = $('#nvInst'), { c, w } = prep(cv), { cx, cy, R } = caixa(c, w), m = M.modo, f = R * 0.15;
+  const kr = w * 0.062, k1 = [w * 0.105, w * 0.895], k2 = [w * 0.895, w * 0.895];
+  if (m === 'cdi' || m === 'ils') {
+    // CDI/ILS com cartão de curso que gira pelo OBS; agulha presa no alto; no ILS, a da rampa presa à esquerda
+    cartao(c, cx, cy, R * 0.98, st.obs, f); indice(c, cx, cy, R * 0.98, '#f4f4f0');
+    c.fillStyle = '#f4f4f0'; c.beginPath(); c.moveTo(cx, cy + R * 0.86); c.lineTo(cx - R * 0.05, cy + R * 0.98); c.lineTo(cx + R * 0.05, cy + R * 0.98); c.closePath(); c.fill();
+    c.fillStyle = '#060607'; c.beginPath(); c.arc(cx, cy, R * 0.6, 0, 7); c.fill();
+    const esp = R * 0.1; pontos(c, cx, cy, esp, 5, false, R * 0.028);
+    c.strokeStyle = '#f4f4f0'; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, R * 0.06, 0, 7); c.stroke();
+    if (m === 'ils') pontos(c, cx, cy, esp, 5, true, R * 0.028);
+    const sem = L.cone || L.flag;
+    const dotsL = m === 'ils' ? clamp(L.loc, -1, 1) * 5 : (L.cone ? Math.sin(performance.now() / 300) * 3 : sem ? 0 : clamp(L.dev / 2, -5, 5));
+    const piv = cy - R * 2.6, ang = Math.atan2(dotsL * esp, cy - piv);
+    agulha(c, cx + Math.sin(ang) * (cy - piv - R * 0.58), piv + Math.cos(ang) * (cy - piv - R * 0.58), cx + Math.sin(ang) * (cy - piv + R * 0.55), piv + Math.cos(ang) * (cy - piv + R * 0.55), R * 0.035);
+    if (m === 'ils') {
+      const dotsG = clamp(L.gs, -1, 1) * 5, px = cx - R * 2.6, a2 = Math.atan2(-dotsG * esp, cx - px);
+      agulha(c, px + Math.cos(a2) * (cx - px - R * 0.55), cy + Math.sin(a2) * (cx - px - R * 0.55), px + Math.cos(a2) * (cx - px + R * 0.55), cy + Math.sin(a2) * (cx - px + R * 0.55), R * 0.035);
+    } else toFrom(c, cx + R * 0.32, cy - R * 0.28, R * 0.1, L.from, sem);
+    if (sem && m === 'cdi') bandeira(c, cx - R * 0.5, cy - R * 0.36, R * 0.34, R * 0.13, 'NAV');
+    if (m === 'ils' && Math.max(0, -st.x) < 0.3) bandeira(c, cx + R * 0.26, cy + R * 0.2, R * 0.28, R * 0.12, 'GS');
+    vidro(c, cx, cy, R); botao(c, k1[0], k1[1], kr, 'OBS');
   } else if (m === 'hsi') {
-    rosa(c, cx, cy, R, st.hdg, true);
-    c.fillStyle = COR.amar; c.beginPath(); c.moveTo(cx, cy - R + 1); c.lineTo(cx - 6, cy - R - 8); c.lineTo(cx + 6, cy - R - 8); c.closePath(); c.fill();
+    // HSI mecânico: cartão gira com a proa, marcador de proa laranja, seta de curso amarela, barra de desvio (5° por ponto)
+    cartao(c, cx, cy, R * 0.98, st.hdg, f);
+    c.fillStyle = '#f4f4f0'; for (let a = 45; a < 360; a += 45) { if (a === 180) continue; c.save(); c.translate(cx, cy); c.rotate(a * D2R); c.beginPath(); c.moveTo(0, -R * 1.0); c.lineTo(-R * 0.03, -R * 1.07); c.lineTo(R * 0.03, -R * 1.07); c.closePath(); c.fill(); c.restore(); }
+    indice(c, cx, cy, R * 0.98);
+    c.save(); c.translate(cx, cy); c.rotate((st.alvo - st.hdg) * D2R); c.fillStyle = '#ff8a1f';
+    c.fillRect(-R * 0.09, -R * 0.99, R * 0.05, R * 0.08); c.fillRect(R * 0.04, -R * 0.99, R * 0.05, R * 0.08); c.restore();
     c.save(); c.translate(cx, cy); c.rotate((st.obs - st.hdg) * D2R);
-    const esp = (R - 44) / 5.5; pontos(c, 0, 0, esp, false);
-    c.strokeStyle = COR.mag; c.fillStyle = COR.mag; c.lineWidth = 4;
-    c.beginPath(); c.moveTo(0, -R + 26); c.lineTo(0, -R * 0.45); c.moveTo(0, R * 0.45); c.lineTo(0, R - 26); c.stroke();
-    c.beginPath(); c.moveTo(0, -R + 20); c.lineTo(-7, -R + 32); c.lineTo(7, -R + 32); c.closePath(); c.fill();
-    const off = L.cone ? 0 : clamp(L.dev / 2, -5, 5) * esp;
-    c.beginPath(); c.moveTo(off, -R * 0.42); c.lineTo(off, R * 0.42); c.stroke();
-    // TO/FROM: triângulo apontando para a estação
-    c.fillStyle = COR.branco; const tf = L.from ? 1 : -1; c.beginPath(); c.moveTo(18, tf * 22); c.lineTo(12, tf * 12); c.lineTo(24, tf * 12); c.closePath(); c.fill();
+    const esp = R * 0.17; pontos(c, 0, 0, esp, 2, false, R * 0.035);
+    const amar = '#ffd400';
+    c.fillStyle = amar; c.beginPath(); c.moveTo(0, -R * 0.86); c.lineTo(-R * 0.07, -R * 0.68); c.lineTo(-R * 0.025, -R * 0.68); c.lineTo(-R * 0.025, -R * 0.42); c.lineTo(R * 0.025, -R * 0.42); c.lineTo(R * 0.025, -R * 0.68); c.lineTo(R * 0.07, -R * 0.68); c.closePath(); c.fill();
+    c.fillRect(-R * 0.025, R * 0.42, R * 0.05, R * 0.42);
+    const off = L.cone ? 0 : clamp(L.dev / 5, -2.4, 2.4) * esp;
+    c.fillStyle = 'rgba(0,0,0,.5)'; c.fillRect(off - R * 0.025 + 2, -R * 0.4 + 2, R * 0.05, R * 0.8);
+    c.fillStyle = amar; c.fillRect(off - R * 0.025, -R * 0.4, R * 0.05, R * 0.8);
+    if (!L.cone && !L.flag) { c.fillStyle = '#f4f4f0'; const s = L.from ? 1 : -1; c.beginPath(); c.moveTo(R * 0.28, -s * R * 0.3); c.lineTo(R * 0.2, -s * R * 0.18); c.lineTo(R * 0.36, -s * R * 0.18); c.closePath(); c.fill(); }
     c.restore();
-    c.save(); c.translate(cx, cy); c.fillStyle = COR.amar;
-    c.beginPath(); c.moveTo(0, -12); c.lineTo(3, 0); c.lineTo(12, 4); c.lineTo(3, 5); c.lineTo(2, 10); c.lineTo(-2, 10); c.lineTo(-3, 5); c.lineTo(-12, 4); c.lineTo(-3, 0); c.closePath(); c.fill(); c.restore();
-    c.fillStyle = COR.mag; c.font = '800 13px system-ui'; c.textAlign = 'left'; c.fillText(`CRS ${rumo(st.obs)}`, 8, 18);
-    c.fillStyle = COR.branco; c.textAlign = 'right'; c.fillText(`HDG ${rumo(st.hdg)}`, w - 8, 18);
-    c.textAlign = 'left'; c.fillStyle = COR.cinza; c.font = '700 12px system-ui'; c.fillText(L.cone ? '' : L.from ? 'FROM' : 'TO', 8, h - 10);
-  } else if (m === 'adf') {
-    // ADF de cartão fixo: 0 sempre no nariz, a agulha mostra a marcação relativa
-    rosa(c, cx, cy, R, 0, false);
-    c.save(); c.translate(cx, cy); c.rotate(L.rel * D2R); c.strokeStyle = COR.amar; c.fillStyle = COR.amar; c.lineWidth = 4;
-    c.beginPath(); c.moveTo(0, R * 0.62); c.lineTo(0, -R * 0.62); c.stroke();
-    c.beginPath(); c.moveTo(0, -R * 0.78); c.lineTo(-9, -R * 0.6); c.lineTo(9, -R * 0.6); c.closePath(); c.fill(); c.restore();
-    c.fillStyle = COR.branco; c.beginPath(); c.arc(cx, cy, 5, 0, 7); c.fill();
-    c.fillStyle = COR.cinza; c.font = '700 12px system-ui'; c.textAlign = 'left'; c.fillText('ADF · cartão fixo', 8, 18);
-    c.textAlign = 'right'; c.fillStyle = COR.branco; c.fillText(`MR ${rumo(L.rel)}`, w - 8, 18);
+    if (L.cone || L.flag) bandeira(c, cx - R * 0.55, cy - R * 0.32, R * 0.3, R * 0.12, 'NAV');
+    // Avião fixo no centro
+    c.save(); c.translate(cx, cy); c.fillStyle = '#ff8a1f'; c.strokeStyle = '#000'; c.lineWidth = 1; const a = R * 0.012;
+    c.beginPath(); c.moveTo(0, -18 * a); c.lineTo(2 * a, -6 * a); c.lineTo(14 * a, 0); c.lineTo(14 * a, 3 * a); c.lineTo(2 * a, 2 * a); c.lineTo(1.5 * a, 10 * a); c.lineTo(6 * a, 13 * a); c.lineTo(6 * a, 15 * a); c.lineTo(-6 * a, 15 * a); c.lineTo(-6 * a, 13 * a); c.lineTo(-1.5 * a, 10 * a); c.lineTo(-2 * a, 2 * a); c.lineTo(-14 * a, 3 * a); c.lineTo(-14 * a, 0); c.lineTo(-2 * a, -6 * a); c.closePath(); c.fill(); c.stroke(); c.restore();
+    vidro(c, cx, cy, R); botao(c, k1[0], k1[1], kr, 'HDG', '#ff8a1f'); botao(c, k2[0], k2[1], kr, 'CRS', '#ffd400');
   } else {
-    // ILS: agulha vertical = localizador (2,5° de fundo de escala); horizontal = rampa (0,7°)
-    rosa(c, cx, cy, R, st.hdg, true);
-    c.fillStyle = 'rgba(5,8,11,.85)'; c.beginPath(); c.arc(cx, cy, R - 26, 0, 7); c.fill();
-    const esp = (R - 40) / 5.5;
-    pontos(c, cx, cy, esp, false); pontos(c, cx, cy, esp, true);
-    c.strokeStyle = COR.verde; c.lineWidth = 4;
-    const lx = cx + clamp(L.loc, -1, 1) * 5 * esp, gy = cy - clamp(L.gs, -1, 1) * 5 * esp, len = R * 0.55;
-    c.beginPath(); c.moveTo(lx, cy - len); c.lineTo(lx, cy + len); c.stroke();
-    c.beginPath(); c.moveTo(cx - len, gy); c.lineTo(cx + len, gy); c.stroke();
-    c.strokeStyle = COR.amar; c.lineWidth = 3; c.beginPath(); c.moveTo(cx - 22, cy); c.lineTo(cx - 7, cy); c.moveTo(cx + 7, cy); c.lineTo(cx + 22, cy); c.stroke();
-    c.font = '800 13px system-ui'; c.fillStyle = COR.verde; c.textAlign = 'left'; c.fillText('ILS 090°', 8, 18);
-    c.fillStyle = COR.branco; c.textAlign = 'right'; c.fillText(`${Math.round(st.alt)} ft`, w - 8, 18);
-    c.fillText(`${st.vs > 0 ? '+' : ''}${st.vs} ft/min`, w - 8, h - 10);
-    c.textAlign = 'left'; c.fillText(`${Math.max(0, -st.x).toFixed(1)} NM`, 8, h - 10);
+    // ADF de cartão fixo (0 no nariz): agulha amarela com ponta de seta e cauda
+    cartao(c, cx, cy, R * 0.98, 0, f); indice(c, cx, cy, R * 0.98);
+    c.save(); c.translate(cx, cy); c.rotate(L.rel * D2R);
+    c.fillStyle = 'rgba(0,0,0,.5)'; c.beginPath(); c.moveTo(2, -R * 0.82 + 2); c.lineTo(-R * 0.07 + 2, -R * 0.6 + 2); c.lineTo(R * 0.07 + 2, -R * 0.6 + 2); c.closePath(); c.fill();
+    agulha(c, 0, -R * 0.62, 0, R * 0.7, R * 0.04, '#ffd400');
+    c.fillStyle = '#ffd400'; c.beginPath(); c.moveTo(0, -R * 0.84); c.lineTo(-R * 0.08, -R * 0.6); c.lineTo(R * 0.08, -R * 0.6); c.closePath(); c.fill();
+    c.fillStyle = '#ffd400'; c.beginPath(); c.moveTo(0, R * 0.62); c.lineTo(-R * 0.06, R * 0.78); c.lineTo(0, R * 0.72); c.lineTo(R * 0.06, R * 0.78); c.closePath(); c.fill();
+    c.restore();
+    const hg = c.createRadialGradient(cx - 2, cy - 2, 0, cx, cy, R * 0.07); hg.addColorStop(0, '#9aa0a6'); hg.addColorStop(1, '#2a2d30');
+    c.fillStyle = hg; c.beginPath(); c.arc(cx, cy, R * 0.07, 0, 7); c.fill();
+    c.fillStyle = '#c8ccd0'; c.font = `700 ${Math.round(R * 0.09)}px system-ui`; c.textAlign = 'center'; c.fillText('ADF', cx, cy + R * 0.3);
+    vidro(c, cx, cy, R); botao(c, k1[0], k1[1], kr, 'HDG');
   }
 }
 function painel() {
@@ -226,10 +286,10 @@ function painel() {
   $('#nvExpl').innerHTML = EXPL[M.modo];
 }
 const EXPL = {
-  cdi: '<b>VOR e CDI.</b> O VOR transmite 360 radiais, como raios de uma roda. Gire o OBS para escolher uma. A agulha mostra para que lado está a linha: cada ponto é 2°, e a agulha toda para um lado é 10° ou mais. TO quer dizer que seguir aquele curso leva <i>para</i> a estação; FROM, que afasta dela. Regra de ouro: com TO/FROM e o curso parecidos com a proa, voe <i>em direção</i> à agulha.',
-  hsi: '<b>HSI.</b> É o VOR montado sobre uma bússola que gira com o avião. A seta rosa é o curso e a barra do meio é a linha: o desenho mostra de cima onde ela está em relação ao avião. Por isso é muito mais fácil de ler que o CDI.',
+  cdi: '<b>VOR e CDI.</b> O VOR transmite 360 radiais, como raios de uma roda. Gire o botão OBS para escolher uma: o curso aparece no alto do cartão. A janela mostra TO ou FR, e a bandeira NAV aparece quando o sinal não serve. A agulha mostra para que lado está a linha: cada ponto é 2°, e a agulha toda para um lado é 10° ou mais. TO quer dizer que seguir aquele curso leva <i>para</i> a estação; FROM, que afasta dela. Regra de ouro: com TO/FROM e o curso parecidos com a proa, voe <i>em direção</i> à agulha.',
+  hsi: '<b>HSI.</b> É o VOR montado sobre uma bússola que gira com o avião. A seta amarela é o curso escolhido no botão CRS e a barra do meio é a linha: o desenho mostra de cima onde ela está em relação ao avião. Aqui cada ponto vale 5°. O marcador laranja é a proa escolhida no botão HDG. O triângulo branco aponta para a estação (TO) ou para longe dela (FROM).',
   adf: '<b>ADF e NDB.</b> A agulha aponta sempre para a estação. O 0 é o nariz: com a agulha no 0, o avião vai direto para o NDB. Proa + marcação relativa (MR) = rumo para a estação (QDM). Com vento, o avião vai derivando e a agulha sai do nariz aos poucos.',
-  ils: '<b>ILS.</b> A agulha vertical é o localizador (esquerda e direita) e a horizontal é a rampa de 3° (subir e descer). Cada ponto do localizador vale 0,5° e o da rampa cerca de 0,14°: muito mais sensível que o VOR. Voe em direção às agulhas, com correções pequenas.',
+  ils: '<b>ILS.</b> A agulha vertical, presa no alto, é o localizador (esquerda e direita); a horizontal, presa à esquerda, é a rampa de 3° (subir e descer). Cada ponto do localizador vale 0,5° e o da rampa cerca de 0,14°: muito mais sensível que o VOR. Voe em direção às agulhas, com correções pequenas.',
 };
 function frame(t) {
   if (!active()) { raf = 0; return; }
