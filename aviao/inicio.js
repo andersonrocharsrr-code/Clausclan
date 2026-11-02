@@ -43,6 +43,11 @@ const MAIS = [
   ['cartas', 'Cartas aeronáuticas', 'Aprenda a ler o diagrama, a aproximação e a saída', '<path d="M4 5 L9 3 L15 5 L20 3 V19 L15 21 L9 19 L4 21Z"/><path d="M9 3 V19 M15 5 V21"/>'],
   ['plano', 'Computador de voo', 'Vento, combustível, peso e balanceamento', '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7 H16 M8 11 H10 M14 11 H16 M8 15 H10 M14 15 H16"/>'],
   ['nav', 'Navegação por instrumentos', 'VOR, HSI, ADF e ILS com missões', '<circle cx="12" cy="12" r="9"/><path d="M12 5 V19"/><path d="M9 8 L12 5 L15 8"/>'],
+  ['luzes', 'Luzes do avião e do aeroporto', 'Navegação, pista, PAPI e os sinais da torre', '<circle cx="12" cy="10" r="5"/><path d="M12 15 V21 M9 21 H15 M5 4 L7 6 M19 4 L17 6 M12 1 V3"/>'],
+  ['espaco', 'Espaço aéreo', 'Classes A a G, mínimos VFR e áreas especiais', '<path d="M3 20 H21 M6 20 V14 H18 V20 M8 14 V9 H16 V14 M10 9 V4 H14 V9"/>'],
+  ['regras', 'Regras do ar', 'Preferência, níveis de cruzeiro e circuito', '<path d="M5 19 L19 5 M5 5 L19 19"/><circle cx="12" cy="12" r="9"/>'],
+  ['aero', 'Aerodinâmica avançada', 'Fator de carga, efeito solo, esteira e parafuso', '<path d="M3 14 Q8 6 21 10 Q12 12 3 14Z"/><path d="M5 18 Q12 16 19 18"/>'],
+  ['tempo', 'Meteorologia prática', 'Frentes, gelo, microexplosão e carta SIGWX', '<path d="M7 16 H17 A4 4 0 0 0 16.5 8 A5.5 5.5 0 0 0 6 9.5 A3.3 3.3 0 0 0 7 16Z"/><path d="M9 19 L8 21 M13 19 L12 21 M17 19 L16 21"/>'],
   ['glossario', 'Glossário', 'Os termos em português e em inglês', '<path d="M5 4 H17 A2 2 0 0 1 19 6 V20 H7 A2 2 0 0 1 5 18Z"/><path d="M5 18 A2 2 0 0 1 7 16 H19"/><path d="M9 8 H15 M9 11 H13"/>'],
   ['catalogo', 'Catálogo 747', 'As categorias de peças do 747-8', '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>'],
 ];
