@@ -1383,4 +1383,4 @@ html.menu-lock, html.menu-lock body { overflow: hidden; overscroll-behavior: non
 .hs-pick .dz-pick__caret, .hs-pick .dz-pick__btn, .hs-pick .dz__list .dz-item { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .hs-spin-slow { animation: hsSpin 14s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .hs-spin-slow { animation: none !important; } }
-.hs-capa { width: 50%; object-position: 75% 35%; -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 45%); mask-image: linear-gradient(to right, transparent 0%, #000 45%); }
+.hs-capa { width: 56%; object-position: 60% 35%; -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 38%); mask-image: linear-gradient(to right, transparent 0%, #000 38%); }
