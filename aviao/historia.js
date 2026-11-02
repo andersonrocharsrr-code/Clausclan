@@ -303,6 +303,7 @@ const CAPS_DOUGLAS = [
       'Os outros três seguiram. Cruzaram o Japão, a China, a Índia, o Oriente Médio e a Europa, trocando motores pelo caminho, enfrentando tempestades de areia, calor de 50 graus e multidões que nunca tinham visto um avião.',
       'Em agosto, no Atlântico Norte, o Boston teve uma pane e pousou no mar perto das Ilhas Faroé. Os tripulantes foram resgatados, mas o avião afundou. Restavam dois.'],
     sabia: 'Ao longo da viagem, a expedição trocou de motor várias vezes. Peças de reposição tinham sido espalhadas com antecedência por navios e escritórios no mundo inteiro.',
+    foto: { src: 'assets/douglas-alasca.webp', legenda: 'Recriação do World Cruiser Seattle destruído numa montanha do Alasca, em 1924, e dos dois tripulantes partindo a pé pela neve (imagem ilustrativa)' },
     cena: () => `<rect width="320" height="180" class="hs-sky"/>${cloud(60, 50, 1.6, 0)}${cloud(200, 40, 1.8, 1)}${cloud(260, 90, 1.2, 2)}<path d="M0 180 L60 90 L100 130 L160 60 L230 140 L290 100 L320 120 V180Z" class="hs-fill-mount"/><path d="M160 60 L178 82 L142 82Z" class="hs-fill-snow"/>
       ${person(120, 170, false, 'hs-fill-ink', 0)}${person(140, 172, false, 'hs-fill-ink', .3)}` },
   { parte: 2, ano: '1924', lugar: 'Seattle', titulo: '175 dias depois',
