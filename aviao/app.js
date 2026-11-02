@@ -285,18 +285,15 @@ const GLOSS = [
 ];
 
 /* ---------------- Abas ---------------- */
-const TABS = ['pecas', 'escola', 'historia', 'desastres', 'cockpit', 'lab', 'meteo', 'radio', 'glossario', 'catalogo'];
+const TABS = ['inicio', 'pecas', 'escola', 'historia', 'desastres', 'cockpit', 'lab', 'meteo', 'radio', 'glossario', 'catalogo'];
 let current = null;
 function showTab(id, push) {
   if (typeof hideHint === 'function') hideHint();
-  if (!TABS.includes(id)) id = 'pecas';
+  if (!TABS.includes(id)) id = 'inicio';
   current = id;
   $$('.view').forEach((v) => { v.hidden = v.dataset.view !== id; });
-  $$('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.id === 'exploreBtn' ? id !== 'escola' : t.dataset.tab === id)));
-  const item = $(`#exploreMenu [data-tab="${id}"]`);
-  $$('#exploreMenu [data-tab]').forEach((a) => { if (a === item) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
-  if (item) $('#exploreSub').textContent = item.dataset.short || item.querySelector('b').textContent;
-  setExplore(false);
+  // Na barra de baixo: Escola e Cockpit acendem na própria seção; Início acende na tela inicial e nas seções abertas a partir dela
+  $$('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.id === 'bnInicio' ? !['escola', 'cockpit', 'lab'].includes(id) : t.dataset.tab === id)));
   if (push) { try { history.replaceState(null, '', '#' + id); } catch {} }
   if (id === 'cockpit') { sizeGauges(); startSim(); }
   if (id === 'lab') startLab();
@@ -304,20 +301,9 @@ function showTab(id, push) {
   if (id === 'radio') window.Radio?.start();
   if (id === 'historia') window.Historia?.start();
   if (id === 'desastres') window.Desastres?.start();
+  if (id === 'inicio') window.Inicio?.start();
   window.scrollTo({ top: 0 });
 }
-// Explorar: a aba abre a lista das seções
-function setExplore(open) {
-  const m = $('#exploreMenu'), b = $('#exploreBtn');
-  if (!m) return;
-  m.hidden = !open; b.setAttribute('aria-expanded', String(open));
-  // Com o menu aberto, a página de trás não rola: só a lista do menu se mexe
-  document.documentElement.classList.toggle('menu-lock', open);
-  if (open) (m.querySelector('[aria-current]') || m.querySelector('a')).focus({ preventScroll: true });
-}
-$('#exploreBtn').addEventListener('click', (e) => { e.stopPropagation(); setExplore($('#exploreMenu').hidden); });
-document.addEventListener('click', (e) => { if (!e.target.closest('.tabdrop')) setExplore(false); });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#exploreMenu').hidden) { setExplore(false); $('#exploreBtn').focus(); } });
 document.addEventListener('click', (e) => {
   const a = e.target.closest('[data-tab]');
   if (!a) return;
@@ -1196,6 +1182,7 @@ function closePanel() {
   return true;
 }
 $('#menuBtn').addEventListener('click', openPanel);
+$('#moreBtn')?.addEventListener('click', openPanel);
 $('#panelClose').addEventListener('click', () => { closePanel(); $('#menuBtn').focus(); });
 $('#panelBackdrop').addEventListener('click', closePanel);
 $('#panelBack').addEventListener('click', panelMenu);
@@ -1229,7 +1216,7 @@ if (NATIVE) {
     if (!$('#lessonND').hidden && $('#sidePanel').classList.contains('is-open')) { panelMenu(); return; }
     if (closePanel()) return;
     if (current === 'pecas' && planeView !== 'top') { setPlaneView('top'); return; }
-    if (current !== 'pecas') { showTab('pecas', true); return; }
+    if (current !== 'inicio') { showTab('inicio', true); return; }
     AppPlugin.minimizeApp();
   });
 }
@@ -1237,7 +1224,8 @@ if (NATIVE) {
 selPart = 'aileron'; setCraft('c172');
 renderProgress(); renderModules(); renderLesson();
 setCockpit('c172'); updateLab(); renderGloss();
-showTab(location.hash.slice(1) || 'pecas');
+window.Inicio?.init();
+showTab(location.hash.slice(1) || 'inicio');
 
 // Intro: radar ND que some sozinho; um toque pula
 (() => {
