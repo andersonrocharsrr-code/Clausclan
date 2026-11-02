@@ -414,7 +414,7 @@ const HISTORIAS = [
   { id: 'boeing', capa: 'assets/capa-boeing.webp', ano: '1881–1956', titulo: 'William Boeing', sub: 'Do estaleiro ao céu', h1: 'William Boeing: do estaleiro ao céu',
     lede: 'Como um comerciante de madeira que nunca tinha voado fundou uma das maiores fabricantes de aviões do mundo, com asas costuradas à mão, e como um escândalo no Senado o tirou da aviação. Seis partes, 20 capítulos.',
     fontes: 'Fontes: Museum of Flight (Seattle), HistoryLink.org, Smithsonian National Postal Museum, San Diego Air & Space Museum, Flying Magazine e o histórico oficial da Boeing.', partes: PARTES, caps: CAPS },
-  { id: 'douglas', ano: '1892–1981', titulo: 'Donald Douglas', sub: 'Da barbearia ao DC-3', h1: 'Donald Douglas: da barbearia ao DC-3',
+  { id: 'douglas', capa: 'assets/capa-douglas.webp', ano: '1892–1981', titulo: 'Donald Douglas', sub: 'Da barbearia ao DC-3', h1: 'Donald Douglas: da barbearia ao DC-3',
     lede: 'Como um cadete da Marinha apaixonado por aviões começou com 600 dólares nos fundos de uma barbearia, fez a primeira volta ao mundo de avião e criou o DC-3, o avião que tornou a aviação comercial possível. Sete partes, 24 capítulos.',
     fontes: 'Fontes: San Diego Air & Space Museum, Museum of Flight, Smithsonian National Air and Space Museum, Air & Space Forces Magazine, UPI e o histórico oficial da Boeing.', partes: PARTES_DOUGLAS, caps: CAPS_DOUGLAS },
 ];
