@@ -1431,3 +1431,5 @@ main.wrap { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 .rd__foto figcaption { padding: 12px 16px 14px; font-size: 14px; line-height: 1.5; color: var(--muted); }
 .rd__foto figcaption b { color: var(--ink); }
 .es-foto { margin-bottom: 18px; }
+/* As fotos do topo da Escola e do Rádio aparecem inteiras, sem corte */
+.rd__foto img { aspect-ratio: auto; height: auto; object-fit: contain; }
