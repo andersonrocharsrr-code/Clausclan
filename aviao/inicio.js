@@ -36,7 +36,7 @@ function render() {
     ['radio', '<img src="assets/radio-gns430.webp" alt="">', 'Rádio', radioFeitas ? `${radioFeitas} conversas feitas` : 'Fale com a torre'],
   ].map(([tab, fig, t, s]) => `<a class="in-tile" href="#${tab}" data-tab="${tab}"><span class="in-tile__fig">${fig}</span><b>${t}</b><span>${esc(s)}</span></a>`).join('');
   // As outras seções, que não estão na barra de baixo nem nos blocos de cima
-  $('#inMais').innerHTML = MAIS.map(([tab, t, s, p]) => `<a class="in-row" href="#${tab}" data-tab="${tab}"><span class="in-row__ico"><svg viewBox="0 0 24 24" aria-hidden="true">${p}</svg></span><span class="in-row__t"><b>${t}</b><span>${s}</span></span><span class="in-row__go" aria-hidden="true">›</span></a>`).join('');
+  $('#inMais').innerHTML = MAIS.map(([tab, t, s]) => `<a class="in-card" href="#${tab}" data-tab="${tab}"><span class="in-card__img"><img src="assets/card-${tab}.webp" alt="" loading="lazy" draggable="false"></span><span class="in-card__t"><b>${t}</b><span>${s}</span></span></a>`).join('');
 }
 const MAIS = [
   ['pecas', 'Peças do avião', 'Toque nas peças, raio-X e as vistas do 747', '<path d="M3 13 L10 11 L13 4 H15 L14 11 L21 12 V14 L14 14 L13 20 H11 L10 15 L3 15Z"/>'],
