@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=213">
+  <link rel="stylesheet" href="style.css?v=214">
 </head>
 <body>
   <!-- Intro: o avião decola pela pista iluminada e aparece o nome do app (toque para pular) -->
@@ -314,6 +314,10 @@
         <h1>Escola de voo</h1>
         <p class="lede">Oito módulos em ordem, do básico ao pouso. Cada lição termina com uma pergunta. Acerte para marcar como concluída.</p>
       </div>
+      <figure class="card rd__foto es-foto">
+        <img src="assets/escola-sala.webp" alt="Sala de aula de aviação com o quadro de teoria de voo" loading="lazy" draggable="false">
+        <figcaption><b>A sala de aula.</b> Antes de voar, todo piloto estuda a teoria de voo: as quatro forças, o perfil da asa e as superfícies de comando. <i>(imagem ilustrativa; os textos do quadro são decorativos)</i></figcaption>
+      </figure>
       <div class="school">
         <ol class="modules" id="moduleList"></ol>
         <article class="card lesson" id="lesson"></article>
@@ -1007,17 +1011,17 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=213"></script>
-  <script src="catalogo747.js?v=213"></script>
-  <script src="cockpit747.js?v=213"></script>
-  <script src="motor3d.js?v=213"></script>
-  <script src="motor747.js?v=213"></script>
-  <script src="meteo.js?v=213"></script>
-  <script src="radio.js?v=213"></script>
-  <script src="historia.js?v=213"></script>
-  <script src="desastres.js?v=213"></script>
-  <script src="inicio.js?v=213"></script>
-  <script src="app.js?v=213"></script>
+  <script src="avioes.js?v=214"></script>
+  <script src="catalogo747.js?v=214"></script>
+  <script src="cockpit747.js?v=214"></script>
+  <script src="motor3d.js?v=214"></script>
+  <script src="motor747.js?v=214"></script>
+  <script src="meteo.js?v=214"></script>
+  <script src="radio.js?v=214"></script>
+  <script src="historia.js?v=214"></script>
+  <script src="desastres.js?v=214"></script>
+  <script src="inicio.js?v=214"></script>
+  <script src="app.js?v=214"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
