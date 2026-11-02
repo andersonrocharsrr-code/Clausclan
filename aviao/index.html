@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=212">
+  <link rel="stylesheet" href="style.css?v=213">
 </head>
 <body>
   <!-- Intro: o avião decola pela pista iluminada e aparece o nome do app (toque para pular) -->
@@ -855,6 +855,10 @@
         <p class="lede">No rádio cada palavra tem um jeito certo de ser dita. Escolha uma situação, no solo, em voo ou numa emergência, e responda ao Solo, à Torre e ao Controle como um piloto de verdade.</p>
       </div>
       <div class="rd">
+        <figure class="card rd__foto">
+          <img src="assets/radio-gns430.webp" alt="Painel de um avião pequeno com o rádio Garmin GNS 430" loading="lazy" draggable="false">
+          <figcaption><b>O rádio do avião.</b> No meio, um Garmin GNS 430, que junta o rádio de voz (COM), o rádio de navegação (NAV) e o GPS. Em cima, o painel de áudio, onde o piloto escolhe o que ouvir no fone. <i>(imagem ilustrativa)</i></figcaption>
+        </figure>
         <div class="card rd__pickcard">
           <div class="rd__head"><div><span class="label">Escolha a conversa</span><h2>Situações de rádio</h2></div><span class="small" id="rdCount"></span></div>
           <div class="rd__pick" id="rdPick"></div>
@@ -1003,17 +1007,17 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=212"></script>
-  <script src="catalogo747.js?v=212"></script>
-  <script src="cockpit747.js?v=212"></script>
-  <script src="motor3d.js?v=212"></script>
-  <script src="motor747.js?v=212"></script>
-  <script src="meteo.js?v=212"></script>
-  <script src="radio.js?v=212"></script>
-  <script src="historia.js?v=212"></script>
-  <script src="desastres.js?v=212"></script>
-  <script src="inicio.js?v=212"></script>
-  <script src="app.js?v=212"></script>
+  <script src="avioes.js?v=213"></script>
+  <script src="catalogo747.js?v=213"></script>
+  <script src="cockpit747.js?v=213"></script>
+  <script src="motor3d.js?v=213"></script>
+  <script src="motor747.js?v=213"></script>
+  <script src="meteo.js?v=213"></script>
+  <script src="radio.js?v=213"></script>
+  <script src="historia.js?v=213"></script>
+  <script src="desastres.js?v=213"></script>
+  <script src="inicio.js?v=213"></script>
+  <script src="app.js?v=213"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
