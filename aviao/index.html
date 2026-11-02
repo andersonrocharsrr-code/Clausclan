@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=227">
+  <link rel="stylesheet" href="style.css?v=231">
 </head>
 <body>
   <!-- Intro: o avião decola pela pista iluminada e aparece o nome do app (toque para pular) -->
@@ -958,6 +958,97 @@
       </div>
     </section>
 
+    <!-- COMPUTADOR DE VOO -->
+    <section class="view" id="view-plano" data-view="plano" hidden>
+      <div class="view__head">
+        <p class="eyebrow">Planejamento de voo</p>
+        <h1>Computador de voo</h1>
+        <p class="lede">As contas que o piloto faz antes de sair: a proa para compensar o vento, quanto vento cruzado tem na pista, o combustível com a reserva, o peso e o centro de gravidade e o efeito do calor e da altitude. Os números do avião são do Hangar H-1, um monomotor de 4 lugares fictício.</p>
+      </div>
+      <div class="fv">
+        <div class="card fv-card" id="fvVentoCard">
+          <span class="label">1 · Triângulo de vento</span><h2>Proa e velocidade no solo</h2>
+          <div class="fv-grid"><label class="fv-f"><span>Curso</span><input id="fvCurso" type="number" inputmode="decimal" step="1" value="090"><em>°</em></label><label class="fv-f"><span>TAS</span><input id="fvTas" type="number" inputmode="decimal" step="1" value="110"><em>kt</em></label><label class="fv-f"><span>Vento de</span><input id="fvWd" type="number" inputmode="decimal" step="1" value="040"><em>°</em></label><label class="fv-f"><span>Vento</span><input id="fvWv" type="number" inputmode="decimal" step="1" value="20"><em>kt</em></label></div>
+          <div class="fv-res" id="fvVentoRes"></div>
+          <div class="fv-draw" id="fvVentoSvg"></div>
+          <p class="small">O vento empurra o avião para o lado. Para seguir o curso, o nariz aponta um pouco para o lado de onde vem o vento: é a correção de deriva. A seta rosa é o avião no ar, a azul o vento e a verde o caminho sobre o chão.</p>
+        </div>
+        <div class="card fv-card" id="fvPistaCard">
+          <span class="label">2 · Vento na pista</span><h2>De frente e de través</h2>
+          <div class="fv-grid"><label class="fv-f"><span>Pista</span><input id="fvPista" type="number" inputmode="decimal" step="1" value="09"></label><label class="fv-f"><span>Vento de</span><input id="fvPwd" type="number" inputmode="decimal" step="10" value="130"><em>°</em></label><label class="fv-f"><span>Vento</span><input id="fvPwv" type="number" inputmode="decimal" step="1" value="20"><em>kt</em></label></div>
+          <div class="fv-res" id="fvPistaRes"></div>
+          <p class="small">Regra prática para o través: 30° de diferença = metade do vento, 45° = 70%, 60° ou mais = quase todo. Pousa-se sempre o mais de frente possível para o vento.</p>
+        </div>
+        <div class="card fv-card" id="fvCombCard">
+          <span class="label">3 · Combustível</span><h2>Quanto levar</h2>
+          <div class="fv-grid"><label class="fv-f"><span>Distância</span><input id="fvDist" type="number" inputmode="decimal" step="1" value="180"><em>NM</em></label><label class="fv-f"><span>GS</span><input id="fvGs" type="number" inputmode="decimal" step="1" value="120"><em>kt</em></label><label class="fv-f"><span>Consumo</span><input id="fvCons" type="number" inputmode="decimal" step="1" value="34"><em>L/h</em></label>
+            <label class="fv-f"><span>Voo</span><select id="fvTipo"><option value="dia">VFR de dia</option><option value="noite">VFR à noite</option><option value="ifr">IFR</option></select></label>
+            <div id="fvAltWrap" hidden><label class="fv-f"><span>Até a alternativa</span><input id="fvAlt" type="number" inputmode="decimal" step="1" value="40"><em>NM</em></label></div></div>
+          <div id="fvCombRes"></div>
+          <button type="button" class="btn-ghost" id="fvLevar">Levar este combustível para o peso e balanceamento</button>
+          <p class="small">Reserva mínima para aviões no Brasil (RBAC 91): VFR de dia, 30 minutos além do destino; VFR à noite, 45 minutos; IFR, voar até o destino, depois até a alternativa e ainda 45 minutos. É o mínimo legal: muitos pilotos levam mais.</p>
+        </div>
+        <div class="card fv-card" id="fvPesoCard">
+          <span class="label">4 · Peso e balanceamento · Hangar H-1</span><h2>O avião está dentro dos limites?</h2>
+          <div class="fv-grid"><label class="fv-f"><span>Frente</span><input id="fvFrente" type="number" inputmode="decimal" step="1" value="160"><em>kg</em></label><label class="fv-f"><span>Trás</span><input id="fvTras" type="number" inputmode="decimal" step="1" value="0"><em>kg</em></label><label class="fv-f"><span>Combustível</span><input id="fvLitros" type="number" inputmode="decimal" step="1" value="100"><em>L</em></label><label class="fv-f"><span>Bagagem</span><input id="fvBag" type="number" inputmode="decimal" step="1" value="20"><em>kg</em></label></div>
+          <div class="fv-draw" id="fvPesoSvg"></div>
+          <div id="fvPesoRes"></div>
+          <p class="small">Momento = peso x braço (a distância até a linha de referência, no nariz). O CG é o momento total dividido pelo peso total. Combustível pesa 0,72 kg por litro. CG muito à frente deixa o avião pesado de nariz, difícil de arredondar no pouso; muito atrás, instável e perigoso no estol.</p>
+        </div>
+        <div class="card fv-card" id="fvDensCard">
+          <span class="label">5 · Altitude-densidade</span><h2>Calor e altitude</h2>
+          <div class="fv-grid"><label class="fv-f"><span>Elevação</span><input id="fvElev" type="number" inputmode="decimal" step="10" value="3000"><em>ft</em></label><label class="fv-f"><span>QNH</span><input id="fvQnh" type="number" inputmode="decimal" step="1" value="1003"><em>hPa</em></label><label class="fv-f"><span>Temperatura</span><input id="fvOat" type="number" inputmode="decimal" step="1" value="30"><em>°C</em></label></div>
+          <div class="fv-res" id="fvDensRes"></div>
+          <p class="small">Ar quente e alto é ar fino: a asa sustenta menos e o motor rende menos. Altitude-pressão = elevação + (1013 - QNH) x 30 ft. Altitude-densidade ≈ altitude-pressão + 120 x (temperatura - temperatura ISA).</p>
+        </div>
+        <div class="card fv-card fv-conv">
+          <span class="label">6 · Conversões</span>
+          <div class="fv-grid"><label class="fv-f"><span>Valor</span><input id="fvConvV" type="number" inputmode="decimal" step="any" value="100"></label><label class="fv-f"><span>Unidades</span><select id="fvConvU"></select></label></div>
+          <p class="fv-convres" id="fvConvRes"></p>
+          <div class="fv-grid"><label class="fv-f"><span>Temperatura</span><input id="fvTempC" type="number" inputmode="decimal" step="any" value="15"><em>°C</em></label></div>
+          <p class="fv-convres" id="fvTempRes"></p>
+        </div>
+        <div class="card fv-card fv-ex">
+          <span class="label">Exercícios</span>
+          <p class="small" id="fvExN"></p>
+          <p class="fv-exq" id="fvExQ"></p>
+          <div class="fv-exrow"><input id="fvExIn" type="number" inputmode="decimal" step="any" placeholder="Sua resposta"><button type="button" class="btn" id="fvExOk">Conferir</button></div>
+          <p class="fv-fb" id="fvExFb" hidden></p>
+          <div class="fv-exnav"><button type="button" class="btn-ghost" id="fvExPrev">‹ Anterior</button><button type="button" class="btn-ghost" id="fvExIr">Abrir a calculadora</button><button type="button" class="btn-ghost" id="fvExNext">Próximo ›</button></div>
+        </div>
+        <p class="small fv-aviso">O Hangar H-1 é um avião fictício. Para voar de verdade, use sempre o manual (POH) do seu avião e as regras em vigor.</p>
+      </div>
+    </section>
+
+    <!-- NAVEGAÇÃO POR INSTRUMENTOS -->
+    <section class="view" id="view-nav" data-view="nav" hidden>
+      <div class="view__head">
+        <p class="eyebrow">Navegação por instrumentos</p>
+        <h1>VOR, ADF e ILS na prática</h1>
+        <p class="lede">Dentro das nuvens, o piloto não vê o chão: ele se guia por estações de rádio e pelos instrumentos. Aqui você voa um avião sobre o mapa e vê, ao mesmo tempo, o que cada instrumento mostra. Depois, esconda o mapa e tente só pelos instrumentos.</p>
+      </div>
+      <div class="nv">
+        <div class="card nv__top">
+          <label class="nv__mis"><span class="label">Missão</span><select id="nvMis"></select></label>
+          <p class="nv__brief" id="nvBrief"></p>
+          <div class="seg seg--sm nv__modo" id="nvModo" role="group" aria-label="Instrumento"><button type="button" data-m="cdi">VOR</button><button type="button" data-m="hsi">HSI</button><button type="button" data-m="adf">ADF</button><button type="button" data-m="ils">ILS</button></div>
+          <p class="nv-status" id="nvStatus" role="status"></p>
+        </div>
+        <div class="nv__sim">
+          <canvas id="nvMapa" class="nv__mapa" aria-label="Mapa visto de cima com o avião e a estação"></canvas>
+          <canvas id="nvInst" class="nv__inst" aria-label="Instrumento de navegação"></canvas>
+        </div>
+        <div class="nv__leit" id="nvLeit"></div>
+        <div class="card nv__ctl" id="nvCtl">
+          <div class="nv__row"><span class="label">Proa <b id="nvHdg"></b></span><div class="nv__btns"><button type="button" data-h="-15">−15</button><button type="button" data-h="-5">−5</button><button type="button" data-h="5">+5</button><button type="button" data-h="15">+15</button></div></div>
+          <div class="nv__row" id="nvObsBox"><span class="label">OBS / curso <b id="nvObs"></b></span><div class="nv__btns"><button type="button" data-o="-10">−10</button><button type="button" data-o="-1">−1</button><button type="button" data-o="1">+1</button><button type="button" data-o="10">+10</button></div></div>
+          <div class="nv__row" id="nvVs" hidden><span class="label">Razão (ft/min)</span><div class="nv__btns"><button type="button" data-v="0" aria-pressed="true">0</button><button type="button" data-v="-400">−400</button><button type="button" data-v="-600">−600</button><button type="button" data-v="-800">−800</button></div></div>
+          <div class="nv__foot"><button type="button" class="btn-ghost" id="nvReset">Recomeçar</button><button type="button" class="btn-ghost" id="nvMapaBtn">Esconder o mapa</button></div>
+        </div>
+        <div class="card"><p class="nv__expl" id="nvExpl"></p><p class="small">As estações e as posições são fictícias. Para simplificar, o simulador não tem vento e considera o norte magnético igual ao verdadeiro. O tempo passa 15 vezes mais rápido.</p></div>
+      </div>
+    </section>
+
     <!-- E · GLOSSÁRIO -->
     <section class="view" id="view-glossario" data-view="glossario" hidden>
       <div class="view__head">
@@ -1031,18 +1122,20 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=227"></script>
-  <script src="catalogo747.js?v=227"></script>
-  <script src="cockpit747.js?v=227"></script>
-  <script src="motor3d.js?v=227"></script>
-  <script src="motor747.js?v=227"></script>
-  <script src="meteo.js?v=227"></script>
-  <script src="radio.js?v=227"></script>
-  <script src="historia.js?v=227"></script>
-  <script src="desastres.js?v=227"></script>
-  <script src="cartas.js?v=227"></script>
-  <script src="inicio.js?v=227"></script>
-  <script src="app.js?v=227"></script>
+  <script src="avioes.js?v=231"></script>
+  <script src="catalogo747.js?v=231"></script>
+  <script src="cockpit747.js?v=231"></script>
+  <script src="motor3d.js?v=231"></script>
+  <script src="motor747.js?v=231"></script>
+  <script src="meteo.js?v=231"></script>
+  <script src="radio.js?v=231"></script>
+  <script src="historia.js?v=231"></script>
+  <script src="desastres.js?v=231"></script>
+  <script src="cartas.js?v=231"></script>
+  <script src="plano.js?v=231"></script>
+  <script src="nav.js?v=231"></script>
+  <script src="inicio.js?v=231"></script>
+  <script src="app.js?v=231"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
