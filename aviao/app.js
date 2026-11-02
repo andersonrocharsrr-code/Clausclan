@@ -292,7 +292,8 @@ function showTab(id, push) {
   if (!TABS.includes(id)) id = 'pecas';
   current = id;
   $$('.view').forEach((v) => { v.hidden = v.dataset.view !== id; });
-  $$('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.id === 'exploreBtn' ? id !== 'escola' : t.dataset.tab === id)));
+  // Na barra de baixo: Início, Escola e Cockpit acendem na própria seção; Explorar acende nas outras
+  $$('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.id === 'exploreBtn' ? !['pecas', 'escola', 'cockpit'].includes(id) : t.dataset.tab === id)));
   const item = $(`#exploreMenu [data-tab="${id}"]`);
   $$('#exploreMenu [data-tab]').forEach((a) => { if (a === item) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   if (item) $('#exploreSub').textContent = item.dataset.short || item.querySelector('b').textContent;
@@ -1196,6 +1197,7 @@ function closePanel() {
   return true;
 }
 $('#menuBtn').addEventListener('click', openPanel);
+$('#moreBtn')?.addEventListener('click', openPanel);
 $('#panelClose').addEventListener('click', () => { closePanel(); $('#menuBtn').focus(); });
 $('#panelBackdrop').addEventListener('click', closePanel);
 $('#panelBack').addEventListener('click', panelMenu);

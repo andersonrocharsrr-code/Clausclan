@@ -1384,3 +1384,19 @@ html.menu-lock, html.menu-lock body { overflow: hidden; overscroll-behavior: non
 .hs-spin-slow { animation: hsSpin 14s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .hs-spin-slow { animation: none !important; } }
 .hs-capa { width: 56%; object-position: 60% 35%; -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 38%); mask-image: linear-gradient(to right, transparent 0%, #000 38%); }
+
+/* Barra de navegação de baixo, no estilo dos aplicativos de celular, com o rosa do app */
+.bnav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); align-items: stretch;
+  padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px)); background: var(--panel); border-top: 1px solid var(--line); box-shadow: 0 -6px 24px rgba(0,0,0,.08); }
+.bnav__drop { position: static; display: grid; }
+.bnav__it { display: grid; justify-items: center; align-content: center; gap: 3px; min-height: 56px; padding: 4px 0; border: 0; background: none; color: var(--muted); font: 600 11px var(--body); text-decoration: none; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.bnav__ico { width: 40px; height: 30px; padding: 4px 8px; border-radius: 12px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: background .15s, color .15s; }
+.bnav__it[aria-selected="true"] { color: var(--magenta); }
+.bnav__it[aria-selected="true"] .bnav__ico { background: var(--sel); }
+.bnav__it:active .bnav__ico { transform: scale(.92); }
+.bnav__it:focus { outline: none; } .bnav__it:focus-visible .bnav__ico { outline: 2px solid var(--magenta); outline-offset: 2px; }
+.bnav .tabmenu { position: fixed; top: auto; left: 12px; right: 12px; width: auto; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); max-height: min(70dvh, 560px); }
+@media (min-width: 720px) { .bnav { left: 50%; right: auto; width: 520px; transform: translateX(-50%); bottom: 12px; border: 1px solid var(--line); border-radius: 20px; padding-bottom: 6px; }
+  .bnav .tabmenu { left: 50%; right: auto; width: 420px; transform: translateX(-50%); bottom: 90px; } }
+main.wrap { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+.bnav .bnav__it.tab { border-bottom: 0; padding: 4px 0; white-space: normal; }
