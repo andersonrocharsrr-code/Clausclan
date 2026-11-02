@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=222">
+  <link rel="stylesheet" href="style.css?v=223">
 </head>
 <body>
   <!-- Intro: o avião decola pela pista iluminada e aparece o nome do app (toque para pular) -->
@@ -671,7 +671,7 @@
       <div class="met">
         <figure class="card rd__foto">
           <img src="assets/meteo-radar.webp" alt="Tela de navegação de um Boeing 737 com o radar meteorológico mostrando áreas de chuva em verde, amarelo e vermelho" loading="lazy" draggable="false">
-          <figcaption><b>O radar meteorológico na cabine.</b> Na tela de navegação (ND), as chuvas aparecem por cores: verde é chuva leve, amarelo é moderada e vermelho é forte, onde costuma haver turbulência. Os arcos marcam a distância à frente do avião, que fica embaixo, no centro. <i>(imagem ilustrativa)</i></figcaption>
+          <figcaption><b>O radar meteorológico na cabine.</b> Na tela de navegação (ND), as chuvas aparecem por cores: verde é chuva leve, amarelo é moderada e vermelho é forte, onde costuma haver turbulência. O avião é o símbolo embaixo, no centro, e os arcos marcam a distância à frente dele. No alto, a trajetória (TRK 240). Nos cantos, a velocidade e o vento, o próximo ponto da rota (LUVOX), o radar ligado com a antena inclinada 2° para cima e o rádio VOR. <i>(imagem ilustrativa)</i></figcaption>
         </figure>
         <div class="card met__atlas">
           <canvas id="metAtlas" aria-label="Os tipos de nuvens por altitude. Toque numa nuvem."></canvas>
@@ -1003,17 +1003,17 @@
       </div>
     </section>
   </aside>
-  <script src="avioes.js?v=222"></script>
-  <script src="catalogo747.js?v=222"></script>
-  <script src="cockpit747.js?v=222"></script>
-  <script src="motor3d.js?v=222"></script>
-  <script src="motor747.js?v=222"></script>
-  <script src="meteo.js?v=222"></script>
-  <script src="radio.js?v=222"></script>
-  <script src="historia.js?v=222"></script>
-  <script src="desastres.js?v=222"></script>
-  <script src="inicio.js?v=222"></script>
-  <script src="app.js?v=222"></script>
+  <script src="avioes.js?v=223"></script>
+  <script src="catalogo747.js?v=223"></script>
+  <script src="cockpit747.js?v=223"></script>
+  <script src="motor3d.js?v=223"></script>
+  <script src="motor747.js?v=223"></script>
+  <script src="meteo.js?v=223"></script>
+  <script src="radio.js?v=223"></script>
+  <script src="historia.js?v=223"></script>
+  <script src="desastres.js?v=223"></script>
+  <script src="inicio.js?v=223"></script>
+  <script src="app.js?v=223"></script>
   <script>
     // No APK os arquivos já vêm dentro do app; o service worker é só para o site.
     const nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
