@@ -229,16 +229,17 @@ function pintarTotais() {
   sincronizar();
   if (avisosProntos) { pintarSino(); agendarDepois(); }
   const c = calcular();
+  const liberado = licencaOk();
   $$('[data-c]').forEach((el) => {
     const v = c[el.dataset.c];
-    el.textContent = R$(v);
+    el.textContent = liberado ? R$(v) : '—';
     if (el.dataset.c === 'falta') {
       el.classList.toggle('neg', v !== 0);
       el.classList.toggle('pos', v === 0 && c.aDepositar > 0);
     }
   });
   $$('[data-status]').forEach((el) => {
-    el.textContent = c.aDepositar < 0 ? `As despesas passaram o recebimento em ${R$(-c.aDepositar)}`
+    el.textContent = !liberado ? '🔒 Licença vencida: os cálculos estão travados.' : c.aDepositar < 0 ? `As despesas passaram o recebimento em ${R$(-c.aDepositar)}`
       : c.falta > 0 ? `Falta depositar ${R$(c.falta)}`
         : c.falta < 0 ? `Depositou ${R$(-c.falta)} a mais`
           : c.aDepositar > 0 ? '✓ Tudo depositado' : '';
@@ -256,7 +257,7 @@ function pintarTotais() {
   const quem = [st.nome, st.cidade].filter(Boolean).join(' · ');
   $('#subtitulo').innerHTML = quem || d ? `<span class="sub__quem">${esc(quem)}</span>${d ? `<span class="sub__data">${quem ? ' · ' : ''}${esc(d)}</span>` : ''}`
     : 'Novo fechamento';
-  $('#feitasTotal').textContent = st.feitas.length ? `Total da semana: ${numero(st.qtNotasDeixadas)} nota(s) · ${R$(c.valorDeixado)}` : '';
+  $('#feitasTotal').textContent = st.feitas.length && liberado ? `Total da semana: ${numero(st.qtNotasDeixadas)} nota(s) · ${R$(c.valorDeixado)}` : '';
   pintarRelatorio();
 }
 
@@ -1888,7 +1889,7 @@ function relatorio(dia) {
 const relDia = () => $('#relData').value || hoje();
 function pintarRelatorio() {
   const pre = $('#relTexto');
-  if (pre) pre.textContent = relatorio(relDia());
+  if (pre) pre.textContent = licencaOk() ? relatorio(relDia()) : '🔒 Licença vencida: o relatório fica travado até a licença ser renovada.';
 }
 function pintarCamposRel() {
   const g = ls.get(KEY_REL, {});
@@ -1950,9 +1951,10 @@ async function copiar(txt) {
   }
 }
 $('#btnRelCopiar').addEventListener('click', async () => {
+  if (!exigirLicenca()) return;
   toast((await copiar(relatorio(relDia()))) ? 'Relatório copiado ✓ Cole no WhatsApp.' : 'Não deu para copiar.');
 });
-$('#btnRelEnviar').addEventListener('click', () => compartilhar(relatorio(relDia()), 'Mandar relatório'));
+$('#btnRelEnviar').addEventListener('click', () => exigirLicenca() && compartilhar(relatorio(relDia()), 'Mandar relatório'));
 
 /* ---------- resumo para WhatsApp ---------- */
 function resumo() {
@@ -1996,7 +1998,7 @@ async function compartilhar(txt, titulo) {
   }
   open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
 }
-$('#btnWhats').addEventListener('click', () => compartilhar(resumo(), 'Mandar resumo'));
+$('#btnWhats').addEventListener('click', () => exigirLicenca() && compartilhar(resumo(), 'Mandar resumo'));
 
 /* ---------- impressão no formato da folha ---------- */
 /* ---------- gerar a folha CAIXA da semana (imagem igual à folha impressa) ---------- */
@@ -2058,6 +2060,7 @@ const nomeArquivo = () => `caixa-${(st.nome || 'vendedor').toLowerCase().replace
 let imagemCaixa = null;
 
 $('#btnGerar').addEventListener('click', async () => {
+  if (!exigirLicenca()) return;
   carregando(true);
   progressoSimulado('Gerando a folha do caixa…');
   try {
@@ -2315,5 +2318,143 @@ $('#btnRota')?.addEventListener('click', async () => {
 // App reaberto com a rota ligada: volta a contar sozinho.
 if (rotaEstado().ativa) ligarGps();
 pintarKm();
+
+/* ---------- Licença por celular (código fixo do aparelho + validade assinada pelo servidor) ---------- */
+// O servidor (Cloudflare) diz até quando este celular está pago e assina a resposta; o app confere a assinatura com
+// a chave pública (CAIXA_LICENCA.pub). Sem internet vale a última validade guardada, mais 2 dias de folga. Vencida (ou
+// bloqueada pelo dono), os cálculos ficam travados. Sem CAIXA_LICENCA (licenca-config.js vazio) não há trava.
+// (Só funções e var: pintarTotais chama licencaOk antes desta parte do arquivo rodar.)
+var KEY_LIC = 'caixa.licenca'; // eslint-disable-line no-var
+var FOLGA_LIC = 2 * 86400000; // eslint-disable-line no-var
+function licCfg() { const c = window.CAIXA_LICENCA; return c && c.url && c.pub ? c : null; }
+function b64urlBytes(s) {
+  const b = atob(String(s).replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4));
+  return Uint8Array.from(b, (ch) => ch.charCodeAt(0));
+}
+// Confere a licença assinada; devolve { ate, emitido } ou null.
+function lerLicenca(token, codigo) {
+  const cfg = licCfg();
+  if (!cfg || !token || !window.nacl) return null;
+  try {
+    const [m, sig] = String(token).split('.');
+    const msg = b64urlBytes(m);
+    if (!window.nacl.sign.detached.verify(msg, b64urlBytes(sig), b64urlBytes(cfg.pub))) return null;
+    const [cod, ate, emitido] = new TextDecoder().decode(msg).split('|');
+    if (cod !== codigo) return null;
+    return { ate: Number(ate) || 0, emitido: Number(emitido) || 0 };
+  } catch { return null; }
+}
+// Situação da licença: { ativa, ok, motivo, ate, codigo }.
+function licencaEstado() {
+  if (!licCfg()) return { ativa: false, ok: true };
+  const l = ls.get(KEY_LIC, {});
+  if (!l.codigo) return { ativa: true, ok: false, motivo: 'verificando' };
+  const v = lerLicenca(l.token, l.codigo);
+  const agora = Date.now();
+  // Relógio atrasado de propósito (para esticar a validade): mais de 2 h antes do último horário visto.
+  if (l.visto && agora < l.visto - 2 * 3600000) return { ativa: true, ok: false, motivo: 'relogio', codigo: l.codigo };
+  if (!v) return { ativa: true, ok: false, motivo: l.token ? 'invalida' : 'sem', codigo: l.codigo };
+  if (l.bloqueado) return { ativa: true, ok: false, motivo: 'bloqueado', codigo: l.codigo, ate: v.ate };
+  if (!v.ate) return { ativa: true, ok: false, motivo: 'sem', codigo: l.codigo };
+  if (agora > v.ate + FOLGA_LIC) return { ativa: true, ok: false, motivo: 'vencida', codigo: l.codigo, ate: v.ate };
+  return { ativa: true, ok: true, codigo: l.codigo, ate: v.ate };
+}
+function licencaOk() { return licencaEstado().ok; }
+function exigirLicenca() {
+  if (licencaOk()) return true;
+  toast('🔒 Licença vencida: fale com o responsável para renovar.');
+  abrirLicenca();
+  return false;
+}
+// Código fixo do aparelho (8 letras/números) a partir do identificador do Android.
+async function codigoDoAparelho() {
+  const l = ls.get(KEY_LIC, {});
+  if (l.codigo) return l.codigo;
+  let id = null;
+  try { id = (await plugin('Device')?.getId())?.identifier || null; } catch { /* sem o plugin */ }
+  if (!id) { // navegador: identificador guardado no próprio aparelho
+    id = ls.get('caixa.aparelho', null);
+    if (!id) { id = uid() + uid(); ls.set('caixa.aparelho', id); }
+  }
+  const h = window.nacl.hash(new TextEncoder().encode('caixa:' + id));
+  const ALF = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c = '';
+  for (let i = 0; i < 8; i++) c += ALF[h[i] % 32];
+  const codigo = `${c.slice(0, 4)}-${c.slice(4)}`;
+  ls.set(KEY_LIC, { ...ls.get(KEY_LIC, {}), codigo });
+  return codigo;
+}
+var licBuscando = false; // eslint-disable-line no-var
+async function atualizarLicenca(avisar = false) {
+  const cfg = licCfg();
+  if (!cfg || licBuscando) return;
+  licBuscando = true;
+  try {
+    const codigo = await codigoDoAparelho();
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 10000);
+    const q = new URLSearchParams({ c: codigo, n: st.nome || '', p: NATIVO ? 'android' : 'web' });
+    const r = await fetch(`${cfg.url.replace(/\/$/, '')}/licenca?${q}`, { signal: ctl.signal, cache: 'no-store' });
+    clearTimeout(t);
+    const j = await r.json();
+    const v = lerLicenca(j.licenca, codigo);
+    if (v) {
+      const antes = licencaOk();
+      // O horário do servidor corrige o "último horário visto" (se o relógio do celular estiver adiantado, volta ao normal).
+      ls.set(KEY_LIC, { codigo, token: j.licenca, bloqueado: !!j.bloqueado, visto: v.emitido, conferidoEm: Date.now() });
+      if (antes !== licencaOk()) pintarTotais();
+      if (avisar) toast(licencaOk() ? `Licença em dia ✓ Vale até ${new Date(v.ate).toLocaleDateString('pt-BR')}` : 'Licença ainda vencida.');
+    } else if (avisar) toast('Resposta do servidor inválida.');
+  } catch { if (avisar) toast('Sem internet: não deu para verificar agora.'); } finally {
+    licBuscando = false;
+    pintarLicenca();
+  }
+}
+// Guarda o maior horário já visto (para perceber relógio voltado para trás).
+function marcarHorario() {
+  const l = ls.get(KEY_LIC, {});
+  if (l.codigo && Date.now() > (l.visto || 0)) { l.visto = Date.now(); ls.set(KEY_LIC, l); }
+}
+function pintarLicenca() {
+  const e = licencaEstado();
+  const box = $('#licAviso');
+  if (!box) return;
+  const dias = e.ate ? Math.ceil((e.ate - Date.now()) / 86400000) : 0;
+  const mostrar = e.ativa && (!e.ok || dias <= 3);
+  box.hidden = !mostrar;
+  if (mostrar) {
+    box.className = 'lic-aviso ' + (e.ok ? 'lic-aviso--quase' : 'lic-aviso--travado');
+    box.innerHTML = e.ok
+      ? `⏳ A licença vence ${dias <= 0 ? 'hoje' : `em ${dias} dia(s)`}. Fale com o responsável para renovar.`
+      : `🔒 <b>${e.motivo === 'relogio' ? 'A data do celular está errada' : e.motivo === 'bloqueado' ? 'Celular bloqueado'
+        : e.motivo === 'verificando' || e.motivo === 'sem' ? 'Licença não ativada' : 'Licença vencida'}</b>: os cálculos estão travados. Toque aqui.`;
+  }
+  $('#licCodigo') && ($('#licCodigo').textContent = e.codigo || ls.get(KEY_LIC, {}).codigo || '…');
+  $('#licStatus') && ($('#licStatus').textContent = !e.ativa ? 'Licença não exigida nesta versão.'
+    : e.ok ? `Em dia ✓ Vale até ${new Date(e.ate).toLocaleDateString('pt-BR')}.`
+      : e.motivo === 'relogio' ? 'A data/hora do celular está atrasada. Ajuste para a data certa (automática) e toque em "Verificar agora".'
+        : e.motivo === 'bloqueado' ? 'Este celular foi bloqueado pelo responsável.'
+          : e.motivo === 'vencida' ? `Venceu em ${new Date(e.ate).toLocaleDateString('pt-BR')}. Fale com o responsável; depois do pagamento, toque em "Verificar agora" com internet.`
+            : 'Ainda não ativada. Mande o código acima para o responsável e, com internet, toque em "Verificar agora".');
+}
+function abrirLicenca() {
+  pintarLicenca();
+  $('#dlgLista').open && $('#dlgLista').close();
+  $('#dlgLic').showModal();
+}
+if (licCfg()) {
+  codigoDoAparelho().then(() => { marcarHorario(); pintarLicenca(); pintarTotais(); atualizarLicenca(); }).catch(() => {});
+  addEventListener('online', () => atualizarLicenca());
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { marcarHorario(); atualizarLicenca(); pintarTotais(); } });
+  setInterval(() => { marcarHorario(); atualizarLicenca(); pintarTotais(); }, 30 * 60000);
+}
+$('#licAviso')?.addEventListener('click', abrirLicenca);
+$('#btnLic')?.addEventListener('click', abrirLicenca);
+$('#licVerificar')?.addEventListener('click', () => atualizarLicenca(true));
+$('#licCopiar')?.addEventListener('click', async () => {
+  const c = ls.get(KEY_LIC, {}).codigo;
+  if (c) toast((await copiar(`Código do meu celular no Caixa: ${c}`)) ? 'Código copiado ✓ Mande para o responsável.' : c);
+});
+pintarLicenca();
 
 if (!NATIVO && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

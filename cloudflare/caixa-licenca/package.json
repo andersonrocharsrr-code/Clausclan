@@ -1,0 +1,11 @@
+{
+  "name": "caixa-licenca",
+  "private": true,
+  "description": "Servidor de licenças do app Caixa (Cloudflare Worker). Publicado pelo GitHub Actions.",
+  "dependencies": {
+    "tweetnacl": "1.0.3"
+  },
+  "devDependencies": {
+    "wrangler": "4.149.0"
+  }
+}

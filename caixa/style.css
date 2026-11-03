@@ -390,3 +390,9 @@ body{overflow-x:clip}
 .item--pila{grid-template-columns:1fr 1fr}
 .item--pila .item__tipo{grid-column:1/-1}
 .item__refeicao{grid-column:1/-1;display:flex;flex-direction:column;gap:4px}
+/* Licença */
+.lic-aviso{display:block;width:100%;text-align:left;font:inherit;font-size:14px;line-height:1.4;padding:12px 14px;margin:0 0 12px;border-radius:14px;cursor:pointer}
+.lic-aviso[hidden]{display:none}
+.lic-aviso--travado{background:rgba(220,38,38,.12);border:1px solid rgba(220,38,38,.4);color:var(--ink)}
+.lic-aviso--quase{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:var(--ink)}
+.lic-codigo{font:700 28px/1.2 ui-monospace,monospace;letter-spacing:.08em;text-align:center;margin:6px 0 10px;user-select:all}
