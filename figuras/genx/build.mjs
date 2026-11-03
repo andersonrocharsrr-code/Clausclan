@@ -21,7 +21,7 @@ const W = 760, H = 560;
 const Z0 = 100;                                    // altura do eixo do motor
 const AX = G.frameOf([0, 0, Z0], [1, 0, 0], [0, 1, 0], [0, 0, 1]);
 const on = (s, r, deg) => G.pointOf(AX, s, r, deg * DEG);   // ponto no motor: s ao longo do eixo, r raio, ângulo (0 = +y, 90 = cima)
-const LIFT = 46, AFT = 44;
+const LIFT = 64, AFT = 44;
 
 // ---------- Explosão: módulos e para onde vão ----------
 const PIECES = {
@@ -36,7 +36,7 @@ const PIECES = {
   hptcase: { name: "Carcaça da turbina de alta", say: "carcaça da HPT · anel de ar que controla a folga das pás", move: [0, 0, LIFT] },
   hpt: { name: "Turbina de alta (rotor)", say: "turbina de alta · 2 estágios · gira o compressor de alta (N2)", move: [0, 0, 0] },
   lptcase: { name: "Carcaça da turbina de baixa", say: "carcaça da LPT · anéis de ar que esfriam a carcaça", move: [AFT, 0, LIFT] },
-  lpt: { name: "Turbina de baixa (rotor)", say: "turbina de baixa · 6 estágios · gira o fan e o booster (N1)", move: [AFT, 0, 0] },
+  lpt: { name: "Turbina de baixa (rotor)", say: "turbina de baixa · 6 estágios · gira o fan e o booster (N1)", move: [AFT, 0, -20] },
   exhaust: { name: "Armação traseira, bocal e cone", say: "armação traseira com o suporte de trás · bocal e cone de escape", move: [AFT + 28, 0, 0] },
   agb: { name: "Caixa de acessórios", say: "caixa de acessórios · bombas de combustível, óleo e hidráulica e gerador", move: [0, 0, -26] },
   eec: { name: "FADEC (EEC) e cabos", say: "FADEC · o computador que controla o motor", move: [0, 0, 0] },
@@ -47,7 +47,7 @@ const STAGGER = ["spinner", "fan", "booster", "agb", "hpccase", "combcase", "hpt
 const SPRING = { stagger: 0.05, stiffness: 52, damping: 13, substeps: 4 };
 
 // ---------- Câmera ----------
-const fitPts = [[-26, 0, Z0], [0, 70, Z0], [0, -70, Z0], [0, 0, Z0 + 70], [40, 0, Z0 - 66], [240, 0, Z0], [-110, 0, Z0], [AFT + 270, 0, Z0], [120, 0, Z0 + 40 + LIFT + 10], [-10, -46, 0], [210, 46, 0], [210, -46, 0], [-10, 46, 0], [76, 0, Z0 - 78]];
+const fitPts = [[AFT + 178, 0, Z0 - 64], [AFT + 178, 0, Z0 + 44 + LIFT + 3], [-26, 0, Z0], [0, 70, Z0], [0, -70, Z0], [0, 0, Z0 + 70], [40, 0, Z0 - 66], [240, 0, Z0], [-110, 0, Z0], [AFT + 270, 0, Z0], [120, 0, Z0 + 40 + LIFT + 10], [-10, -46, 0], [210, 46, 0], [210, -46, 0], [-10, 46, 0], [76, 0, Z0 - 78]];
 const P = k.fitProjection(fitPts, W, H, { pad: 16, azimuth: 146, elevation: 22 });
 const V = G.viewOf(P), KS = G.scaleOf(P);
 const SIDE = Math.sign(V[1]) || 1;                 // lado do motor que fica de frente para quem olha
@@ -139,6 +139,17 @@ const qd = (pts) => "M" + pts.map((p) => at(p).map((v) => v.toFixed(1)).join(" "
 const NV = G.unit3([0, V[1], V[2]]);
 const SIL = Math.atan2(NV[2], NV[1]) / DEG + 90;   // ângulo da silhueta (onde a metade da frente encontra a de trás)
 const LADO = (frente) => A.prism(G.frameOf([0, 0, Z0], [1, 0, 0], NV, [0, -NV[2], NV[1]]), frente ? [[0, -400], [400, -400], [400, 400], [0, 400]] : [[-400, -400], [0, -400], [0, 400], [-400, 400]], -1000, 1000);
+// o plano que separa a parte de fora que se vê da que não se vê: passa pelas duas geratrizes da silhueta
+function planoSilhueta(s0, s1, fo) {
+  const kk = (fo(s1) - fo(s0)) / (s1 - s0), vyz = Math.hypot(V[1], V[2]), phi = Math.atan2(V[2], V[1]);
+  const al = Math.acos(Math.max(-1, Math.min(1, (kk * V[0]) / vyz)));
+  const A_ = on(s0, fo(s0), (phi + al) / DEG), B_ = on(s1, fo(s1), (phi + al) / DEG), C_ = on(s0, fo(s0), (phi - al) / DEG);
+  const a = G.unit3(G.sub3(B_, A_));
+  let n = G.unit3(G.cross3(a, G.sub3(C_, A_)));
+  if (G.dot3(n, G.sub3(on((s0 + s1) / 2, fo((s0 + s1) / 2), phi / DEG), A_)) < 0) n = G.mul3(n, -1);
+  const F = G.frameOf(A_, a, n, G.cross3(a, n));
+  return (frente) => A.prism(F, frente ? [[0, -400], [400, -400], [400, 400], [0, 400]] : [[-400, -400], [0, -400], [0, 400], [-400, 400]], -400, 400);
+}
 function casca(piece, s0, s1, rIn, rOut, { tone = "hi", name, linhas = [], arcos = "", arcosMid = "", pontos = "", segs, naFace } = {}) {
   const fi = typeof rIn === "function" ? rIn : () => rIn, fo = typeof rOut === "function" ? rOut : () => rOut;
   const curvo = typeof rIn === "function" || typeof rOut === "function";
@@ -154,8 +165,9 @@ function casca(piece, s0, s1, rIn, rOut, { tone = "hi", name, linhas = [], arcos
   const fundo = G.arcOf(AX, farS, fi(farS), P, { inward: true });
   const id = nameFor(name ?? `${piece}.casca`);
   const prof = [...S_.map((x) => [x, fo(x)]), ...[...S_].reverse().map((x) => [x, fi(x)])];
-  const shF = record(A.lathe(AX, prof, { name: `${id}.frente`, owner: id, cut: LADO(false) }));
-  const shT = record(A.lathe(AX, prof, { name: `${id}.tras`, owner: id, cut: LADO(true) }));
+  const corte = planoSilhueta(s0, s1, fo);
+  const shF = record(A.lathe(AX, prof, { name: `${id}.frente`, owner: id, cut: corte(false) }));
+  const shT = record(A.lathe(AX, prof, { name: `${id}.tras`, owner: id, cut: corte(true) }));
   const centro = (fr) => on((s0 + s1) / 2, fo((s0 + s1) / 2), (Math.atan2(NV[2], NV[1]) + (fr ? 0 : Math.PI)) / DEG);
   const la = linhas.map((x) => G.arcOf(AX, x, fo(x), P)).join("");
   R.put({ piece, ride: piece, at: centro(false), move: PIECES[piece].move, name: `${id}.tras`, shapes: [shT],
@@ -236,7 +248,7 @@ casca("fancase", 41, 43.5, 59.6, 67, { keyFrente: FCK(41), keyTras: -500 - 41, t
 casca("fancase", 37, 41, 33, 59.6, { tone: "mid", name: "fancase.ogv", naFace: (frente, x, th0) => Array.from({ length: 44 }, (_, q) => (q / 44) * 2 * Math.PI + 0.03).filter((th) => (Math.cos(th) * NV[1] + Math.sin(th) * NV[2] > 0) === frente).map((th) => k.segment(on(x, 33.4, th / DEG), on(x, 59.2, (th + 0.05) / DEG), P)).join("") });
 // FADEC (EEC): caixa com aletas presa na lateral da carcaça, com dois conectores e cabos
 const EY = SIDE * 66.6, EEC = { x: 4, y: SIDE > 0 ? EY : EY - 7, w: 20, d: 7, r: 1.2 };
-for (const x of [7, 21]) caixa("eec", { x: x - 1.4, y: SIDE > 0 ? 63 : -66.6, w: 2.8, d: 3.6, r: 0.4 }, Z0 - 8, 16, { tone: "lo", name: "eec.suporte" });
+for (const x of [7, 21]) caixa("eec", { x: x - 1.4, y: SIDE > 0 ? 64 : -66.6, w: 2.8, d: 2.6, r: 0.4 }, Z0 - 8, 16, { tone: "lo", name: "eec.suporte" });
 caixa("eec", EEC, Z0 - 13, 26, { tone: "hi", name: "eec.caixa", bevel: 0.7, inner: Ln(Array.from({ length: 7 }, (_, i) => k.segment([EEC.x + 3 + i * 2.4, EEC.y + (SIDE > 0 ? EEC.d : 0), Z0 - 13], [EEC.x + 3 + i * 2.4, EEC.y + (SIDE > 0 ? EEC.d : 0), Z0 + 13], P)).join(""), { tone: "faint" }) });
 const conectores = [];
 for (const [x, z] of [[8, Z0 + 15], [15, Z0 + 15], [20, Z0 + 15]]) {
@@ -298,7 +310,7 @@ for (let i = 0; i < FN; i++) {
   const deg = (i / FN) * 360 + 10, base = on(FN_S, CB(FN_S) - 0.3, deg), n = G.unit3(G.sub3(base, [FN_S, 0, Z0]));
   if (G.dot3(n, V) < -0.35) continue;
   const F = G.frameAlong(base, n);
-  disco("combcase", F, -0.6, 2.4, 1.9, { tone: "mid", name: "combcase.injetor", meta: { seated: true, cut: CBC } });
+  disco("combcase", F, 0, 2.4, 1.9, { tone: "mid", name: "combcase.injetor" });
   disco("combcase", F, 2.4, 3.4, 1.2, { tone: "lo", name: "combcase.injetor-tampa" });
 }
 {
@@ -362,7 +374,7 @@ const top = [88, 0, Z0 + HPC(88) + 4];
 cano("hpccase", [top, [88, 0, Z0 + 33], [80, 0, Z0 + 40], [58, 0, Z0 + 40]], 2.6, { name: "hpccase.duto-bleed", tone: "hi" });
 caixa("hpccase", { x: 54, y: -4.5, w: 4, d: 9, r: 1 }, Z0 + 35.5, 9, { tone: "mid", name: "hpccase.flange-pilone" });
 // cabos do FADEC: do conector até a carcaça do compressor (soltos quando a carcaça sobe)
-conectores.forEach((c, i) => cabo("eec", [c, [c[0], c[1], Z0 + 19 + i], [47, SIDE * (69 - i * 1.5), Z0 + 19 + i], [56, SIDE * (48 - i * 3), Z0 + 26 + i], [60 + i * 8, SIDE * (HPC(60 + i * 8) * 0.55), Z0 + HPC(60 + i * 8) * 0.83 + 1.2]], { name: "eec.cabo", free: [false, true], bundle: "harness" }));
+conectores.forEach((c, i) => cabo("eec", [c, [c[0], c[1], Z0 + 22 - i * 2], [47, SIDE * (69 - i * 1.5), Z0 + 22 - i * 2], [56, SIDE * (48 - i * 3), Z0 + 28 - i], [60 + i * 8, SIDE * (HPC(60 + i * 8) * 0.55), Z0 + HPC(60 + i * 8) * 0.83 + 1.2]], { name: "eec.cabo", free: [false, true], bundle: "harness" }));
 
 // ================= ORDEM DE PINTURA MEDIDA E SAÍDA =================
 A.settle(R, P, { states: [0, ...A.prefixStates(STAGGER, { shares: [0.5, 1] }), 1] });
