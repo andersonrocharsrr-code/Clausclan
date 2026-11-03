@@ -3,7 +3,7 @@
 // potência: o fan gira, a chama acende e os jatos frio (do fan) e quente (do núcleo) crescem (WebGL).
 // Construído com a skill Anatomy (MIT): peças torneadas (kit/lathe), tubos (kit/tube), ordem de pintura
 // medida (A.settle) e auditoria (node build.mjs --audit).
-import { writeFileSync } from "node:fs";
+import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -48,7 +48,12 @@ const SPRING = { stagger: 0.05, stiffness: 52, damping: 13, substeps: 4 };
 
 // ---------- Câmera ----------
 const fitPts = [[300, 0, Z0 + 10], [300, 0, Z0 - 10], [-48, 0, Z0 + 81], [-48, 0, Z0 - 81], [-48, 81, Z0], [-48, -81, Z0], [43, 81, Z0], [43, -81, Z0], [43, 0, Z0 + 81], [43, 0, Z0 - 81], [126, 0, Z0 + 54], [126, 0, Z0 - 54], [126, 54, Z0], [126, -54, Z0], [182, 0, Z0 + 49], [182, 0, Z0 - 49], [182, 49, Z0], [182, -49, Z0], [-40, 0, 0], [230, 0, 0]];
-const P = k.fitProjection(fitPts, W, H, { pad: 14, azimuth: 214, elevation: 22 });
+// vistas pré-desenhadas para girar o motor com o dedo: de quase de frente (190°) a quase de costas (350°)
+const VISTAS = [190, 210, 230, 250, 270, 290, 310, 330, 350], VISTA0 = 1;
+const argAz = process.argv.indexOf("--az"), AZ = argAz > 0 ? +process.argv[argAz + 1] : VISTAS[VISTA0], VI = VISTAS.indexOf(AZ);
+if (VI < 0) throw new Error("--az precisa ser uma das vistas: " + VISTAS.join(", "));
+const ESCALA = Math.min(...VISTAS.map((az) => k.fitProjection(fitPts, W, H, { pad: 14, azimuth: az, elevation: 22 }).scale));
+const P = (() => { const q = { origin: [0, 0], scale: ESCALA, azimuth: AZ, elevation: 22 }; const c = k.iso([110, 0, Z0 - 6], q); return { ...q, origin: [W / 2 - c[0], H / 2 - c[1]] }; })();
 const V = G.viewOf(P), KS = G.scaleOf(P);
 const SIDE = Math.sign(V[1]) || 1;                 // lado do motor que fica de frente para quem olha
 const at = (p) => k.iso(p, P);
@@ -435,7 +440,7 @@ cano("hpccase", [[88, 0, Z0 + HPC(88) + 4], [88, 0, Z0 + ccI(88)]], 1.8, { name:
 const halo = `<path class="iso-halo" d="${k.haloOf({ x: -40, y: -58, w: 270, d: 116, r: 50 }, 0, 4, P)}"/>`;
 
 // ================= ORDEM DE PINTURA MEDIDA E SAÍDA =================
-A.settle(R, P, { states: [0, ...A.prefixStates(STAGGER, { shares: [0.5, 1] }), 1] });
+A.settle(R, P, { states: [0], step: 0.5 });
 items.sort((a, b) => a.key - b.key);
 const DENTRO = new Set(["spinner", "fan", "booster", "hpc", "comb", "hpt", "lpt", "stand"]);
 const groups = items.map((it, i) => { const [mx, my, mz] = it.move; return `<g class="it"${DENTRO.has(it.piece) ? "" : " data-g"} data-n="${it.name}" data-piece="${it.piece}" data-r="${it.ride ?? it.piece}" data-k="${it.key.toFixed(2)}" data-m="${mx.toFixed(1)},${my.toFixed(1)},${mz.toFixed(1)}" data-i="${i}">${it.svg}</g>`; });
@@ -467,7 +472,7 @@ function caminho(x) {
 }
 const GAS = Array.from({ length: 196 }, (_, i) => caminho(-130 + i * 2));
 const O2 = at([0, 0, 0]), base = (v) => { const q = at(v); return [q[0] - O2[0], q[1] - O2[1]]; };
-const DATA = { GAS, O2, EX: base([1, 0, 0]), EY: base([0, 1, 0]), EZ: base([0, 0, 1]), CUT, LIGHT: THEME === "light", order: ORDER, pieces: Object.fromEntries(Object.entries(PIECES).map(([id, p]) => [id, { name: p.name, say: p.say }])), W, H, camera: glCamera(P), Z0, FASES };
+const DATA = { VISTAS, VI, GAS, O2, EX: base([1, 0, 0]), EY: base([0, 1, 0]), EZ: base([0, 0, 1]), CUT, LIGHT: THEME === "light", order: ORDER, pieces: Object.fromEntries(Object.entries(PIECES).map(([id, p]) => [id, { name: p.name, say: p.say }])), W, H, camera: glCamera(P), Z0, FASES };
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="iso-svg gx-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="O motor GEnx-2B do Boeing 747-8 pendurado numa estrutura de teste, com um quarto da nacele e das carcaças cortado: aparecem o cone e o fan de 18 pás, o booster, os 10 estágios do compressor de alta, a câmara de combustão com a chama, as turbinas de alta e de baixa, o bocal e o cone de escape. Atrás saem o jato frio do fan e o jato quente do núcleo."><g class="gx-back">${halo}</g><g class="gx-engine">${groups.join("")}</g></svg>`;
 
@@ -616,12 +621,13 @@ const LIVE = `
 const D = ${JSON.stringify(DATA)};
 const JET = ${JSON.stringify(JET)};
 const FLOW = ${JSON.stringify(FLOW)};
-const stage = document.querySelector(".gx-stage"), engine = stage.querySelector(".gx-engine");
+const stage = document.querySelector(".gx-stage");
+let svgAtual = stage.querySelector("svg"), engine = svgAtual.querySelector(".gx-engine");
 const readout = document.querySelector("[data-readout]"), botoes = [...document.querySelectorAll("[data-peca]")];
 const manete = document.querySelector(".gx-manete input"), bLenta = document.querySelector("[data-pot=lenta]"), bDeco = document.querySelector("[data-pot=deco]");
 const still = matchMedia("(prefers-reduced-motion: reduce)");
-const pas = [...engine.querySelectorAll("[data-pa]")], esp = [...engine.querySelectorAll("[data-esp]")];
-const nodes = [...engine.querySelectorAll(".it")];
+let pas = [...engine.querySelectorAll("[data-pa]")], esp = [...engine.querySelectorAll("[data-esp]")];
+let nodes = [...engine.querySelectorAll(".it")];
 let selected = null, visible = false, frame = 0, last = 0, clock = 0, alvo = 0, n1 = 21, giro = 0, touring = !still.matches, tourClock = 0, idle = 0, fasePa = 0, faseEsp = 0;
 const say = (t) => { if (readout.textContent !== t) readout.textContent = t; };
 // modelo aproximado do GEnx-2B67: empuxo de decolagem ~296 kN; N1 de 21% (marcha lenta) a 100%
@@ -665,12 +671,31 @@ function tick(now) {
 function run() { if (!frame && visible) { last = 0; frame = requestAnimationFrame(tick); } }
 function grab() { touring = false; clearTimeout(idle); idle = setTimeout(() => { if (!still.matches) { touring = true; tourClock = 0; run(); } }, 12000); }
 new IntersectionObserver((e) => { visible = e[e.length - 1].isIntersecting; if (visible) run(); }, { rootMargin: "120px 0px" }).observe(stage);
-// arrastar na horizontal mexe a manete; um toque numa peça mostra o que ela faz
+// ---------- Girar com o dedo: cada vista é um desenho pronto, carregado quando o motor chega nela ----------
+const cache = {};
+let vista = D.VI, alvoV = D.VI;
+function aplicaVista(i, dados) {
+  const box = document.createElement("div"); box.innerHTML = dados.svg;
+  const novo = box.firstElementChild; svgAtual.replaceWith(novo); svgAtual = novo; engine = novo.querySelector(".gx-engine");
+  D.camera.origin = dados.camera.origin; D.camera.k = dados.camera.k; D.camera.cam = dados.camera.cam;
+  pas = [...engine.querySelectorAll("[data-pa]")]; esp = [...engine.querySelectorAll("[data-esp]")]; nodes = [...engine.querySelectorAll(".it")];
+  for (const g of pas) g.classList.toggle("on", +g.dataset.pa === fasePa);
+  for (const g of esp) g.classList.toggle("on", +g.dataset.esp === faseEsp);
+  const sel = selected; selected = null; if (sel) select(sel);
+  vista = i; run();
+}
+const carrega = (i) => cache[i] || (cache[i] = fetch("genx/v" + i + (D.LIGHT ? "-l" : "") + ".json").then((r) => r.json()));
+function gira(i) {
+  i = Math.max(0, Math.min(D.VISTAS.length - 1, i));
+  if (i === alvoV) return; alvoV = i;
+  carrega(i).then((d) => { if (alvoV === i) aplicaVista(i, d); }).catch(() => {});
+  carrega(Math.min(D.VISTAS.length - 1, i + 1)); carrega(Math.max(0, i - 1));
+}
 let drag = null;
-stage.addEventListener("pointerdown", (e) => { drag = { x: e.clientX, v: alvo, moved: false }; });
-addEventListener("pointermove", (e) => { if (!drag) return; const dx = e.clientX - drag.x; if (Math.abs(dx) > 6) { drag.moved = true; grab(); setAlvo(drag.v + dx / (stage.clientWidth * 0.6)); } });
+stage.addEventListener("pointerdown", (e) => { drag = { x: e.clientX, v: vista, moved: false }; carrega(Math.max(0, vista - 1)); carrega(Math.min(D.VISTAS.length - 1, vista + 1)); });
+addEventListener("pointermove", (e) => { if (!drag) return; const dx = e.clientX - drag.x; if (Math.abs(dx) > 6) { drag.moved = true; grab(); gira(drag.v + Math.round(-dx / Math.max(28, stage.clientWidth * 0.085))); } });
 addEventListener("pointerup", (e) => { if (drag && !drag.moved) { grab(); const g = e.target.closest && e.target.closest(".it"); if (g && stage.contains(g)) select(g.dataset.piece); } drag = null; });
-stage.addEventListener("keydown", (e) => { if (e.key === "ArrowRight" || e.key === "ArrowUp") { e.preventDefault(); grab(); setAlvo(alvo + 0.1); } if (e.key === "ArrowLeft" || e.key === "ArrowDown") { e.preventDefault(); grab(); setAlvo(alvo - 0.1); } if (e.key === " ") { e.preventDefault(); grab(); setAlvo(alvo > 0.5 ? 0 : 1); } if (e.key === "Escape") select(null); });
+stage.addEventListener("keydown", (e) => { if (e.key === "ArrowRight") { e.preventDefault(); grab(); gira(alvoV + 1); } if (e.key === "ArrowLeft") { e.preventDefault(); grab(); gira(alvoV - 1); } if (e.key === "ArrowUp") { e.preventDefault(); grab(); setAlvo(alvo + 0.1); } if (e.key === "ArrowDown") { e.preventDefault(); grab(); setAlvo(alvo - 0.1); } if (e.key === " ") { e.preventDefault(); grab(); setAlvo(alvo > 0.5 ? 0 : 1); } if (e.key === "Escape") select(null); });
 manete.addEventListener("input", () => { grab(); setAlvo(+manete.value / 100); });
 bLenta.addEventListener("click", () => { grab(); setAlvo(0); });
 bDeco.addEventListener("click", () => { grab(); setAlvo(1); });
@@ -680,7 +705,7 @@ say(leitura());
 `;
 
 const CSS = `body{margin:0}.iso-page{width:100%!important;margin:0!important;padding:14px 18px 18px;box-sizing:border-box}.iso-plate{padding:44px 12px 58px!important;box-shadow:none!important;border-radius:12px!important}
-.gx-stage{position:relative;cursor:ew-resize;touch-action:pan-y;outline:none;user-select:none;-webkit-user-select:none}.gx-stage svg{position:relative;display:block;width:100%;height:auto}
+.gx-stage{position:relative;cursor:grab;touch-action:pan-y;outline:none;user-select:none;-webkit-user-select:none}.gx-stage svg{position:relative;display:block;width:100%;height:auto}
 .iso-plate-corner[data-corner=readout]{white-space:normal!important;max-width:62%;text-align:right;line-height:1.35}
 @media (max-width:560px){.iso-plate-corner[data-corner=hint]{display:none}.iso-plate-corner[data-corner=readout]{max-width:calc(100% - 24px)}}
 .gx-jato,.gx-fluxo{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;filter:blur(1.3px)}
@@ -694,15 +719,17 @@ const CSS = `body{margin:0}.iso-page{width:100%!important;margin:0!important;pad
 .gx-lista{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:10px}.gx-lista button{display:flex;gap:7px;align-items:center;text-align:left;border:1px solid var(--anatomy-mid);background:transparent;color:inherit;border-radius:8px;padding:5px 6px;font:inherit;font-size:11.5px;line-height:1.25;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .gx-lista button b{flex:0 0 19px;height:19px;border-radius:50%;display:grid;place-items:center;font-size:10.5px;border:1px solid currentColor}.gx-lista button[aria-pressed=true]{border-color:var(--anatomy-lit);color:var(--anatomy-lit)}`;
 const body = k.plateHtml({
-  fig: "Fig 1", title: "GEnx-2B · 747-8", hint: "Arraste para acelerar",
+  fig: "Fig 1", title: "GEnx-2B · 747-8", hint: "Arraste para girar",
   readout: "marcha lenta · N1 21%",
   keys: [{ mark: "raised", label: `${nSolidos} peças sólidas · um quarto cortado para ver por dentro` }, { mark: "lit", label: "Jato frio (azul) sai do fan; jato quente (laranja) sai do núcleo" }, { mark: "raised", label: "Toque num módulo (ou num nome) para ver o que ele faz" }],
   caption: "O motor do 747-8 com a nacele e as carcaças cortadas num quarto, para ver por dentro. O fan empurra a maior parte do ar por fora do núcleo (o jato frio); o resto passa pelo compressor, queima na câmara e gira as turbinas antes de sair quente. Valores de N1, empuxo e EGT aproximados; tubos e equipamentos simplificados.",
-  body: `<div class="gx-stage" tabindex="0" role="slider" aria-label="Manete do motor: setas ou arrastar mudam a potência" aria-valuemin="0" aria-valuemax="100"><canvas class="gx-jato" aria-hidden="true"></canvas>${svg}<canvas class="gx-fluxo" aria-hidden="true"></canvas></div><div class="gx-ctl"><button type="button" data-pot="lenta">Marcha lenta</button><label class="gx-manete">Manete <input type="range" min="0" max="100" value="0" aria-label="Manete"></label><button type="button" data-pot="deco">Decolagem</button></div><div class="gx-lista">${ORDER.map((id, i) => `<button type="button" data-peca="${id}"><b>${i + 1}</b>${PIECES[id].name}</button>`).join("")}</div>`,
+  body: `<div class="gx-stage" tabindex="0" role="slider" aria-label="Motor GEnx-2B: arraste ou use as setas para girar; setas para cima e para baixo mudam a potência" aria-valuemin="0" aria-valuemax="100"><canvas class="gx-jato" aria-hidden="true"></canvas>${svg}<canvas class="gx-fluxo" aria-hidden="true"></canvas></div><div class="gx-ctl"><button type="button" data-pot="lenta">Marcha lenta</button><label class="gx-manete">Manete <input type="range" min="0" max="100" value="0" aria-label="Manete"></label><button type="button" data-pot="deco">Decolagem</button></div><div class="gx-lista">${ORDER.map((id, i) => `<button type="button" data-peca="${id}"><b>${i + 1}</b>${PIECES[id].name}</button>`).join("")}</div>`,
 });
 const file = THEME === "light" ? "fig-genx-light.html" : "fig-genx.html";
 const page = k.pageHtml({ title: "GEnx-2B", theme: THEME, body: `<style>${CSS}</style>${body}`, script: kitScript() + glScript() + LIVE });
-writeFileSync(join(HERE, "../../aviao/assets", file), page);
+mkdirSync(join(HERE, "../../aviao/assets/genx"), { recursive: true });
+writeFileSync(join(HERE, "../../aviao/assets/genx", `v${VI}${THEME === "light" ? "-l" : ""}.json`), JSON.stringify({ svg, camera: glCamera(P) }));
+if (VI === VISTA0) writeFileSync(join(HERE, "../../aviao/assets", file), page);
 console.log("wrote", file, `${(page.length / 1024).toFixed(0)} KB`, `${items.length} itens, ${nSolidos} sólidos`);
 // --rapido: só uma em cada 6 poses do voo (para iterar); sem ele, todas
 { const fr = A.explodeStates(R.order, R.spring).frames; A.auditOrExit(R, P, process.argv.includes("--rapido") ? { frames: fr.filter((_, i) => i % 6 === 0) } : {}); }
