@@ -459,4 +459,5 @@ const file = THEME === "light" ? "fig-genx-light.html" : "fig-genx.html";
 const page = k.pageHtml({ title: "GEnx-2B", theme: THEME, body: `<style>${CSS}</style>${body}`, script: kitScript() + LIVE });
 writeFileSync(join(HERE, "../../aviao/assets", file), page);
 console.log("wrote", file, `${(page.length / 1024).toFixed(0)} KB`, `${items.length} itens, ${nSolidos} sólidos`);
-A.auditOrExit(R, P);
+// --rapido: só uma em cada 6 poses do voo (para iterar); sem ele, todas
+{ const fr = A.explodeStates(R.order, R.spring).frames; A.auditOrExit(R, P, process.argv.includes("--rapido") ? { frames: fr.filter((_, i) => i % 6 === 0) } : {}); }
