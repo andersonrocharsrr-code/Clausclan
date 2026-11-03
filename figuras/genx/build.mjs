@@ -363,7 +363,7 @@ rotor("hpc", 54, 98, (x) => 13.2 + (x - 54) * 2 / 44, HPC_S.map((x) => ({ s: x, 
 const VSV = HPC_S.slice(0, 6).map((x) => x + 0.9);
 const HPCC = casca("hpccase", 54, 98, (x) => HPC(x) - 1.8, HPC, { tone: "hi", name: "hpccase.carcaca", linhas: HPC_S.map((x) => x + 2), linhasMid: VSV.flatMap((x) => [x - 0.5, x + 0.5]), parafusos: VSV.map((x) => ({ s: x, r: HPC, n: 40 })) });
 // dois atuadores das palhetas variáveis (fora do corte)
-for (const deg of SIDE > 0 ? [115, 140] : [65, 40]) {
+for (const deg of SIDE > 0 ? [130, 155] : [50, 25]) {
   const a = on(57, HPC(57) + 4.4, deg), b = on(83, HPC(83) + 4.4, deg);
   const F = G.frameAlong(a, G.unit3(G.sub3(b, a)));
   turned("hpccase", F, [[0, 0], [0, 1.6], [1, 2.2], [13, 2.2], [14, 1.6], [14, 0]], { tone: "hi", name: "hpccase.atuador" });
@@ -419,12 +419,14 @@ casca("exhaust", 189, 204, (x) => 37.6 - (x - 189) * 0.3, (x) => 43.4 - (x - 189
   const PL0 = 186, PLL = 84, PLR = 30;
   const PL = (s) => PLR * (1 - Math.pow(Math.min(1, Math.max(0, (s - PL0) / PLL)), 1.7));
   const plSlope = (s) => -PLR * 1.7 * Math.pow(Math.min(1, Math.max(1e-6, (s - PL0) / PLL)), 0.7) / PLL;
-  const prof = [[PL0, 0]]; for (let i = 0; i <= 24; i++) { const s = PL0 + i * (PLL - 0.4) / 24; prof.push([s, PL(s), i > 0 && i < 24 ? 1 : 0]); } prof.push([PL0 + PLL, 0]);
-  turned("exhaust", AX, prof, { tone: "hi", smooth: { slope: plSlope, rows: 5 }, name: "exhaust.cone", inner: Ln(G.arcOf(AX, 212, PL(212), P, { slope: plSlope(212) }) + G.arcOf(AX, 236, PL(236), P, { slope: plSlope(236) }), { tone: "faint" }) });
+  // em duas partes: a de dentro do bocal e a que sai dele (assim nenhuma envolve a outra)
+  const SC = 204, perfil = (a, b, n) => { const pr = [[a, 0]]; for (let i = 0; i <= n; i++) { const s = a + i * (b - a) / n; pr.push([s, PL(s), i > 0 && i < n ? 1 : 0]); } pr.push([b, 0]); return pr; };
+  turned("exhaust", AX, perfil(PL0, SC, 8), { tone: "hi", smooth: { slope: plSlope, rows: 5 }, name: "exhaust.cone" });
+  turned("exhaust", AX, perfil(SC, PL0 + PLL - 0.4, 18), { tone: "hi", smooth: { slope: plSlope, rows: 5 }, name: "exhaust.cone-ponta", inner: Ln(G.arcOf(AX, 212, PL(212), P, { slope: plSlope(212) }) + G.arcOf(AX, 236, PL(236), P, { slope: plSlope(236) }), { tone: "faint" }) });
 }
 
 // ================= NACELE (cortada) =================
-const ccPts = [[43.5, 35.6], [56, 39], [100, 41.5], [140, 45.5], [182, 48.2]];
+const ccPts = [[43.5, 35.2], [56, 39], [100, 41.5], [140, 45.5], [182, 48.2]];
 const ccO = (x) => { for (let i = 0; i < ccPts.length - 1; i++) { const [xa, ra] = ccPts[i], [xb, rb] = ccPts[i + 1]; if (x <= xb + 1e-9) { const t = (x - xa) / (xb - xa), u = t * t * (3 - 2 * t); return ra + (rb - ra) * u; } } return ccPts[ccPts.length - 1][1]; };
 const ccI = (x) => ccO(x) - 2.2;
 const inI = (x) => { const u = (x + 44) / 38; return 59.6 + 4.0 * (1 - u) ** 6 - 1.6 * Math.sin(Math.PI * u); };
