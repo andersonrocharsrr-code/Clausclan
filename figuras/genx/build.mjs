@@ -363,7 +363,7 @@ rotor("hpc", 54, 98, (x) => 13.2 + (x - 54) * 2 / 44, HPC_S.map((x) => ({ s: x, 
 const VSV = HPC_S.slice(0, 6).map((x) => x + 0.9);
 const HPCC = casca("hpccase", 54, 98, (x) => HPC(x) - 1.8, HPC, { tone: "hi", name: "hpccase.carcaca", linhas: HPC_S.map((x) => x + 2), linhasMid: VSV.flatMap((x) => [x - 0.5, x + 0.5]), parafusos: VSV.map((x) => ({ s: x, r: HPC, n: 40 })) });
 // dois atuadores das palhetas variáveis (fora do corte)
-for (const deg of SIDE > 0 ? [100, 125] : [80, 55]) {
+for (const deg of SIDE > 0 ? [115, 140] : [65, 40]) {
   const a = on(57, HPC(57) + 4.4, deg), b = on(83, HPC(83) + 4.4, deg);
   const F = G.frameAlong(a, G.unit3(G.sub3(b, a)));
   turned("hpccase", F, [[0, 0], [0, 1.6], [1, 2.2], [13, 2.2], [14, 1.6], [14, 0]], { tone: "hi", name: "hpccase.atuador" });
