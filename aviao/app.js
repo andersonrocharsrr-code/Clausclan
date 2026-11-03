@@ -293,7 +293,7 @@ function figurasEm(raiz) {
     const src = `assets/fig-${el.dataset.fig}${claro ? '-light' : ''}.html`;
     if (el.dataset.src === src) return;
     el.dataset.src = src;
-    el.innerHTML = `<iframe src="${src}" title="Ilustração interativa"></iframe><p class="small">Ilustração interativa: arraste para acelerar e toque nos números.</p>`;
+    el.innerHTML = `<iframe src="${src}" title="Ilustração interativa"></iframe><p class="small">Ilustração interativa: toque no desenho para explorar.</p>`;
     const fr = el.querySelector('iframe');
     fr.addEventListener('load', () => { try { const ajusta = () => { fr.style.height = fr.contentDocument.documentElement.scrollHeight + 'px'; }; ajusta(); new ResizeObserver(ajusta).observe(fr.contentDocument.body); } catch {} });
   });
