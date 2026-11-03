@@ -1625,3 +1625,6 @@ main.wrap { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 @media (min-width: 720px) { #inMais { grid-template-columns: repeat(3, 1fr); } }
 .in-card__img { position: relative; }
 .in-card__tag { position: absolute; right: 6px; bottom: 6px; font-style: normal; font-size: 9.5px; color: rgba(255,255,255,.85); background: rgba(0,0,0,.45); padding: 2px 6px; border-radius: 99px; letter-spacing: .02em; }
+.dz-fig { margin-top: 16px; }
+.dz-fig iframe { display: block; width: 100%; height: 420px; border: 0; border-radius: 12px; background: transparent; }
+.dz-fig .small { margin: 6px 2px 0; }

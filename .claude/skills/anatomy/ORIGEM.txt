@@ -1,0 +1,3 @@
+Skill Anatomy (MIT), copiada de https://github.com/wheresryan22/anatomy no commit 1482e84.
+Foram deixados de fora o .git, o .github, os PDFs e as páginas HTML geradas dos exemplos
+(cada exemplo se gera de novo com: node examples/<nome>/build.mjs).
