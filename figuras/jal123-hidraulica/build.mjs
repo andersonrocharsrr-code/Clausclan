@@ -28,7 +28,7 @@ const lead = (z) => FX0 + (z - TOPO(FX0)) * 0.62, trail = (z) => FX1 + (z - TOPO
 const ZCUT = TOPO(FX0) + 30, ZTOP = TOPO(FX0) + FH;
 
 // Quatro sistemas hidráulicos
-const SYS = [0, 1, 2, 3].map((i) => ({ i, th: (171 + i * 6) * DEG, rx: -132 + i * 15, xf: 70 + i * 13, cor: ["#3b82f6", "#22c55e", "#eab308", "#ef4444"][i] }));
+const SYS = [0, 1, 2, 3].map((i) => ({ i, th: (171 + i * 6) * DEG, rx: -132 + i * 15, xf: 98 + i * 11, cor: ["#3b82f6", "#22c55e", "#eab308", "#ef4444"][i] }));
 const RES_Y = -40, RES_R = 5.6, RES_H = 18, PIPE_R = 1.7;
 
 const PLATE = { x: -164, y: -48, w: 328, d: 96, r: 8 }, PLATE_H = 8;
@@ -172,8 +172,13 @@ function rompimento() {
 // ---------- Deriva: base fica, topo é arrancado ----------
 const FF = G.frameOf([0, -2.6, 0], [0, 1, 0], [1, 0, 0], [0, 0, 1]);
 function derivaBase() {
-  const z0a = TOPO(FX0) - 2, z0b = TOPO(FX1) - 2;
-  return S(G.prismOf(FF, [[FX0, z0a], [FX1, z0b], [trail(ZCUT), ZCUT], [lead(ZCUT), ZCUT]], 0, 5.2, P), { tone: "hi", className: "c-pintura" });
+  const z0a = TOPO(FX0) - 2, z0b = TOPO(FX1) - 2, out = [];
+  out.push(S(G.prismOf(FF, [[FX0, z0a], [FX1, z0b], [trail(ZCUT), ZCUT], [lead(ZCUT), ZCUT]], 0, 5.2, P), { tone: "hi", className: "c-pintura" }));
+  const nerv = [path([[lead(ZCUT - 14), 2.7, ZCUT - 14], [trail(ZCUT - 14), 2.7, ZCUT - 14]])];
+  out.push(`<path d="${nerv.join("")}" fill="none" stroke="var(--nervura)" stroke-width=".7"/>`);
+  // carenagem na raiz da deriva
+  out.push(`<path d="${path([[FX0 - 6, 2.7, TOPO(FX0 - 6) - 0.5], [FX0 + 10, 2.7, TOPO(FX0 + 10) + 3], [FX1, 2.7, TOPO(FX1) + 3]])}" fill="none" stroke="var(--nervura)" stroke-width="1"/>`);
+  return out.join("");
 }
 function derivaTopo() {
   const out = [];
@@ -182,7 +187,11 @@ function derivaTopo() {
   // nervuras da deriva
   const nerv = [];
   for (let z = ZCUT + 14; z < ZTOP - 4; z += 14) nerv.push(path([[lead(z), 2.7, z], [trail(z) - 21, 2.7, z]]));
+  nerv.push(path([[trail(ZCUT) - 23, 2.7, ZCUT], [trail(ZTOP) - 19, 2.7, ZTOP]]));
   out.push(`<path d="${nerv.join("")}" fill="none" stroke="var(--nervura)" stroke-width=".7"/>`);
+  out.push(D([0.2, 0.45, 0.7, 0.92].map((f) => { const z = ZCUT + (ZTOP - ZCUT) * f; return at([trail(z) - 21, 2.8, z]); }), { size: 0.9, tone: "mid" }));
+  // ponta da deriva
+  out.push(S(G.prismOf(FF, [[lead(ZTOP), ZTOP], [trail(ZTOP), ZTOP], [trail(ZTOP) - 2, ZTOP + 3], [lead(ZTOP) + 4, ZTOP + 3]], 0.4, 4.8, P), { tone: "mid", className: "c-metal" }));
   return out.join("");
 }
 
@@ -215,14 +224,18 @@ function linhasDepois() {
 function linhasDeriva() {
   return SYS.map((s) => {
     const zA = ZTOP - 22 - s.i * 9;
-    return `<g class="c-h${s.i}">${cano([[s.xf, 0, ZCUT], [s.xf, 0, zA]], PIPE_R)}${S(G.disc(0, 10, 2.8, G.frameAlong([s.xf - 1, 0, zA], [1, 0, 0]), P), { tone: "mid", className: "c-metal" })}</g>`;
+    const hinge = trail(zA) - 21, F = G.frameAlong([s.xf, 0, zA], [1, 0, 0]), body = Math.min(12, hinge - s.xf - 6);
+    return `<g class="c-h${s.i}">${cano([[s.xf, 0, ZCUT], [s.xf, 0, zA]], PIPE_R)}</g>`
+      + S(G.disc(-1.5, body, 2.6, F, P, { bevel: 0.3 }), { tone: "mid", className: "c-metal" })
+      + S(G.disc(body, hinge - s.xf - 1, 0.9, F, P), { tone: "hi", className: "c-cromo" })
+      + S(G.sphereOf([hinge - 1, 0, zA], 1.6, P, { steps: 16 }), { tone: "mid", className: "c-metal" });
   }).join("");
 }
 function vazamento() {
-  return SYS.map((s) => `<path data-leak="${s.i}" class="iso-line" data-free="both" d="${path([[s.xf, 0, ZCUT], [s.xf + 4, 0, ZCUT - 26]])}" style="stroke:${s.cor};stroke-width:1.8;stroke-dasharray:2 5;opacity:0"/>`).join("");
+  return SYS.map((s) => `<path data-leak="${s.i}" class="iso-line" data-free="both" d="${path([[s.xf, 0, ZCUT], [s.xf + 4, 0, ZCUT - 26]])}" style="stroke:${s.cor};stroke-width:2.4;stroke-dasharray:2.5 4;stroke-linecap:round;opacity:0"/>`).join("");
 }
 
-const MATERIAIS = { metal: "#8d97a2", primer: PRIMER, piso: "#6e665c", pintura: "#e3e7eb", leme: "#c9d0d7", h0: "#3b82f6", h1: "#22c55e", h2: "#eab308", h3: "#ef4444", chao: "#5d646d" };
+const MATERIAIS = { cromo: "#d7dde3", metal: "#8d97a2", primer: PRIMER, piso: "#6e665c", pintura: "#e3e7eb", leme: "#c9d0d7", h0: "#3b82f6", h1: "#22c55e", h2: "#eab308", h3: "#ef4444", chao: "#5d646d" };
 const CORES = Object.entries(MATERIAIS).map(([n, c]) => `.c-${n}{--anatomy-shade-0:${hex(c, 0.6)};--anatomy-shade-1:${hex(c, 0.7)};--anatomy-shade-2:${hex(c, 0.8)};--anatomy-shade-3:${hex(c, 0.9)};--anatomy-top:${hex(c, 1.06)};--anatomy-paper:${hex(c, 0.85)};--anatomy-face:${hex(c, 0.85)}}.c-${n} .iso-edge{stroke:${hex(c, 0.42)}}`).join("")
   + `.c-chao .iso-line{stroke:#454b52}.c-piso .iso-line{stroke:#4a443d}.mostrador .iso-line{stroke:#e9edf1}`
   + `.iso{--anillo:#8a96a3;--borda:#d9dee4;--nervura:#a7b0ba}.iso[data-theme=light]{--anillo:#7d8894;--borda:#4b535c;--nervura:#9aa3ad}`;
@@ -253,7 +266,7 @@ function draw() {
   topo.style.opacity = (1 - voa).toFixed(3);
   const psi = SYS.map((s) => psiOf(s.i, t));
   gauges.forEach((g, i) => g.setAttribute("d", gaugeAt(i, psi[i])));
-  leaks.forEach((l, i) => { l.style.opacity = (smooth(0.21, 0.26, t) * Math.min(1, psi[i] / 600 + 0.25)).toFixed(3); l.style.strokeDashoffset = String(-dash * 1.6); });
+  leaks.forEach((l, i) => { l.style.opacity = (smooth(0.21, 0.26, t) * (0.35 + 0.65 * Math.min(1, psi[i] / 800))).toFixed(3); l.style.strokeDashoffset = String(-dash * 1.6); });
   ares.forEach((a) => { a.style.strokeDashoffset = String(-dash); });
   const txt = t < 0.18 ? "18:24 · normal · 3000 psi" : t < 0.3 ? "18:24:35 · estrondo" : "psi " + psi.map((p) => Math.round(p / 100) * 100).join(" · ");
   if (readout.textContent !== txt) readout.textContent = txt;
@@ -277,7 +290,7 @@ draw();
 `;
 
 const body = k.plateHtml({
-  fig: "Fig 2", title: "JAL 123 · cauda", hint: "Arraste para avançar",
+  fig: "Fig 1", title: "JAL 123 · cauda", hint: "Arraste para avançar",
   readout: "18:24 · normal · 3000 psi",
   keys: [{ mark: "blue", label: "Ar da cabine escapando pela antepara" }, { mark: "raised", label: "Quatro sistemas hidráulicos, um de cada cor" }, { mark: "dashed", label: "Metade da frente da fuselagem, retirada para ver dentro" }],
   caption: "Simplificado e fora de escala. A cauda do 747 em corte: a antepara de pressão traseira fecha a cabine pressurizada. As linhas dos quatro sistemas hidráulicos passavam por trás dela, rumo à deriva. Quando a antepara se rompeu, o ar da cabine arrancou a maior parte da deriva e cortou as quatro de uma vez: o fluido vazou e os comandos pararam de responder.",
