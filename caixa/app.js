@@ -2453,7 +2453,7 @@ $('#btnLic')?.addEventListener('click', abrirLicenca);
 $('#licVerificar')?.addEventListener('click', () => atualizarLicenca(true));
 $('#licCopiar')?.addEventListener('click', async () => {
   const c = ls.get(KEY_LIC, {}).codigo;
-  if (c) toast((await copiar(`Código do meu celular no Caixa: ${c}`)) ? 'Código copiado ✓ Mande para o responsável.' : c);
+  if (c) toast((await copiar(c)) ? `Código ${c} copiado ✓ Mande para o responsável.` : c);
 });
 pintarLicenca();
 
