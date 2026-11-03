@@ -973,7 +973,8 @@ function mostrar() {
   $('#dzSub').textContent = a.resumo;
   $('#dzNums').innerHTML = a.numeros.map(([n, l]) => `<div><b>${esc(n)}</b><span>${esc(l)}</span></div>`).join('');
   $('#dzFicha').innerHTML = a.ficha.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('');
-  cap = 0; montarCapitulos();
+  // Volta para o capítulo em que a pessoa estava neste acidente (antes recomeçava sempre do 1)
+  cap = Math.min(capDe[a.id] || 0, a.secoes.length - 1); montarCapitulos();
   $('#dzFail').innerHTML = a.esquema();
   $('#dzFailTxt').textContent = a.falha;
   $('#dzPhugBox').hidden = !a.fugoide;
@@ -1052,6 +1053,7 @@ function seguir() {
 
 /* ---------- O relato em capítulos, como no Modo história ---------- */
 let cap = 0;
+const capDe = {};
 function montarCapitulos() {
   const a = atual;
   $('#dzhParts').innerHTML = a.partes.map((p, i) => `<button type="button" aria-pressed="false"><b>${i + 1}</b>${esc(p)}</button>`).join('');
@@ -1061,6 +1063,7 @@ function montarCapitulos() {
 }
 function capitulo(dir = 0) {
   const a = atual, c = a.secoes[cap], card = $('#dzhCard');
+  capDe[a.id] = cap;
   // Guarda onde a pessoa parou, para o "Continue lendo" da tela inicial
   if (!document.getElementById('view-desastres')?.hidden) try { localStorage.setItem('hgLeitura', JSON.stringify({ tipo: 'desastres', id: a.id, cap, total: a.secoes.length, titulo: a.titulo, foto: c.foto?.src || a.secoes.find((x) => x.foto)?.foto.src || '', em: Date.now() })); } catch {}
   card.classList.remove('is-next', 'is-prev'); void card.offsetWidth;
