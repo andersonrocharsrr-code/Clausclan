@@ -39,7 +39,7 @@ function render() {
   $('#inMais').innerHTML = MAIS.map(([tab, t, s]) => `<a class="in-card" href="#${tab}" data-tab="${tab}"><span class="in-card__img"><img src="assets/card-${tab}.webp" alt="" loading="lazy" draggable="false">${ILUSTR.includes(tab) ? '<i class="in-card__tag">imagem ilustrativa</i>' : ''}</span><span class="in-card__t"><b>${t}</b><span>${s}</span></span></a>`).join('');
 }
 // Cards cujas imagens foram geradas por IA: levam a etiqueta "imagem ilustrativa"
-const ILUSTR = ['pecas', 'cartas', 'plano', 'nav', 'luzes'];
+const ILUSTR = ['pecas', 'cartas', 'plano', 'nav', 'luzes', 'regras', 'aero', 'tempo'];
 const MAIS = [
   ['pecas', 'Peças do avião', 'Toque nas peças, raio-X e as vistas do 747', '<path d="M3 13 L10 11 L13 4 H15 L14 11 L21 12 V14 L14 14 L13 20 H11 L10 15 L3 15Z"/>'],
   ['cartas', 'Cartas aeronáuticas', 'Aprenda a ler o diagrama, a aproximação e a saída', '<path d="M4 5 L9 3 L15 5 L20 3 V19 L15 21 L9 19 L4 21Z"/><path d="M9 3 V19 M15 5 V21"/>'],
