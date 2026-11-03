@@ -100,7 +100,8 @@ $('#btnEntrar').addEventListener('click', async () => {
 $('#senha').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#btnEntrar').click(); });
 $('#btnAtualizar').addEventListener('click', () => carregar().catch((err) => aviso(err.message)));
 $('#btnAdd').addEventListener('click', async () => {
-  const codigo = $('#novoCod').value.trim().toUpperCase();
+  const achado = $('#novoCod').value.toUpperCase().match(/[A-Z2-9]{4}-[A-Z2-9]{4}/);
+  const codigo = achado ? achado[0] : '';
   if (!/^[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(codigo)) { aviso('Código no formato XXXX-XXXX.'); return; }
   try { await api('nome', { codigo, nome: $('#novoNome').value.trim() }); $('#novoCod').value = ''; $('#novoNome').value = ''; await carregar(); aviso('Adicionado. Agora marque o pagamento.'); }
   catch (err) { aviso(err.message); }
