@@ -114,6 +114,30 @@ function tubo(piece, route, r, { name, tone = "hi", bias = 0, gaps = [], closed 
 function cano(piece, pts, r, opts = {}) { return tubo(piece, G.fillet(pts, Math.max(r * 2.8, 3), 12, { P, tube: r }), r, opts); }
 function cabo(piece, pts, opts = {}) { return tubo(piece, G.fillet(pts, 5, 12, { P, tube: 0.6 }), 0.6, { tone: "mid", limp: true, maxLength: 12, spacing: 1, ...opts }); }
 
+
+// Casca que envolve outras peças (a carcaça do fan, o divisor): dividida em metade de trás, que mostra a
+// parede de dentro, e metade da frente, que mostra a parede de fora e a face da frente. As peças de dentro
+// ficam entre as duas na ordem de pintura (craft.md, "Painter's order").
+const shade = (n) => { const b = G.toneOf(n, P); return b >= 4 ? `class="iso-top"` : `class="iso-shade" data-shade="${b}"`; };
+const qd = (pts) => "M" + pts.map((p) => at(p).map((v) => v.toFixed(1)).join(" ")).join("L") + "Z";
+function casca(piece, s0, s1, rIn, rOut, { keyFrente, keyTras, tone = "hi", name, linhas = [], pontos = "" } = {}) {
+  const N = 120, fr = [], tr = [], vis = (th) => Math.cos(th) * V[1] + Math.sin(th) * V[2];
+  for (let i = 0; i < N; i++) {
+    const a0 = (i / N) * 2 * Math.PI, a1 = ((i + 1) / N) * 2 * Math.PI, am = (a0 + a1) / 2, n = [0, Math.cos(am), Math.sin(am)];
+    if (vis(am) > 0) fr.push(`<path ${shade(n)} d="${qd([on(s0, rOut, a0 / DEG), on(s1, rOut, a0 / DEG), on(s1, rOut, a1 / DEG), on(s0, rOut, a1 / DEG)])}"/>`);
+    else tr.push(`<path ${shade(G.mul3(n, -1))} d="${qd([on(s0, rIn, a0 / DEG), on(s1, rIn, a0 / DEG), on(s1, rIn, a1 / DEG), on(s0, rIn, a1 / DEG)])}"/>`);
+  }
+  const faceS = G.dot3(AX.a, V) > 0 ? s1 : s0, fn = G.dot3(AX.a, V) > 0 ? [1, 0, 0] : [-1, 0, 0];
+  const anelFace = `<path ${shade(fn)} fill-rule="evenodd" d="${G.circleOf(AX, faceS, rOut, P, 96)}${G.circleOf(AX, faceS, rIn, P, 96)}"/>`;
+  const thV = Math.atan2(V[2], V[1]), lados = [thV + Math.PI / 2, thV - Math.PI / 2].map((th) => k.segment(on(s0, rOut, th / DEG), on(s1, rOut, th / DEG), P)).join("");
+  const arco = (s, r, frente) => { const pts = []; for (let i = 0; i <= 96; i++) { const th = (i / 96) * 2 * Math.PI; if ((vis(th) > 0) === frente) pts.push(on(s, r, th / DEG)); else if (pts.length) break; } return pts.length > 1 ? "M" + pts.map((p) => at(p).map((v) => v.toFixed(1)).join(" ")).join("L") : ""; };
+  const backS = faceS === s0 ? s1 : s0;
+  const idF = nameFor(name ?? `${piece}.casca`);
+  R.put({ piece, ride: piece, key: keyTras, move: PIECES[piece].move, name: `${idF}.tras`, svg: `<g class="iso-solid">${tr.join("")}${Ln(arco(backS, rIn, false), { tone: "mid" })}</g>`, shapes: [] });
+  const inner = linhas.map((sx) => arco(sx, rOut, true)).join("");
+  R.put({ piece, ride: piece, key: keyFrente, move: PIECES[piece].move, name: `${idF}.frente`, svg: `<g class="iso-solid">${fr.join("")}${anelFace}${inner ? Ln(inner, { tone: "faint" }) : ""}<path class="iso-line iso-edge" data-tone="${tone}" d="${lados}${G.circleOf(AX, faceS, rOut, P, 96)}${G.circleOf(AX, faceS, rIn, P, 96)}${arco(backS, rOut, true)}"/>${pontos}</g>`, shapes: [] });
+}
+
 // ================= SUPORTE DE TRANSPORTE =================
 const BASE = { x: -14, y: -42, w: 226, d: 84, r: 4 };
 for (const y of [-36, 36]) caixa("stand", { x: BASE.x, y: y - 4, w: BASE.w, d: 8, r: 1 }, 10, 6, { tone: "mid", name: "stand.trilho", bevel: 0.6 });
@@ -133,36 +157,54 @@ for (const [x, top] of BERCO) {
 const halo = `<path class="iso-halo" d="${k.haloOf(BASE, 0, 16, P)}"/>`;
 
 // ================= FAN: CONE, DISCO E 18 PÁS =================
-const SP0 = -24, SP1 = 8, SPR = 18.5;
-const spR = (s) => SPR * Math.sqrt(Math.max(0, 1 - ((s - SP1) / (SP1 - SP0)) ** 2));
-const spSlope = (s) => { const r = spR(s); return r > 0.3 ? (-SPR * SPR * (s - SP1)) / ((SP1 - SP0) ** 2 * r) : 40; };
+const SP0 = -34, SP1 = 8, SPR = 18.5;
+const spR = (s) => SPR * (1 - Math.pow(Math.max(0, (SP1 - s) / (SP1 - SP0)), 1.5));
+const spSlope = (s) => (SPR * 1.5 * Math.pow(Math.max(1e-6, (SP1 - s) / (SP1 - SP0)), 0.5)) / (SP1 - SP0);
 {
   const prof = Array.from({ length: 22 }, (_, i) => { const s = SP0 + 0.05 + (i / 21) * (SP1 - SP0 - 0.05); return [s, spR(s), i > 0 && i < 21 ? 1 : 0]; });
   prof[0] = [SP0, 0];
   // a espiral pintada (só a parte que se vê) e a ponta de borracha
   const esp = []; for (let j = 0; j <= 50; j++) { const s = SP0 + 2 + j * (SP1 - SP0 - 3) / 50; esp.push(G.pointOf(AX, s, spR(s) + 0.15, (40 + j * 9) * DEG)); }
-  const vis = []; let run = []; for (const p of esp) { const n = G.unit3(G.sub3(p, [p[0], 0, Z0])); if (G.dot3(n, V) > 0.12) run.push(p); else if (run.length) { vis.push(run); run = []; } } if (run.length) vis.push(run);
-  turned("spinner", AX, prof, { tone: "hi", smooth: { slope: spSlope, rows: 5 }, name: "spinner.cone", extra: vis.map((r) => k.fadeLineSvg(r.map(at), { fade: [3, 3], tone: "lit" })).join("") });
+  const vis = []; let run = []; for (const p of esp) { const rad = G.unit3(G.sub3(p, [p[0], 0, Z0])); const n = G.unit3(G.sub3(rad, [spSlope(p[0]), 0, 0])); if (G.dot3(n, V) > 0.12) run.push(p); else if (run.length) { vis.push(run); run = []; } } if (run.length) vis.push(run);
+  turned("spinner", AX, prof, { tone: "mid", smooth: { slope: spSlope, rows: 5 }, name: "spinner.cone", extra: vis.map((r) => `<path class="iso-line" data-tone="hi" data-free="both" d="M${r.map((p) => at(p).map((v) => v.toFixed(1)).join(" ")).join("L")}" style="stroke-width:2.2;stroke-linecap:round"/>`).join("") });
   anel("spinner", SP1 - 0.6, SP1 + 0.8, SPR - 1.5, SPR + 0.4, { tone: "mid", name: "spinner.anel", extra: Dots(G.dotsOf(AX, SP1 - 0.6, SPR - 0.6, 24, P, { fade: FADE }), { size: 0.4 }) });
 }
 disco("fan", AX, SP1 + 0.8, 22, 18.6, { tone: "mid", name: "fan.disco" });
 const BLADES = 18;
+// cada pá é uma superfície torcida: da raiz à ponta o ângulo abre (de 28° a 68° com o eixo), a corda cresce
+// e a ponta vai para trás, como as pás largas de compósito do GEnx; a borda de ataque de titânio fica clara
 for (let i = 0; i < BLADES; i++) {
   const th = (i / BLADES) * 360 + 6;
-  const a = [0, Math.cos(th * DEG), Math.sin(th * DEG)], t = [0, -Math.sin(th * DEG), Math.cos(th * DEG)];
-  const F = G.frameOf([14.5, 0, Z0], a, [1, 0, 0], t);
-  const beta = 58 * DEG, poly = [];
-  for (let j = 0; j < 14; j++) { const q = (j / 14) * 2 * Math.PI, x = 8.4 * Math.cos(q), y = 1.15 * Math.sin(q) * (Math.cos(q) > 0 ? 0.7 : 1); poly.push([x * Math.cos(beta) - y * Math.sin(beta), x * Math.sin(beta) + y * Math.cos(beta)]); }
+  const rad = [0, Math.cos(th * DEG), Math.sin(th * DEG)], tan = [0, -Math.sin(th * DEG), Math.cos(th * DEG)];
+  const le = [], te = [], N = 12;
+  for (let j = 0; j <= N; j++) {
+    const t = j / N, r = 18.8 + (58.9 - 18.8) * t, beta = (28 + 40 * t) * DEG, c = 5.8 + 5.4 * t - 2.2 * t * t * t, sweep = 2.4 * t * t;
+    const c0 = G.add3([14.5 + sweep, 0, Z0], G.mul3(rad, r));
+    const d = G.add3(G.mul3([1, 0, 0], Math.cos(beta)), G.mul3(tan, Math.sin(beta)));
+    le.push(G.add3(c0, G.mul3(d, -c))); te.push(G.add3(c0, G.mul3(d, c * 0.9)));
+  }
+  const faces = [];
+  for (let j = 0; j < N; j++) {
+    let n = G.unit3(G.cross3(G.sub3(le[j + 1], le[j]), G.sub3(te[j], le[j])));
+    if (G.dot3(n, V) < 0) n = G.mul3(n, -1);
+    faces.push(`<path ${shade(n)} d="${qd([le[j], le[j + 1], te[j + 1], te[j]])}"/>`);
+  }
+  const contorno = "M" + [...le, ...[...te].reverse()].map((p) => at(p).map((v) => v.toFixed(1)).join(" ")).join("L") + "Z";
+  const borda = "M" + le.map((p) => at(p).map((v) => v.toFixed(1)).join(" ")).join("L");
+  const F = G.frameOf([15.5, 0, Z0], rad, [1, 0, 0], tan), b = 48 * DEG, poly = [];
+  for (let j = 0; j < 12; j++) { const q = (j / 12) * 2 * Math.PI, x = 8 * Math.cos(q), y = 0.9 * Math.sin(q); poly.push([x * Math.cos(b) - y * Math.sin(b), x * Math.sin(b) + y * Math.cos(b)]); }
   const id = nameFor("fan.pa");
-  put("fan", G.pointOf(F, 38, 0, 0), S(G.prismOf(F, poly, 18.8, 58.9, P), { tone: "hi" }), { name: id, shapes: [record(A.prism(F, poly, 18.8, 58.9, { name: id }))] });
+  put("fan", G.pointOf(F, 40, 0, 0), `<g class="iso-solid"><path class="iso-fill" d="${contorno}"/>${faces.join("")}<path class="iso-line iso-edge" data-tone="hi" d="${contorno}"/><path class="iso-line" data-tone="lit" d="${borda}" style="stroke-width:1.3"/></g>`, { name: id, shapes: [record(A.prism(F, poly, 18.8, 58.9, { name: id }))] });
 }
 
 // ================= CARCAÇA DO FAN, PALHETAS GUIA E EQUIPAMENTOS =================
-anel("fancase", -6, -2, 59.6, 66.5, { tone: "mid", name: "fancase.flange-frente", extra: Dots(G.dotsOf(AX, -6, 64.2, 60, P, { fade: FADE }), { size: 0.4 }) });
-anel("fancase", -2, 26, 59.6, 64.4, { tone: "lo", name: "fancase.contencao", inner: Ln([6, 13, 20].map((s) => G.arcOf(AX, s, 64.4, P)).join(""), { tone: "faint" }) });
-anel("fancase", 26, 41, 59.6, 63.2, { tone: "mid", name: "fancase.traseira", inner: Ln([29, 33, 37].map((s) => G.arcOf(AX, s, 63.2, P)).join(""), { tone: "faint" }) });
-anel("fancase", 31, 32.6, 63.2, 65.4, { tone: "mid", name: "fancase.reforco" });
-anel("fancase", 41, 43.5, 59.6, 67, { tone: "mid", name: "fancase.flange-tras", extra: Dots(G.dotsOf(AX, 41, 65.4, 64, P, { fade: FADE }), { size: 0.4 }) });
+// carcaça do fan: anéis em casca, da frente para trás (a da frente fica por cima)
+const FCK = (sx) => 60 - sx * 0.01;
+casca("fancase", -6, -2, 59.6, 66.5, { keyFrente: FCK(-6), keyTras: -500 + 6, tone: "mid", name: "fancase.flange-frente", pontos: Dots(G.dotsOf(AX, -6, 64.2, 60, P, { fade: FADE }), { size: 0.4 }) });
+casca("fancase", -2, 26, 59.6, 64.4, { keyFrente: FCK(-2), keyTras: -500 - 2, tone: "lo", name: "fancase.contencao", linhas: [6, 13, 20] });
+casca("fancase", 26, 41, 59.6, 63.2, { keyFrente: FCK(26), keyTras: -500 - 26, tone: "mid", name: "fancase.traseira", linhas: [29, 37] });
+casca("fancase", 31, 32.6, 63.2, 65.4, { keyFrente: FCK(31) + 0.001, keyTras: -600, tone: "mid", name: "fancase.reforco" });
+casca("fancase", 41, 43.5, 59.6, 67, { keyFrente: FCK(41), keyTras: -500 - 41, tone: "mid", name: "fancase.flange-tras", pontos: Dots(G.dotsOf(AX, 41, 65.4, 64, P, { fade: FADE }), { size: 0.4 }) });
 // palhetas guia (OGV) entre o núcleo e a carcaça
 fileira("fancase", 37, 4, 33, 59.6, 44, { tone: "mid", sweep: 0.04, name: "fancase.ogv" });
 // FADEC (EEC): caixa com aletas presa na lateral da carcaça, com dois conectores e cabos
@@ -185,7 +227,7 @@ for (const s of [5, 18]) caixa("fancase", { x: 2 + s - 1.5, y: SIDE * 54 - 1.5, 
 turned("booster", AX, [[22, 0], [22, 19], [44, 21], [44, 0]], { tone: "mid", name: "booster.tambor" });
 for (const s of [25, 31, 37]) fileira("booster", s, 2.4, 20.4, 29.2, 64, { name: "booster.fileira" });
 // divisor de fluxo (bico do núcleo) e carcaça do booster: ficam com a carcaça do fan
-anel("fancase", 22, 37, 29.6, 32.6, { tone: "hi", name: "fancase.divisor", extra: Ln(G.arcOf(AX, 22, 31.1, P), { tone: "faint" }) });
+casca("fancase", 22, 37, 29.6, 32.6, { keyFrente: 20, keyTras: -400, tone: "hi", name: "fancase.divisor" });
 // armação do fan (cone que desce até o compressor de alta) e suporte da frente em cima
 turned("core", AX, [[43.5, 0], [43.5, 33], [48, 33, 1], [54, 27.6, 1], [54, 0]], { tone: "mid", name: "core.armacao" });
 caixa("core", { x: 44, y: -5, w: 9, d: 10, r: 1 }, Z0 + 32.5, 6, { tone: "mid", name: "core.suporte-frente", extra: Dots([at([46, -2.5, Z0 + 38.5]), at([51, -2.5, Z0 + 38.5]), at([46, 2.5, Z0 + 38.5]), at([51, 2.5, Z0 + 38.5])], { size: 0.45 }) });
@@ -308,7 +350,15 @@ caixa("hpccase", { x: 54, y: -4.5, w: 4, d: 9, r: 1 }, Z0 + 35.5, 9, { tone: "mi
 conectores.forEach((c, i) => cabo("eec", [c, [c[0], c[1], c[2] + 4 + i], [44, SIDE * (50 - i * 3), Z0 + 22 + i * 2], [60 + i * 8, SIDE * (HPC(60 + i * 8) * 0.55), Z0 + HPC(60 + i * 8) * 0.83 + 1.2]], { name: "eec.cabo", free: [false, true], bundle: "harness" }));
 
 // ================= ORDEM DE PINTURA MEDIDA E SAÍDA =================
-A.settle(R, P);
+// peças por fora da carcaça do fan ficam por cima dela
+for (const it of items) if (/^(eec\.|fancase\.(tanque|suporte-tanque))/.test(it.name)) it.key += 300;
+A.settle(R, P, { states: [0, ...A.prefixStates(STAGGER, { shares: [0.5, 1] }), 1] });
+// o cone fica na frente do disco do fan (o settle reescreve as chaves; ajusta depois dele)
+{ const kd = Math.max(...items.filter((it) => it.name.startsWith("fan.disco")).map((it) => it.key));
+  const sp = items.filter((it) => it.name.startsWith("spinner.")).sort((a, b) => a.key - b.key);
+  // o anel fica na base do cone, atrás dele: anel primeiro, cone por cima
+  const peso = (it) => (it.name.startsWith("spinner.cone") ? 1 : 0);
+  sp.sort((a, b) => peso(a) - peso(b)).forEach((it, i) => { it.key = Math.max(it.key, kd) + 0.001 * (i + 1); }); }
 items.sort((a, b) => a.key - b.key);
 const groups = items.map((it, i) => { const [mx, my, mz] = it.move; return `<g class="it" data-piece="${it.piece}" data-k="${it.key.toFixed(2)}" data-m="${mx.toFixed(1)},${my.toFixed(1)},${mz.toFixed(1)}" data-i="${i}">${it.svg}</g>`; });
 const nSolidos = items.filter((it) => !it.route).length;
