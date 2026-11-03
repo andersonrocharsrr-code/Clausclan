@@ -248,11 +248,12 @@ function casca(piece, s0, s1, rIn, rOut, { tone = "hi", name, segs, linhas = [],
   }
   const id = nameFor(name ?? `${piece}.casca`);
   const cutF = corte ? [corteS(false), CUNHA] : corteS(false), cutT = corte ? [corteS(true), CUNHA] : corteS(true);
-  const shF = record(A.lathe(AX, prof, { name: `${id}.frente`, owner: id, cut: cutF }));
-  const shT = record(A.lathe(AX, prof, { name: `${id}.tras`, owner: id, cut: cutT }));
+  const temF = out.true.f.length > 0, temT = out.false.f.length > 0;
+  const shF = A.lathe(AX, prof, { name: `${id}.frente`, owner: id, cut: cutF }), shT = A.lathe(AX, prof, { name: `${id}.tras`, owner: id, cut: cutT });
+  if (temF) record(shF); if (temT) record(shT);
   for (const half of [false, true]) {
     const o = out[half];
-    if (!o.f.length && !o.extra.length) continue;
+    if (!o.f.length) continue;
     const ang = (Math.atan2(NV[2], NV[1]) / DEG) + (half ? 0 : 180);
     R.put({ piece, ride: piece, at: on((s0 + s1) / 2, fo((s0 + s1) / 2), ang), move: PIECES[piece].move, name: `${id}.${half ? "frente" : "tras"}`, shapes: [half ? shF : shT],
       svg: `<g class="iso-solid">${o.f.join("")}${o.extra.join("")}${!half && chama.length ? `<path class="gx-chama" d="${chama.join("")}"/>` : ""}<path class="iso-line iso-edge" data-tone="${tone}" d="${o.e.join("")}"/>${half ? "" : extraTras}</g>` });
