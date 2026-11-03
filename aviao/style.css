@@ -1628,3 +1628,5 @@ main.wrap { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 .dz-fig { margin-top: 16px; }
 .dz-fig iframe { display: block; width: 100%; height: 420px; border: 0; border-radius: 12px; background: transparent; }
 .dz-fig .small { margin: 6px 2px 0; }
+.eng__ilustra { margin: 14px 0 18px; padding: 12px; }
+.eng__ilustra .dz-fig { margin-top: 8px; }

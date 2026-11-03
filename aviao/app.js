@@ -284,6 +284,21 @@ const GLOSS = [
   ['Enflechamento', 'sweep', 'Inclinação da asa para trás, que permite voar mais perto da velocidade do som.'],
 ];
 
+/* ---------------- Ilustrações interativas (skill Anatomy) ---------------- */
+// Preenche cada [data-fig] com a página assets/fig-NOME.html no tema do app e ajusta a altura ao conteúdo
+function figurasEm(raiz) {
+  if (!raiz) return;
+  const claro = document.documentElement.dataset.theme === 'light' || (!document.documentElement.dataset.theme && matchMedia('(prefers-color-scheme: light)').matches);
+  raiz.querySelectorAll('[data-fig]').forEach((el) => {
+    const src = `assets/fig-${el.dataset.fig}${claro ? '-light' : ''}.html`;
+    if (el.dataset.src === src) return;
+    el.dataset.src = src;
+    el.innerHTML = `<iframe src="${src}" title="Ilustração interativa"></iframe><p class="small">Ilustração interativa: arraste para acelerar e toque nos números.</p>`;
+    const fr = el.querySelector('iframe');
+    fr.addEventListener('load', () => { try { const ajusta = () => { fr.style.height = fr.contentDocument.documentElement.scrollHeight + 'px'; }; ajusta(); new ResizeObserver(ajusta).observe(fr.contentDocument.body); } catch {} });
+  });
+}
+
 /* ---------------- Abas ---------------- */
 const TABS = ['inicio', 'pecas', 'escola', 'historia', 'desastres', 'cockpit', 'lab', 'meteo', 'radio', 'glossario', 'catalogo', 'cartas', 'plano', 'nav', 'luzes', 'espaco', 'regras', 'aero', 'tempo'];
 let current = null;
@@ -296,7 +311,7 @@ function showTab(id, push) {
   $$('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.id === 'bnInicio' ? !['escola', 'cockpit', 'lab'].includes(id) : t.dataset.tab === id)));
   if (push) { try { history.replaceState(null, '', '#' + id); } catch {} }
   if (id === 'cockpit') { sizeGauges(); startSim(); }
-  if (id === 'lab') startLab();
+  if (id === 'lab') { startLab(); figurasEm(document.getElementById('view-lab')); }
   if (id === 'meteo') window.Meteo?.start();
   if (id === 'radio') window.Radio?.start();
   if (id === 'cartas') window.Cartas?.start();
