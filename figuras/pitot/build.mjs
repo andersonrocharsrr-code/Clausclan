@@ -31,8 +31,8 @@ const byDepth = (pts) => [...pts].sort((a, b) => k.depthOf([a[0], a[1], 0], P) -
 function painel() {
   const out = [`<path class="iso-halo" d="${k.haloOf(PLATE, -PLATE_H - FOOT_H, PLATE_H, P)}"/>`];
   for (const [x, y] of byDepth(k.corners(PLATE, 20))) {
-    out.push(S(k.cylinder(x, y, 7, -PLATE_H - FOOT_H, 1.6, P, 28), { tone: "lo" }));
-    out.push(S(k.cylinder(x, y, 5.4, -PLATE_H - FOOT_H + 1.6, FOOT_H - 1.6, P, 28), { tone: "mid" }));
+    out.push(S(k.cylinder(x, y, 7, -PLATE_H - FOOT_H, 1.6, P, 28), { tone: "lo", className: "c-borracha" }));
+    out.push(S(k.cylinder(x, y, 5.4, -PLATE_H - FOOT_H + 1.6, FOOT_H - 1.6, P, 28), { tone: "mid", className: "c-borracha" }));
   }
   out.push(S(k.slabOf(PLATE, -PLATE_H, PLATE_H, P, 8, 1.4), { tone: "mid" }));
   // emendas das chapas e fileiras de rebites
@@ -48,7 +48,7 @@ function painel() {
   out.push(D(screws.map(([x, y]) => at([x, y, 0])), { size: 0.5 }));
   // plaqueta de identificação
   const tag = { x: 18, y: PLATE.y + 10, w: 44, d: 12, r: 1.2 };
-  out.push(S(k.slabOf(tag, 0, 0.6, P, 3), { tone: "lo", crease: "none" }));
+  out.push(S(k.slabOf(tag, 0, 0.6, P, 3), { tone: "lo", crease: "none", className: "c-placa" }));
   out.push(k.faceTextSvg(k.topMatrix([tag.x + tag.w / 2, tag.y + 7.4], 0.6, P, "x"), "PITOT 1", { size: 3.4, tone: "mid", anchor: "middle" }));
   out.push(D([at([tag.x + 2.4, tag.y + 6, 0.6]), at([tag.x + tag.w - 2.4, tag.y + 6, 0.6])], { size: 0.4 }));
   return out.join("");
@@ -68,7 +68,7 @@ function aquecimento() {
   const out = [], cx = FL[0] + 13, cy = FL[1] - 12;
   out.push(S(k.cylinder(cx, cy, 3.6, 2.4, 5, P, 24), { tone: "mid" }));
   out.push(L(k.knurl(cx, cy, 3.6, 4, 7.4, 20, P), { tone: "lo" }));
-  out.push(k.wireSvg(at([cx, cy, 7.4]), at([cx + 30, PLATE.y + 5, 0]), { via: [at([cx + 6, cy - 6, 7]), at([cx + 22, PLATE.y + 10, 1])], tone: "lo", ends: "both", size: 1.1 }));
+  out.push(k.wireSvg(at([cx, cy, 7.4]), at([cx + 30, PLATE.y + 5, 0]), { via: [at([cx + 6, cy - 6, 7]), at([cx + 22, PLATE.y + 10, 1])], tone: "lo", ends: "both", size: 1.1 }).replace("<path", "<path style=\"stroke:#e8792f;stroke-width:1.3\""));
   return out.join("");
 }
 
@@ -89,7 +89,7 @@ function mastro() {
   out.push(L(k.lineOnTop([fx - 9, fy], [fx + 9, fy], 2.4, P), { tone: "faint" }));
   // tubo: tampa traseira, corpo e ponta afinada com a entrada
   const prof = [[0, 0], [0, 6.2], [2, 6.4], [70, 6.4], [84, 5.6, 1], [96, 4.4, 1], [LEN, 3.6]];
-  out.push(S(G.lathe(prof, TUBE, P, { hole: [LEN, 2.0], bevel: 0.5 }), { tone: "hi", inner: L([20, 46, 70].map((s) => G.arcOf(TUBE, s, 6.4, P)).join(""), { tone: "faint" }) }));
+  out.push(S(G.lathe(prof, TUBE, P, { hole: [LEN, 2.0], bevel: 0.5 }), { tone: "hi", className: "c-sonda", inner: L([20, 46, 70].map((s) => G.arcOf(TUBE, s, 6.4, P)).join(""), { tone: "faint" }) }));
   // furo de dreno embaixo e marca de aquecimento
   out.push(D([at([T0 + 78, AX_Y + 3.8, AX_Z - 4.8])], { size: 0.6, tone: "lo" }));
   return out.join("");
@@ -130,7 +130,7 @@ function tubulacao() {
   out.push(S(G.disc(0, lenB, PIPE_R, B, P), { tone: "mid" }));
   for (const x of [-26, 14]) {
     const cl = { x: x - 3, y: PIPE_Y - 4.4, w: 6, d: 8.8, r: 1 };
-    out.push(S(k.slabOf(cl, 0, PIPE_Z * 2 + 0.6, P, 3, 0.3), { tone: "lo" }));
+    out.push(S(k.slabOf(cl, 0, PIPE_Z * 2 + 0.6, P, 3, 0.3), { tone: "lo", className: "c-presilha" }));
     out.push(D([at([x, PIPE_Y - 3.2, PIPE_Z * 2 + 0.6]), at([x, PIPE_Y + 3.2, PIPE_Z * 2 + 0.6])], { size: 0.4 }));
   }
   return out.join("");
@@ -148,7 +148,7 @@ function velocimetro() {
   out.push(S(k.cylinder(x, y, DIAL_R - 4, 0, 6, P, 48), { tone: "lo" }));
   out.push(S(k.cylinder(x, y, 6, 6, DIAL_Z - 6, P, 28), { tone: "mid" }));
   out.push(L(k.sideArc(x, y, 6, 12, P, 16), { tone: "faint" }));
-  out.push(S(k.cylinder(x, y, DIAL_R, DIAL_Z, DIAL_H, P, 72, 0.8), { tone: "hi", crease: "lo" }));
+  out.push(S(k.cylinder(x, y, DIAL_R, DIAL_Z, DIAL_H, P, 72, 0.8), { tone: "hi", crease: "lo", className: "c-mostrador" }));
   out.push(L(k.knurl(x, y, DIAL_R, DIAL_TOP - 3.2, DIAL_TOP, 84, P, 0.3), { tone: "lo" }));
   out.push(L(k.sideArc(x, y, DIAL_R, DIAL_TOP - 3.2, P, 40), { tone: "faint" }));
   out.push(L(k.ring(x, y, DIAL_R - 2.2, DIAL_TOP, P, 64), { tone: "lo" }));
@@ -156,18 +156,24 @@ function velocimetro() {
   out.push(L(t.minor, { tone: "lo" }), L(t.major, { tone: "mid" }));
   // arco vermelho da velocidade de estol (até ~ 120 kt, didático)
   const arc = []; for (let i = 0; i <= 16; i++) { const a = FROM + (i / 16) * SPAN * (120 / MAXKT); arc.push([x + Math.sin(a) * (DIAL_R - 6.6), y - Math.cos(a) * (DIAL_R - 6.6)]); }
-  out.push(`<path class="iso-line" data-tone="red" d="${k.onTop(arc, DIAL_TOP, P)}" style="stroke-width:1.6"/>`);
+  out.push(`<path class="iso-line" data-tone="red" d="${k.onTop(arc, DIAL_TOP, P)}" style="stroke-width:1.6;stroke:#ff4d4d!important"/>`);
   out.push(k.faceTextSvg(k.topMatrix([x, y + 9], DIAL_TOP, P, "x"), "KT", { size: 3, tone: "lo", anchor: "middle" }));
   out.push(L(k.ring(x, y, 1.6, DIAL_TOP, P, 16), { tone: "mid" }));
   return out.join("");
 }
 
+
+const MATERIAIS = { pele: "#c8ced6", borracha: "#30343a", placa: "#3d6aa3", alu: "#b4bcc5", latao: "#c9a24c", mastro: "#8f9aa6", sonda: "#aab4be", cobre: "#c07a45", presilha: "#4b5562", preto: "#2a2e34", mostrador: "#1c2025" };
+const hex = (h, f) => "#" + [1, 3, 5].map((i) => Math.max(0, Math.min(255, Math.round(parseInt(h.slice(i, i + 2), 16) * f))).toString(16).padStart(2, "0")).join("");
+const CORES = Object.entries(MATERIAIS).map(([n, c]) => `.c-${n}{--anatomy-shade-0:${hex(c, 0.6)};--anatomy-shade-1:${hex(c, 0.7)};--anatomy-shade-2:${hex(c, 0.8)};--anatomy-shade-3:${hex(c, 0.9)};--anatomy-top:${hex(c, 1.06)};--anatomy-paper:${hex(c, 0.85)};--anatomy-face:${hex(c, 0.85)}}.c-${n} .iso-edge{stroke:${hex(c, 0.42)}}`).join("")
+  + ".c-pele .iso-line[data-tone=lo],.c-pele .iso-line[data-tone=faint]{stroke:#8d96a0}.c-placa text{fill:#e9eef5}"
+  + ".c-mostrador~.iso-line,.c-preto .iso-line[data-tone=lo],.c-preto .iso-line[data-tone=mid]{stroke:#e9edf1}.c-preto text{fill:#e9edf1}";
 const ices = Array.from({ length: ICE_LEVELS + 1 }, (_, i) => `<g data-ice="${i}" style="opacity:${i ? 0 : 1}">${gelo(i)}</g>`).join("");
 const svg = k.figureSvg({
   width: WIDTH, height: HEIGHT,
   label: "Tubo de Pitot preso a um painel da fuselagem, ligado por um tubo fino a um velocímetro. O ar entra pela ponta do tubo; quando cristais de gelo entopem a entrada, a pressão cai e o ponteiro do velocímetro despenca, mesmo com o avião na mesma velocidade.",
-  body: [painel(), estatica(), aquecimento(), mastro(), ices, fluxo(), tubulacao(), velocimetro(),
-    `<path data-part="needle" class="iso-line" data-tone="lit" data-free="start" d="${needleAt(275)}" style="stroke-width:1.2"/>`],
+  body: [`<g class="c-pele">${painel()}</g>`, `<g class="c-alu">${estatica()}</g>`, `<g class="c-latao">${aquecimento()}</g>`, `<g class="c-mastro">${mastro()}</g>`, ices, fluxo(), `<g class="c-cobre">${tubulacao()}</g>`, `<g class="c-preto">${velocimetro()}</g>`,
+    `<path data-part="needle" class="iso-line" data-tone="lit" data-free="start" d="${needleAt(275)}" style="stroke-width:1.3;stroke:#ffd23f"/>`],
 });
 
 const live = `
@@ -214,10 +220,10 @@ draw();
 const body = k.plateHtml({
   fig: "Fig 1", title: "Tubo de Pitot", hint: "Arraste para congelar",
   readout: "entrada livre · velocímetro 275 kt",
-  keys: [{ mark: "lit", label: "Ponteiro: a velocidade mostrada" }, { mark: "blue", label: "Ar entrando na ponta do tubo" }, { mark: "dotted", label: "Tomada estática: pressão do ar parado" }],
+  keys: [{ mark: "lit", label: "Ponteiro amarelo: a velocidade mostrada" }, { mark: "blue", label: "Ar entrando na ponta do tubo" }, { mark: "dotted", label: "Tomada estática: pressão do ar parado" }],
   caption: "Simplificado. O tubo de Pitot mede a pressão do ar que bate de frente na ponta; a tomada estática, rente à fuselagem, mede a do ar parado. A diferença entre as duas é a velocidade. No AF447, cristais de gelo entupiram a entrada por menos de um minuto: a pressão caiu e a velocidade mostrada despencou, mesmo com o avião voando igual.",
   body: `<div class="iso-stage" tabindex="0" role="slider" aria-label="Tubo de Pitot: setas para congelar ou descongelar a entrada" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">${svg}</div>`,
 });
 const file = theme === "light" ? "fig-pitot-light.html" : "fig-pitot.html";
-writeFileSync(join(HERE, "../../aviao/assets", file), k.pageHtml({ title: "Tubo de Pitot", theme, body: body + `<style>.ice path{fill:#e4f1fb!important;stroke:#8fb0c9!important;stroke-width:.5!important}.ice path:nth-of-type(n+3){fill:#cfe3f3!important}body{margin:0}.iso-page{width:100%!important;margin:0!important}.iso-plate{padding:44px 10px 58px!important;box-shadow:none!important;border-radius:12px!important}.iso-stage{touch-action:pan-y}</style>`, script: kitScript() + live }));
+writeFileSync(join(HERE, "../../aviao/assets", file), k.pageHtml({ title: "Tubo de Pitot", theme, body: body + `<style>${CORES}.ice path{fill:#e4f1fb!important;stroke:#8fb0c9!important;stroke-width:.5!important}.ice path:nth-of-type(n+3){fill:#cfe3f3!important}body{margin:0}.iso-page{width:100%!important;margin:0!important}.iso-plate{padding:44px 10px 58px!important;box-shadow:none!important;border-radius:12px!important}.iso-stage{touch-action:pan-y}</style>`, script: kitScript() + live }));
 console.log("wrote", file);
