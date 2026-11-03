@@ -134,22 +134,34 @@ function cabo(piece, pts, opts = {}) { return tubo(piece, G.fillet(pts, 5, 12, {
 // ficam entre as duas na ordem de pintura (craft.md, "Painter's order").
 const shade = (n) => { const b = G.toneOf(n, P); return b >= 4 ? `class="iso-top"` : `class="iso-shade" data-shade="${b}"`; };
 const qd = (pts) => "M" + pts.map((p) => at(p).map((v) => v.toFixed(1)).join(" ")).join("L") + "Z";
-function casca(piece, s0, s1, rIn, rOut, { keyFrente, keyTras, tone = "hi", name, linhas = [], pontos = "" } = {}) {
-  const N = 120, fr = [], tr = [], vis = (th) => Math.cos(th) * V[1] + Math.sin(th) * V[2];
-  for (let i = 0; i < N; i++) {
-    const a0 = (i / N) * 2 * Math.PI, a1 = ((i + 1) / N) * 2 * Math.PI, am = (a0 + a1) / 2, n = [0, Math.cos(am), Math.sin(am)];
-    if (vis(am) > 0) fr.push(`<path ${shade(n)} d="${qd([on(s0, rOut, a0 / DEG), on(s1, rOut, a0 / DEG), on(s1, rOut, a1 / DEG), on(s0, rOut, a1 / DEG)])}"/>`);
-    else tr.push(`<path ${shade(G.mul3(n, -1))} d="${qd([on(s0, rIn, a0 / DEG), on(s1, rIn, a0 / DEG), on(s1, rIn, a1 / DEG), on(s0, rIn, a1 / DEG)])}"/>`);
-  }
-  const faceS = G.dot3(AX.a, V) > 0 ? s1 : s0, fn = G.dot3(AX.a, V) > 0 ? [1, 0, 0] : [-1, 0, 0];
-  const anelFace = `<path ${shade(fn)} fill-rule="evenodd" d="${G.circleOf(AX, faceS, rOut, P, 96)}${G.circleOf(AX, faceS, rIn, P, 96)}"/>`;
-  const thV = Math.atan2(V[2], V[1]), lados = [thV + Math.PI / 2, thV - Math.PI / 2].map((th) => k.segment(on(s0, rOut, th / DEG), on(s1, rOut, th / DEG), P)).join("");
-  const arco = (s, r, frente) => { const pts = []; for (let i = 0; i <= 96; i++) { const th = (i / 96) * 2 * Math.PI; if ((vis(th) > 0) === frente) pts.push(on(s, r, th / DEG)); else if (pts.length) break; } return pts.length > 1 ? "M" + pts.map((p) => at(p).map((v) => v.toFixed(1)).join(" ")).join("L") : ""; };
-  const backS = faceS === s0 ? s1 : s0;
-  const idF = nameFor(name ?? `${piece}.casca`);
-  R.put({ piece, ride: piece, key: keyTras, move: PIECES[piece].move, name: `${idF}.tras`, svg: `<g class="iso-solid">${tr.join("")}${Ln(arco(backS, rIn, false), { tone: "mid" })}</g>`, shapes: [] });
-  const inner = linhas.map((sx) => arco(sx, rOut, true)).join("");
-  R.put({ piece, ride: piece, key: keyFrente, move: PIECES[piece].move, name: `${idF}.frente`, svg: `<g class="iso-solid">${fr.join("")}${anelFace}${inner ? Ln(inner, { tone: "faint" }) : ""}<path class="iso-line iso-edge" data-tone="${tone}" d="${lados}${G.circleOf(AX, faceS, rOut, P, 96)}${G.circleOf(AX, faceS, rIn, P, 96)}${arco(backS, rOut, true)}"/>${pontos}</g>`, shapes: [] });
+// rIn e rOut podem ser números ou funções de s (cone, bojo); cada metade registra a forma de verdade:
+// o anel inteiro cortado pelo semiespaço da outra metade, e o settle mede a ordem delas com as peças de dentro.
+const NV = G.unit3([0, V[1], V[2]]);
+const LADO = (frente) => A.prism(G.frameOf([0, 0, Z0], [1, 0, 0], NV, [0, -NV[2], NV[1]]), frente ? [[0, -400], [400, -400], [400, 400], [0, 400]] : [[-400, -400], [0, -400], [0, 400], [-400, 400]], -1000, 1000);
+function casca(piece, s0, s1, rIn, rOut, { tone = "hi", name, linhas = [], arcos = "", arcosMid = "", pontos = "", segs, naFace } = {}) {
+  const fi = typeof rIn === "function" ? rIn : () => rIn, fo = typeof rOut === "function" ? rOut : () => rOut;
+  const curvo = typeof rIn === "function" || typeof rOut === "function";
+  const M = segs ?? (curvo ? 10 : 1);
+  const S_ = Array.from({ length: M + 1 }, (_, j) => s0 + (j / M) * (s1 - s0));
+  const faceS = G.dot3(AX.a, V) > 0 ? s1 : s0, farS = faceS === s0 ? s1 : s0;
+  const naFrente = (th) => Math.cos(th) * NV[1] + Math.sin(th) * NV[2] > 0;
+  // frente: o sólido torneado do kit (sombras suaves, contorno de verdade) com o furo na boca
+  const merid = [[s0, fi(s0)], ...S_.map((x, j) => [x, fo(x), curvo && j > 0 && j < M ? 1 : 0]), [s1, fi(s1)]];
+  const frente = `<g style="fill-rule:evenodd">${S(G.lathe(merid, AX, P, { hole: [faceS, fi(faceS)] }), { tone })}</g>`;
+  // trás: a cavidade vista pela boca, num tom de sombra, com o aro de dentro do fundo
+  const furo = G.circleOf(AX, faceS, fi(faceS), P, 96);
+  const fundo = G.arcOf(AX, farS, fi(farS), P, { inward: true });
+  const id = nameFor(name ?? `${piece}.casca`);
+  const prof = [...S_.map((x) => [x, fo(x)]), ...[...S_].reverse().map((x) => [x, fi(x)])];
+  const shF = record(A.lathe(AX, prof, { name: `${id}.frente`, owner: id, cut: LADO(false) }));
+  const shT = record(A.lathe(AX, prof, { name: `${id}.tras`, owner: id, cut: LADO(true) }));
+  const centro = (fr) => on((s0 + s1) / 2, fo((s0 + s1) / 2), (Math.atan2(NV[2], NV[1]) + (fr ? 0 : Math.PI)) / DEG);
+  const la = linhas.map((x) => G.arcOf(AX, x, fo(x), P)).join("");
+  R.put({ piece, ride: piece, at: centro(false), move: PIECES[piece].move, name: `${id}.tras`, shapes: [shT],
+    svg: `<g class="iso-solid"><path class="iso-shade" data-shade="1" d="${furo}"/>${fundo ? Ln(fundo, { tone: "lo" }) : ""}</g>` });
+  R.put({ piece, ride: piece, at: centro(true), move: PIECES[piece].move, name: `${id}.frente`, shapes: [shF],
+    svg: frente + (naFace ? Ln(naFace(true, faceS) + naFace(false, faceS), { tone: "faint" }) : "") + (la ? Ln(la, { tone: "faint" }) : "") + (arcos ? Ln(arcos, { tone: "faint" }) : "") + (arcosMid ? Ln(arcosMid, { tone: "mid" }) : "") + pontos });
+  return [shF, shT];
 }
 
 // ================= SUPORTE DE TRANSPORTE =================
@@ -181,7 +193,7 @@ const spSlope = (s) => (SPR * 1.5 * Math.pow(Math.max(1e-6, (SP1 - s) / (SP1 - S
   const esp = []; for (let j = 0; j <= 50; j++) { const s = SP0 + 2 + j * (SP1 - SP0 - 3) / 50; esp.push(G.pointOf(AX, s, spR(s) + 0.15, (40 + j * 9) * DEG)); }
   const vis = []; let run = []; for (const p of esp) { const rad = G.unit3(G.sub3(p, [p[0], 0, Z0])); const n = G.unit3(G.sub3(rad, [spSlope(p[0]), 0, 0])); if (G.dot3(n, V) > 0.12) run.push(p); else if (run.length) { vis.push(run); run = []; } } if (run.length) vis.push(run);
   turned("spinner", AX, prof, { tone: "mid", smooth: { slope: spSlope, rows: 5 }, name: "spinner.cone", extra: vis.map((r) => `<path class="iso-line" data-tone="hi" data-free="both" d="M${r.map((p) => at(p).map((v) => v.toFixed(1)).join(" ")).join("L")}" style="stroke-width:2.2;stroke-linecap:round"/>`).join("") });
-  anel("spinner", SP1 - 0.6, SP1 + 0.8, SPR - 1.5, SPR + 0.4, { tone: "mid", name: "spinner.anel", extra: Dots(G.dotsOf(AX, SP1 - 0.6, SPR - 0.6, 24, P, { fade: FADE }), { size: 0.4 }) });
+  anel("spinner", SP1, SP1 + 0.8, SPR - 1.5, SPR + 0.4, { tone: "mid", name: "spinner.anel", extra: Dots(G.dotsOf(AX, SP1, SPR - 0.6, 24, P, { fade: FADE }), { size: 0.4 }) });
 }
 disco("fan", AX, SP1 + 0.8, 22, 18.6, { tone: "mid", name: "fan.disco" });
 const BLADES = 18;
@@ -220,7 +232,7 @@ casca("fancase", 26, 41, 59.6, 63.2, { keyFrente: FCK(26), keyTras: -500 - 26, t
 casca("fancase", 31, 32.6, 63.2, 65.4, { keyFrente: FCK(31) + 0.001, keyTras: -600, tone: "mid", name: "fancase.reforco" });
 casca("fancase", 41, 43.5, 59.6, 67, { keyFrente: FCK(41), keyTras: -500 - 41, tone: "mid", name: "fancase.flange-tras", pontos: Dots(G.dotsOf(AX, 41, 65.4, 64, P, { fade: FADE }), { size: 0.4 }) });
 // palhetas guia (OGV) entre o núcleo e a carcaça
-fileira("fancase", 37, 4, 33, 59.6, 44, { tone: "mid", sweep: 0.04, name: "fancase.ogv" });
+casca("fancase", 37, 41, 33, 59.6, { tone: "mid", name: "fancase.ogv", naFace: (frente, x, th0) => Array.from({ length: 44 }, (_, q) => (q / 44) * 2 * Math.PI + 0.03).filter((th) => (Math.cos(th) * NV[1] + Math.sin(th) * NV[2] > 0) === frente).map((th) => k.segment(on(x, 33.4, th / DEG), on(x, 59.2, (th + 0.05) / DEG), P)).join("") });
 // FADEC (EEC): caixa com aletas presa na lateral da carcaça, com dois conectores e cabos
 const EY = SIDE * 66.6, EEC = { x: 4, y: SIDE > 0 ? EY : EY - 7, w: 20, d: 7, r: 1.2 };
 for (const x of [7, 21]) caixa("eec", { x: x - 1.4, y: SIDE > 0 ? 63 : -66.6, w: 2.8, d: 3.6, r: 0.4 }, Z0 - 8, 16, { tone: "lo", name: "eec.suporte" });
@@ -260,7 +272,7 @@ rotor("hpc", 54, 98, (x) => 13.2 + (x - 54) * 2 / 44, HPC_S.map((x) => ({ s: x, 
 // carcaça em duas partes, com os flanges de cada estágio
 // anéis das palhetas variáveis (VSV) nos 6 primeiros estágios: faixas e alavancas na superfície da carcaça
 const VSV = HPC_S.slice(0, 6).map((x) => x + 0.9);
-const HPCC = turned("hpccase", AX, [[54, HPC(54) - 1.8], [54, HPC(54)], [98, HPC(98)], [98, HPC(98) - 1.8]], { tone: "hi", name: "hpccase.carcaca", inner: Ln(HPC_S.map((s) => G.arcOf(AX, s + 2, HPC(s + 2), P, { slope: -0.065 })).join(""), { tone: "faint" }) + Ln(VSV.map((x) => G.arcOf(AX, x - 0.5, HPC(x - 0.5), P, { slope: -0.065 }) + G.arcOf(AX, x + 0.5, HPC(x + 0.5), P, { slope: -0.065 })).join(""), { tone: "mid" }), extra: VSV.map((x) => Dots(G.dotsOf(AX, x, HPC(x), 40, P, { fade: FADE, slope: -0.065 }), { size: 0.4 })).join("") });
+const HPCC = casca("hpccase", 54, 98, (x) => HPC(x) - 1.8, HPC, { tone: "hi", name: "hpccase.carcaca", arcos: HPC_S.map((s) => G.arcOf(AX, s + 2, HPC(s + 2), P, { slope: -0.065 })).join(""), arcosMid: VSV.map((x) => G.arcOf(AX, x - 0.5, HPC(x - 0.5), P, { slope: -0.065 }) + G.arcOf(AX, x + 0.5, HPC(x + 0.5), P, { slope: -0.065 })).join(""), pontos: VSV.map((x) => Dots(G.dotsOf(AX, x, HPC(x), 40, P, { fade: FADE, slope: -0.065 }), { size: 0.4 })).join("") });
 // dois atuadores das palhetas variáveis (hidráulicos), em cima, com a haste
 for (const deg of [70, 110]) {
   const a = on(57, HPC(57) + 4.4, deg), b = on(83, HPC(83) + 4.4, deg);
@@ -276,12 +288,7 @@ disco("hpccase", G.frameAlong(BLEED, [0, 0, 1]), -1.2, 4, 4.2, { tone: "mid", na
 // ================= CÂMARA DE COMBUSTÃO =================
 const CB = (s) => 23.6 + 6.4 * Math.sin(Math.min(1, Math.max(0, (s - 98) / 22)) * Math.PI);
 const cbSlope = (s) => 6.4 * Math.cos(Math.min(1, Math.max(0, (s - 98) / 22)) * Math.PI) * Math.PI / 22;
-let CBC;
-{
-  const prof = [[98, 23]]; for (let i = 0; i <= 16; i++) { const s = 98 + i * 22 / 16; prof.push([s, CB(s), i > 0 && i < 16 ? 1 : 0]); } prof.push([120, 23]);
-  const id = nameFor("combcase.carcaca");
-  put("combcase", [109, 0, Z0], S(G.lathe(prof, AX, P, { smooth: { slope: cbSlope, rows: 5 } }), { tone: "hi", inner: Ln(G.arcOf(AX, 109, CB(109), P), { tone: "faint" }) }), { name: id, shapes: [(CBC = record(A.lathe(AX, prof, { name: id })))] });
-}
+const CBC = casca("combcase", 98, 120, 23, CB, { tone: "hi", name: "combcase.carcaca", segs: 22, arcos: G.arcOf(AX, 109, CB(109), P) });
 // 18 injetores na carcaça e o anel de combustível (manifold) em volta
 const FN = 18, FN_S = 104, MAN_R = CB(FN_S) + 5;
 for (let i = 0; i < FN; i++) {
@@ -300,13 +307,12 @@ anel("comb", 100, 118, 15.6, 22.6, { tone: "hi", name: "comb.liner", inner: Ln(G
 for (let i = 0; i < 12; i++) { const deg = (i / 12) * 360 + 15, F = G.frameAlong(on(100, 19, deg), [-1, 0, 0]); if (G.dot3([0, Math.cos(deg * DEG), Math.sin(deg * DEG)], V) < -0.3) continue; disco("comb", F, 0, 1.6, 1.4, { tone: "mid", name: "comb.swirler" }); }
 
 // ================= TURBINAS =================
-anel("hptcase", 120, 132, 20, 30.6, { tone: "hi", name: "hptcase.carcaca", inner: Ln(G.arcOf(AX, 126, 30.6, P), { tone: "faint" }) });
-anel("hptcase", 125.4, 126.6, 30.6, 32.6, { tone: "mid", name: "hptcase.anel" });
+casca("hptcase", 120, 132, 20, 30.6, { tone: "hi", name: "hptcase.carcaca", arcos: G.arcOf(AX, 128.5, 30.6, P), arcosMid: G.arcOf(AX, 125.4, 30.6, P) + G.arcOf(AX, 126.6, 30.6, P), pontos: Dots(G.dotsOf(AX, 126, 30.6, 48, P, { fade: FADE }), { size: 0.4 }) });
 rotor("hpt", 120, 131, () => 13.4, [121.5, 127].map((x) => ({ s: x, w: 2.6, tip: 19.4, count: 64 })));
 const LPT = (s) => 31 + (s - 132) * 0.27;
 const LPT_S = Array.from({ length: 6 }, (_, i) => 135 + i * 7.4);
 rotor("lpt", 132, 178, (x) => 15 + (x - 132) * 4 / 46, LPT_S.map((x) => ({ s: x, w: 3, tip: LPT(x) - 2.6, count: 80 })));
-turned("lptcase", AX, [[132, LPT(132) - 1.8], [132, LPT(132)], [178, LPT(178)], [178, LPT(178) - 1.8]], { tone: "hi", name: "lptcase.carcaca", inner: Ln(LPT_S.map((s) => G.arcOf(AX, s + 4.5, LPT(s + 4.5), P, { slope: 0.27 })).join(""), { tone: "faint" }) });
+casca("lptcase", 132, 178, (x) => LPT(x) - 1.8, LPT, { tone: "hi", name: "lptcase.carcaca", arcos: LPT_S.map((s) => G.arcOf(AX, s + 4.5, LPT(s + 4.5), P, { slope: 0.27 })).join("") });
 // anéis do controle ativo de folga (ACC): tubos perfurados em volta da carcaça, com o tubo que alimenta
 const ACC_S = [139, 151, 163, 172];
 for (const s of ACC_S) {
@@ -316,9 +322,9 @@ for (const s of ACC_S) {
 cano("lptcase", [on(136, LPT(136) + 6, 90), on(139, LPT(139) + 4, 90), on(172, LPT(172) + 4, 90)], 1.1, { name: "lptcase.acc-alimenta", tone: "hi", free: [true, false] });
 
 // ================= ARMAÇÃO TRASEIRA, BOCAL E CONE =================
-anel("exhaust", 178, 189, 30, 44.6, { tone: "hi", name: "exhaust.armacao", extra: Dots(G.dotsOf(AX, 178, 43.2, 56, P, { fade: FADE }), { size: 0.4 }) });
+casca("exhaust", 178, 189, 30, 44.6, { tone: "hi", name: "exhaust.armacao", pontos: Dots(G.dotsOf(AX, 178, 43.2, 56, P, { fade: FADE }), { size: 0.4 }) });
 caixa("exhaust", { x: 180, y: -6, w: 8, d: 12, r: 1 }, Z0 + 44.4, 6, { tone: "mid", name: "exhaust.suporte-tras", extra: Dots([at([182, -3, Z0 + 50.4]), at([186, -3, Z0 + 50.4]), at([182, 3, Z0 + 50.4]), at([186, 3, Z0 + 50.4])], { size: 0.45 }) });
-anel("exhaust", 189, 202, 37.6, 43.4, { tone: "mid", name: "exhaust.bocal", inner: Ln(G.arcOf(AX, 195, 43.4, P), { tone: "faint" }) });
+casca("exhaust", 189, 202, 37.6, 43.4, { tone: "mid", name: "exhaust.bocal", arcos: G.arcOf(AX, 195, 43.4, P) });
 {
   const PL = (s) => 30 * Math.sqrt(Math.max(0, 1 - ((s - 186) / 54) ** 2));
   const plSlope = (s) => { const r = PL(s); return r > 0.3 ? (-900 * (s - 186)) / (54 * 54 * r) : -40; };
@@ -356,15 +362,7 @@ caixa("hpccase", { x: 54, y: -4.5, w: 4, d: 9, r: 1 }, Z0 + 35.5, 9, { tone: "mi
 conectores.forEach((c, i) => cabo("eec", [c, [c[0], c[1], c[2] + 4 + i], [44, SIDE * (50 - i * 3), Z0 + 22 + i * 2], [60 + i * 8, SIDE * (HPC(60 + i * 8) * 0.55), Z0 + HPC(60 + i * 8) * 0.83 + 1.2]], { name: "eec.cabo", free: [false, true], bundle: "harness" }));
 
 // ================= ORDEM DE PINTURA MEDIDA E SAÍDA =================
-// peças por fora da carcaça do fan ficam por cima dela
-for (const it of items) if (/^(eec\.|fancase\.(tanque|suporte-tanque))/.test(it.name)) it.key += 300;
 A.settle(R, P, { states: [0, ...A.prefixStates(STAGGER, { shares: [0.5, 1] }), 1] });
-// o cone fica na frente do disco do fan (o settle reescreve as chaves; ajusta depois dele)
-{ const kd = Math.max(...items.filter((it) => it.name.startsWith("fan.disco")).map((it) => it.key));
-  const sp = items.filter((it) => it.name.startsWith("spinner.")).sort((a, b) => a.key - b.key);
-  // o anel fica na base do cone, atrás dele: anel primeiro, cone por cima
-  const peso = (it) => (it.name.startsWith("spinner.cone") ? 1 : 0);
-  sp.sort((a, b) => peso(a) - peso(b)).forEach((it, i) => { it.key = Math.max(it.key, kd) + 0.001 * (i + 1); }); }
 items.sort((a, b) => a.key - b.key);
 const groups = items.map((it, i) => { const [mx, my, mz] = it.move; return `<g class="it" data-piece="${it.piece}" data-k="${it.key.toFixed(2)}" data-m="${mx.toFixed(1)},${my.toFixed(1)},${mz.toFixed(1)}" data-i="${i}">${it.svg}</g>`; });
 const nSolidos = items.filter((it) => !it.route).length;
