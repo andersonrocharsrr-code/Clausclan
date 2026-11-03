@@ -118,10 +118,10 @@ function bola(piece, c, r, { tone = "mid", bias = 0, name } = {}) {
   const id = nameFor(name ?? `${piece}.bola`);
   put(piece, c, S(G.sphereOf(c, r, P, { steps: G.stepsFor(r, 24) }), { tone }), { bias, name: id, shapes: [record(A.ball(c, r, { name: id }))] });
 }
-function tubo(piece, route, r, { name, tone = "hi", bias = 0, gaps = [], closed = false, maxLength = 20, spacing, free = [false, false], limp = false, touch, bundle, rims } = {}) {
+function tubo(piece, route, r, { name, tone = "hi", bias = 0, gaps = [], breaks = [], closed = false, maxLength = 20, spacing, free = [false, false], limp = false, touch, bundle, rims } = {}) {
   const id = nameFor(name ?? `${piece}.tubo`);
   R.route(id, route, r, { owner: id, touch, bundle, limp, gaps, closed, free, rims, piece, move: PIECES[piece].move, ride: piece });
-  tubePieces(route, r, P, { maxLength, spacing: spacing ?? Math.max(0.8, Math.min(2.4, r * 0.2)), closed, gaps }).forEach((part, i) =>
+  tubePieces(route, r, P, { maxLength, spacing: spacing ?? Math.max(0.8, Math.min(2.4, r * 0.2)), closed, gaps, breaks }).forEach((part, i) =>
     put(piece, part.mid, tubeSvg(part, { tone }), { bias, name: `${id}:${i}`, route: id, chunk: i, shapes: [A.tube(part.points, part.radii)] }));
   return id;
 }
@@ -137,6 +137,7 @@ const qd = (pts) => "M" + pts.map((p) => at(p).map((v) => v.toFixed(1)).join(" "
 // rIn e rOut podem ser números ou funções de s (cone, bojo); cada metade registra a forma de verdade:
 // o anel inteiro cortado pelo semiespaço da outra metade, e o settle mede a ordem delas com as peças de dentro.
 const NV = G.unit3([0, V[1], V[2]]);
+const SIL = Math.atan2(NV[2], NV[1]) / DEG + 90;   // ângulo da silhueta (onde a metade da frente encontra a de trás)
 const LADO = (frente) => A.prism(G.frameOf([0, 0, Z0], [1, 0, 0], NV, [0, -NV[2], NV[1]]), frente ? [[0, -400], [400, -400], [400, 400], [0, 400]] : [[-400, -400], [0, -400], [0, 400], [-400, 400]], -1000, 1000);
 function casca(piece, s0, s1, rIn, rOut, { tone = "hi", name, linhas = [], arcos = "", arcosMid = "", pontos = "", segs, naFace } = {}) {
   const fi = typeof rIn === "function" ? rIn : () => rIn, fo = typeof rOut === "function" ? rOut : () => rOut;
@@ -236,7 +237,7 @@ casca("fancase", 37, 41, 33, 59.6, { tone: "mid", name: "fancase.ogv", naFace: (
 // FADEC (EEC): caixa com aletas presa na lateral da carcaça, com dois conectores e cabos
 const EY = SIDE * 66.6, EEC = { x: 4, y: SIDE > 0 ? EY : EY - 7, w: 20, d: 7, r: 1.2 };
 for (const x of [7, 21]) caixa("eec", { x: x - 1.4, y: SIDE > 0 ? 63 : -66.6, w: 2.8, d: 3.6, r: 0.4 }, Z0 - 8, 16, { tone: "lo", name: "eec.suporte" });
-caixa("eec", EEC, Z0 - 13, 26, { tone: "hi", name: "eec.caixa", bevel: 0.7, inner: Ln(Array.from({ length: 7 }, (_, i) => k.segment([EEC.x + 3 + i * 2.4, EEC.y + (SIDE > 0 ? EEC.d : 0), Z0 - 11], [EEC.x + 3 + i * 2.4, EEC.y + (SIDE > 0 ? EEC.d : 0), Z0 + 11], P)).join(""), { tone: "faint" }) });
+caixa("eec", EEC, Z0 - 13, 26, { tone: "hi", name: "eec.caixa", bevel: 0.7, inner: Ln(Array.from({ length: 7 }, (_, i) => k.segment([EEC.x + 3 + i * 2.4, EEC.y + (SIDE > 0 ? EEC.d : 0), Z0 - 13], [EEC.x + 3 + i * 2.4, EEC.y + (SIDE > 0 ? EEC.d : 0), Z0 + 13], P)).join(""), { tone: "faint" }) });
 const conectores = [];
 for (const [x, z] of [[8, Z0 + 15], [15, Z0 + 15], [20, Z0 + 15]]) {
   const F = G.frameOf([x, EEC.y + EEC.d / 2, Z0 + 13], [0, 0, 1], [1, 0, 0], [0, 1, 0]);
@@ -244,9 +245,11 @@ for (const [x, z] of [[8, Z0 + 15], [15, Z0 + 15], [20, Z0 + 15]]) {
   conectores.push([x, EEC.y + EEC.d / 2, Z0 + 15.6]);
 }
 // tanque de óleo na parte de baixo da carcaça, com o visor
-const TQ = G.frameOf([2, SIDE * 54, Z0 - 40], [1, 0, 0], [0, 1, 0], [0, 0, 1]);
+const TQ_DEG = SIDE > 0 ? -40 : 220, TQ_R = 64.4 + 1.5 + 6.8;
+const TQ = G.frameOf(on(2, TQ_R, TQ_DEG), [1, 0, 0], [0, 1, 0], [0, 0, 1]);
 turned("fancase", TQ, [[0, 0], [0, 5.4], [1.4, 6.8], [22, 6.8], [23.4, 5.4], [23.4, 0]], { tone: "hi", name: "fancase.tanque-oleo", inner: Ln(G.arcOf(TQ, 11.7, 6.8, P), { tone: "faint" }) });
-for (const s of [5, 18]) caixa("fancase", { x: 2 + s - 1.5, y: SIDE * 54 - 1.5, w: 3, d: 3, r: 0.4 }, Z0 - 34, 2.6, { tone: "lo", name: "fancase.suporte-tanque" });
+// duas sapatas radiais prendem o tanque na carcaça de contenção
+for (const x of [7, 20]) { const b = on(x, 64.4, TQ_DEG); disco("fancase", G.frameAlong(b, G.unit3(G.sub3(b, [x, 0, Z0]))), 0, 1.5, 1.4, { tone: "lo", name: "fancase.suporte-tanque" }); }
 
 // ================= NÚCLEO: ARMAÇÃO DO FAN E EIXO =================
 // booster: tambor com 3 fileiras, dentro do bocal do núcleo
@@ -255,7 +258,7 @@ rotor("booster", 22, 43.5, (x) => 19 + (x - 22) * 2 / 21.5, [25, 31, 37].map((x)
 casca("fancase", 22, 37, 29.6, 32.6, { keyFrente: 20, keyTras: -400, tone: "hi", name: "fancase.divisor" });
 // armação do fan (cone que desce até o compressor de alta) e suporte da frente em cima
 turned("core", AX, [[43.5, 0], [43.5, 33], [48, 33, 1], [54, 27.6, 1], [54, 0]], { tone: "mid", name: "core.armacao" });
-caixa("core", { x: 44, y: -5, w: 9, d: 10, r: 1 }, Z0 + 32.5, 6, { tone: "mid", name: "core.suporte-frente", extra: Dots([at([46, -2.5, Z0 + 38.5]), at([51, -2.5, Z0 + 38.5]), at([46, 2.5, Z0 + 38.5]), at([51, 2.5, Z0 + 38.5])], { size: 0.45 }) });
+caixa("core", { x: 44, y: -5, w: 9, d: 10, r: 1 }, Z0 + 33, 5.5, { tone: "mid", name: "core.suporte-frente", extra: Dots([at([46, -2.5, Z0 + 38.5]), at([51, -2.5, Z0 + 38.5]), at([46, 2.5, Z0 + 38.5]), at([51, 2.5, Z0 + 38.5])], { size: 0.45 }) });
 // portinholas das válvulas de sangria (VBV), na armação
 for (const deg of [-60, -20, 20, 60, 120, 160, 200, 240]) {
   const c = on(49, 31.4, deg), n = G.unit3(G.sub3(c, [49, 0, Z0]));
@@ -278,7 +281,7 @@ for (const deg of [70, 110]) {
   const a = on(57, HPC(57) + 4.4, deg), b = on(83, HPC(83) + 4.4, deg);
   const F = G.frameAlong(a, G.unit3(G.sub3(b, a)));
   turned("hpccase", F, [[0, 0], [0, 1.6], [1, 2.2], [13, 2.2], [14, 1.6], [14, 0]], { tone: "hi", name: "hpccase.atuador" });
-  disco("hpccase", F, 14, 25, 0.8, { tone: "mid", name: "hpccase.haste" });
+  disco("hpccase", F, 14, 21.9, 0.8, { tone: "mid", name: "hpccase.haste" });
   for (const s of [3, 23]) disco("hpccase", G.frameAlong(G.pointOf(F, s, 0, 0), G.unit3(G.sub3(G.pointOf(F, s, 0, 0), [57 + s, 0, Z0]))), -2.6, 0, 1.1, { tone: "lo", name: "hpccase.pe-atuador" });
 }
 // saída de ar de sangria (bleed) no alto, com flange
@@ -299,8 +302,8 @@ for (let i = 0; i < FN; i++) {
   disco("combcase", F, 2.4, 3.4, 1.2, { tone: "lo", name: "combcase.injetor-tampa" });
 }
 {
-  const ring = Array.from({ length: 73 }, (_, i) => on(FN_S + 3.4, MAN_R, (i / 72) * 360));
-  tubo("combcase", ring, 0.8, { name: "combcase.manifold", closed: true, tone: "mid", maxLength: 10 });
+  const ring = Array.from({ length: 73 }, (_, i) => on(FN_S + 3.4, MAN_R, SIL + (i / 72) * 360));
+  tubo("combcase", ring, 0.8, { name: "combcase.manifold", closed: true, tone: "mid", maxLength: 10, breaks: [Math.PI * MAN_R] });
 }
 // liner da câmara (aparece quando a carcaça sobe)
 anel("comb", 100, 118, 15.6, 22.6, { tone: "hi", name: "comb.liner", inner: Ln(G.arcOf(AX, 104, 22.6, P) + G.arcOf(AX, 112, 22.6, P), { tone: "faint" }), extra: Dots(G.dotsOf(AX, 108, 22.6, 36, P, { fade: FADE }), { size: 0.5, tone: "lo" }) });
@@ -316,8 +319,8 @@ casca("lptcase", 132, 178, (x) => LPT(x) - 1.8, LPT, { tone: "hi", name: "lptcas
 // anéis do controle ativo de folga (ACC): tubos perfurados em volta da carcaça, com o tubo que alimenta
 const ACC_S = [139, 151, 163, 172];
 for (const s of ACC_S) {
-  const ring = Array.from({ length: 49 }, (_, i) => on(s, LPT(s) + 1.6, (i / 48) * 360));
-  tubo("lptcase", ring, 0.75, { name: "lptcase.acc", closed: true, tone: "mid", maxLength: 12 });
+  const ring = Array.from({ length: 49 }, (_, i) => on(s, LPT(s) + 1.6, SIL + (i / 48) * 360));
+  tubo("lptcase", ring, 0.75, { name: "lptcase.acc", closed: true, tone: "mid", maxLength: 12, breaks: [Math.PI * (LPT(s) + 1.6)] });
 }
 cano("lptcase", [on(136, LPT(136) + 6, 90), on(139, LPT(139) + 4, 90), on(172, LPT(172) + 4, 90)], 1.1, { name: "lptcase.acc-alimenta", tone: "hi", free: [true, false] });
 
@@ -350,16 +353,16 @@ turned("agb", PARTIDA, [[0, 0], [0, 5], [2, 5], [2, 4.2], [12, 4.2], [14, 3], [1
 // ================= TUBOS E CABOS =================
 // combustível: da bomba na caixa até o anel de injetores (solto da caixa quando o motor se abre)
 const pc = [61, FACE_Y + SIDE * 7.8, GBZ + 4.4];
-cano("combcase", [pc, [61, FACE_Y + SIDE * 11, GBZ + 4.4], [96, SIDE * 31, GBZ + 4.4], [102, SIDE * 31, Z0 - 14], on(FN_S + 3.4, MAN_R + 0.2, SIDE > 0 ? -15 : 195)], 1.1, { name: "combcase.linha-combustivel", free: [true, false], tone: "hi" });
+cano("agb", [pc, [61, FACE_Y + SIDE * 11, GBZ + 4.4], [96, SIDE * 31, GBZ + 4.4], [102, SIDE * 31, Z0 - 14], on(FN_S + 3.4, MAN_R + 0.2, SIDE > 0 ? -15 : 195)], 1.1, { name: "agb.linha-combustivel", free: [false, true], tone: "hi" });
 // óleo: da bomba de óleo até o mancal da frente (na armação do fan)
 const po = [70, FACE_Y + SIDE * 6.8, GBZ + 6];
-cano("core", [po, [70, FACE_Y + SIDE * 9, GBZ + 6], [52, SIDE * 22, GBZ + 6], on(50, 30.6, SIDE > 0 ? -40 : 220)], 0.9, { name: "core.linha-oleo", free: [true, false], tone: "mid" });
+cano("core", [po, [70, FACE_Y + SIDE * 9, GBZ + 6], [52, SIDE * 22, GBZ + 6], on(50, 31.25, SIDE > 0 ? -40 : 220)], 0.9, { name: "core.linha-oleo", free: [true, false], tone: "mid" });
 // ar de sangria: duto grosso que sobe da bossa até a interface do pilone, com uma válvula
 const top = [88, 0, Z0 + HPC(88) + 4];
 cano("hpccase", [top, [88, 0, Z0 + 33], [80, 0, Z0 + 40], [58, 0, Z0 + 40]], 2.6, { name: "hpccase.duto-bleed", tone: "hi" });
 caixa("hpccase", { x: 54, y: -4.5, w: 4, d: 9, r: 1 }, Z0 + 35.5, 9, { tone: "mid", name: "hpccase.flange-pilone" });
 // cabos do FADEC: do conector até a carcaça do compressor (soltos quando a carcaça sobe)
-conectores.forEach((c, i) => cabo("eec", [c, [c[0], c[1], c[2] + 4 + i], [44, SIDE * (50 - i * 3), Z0 + 22 + i * 2], [60 + i * 8, SIDE * (HPC(60 + i * 8) * 0.55), Z0 + HPC(60 + i * 8) * 0.83 + 1.2]], { name: "eec.cabo", free: [false, true], bundle: "harness" }));
+conectores.forEach((c, i) => cabo("eec", [c, [c[0], c[1], Z0 + 19 + i], [47, SIDE * (69 - i * 1.5), Z0 + 19 + i], [56, SIDE * (48 - i * 3), Z0 + 26 + i], [60 + i * 8, SIDE * (HPC(60 + i * 8) * 0.55), Z0 + HPC(60 + i * 8) * 0.83 + 1.2]], { name: "eec.cabo", free: [false, true], bundle: "harness" }));
 
 // ================= ORDEM DE PINTURA MEDIDA E SAÍDA =================
 A.settle(R, P, { states: [0, ...A.prefixStates(STAGGER, { shares: [0.5, 1] }), 1] });
