@@ -40,7 +40,7 @@ const PIECES = {
   exhaust: { name: "Armação traseira, bocal e cone", say: "armação traseira com o suporte de trás · bocal e cone de escape", move: [AFT + 28, 0, 0] },
   agb: { name: "Caixa de acessórios", say: "caixa de acessórios · bombas de combustível, óleo e hidráulica e gerador", move: [0, 0, -26] },
   eec: { name: "FADEC (EEC) e cabos", say: "FADEC · o computador que controla o motor", move: [0, 0, 0] },
-  core: { name: "Armação do fan e eixo", say: "armação do fan, suporte da frente e eixo de baixa", move: [0, 0, 0] },
+  core: { name: "Armação do fan", say: "armação do fan, suporte da frente e válvulas de sangria (VBV)", move: [0, 0, 0] },
   stand: { name: "Suporte de transporte", say: "", move: [0, 0, 0] },
 };
 const STAGGER = ["spinner", "fan", "booster", "agb", "hpccase", "combcase", "hptcase", "lptcase", "lpt", "exhaust"];
@@ -88,15 +88,29 @@ function fileira(piece, s, w, rHub, rTip, count, { tone = "hi", sweep = 0.16, na
   const pas = G.spokesOf(AX, face, rHub + 0.4, rTip - 0.4, count, P, { sweep });
   return anel(piece, s, s + w, rHub, rTip, { tone, name, inner: Ln(pas, { tone: "faint" }) + Ln(G.circleOf(AX, face, rHub + (rTip - rHub) * 0.5, P, 64), { tone: "faint" }) });
 }
+// rotor: tambor cortado entre as fileiras e cada fileira como um disco cheio (pás na face, aro do cubo),
+// assim nenhuma peça envolve outra e a ordem de pintura não tem ciclos
+function rotor(piece, s0, s1, hub, rows, { tone = "hi", sweep = 0.16, name } = {}) {
+  let cur = s0;
+  const seg = (a, b) => { if (b - a > 0.05) turned(piece, AX, [[a, 0], [a, hub(a)], [b, hub(b)], [b, 0]], { tone: "mid", name: `${piece}.tambor` }); };
+  for (const r of rows) {
+    seg(cur, r.s);
+    const face = G.dot3(AX.a, V) > 0 ? r.s + r.w : r.s, h = hub(r.s + r.w / 2);
+    const pas = G.spokesOf(AX, face, h + 0.4, r.tip - 0.4, r.count, P, { sweep: r.sweep ?? sweep });
+    disco(piece, AX, r.s, r.s + r.w, r.tip, { tone, name: name ?? `${piece}.fileira`, extra: Ln(pas, { tone: "faint" }) + Ln(G.circleOf(AX, face, h, P, 64) + G.circleOf(AX, face, h + (r.tip - h) * 0.5, P, 64), { tone: "faint" }) });
+    cur = r.s + r.w;
+  }
+  seg(cur, s1);
+}
 function caixa(piece, plan, z, h, { tone = "hi", extra = "", bias = 0, name, bevel = 0.5, steps = 3, inner = "" } = {}) {
   const id = nameFor(name ?? `${piece}.caixa`);
   const shape = record(A.slab(plan, z, h, { name: id }, steps));
   put(piece, [plan.x + plan.w / 2, plan.y + plan.d / 2, z + h / 2], S(k.slabOf(plan, z, h, P, steps, bevel), { tone, inner }) + extra, { bias, name: id, shapes: [shape] });
   return shape;
 }
-function disco(piece, F, s0, s1, r, { tone = "hi", extra = "", bias = 0, name, bevel = 0 } = {}) {
+function disco(piece, F, s0, s1, r, { tone = "hi", extra = "", bias = 0, name, bevel = 0, meta = {} } = {}) {
   const id = nameFor(name ?? `${piece}.disco`);
-  const shape = record(A.disc(F, s0, s1, r, { name: id }));
+  const shape = record(A.disc(F, s0, s1, r, { name: id, ...meta }));
   put(piece, G.pointOf(F, (s0 + s1) / 2, 0, 0), S(G.disc(s0, s1, r, F, P, { bevel }), { tone }) + extra, { bias, name: id, shapes: [shape] });
   return shape;
 }
@@ -152,7 +166,7 @@ const FC_R = 63.5, BERCO = [[22, Z0 - FC_R], [124, Z0 - 30.6]];
 for (const [x, top] of BERCO) {
   for (const y of [-26, 26]) caixa("stand", { x: x - 3, y: y - 3, w: 6, d: 6, r: 1 }, 16, top - 16 - 4, { tone: "mid", name: "stand.coluna", bevel: 0.3 });
   caixa("stand", { x: x - 6, y: -30, w: 12, d: 60, r: 1.5 }, top - 4, 4, { tone: "mid", name: "stand.berco", bevel: 0.5, extra: Dots([at([x - 3.5, -24, top]), at([x - 3.5, 24, top]), at([x + 3.5, -24, top]), at([x + 3.5, 24, top])], { size: 0.45 }) });
-  for (const y of [-26, 26]) caixa("stand", { x: x - 1.5, y: y - 9, w: 3, d: 18, r: 0.6 }, 16, 3, { tone: "lo", name: "stand.mao-francesa" });
+  for (const y of [-26, 26]) for (const [a, b] of [[y - 9, y - 3], [y + 3, y + 9]]) caixa("stand", { x: x - 1.5, y: a, w: 3, d: b - a, r: 0.6 }, 16, 3, { tone: "lo", name: "stand.mao-francesa" });
 }
 const halo = `<path class="iso-halo" d="${k.haloOf(BASE, 0, 16, P)}"/>`;
 
@@ -219,13 +233,12 @@ for (const [x, z] of [[8, Z0 + 15], [15, Z0 + 15], [20, Z0 + 15]]) {
 }
 // tanque de óleo na parte de baixo da carcaça, com o visor
 const TQ = G.frameOf([2, SIDE * 54, Z0 - 40], [1, 0, 0], [0, 1, 0], [0, 0, 1]);
-turned("fancase", TQ, [[0, 0], [0, 5.4], [1.4, 6.8, 1], [22, 6.8, 1], [23.4, 5.4], [23.4, 0]], { tone: "hi", name: "fancase.tanque-oleo", inner: Ln(G.arcOf(TQ, 11.7, 6.8, P), { tone: "faint" }) });
+turned("fancase", TQ, [[0, 0], [0, 5.4], [1.4, 6.8], [22, 6.8], [23.4, 5.4], [23.4, 0]], { tone: "hi", name: "fancase.tanque-oleo", inner: Ln(G.arcOf(TQ, 11.7, 6.8, P), { tone: "faint" }) });
 for (const s of [5, 18]) caixa("fancase", { x: 2 + s - 1.5, y: SIDE * 54 - 1.5, w: 3, d: 3, r: 0.4 }, Z0 - 34, 2.6, { tone: "lo", name: "fancase.suporte-tanque" });
 
 // ================= NÚCLEO: ARMAÇÃO DO FAN E EIXO =================
 // booster: tambor com 3 fileiras, dentro do bocal do núcleo
-turned("booster", AX, [[22, 0], [22, 19], [44, 21], [44, 0]], { tone: "mid", name: "booster.tambor" });
-for (const s of [25, 31, 37]) fileira("booster", s, 2.4, 20.4, 29.2, 64, { name: "booster.fileira" });
+rotor("booster", 22, 43.5, (x) => 19 + (x - 22) * 2 / 21.5, [25, 31, 37].map((x) => ({ s: x, w: 2.4, tip: 29.2, count: 64 })));
 // divisor de fluxo (bico do núcleo) e carcaça do booster: ficam com a carcaça do fan
 casca("fancase", 22, 37, 29.6, 32.6, { keyFrente: 20, keyTras: -400, tone: "hi", name: "fancase.divisor" });
 // armação do fan (cone que desce até o compressor de alta) e suporte da frente em cima
@@ -239,21 +252,15 @@ for (const deg of [-60, -20, 20, 60, 120, 160, 200, 240]) {
   const F = G.frameAlong(c, n);
   put("core", c, S(G.disc(0, 0.7, 2.6, F, P), { tone: "lo" }), { name: id, bias: 0.05, shapes: [record(A.disc(F, -0.5, 0.7, 2.6, { name: id, seated: true }))] });
 }
-// eixo de baixa (N1): aparece entre os módulos quando o motor se abre
-disco("core", AX, 20, 196, 3.6, { tone: "mid", name: "core.eixo-n1" });
 
 // ================= COMPRESSOR DE ALTA =================
 const HPC = (s) => 26.4 - (s - 54) * 0.065;          // raio externo da carcaça
 const HPC_S = Array.from({ length: 10 }, (_, i) => 56 + i * 4.3);
-turned("hpc", AX, [[54, 0], [54, 13.2], [98, 15.2], [98, 0]], { tone: "mid", name: "hpc.tambor" });
-for (const s of HPC_S) fileira("hpc", s, 1.8, 13.4 + (s - 54) * 0.045, HPC(s) - 2.6, 72 - Math.round((s - 56) / 4.3) * 2, { name: "hpc.fileira" });
+rotor("hpc", 54, 98, (x) => 13.2 + (x - 54) * 2 / 44, HPC_S.map((x) => ({ s: x, w: 1.8, tip: HPC(x) - 2.6, count: 72 - Math.round((x - 56) / 4.3) * 2 })));
 // carcaça em duas partes, com os flanges de cada estágio
-turned("hpccase", AX, [[54, 22.8], [54, HPC(54)], [98, HPC(98)], [98, 20]], { tone: "hi", name: "hpccase.carcaca", inner: Ln(HPC_S.map((s) => G.arcOf(AX, s + 2, HPC(s + 2), P, { slope: -0.065 })).join(""), { tone: "faint" }) });
-// anéis das palhetas variáveis (VSV) nos 6 primeiros estágios, com as alavancas
-for (let i = 0; i < 6; i++) {
-  const s = HPC_S[i] + 0.9;
-  anel("hpccase", s - 0.5, s + 0.5, HPC(s), HPC(s) + 1.5, { tone: "mid", name: "hpccase.anel-vsv", extra: Dots(G.dotsOf(AX, s - 0.5, HPC(s) + 0.4, 40, P, { fade: FADE, slope: -0.065 }), { size: 0.35 }) });
-}
+// anéis das palhetas variáveis (VSV) nos 6 primeiros estágios: faixas e alavancas na superfície da carcaça
+const VSV = HPC_S.slice(0, 6).map((x) => x + 0.9);
+const HPCC = turned("hpccase", AX, [[54, HPC(54) - 1.8], [54, HPC(54)], [98, HPC(98)], [98, HPC(98) - 1.8]], { tone: "hi", name: "hpccase.carcaca", inner: Ln(HPC_S.map((s) => G.arcOf(AX, s + 2, HPC(s + 2), P, { slope: -0.065 })).join(""), { tone: "faint" }) + Ln(VSV.map((x) => G.arcOf(AX, x - 0.5, HPC(x - 0.5), P, { slope: -0.065 }) + G.arcOf(AX, x + 0.5, HPC(x + 0.5), P, { slope: -0.065 })).join(""), { tone: "mid" }), extra: VSV.map((x) => Dots(G.dotsOf(AX, x, HPC(x), 40, P, { fade: FADE, slope: -0.065 }), { size: 0.4 })).join("") });
 // dois atuadores das palhetas variáveis (hidráulicos), em cima, com a haste
 for (const deg of [70, 110]) {
   const a = on(57, HPC(57) + 4.4, deg), b = on(83, HPC(83) + 4.4, deg);
@@ -264,15 +271,16 @@ for (const deg of [70, 110]) {
 }
 // saída de ar de sangria (bleed) no alto, com flange
 const BLEED = on(88, HPC(88), 90);
-disco("hpccase", G.frameAlong(BLEED, [0, 0, 1]), -0.4, 4, 4.2, { tone: "mid", name: "hpccase.bossa-bleed" });
+disco("hpccase", G.frameAlong(BLEED, [0, 0, 1]), -1.2, 4, 4.2, { tone: "mid", name: "hpccase.bossa-bleed", meta: { seated: true, cut: HPCC } });
 
 // ================= CÂMARA DE COMBUSTÃO =================
 const CB = (s) => 23.6 + 6.4 * Math.sin(Math.min(1, Math.max(0, (s - 98) / 22)) * Math.PI);
 const cbSlope = (s) => 6.4 * Math.cos(Math.min(1, Math.max(0, (s - 98) / 22)) * Math.PI) * Math.PI / 22;
+let CBC;
 {
-  const prof = [[98, 18]]; for (let i = 0; i <= 16; i++) { const s = 98 + i * 22 / 16; prof.push([s, CB(s), i > 0 && i < 16 ? 1 : 0]); } prof.push([120, 18]);
+  const prof = [[98, 23]]; for (let i = 0; i <= 16; i++) { const s = 98 + i * 22 / 16; prof.push([s, CB(s), i > 0 && i < 16 ? 1 : 0]); } prof.push([120, 23]);
   const id = nameFor("combcase.carcaca");
-  put("combcase", [109, 0, Z0], S(G.lathe(prof, AX, P, { smooth: { slope: cbSlope, rows: 5 } }), { tone: "hi", inner: Ln(G.arcOf(AX, 109, CB(109), P), { tone: "faint" }) }), { name: id, shapes: [record(A.lathe(AX, prof, { name: id }))] });
+  put("combcase", [109, 0, Z0], S(G.lathe(prof, AX, P, { smooth: { slope: cbSlope, rows: 5 } }), { tone: "hi", inner: Ln(G.arcOf(AX, 109, CB(109), P), { tone: "faint" }) }), { name: id, shapes: [(CBC = record(A.lathe(AX, prof, { name: id })))] });
 }
 // 18 injetores na carcaça e o anel de combustível (manifold) em volta
 const FN = 18, FN_S = 104, MAN_R = CB(FN_S) + 5;
@@ -280,7 +288,7 @@ for (let i = 0; i < FN; i++) {
   const deg = (i / FN) * 360 + 10, base = on(FN_S, CB(FN_S) - 0.3, deg), n = G.unit3(G.sub3(base, [FN_S, 0, Z0]));
   if (G.dot3(n, V) < -0.35) continue;
   const F = G.frameAlong(base, n);
-  disco("combcase", F, 0, 2.4, 1.9, { tone: "mid", name: "combcase.injetor" });
+  disco("combcase", F, -0.6, 2.4, 1.9, { tone: "mid", name: "combcase.injetor", meta: { seated: true, cut: CBC } });
   disco("combcase", F, 2.4, 3.4, 1.2, { tone: "lo", name: "combcase.injetor-tampa" });
 }
 {
@@ -294,13 +302,11 @@ for (let i = 0; i < 12; i++) { const deg = (i / 12) * 360 + 15, F = G.frameAlong
 // ================= TURBINAS =================
 anel("hptcase", 120, 132, 20, 30.6, { tone: "hi", name: "hptcase.carcaca", inner: Ln(G.arcOf(AX, 126, 30.6, P), { tone: "faint" }) });
 anel("hptcase", 125.4, 126.6, 30.6, 32.6, { tone: "mid", name: "hptcase.anel" });
-for (const s of [121.5, 127]) fileira("hpt", s, 2.6, 13.6, 19.4, 64, { name: "hpt.fileira" });
-turned("hpt", AX, [[120, 0], [120, 13.4], [131, 13.4], [131, 0]], { tone: "mid", name: "hpt.disco" });
+rotor("hpt", 120, 131, () => 13.4, [121.5, 127].map((x) => ({ s: x, w: 2.6, tip: 19.4, count: 64 })));
 const LPT = (s) => 31 + (s - 132) * 0.27;
 const LPT_S = Array.from({ length: 6 }, (_, i) => 135 + i * 7.4);
-turned("lpt", AX, [[132, 0], [132, 15], [178, 19], [178, 0]], { tone: "mid", name: "lpt.tambor" });
-for (const s of LPT_S) fileira("lpt", s, 3, 15.6 + (s - 132) * 0.09, LPT(s) - 2.6, 80, { name: "lpt.fileira" });
-turned("lptcase", AX, [[132, 27], [132, LPT(132)], [178, LPT(178)], [178, 38]], { tone: "hi", name: "lptcase.carcaca", inner: Ln(LPT_S.map((s) => G.arcOf(AX, s + 4.5, LPT(s + 4.5), P, { slope: 0.27 })).join(""), { tone: "faint" }) });
+rotor("lpt", 132, 178, (x) => 15 + (x - 132) * 4 / 46, LPT_S.map((x) => ({ s: x, w: 3, tip: LPT(x) - 2.6, count: 80 })));
+turned("lptcase", AX, [[132, LPT(132) - 1.8], [132, LPT(132)], [178, LPT(178)], [178, LPT(178) - 1.8]], { tone: "hi", name: "lptcase.carcaca", inner: Ln(LPT_S.map((s) => G.arcOf(AX, s + 4.5, LPT(s + 4.5), P, { slope: 0.27 })).join(""), { tone: "faint" }) });
 // anéis do controle ativo de folga (ACC): tubos perfurados em volta da carcaça, com o tubo que alimenta
 const ACC_S = [139, 151, 163, 172];
 for (const s of ACC_S) {
@@ -323,8 +329,8 @@ anel("exhaust", 189, 202, 37.6, 43.4, { tone: "mid", name: "exhaust.bocal", inne
 // ================= CAIXA DE ACESSÓRIOS (no núcleo, embaixo) =================
 const GB = { x: 56, y: -10, w: 42, d: 20, r: 3 }, GBZ = Z0 - 50;
 caixa("agb", GB, GBZ, 12, { tone: "hi", name: "agb.caixa", bevel: 0.8, inner: Ln(k.sideSeam(GB, GBZ + 6, P, 3), { tone: "faint" }) });
-for (const x of [62, 92]) caixa("agb", { x: x - 1.5, y: -1.5, w: 3, d: 3, r: 0.5 }, GBZ + 12, Z0 - HPC(x) - GBZ - 12 + 0.6, { tone: "lo", name: "agb.tirante" });
-disco("agb", G.frameAlong([70, 0, GBZ + 12], [0, 0, 1]), 0, Z0 - HPC(70) - GBZ - 12 + 0.6, 2.2, { tone: "mid", name: "agb.eixo-radial" });
+for (const x of [62, 92]) caixa("agb", { x: x - 1.5, y: -1.5, w: 3, d: 3, r: 0.5 }, GBZ + 12, Z0 - HPC(x) - GBZ - 12, { tone: "lo", name: "agb.tirante" });
+disco("agb", G.frameAlong([70, 0, GBZ + 12], [0, 0, 1]), 0, Z0 - HPC(70) - GBZ - 12 - 0.15, 2.2, { tone: "mid", name: "agb.eixo-radial" });
 // na face que se vê: bomba de combustível, bomba de óleo, bomba hidráulica, gerador e partida
 const FACE_Y = SIDE > 0 ? GB.y + GB.d : GB.y;
 const acess = [[61, GBZ + 4.4, 3.2, 7, "agb.bomba-combustivel"], [70, GBZ + 6, 2.6, 6, "agb.bomba-oleo"], [78, GBZ + 5, 3.4, 8, "agb.bomba-hidraulica"], [90, GBZ + 6, 5.4, 11, "agb.gerador"]];
@@ -333,7 +339,7 @@ for (const [x, z, r, len, name] of acess) {
   turned("agb", F, [[0, 0], [0, r + 1.2], [1, r + 1.2], [1, r], [len, r], [len + 0.8, r - 0.8], [len + 0.8, 0]], { tone: "hi", name, extra: Dots(G.dotsOf(F, 1, r + 0.6, 6, P, { all: true }), { size: 0.4 }) });
 }
 const PARTIDA = G.frameOf([GB.x, 0, GBZ + 6], [-1, 0, 0], [0, 1, 0], [0, 0, 1]);
-turned("agb", PARTIDA, [[0, 0], [0, 5], [2, 5], [2, 4.2], [12, 4.2, 1], [14, 3, 1], [15, 0]], { tone: "hi", name: "agb.partida", extra: Dots(G.dotsOf(PARTIDA, 0, 4.4, 8, P, { all: true }), { size: 0.4 }) });
+turned("agb", PARTIDA, [[0, 0], [0, 5], [2, 5], [2, 4.2], [12, 4.2], [14, 3], [15, 0]], { tone: "hi", name: "agb.partida", extra: Dots(G.dotsOf(PARTIDA, 0, 4.4, 8, P, { all: true }), { size: 0.4 }) });
 
 // ================= TUBOS E CABOS =================
 // combustível: da bomba na caixa até o anel de injetores (solto da caixa quando o motor se abre)
@@ -344,7 +350,7 @@ const po = [70, FACE_Y + SIDE * 6.8, GBZ + 6];
 cano("core", [po, [70, FACE_Y + SIDE * 9, GBZ + 6], [52, SIDE * 22, GBZ + 6], on(50, 30.6, SIDE > 0 ? -40 : 220)], 0.9, { name: "core.linha-oleo", free: [true, false], tone: "mid" });
 // ar de sangria: duto grosso que sobe da bossa até a interface do pilone, com uma válvula
 const top = [88, 0, Z0 + HPC(88) + 4];
-cano("hpccase", [top, [88, 0, Z0 + 34], [70, 0, Z0 + 40], [58, 0, Z0 + 40]], 2.6, { name: "hpccase.duto-bleed", tone: "hi" });
+cano("hpccase", [top, [88, 0, Z0 + 33], [80, 0, Z0 + 40], [58, 0, Z0 + 40]], 2.6, { name: "hpccase.duto-bleed", tone: "hi" });
 caixa("hpccase", { x: 54, y: -4.5, w: 4, d: 9, r: 1 }, Z0 + 35.5, 9, { tone: "mid", name: "hpccase.flange-pilone" });
 // cabos do FADEC: do conector até a carcaça do compressor (soltos quando a carcaça sobe)
 conectores.forEach((c, i) => cabo("eec", [c, [c[0], c[1], c[2] + 4 + i], [44, SIDE * (50 - i * 3), Z0 + 22 + i * 2], [60 + i * 8, SIDE * (HPC(60 + i * 8) * 0.55), Z0 + HPC(60 + i * 8) * 0.83 + 1.2]], { name: "eec.cabo", free: [false, true], bundle: "harness" }));
