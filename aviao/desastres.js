@@ -681,7 +681,7 @@ const ACIDENTES = [
     p: ["Segunda-feira, 12 de agosto de 1985. Fazia calor em Tóquio, aquele calor úmido de fim de verão, e o Japão inteiro estava pegando a estrada para o Obon, o feriado em que as famílias voltam às cidades natais para visitar os pais e honrar os antepassados. Trens lotados, estradas paradas, aeroportos cheios.", "No saguão de Haneda, a fila do balcão da Japan Air Lines misturava gente de todo tipo: executivos de terno que tinham emendado o trabalho com a folga, mães com crianças pequenas no colo, avós voltando de uma visita aos netos, estudantes carregando sacolas de presentes. No Japão, quem viaja leva sempre uma lembrancinha da cidade de onde vem, o omiyage, e muitas mãos seguravam caixinhas embrulhadas com capricho.", "O voo 123 para Osaka era uma das rotas mais curtas e comuns do país, cerca de uma hora no ar. Uma ponte aérea. Para muita gente, mais rápida e mais confortável que o trem-bala naquela véspera de feriado. O avião estava praticamente lotado: 509 passageiros.", "Era um Boeing 747SR, a versão de \"curto alcance\" feita para o Japão, reforçada para decolar e pousar muitas vezes por dia. Aquele, o JA8119, já tinha mais de 18.000 voos. Na cabine, três homens experientes: o primeiro-oficial Yutaka Sasaki, em treinamento para comandante, pilotava do assento da esquerda; ao lado dele, o comandante Masami Takahama, instrutor, com mais de 12.000 horas de voo; atrás, o engenheiro de voo Hiroshi Fukuda."] },
   { t: "Rumo ao pôr do sol", foto: { src: "assets/jal123-decolagem.webp", legenda: "Um 747 da Japan Air Lines subindo sobre a baía de Tóquio ao entardecer, com o monte Fuji ao fundo (imagem ilustrativa)" }, parte: 0, hora: "18:12", lugar: "Sobre a baía de Tóquio", sabia: "O 747SR tinha mais assentos que o 747 comum: era feito para as rotas curtas e lotadas dentro do Japão.", cena: CENAS.decolagem,
     p: ["O embarque terminou com algum atraso. As portas se fecharam, os comissários mostraram como usar o cinto e as máscaras de oxigênio, como fazem em todo voo, e muita gente nem prestou atenção. Era só mais uma viagem.", "Às 18:12, com 12 minutos de atraso, o 747 acelerou na pista de Haneda e subiu sobre a baía de Tóquio. Lá embaixo, os navios pareciam brinquedos e a cidade começava a acender as primeiras luzes. O avião fez a curva para o oeste, na direção do sol, que já estava baixo no horizonte e pintava as janelas de laranja.", "Quem estava do lado direito talvez tenha visto, ao longe, a silhueta do monte Fuji contra o céu do entardecer. Crianças grudavam o rosto nas janelas. Casais conversavam sobre os planos para o feriado. Alguns passageiros já cochilavam, cansados do dia, outros folheavam a revista de bordo. O ronco dos quatro motores era constante e tranquilizador.", "Na cabine de comando, a rotina de sempre: recolher o trem de pouso, recolher os flapes, conferir o checklist depois da decolagem, conversar com o controle de Tóquio, pedir para subir mais. Tudo normal. Lá atrás, os comissários se levantaram e começaram a preparar os carrinhos do serviço de bordo. Em menos de uma hora todos estariam em Osaka, a tempo do jantar com a família."] },
-  { t: "18:24: o estrondo", figura: "jal123-hidraulica", foto: { src: "assets/jal123-cauda.webp", legenda: "Recriação do 747 logo depois do estrondo, com a maior parte do estabilizador vertical arrancada (imagem ilustrativa)" }, parte: 1, hora: "18:24", lugar: "Baía de Sagami, 24.000 pés", sabia: "A névoa da descompressão é condensação: o ar da cabine se expande, esfria de repente e a umidade vira neblina.", cena: CENAS.estrondo,
+  { t: "18:24: o estrondo", foto: { src: "assets/jal123-cauda.webp", legenda: "Recriação do 747 logo depois do estrondo, com a maior parte do estabilizador vertical arrancada (imagem ilustrativa)" }, parte: 1, hora: "18:24", lugar: "Baía de Sagami, 24.000 pés", sabia: "A névoa da descompressão é condensação: o ar da cabine se expande, esfria de repente e a umidade vira neblina.", cena: CENAS.estrondo,
     p: ["Doze minutos depois da decolagem, o avião ainda subia, a cerca de 24.000 pés (7.300 m) sobre a baía de Sagami, ao sul de Tóquio. Então, às 18:24, veio um estrondo seco, vindo de trás.", "Em um instante a cabine se encheu de uma névoa branca. Não era fumaça: quando a pressão cai de repente, o ar esfria e a umidade vira neblina. Os ouvidos doeram, papéis voaram e as máscaras amarelas de oxigênio caíram do teto. Uma voz gravada começou a repetir, em japonês e em inglês, que era uma emergência.", "Lá atrás, a antepara de pressão traseira, a \"tampa\" em forma de cúpula que fecha a cabine na cauda, tinha se partido. O ar da cabine, mais pressurizado que o ar lá fora, explodiu para dentro da cauda, que não era feita para aguentar aquilo. Em frações de segundo, a maior parte do estabilizador vertical, a grande barbatana da cauda, foi arrancada e caiu no mar."] },
   { t: "Na cabine de passageiros", foto: { src: "assets/jal123-cabine.webp", legenda: "Foto real tirada por um passageiro dentro do voo 123, minutos depois da descompressão: as máscaras de oxigênio caídas e uma comissária no corredor. A câmera foi encontrada depois nos destroços." }, parte: 1, hora: "18:25", lugar: "Cabine de passageiros", sabia: "As máscaras de oxigênio dos passageiros duram poucos minutos, o tempo de o avião descer a uma altitude onde se respira sem ajuda.", cena: CENAS.cabine,
     p: ["Os comissários correram pelos corredores ajudando as pessoas a colocar as máscaras, mostrando como apertar o cinto e como se curvar para a frente, a posição de impacto. Muita gente achou que era um susto que ia passar. O avião, afinal, continuava voando.", "Mas logo o 747 começou a se mexer de um jeito que ninguém ali tinha sentido: balançava de um lado para o outro e subia e descia em ondas longas, como um barco num mar agitado. Segundo uma das sobreviventes, uma comissária da JAL que viajava de folga, uma parte do teto perto dos banheiros do fundo tinha se aberto.", "Um passageiro chegou a fotografar a cabine com as máscaras penduradas e as pessoas sentadas, assustadas mas quietas. As fotos foram encontradas anos depois, no filme da câmera dele, e estão entre as imagens mais impressionantes da história da aviação."] },
@@ -715,7 +715,7 @@ const ACIDENTES = [
     memoria: 'Todo dia 12 de agosto, familiares das vítimas sobem a trilha até o Cume Osutaka para lembrar os 520 que morreram. A JAL deixou de usar o número 123 nos seus voos.',
     fontes: [['Wikipedia: Japan Air Lines Flight 123', 'https://en.wikipedia.org/wiki/Japan_Air_Lines_Flight_123'], ['Britannica: Japan Airlines flight 123', 'https://www.britannica.com/event/Mount-Osutaka-airline-disaster'],
       ['Nippon.com: Japan’s Deadliest Air Disaster', 'https://www.nippon.com/en/guide-to-japan/cs00019/'], ['Admiral Cloudberg: Fire on the Mountain', 'https://admiralcloudberg.medium.com/fire-on-the-mountain-the-crash-of-japan-airlines-flight-123-dadebd321224']],
-    cauda: 'assets/cauda-jal.webp', mapaImg: 'assets/jal123-mapa.webp', mapa: mapaJal123, esquema: falhaJal123, fugoide: fugoideJal123,
+    figuraFalha: 'jal123-hidraulica', cauda: 'assets/cauda-jal.webp', mapaImg: 'assets/jal123-mapa.webp', mapa: mapaJal123, esquema: falhaJal123, fugoide: fugoideJal123,
     fuso: 'Linha do tempo · horário de Tóquio, alguns aproximados', fugoideTit: 'A fugoide: subindo e descendo sem controle',
     fugoideTxt: 'Sem os profundores, cada subida custava velocidade e cada descida a devolvia. O 747 ficou preso nessa gangorra, subindo e descendo centenas de metros por vez, enquanto o dutch roll o balançava de lado.',
   },
@@ -975,7 +975,9 @@ function mostrar() {
   $('#dzFicha').innerHTML = a.ficha.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('');
   // Volta para o capítulo em que a pessoa estava neste acidente (antes recomeçava sempre do 1)
   cap = Math.min(capDe[a.id] || 0, a.secoes.length - 1); montarCapitulos();
-  $('#dzFail').innerHTML = a.esquema();
+  const ff = $('#dzFailFig');
+  if (a.figuraFalha) { $('#dzFail').innerHTML = ''; $('#dzFail').hidden = true; figuraEm(ff, a.figuraFalha, 'O que falhou'); }
+  else { $('#dzFail').hidden = false; $('#dzFail').innerHTML = a.esquema(); figuraEm(ff, '', ''); }
   $('#dzFailTxt').textContent = a.falha;
   $('#dzPhugBox').hidden = !a.fugoide;
   if (a.fugoide) { $('#dzPhug').innerHTML = a.fugoide(); $('#dzPhugTit').textContent = a.fugoideTit; $('#dzPhugTxt').textContent = a.fugoideTxt; }
@@ -1061,6 +1063,18 @@ function montarCapitulos() {
   $('#dzhLine').style.gridTemplateColumns = `repeat(${a.secoes.length}, minmax(0, 1fr))`;
   capitulo(0);
 }
+// Põe uma ilustração interativa (página em assets/fig-NOME.html, no tema do app) dentro de um elemento
+function figuraEm(fig, nome, titulo) {
+  const claro = document.documentElement.dataset.theme === 'light' || (!document.documentElement.dataset.theme && matchMedia('(prefers-color-scheme: light)').matches);
+  const src = nome ? `assets/fig-${nome}${claro ? '-light' : ''}.html` : '';
+  fig.hidden = !src;
+  if (!src) { fig.innerHTML = ''; delete fig.dataset.src; return; }
+  if (fig.dataset.src === src) return;
+  fig.dataset.src = src;
+  fig.innerHTML = `<iframe src="${src}" title="Ilustração interativa: ${esc(titulo)}"></iframe><p class="small">Ilustração interativa: arraste o dedo sobre ela.</p>`;
+  const fr = fig.querySelector('iframe');
+  fr.addEventListener('load', () => { try { const ajusta = () => { fr.style.height = fr.contentDocument.documentElement.scrollHeight + 'px'; }; ajusta(); new ResizeObserver(ajusta).observe(fr.contentDocument.body); } catch {} });
+}
 function capitulo(dir = 0) {
   const a = atual, c = a.secoes[cap], card = $('#dzhCard');
   capDe[a.id] = cap;
@@ -1076,19 +1090,7 @@ function capitulo(dir = 0) {
   $('#dzhText').innerHTML = c.p.map((p) => `<p>${esc(p)}</p>`).join('');
   $('#dzhFact').textContent = c.sabia;
   // Ilustração interativa (feita com a skill Anatomy) logo abaixo do texto, no tema do app
-  const fig = $('#dzhFig');
-  if (fig) {
-    const claro = document.documentElement.dataset.theme === 'light' || (!document.documentElement.dataset.theme && matchMedia('(prefers-color-scheme: light)').matches);
-    const src = c.figura ? `assets/fig-${c.figura}${claro ? '-light' : ''}.html` : '';
-    fig.hidden = !src;
-    if (src && fig.dataset.src !== src) {
-      fig.dataset.src = src;
-      fig.innerHTML = `<iframe src="${src}" title="Ilustração interativa: ${esc(c.t)}" loading="lazy"></iframe><p class="small">Ilustração interativa: arraste o dedo sobre ela.</p>`;
-      const fr = fig.querySelector('iframe');
-      fr.addEventListener('load', () => { try { const ajusta = () => { fr.style.height = fr.contentDocument.documentElement.scrollHeight + 'px'; }; ajusta(); new ResizeObserver(ajusta).observe(fr.contentDocument.body); } catch {} });
-    }
-    if (!src) { fig.innerHTML = ''; delete fig.dataset.src; }
-  }
+  if ($('#dzhFig')) figuraEm($('#dzhFig'), c.figura, c.t);
   $('#dzhScene').innerHTML = c.foto
     ? `<figure class="hs-photo"><div class="hs-photo__frame"><img src="${c.foto.src}" alt="${esc(c.foto.legenda)}" draggable="false">${c.foto.tag ? `<span class="hs-photo__tag${c.foto.tagTopo ? ' hs-photo__tag--top' : ''}">${esc(c.foto.tag)}</span>` : ''}</div><figcaption>${esc(c.foto.legenda)}</figcaption></figure>`
     : `<svg viewBox="0 0 320 180" role="img" aria-label="Ilustração: ${esc(c.t)}"><rect width="320" height="180" class="hs-sky"/>${c.cena()}</svg>`;
