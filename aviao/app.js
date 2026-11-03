@@ -290,7 +290,8 @@ function figurasEm(raiz) {
   if (!raiz) return;
   const claro = document.documentElement.dataset.theme === 'light' || (!document.documentElement.dataset.theme && matchMedia('(prefers-color-scheme: light)').matches);
   raiz.querySelectorAll('[data-fig]').forEach((el) => {
-    const src = `assets/fig-${el.dataset.fig}${claro ? '-light' : ''}.html`;
+    // data-tema="claro" fixa a versão clara do desenho, qualquer que seja o tema do app
+    const src = `assets/fig-${el.dataset.fig}${claro || el.dataset.tema === 'claro' ? '-light' : ''}.html`;
     if (el.dataset.src === src) return;
     el.dataset.src = src;
     el.innerHTML = `<iframe src="${src}" title="Ilustração interativa"></iframe><p class="small">Ilustração interativa: toque no desenho para explorar.</p>`;
