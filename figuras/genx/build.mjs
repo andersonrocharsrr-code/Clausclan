@@ -48,8 +48,8 @@ const STAGGER = [];
 const SPRING = { stagger: 0.05, stiffness: 52, damping: 13, substeps: 4 };
 
 // ---------- Câmera ----------
-const fitPts = [[275, 0, Z0], [-48, 0, Z0 + 81], [-48, 0, Z0 - 81], [-48, 81, Z0], [-48, -81, Z0], [40, 81, Z0], [40, 0, Z0 - 81], [245, 0, Z0], [290, 0, Z0 + 20], [-60, -105, 0], [250, -105, 0], [250, 95, 0], [-60, 95, 0], [60, -95, Z0 + 125], [60, 0, Z0 + 125], [150, 0, Z0 + 125]];
-const P = k.fitProjection(fitPts, W, H, { pad: 12, azimuth: 146, elevation: 22 });
+const fitPts = [[272, 0, Z0], [-48, 0, Z0 + 81], [-48, 0, Z0 - 81], [-48, 81, Z0], [-48, -81, Z0], [40, 81, Z0], [40, 0, Z0 - 81], [245, 0, Z0], [-56, -100, 0], [236, -100, 0], [236, 64, 0], [-56, 64, 0], [10, -92, Z0 + 120], [130, -92, Z0 + 120], [60, 0, Z0 + 120]];
+const P = k.fitProjection(fitPts, W, H, { pad: 6, azimuth: 146, elevation: 22 });
 const V = G.viewOf(P), KS = G.scaleOf(P);
 const SIDE = Math.sign(V[1]) || 1;                 // lado do motor que fica de frente para quem olha
 const at = (p) => k.iso(p, P);
@@ -202,7 +202,8 @@ function casca(piece, s0, s1, rIn, rOut, { tone = "hi", name, segs, linhas = [],
     }
   }
   // arcos (aros, linhas, rebites) só onde há material e de onde se vê
-  const arco = (x, r, cond) => { const runs = []; let run = []; for (const t of ths) { if (cond(t)) run.push(on(x, r(x), t)); else if (run.length) { runs.push(run); run = []; } } if (run.length) runs.push(run); return runs.filter((q) => q.length > 1).map((q) => pathOf(q)).join(""); };
+  // cada trecho avança uma amostra além da borda, para emendar com o trecho da outra metade
+  const arco = (x, r, cond) => { const runs = []; let run = []; ths.forEach((t, i) => { if (cond(t)) { if (!run.length && i > 0) run.push(on(x, r(x), ths[i - 1])); run.push(on(x, r(x), t)); } else if (run.length) { run.push(on(x, r(x), t)); runs.push(run); run = []; } }); if (run.length) runs.push(run); return runs.filter((q) => q.length > 1).map((q) => pathOf(q)).join(""); };
   const visO = (x) => (t) => G.dot3(nOut(x, t), V) > 0, visI = (x) => (t) => G.dot3(nIn(x, t), V) > 0;
   const fn = faceS === s0 ? [-1, 0, 0] : [1, 0, 0];
   for (const half of [true, false]) {
@@ -212,7 +213,9 @@ function casca(piece, s0, s1, rIn, rOut, { tone = "hi", name, segs, linhas = [],
     const fecha = () => { if (run.length > 1) out[half].f.push(`<path ${shade(fn)} d="${pathOf([...run.map((t) => on(faceS, fo(faceS), t)), ...[...run].reverse().map((t) => on(faceS, fi(faceS), t))], true)}"/>`); run = []; };
     for (const t of ths) { if (H_(t)) run.push(t); else fecha(); } fecha();
     out[half].e.push(arco(faceS, fo, (t) => H_(t)) + arco(faceS, fi, (t) => H_(t, faceS, fi)) + arco(farS, fo, (t) => H_(t, farS) && visO(farS)(t)) + (half ? "" : arco(farS, fi, (t) => H_(t, farS, fi) && visI(farS)(t))));
-    const lf = linhas.map((x) => arco(x, fo, (t) => H_(t, x) && visO(x)(t))).join(""), lm = linhasMid.map((x) => arco(x, fo, (t) => H_(t, x) && visO(x)(t))).join("");
+    // num perfil curvo a linha fica no meio de uma faixa, onde o contorno usa a mesma visibilidade
+    const meio = (x) => { if (!curvo) return x; const st = (s1 - s0) / M, j = Math.max(0, Math.min(M - 1, Math.floor((x - s0) / st))); return s0 + (j + 0.5) * st; };
+    const lf = linhas.map(meio).map((x) => arco(x, fo, (t) => H_(t, x) && visO(x)(t))).join(""), lm = linhasMid.map(meio).map((x) => arco(x, fo, (t) => H_(t, x) && visO(x)(t))).join("");
     if (lf) out[half].extra.push(Ln(lf, { tone: "faint" }));
     if (lm) out[half].extra.push(Ln(lm, { tone: "mid" }));
     for (const { s: x, r: rr, n: cnt } of parafusos) {
@@ -224,7 +227,12 @@ function casca(piece, s0, s1, rIn, rOut, { tone = "hi", name, segs, linhas = [],
   // faces do corte: o perfil da parede no plano da cunha, com hachura
   const prof = [...S_.map((x) => [x, fo(x)]), ...[...S_].reverse().map((x) => [x, fi(x)])];
   if (corte) for (const [deg, n] of [[CUT[1], [0, Math.sin(CUT[1] * DEG), -Math.cos(CUT[1] * DEG)]], [CUT[0], [0, -Math.sin(CUT[0] * DEG), Math.cos(CUT[0] * DEG)]]]) {
-    if (G.dot3(n, V) <= 0) continue;
+    if (G.dot3(n, V) <= 0) {
+      // a face do corte está de costas: fica só a aresta de fora, onde a superfície termina
+      const vis = S_.filter((x) => G.dot3(nOut(x, deg), V) > 0);
+      if (vis.length > 1) out[frenteDe(deg)].e.push(pathOf(vis.map((x) => on(x, fo(x), deg))));
+      continue;
+    }
     const half = frenteDe(deg, smid, (x) => (fi(x) + fo(x)) / 2);
     const poly = prof.map(([x, r]) => on(x, r, deg));
     const nh = Math.max(1, Math.floor((s1 - s0) / 2.2));
@@ -424,8 +432,8 @@ casca("nacele", 43.5, 182, ccI, ccO, { tone: "mid", name: "nacele.carenagem-nucl
 cano("hpccase", [[88, 0, Z0 + HPC(88) + 4], [88, 0, Z0 + ccI(88)]], 1.8, { name: "hpccase.duto-bleed", tone: "hi" });
 
 // ================= ESTRUTURA DE TESTE E PILONE =================
-const BASE = { x: -60, y: -105, w: 310, d: 200, r: 6 };
-caixa("stand", BASE, 0, 5, { tone: "lo", name: "stand.piso", bevel: 1.2, inner: Ln(Array.from({ length: 31 }, (_, i) => k.segment([BASE.x + 10 + i * 10, BASE.y + BASE.d - 6, 5], [BASE.x + 10 + i * 10, BASE.y + BASE.d - (i % 5 ? 9 : 12), 5], P)).join(""), { tone: "faint" }), extra: Dots([[-52, -97], [-52, 87], [242, -97], [242, 87]].map(([x, y]) => at([x, y, 5])), { size: 0.55 }) });
+const BASE = { x: -56, y: -100, w: 292, d: 164, r: 6 };
+caixa("stand", BASE, 0, 5, { tone: "lo", name: "stand.piso", bevel: 1.2, inner: Ln(k.segment([BASE.x, BASE.y + BASE.d - 6, 5], [BASE.x + BASE.w, BASE.y + BASE.d - 6, 5], P) + Array.from({ length: 30 }, (_, i) => k.segment([BASE.x + 10 + i * 10, BASE.y + BASE.d - 6, 5], [BASE.x + 10 + i * 10, BASE.y + BASE.d - (i % 5 ? 3 : 0.4), 5], P)).join(""), { tone: "faint" }), extra: Dots([[BASE.x + 4, BASE.y + 4], [BASE.x + 4, BASE.y + BASE.d - 4], [BASE.x + BASE.w - 4, BASE.y + 4], [BASE.x + BASE.w - 4, BASE.y + BASE.d - 4]].map(([x, y]) => at([x, y, 5])), { size: 0.55 }) });
 const halo = `<path class="iso-halo" d="${k.haloOf(BASE, 0, 5, P)}"/>`;
 const TOPO = Z0 + 108, FAR = -SIDE * 92;
 for (const x of [10, 130]) {
@@ -592,7 +600,8 @@ void main(){
       dens=w*fios(vec2(s*.022-uTime*vel*.7,u*9.+ang*.05+s*.012))*(.55+.45*p)*.45;
     }else if(s<8.){
       float lo=s<-34.?0.:spR(s),hi=s<-6.?inI(s):59.6;
-      dens=cunha*faixa(r,vec2(lo,hi),2.)*fios(vec2(s*.03-uTime*vel,(r-lo)/(hi-lo)*9.+ang*.05))*(.6+.4*p)*.6;
+      float fora=sm(.38,.5,(r-lo)/max(hi-lo,1.));
+      dens=cunha*faixa(r,vec2(lo,hi),2.)*fios(vec2(s*.03-uTime*vel,(r-lo)/(hi-lo)*9.+ang*.05))*(.6+.4*p)*.5*mix(.15,1.,fora);
     }else{
       vec2 bn=nucleo(s),bf=frio(s);
       float wn=faixa(r,bn,1.2),wf=s<126.?faixa(r,bf,1.5):0.;
@@ -600,17 +609,16 @@ void main(){
       float gir=s<22.?ang*.06:0.;
       float fn=fios(vec2(s*.035-uTime*vel*(s>100.&&s<120.?.6:1.2),un*7.+gir+ang*.05));
       float ff=fios(vec2(s*.025-uTime*vel*1.3,uf*9.+gir+ang*.05));
-      float qn=wn*fn*cunha,qf=wf*ff*cunha*.85;
-      // cor do núcleo: frio no compressor, chama na câmara, quente nas turbinas
-      float h=sm(99.,104.,s);
-      vec3 cn=mix(vec3(.38,.62,1.),vec3(1.,.82,.35),h);
-      cn=mix(cn,vec3(1.,.42,.12),sm(116.,132.,s));
-      cn=mix(cn,vec3(.95,.3,.12),sm(150.,200.,s));
-      float chama=(s>100.&&s<120.)?(.6+1.4*p):1.;
+      // separados: o frio (azul) só no fan e no duto de fora; o quente (laranja) só no meio, depois da câmara
+      float quente=sm(98.,104.,s);
+      float qn=wn*fn*cunha*mix(.12,1.,quente),qf=wf*ff*cunha*.9;
+      vec3 cn=mix(vec3(1.,.72,.42),vec3(1.,.6,.22),sm(100.,112.,s));
+      cn=mix(cn,vec3(1.,.42,.12),sm(116.,140.,s));
+      float chama=(s>100.&&s<120.)?(.7+1.1*p):1.;
       dens=qn*chama+qf;
-      c=(qn*chama*cn+qf*vec3(.38,.62,1.))/max(dens,1e-4);
+      c=(qn*chama*cn+qf*vec3(.4,.64,1.))/max(dens,1e-4);
     }
-    float al=clamp(dens*dt*.036,0.,1.);
+    float al=clamp(dens*dt*.024,0.,1.);
     col=col*(1.-al)+c*al;a=a*(1.-al)+al;
   }
   gl_FragColor=vec4(col,a);
@@ -685,6 +693,7 @@ say(leitura());
 
 const CSS = `body{margin:0}.iso-page{width:100%!important;margin:0!important;padding:14px 18px 18px;box-sizing:border-box}.iso-plate{padding:44px 12px 58px!important;box-shadow:none!important;border-radius:12px!important}
 .gx-stage{position:relative;cursor:ew-resize;touch-action:pan-y;outline:none;user-select:none;-webkit-user-select:none}.gx-stage svg{position:relative;display:block;width:100%;height:auto}
+.iso-plate-corner[data-corner=readout]{white-space:normal!important;max-width:62%;text-align:right;line-height:1.35}
 .gx-jato,.gx-fluxo{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;filter:blur(1.3px)}
 .gx-f{display:none}.gx-f.on{display:inline}
 .gx-chama{fill:#ff7a1a;opacity:var(--chama,.2);mix-blend-mode:normal}
