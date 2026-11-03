@@ -41,15 +41,14 @@ const PIECES = {
   lptcase: { name: "Carcaça da turbina de baixa", say: "carcaça da LPT" },
   exhaust: { name: "Bocal e cone de escape", say: "armação traseira, bocal do núcleo e cone · sai o jato quente" },
   nacele: { name: "Nacele e reversor", say: "nacele · entrada de ar, capô do fan e reversor · o duto do fluxo frio" },
-  stand: { name: "Estrutura de teste e pilone", say: "pilone e estrutura de teste" },
 };
 for (const p of Object.values(PIECES)) p.move = [0, 0, 0];
 const STAGGER = [];
 const SPRING = { stagger: 0.05, stiffness: 52, damping: 13, substeps: 4 };
 
 // ---------- Câmera ----------
-const fitPts = [[272, 0, Z0], [-48, 0, Z0 + 81], [-48, 0, Z0 - 81], [-48, 81, Z0], [-48, -81, Z0], [40, 81, Z0], [40, 0, Z0 - 81], [245, 0, Z0], [-56, -100, 0], [236, -100, 0], [236, 64, 0], [-56, 64, 0], [10, -92, Z0 + 120], [130, -92, Z0 + 120], [60, 0, Z0 + 120]];
-const P = k.fitProjection(fitPts, W, H, { pad: 6, azimuth: 146, elevation: 22 });
+const fitPts = [[300, 0, Z0 + 10], [300, 0, Z0 - 10], [-48, 0, Z0 + 81], [-48, 0, Z0 - 81], [-48, 81, Z0], [-48, -81, Z0], [43, 81, Z0], [43, -81, Z0], [43, 0, Z0 + 81], [43, 0, Z0 - 81], [126, 0, Z0 + 54], [126, 0, Z0 - 54], [126, 54, Z0], [126, -54, Z0], [182, 0, Z0 + 49], [182, 0, Z0 - 49], [182, 49, Z0], [182, -49, Z0], [-40, 0, 0], [230, 0, 0]];
+const P = k.fitProjection(fitPts, W, H, { pad: 14, azimuth: 214, elevation: 22 });
 const V = G.viewOf(P), KS = G.scaleOf(P);
 const SIDE = Math.sign(V[1]) || 1;                 // lado do motor que fica de frente para quem olha
 const at = (p) => k.iso(p, P);
@@ -58,7 +57,8 @@ const Ln = (d, style) => k.lineSvg(d, style);
 const Dots = (pts, style) => k.dotsSvg(pts, style);
 const FADE = [0.04, 0.42];
 
-const R = A.recorder(P, { order: STAGGER, spring: SPRING });
+// sem suporte, o motor é segurado pela carcaça do fan (é ela que vai no pilone)
+const R = A.recorder(P, { order: STAGGER, spring: SPRING, ground: (shape) => (shape.name ?? "").startsWith("fancase.contencao") });
 const { items, nameFor } = R;
 const record = R.solid;
 // cada rotor sai junto com a sua carcaça (o módulo inteiro), como na oficina: nada atravessa nada no caminho
@@ -431,20 +431,8 @@ casca("nacele", 43.5, 182, ccI, ccO, { tone: "mid", name: "nacele.carenagem-nucl
 // duto de sangria: da bossa no alto do compressor até a carenagem (vai para o pilone)
 cano("hpccase", [[88, 0, Z0 + HPC(88) + 4], [88, 0, Z0 + ccI(88)]], 1.8, { name: "hpccase.duto-bleed", tone: "hi" });
 
-// ================= ESTRUTURA DE TESTE E PILONE =================
-const BASE = { x: -56, y: -100, w: 292, d: 164, r: 6 };
-caixa("stand", BASE, 0, 5, { tone: "lo", name: "stand.piso", bevel: 1.2, inner: Ln(k.segment([BASE.x, BASE.y + BASE.d - 6, 5], [BASE.x + BASE.w, BASE.y + BASE.d - 6, 5], P) + Array.from({ length: 30 }, (_, i) => k.segment([BASE.x + 10 + i * 10, BASE.y + BASE.d - 6, 5], [BASE.x + 10 + i * 10, BASE.y + BASE.d - (i % 5 ? 3 : 0.4), 5], P)).join(""), { tone: "faint" }), extra: Dots([[BASE.x + 4, BASE.y + 4], [BASE.x + 4, BASE.y + BASE.d - 4], [BASE.x + BASE.w - 4, BASE.y + 4], [BASE.x + BASE.w - 4, BASE.y + BASE.d - 4]].map(([x, y]) => at([x, y, 5])), { size: 0.55 }) });
-const halo = `<path class="iso-halo" d="${k.haloOf(BASE, 0, 5, P)}"/>`;
-const TOPO = Z0 + 108, FAR = -SIDE * 92;
-for (const x of [10, 130]) {
-  caixa("stand", { x: x - 10, y: FAR - 10, w: 20, d: 20, r: 1.5 }, 5, 3, { tone: "mid", name: "stand.sapata", extra: Dots([[x - 7, FAR - 7], [x + 7, FAR - 7], [x - 7, FAR + 7], [x + 7, FAR + 7]].map(([a, b]) => at([a, b, 8])), { size: 0.5 }) });
-  caixa("stand", { x: x - 5, y: FAR - 5, w: 10, d: 10, r: 1 }, 8, TOPO + 10 - 8, { tone: "mid", name: "stand.coluna", bevel: 0.5 });
-  caixa("stand", { x: x - 4, y: Math.min(FAR + 5, -4), w: 8, d: Math.abs(FAR) + 4 - 5 + 4, r: 1 }, TOPO + 2, 8, { tone: "mid", name: "stand.braco", bevel: 0.5 });
-}
-caixa("stand", { x: -12, y: -6, w: 154, d: 12, r: 1.5 }, TOPO, 2, { tone: "lo", name: "stand.viga-placa" });
-caixa("stand", { x: 16, y: -5, w: 112, d: 10, r: 1.5 }, Z0 + 86, TOPO - (Z0 + 86), { tone: "hi", name: "stand.pilone", bevel: 0.8, inner: Ln(k.sideSeam({ x: 16, y: -5, w: 112, d: 10, r: 1.5 }, Z0 + 97, P, 2), { tone: "faint" }) });
-caixa("stand", { x: 26, y: -3, w: 6, d: 6, r: 1 }, Z0 + 80, 6, { tone: "mid", name: "stand.suporte-frente" });
-caixa("stand", { x: 100, y: -3, w: 6, d: 6, r: 1 }, Z0 + rvO(100), Z0 + 86 - (Z0 + rvO(100)), { tone: "mid", name: "stand.suporte-tras" });
+// sombra suave embaixo do motor (sem suporte: só o motor)
+const halo = `<path class="iso-halo" d="${k.haloOf({ x: -40, y: -58, w: 270, d: 116, r: 50 }, 0, 4, P)}"/>`;
 
 // ================= ORDEM DE PINTURA MEDIDA E SAÍDA =================
 A.settle(R, P, { states: [0, ...A.prefixStates(STAGGER, { shares: [0.5, 1] }), 1] });
