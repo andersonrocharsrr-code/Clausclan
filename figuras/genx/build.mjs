@@ -12,7 +12,8 @@ const k = await import(KIT + "/kit/iso-kit.mjs");
 const G = await import(KIT + "/kit/lathe.mjs");
 const { tubePieces, tubeSvg } = await import(KIT + "/kit/tube.mjs");
 const A = await import(KIT + "/kit/audit.mjs");
-const { kitScript } = await import(KIT + "/scripts/inline-kit.mjs");
+const { kitScript, glScript } = await import(KIT + "/scripts/inline-kit.mjs");
+const { glCamera } = await import(KIT + "/kit/gl.mjs");
 
 const THEME = process.argv.includes("--light") ? "light" : "dark";
 const DEG = Math.PI / 180;
@@ -47,7 +48,7 @@ const STAGGER = [];
 const SPRING = { stagger: 0.05, stiffness: 52, damping: 13, substeps: 4 };
 
 // ---------- Câmera ----------
-const fitPts = [[-48, 0, Z0 + 81], [-48, 0, Z0 - 81], [-48, 81, Z0], [-48, -81, Z0], [40, 81, Z0], [40, 0, Z0 - 81], [245, 0, Z0], [290, 0, Z0 + 20], [-60, -105, 0], [250, -105, 0], [250, 95, 0], [-60, 95, 0], [60, -95, Z0 + 125], [60, 0, Z0 + 125], [150, 0, Z0 + 125]];
+const fitPts = [[275, 0, Z0], [-48, 0, Z0 + 81], [-48, 0, Z0 - 81], [-48, 81, Z0], [-48, -81, Z0], [40, 81, Z0], [40, 0, Z0 - 81], [245, 0, Z0], [290, 0, Z0 + 20], [-60, -105, 0], [250, -105, 0], [250, 95, 0], [-60, 95, 0], [60, -95, Z0 + 125], [60, 0, Z0 + 125], [150, 0, Z0 + 125]];
 const P = k.fitProjection(fitPts, W, H, { pad: 12, azimuth: 146, elevation: 22 });
 const V = G.viewOf(P), KS = G.scaleOf(P);
 const SIDE = Math.sign(V[1]) || 1;                 // lado do motor que fica de frente para quem olha
@@ -254,17 +255,19 @@ const spSlope = (s) => (SPR * 1.5 * Math.pow(Math.max(1e-6, (SP1 - s) / (SP1 - S
   const prof = Array.from({ length: 22 }, (_, i) => { const s = SP0 + 0.05 + (i / 21) * (SP1 - SP0 - 0.05); return [s, spR(s), i > 0 && i < 21 ? 1 : 0]; });
   prof[0] = [SP0, 0];
   // a espiral pintada (só a parte que se vê) e a ponta de borracha
-  const esp = []; for (let j = 0; j <= 50; j++) { const s = SP0 + 2 + j * (SP1 - SP0 - 3) / 50; esp.push(G.pointOf(AX, s, spR(s) + 0.15, (40 + j * 9) * DEG)); }
-  const vis = []; let run = []; for (const p of esp) { const rad = G.unit3(G.sub3(p, [p[0], 0, Z0])); const n = G.unit3(G.sub3(rad, [spSlope(p[0]), 0, 0])); if (G.dot3(n, V) > 0.12) run.push(p); else if (run.length) { vis.push(run); run = []; } } if (run.length) vis.push(run);
-  turned("spinner", AX, prof, { tone: "mid", smooth: { slope: spSlope, rows: 5 }, name: "spinner.cone", extra: vis.map((r) => `<path class="iso-line" data-tone="hi" data-free="both" d="M${r.map((p) => at(p).map((v) => v.toFixed(1)).join(" ")).join("L")}" style="stroke-width:2.2;stroke-linecap:round"/>`).join("") });
+  const espiral = (off) => {
+    const esp = []; for (let j = 0; j <= 50; j++) { const s = SP0 + 2 + j * (SP1 - SP0 - 3) / 50; esp.push(G.pointOf(AX, s, spR(s) + 0.15, (40 + off + j * 9) * DEG)); }
+    const vis = []; let run = []; for (const p of esp) { const rad = G.unit3(G.sub3(p, [p[0], 0, Z0])); const n = G.unit3(G.sub3(rad, [spSlope(p[0]), 0, 0])); if (G.dot3(n, V) > 0.12) run.push(p); else if (run.length) { vis.push(run); run = []; } } if (run.length) vis.push(run);
+    return vis.map((r) => `<path class="iso-line" data-tone="hi" data-free="both" d="M${r.map((p) => at(p).map((v) => v.toFixed(1)).join(" ")).join("L")}" style="stroke-width:2.2;stroke-linecap:round"/>`).join("");
+  };
+  turned("spinner", AX, prof, { tone: "mid", smooth: { slope: spSlope, rows: 5 }, name: "spinner.cone", extra: Array.from({ length: 36 }, (_, f) => `<g class="gx-f${f ? "" : " on"}" data-esp="${f}">${espiral(f * 10)}</g>`).join("") });
   anel("spinner", SP1, SP1 + 0.8, SPR - 1.5, SPR + 0.4, { tone: "mid", name: "spinner.anel", extra: Dots(G.dotsOf(AX, SP1, SPR - 0.6, 24, P, { fade: FADE }), { size: 0.4 }) });
 }
 disco("fan", AX, SP1 + 0.8, 22, 18.6, { tone: "mid", name: "fan.disco" });
-const BLADES = 18;
+const BLADES = 18, FASES = 10;
 // cada pá é uma superfície torcida: da raiz à ponta o ângulo abre (de 28° a 68° com o eixo), a corda cresce
 // e a ponta vai para trás, como as pás largas de compósito do GEnx; a borda de ataque de titânio fica clara
-for (let i = 0; i < BLADES; i++) {
-  const th = (i / BLADES) * 360 + 6;
+function pa(th) {
   const rad = [0, Math.cos(th * DEG), Math.sin(th * DEG)], tan = [0, -Math.sin(th * DEG), Math.cos(th * DEG)];
   const le = [], te = [], N = 12;
   for (let j = 0; j <= N; j++) {
@@ -279,12 +282,22 @@ for (let i = 0; i < BLADES; i++) {
     if (G.dot3(n, V) < 0) n = G.mul3(n, -1);
     faces.push(`<path ${shade(n)} d="${qd([le[j], le[j + 1], te[j + 1], te[j]])}"/>`);
   }
-  const contorno = "M" + [...le, ...[...te].reverse()].map((p) => at(p).map((v) => v.toFixed(1)).join(" ")).join("L") + "Z";
-  const borda = "M" + le.map((p) => at(p).map((v) => v.toFixed(1)).join(" ")).join("L");
+  const contorno = pathOf([...le, ...[...te].reverse()], true), borda = pathOf(le);
   const F = G.frameOf([15.5, 0, Z0], rad, [1, 0, 0], tan), b = 48 * DEG, poly = [];
   for (let j = 0; j < 12; j++) { const q = (j / 12) * 2 * Math.PI, x = 8 * Math.cos(q), y = 0.9 * Math.sin(q); poly.push([x * Math.cos(b) - y * Math.sin(b), x * Math.sin(b) + y * Math.cos(b)]); }
-  const id = nameFor("fan.pa");
-  put("fan", G.pointOf(F, 40, 0, 0), `<g class="iso-solid"><path class="iso-fill" d="${contorno}"/>${faces.join("")}<path class="iso-line iso-edge" data-tone="hi" d="${contorno}"/><path class="iso-line" data-tone="lit" d="${borda}" style="stroke-width:1.3"/></g>`, { name: id, shapes: [record(A.prism(F, poly, 18.3, 58.9, { name: id }))] });
+  return { svg: `<g class="iso-solid"><path class="iso-fill" d="${contorno}"/>${faces.join("")}<path class="iso-line iso-edge" data-tone="hi" d="${contorno}"/><path class="iso-line" data-tone="lit" d="${borda}" style="stroke-width:1.3"/></g>`, F, poly, depth: G.dot3(G.pointOf(F, 40, 0, 0), V) };
+}
+{
+  const naFrenteDoDisco = (th) => Math.cos(th * DEG) * NV[1] + Math.sin(th * DEG) * NV[2] > 0;
+  for (const frente of [false, true]) {
+    const fases = [], shapes = [];
+    for (let f = 0; f < FASES; f++) {
+      const pas = Array.from({ length: BLADES }, (_, i) => (i / BLADES) * 360 + 6 + f * (360 / BLADES / FASES)).filter((th) => naFrenteDoDisco(th) === frente).map(pa).sort((a, b) => a.depth - b.depth);
+      fases.push(`<g class="gx-f${f ? "" : " on"}" data-pa="${f}">${pas.map((q) => q.svg).join("")}</g>`);
+      if (f === 0) pas.forEach((q) => shapes.push(record(A.prism(q.F, q.poly, 18.3, 58.9, { name: `fan.pas-${frente ? "frente" : "tras"}`, owner: "fan.pas" }))));
+    }
+    put("fan", [15.5, 0, Z0 + (frente ? 1 : -1)], fases.join(""), { name: nameFor(`fan.pas-${frente ? "frente" : "tras"}`), shapes });
+  }
 }
 
 // ================= CARCAÇA DO FAN, PALHETAS GUIA E EQUIPAMENTOS =================
@@ -367,8 +380,11 @@ for (let i = 0; i < FN; i++) {
   for (const d of [a0 + 20, a0 + 110, a0 + 190, a1 - 20]) { const b = on(FN_S + 3.4, CB(FN_S + 3.4), d); disco("combcase", G.frameAlong(b, G.unit3(G.sub3(b, [FN_S + 3.4, 0, Z0]))), -0.4, MAN_R - CB(FN_S + 3.4) - 0.8, 0.6, { tone: "lo", name: "combcase.suporte-anel" }); }
 }
 // liner (parede da chama), também cortado: por dentro dele aparece a chama
-casca("comb", 100, 120, 15.6, 22.6, { tone: "hi", name: "comb.liner", linhas: [104, 112], parafusos: [{ s: 108, r: 22.6, n: 60 }], brilho: true });
-for (let i = 0; i < 12; i++) { const deg = (i / 12) * 360 + 15, F = G.frameAlong(on(100, 19, deg), [-1, 0, 0]); if (G.dot3([0, Math.cos(deg * DEG), Math.sin(deg * DEG)], V) < -0.3 || naCunha(deg) || naCunha(deg - 5) || naCunha(deg + 5)) continue; disco("comb", F, 0, 1.6, 1.4, { tone: "mid", name: "comb.swirler" }); }
+// câmara anular: domo na frente, liner de fora e liner de dentro; a chama fica entre os dois
+casca("comb", 99, 100, 15.6, 22.6, { tone: "mid", name: "comb.domo" });
+casca("comb", 100, 120, 21.6, 22.6, { tone: "hi", name: "comb.liner-externo", linhas: [104, 112], parafusos: [{ s: 108, r: 22.6, n: 60 }], brilho: true });
+casca("comb", 100, 120, 15.6, 16.6, { tone: "hi", name: "comb.liner-interno", linhas: [108] });
+for (let i = 0; i < 12; i++) { const deg = (i / 12) * 360 + 15, F = G.frameAlong(on(99, 19, deg), [-1, 0, 0]); if (G.dot3([0, Math.cos(deg * DEG), Math.sin(deg * DEG)], V) < -0.3 || naCunha(deg) || naCunha(deg - 5) || naCunha(deg + 5)) continue; disco("comb", F, 0, 1.6, 1.4, { tone: "mid", name: "comb.swirler" }); }
 
 // ================= TURBINAS =================
 casca("hptcase", 120, 132, 20, 30.6, { tone: "hi", name: "hptcase.carcaca", linhas: [128.5], linhasMid: [125.4, 126.6], parafusos: [{ s: 126, r: 30.6, n: 48 }] });
@@ -382,12 +398,15 @@ casca("lptcase", 132, 178, (x) => LPT(x) - 1.8, LPT, { tone: "hi", name: "lptcas
 
 // ================= ARMAÇÃO TRASEIRA, BOCAL E CONE =================
 casca("exhaust", 178, 189, 30, 44.6, { tone: "hi", name: "exhaust.armacao", parafusos: [{ s: 178, r: 43.2, n: 56 }] });
-casca("exhaust", 189, 202, 37.6, 43.4, { tone: "mid", name: "exhaust.bocal", linhas: [195] });
+// bocal do núcleo: convergente, termina em borda fina
+casca("exhaust", 189, 204, (x) => 37.6 - (x - 189) * 0.3, (x) => 43.4 - (x - 189) * 0.6, { tone: "mid", name: "exhaust.bocal", segs: 6, linhas: [196] });
 {
-  const PL = (s) => 30 * Math.sqrt(Math.max(0, 1 - ((s - 186) / 54) ** 2));
-  const plSlope = (s) => { const r = PL(s); return r > 0.3 ? (-900 * (s - 186)) / (54 * 54 * r) : -40; };
-  const prof = [[186, 0]]; for (let i = 0; i <= 20; i++) { const s = 186 + i * 53.6 / 20; prof.push([s, PL(s), i > 0 && i < 20 ? 1 : 0]); } prof.push([240, 0]);
-  turned("exhaust", AX, prof, { tone: "hi", smooth: { slope: plSlope, rows: 5 }, name: "exhaust.cone" });
+  // cone de escape (plug): longo e pontudo, como no GEnx-2B; perfil de ogiva com ponta afiada
+  const PL0 = 186, PLL = 84, PLR = 30;
+  const PL = (s) => PLR * (1 - Math.pow(Math.min(1, Math.max(0, (s - PL0) / PLL)), 1.7));
+  const plSlope = (s) => -PLR * 1.7 * Math.pow(Math.min(1, Math.max(1e-6, (s - PL0) / PLL)), 0.7) / PLL;
+  const prof = [[PL0, 0]]; for (let i = 0; i <= 24; i++) { const s = PL0 + i * (PLL - 0.4) / 24; prof.push([s, PL(s), i > 0 && i < 24 ? 1 : 0]); } prof.push([PL0 + PLL, 0]);
+  turned("exhaust", AX, prof, { tone: "hi", smooth: { slope: plSlope, rows: 5 }, name: "exhaust.cone", inner: Ln(G.arcOf(AX, 212, PL(212), P, { slope: plSlope(212) }) + G.arcOf(AX, 236, PL(236), P, { slope: plSlope(236) }), { tone: "faint" }) });
 }
 
 // ================= NACELE (cortada) =================
@@ -423,131 +442,268 @@ caixa("stand", { x: 100, y: -3, w: 6, d: 6, r: 1 }, Z0 + rvO(100), Z0 + 86 - (Z0
 A.settle(R, P, { states: [0, ...A.prefixStates(STAGGER, { shares: [0.5, 1] }), 1] });
 items.sort((a, b) => a.key - b.key);
 const DENTRO = new Set(["spinner", "fan", "booster", "hpc", "comb", "hpt", "lpt", "stand"]);
-const groups = items.map((it, i) => { const [mx, my, mz] = it.move; return `<g class="it"${DENTRO.has(it.piece) ? "" : " data-g"} data-piece="${it.piece}" data-r="${it.ride ?? it.piece}" data-k="${it.key.toFixed(2)}" data-m="${mx.toFixed(1)},${my.toFixed(1)},${mz.toFixed(1)}" data-i="${i}">${it.svg}</g>`; });
+const groups = items.map((it, i) => { const [mx, my, mz] = it.move; return `<g class="it"${DENTRO.has(it.piece) ? "" : " data-g"} data-n="${it.name}" data-piece="${it.piece}" data-r="${it.ride ?? it.piece}" data-k="${it.key.toFixed(2)}" data-m="${mx.toFixed(1)},${my.toFixed(1)},${mz.toFixed(1)}" data-i="${i}">${it.svg}</g>`; });
 const nSolidos = items.filter((it) => !it.route).length;
 
-const ORDER = ["spinner", "fan", "booster", "fancase", "eec", "core", "hpccase", "hpc", "combcase", "comb", "hptcase", "hpt", "lptcase", "lpt", "exhaust", "agb"];
-const unit = (v) => { const o = at([0, 0, 0]), p = at(v); return [p[0] - o[0], p[1] - o[1]]; };
-const DATA = { V, EX: unit([1, 0, 0]), EY: unit([0, 1, 0]), EZ: unit([0, 0, 1]), stagger: STAGGER, spring: SPRING, order: ORDER, pieces: Object.fromEntries(Object.entries(PIECES).map(([id, p]) => [id, { name: p.name, say: p.say }])) };
+const ORDER = ["spinner", "fan", "booster", "fancase", "hpc", "hpccase", "comb", "combcase", "hpt", "hptcase", "lpt", "lptcase", "exhaust", "nacele", "agb", "eec", "core"];
+const PLs = (x) => (x < 186 || x > 270 ? 0 : 30 * (1 - Math.pow((x - 186) / 84, 1.7)));
+const lerp = (a, b, t) => a + (b - a) * Math.max(0, Math.min(1, t));
+function caminho(x) {
+  // [baixo, alto] da entrada, do núcleo e do fluxo frio na estação x
+  const ent = x < -44 ? [x < SP0 ? 0 : spR(x), 58 + (-44 - x) * 0.45] : x < 8 ? [x < SP0 ? 0 : spR(x), inI(Math.min(x, -6.01))] : [18.6, 59.6];
+  let nuc;
+  if (x < 22) nuc = [18.6, 30.5];
+  else if (x < 41) nuc = [19 + (x - 22) * 2 / 21.5, 29.6];
+  else if (x < 54) nuc = [lerp(21, 13.2, (x - 41) / 13), lerp(29.6, HPC(54) - 1.8, (x - 41) / 13)];
+  else if (x < 98) nuc = [13.2 + (x - 54) * 2 / 44, HPC(x) - 1.8];
+  else if (x < 100) nuc = [lerp(15.2, 16.6, (x - 98) / 2), lerp(HPC(98) - 1.8, 21.6, (x - 98) / 2)];
+  else if (x < 120) nuc = [16.6, 21.6];
+  else if (x < 132) nuc = [13.4, 20];
+  else if (x < 178) nuc = [15 + (x - 132) * 4 / 46, LPT(x) - 1.8];
+  else if (x < 189) nuc = [Math.max(19, PLs(x)), 30];
+  else nuc = [Math.max(PLs(x), 1), 37.6 + Math.max(0, x - 202) * 0.07];
+  let byp;
+  if (x < 22) byp = [30.5, 59.6];
+  else if (x < 43.5) byp = [32.6, 59.6];
+  else if (x < 126) byp = [ccO(x), rvI(x)];
+  else byp = [x < 182 ? ccO(x) : 48.2 - (x - 182) * 0.2, rvI(126) + (x - 126) * 0.07];
+  return [...ent, ...nuc, ...byp].map((v) => +v.toFixed(2));
+}
+const GAS = Array.from({ length: 196 }, (_, i) => caminho(-130 + i * 2));
+const O2 = at([0, 0, 0]), base = (v) => { const q = at(v); return [q[0] - O2[0], q[1] - O2[1]]; };
+const DATA = { GAS, O2, EX: base([1, 0, 0]), EY: base([0, 1, 0]), EZ: base([0, 0, 1]), CUT, LIGHT: THEME === "light", order: ORDER, pieces: Object.fromEntries(Object.entries(PIECES).map(([id, p]) => [id, { name: p.name, say: p.say }])), W, H, camera: glCamera(P), Z0, FASES };
 
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="iso-svg gx-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="O motor GEnx-2B do Boeing 747-8 sem a nacele, num suporte de transporte: o cone e o fan de 18 pás na frente, a carcaça do fan com as palhetas guia, o FADEC e o tanque de óleo; atrás, o núcleo com a carcaça do compressor de alta, os atuadores das palhetas variáveis, o duto de ar de sangria, a câmara de combustão com 18 injetores e o anel de combustível, as turbinas com os anéis de ar de resfriamento, a armação traseira, o bocal e o cone de escape; embaixo, a caixa de acessórios com bombas, gerador e motor de partida."><g class="gx-back">${halo}</g><g class="gx-engine">${groups.join("")}</g></svg>`;
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="iso-svg gx-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="O motor GEnx-2B do Boeing 747-8 pendurado numa estrutura de teste, com um quarto da nacele e das carcaças cortado: aparecem o cone e o fan de 18 pás, o booster, os 10 estágios do compressor de alta, a câmara de combustão com a chama, as turbinas de alta e de baixa, o bocal e o cone de escape. Atrás saem o jato frio do fan e o jato quente do núcleo."><g class="gx-back">${halo}</g><g class="gx-engine">${groups.join("")}</g></svg>`;
+
+// ---------- Jatos (WebGL): frio, do duto do fan; quente, do bocal do núcleo ----------
+const JET = `
+uniform float uP;
+const float Z0=${Z0.toFixed(1)};
+float corte(float s){return 44.+(s-126.)*.075;}
+float plug(float s){float u=clamp((s-186.)/84.,0.,1.);return 30.*(1.-pow(u,1.7));}
+void main(){
+  vec2 vb=viewOf(gl_FragCoord.xy);
+  vec3 V=towardViewer();
+  vec3 g=rayOf(vb);
+  vec2 o=vec2(g.y,g.z-Z0),d=vec2(V.y,V.z);
+  float A=dot(d,d),B=2.*dot(o,d),C=dot(o,o)-95.*95.;
+  float D=B*B-4.*A*C;
+  if(D<=0.){gl_FragColor=vec4(0.);return;}
+  float q=sqrt(D),t0=(-B-q)/(2.*A),t1=(-B+q)/(2.*A);
+  float p=clamp(uP,0.,1.);
+  vec3 col=vec3(0.);float a=0.;
+  const int N=24;
+  float dt=(t1-t0)/float(N),jit=hash12(floor(gl_FragCoord.xy)+7.);
+  for(int i=0;i<N;i++){
+    float t=t0+(float(i)+jit)*dt;
+    vec3 x=g+t*V;
+    float s=x.x;
+    if(s<126.)continue;
+    float r=length(vec2(x.y,x.z-Z0));
+    float ang=atan(x.z-Z0,x.y);
+    // jato frio: anel entre a carenagem do núcleo e o bocal do fan, que se abre e se mistura
+    float sc=s-126.;
+    float fim=1.-smoothstep(250.,335.,s);
+    float rin=s<182.?corte(s):max(corte(182.)-(s-182.)*.25,0.);
+    float rout=52.5+sc*.07;
+    float wc=smoothstep(rin-2.,rin+3.,r)*(1.-smoothstep(rout-5.,rout+4.,r));
+    float nc=noise3(vec3(sc*.014-uTime*(.35+1.9*p),r*.22,ang*5.))*.65+noise3(vec3(sc*.03-uTime*(.5+2.4*p),r*.45,ang*9.))*.35;
+    float dc=wc*exp(-sc/(45.+150.*p))*(.15+1.25*nc*nc)*(.3+.7*p)*fim;
+    // jato quente: sai do bocal do núcleo em volta do cone e vira um jato cheio depois dele
+    float sh=s-202.;
+    float dh=0.;
+    if(sh>0.){
+      float rh=33.+sh*.07;
+      float wh=(1.-smoothstep(rh-7.,rh+2.,r))*smoothstep(plug(s)-1.,plug(s)+3.,r);
+      float nh=noise3(vec3(sh*.018-uTime*(.6+2.8*p),r*.25,ang*5.))*.65+noise3(vec3(sh*.04-uTime*(.9+3.2*p),r*.5,ang*9.))*.35;
+      dh=wh*exp(-sh/(40.+140.*p))*(.25+1.3*nh*nh)*(.35+.65*p)*fim;
+    }
+    vec3 cc=vec3(.42,.64,1.);
+    vec3 ch=mix(vec3(1.,.9,.6),vec3(1.,.38,.08),smoothstep(0.,70.,max(sh,0.)));
+    float ac=clamp(dc*dt*.07,0.,1.),ah=clamp(dh*dt*.11,0.,1.);
+    col=col*(1.-ac)+cc*ac; a=a*(1.-ac)+ac;
+    col=col*(1.-ah)+ch*ah; a=a*(1.-ah)+ah;
+  }
+  gl_FragColor=vec4(col,a);
+}`;
+
+const FLOW = `
+uniform float uP;
+const float Z0=${Z0.toFixed(1)};
+const float C0=${CUT[0].toFixed(1)},C1=${CUT[1].toFixed(1)};
+float spR(float s){return s<-34.?0.:18.5*(1.-pow(max(0.,(8.-s)/42.),1.5));}
+float inI(float s){float u=(s+44.)/38.;return 59.6+4.*pow(1.-u,6.)-1.6*sin(3.14159*u);}
+float sm(float a,float b,float x){float t=clamp((x-a)/(b-a),0.,1.);return t*t*(3.-2.*t);}
+float ccO(float x){
+  if(x<56.)return 35.6+3.4*sm(43.5,56.,x);
+  if(x<100.)return 39.+2.5*sm(56.,100.,x);
+  if(x<140.)return 41.5+4.*sm(100.,140.,x);
+  return 45.5+2.7*sm(140.,182.,x);}
+float hpc(float s){return 26.4-(s-54.)*.065;}
+float lpt(float s){return 31.+(s-132.)*.27;}
+float rvI(float s){return 59.6-(s-43.5)*(7.1/82.5);}
+float plug(float s){float u=clamp((s-186.)/84.,0.,1.);return 30.*(1.-pow(u,1.7));}
+vec2 nucleo(float x){
+  if(x<22.)return vec2(18.6,30.5);
+  if(x<41.)return vec2(19.+(x-22.)*2./21.5,29.6);
+  if(x<54.)return mix(vec2(21.,29.6),vec2(13.2,hpc(54.)-1.8),(x-41.)/13.);
+  if(x<98.)return vec2(13.2+(x-54.)*2./44.,hpc(x)-1.8);
+  if(x<100.)return mix(vec2(15.2,hpc(98.)-1.8),vec2(16.6,21.6),(x-98.)/2.);
+  if(x<120.)return vec2(16.6,21.6);
+  if(x<132.)return vec2(13.4,20.);
+  if(x<178.)return vec2(15.+(x-132.)*4./46.,lpt(x)-1.8);
+  if(x<189.)return vec2(max(19.,plug(x)),30.);
+  return vec2(plug(x),37.6-(x-189.)*.3);}
+vec2 frio(float x){
+  if(x<22.)return vec2(30.5,59.6);
+  if(x<43.5)return vec2(32.6,59.6);
+  return vec2(ccO(x),rvI(x));}
+float faixa(float r,vec2 b,float soft){return sm(b.x-soft,b.x+soft,r)*(1.-sm(b.y-soft,b.y+soft,r));}
+float fbl(vec2 p){return .62*noise2(p)+.38*noise2(p*2.07+vec2(17.1,9.2));}
+float fios(vec2 q){float n=fbl(q);float c=1.-abs(2.*n-1.);return pow(c,7.)*1.6+pow(c,2.)*.08;}
+void main(){
+  vec2 vb=viewOf(gl_FragCoord.xy);
+  vec3 V=towardViewer();
+  vec3 g=rayOf(vb);
+  vec2 o=vec2(g.y,g.z-Z0),d=vec2(V.y,V.z);
+  float A=dot(d,d),B=2.*dot(o,d),C=dot(o,o)-118.*118.;
+  float D=B*B-4.*A*C;
+  if(D<=0.){gl_FragColor=vec4(0.);return;}
+  float q=sqrt(D),t0=(-B-q)/(2.*A),t1=(-B+q)/(2.*A);
+  float p=clamp(uP,0.,1.),vel=.35+2.2*p;
+  vec3 col=vec3(0.);float a=0.;
+  const int N=26;
+  float dt=(t1-t0)/float(N),jit=hash12(floor(gl_FragCoord.xy));
+  for(int i=0;i<N;i++){
+    float t=t0+(float(i)+jit)*dt;
+    vec3 x=g+t*V;
+    float s=x.x;
+    if(s<-150.||s>205.)continue;
+    float r=length(vec2(x.y,x.z-Z0));
+    float ang=degrees(atan(x.z-Z0,x.y));
+    float dA=mod(ang-C0+360.,360.);
+    float cunha=sm(2.,7.,dA)*(1.-sm(C1-C0-7.,C1-C0-2.,dA));
+    float dens=0.;vec3 c=vec3(.38,.62,1.);
+    if(s<-44.){
+      // o ar puxado pela frente: um funil que converge para a entrada e gira um pouco
+      float R=56.+(-44.-s)*.28;
+      float w=(1.-sm(.55*R,.92*R,r))*sm(-140.,-85.,s);
+      float u=r/R;
+      dens=w*fios(vec2(s*.022-uTime*vel*.7,u*9.+ang*.05+s*.012))*(.55+.45*p)*.45;
+    }else if(s<8.){
+      float lo=s<-34.?0.:spR(s),hi=s<-6.?inI(s):59.6;
+      dens=cunha*faixa(r,vec2(lo,hi),2.)*fios(vec2(s*.03-uTime*vel,(r-lo)/(hi-lo)*9.+ang*.05))*(.6+.4*p)*.6;
+    }else{
+      vec2 bn=nucleo(s),bf=frio(s);
+      float wn=faixa(r,bn,1.2),wf=s<126.?faixa(r,bf,1.5):0.;
+      float un=(r-bn.x)/max(bn.y-bn.x,1.),uf=(r-bf.x)/max(bf.y-bf.x,1.);
+      float gir=s<22.?ang*.06:0.;
+      float fn=fios(vec2(s*.035-uTime*vel*(s>100.&&s<120.?.6:1.2),un*7.+gir+ang*.05));
+      float ff=fios(vec2(s*.025-uTime*vel*1.3,uf*9.+gir+ang*.05));
+      float qn=wn*fn*cunha,qf=wf*ff*cunha*.85;
+      // cor do núcleo: frio no compressor, chama na câmara, quente nas turbinas
+      float h=sm(99.,104.,s);
+      vec3 cn=mix(vec3(.38,.62,1.),vec3(1.,.82,.35),h);
+      cn=mix(cn,vec3(1.,.42,.12),sm(116.,132.,s));
+      cn=mix(cn,vec3(.95,.3,.12),sm(150.,200.,s));
+      float chama=(s>100.&&s<120.)?(.6+1.4*p):1.;
+      dens=qn*chama+qf;
+      c=(qn*chama*cn+qf*vec3(.38,.62,1.))/max(dens,1e-4);
+    }
+    float al=clamp(dens*dt*.036,0.,1.);
+    col=col*(1.-al)+c*al;a=a*(1.-al)+al;
+  }
+  gl_FragColor=vec4(col,a);
+}`;
 
 const LIVE = `
 const D = ${JSON.stringify(DATA)};
+const JET = ${JSON.stringify(JET)};
+const FLOW = ${JSON.stringify(FLOW)};
 const stage = document.querySelector(".gx-stage"), engine = stage.querySelector(".gx-engine");
 const readout = document.querySelector("[data-readout]"), botoes = [...document.querySelectorAll("[data-peca]")];
-const svgEl = stage.querySelector("svg"), FULL = svgEl.viewBox.baseVal, F0 = [FULL.x, FULL.y, FULL.width, FULL.height];
-const raio = document.querySelector(".gx-rx");
-let CLOSE = null, shownBox = "";
-function closeBox() {
-  // enquadra o motor montado (o desenho todo em repouso) mantendo a proporção do quadro
-  let b; try { b = engine.getBBox(); } catch (e) { return null; }
-  if (!b || b.width < 10) return null;
-  const pad = 10, ar = F0[2] / F0[3];
-  let w = b.width + pad * 2, h = b.height + pad * 2;
-  if (w / h > ar) h = w / ar; else w = h * ar;
-  w = Math.min(w, F0[2]); h = Math.min(h, F0[3]);
-  let x = b.x + b.width / 2 - w / 2, y = b.y + b.height / 2 - h / 2;
-  x = Math.max(F0[0], Math.min(x, F0[0] + F0[2] - w)); y = Math.max(F0[1], Math.min(y, F0[1] + F0[3] - h));
-  return [x, y, w, h];
-}
-function frameView() {
-  if (!CLOSE) { CLOSE = closeBox(); if (!CLOSE) return; }
-  let z = 0; for (const id of D.stagger) z = Math.max(z, piece[id].x);
-  z = Math.max(0, Math.min(1, z)); z = z * z * (3 - 2 * z);
-  const v = CLOSE.map((c, i) => (c + (F0[i] - c) * z).toFixed(2)).join(" ");
-  if (v !== shownBox) { shownBox = v; svgEl.setAttribute("viewBox", v); }
-}
-function setXray(v) {
-  v ? stage.setAttribute("data-xray", "") : stage.removeAttribute("data-xray");
-  raio.setAttribute("aria-pressed", String(v));
-  if (!selected) say(v ? "raio X · compressores, câmara e turbinas por dentro" : rest());
-}
+const manete = document.querySelector(".gx-manete input"), bLenta = document.querySelector("[data-pot=lenta]"), bDeco = document.querySelector("[data-pot=deco]");
 const still = matchMedia("(prefers-reduced-motion: reduce)");
-const nodes = [...engine.querySelectorAll(".it")].map((el) => ({ el, piece: el.dataset.piece, ride: el.dataset.r, key: +el.dataset.k, m: el.dataset.m.split(",").map(Number), shown: "" }));
-for (const n of nodes) n.lift = n.m[0] * D.V[0] + n.m[1] * D.V[1] + n.m[2] * D.V[2];
-let order = nodes.map((_, i) => i);
-const piece = Object.fromEntries(Object.keys(D.pieces).map((id) => [id, { x: 0, v: 0, target: 0, pending: null }]));
-let clock = 0, apart = false, selected = null, touring = !still.matches, tourClock = 0, idle = 0, visible = false, frame = 0, last = 0;
+const pas = [...engine.querySelectorAll("[data-pa]")], esp = [...engine.querySelectorAll("[data-esp]")];
+const nodes = [...engine.querySelectorAll(".it")];
+let selected = null, visible = false, frame = 0, last = 0, clock = 0, alvo = 0, n1 = 21, giro = 0, touring = !still.matches, tourClock = 0, idle = 0, fasePa = 0, faseEsp = 0;
 const say = (t) => { if (readout.textContent !== t) readout.textContent = t; };
-const rest = () => apart ? "desmontado · 10 módulos" : "montado · GEnx-2B";
-function setApart(v) {
-  if (apart === v) return; apart = v; let i = 0;
-  for (const id of v ? D.stagger : [...D.stagger].reverse()) piece[id].pending = { value: v ? 1 : 0, at: clock + (still.matches ? 0 : i++ * D.spring.stagger) };
-  if (!selected) say(rest()); run();
-}
+// modelo aproximado do GEnx-2B67: empuxo de decolagem ~296 kN; N1 de 21% (marcha lenta) a 100%
+const pot = () => Math.max(0, Math.min(1, (n1 - 21) / 79));
+const empuxo = () => 296 * (0.045 + 0.955 * Math.pow(pot(), 1.8));
+const egt = () => 420 + 560 * Math.pow(pot(), 1.2);
+const estado = () => (alvo < 0.05 && pot() < 0.06 ? "marcha lenta" : alvo > 0.95 && pot() > 0.94 ? "decolagem" : n1 > 21 + 79 * alvo + 1 ? "reduzindo" : n1 < 21 + 79 * alvo - 1 ? "acelerando" : "potência parcial");
+const leitura = () => estado() + " · N1 " + n1.toFixed(0) + "% · " + empuxo().toFixed(0) + " kN · EGT " + egt().toFixed(0) + " °C";
 function select(id) {
   if (id === "stand") id = null;
   selected = selected === id ? null : id;
-  for (const n of nodes) n.piece === selected ? n.el.setAttribute("data-on", "") : n.el.removeAttribute("data-on");
+  for (const n of nodes) n.dataset.piece === selected ? n.setAttribute("data-on", "") : n.removeAttribute("data-on");
   selected ? stage.setAttribute("data-focus", "") : stage.removeAttribute("data-focus");
   botoes.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.peca === selected)));
-  say(selected ? D.pieces[selected].say : rest());
+  say(selected ? D.pieces[selected].say : leitura());
 }
-function spring(s, dt) {
-  if (s.pending && clock >= s.pending.at) { s.target = s.pending.value; s.pending = null; }
-  if (still.matches) { s.x = s.target; s.v = 0; return false; }
-  for (let i = 0; i < D.spring.substeps; i++) { const h = dt / D.spring.substeps; s.v += ((s.target - s.x) * D.spring.stiffness - s.v * D.spring.damping) * h; s.x += s.v * h; }
-  if (Math.abs(s.target - s.x) < 2e-4 && Math.abs(s.v) < 2e-4) { s.x = s.target; s.v = 0; return s.pending !== null; }
-  return true;
-}
-function place() {
-  for (const n of nodes) {
-    const sh = piece[n.ride].x;
-    const tx = (D.EX[0] * n.m[0] + D.EY[0] * n.m[1] + D.EZ[0] * n.m[2]) * sh, ty = (D.EX[1] * n.m[0] + D.EY[1] * n.m[1] + D.EZ[1] * n.m[2]) * sh;
-    const t = sh === 0 ? "" : "translate(" + tx.toFixed(2) + " " + ty.toFixed(2) + ")";
-    if (t !== n.shown) { n.shown = t; t ? n.el.setAttribute("transform", t) : n.el.removeAttribute("transform"); }
-  }
-  const next = nodes.map((_, i) => i).sort((a, b) => nodes[a].key + nodes[a].lift * piece[nodes[a].ride].x - (nodes[b].key + nodes[b].lift * piece[nodes[b].ride].x));
-  if (next.some((v, i) => v !== order[i])) { const f = document.createDocumentFragment(); for (const i of next) f.appendChild(nodes[i].el); engine.appendChild(f); order = next; }
-  frameView();
-}
-const TOUR = 0.9;
-function tourAt(t) {
-  const c = t % (4 + D.order.length * TOUR + 3);
-  if (c < 2) return { apart: false, part: null };
-  if (c < 4) return { apart: true, part: null };
-  if (c < 4 + D.order.length * TOUR) return { apart: true, part: D.order[Math.floor((c - 4) / TOUR)] };
-  return { apart: false, part: null };
-}
+function setAlvo(v) { alvo = Math.max(0, Math.min(1, v)); manete.value = String(Math.round(alvo * 100)); run(); }
+const canvas = stage.querySelector(".gx-jato");
+const jato = typeof glLayer === "function" ? glLayer({ canvas, fragment: JET, view: [D.W, D.H], camera: D.camera, uniforms: ["uP"], maxRatio: 0.85 }) : null;
+if (jato) stage.setAttribute("data-gl", "");
+// ---------- Fluido por dentro: o ar puxado pela frente, o fluxo frio no fan e o núcleo quente (WebGL) ----------
+const fluido = typeof glLayer === "function" ? glLayer({ canvas: stage.querySelector(".gx-fluxo"), fragment: FLOW, view: [D.W, D.H], camera: D.camera, uniforms: ["uP"], maxRatio: 0.85 }) : null;
+
 function tick(now) {
-  const dt = last ? Math.min((now - last) / 1000, 1 / 30) : 1 / 60; last = now; clock += dt;
-  if (touring) { tourClock += dt; const st = tourAt(tourClock); setApart(st.apart); if (st.part !== selected) { selected = null; select(st.part); } }
-  let moving = false; for (const id in piece) moving = spring(piece[id], dt) || moving;
-  place();
-  frame = visible && (moving || touring) ? requestAnimationFrame(tick) : 0;
+  const dt = last ? Math.min((now - last) / 1000, 1 / 20) : 1 / 60; last = now; clock += dt;
+  if (touring) { tourClock += dt; const c = tourClock % 16; setAlvo(c < 3 ? 0 : c < 9 ? 1 : c < 11 ? 0.55 : 0); }
+  const meta = 21 + 79 * alvo, tau = meta > n1 ? 1.4 : 2.0;
+  n1 += still.matches ? meta - n1 : (meta - n1) * (1 - Math.exp(-dt / tau));
+  const p = pot();
+  giro += (still.matches ? 0 : 1) * (0.12 + 0.95 * p) * 360 * dt;
+  const fp = Math.floor(((giro % 20) + 20) % 20 / (20 / D.FASES)) % D.FASES, fe = Math.floor(((giro % 360) + 360) % 360 / 10) % 36;
+  if (fp !== fasePa) { for (const g of pas) g.classList.toggle("on", +g.dataset.pa === fp); fasePa = fp; }
+  if (fe !== faseEsp) { for (const g of esp) g.classList.toggle("on", +g.dataset.esp === fe); faseEsp = fe; }
+  stage.style.setProperty("--chama", (0.18 + 0.82 * p).toFixed(3));
+  stage.style.setProperty("--borrao", Math.max(0, (p - 0.35) / 0.65).toFixed(3));
+  if (jato) jato.draw({ uP: p }, clock);
+  if (fluido) fluido.draw({ uP: p }, clock);
+  if (!selected) say(leitura());
+  frame = visible ? requestAnimationFrame(tick) : 0;
 }
 function run() { if (!frame && visible) { last = 0; frame = requestAnimationFrame(tick); } }
-function grab() { touring = false; clearTimeout(idle); idle = setTimeout(() => { if (!still.matches) { touring = true; tourClock = 0; select(null); run(); } }, 9000); }
-new IntersectionObserver((e) => { visible = e[e.length - 1].isIntersecting; if (visible) { frameView(); run(); } }, { rootMargin: "120px 0px" }).observe(stage);
-stage.addEventListener("click", (e) => { grab(); const g = e.target.closest(".it"); if (apart && g && g.dataset.piece !== "stand") { select(g.dataset.piece === selected ? null : g.dataset.piece); return; } setApart(!apart); if (!apart) select(null); run(); });
-stage.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); grab(); setApart(!apart); run(); } if (e.key === "Escape") { grab(); select(null); setApart(false); } });
-botoes.forEach((b) => b.addEventListener("click", () => { grab(); setApart(true); select(b.dataset.peca); run(); }));
-raio.addEventListener("click", () => { grab(); setXray(raio.getAttribute("aria-pressed") !== "true"); });
-addEventListener("resize", () => { CLOSE = null; frameView(); });
-place(); say(rest());
+function grab() { touring = false; clearTimeout(idle); idle = setTimeout(() => { if (!still.matches) { touring = true; tourClock = 0; run(); } }, 12000); }
+new IntersectionObserver((e) => { visible = e[e.length - 1].isIntersecting; if (visible) run(); }, { rootMargin: "120px 0px" }).observe(stage);
+// arrastar na horizontal mexe a manete; um toque numa peça mostra o que ela faz
+let drag = null;
+stage.addEventListener("pointerdown", (e) => { drag = { x: e.clientX, v: alvo, moved: false }; });
+addEventListener("pointermove", (e) => { if (!drag) return; const dx = e.clientX - drag.x; if (Math.abs(dx) > 6) { drag.moved = true; grab(); setAlvo(drag.v + dx / (stage.clientWidth * 0.6)); } });
+addEventListener("pointerup", (e) => { if (drag && !drag.moved) { grab(); const g = e.target.closest && e.target.closest(".it"); if (g && stage.contains(g)) select(g.dataset.piece); } drag = null; });
+stage.addEventListener("keydown", (e) => { if (e.key === "ArrowRight" || e.key === "ArrowUp") { e.preventDefault(); grab(); setAlvo(alvo + 0.1); } if (e.key === "ArrowLeft" || e.key === "ArrowDown") { e.preventDefault(); grab(); setAlvo(alvo - 0.1); } if (e.key === " ") { e.preventDefault(); grab(); setAlvo(alvo > 0.5 ? 0 : 1); } if (e.key === "Escape") select(null); });
+manete.addEventListener("input", () => { grab(); setAlvo(+manete.value / 100); });
+bLenta.addEventListener("click", () => { grab(); setAlvo(0); });
+bDeco.addEventListener("click", () => { grab(); setAlvo(1); });
+botoes.forEach((b) => b.addEventListener("click", () => { grab(); select(b.dataset.peca); }));
+if (still.matches) setAlvo(0.7);
+say(leitura());
 `;
 
 const CSS = `body{margin:0}.iso-page{width:100%!important;margin:0!important;padding:14px 18px 18px;box-sizing:border-box}.iso-plate{padding:44px 12px 58px!important;box-shadow:none!important;border-radius:12px!important}
-.gx-stage{cursor:pointer;touch-action:pan-y;outline:none}.gx-stage svg{display:block;width:100%;height:auto}
+.gx-stage{position:relative;cursor:ew-resize;touch-action:pan-y;outline:none;user-select:none;-webkit-user-select:none}.gx-stage svg{position:relative;display:block;width:100%;height:auto}
+.gx-jato,.gx-fluxo{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;filter:blur(1.3px)}
+.gx-f{display:none}.gx-f.on{display:inline}
+.gx-chama{fill:#ff7a1a;opacity:var(--chama,.2);mix-blend-mode:normal}
 .gx-stage[data-focus] .it:not([data-on]){opacity:.22;transition:opacity .3s}.gx-stage .it{transition:opacity .3s}
 .gx-stage .it[data-on] .iso-edge{stroke:var(--anatomy-lit)!important;stroke-width:1.1}
-.gx-stage[data-xray] .it[data-g]{opacity:.1}.gx-stage[data-xray] .it[data-g][data-on]{opacity:.5}
-.gx-stage[data-xray] .it:not([data-g]):not([data-piece=stand]) .iso-edge{stroke:var(--anatomy-lit)}
-.gx-ctl{display:flex;justify-content:center;margin-top:8px}.gx-rx{display:flex;gap:8px;align-items:center;border:1px solid var(--anatomy-mid);background:transparent;color:inherit;border-radius:999px;padding:7px 16px;font:inherit;font-size:13px;letter-spacing:.06em;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.gx-rx::before{content:"";width:14px;height:14px;border-radius:50%;border:1.5px solid currentColor;box-sizing:border-box}
-.gx-rx[aria-pressed=true]{border-color:var(--anatomy-lit);color:var(--anatomy-lit)}.gx-rx[aria-pressed=true]::before{background:currentColor}
+.gx-ctl{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:8px;font-size:12.5px}
+.gx-ctl button{border:1px solid var(--anatomy-mid);background:transparent;color:inherit;border-radius:999px;padding:6px 13px;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.gx-manete{display:flex;align-items:center;gap:8px;flex:1 1 180px;max-width:320px}.gx-manete input{flex:1;accent-color:#ff7a1a}
 .gx-lista{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:10px}.gx-lista button{display:flex;gap:7px;align-items:center;text-align:left;border:1px solid var(--anatomy-mid);background:transparent;color:inherit;border-radius:8px;padding:5px 6px;font:inherit;font-size:11.5px;line-height:1.25;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .gx-lista button b{flex:0 0 19px;height:19px;border-radius:50%;display:grid;place-items:center;font-size:10.5px;border:1px solid currentColor}.gx-lista button[aria-pressed=true]{border-color:var(--anatomy-lit);color:var(--anatomy-lit)}`;
 const body = k.plateHtml({
-  fig: "Fig 1", title: "GEnx-2B · 747-8", hint: "Toque para desmontar",
-  readout: "montado · GEnx-2B",
-  keys: [{ mark: "raised", label: `${nSolidos} peças sólidas e ${items.length - nSolidos} trechos de tubo e cabo` }, { mark: "lit", label: "Toque num módulo (ou num nome) para ver o que ele faz" }, { mark: "raised", label: "Raio X: as carcaças ficam transparentes e mostram os compressores, a câmara e as turbinas" }],
-  caption: "O motor do 747-8 sem a nacele, num suporte de transporte, e desmontado em módulos como na manutenção. Proporções e quantidades reais: fan de 18 pás, booster de 3 estágios, compressor de alta de 10, câmara TAPS com 18 injetores, turbina de alta de 2 e turbina de baixa de 6. Tubos, cabos e equipamentos foram simplificados e algumas posições, ajustadas para aparecerem.",
-  body: `<div class="gx-stage" tabindex="0" role="button" aria-label="Toque ou Enter para desmontar e montar o motor">${svg}</div><div class="gx-ctl"><button type="button" class="gx-rx" aria-pressed="false">Raio X</button></div><div class="gx-lista">${ORDER.map((id, i) => `<button type="button" data-peca="${id}"><b>${i + 1}</b>${PIECES[id].name}</button>`).join("")}</div>`,
+  fig: "Fig 1", title: "GEnx-2B · 747-8", hint: "Arraste para acelerar",
+  readout: "marcha lenta · N1 21%",
+  keys: [{ mark: "raised", label: `${nSolidos} peças sólidas · um quarto cortado para ver por dentro` }, { mark: "lit", label: "Jato frio (azul) sai do fan; jato quente (laranja) sai do núcleo" }, { mark: "raised", label: "Toque num módulo (ou num nome) para ver o que ele faz" }],
+  caption: "O motor do 747-8 pendurado pelo pilone numa estrutura de teste, com a nacele e as carcaças cortadas num quarto. O fan empurra a maior parte do ar por fora do núcleo (o jato frio); o resto passa pelo compressor, queima na câmara e gira as turbinas antes de sair quente. Valores de N1, empuxo e EGT aproximados; tubos e equipamentos simplificados.",
+  body: `<div class="gx-stage" tabindex="0" role="slider" aria-label="Manete do motor: setas ou arrastar mudam a potência" aria-valuemin="0" aria-valuemax="100"><canvas class="gx-jato" aria-hidden="true"></canvas>${svg}<canvas class="gx-fluxo" aria-hidden="true"></canvas></div><div class="gx-ctl"><button type="button" data-pot="lenta">Marcha lenta</button><label class="gx-manete">Manete <input type="range" min="0" max="100" value="0" aria-label="Manete"></label><button type="button" data-pot="deco">Decolagem</button></div><div class="gx-lista">${ORDER.map((id, i) => `<button type="button" data-peca="${id}"><b>${i + 1}</b>${PIECES[id].name}</button>`).join("")}</div>`,
 });
 const file = THEME === "light" ? "fig-genx-light.html" : "fig-genx.html";
-const page = k.pageHtml({ title: "GEnx-2B", theme: THEME, body: `<style>${CSS}</style>${body}`, script: kitScript() + LIVE });
+const page = k.pageHtml({ title: "GEnx-2B", theme: THEME, body: `<style>${CSS}</style>${body}`, script: kitScript() + glScript() + LIVE });
 writeFileSync(join(HERE, "../../aviao/assets", file), page);
 console.log("wrote", file, `${(page.length / 1024).toFixed(0)} KB`, `${items.length} itens, ${nSolidos} sólidos`);
 // --rapido: só uma em cada 6 poses do voo (para iterar); sem ele, todas
