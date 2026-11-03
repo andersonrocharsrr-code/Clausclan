@@ -1,0 +1,113 @@
+# Publica o servidor de licenças do Caixa (cloudflare/caixa-licenca) na conta Cloudflare do dono.
+# Segredos usados (Settings → Secrets → Actions): CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID,
+# CAIXA_ADMIN_SENHA (senha do painel) e CAIXA_LICENCA_SEED (frase que gera a chave de assinatura das licenças).
+# No fim mostra o endereço do servidor/painel e a chave pública que vai em caixa/licenca-config.js.
+name: Publicar servidor de licenças do Caixa
+
+on:
+  push:
+    branches: [main, 'ccr-**']
+    paths: ['cloudflare/caixa-licenca/**', '.github/workflows/caixa-licenca.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: caixa-licenca
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cloudflare/caixa-licenca
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      API: https://api.cloudflare.com/client/v4
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Conferir segredos
+        env:
+          ADMIN: ${{ secrets.CAIXA_ADMIN_SENHA }}
+          SEED: ${{ secrets.CAIXA_LICENCA_SEED }}
+        run: |
+          faltam=""
+          [ -n "$CLOUDFLARE_API_TOKEN" ] || faltam="$faltam CLOUDFLARE_API_TOKEN"
+          [ -n "$CLOUDFLARE_ACCOUNT_ID" ] || faltam="$faltam CLOUDFLARE_ACCOUNT_ID"
+          [ -n "$ADMIN" ] || faltam="$faltam CAIXA_ADMIN_SENHA"
+          [ -n "$SEED" ] || faltam="$faltam CAIXA_LICENCA_SEED"
+          if [ -n "$faltam" ]; then echo "::error::Faltam os segredos:$faltam"; exit 1; fi
+          # O token precisa estar ativo.
+          curl -sf -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$API/user/tokens/verify" | jq -e '.success' >/dev/null \
+            || { echo "::error::CLOUDFLARE_API_TOKEN inválido ou sem permissão."; exit 1; }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cloudflare/caixa-licenca/package-lock.json
+
+      - run: npm ci
+
+      - name: Subdomínio workers.dev (cria se ainda não existir)
+        id: sub
+        run: |
+          r=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$API/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain")
+          sub=$(echo "$r" | jq -r '.result.subdomain // empty')
+          if [ -z "$sub" ]; then
+            novo="caixa-$(echo -n "$CLOUDFLARE_ACCOUNT_ID" | sha256sum | cut -c1-6)"
+            r=$(curl -s -X PUT -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" \
+              --data "{\"subdomain\":\"$novo\"}" "$API/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain")
+            sub=$(echo "$r" | jq -r '.result.subdomain // empty')
+            [ -n "$sub" ] || { echo "::error::Não deu para criar o subdomínio workers.dev: $(echo "$r" | jq -c '.errors')"; exit 1; }
+          fi
+          echo "sub=$sub" >> "$GITHUB_OUTPUT"
+
+      - name: Banco de licenças (KV) e wrangler.toml
+        run: |
+          r=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$API/accounts/$CLOUDFLARE_ACCOUNT_ID/storage/kv/namespaces?per_page=100")
+          id=$(echo "$r" | jq -r '.result[]? | select(.title=="caixa-licencas") | .id' | head -1)
+          if [ -z "$id" ]; then
+            r=$(curl -s -X POST -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" \
+              --data '{"title":"caixa-licencas"}' "$API/accounts/$CLOUDFLARE_ACCOUNT_ID/storage/kv/namespaces")
+            id=$(echo "$r" | jq -r '.result.id // empty')
+            [ -n "$id" ] || { echo "::error::Não deu para criar o KV: $(echo "$r" | jq -c '.errors')"; exit 1; }
+          fi
+          sed "s/__KV_ID__/$id/" wrangler.base.toml > wrangler.toml
+
+      - name: Publicar o Worker
+        run: npx wrangler deploy
+
+      - name: Guardar a senha do painel e a frase das licenças
+        env:
+          ADMIN: ${{ secrets.CAIXA_ADMIN_SENHA }}
+          SEED: ${{ secrets.CAIXA_LICENCA_SEED }}
+        run: |
+          jq -n --arg a "$ADMIN" --arg s "$SEED" '{ADMIN_SENHA:$a, LICENCA_SEED:$s}' > "$RUNNER_TEMP/segredos.json"
+          npx wrangler secret bulk "$RUNNER_TEMP/segredos.json"
+          rm -f "$RUNNER_TEMP/segredos.json"
+
+      - name: Endereço e chave pública
+        env:
+          SEED: ${{ secrets.CAIXA_LICENCA_SEED }}
+          SUB: ${{ steps.sub.outputs.sub }}
+        run: |
+          url="https://caixa-licenca.$SUB.workers.dev"
+          pub=$(node -e "const n=require('tweetnacl');const k=n.sign.keyPair.fromSeed(n.hash(new TextEncoder().encode(process.env.SEED)).slice(0,32));process.stdout.write(Buffer.from(k.publicKey).toString('base64url'))")
+          # Confere que o servidor publicado usa a mesma chave (pode levar alguns segundos para ficar no ar).
+          for i in 1 2 3 4 5 6; do
+            got=$(curl -s "$url/chave" | jq -r '.pub // empty') && [ "$got" = "$pub" ] && break
+            sleep 10
+          done
+          [ "$got" = "$pub" ] || echo "::warning::O servidor ainda não respondeu com a chave esperada (respondeu: '$got')."
+          echo "CAIXA_LICENCA_URL=$url"
+          echo "CAIXA_LICENCA_PUB=$pub"
+          {
+            echo "### Servidor de licenças publicado"
+            echo "- Painel: $url/painel"
+            echo "- caixa/licenca-config.js: \`window.CAIXA_LICENCA = { url: '$url', pub: '$pub' };\`"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -236,6 +236,12 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
 - **Comprovante do depósito**: todo depósito novo precisa da foto do comprovante (📷 Câmera ou 🖼 Galeria). A foto fica
   no aparelho (IndexedDB) e abre em "📎 Ver comprovante"; depósitos antigos sem foto têm "📷 Anexar comprovante".
 - **Recibo do Pila**: todo gasto novo do Pila precisa da foto do recibo; depois abre em "📎 Ver recibo" (antigos: "📷 Anexar recibo").
+- **Licença por celular** (servidor em `cloudflare/caixa-licenca`, publicado por `.github/workflows/caixa-licenca.yml`):
+  cada celular tem um código fixo (ex.: `7F3K-92QD`, ☰ → 🔐 Licença). O servidor guarda até quando cada código está
+  pago e devolve a validade assinada (Ed25519); o app confere com a chave pública de `caixa/licenca-config.js`.
+  Sem internet vale a última validade (+2 dias de folga). Vencida, bloqueada, relógio atrasado ou código de outro
+  celular: os cálculos travam (totais "—", sem relatório, resumo nem folha). Celular Android novo ganha 7 dias.
+  O dono marca os pagamentos (+7/+15/+30 dias) no painel `https://caixa-licenca.<subdomínio>.workers.dev/painel`.
 - **Ao gerar o caixa**: o primeiro aviso pede para conferir se o Recebimento do app bate com o recebimento do sistema.
 - **Quilometragem (GPS, funciona sem internet)**: aba Relatório → "Iniciar rota" / "Parar rota". Conta os km com a
   tela desligada (notificação fixa "Contando os km"; plugin `@capacitor-community/background-geolocation`). Ignora
