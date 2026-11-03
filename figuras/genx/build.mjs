@@ -392,7 +392,8 @@ conectores.forEach((c, i) => cabo("eec", [c, [c[0], c[1], Z0 + 22 - i * 2], [46 
 // ================= ORDEM DE PINTURA MEDIDA E SAÍDA =================
 A.settle(R, P, { states: [0, ...A.prefixStates(STAGGER, { shares: [0.5, 1] }), 1] });
 items.sort((a, b) => a.key - b.key);
-const groups = items.map((it, i) => { const [mx, my, mz] = it.move; return `<g class="it" data-piece="${it.piece}" data-r="${it.ride ?? it.piece}" data-k="${it.key.toFixed(2)}" data-m="${mx.toFixed(1)},${my.toFixed(1)},${mz.toFixed(1)}" data-i="${i}">${it.svg}</g>`; });
+const DENTRO = new Set(["spinner", "fan", "booster", "hpc", "comb", "hpt", "lpt", "stand"]);
+const groups = items.map((it, i) => { const [mx, my, mz] = it.move; return `<g class="it"${DENTRO.has(it.piece) ? "" : " data-g"} data-piece="${it.piece}" data-r="${it.ride ?? it.piece}" data-k="${it.key.toFixed(2)}" data-m="${mx.toFixed(1)},${my.toFixed(1)},${mz.toFixed(1)}" data-i="${i}">${it.svg}</g>`; });
 const nSolidos = items.filter((it) => !it.route).length;
 
 const ORDER = ["spinner", "fan", "booster", "fancase", "eec", "core", "hpccase", "hpc", "combcase", "comb", "hptcase", "hpt", "lptcase", "lpt", "exhaust", "agb"];
@@ -405,6 +406,33 @@ const LIVE = `
 const D = ${JSON.stringify(DATA)};
 const stage = document.querySelector(".gx-stage"), engine = stage.querySelector(".gx-engine");
 const readout = document.querySelector("[data-readout]"), botoes = [...document.querySelectorAll("[data-peca]")];
+const svgEl = stage.querySelector("svg"), FULL = svgEl.viewBox.baseVal, F0 = [FULL.x, FULL.y, FULL.width, FULL.height];
+const raio = document.querySelector(".gx-rx");
+let CLOSE = null, shownBox = "";
+function closeBox() {
+  // enquadra o motor montado (o desenho todo em repouso) mantendo a proporção do quadro
+  let b; try { b = engine.getBBox(); } catch (e) { return null; }
+  if (!b || b.width < 10) return null;
+  const pad = 10, ar = F0[2] / F0[3];
+  let w = b.width + pad * 2, h = b.height + pad * 2;
+  if (w / h > ar) h = w / ar; else w = h * ar;
+  w = Math.min(w, F0[2]); h = Math.min(h, F0[3]);
+  let x = b.x + b.width / 2 - w / 2, y = b.y + b.height / 2 - h / 2;
+  x = Math.max(F0[0], Math.min(x, F0[0] + F0[2] - w)); y = Math.max(F0[1], Math.min(y, F0[1] + F0[3] - h));
+  return [x, y, w, h];
+}
+function frameView() {
+  if (!CLOSE) { CLOSE = closeBox(); if (!CLOSE) return; }
+  let z = 0; for (const id of D.stagger) z = Math.max(z, piece[id].x);
+  z = Math.max(0, Math.min(1, z)); z = z * z * (3 - 2 * z);
+  const v = CLOSE.map((c, i) => (c + (F0[i] - c) * z).toFixed(2)).join(" ");
+  if (v !== shownBox) { shownBox = v; svgEl.setAttribute("viewBox", v); }
+}
+function setXray(v) {
+  v ? stage.setAttribute("data-xray", "") : stage.removeAttribute("data-xray");
+  raio.setAttribute("aria-pressed", String(v));
+  if (!selected) say(v ? "raio X · compressores, câmara e turbinas por dentro" : rest());
+}
 const still = matchMedia("(prefers-reduced-motion: reduce)");
 const nodes = [...engine.querySelectorAll(".it")].map((el) => ({ el, piece: el.dataset.piece, ride: el.dataset.r, key: +el.dataset.k, m: el.dataset.m.split(",").map(Number), shown: "" }));
 for (const n of nodes) n.lift = n.m[0] * D.V[0] + n.m[1] * D.V[1] + n.m[2] * D.V[2];
@@ -442,6 +470,7 @@ function place() {
   }
   const next = nodes.map((_, i) => i).sort((a, b) => nodes[a].key + nodes[a].lift * piece[nodes[a].ride].x - (nodes[b].key + nodes[b].lift * piece[nodes[b].ride].x));
   if (next.some((v, i) => v !== order[i])) { const f = document.createDocumentFragment(); for (const i of next) f.appendChild(nodes[i].el); engine.appendChild(f); order = next; }
+  frameView();
 }
 const TOUR = 0.9;
 function tourAt(t) {
@@ -460,10 +489,12 @@ function tick(now) {
 }
 function run() { if (!frame && visible) { last = 0; frame = requestAnimationFrame(tick); } }
 function grab() { touring = false; clearTimeout(idle); idle = setTimeout(() => { if (!still.matches) { touring = true; tourClock = 0; select(null); run(); } }, 9000); }
-new IntersectionObserver((e) => { visible = e[e.length - 1].isIntersecting; if (visible) run(); }, { rootMargin: "120px 0px" }).observe(stage);
+new IntersectionObserver((e) => { visible = e[e.length - 1].isIntersecting; if (visible) { frameView(); run(); } }, { rootMargin: "120px 0px" }).observe(stage);
 stage.addEventListener("click", (e) => { grab(); const g = e.target.closest(".it"); if (apart && g && g.dataset.piece !== "stand") { select(g.dataset.piece === selected ? null : g.dataset.piece); return; } setApart(!apart); if (!apart) select(null); run(); });
 stage.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); grab(); setApart(!apart); run(); } if (e.key === "Escape") { grab(); select(null); setApart(false); } });
 botoes.forEach((b) => b.addEventListener("click", () => { grab(); setApart(true); select(b.dataset.peca); run(); }));
+raio.addEventListener("click", () => { grab(); setXray(raio.getAttribute("aria-pressed") !== "true"); });
+addEventListener("resize", () => { CLOSE = null; frameView(); });
 place(); say(rest());
 `;
 
@@ -471,14 +502,19 @@ const CSS = `body{margin:0}.iso-page{width:100%!important;margin:0!important;pad
 .gx-stage{cursor:pointer;touch-action:pan-y;outline:none}.gx-stage svg{display:block;width:100%;height:auto}
 .gx-stage[data-focus] .it:not([data-on]){opacity:.22;transition:opacity .3s}.gx-stage .it{transition:opacity .3s}
 .gx-stage .it[data-on] .iso-edge{stroke:var(--anatomy-lit)!important;stroke-width:1.1}
+.gx-stage[data-xray] .it[data-g]{opacity:.1}.gx-stage[data-xray] .it[data-g][data-on]{opacity:.5}
+.gx-stage[data-xray] .it:not([data-g]):not([data-piece=stand]) .iso-edge{stroke:var(--anatomy-lit)}
+.gx-ctl{display:flex;justify-content:center;margin-top:8px}.gx-rx{display:flex;gap:8px;align-items:center;border:1px solid var(--anatomy-mid);background:transparent;color:inherit;border-radius:999px;padding:7px 16px;font:inherit;font-size:13px;letter-spacing:.06em;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.gx-rx::before{content:"";width:14px;height:14px;border-radius:50%;border:1.5px solid currentColor;box-sizing:border-box}
+.gx-rx[aria-pressed=true]{border-color:var(--anatomy-lit);color:var(--anatomy-lit)}.gx-rx[aria-pressed=true]::before{background:currentColor}
 .gx-lista{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:10px}.gx-lista button{display:flex;gap:7px;align-items:center;text-align:left;border:1px solid var(--anatomy-mid);background:transparent;color:inherit;border-radius:8px;padding:5px 6px;font:inherit;font-size:11.5px;line-height:1.25;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .gx-lista button b{flex:0 0 19px;height:19px;border-radius:50%;display:grid;place-items:center;font-size:10.5px;border:1px solid currentColor}.gx-lista button[aria-pressed=true]{border-color:var(--anatomy-lit);color:var(--anatomy-lit)}`;
 const body = k.plateHtml({
   fig: "Fig 1", title: "GEnx-2B · 747-8", hint: "Toque para desmontar",
   readout: "montado · GEnx-2B",
-  keys: [{ mark: "raised", label: `${nSolidos} peças sólidas e ${items.length - nSolidos} trechos de tubo e cabo` }, { mark: "lit", label: "Toque num módulo (ou num nome) para ver o que ele faz" }],
+  keys: [{ mark: "raised", label: `${nSolidos} peças sólidas e ${items.length - nSolidos} trechos de tubo e cabo` }, { mark: "lit", label: "Toque num módulo (ou num nome) para ver o que ele faz" }, { mark: "raised", label: "Raio X: as carcaças ficam transparentes e mostram os compressores, a câmara e as turbinas" }],
   caption: "O motor do 747-8 sem a nacele, num suporte de transporte, e desmontado em módulos como na manutenção. Proporções e quantidades reais: fan de 18 pás, booster de 3 estágios, compressor de alta de 10, câmara TAPS com 18 injetores, turbina de alta de 2 e turbina de baixa de 6. Tubos, cabos e equipamentos foram simplificados e algumas posições, ajustadas para aparecerem.",
-  body: `<div class="gx-stage" tabindex="0" role="button" aria-label="Toque ou Enter para desmontar e montar o motor">${svg}</div><div class="gx-lista">${ORDER.map((id, i) => `<button type="button" data-peca="${id}"><b>${i + 1}</b>${PIECES[id].name}</button>`).join("")}</div>`,
+  body: `<div class="gx-stage" tabindex="0" role="button" aria-label="Toque ou Enter para desmontar e montar o motor">${svg}</div><div class="gx-ctl"><button type="button" class="gx-rx" aria-pressed="false">Raio X</button></div><div class="gx-lista">${ORDER.map((id, i) => `<button type="button" data-peca="${id}"><b>${i + 1}</b>${PIECES[id].name}</button>`).join("")}</div>`,
 });
 const file = THEME === "light" ? "fig-genx-light.html" : "fig-genx.html";
 const page = k.pageHtml({ title: "GEnx-2B", theme: THEME, body: `<style>${CSS}</style>${body}`, script: kitScript() + LIVE });
