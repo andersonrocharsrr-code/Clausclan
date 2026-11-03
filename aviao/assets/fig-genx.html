@@ -114,6 +114,7 @@ body{margin:0;background:var(--anatomy-page);color:var(--anatomy-text);font:14px
 </style></head><body class="iso" data-theme="dark"><main class="iso-page"><style>body{margin:0}.iso-page{width:100%!important;margin:0!important;padding:14px 18px 18px;box-sizing:border-box}.iso-plate{padding:44px 12px 58px!important;box-shadow:none!important;border-radius:12px!important}
 .gx-stage{position:relative;cursor:ew-resize;touch-action:pan-y;outline:none;user-select:none;-webkit-user-select:none}.gx-stage svg{position:relative;display:block;width:100%;height:auto}
 .iso-plate-corner[data-corner=readout]{white-space:normal!important;max-width:62%;text-align:right;line-height:1.35}
+@media (max-width:560px){.iso-plate-corner[data-corner=hint]{display:none}.iso-plate-corner[data-corner=readout]{max-width:calc(100% - 24px)}}
 .gx-jato,.gx-fluxo{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;filter:blur(1.3px)}
 .gx-f{display:none}.gx-f.on{display:inline}
 .gx-chama{fill:#ff7a1a;opacity:var(--chama,.2);mix-blend-mode:normal}
