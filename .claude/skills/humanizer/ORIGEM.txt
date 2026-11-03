@@ -1,0 +1,2 @@
+Skill Humanizer (MIT), copiada de https://github.com/blader/humanizer no commit 0ef9fe5.
+Só o SKILL.md e os textos de licença e documentação; o resto do repositório é de empacotamento.
