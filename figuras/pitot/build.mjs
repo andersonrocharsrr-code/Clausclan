@@ -193,7 +193,7 @@ function draw() {
   ices.forEach((g, i) => { const o = i === i0 ? 1 - f : i === i0 + 1 ? f : 0; g.style.opacity = o.toFixed(3); });
   needle.setAttribute("d", needleAt(kt));
   flows.forEach((p, i) => { p.style.strokeDashoffset = String(dash * (1 - b * 0.9)); p.style.opacity = String(1 - b * 0.7); });
-  const pct = Math.round(b * 100), txt = (pct < 5 ? "entrada livre" : "entrada " + pct + "% entupida") + " · velocímetro " + Math.round(kt) + " kt";
+  const pct = Math.round(b * 100), txt = (pct < 5 ? "entrada livre" : pct + "% entupida") + " · " + Math.round(kt) + " kt";
   if (readout.textContent !== txt) readout.textContent = txt;
   stage.setAttribute("aria-valuenow", String(pct)); stage.setAttribute("aria-valuetext", txt);
 }
@@ -219,11 +219,11 @@ draw();
 
 const body = k.plateHtml({
   fig: "Fig 1", title: "Tubo de Pitot", hint: "Arraste para congelar",
-  readout: "entrada livre · velocímetro 275 kt",
+  readout: "entrada livre · 275 kt",
   keys: [{ mark: "lit", label: "Ponteiro amarelo: a velocidade mostrada" }, { mark: "blue", label: "Ar entrando na ponta do tubo" }, { mark: "dotted", label: "Tomada estática: pressão do ar parado" }],
   caption: "Simplificado. O tubo de Pitot mede a pressão do ar que bate de frente na ponta; a tomada estática, rente à fuselagem, mede a do ar parado. A diferença entre as duas é a velocidade. No AF447, cristais de gelo entupiram a entrada por menos de um minuto: a pressão caiu e a velocidade mostrada despencou, mesmo com o avião voando igual.",
   body: `<div class="iso-stage" tabindex="0" role="slider" aria-label="Tubo de Pitot: setas para congelar ou descongelar a entrada" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">${svg}</div>`,
 });
 const file = theme === "light" ? "fig-pitot-light.html" : "fig-pitot.html";
-writeFileSync(join(HERE, "../../aviao/assets", file), k.pageHtml({ title: "Tubo de Pitot", theme, body: body + `<style>${CORES}.ice path{fill:#e4f1fb!important;stroke:#8fb0c9!important;stroke-width:.5!important}.ice path:nth-of-type(n+3){fill:#cfe3f3!important}body{margin:0}.iso-page{width:100%!important;margin:0!important}.iso-plate{padding:44px 10px 58px!important;box-shadow:none!important;border-radius:12px!important}.iso-stage{touch-action:pan-y}</style>`, script: kitScript() + live }));
+writeFileSync(join(HERE, "../../aviao/assets", file), k.pageHtml({ title: "Tubo de Pitot", theme, body: body + `<style>${CORES}.ice path{fill:#e4f1fb!important;stroke:#8fb0c9!important;stroke-width:.5!important}.ice path:nth-of-type(n+3){fill:#cfe3f3!important}body{margin:0}.iso-page{width:100%!important;margin:0!important;padding:14px 18px 18px;box-sizing:border-box}.iso-plate{padding:44px 16px 58px!important;box-shadow:none!important;border-radius:12px!important}.iso-stage{touch-action:pan-y}</style>`, script: kitScript() + live }));
 console.log("wrote", file);
