@@ -2474,9 +2474,8 @@ async function buscarVersao() {
 }
 async function verificarAtualizacao() {
   if (!NATIVO || !versaoAtual() || $('#dlgAtualizar').open) return;
-  const a = ls.get(KEY_ATU, {});
-  // "Depois": pergunta de novo na próxima vez que a pessoa entrar no app (passada 1 hora).
-  if (a.depoisEm && Date.now() - a.depoisEm < 3600000) return;
+  // A mensagem aparece no máximo uma vez por dia.
+  if (ls.get(KEY_ATU, {}).mostradoDia === hoje()) return;
   let v = null;
   try { v = await buscarVersao(); } catch { return; }
   if (!v || !(Number(v.versao) > versaoAtual())) return;
@@ -2486,11 +2485,9 @@ async function verificarAtualizacao() {
   $('#atuTxt').innerHTML = `Tem uma versão nova do Caixa (<b>${esc(v.versao)}</b>). Você está na ${versaoAtual()}. Deseja atualizar?`;
   $('#atuObs').textContent = atuNova.soTelas ? 'Leva alguns segundos e o app abre de novo já atualizado. Seus lançamentos continuam.'
     : 'Esta versão precisa instalar o app de novo: toque em Atualizar, abra o arquivo baixado e toque em Instalar. Seus lançamentos continuam.';
+  ls.set(KEY_ATU, { ...ls.get(KEY_ATU, {}), mostradoDia: hoje() });
   $('#dlgAtualizar').showModal();
 }
-$('#dlgAtualizar').addEventListener('close', () => {
-  if ($('#dlgAtualizar').returnValue === 'depois') ls.set(KEY_ATU, { ...ls.get(KEY_ATU, {}), depoisEm: Date.now() });
-});
 $('#atuSim').addEventListener('click', async () => {
   const v = atuNova;
   if (!v) return;
@@ -2505,7 +2502,7 @@ $('#atuSim').addEventListener('click', async () => {
   try {
     const U = plugin('CapacitorUpdater');
     const pacote = await U.download({ url: v.zip, version: String(v.versao), checksum: v.checksum });
-    ls.set(KEY_ATU, { atualizandoPara: v.versao });
+    ls.set(KEY_ATU, { ...ls.get(KEY_ATU, {}), atualizandoPara: v.versao });
     await U.set(pacote); // reabre o app já na versão nova
   } catch {
     carregando(false);
@@ -2517,7 +2514,7 @@ if (NATIVO) {
   plugin('CapacitorUpdater')?.notifyAppReady?.().catch(() => {});
   const a = ls.get(KEY_ATU, {});
   if (a.atualizandoPara) {
-    ls.set(KEY_ATU, {});
+    ls.set(KEY_ATU, { mostradoDia: a.mostradoDia });
     setTimeout(() => toast(versaoAtual() >= a.atualizandoPara ? `✅ App atualizado: versão ${versaoAtual()}` : 'A atualização não deu certo; continua na versão anterior.'), 800);
   }
   setTimeout(verificarAtualizacao, 1500);
