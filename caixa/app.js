@@ -2167,7 +2167,8 @@ dataDeHoje();
 setInterval(dataDeHoje, 60000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) dataDeHoje(); else guardarPosicao(); });
 
-// Puxar para atualizar: no topo da tela, arrastar para baixo e soltar recarrega o app (os dados ficam salvos).
+// Puxar para atualizar: no topo da tela, arrastar para baixo e soltar atualiza a tela sem recarregar a página
+// (recarregar fazia tudo sumir e voltar): relê o que está salvo, confere a data, a licença e se tem versão nova.
 const puxar = $('#puxar');
 const LIMITE = 70;
 let puxarY0 = null, puxado = 0;
@@ -2196,9 +2197,21 @@ addEventListener('touchend', () => {
   puxarY0 = null;
   if (puxado < LIMITE) { soltarPuxar(); return; }
   puxar.classList.add('girando');
-  salvarAtual(); guardarPosicao();
-  try { sessionStorage.setItem('caixa.semIntro', '1'); } catch {}
-  setTimeout(() => location.reload(), 450);
+  puxar.style.transform = `translate(-50%, ${LIMITE}px)`;
+  salvarAtual();
+  setTimeout(() => {
+    st = normalizar(ls.get(KEY_ATUAL, null) || st);
+    dataDeHoje();
+    pintarTudo();
+    pintarLicenca();
+    atualizarLicenca();
+    verificarAtualizacao();
+    // A bolinha sobe de volta suave.
+    puxar.classList.remove('girando', 'pronto');
+    puxar.classList.add('voltando');
+    puxar.style.transform = '';
+    setTimeout(() => { puxar.classList.remove('voltando'); puxar.hidden = true; }, 260);
+  }, 550);
 });
 try { abrirAba(sessionStorage.getItem('caixa.aba') || 'receb'); } catch { abrirAba('receb'); }
 // No APK os arquivos já estão dentro do app; o service worker é só para o site.
