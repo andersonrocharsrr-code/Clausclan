@@ -1,0 +1,25 @@
+name: Narração do vídeo (vozes neurais)
+on:
+  push:
+    branches: ['ccr-**']
+    paths: ['narracao/**', '.github/workflows/narracao.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  gerar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install edge-tts==7.3.1
+      - run: python narracao/gerar.py "$RUNNER_TEMP/narr" && cd "$RUNNER_TEMP/narr" && zip -qr ../narracao.zip .
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view narracao --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create narracao --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest=false --prerelease \
+              --title "Narração do vídeo tutorial" --notes "Áudios gerados para o vídeo do Caixa."
+          fi
+          gh release upload narracao "$RUNNER_TEMP/narracao.zip" --repo "$GITHUB_REPOSITORY" --clobber
