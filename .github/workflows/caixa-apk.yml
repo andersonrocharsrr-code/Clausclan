@@ -44,7 +44,11 @@ jobs:
         run: npm ci
 
       - name: Copiar o app para dentro do projeto Android
-        run: npm run www && npx cap sync android
+        run: |
+          npm run www
+          # Número desta versão (o mesmo do APK): o app compara com o versao.json da Release para oferecer atualização.
+          echo "window.CAIXA_VERSAO = $CAIXA_BUILD;" > www/versao-app.js
+          npx cap sync android
 
       # Mesma chave do Nexa Money (gerada pelo mesmo script e segredo); o Caixa tem seu próprio applicationId.
       - name: Criar a chave de assinatura
@@ -90,4 +94,25 @@ jobs:
               --notes "Baixe o arquivo caixa.apk no celular e toque nele para instalar. Os dados continuam no celular ao atualizar."
           fi
           gh release upload caixa "$RUNNER_TEMP/caixa.apk" --repo "$GITHUB_REPOSITORY" --clobber
+
+          # Pacote das telas (atualização sem APK novo) + versao.json, que os celulares consultam ao abrir o app.
+          # apkMin: a partir de qual APK este pacote funciona; muda só quando a parte nativa (plugins, Android) muda.
+          # (este passo roda dentro de caixa-android/)
+          (cd www && zip -qr "$RUNNER_TEMP/caixa-web.zip" .)
+          nativo=$(git ls-files . | grep -v '^www/' | sort | xargs sha256sum | sha256sum | cut -c1-16)
+          apkMin=$CAIXA_BUILD
+          if gh release download caixa --repo "$GITHUB_REPOSITORY" -p versao.json -D "$RUNNER_TEMP/ant" 2>/dev/null; then
+            if [ "$(jq -r '.nativo // empty' "$RUNNER_TEMP/ant/versao.json")" = "$nativo" ]; then
+              apkMin=$(jq -r '.apkMin' "$RUNNER_TEMP/ant/versao.json")
+            fi
+          fi
+          base="https://github.com/$GITHUB_REPOSITORY/releases/download/caixa"
+          jq -n --argjson versao "$CAIXA_BUILD" --argjson apkMin "$apkMin" --arg nativo "$nativo" \
+            --arg zip "$base/caixa-web.zip" --arg apk "$base/caixa.apk" \
+            --arg checksum "$(sha256sum "$RUNNER_TEMP/caixa-web.zip" | cut -d' ' -f1)" \
+            '{versao:$versao, apkMin:$apkMin, nativo:$nativo, zip:$zip, apk:$apk, checksum:$checksum}' > "$RUNNER_TEMP/versao.json"
+          cat "$RUNNER_TEMP/versao.json"
+          gh release upload caixa "$RUNNER_TEMP/caixa-web.zip" --repo "$GITHUB_REPOSITORY" --clobber
+          # Por último: só avisa os celulares quando o pacote e o APK já estão no ar.
+          gh release upload caixa "$RUNNER_TEMP/versao.json" --repo "$GITHUB_REPOSITORY" --clobber
           gh release edit caixa --repo "$GITHUB_REPOSITORY" --latest=false --title "Caixa — fechamento de caixa (versão $CAIXA_BUILD)"

@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=69">
+  <link rel="stylesheet" href="style.css?v=70">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -306,15 +306,6 @@
   </div>
 
   <div data-tab="rel" hidden>
-    <section class="card" id="cardKm">
-      <div class="card__head">
-        <h2>🚗 Quilometragem</h2>
-        <strong class="total" id="kmHoje">0,0 km</strong>
-      </div>
-      <p class="muted small" id="kmInfo"></p>
-      <button class="btn btn--primary" id="btnRota" type="button">▶ Iniciar rota</button>
-    </section>
-
     <section class="card card--accent">
       <h2>📝 Relatório do dia</h2>
       <p class="muted">Preenchido sozinho com o que você lança no app: notas pagas (25% e 40%), recebido do dia e total, vendido (valor deixado), pepino extra e depósitos. Só digite abaixo o que o app não tem.</p>
@@ -506,6 +497,18 @@
     </form>
   </dialog>
 
+  <dialog id="dlgAtualizar" class="dlg-remover">
+    <form method="dialog">
+      <h2>🚀 Versão nova</h2>
+      <p id="atuTxt"></p>
+      <p class="muted small" id="atuObs"></p>
+      <div class="row-actions">
+        <button type="button" class="btn btn--primary" id="atuSim">Atualizar</button>
+        <button class="btn" value="depois">Depois</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="dlgLic">
     <form method="dialog">
       <h2>🔐 Licença deste celular</h2>
@@ -566,6 +569,7 @@
 
   <script src="vendor/nacl-fast.min.js?v=1"></script>
   <script src="licenca-config.js?v=2"></script>
-  <script type="module" src="app.js?v=90"></script>
+  <script src="versao-app.js?v=1"></script>
+  <script type="module" src="app.js?v=93"></script>
 </body>
 </html>
