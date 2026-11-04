@@ -236,6 +236,11 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
 - **Comprovante do depósito**: todo depósito novo precisa da foto do comprovante (📷 Câmera ou 🖼 Galeria). A foto fica
   no aparelho (IndexedDB) e abre em "📎 Ver comprovante"; depósitos antigos sem foto têm "📷 Anexar comprovante".
 - **Recibo do Pila**: todo gasto novo do Pila precisa da foto do recibo; depois abre em "📎 Ver recibo" (antigos: "📷 Anexar recibo").
+- **Atualização pelo próprio app**: cada APK publicado no main também sobe para a Release `versao.json` e
+  `caixa-web.zip` (as telas). Ao abrir o app (e ao voltar para ele) aparece "🚀 Versão nova — Atualizar / Depois".
+  Atualizar baixa só as telas e reabre já atualizado (plugin `@capgo/capacitor-updater`, sem nuvem da Capgo); se a
+  mudança for na parte nativa (`apkMin` maior que o APK instalado), baixa o APK novo para instalar. "Depois" pergunta
+  de novo na próxima entrada (passada 1 hora).
 - **Licença por celular** (servidor em `cloudflare/caixa-licenca`, publicado por `.github/workflows/caixa-licenca.yml`):
   cada celular tem um código fixo (ex.: `7F3K-92QD`, ☰ → 🔐 Licença). O servidor guarda até quando cada código está
   pago e devolve a validade assinada (Ed25519); o app confere com a chave pública de `caixa/licenca-config.js`.

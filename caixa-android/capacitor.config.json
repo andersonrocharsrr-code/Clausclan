@@ -10,6 +10,14 @@
     "LocalNotifications": {
       "smallIcon": "ic_stat_caixa",
       "iconColor": "#5b8cff"
+    },
+    "CapacitorUpdater": {
+      "autoUpdate": false,
+      "resetWhenUpdate": true,
+      "statsUrl": "",
+      "updateUrl": "",
+      "channelUrl": "",
+      "appReadyTimeout": 15000
     }
   }
 }

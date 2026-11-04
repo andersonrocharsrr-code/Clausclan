@@ -506,6 +506,18 @@
     </form>
   </dialog>
 
+  <dialog id="dlgAtualizar" class="dlg-remover">
+    <form method="dialog">
+      <h2>🚀 Versão nova</h2>
+      <p id="atuTxt"></p>
+      <p class="muted small" id="atuObs"></p>
+      <div class="row-actions">
+        <button type="button" class="btn btn--primary" id="atuSim">Atualizar</button>
+        <button class="btn" value="depois">Depois</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="dlgLic">
     <form method="dialog">
       <h2>🔐 Licença deste celular</h2>
@@ -566,6 +578,7 @@
 
   <script src="vendor/nacl-fast.min.js?v=1"></script>
   <script src="licenca-config.js?v=2"></script>
-  <script type="module" src="app.js?v=90"></script>
+  <script src="versao-app.js?v=1"></script>
+  <script type="module" src="app.js?v=91"></script>
 </body>
 </html>

@@ -2457,4 +2457,71 @@ $('#licCopiar')?.addEventListener('click', async () => {
 });
 pintarLicenca();
 
+/* ---------- Atualização do app (aviso "Versão nova" ao abrir) ---------- */
+// O APK publica na Release "caixa" um versao.json e o pacote das telas (caixa-web.zip). Ao abrir o app (e ao voltar
+// para ele), se tiver versão nova pergunta "Atualizar" ou "Depois". Atualizar: se o APK instalado serve (apkMin), baixa
+// só o pacote e reabre já atualizado (plugin Capgo Updater, sem instalar nada); senão, baixa o APK novo para instalar.
+var URL_VERSAO = 'https://github.com/andersonrocharsrr-code/Clausclan/releases/download/caixa/versao.json'; // eslint-disable-line no-var
+var KEY_ATU = 'caixa.atualizacao'; // eslint-disable-line no-var
+var atuNova = null; // eslint-disable-line no-var
+const versaoAtual = () => Number(window.CAIXA_VERSAO) || 0;
+async function buscarVersao() {
+  const http = plugin('CapacitorHttp');
+  if (!http) return null;
+  const r = await http.get({ url: `${URL_VERSAO}?t=${Date.now()}`, headers: { 'Cache-Control': 'no-cache' }, connectTimeout: 10000, readTimeout: 10000 });
+  if (r.status !== 200) return null;
+  return typeof r.data === 'string' ? JSON.parse(r.data) : r.data;
+}
+async function verificarAtualizacao() {
+  if (!NATIVO || !versaoAtual() || $('#dlgAtualizar').open) return;
+  const a = ls.get(KEY_ATU, {});
+  // "Depois": pergunta de novo na próxima vez que a pessoa entrar no app (passada 1 hora).
+  if (a.depoisEm && Date.now() - a.depoisEm < 3600000) return;
+  let v = null;
+  try { v = await buscarVersao(); } catch { return; }
+  if (!v || !(Number(v.versao) > versaoAtual())) return;
+  let apk = 0;
+  try { apk = Number((await plugin('App')?.getInfo())?.build) || 0; } catch { /* sem a informação */ }
+  atuNova = { ...v, soTelas: apk >= Number(v.apkMin || Infinity) && !!plugin('CapacitorUpdater') };
+  $('#atuTxt').innerHTML = `Tem uma versão nova do Caixa (<b>${esc(v.versao)}</b>). Você está na ${versaoAtual()}. Deseja atualizar?`;
+  $('#atuObs').textContent = atuNova.soTelas ? 'Leva alguns segundos e o app abre de novo já atualizado. Seus lançamentos continuam.'
+    : 'Esta versão precisa instalar o app de novo: toque em Atualizar, abra o arquivo baixado e toque em Instalar. Seus lançamentos continuam.';
+  $('#dlgAtualizar').showModal();
+}
+$('#dlgAtualizar').addEventListener('close', () => {
+  if ($('#dlgAtualizar').returnValue === 'depois') ls.set(KEY_ATU, { ...ls.get(KEY_ATU, {}), depoisEm: Date.now() });
+});
+$('#atuSim').addEventListener('click', async () => {
+  const v = atuNova;
+  if (!v) return;
+  if (!v.soTelas) { // precisa do APK novo
+    window.open(v.apk, '_system');
+    $('#dlgAtualizar').close();
+    return;
+  }
+  $('#dlgAtualizar').close();
+  carregando(true);
+  progressoSimulado('Baixando a versão nova…');
+  try {
+    const U = plugin('CapacitorUpdater');
+    const pacote = await U.download({ url: v.zip, version: String(v.versao), checksum: v.checksum });
+    ls.set(KEY_ATU, { atualizandoPara: v.versao });
+    await U.set(pacote); // reabre o app já na versão nova
+  } catch {
+    carregando(false);
+    toast('Não deu para baixar agora. Tente de novo com internet.');
+  }
+});
+if (NATIVO) {
+  // Confirma que esta versão abriu bem (se não confirmar, o plugin volta sozinho para a anterior).
+  plugin('CapacitorUpdater')?.notifyAppReady?.().catch(() => {});
+  const a = ls.get(KEY_ATU, {});
+  if (a.atualizandoPara) {
+    ls.set(KEY_ATU, {});
+    setTimeout(() => toast(versaoAtual() >= a.atualizandoPara ? `✅ App atualizado: versão ${versaoAtual()}` : 'A atualização não deu certo; continua na versão anterior.'), 800);
+  }
+  setTimeout(verificarAtualizacao, 1500);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) verificarAtualizacao(); });
+}
+
 if (!NATIVO && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
