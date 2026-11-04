@@ -283,6 +283,7 @@ body{overflow-x:clip}
   font:700 22px/1 system-ui,sans-serif;transform:translate(-50%,0);pointer-events:none}
 .puxar.pronto{color:var(--accent);border-color:var(--accent)}
 .puxar.girando span{display:block;animation:puxar-gira .6s linear infinite}
+.puxar.girando,.puxar.voltando{transition:transform .25s ease}
 @keyframes puxar-gira{to{transform:rotate(360deg)}}
 /* Remover lançamento: confirmação e "Desfazer" embaixo por 3 segundos */
 .btn--perigo{background:#dc2626;border-color:#dc2626;color:#fff}
