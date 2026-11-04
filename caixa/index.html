@@ -61,42 +61,6 @@
   <main id="app">
   <button type="button" id="licAviso" class="lic-aviso" hidden></button>
   <div data-tab="receb">
-    <!-- Ler a folha inteira pela foto -->
-    <section class="card card--accent">
-      <h2>📄 Ler folha de fechamento</h2>
-      <p class="muted">Tire foto de uma folha de fechamento (em branco ou já preenchida à mão). O app identifica os campos e preenche aqui.</p>
-      <div class="row-actions">
-        <label class="btn btn--primary">📷 Câmera<input type="file" accept="image/*" capture="environment" hidden data-ler="folha"></label>
-        <label class="btn btn--sec">🖼 Galeria<input type="file" accept="image/*" hidden data-ler="folha"></label>
-      </div>
-    </section>
-
-    <!-- Cabeçalho -->
-    <section class="card">
-      <h2>Cabeçalho</h2>
-      <div class="grid">
-        <label>Cidade<input data-f="cidade" enterkeyhint="done" autocomplete="off"></label>
-        <label>Nome<input data-f="nome" enterkeyhint="done" autocomplete="off"></label>
-        <label>Data<input data-f="data" enterkeyhint="done" type="date"></label>
-        <label>Semana<input data-f="semana" enterkeyhint="done" inputmode="numeric"></label>
-        <label>Foi cobrar (R$)<input data-f="foiCobrar" enterkeyhint="done" data-money inputmode="decimal"></label>
-        <label>Qt. de notas<input data-f="qtNotas" enterkeyhint="done" inputmode="numeric"></label>
-        <label>V. pep. 5% (R$)<output data-c="vPep5"></output></label>
-        <label>Nº de pinos<input data-f="pinos" enterkeyhint="done" inputmode="numeric"></label>
-        <label>Valor dos pepinos (R$)<input data-f="valorPepinos" enterkeyhint="done" data-money inputmode="decimal" placeholder="Preencha o Nº de pinos"></label>
-      </div>
-    </section>
-
-    <!-- Fotos das notas: o app separa em 25% ou 40%/50% pelo que está escrito em cada nota -->
-    <section class="card card--accent">
-      <h2>📷 Notas quitadas</h2>
-      <p class="muted">Uma nota por foto, esticada e nítida (pode escolher várias da galeria). Basta aparecer o <b>final da nota</b>: "Recebi o valor de R$…" e "Nota quitada" (com 25% ou sem). O app pega o valor e põe em 25% ou 40%/50%.</p>
-      <div class="row-actions">
-        <label class="btn btn--primary">📷 Câmera<input type="file" accept="image/*" capture="environment" hidden data-ler="notas"></label>
-        <label class="btn btn--sec">🖼 Galeria (várias)<input type="file" accept="image/*" multiple hidden data-ler="notas"></label>
-      </div>
-    </section>
-
     <!-- Notas 25% -->
     <section class="card">
       <div class="card__head">
@@ -121,6 +85,26 @@
       <div class="lista" data-lista="notas4050"></div>
     </section>
 
+    <section class="card">
+      <div class="card__head">
+        <h2>Notas feitas (vendas)</h2>
+        <strong class="total" data-c="valorDeixado"></strong>
+      </div>
+      <p class="muted small">Uma linha para cada nota feita: escolha <b>Ab</b> (abertura) ou <b>Rp</b> (reposição) e o valor. Depois de lançada, toque em <b>Editar</b> para acrescentar valor em outro dia: só o acréscimo entra no relatório daquele dia. O total vira o <b>Valor deixado</b> e as <b>Notas deixadas</b> da folha.</p>
+      <button class="btn" data-add="feitas">+ Notas feitas do dia</button>
+      <div class="lista" data-lista="feitas"></div>
+      <p class="muted small" id="feitasTotal"></p>
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <h2>Pepino parcial</h2>
+        <strong class="total" data-c="pepinoParcial"></strong>
+      </div>
+      <p class="muted small">O pepino parcial (recebido, devolução e o que ficou devendo) é lançado na aba Relatório. O recebido entra aqui no recebimento.</p>
+      <button class="btn" data-ir="rel" data-alvo="cardParcial">Lançar pepino parcial ›</button>
+    </section>
+
     <!-- Pepino extra -->
     <section class="card">
       <div class="card__head">
@@ -137,6 +121,15 @@
       <div class="lista" data-lista="extras"></div>
     </section>
 
+    <!-- Recebimento -->
+    <section class="card card--sum">
+      <div class="card__head">
+        <h2>Recebimento</h2>
+        <strong class="total total--big" data-c="recebimento"></strong>
+      </div>
+      <p class="muted small">Notas 25% + Notas 40% e 50% + Antecipados + Pepino extra + Pepino parcial</p>
+    </section>
+
     <section class="card">
       <div class="card__head">
         <h2>Notas antecipadas</h2>
@@ -147,33 +140,40 @@
       <div class="lista" data-lista="antecipadas"></div>
     </section>
 
-    <section class="card">
-      <div class="card__head">
-        <h2>Pepino parcial</h2>
-        <strong class="total" data-c="pepinoParcial"></strong>
+    <!-- Fotos das notas: o app separa em 25% ou 40%/50% pelo que está escrito em cada nota -->
+    <section class="card card--accent">
+      <h2>📷 Notas quitadas</h2>
+      <p class="muted">Uma nota por foto, esticada e nítida (pode escolher várias da galeria). Basta aparecer o <b>final da nota</b>: "Recebi o valor de R$…" e "Nota quitada" (com 25% ou sem). O app pega o valor e põe em 25% ou 40%/50%.</p>
+      <div class="row-actions">
+        <label class="btn btn--primary">📷 Câmera<input type="file" accept="image/*" capture="environment" hidden data-ler="notas"></label>
+        <label class="btn btn--sec">🖼 Galeria (várias)<input type="file" accept="image/*" multiple hidden data-ler="notas"></label>
       </div>
-      <p class="muted small">O pepino parcial (recebido, devolução e o que ficou devendo) é lançado na aba Relatório. O recebido entra aqui no recebimento.</p>
-      <button class="btn" data-ir="rel" data-alvo="cardParcial">Lançar pepino parcial ›</button>
     </section>
 
-    <section class="card">
-      <div class="card__head">
-        <h2>Notas feitas (vendas)</h2>
-        <strong class="total" data-c="valorDeixado"></strong>
+    <!-- Ler a folha inteira pela foto -->
+    <section class="card card--accent">
+      <h2>📄 Ler folha de fechamento</h2>
+      <p class="muted">Tire foto de uma folha de fechamento (em branco ou já preenchida à mão). O app identifica os campos e preenche aqui.</p>
+      <div class="row-actions">
+        <label class="btn btn--primary">📷 Câmera<input type="file" accept="image/*" capture="environment" hidden data-ler="folha"></label>
+        <label class="btn btn--sec">🖼 Galeria<input type="file" accept="image/*" hidden data-ler="folha"></label>
       </div>
-      <p class="muted small">Uma linha para cada nota feita: escolha <b>Ab</b> (abertura) ou <b>Rp</b> (reposição) e o valor. Depois de lançada, toque em <b>Editar</b> para acrescentar valor em outro dia: só o acréscimo entra no relatório daquele dia. O total vira o <b>Valor deixado</b> e as <b>Notas deixadas</b> da folha.</p>
-      <button class="btn" data-add="feitas">+ Notas feitas do dia</button>
-      <div class="lista" data-lista="feitas"></div>
-      <p class="muted small" id="feitasTotal"></p>
     </section>
 
-    <!-- Recebimento -->
-    <section class="card card--sum">
-      <div class="card__head">
-        <h2>Recebimento</h2>
-        <strong class="total total--big" data-c="recebimento"></strong>
+    <!-- Cabeçalho -->
+    <section class="card">
+      <h2>Cabeçalho</h2>
+      <div class="grid">
+        <label>Cidade<input data-f="cidade" enterkeyhint="done" autocomplete="off"></label>
+        <label>Nome<input data-f="nome" enterkeyhint="done" autocomplete="off"></label>
+        <label>Data<input data-f="data" enterkeyhint="done" type="date"></label>
+        <label>Semana<input data-f="semana" enterkeyhint="done" inputmode="numeric"></label>
+        <label>Foi cobrar (R$)<input data-f="foiCobrar" enterkeyhint="done" data-money inputmode="decimal"></label>
+        <label>Qt. de notas<input data-f="qtNotas" enterkeyhint="done" inputmode="numeric"></label>
+        <label>V. pep. 5% (R$)<output data-c="vPep5"></output></label>
+        <label>Nº de pinos<input data-f="pinos" enterkeyhint="done" inputmode="numeric"></label>
+        <label>Valor dos pepinos (R$)<input data-f="valorPepinos" enterkeyhint="done" data-money inputmode="decimal" placeholder="Preencha o Nº de pinos"></label>
       </div>
-      <p class="muted small">Notas 25% + Notas 40% e 50% + Antecipados + Pepino extra + Pepino parcial</p>
     </section>
 
     <button class="btn btn--primary btn--next" data-ir="desp">Próximo: despesas →</button>
