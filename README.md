@@ -248,10 +248,6 @@ Abra `caixa/index.html` por um servidor (GitHub Pages, ou `python3 -m http.serve
   celular: os cálculos travam (totais "—", sem relatório, resumo nem folha). Celular Android novo ganha 7 dias.
   O dono marca os pagamentos (+7/+15/+30 dias) no painel `https://caixa-licenca.<subdomínio>.workers.dev/painel`.
 - **Ao gerar o caixa**: o primeiro aviso pede para conferir se o Recebimento do app bate com o recebimento do sistema.
-- **Quilometragem (GPS, funciona sem internet)**: aba Relatório → "Iniciar rota" / "Parar rota". Conta os km com a
-  tela desligada (notificação fixa "Contando os km"; plugin `@capacitor-community/background-geolocation`). Ignora
-  pontos imprecisos (> 50 m), tremidas (< 15 m) e saltos impossíveis (> 200 km/h). O **Km** do carro (Carro e
-  supervisor) vai subindo sozinho a cada km rodado, e é ele que sai no relatório.
 - **Antecipado nas notas 25% e 40/50%**: o que a cliente já tinha pago antes; soma com o recebido para tirar a nota
   inteira das notas em branco (25%: (recebido + antecipado) ÷ 0,75 + devolução; 40/50%: recebido + antecipado + devolução).
 - **Nº de pinos / Valor dos pepinos**: o valor é digitado e só abre depois que o Nº de pinos é preenchido. Na folha
