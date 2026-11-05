@@ -2502,7 +2502,8 @@ function nomeFalado(trecho, falado) {
 }
 const mesmoNome = (a, b) => { const x = semAcento(String(a || '').toLowerCase()).trim(), y = semAcento(String(b || '').toLowerCase()).trim(); return !!x && !!y && (x === y || x.startsWith(y + ' ') || y.startsWith(x + ' ')); };
 // A cliente já pagou nota nesta semana? Então a nota feita para ela é reposição; se não, é abertura.
-const clientePagou = (nome) => [...st.notas25, ...st.notas4050].some((n) => mesmoNome(n.cliente, nome));
+const clientePagou = (nome) => [...st.notas25, ...st.notas4050, ...micSessao.filter((x) => x.lista !== 'feitas')]
+  .some((n) => mesmoNome(n.cliente, nome));
 
 // Lê o que foi falado. Com "pagou"/"devolveu" é nota paga (25% ou 40/50%); só nome e valor é nota feita.
 function lerFalaNota(falado) {
@@ -2523,8 +2524,9 @@ function lerFalaNota(falado) {
       .replace(/^\s*(?:a|o)?\s*(?:cliente|clienta)\s*/, ' ').replace(/^\s*(?:a|o|de|da|do|das|dos)\s+/, ' ')
       .replace(/\s+(?:de|em|no|na|valor|com)\s*$/, ' ');
     const cliente = nomeFalado(nomeTxt.replace(/\s+(?:de|em|no|na|valor|com)\s*$/, ''), falado);
+    const tipoFalado = !!tipo;
     if (!tipo) tipo = cliente && clientePagou(cliente) ? 'rp' : 'ab';
-    return { lista: 'feitas', cliente, valor, tipo };
+    return { lista: 'feitas', cliente, valor, tipo, tipoFalado };
   }
   // Faixa: "nos 40%", "40, 50%", "nota 25", "comissão em mercadoria".
   const FAIXA_4050 = /\b(?:(?:nos|nas|na|no|nota|notas|de)\s+)?(?:40|50)\s*%?(?:\s*(?:,|e|ou)?\s*(?:40|50)\s*%)?(?=\s|,|\.|$)/;
@@ -2544,7 +2546,8 @@ function lerFalaNota(falado) {
 }
 
 const dlgMic = $('#dlgMic');
-let micTexto = '', micFim = null, micParar = null, micLido = null;
+// micSessao: as notas já conferidas ("✓ Correto") nesta fala; "Pronto" lança todas de uma vez.
+let micTexto = '', micFim = null, micParar = null, micLido = null, micSessao = [];
 function micMostrar(estado, texto) {
   if (estado != null) $('#micEstado').textContent = estado;
   if (texto != null) $('#micTexto').textContent = texto;
@@ -2576,7 +2579,10 @@ async function micOuvir() {
   r.start();
 }
 const NOME_DESTINO = { notas25: 'Nota 25%', notas4050: 'Nota 40% e 50%', feitas: 'Nota feita' };
-// Conferência: o que vai em cada campo, antes de preencher.
+const resumoMic = (x) => (x.lista === 'feitas'
+  ? `${NOME_DESTINO.feitas} ${x.tipo === 'rp' ? 'Rp' : 'Ab'} · ${x.cliente || 'sem nome'} · ${R$(x.valor)}`
+  : `${NOME_DESTINO[x.lista]} · ${x.cliente || 'sem nome'} · recebeu ${R$(x.valor)}${x.devolucao ? ` · devolveu ${R$(x.devolucao)}` : ''}`);
+// Conferência: o que vai em cada campo, antes de lançar; em cima, as notas já marcadas como corretas.
 function micConferencia(x) {
   const lin = (r, v) => `<div><span>${r}</span><b>${v}</b></div>`;
   const campos = x.lista === 'feitas'
@@ -2586,16 +2592,27 @@ function micConferencia(x) {
   $('#micConf').innerHTML = `<p class="mic-conf__tit">${NOME_DESTINO[x.lista]}</p>${campos.join('')}`;
   $('#micConf').hidden = false;
 }
+function pintarSessao() {
+  const box = $('#micSessao');
+  box.hidden = !micSessao.length;
+  box.innerHTML = micSessao.map((x) => `<p>✓ ${esc(resumoMic(x))}</p>`).join('');
+}
 function micModo(modo) { // 'ouvindo' | 'conferir' | 'erro'
   dlgMic.classList.toggle('ouvindo', modo === 'ouvindo');
-  $('#micDica').hidden = modo === 'conferir';
+  $('#micDica').hidden = modo === 'conferir' || micSessao.length > 0;
   if (modo !== 'conferir') $('#micConf').hidden = true;
-  $('#micPronto').textContent = modo === 'ouvindo' ? 'Parar' : modo === 'conferir' ? '✓ Pronto' : '🎤 Falar de novo';
-  $('#micDeNovo').hidden = modo !== 'conferir';
+  $('#micCorreto').hidden = modo !== 'conferir';
+  $('#micDeNovo').hidden = modo === 'ouvindo';
+  // "Pronto" lança: aparece na conferência ou quando já tem nota marcada como correta.
+  $('#micPronto').hidden = !(modo === 'conferir' || (micSessao.length && modo !== 'ouvindo'));
+  $('#micParar').hidden = modo !== 'ouvindo';
+  const n = micSessao.length + (modo === 'conferir' ? 1 : 0);
+  $('#micPronto').textContent = n > 1 ? `✓ Pronto, lançar as ${n}` : '✓ Pronto, lançar';
+  pintarSessao();
 }
 async function micAbrir() {
   micLido = null;
-  micMostrar('Pode falar…', '');
+  micMostrar(micSessao.length ? 'Pode falar a próxima…' : 'Pode falar…', '');
   micModo('ouvindo');
   if (!dlgMic.open) dlgMic.showModal();
   let terminou = false;
@@ -2612,33 +2629,55 @@ async function micAbrir() {
     micMostrar(falado ? 'Não entendi o valor. Fale de novo.' : 'Não ouvi nada. Fale de novo.', falado);
     return;
   }
-  // Mostra o que entendeu e só preenche quando tocar em "Pronto".
+  // Nota feita logo depois de uma nota paga, sem falar o nome: é da mesma cliente, e é reposição.
+  const ultima = micSessao[micSessao.length - 1];
+  if (x.lista === 'feitas' && !x.cliente && ultima) {
+    x.cliente = ultima.cliente;
+    if (!x.tipoFalado && ultima.lista !== 'feitas') x.tipo = 'rp';
+  }
   micLido = x;
   micModo('conferir');
   micMostrar('Confira:', `“${falado}”`);
   micConferencia(x);
 }
-async function micPreencher(x) {
+// Lança tudo o que foi conferido, cada nota na sua lista; dá para desfazer por 3 segundos.
+function micLancar() {
+  const itens = [...micSessao, ...(micLido ? [micLido] : [])];
+  micSessao = []; micLido = null;
   dlgMic.close();
-  document.activeElement?.blur(); // o diálogo devolve o foco ao 🎤 e isso atrapalharia a rolagem até a nota
+  document.activeElement?.blur(); // o diálogo devolve o foco ao 🎤 e isso atrapalharia a rolagem
+  if (!itens.length) return;
   if (abaAtual !== 'receb') abrirAba('receb');
-  await new Promise((ok) => setTimeout(ok, 60));
-  if (x.lista === 'feitas') novaLinha('feitas', { cliente: x.cliente, tipo: x.tipo, ab: x.tipo === 'ab' ? 1 : 0, rp: x.tipo === 'rp' ? 1 : 0, valor: x.valor });
-  else {
-    const extra = { cliente: x.cliente, valor: x.valor };
-    if (x.devolucao) extra.devolucao = x.devolucao;
-    if (x.antecipado) extra.antecipado = x.antecipado;
-    novaLinha(x.lista, extra);
-  }
-  toast(`${NOME_DESTINO[x.lista]} preenchida. Toque em ✓ Lançar.`);
+  const lancados = itens.map((x) => {
+    const nota = x.lista === 'feitas'
+      ? { id: uid(), cliente: x.cliente, data: hoje(), tipo: x.tipo, ab: x.tipo === 'ab' ? 1 : 0, rp: x.tipo === 'rp' ? 1 : 0, valor: x.valor }
+      : { id: uid(), dia: hoje(), cidade: st.cidade, cliente: x.cliente, valor: x.valor, devolucao: x.devolucao || 0,
+        ...(x.antecipado ? { antecipado: x.antecipado } : {}) };
+    st[x.lista].push(nota);
+    abrirLista(x.lista);
+    return [x.lista, nota];
+  });
+  const listas = [...new Set(lancados.map(([l]) => l))];
+  salvarAtual(); listas.forEach(pintarLista); pintarTotais();
+  setTimeout(() => {
+    const [l, nota] = lancados[lancados.length - 1];
+    const el = [...$$(`[data-lista="${l}"] .item`)][st[l].indexOf(nota)];
+    if (el) mostrarNoMeio(el);
+  }, 60);
+  oferecerDesfazer(lancados.length > 1 ? `${lancados.length} lançamentos ✓` : 'Lançado ✓', () => {
+    lancados.forEach(([l, nota]) => { const i = st[l].indexOf(nota); if (i >= 0) st[l].splice(i, 1); });
+    salvarAtual(); listas.forEach(pintarLista); pintarTotais();
+  });
+  // Só nota paga, sem nota feita depois: pergunta se já lança a nota nova, como no "✓ Lançar".
+  const ult = itens[itens.length - 1];
+  if (ult.lista !== 'feitas') setTimeout(() => perguntarNovaNota(ult.cliente), 3200);
 }
-$('#btnMic').addEventListener('click', (e) => { e.stopPropagation(); micAbrir(); });
-$('#micPronto').addEventListener('click', () => {
-  if (dlgMic.classList.contains('ouvindo')) { micParar?.(); return; }
-  if (micLido) { micPreencher(micLido); return; }
-  micAbrir();
-});
+$('#btnMic').addEventListener('click', (e) => { e.stopPropagation(); micSessao = []; micAbrir(); });
+$('#micParar').addEventListener('click', () => micParar?.());
+// "✓ Correto": guarda esta nota e já escuta a próxima (ex.: a reposição que ela pegou).
+$('#micCorreto').addEventListener('click', () => { if (micLido) micSessao.push(micLido); micLido = null; micAbrir(); });
+$('#micPronto').addEventListener('click', () => micLancar());
 $('#micDeNovo').addEventListener('click', () => micAbrir());
-$('#micCancelar').addEventListener('click', () => { dlgMic.close(); micParar?.(); micFim?.(); });
+$('#micCancelar').addEventListener('click', () => { micSessao = []; micLido = null; dlgMic.close(); micParar?.(); micFim?.(); });
 dlgMic.addEventListener('close', () => { if (dlgMic.classList.contains('ouvindo')) micParar?.(); });
 window.lerFalaNota = lerFalaNota; // para teste
