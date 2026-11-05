@@ -411,3 +411,9 @@ body{overflow-x:clip}
 .mic-texto{min-height:1.4em;font-size:17px;margin:6px 0 10px}
 .mic-dica{font-size:12px;color:var(--muted);margin:0 0 12px}
 .dlg-mic .row-actions{justify-content:center}
+.mic-conf{text-align:left;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 12px;background:var(--bg)}
+.mic-conf__tit{margin:0 0 6px;font-weight:800;color:var(--accent)}
+.mic-conf div{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-top:1px solid var(--line)}
+.mic-conf div span{color:var(--muted)}
+.mic-texto{font-size:14px;color:var(--muted)}
+.dlg-mic .row-actions{flex-wrap:wrap}

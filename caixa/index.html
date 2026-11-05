@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=73">
+  <link rel="stylesheet" href="style.css?v=74">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -479,9 +479,11 @@
     <div class="mic-onda" id="micOnda"><span>🎤</span></div>
     <p class="mic-estado" id="micEstado">Pode falar…</p>
     <p class="mic-texto" id="micTexto"></p>
-    <p class="mic-dica" id="micDica">Ex.: “Francisca de Oliveira pagou 350, devolveu 200, nos 25%”</p>
+    <div class="mic-conf" id="micConf" hidden></div>
+    <p class="mic-dica" id="micDica">Nota paga: “Francisca de Oliveira pagou 350, devolveu 200, nos 25%”<br>Nota feita: “Francisca de Oliveira, reposição de 1.385”</p>
     <div class="row-actions">
       <button type="button" class="btn btn--primary" id="micPronto">Pronto</button>
+      <button type="button" class="btn btn--ghost" id="micDeNovo" hidden>🎤 Falar de novo</button>
       <button type="button" class="btn btn--ghost" id="micCancelar">Cancelar</button>
     </div>
   </dialog>
@@ -580,6 +582,6 @@
   <script src="vendor/nacl-fast.min.js?v=1"></script>
   <script src="licenca-config.js?v=2"></script>
   <script src="versao-app.js?v=1"></script>
-  <script type="module" src="app.js?v=97"></script>
+  <script type="module" src="app.js?v=98"></script>
 </body>
 </html>

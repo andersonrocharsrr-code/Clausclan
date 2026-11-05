@@ -779,7 +779,7 @@ function perguntarNovaNota(cliente = '') {
   dlg.onclose = () => {
     if (dlg.returnValue !== 'sim') return;
     if (abaAtual !== 'receb') abrirAba('receb');
-    novaLinha('feitas', { cliente }); // já vem com o nome do cliente da nota quitada
+    novaLinha('feitas', { cliente, tipo: 'rp', ab: 0, rp: 1 }); // nome da cliente e reposição (ela acabou de pagar)
   };
   dlg.showModal();
 }
@@ -2489,36 +2489,58 @@ function valorDepois(t, chaves) {
   if (cent) v += Number(cent[1]) / 100;
   return arred(v);
 }
+// Nome falado → com acentos do que foi dito e maiúscula nos nomes ("de", "da", "dos" ficam minúsculos).
+function nomeFalado(trecho, falado) {
+  const original = String(falado).split(/\s+/);
+  return trecho.replace(/[.,;:!?%]/g, ' ').replace(/\b\d+\b/g, ' ').replace(/\s+/g, ' ').trim()
+    .split(' ').filter(Boolean).map((w) => {
+      const o = original.find((x) => semAcento(x.toLowerCase()).replace(/[^a-z]/g, '') === w);
+      const p = (o || w).replace(/[.,;:!?]/g, '').toLowerCase();
+      return /^(de|da|do|das|dos|e)$/.test(p) ? p : p.charAt(0).toUpperCase() + p.slice(1);
+    }).join(' ');
+}
+const mesmoNome = (a, b) => { const x = semAcento(String(a || '').toLowerCase()).trim(), y = semAcento(String(b || '').toLowerCase()).trim(); return !!x && !!y && (x === y || x.startsWith(y + ' ') || y.startsWith(x + ' ')); };
+// A cliente já pagou nota nesta semana? Então a nota feita para ela é reposição; se não, é abertura.
+const clientePagou = (nome) => [...st.notas25, ...st.notas4050].some((n) => mesmoNome(n.cliente, nome));
+
+// Lê o que foi falado. Com "pagou"/"devolveu" é nota paga (25% ou 40/50%); só nome e valor é nota feita.
 function lerFalaNota(falado) {
   let t = numerosPorExtenso(semAcento(String(falado).toLowerCase()).replace(/r\$\s*/g, ' ').replace(/[“”"]/g, ' ').replace(/\s+/g, ' '));
   t = t.replace(/(\d)\s*por\s*cento/g, '$1%');
+  const paga = /\b(?:pagou|pago|paguei|recebi|recebido|recebeu|devolveu|devolvi|devolucao|devolvido|quitou)\b/.test(t);
+  if (!paga) {
+    // Nota feita: "Francisca de Oliveira, reposição de 1.385" ou só "Francisca de Oliveira, 1.385".
+    let tipo = /\breposic|\brepos\b/.test(t) ? 'rp' : /\babertura\b/.test(t) ? 'ab' : '';
+    const m = t.match(/(\d[\d.]*(?:,\d{1,2})?)/);
+    const valor = m ? arred(numero(m[1].replace(/\.(?=\d{3}\b)/g, ''))) : 0;
+    const nomeTxt = (m ? t.slice(0, m.index) : t)
+      .replace(/\b(?:nota|notas|feita|feitas|fazer|fez|nova|de|em|no|na|valor|reais|uma|um)\b(?=\s*$)/g, ' ')
+      .replace(/\b(?:reposicao|reposicoes|abertura|nota feita|fazer nota|fez nota|nova nota)\b/g, ' ')
+      .replace(/^\s*(?:a|o)?\s*(?:cliente|clienta)\s*/, ' ').replace(/^\s*(?:a|o|de|da|do|das|dos)\s+/, ' ')
+      .replace(/\s+(?:de|em|no|na|valor|com)\s*$/, ' ');
+    const cliente = nomeFalado(nomeTxt.replace(/\s+(?:de|em|no|na|valor|com)\s*$/, ''), falado);
+    if (!tipo) tipo = cliente && clientePagou(cliente) ? 'rp' : 'ab';
+    return { lista: 'feitas', cliente, valor, tipo };
+  }
   // Faixa: "nos 40%", "40, 50%", "nota 25", "comissão em mercadoria".
   const FAIXA_4050 = /\b(?:(?:nos|nas|na|no|nota|notas|de)\s+)?(?:40|50)\s*%?(?:\s*(?:,|e|ou)?\s*(?:40|50)\s*%)?(?=\s|,|\.|$)/;
   const marca4050 = /\b(?:40|50)\s*%|\b(?:nos|nas|na|no|nota|notas)\s+(?:40|50)\b|\b40\s*(?:,|e|ou)?\s*50\b|comiss/;
   const lista = marca4050.test(t) ? 'notas4050' : 'notas25';
   if (lista === 'notas4050') t = t.replace(FAIXA_4050, ' ');
   t = t.replace(/\b(?:(?:nos|nas|na|no|nota|notas|de)\s+)?25\s*%?(?=\s|,|\.|$)/, ' ').replace(/comiss[a-z]*\s*(?:em|de)?\s*mercadorias?/g, ' ');
-  const valor = valorDepois(t, 'pagou|pago|paguei|recebi|recebido|recebeu|valor');
+  const valor = valorDepois(t, 'pagou|pago|paguei|recebi|recebido|recebeu|valor|quitou');
   const devolucao = valorDepois(t, 'devolveu|devolvi|devolucao|devolvido|devolveram|devolve');
   const antecipado = valorDepois(t, 'antecipado|antecipou|adiantado');
   // Nome: o que vem antes de "pagou" (sem "nota", "cliente", "a/o" no começo).
-  const corte = t.search(/\b(?:pagou|pago|paguei|recebi|recebido|recebeu|devolveu|devolvi)\b/);
-  let nome = (corte > 0 ? t.slice(0, corte) : '')
+  const corte = t.search(/\b(?:pagou|pago|paguei|recebi|recebido|recebeu|devolveu|devolvi|quitou)\b/);
+  const nomeTxt = (corte > 0 ? t.slice(0, corte) : '')
     .replace(/[.,;:!?%]/g, ' ').replace(/\b(?:nota|notas|nos|nas)\b/g, ' ')
-    .replace(/^\s*(?:a|o)?\s*(?:cliente|clienta)\s*/, ' ').replace(/^\s*(?:a|o)\s+/, ' ').replace(/\b\d+\b/g, ' ')
-    .replace(/\s+/g, ' ').trim();
-  // Volta com os acentos do que foi falado e põe maiúscula nos nomes ("de", "da", "dos" ficam minúsculos).
-  const original = String(falado).split(/\s+/);
-  nome = nome.split(' ').filter(Boolean).map((w) => {
-    const o = original.find((x) => semAcento(x.toLowerCase()).replace(/[^a-z]/g, '') === w);
-    const p = (o || w).replace(/[.,;:!?]/g, '').toLowerCase();
-    return /^(de|da|do|das|dos|e)$/.test(p) ? p : p.charAt(0).toUpperCase() + p.slice(1);
-  }).join(' ');
-  return { lista, cliente: nome, valor, devolucao, antecipado };
+    .replace(/^\s*(?:a|o)?\s*(?:cliente|clienta)\s*/, ' ').replace(/^\s*(?:a|o)\s+/, ' ');
+  return { lista, cliente: nomeFalado(nomeTxt, falado), valor, devolucao, antecipado };
 }
 
 const dlgMic = $('#dlgMic');
-let micTexto = '', micFim = null, micParar = null;
+let micTexto = '', micFim = null, micParar = null, micLido = null;
 function micMostrar(estado, texto) {
   if (estado != null) $('#micEstado').textContent = estado;
   if (texto != null) $('#micTexto').textContent = texto;
@@ -2549,43 +2571,70 @@ async function micOuvir() {
   micParar = () => { try { r.stop(); } catch {} };
   r.start();
 }
+const NOME_DESTINO = { notas25: 'Nota 25%', notas4050: 'Nota 40% e 50%', feitas: 'Nota feita' };
+// Conferência: o que vai em cada campo, antes de preencher.
+function micConferencia(x) {
+  const lin = (r, v) => `<div><span>${r}</span><b>${v}</b></div>`;
+  const campos = x.lista === 'feitas'
+    ? [lin('Cliente', esc(x.cliente) || '<i>sem nome</i>'), lin('Nota', x.tipo === 'rp' ? 'Rp (reposição)' : 'Ab (abertura)'), lin('Valor', R$(x.valor))]
+    : [lin('Cliente', esc(x.cliente) || '<i>sem nome</i>'), lin('Valor recebido', R$(x.valor)), lin('Devolução', R$(x.devolucao || 0)),
+      ...(x.antecipado ? [lin('Antecipado', R$(x.antecipado))] : [])];
+  $('#micConf').innerHTML = `<p class="mic-conf__tit">${NOME_DESTINO[x.lista]}</p>${campos.join('')}`;
+  $('#micConf').hidden = false;
+}
+function micModo(modo) { // 'ouvindo' | 'conferir' | 'erro'
+  dlgMic.classList.toggle('ouvindo', modo === 'ouvindo');
+  $('#micDica').hidden = modo === 'conferir';
+  if (modo !== 'conferir') $('#micConf').hidden = true;
+  $('#micPronto').textContent = modo === 'ouvindo' ? 'Parar' : modo === 'conferir' ? '✓ Pronto' : '🎤 Falar de novo';
+  $('#micDeNovo').hidden = modo !== 'conferir';
+}
 async function micAbrir() {
+  micLido = null;
   micMostrar('Pode falar…', '');
-  $('#micDica').hidden = false;
-  dlgMic.classList.add('ouvindo');
+  micModo('ouvindo');
   if (!dlgMic.open) dlgMic.showModal();
   let terminou = false;
   const acabou = new Promise((ok) => { micFim = () => { if (!terminou) { terminou = true; ok(); } }; });
-  try { await micOuvir(); } catch (err) { dlgMic.classList.remove('ouvindo'); micMostrar(err.message || 'Não deu para usar o microfone.', ''); return; }
+  try { await micOuvir(); } catch (err) { micModo('erro'); micMostrar(err.message || 'Não deu para usar o microfone.', ''); return; }
   const limite = setTimeout(() => micParar?.(), 25000);
   await acabou;
   clearTimeout(limite);
-  dlgMic.classList.remove('ouvindo');
   if (!dlgMic.open) return; // cancelou
   const falado = micTexto.trim();
   const x = falado ? lerFalaNota(falado) : null;
   if (!x || !x.valor) {
-    micMostrar(falado ? 'Não entendi o valor. Toque em 🎤 e fale de novo.' : 'Não ouvi nada. Toque em 🎤 e fale de novo.', falado);
-    $('#micDica').hidden = false;
-    $('#micPronto').textContent = '🎤 Falar de novo';
+    micModo('erro');
+    micMostrar(falado ? 'Não entendi o valor. Fale de novo.' : 'Não ouvi nada. Fale de novo.', falado);
     return;
   }
+  // Mostra o que entendeu e só preenche quando tocar em "Pronto".
+  micLido = x;
+  micModo('conferir');
+  micMostrar('Confira:', `“${falado}”`);
+  micConferencia(x);
+}
+async function micPreencher(x) {
   dlgMic.close();
-  const extra = { cliente: x.cliente, valor: x.valor };
-  if (x.devolucao) extra.devolucao = x.devolucao;
-  if (x.antecipado) extra.antecipado = x.antecipado;
   document.activeElement?.blur(); // o diálogo devolve o foco ao 🎤 e isso atrapalharia a rolagem até a nota
   if (abaAtual !== 'receb') abrirAba('receb');
   await new Promise((ok) => setTimeout(ok, 60));
-  novaLinha(x.lista, extra);
-  toast(`${x.lista === 'notas25' ? 'Nota 25%' : 'Nota 40% e 50%'} preenchida. Confira e toque em ✓ Lançar.`);
+  if (x.lista === 'feitas') novaLinha('feitas', { cliente: x.cliente, tipo: x.tipo, ab: x.tipo === 'ab' ? 1 : 0, rp: x.tipo === 'rp' ? 1 : 0, valor: x.valor });
+  else {
+    const extra = { cliente: x.cliente, valor: x.valor };
+    if (x.devolucao) extra.devolucao = x.devolucao;
+    if (x.antecipado) extra.antecipado = x.antecipado;
+    novaLinha(x.lista, extra);
+  }
+  toast(`${NOME_DESTINO[x.lista]} preenchida. Toque em ✓ Lançar.`);
 }
-$('#btnMic').addEventListener('click', (e) => { e.stopPropagation(); $('#micPronto').textContent = 'Pronto'; micAbrir(); });
+$('#btnMic').addEventListener('click', (e) => { e.stopPropagation(); micAbrir(); });
 $('#micPronto').addEventListener('click', () => {
   if (dlgMic.classList.contains('ouvindo')) { micParar?.(); return; }
-  $('#micPronto').textContent = 'Pronto';
+  if (micLido) { micPreencher(micLido); return; }
   micAbrir();
 });
+$('#micDeNovo').addEventListener('click', () => micAbrir());
 $('#micCancelar').addEventListener('click', () => { dlgMic.close(); micParar?.(); micFim?.(); });
 dlgMic.addEventListener('close', () => { if (dlgMic.classList.contains('ouvindo')) micParar?.(); });
 window.lerFalaNota = lerFalaNota; // para teste
