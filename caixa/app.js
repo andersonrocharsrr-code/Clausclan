@@ -2553,6 +2553,18 @@ function micMostrar(estado, texto) {
   if (texto != null) $('#micTexto').textContent = texto;
 }
 // Reconhecimento: no APK pelo plugin nativo (o WebView não tem); no navegador pelo do Chrome.
+// Escuta até ficar MIC_SILENCIO ms sem falar nada (o reconhecimento do celular sozinho para com 1 ou 2 s de
+// pausa: aqui ele recomeça na hora e junta o texto, e quem decide parar é o app). No começo espera um pouco mais.
+const MIC_SILENCIO = 4000, MIC_INICIO = 6000;
+let micSilencio = null;
+function vigiarSilencio(parar) {
+  let ultimo = Date.now(), falou = false;
+  clearInterval(micSilencio);
+  micSilencio = setInterval(() => {
+    if (Date.now() - ultimo > (falou ? MIC_SILENCIO : MIC_INICIO)) { clearInterval(micSilencio); parar(); }
+  }, 250);
+  return () => { ultimo = Date.now(); falou = true; }; // chamar sempre que chegar texto novo
+}
 async function micOuvir() {
   micTexto = '';
   if (NATIVO) {
@@ -2562,20 +2574,42 @@ async function micOuvir() {
     const { available } = await SR.available().catch(() => ({ available: false }));
     if (!available) throw new Error('Este celular não tem o reconhecimento de voz do Google.');
     await SR.removeAllListeners().catch(() => {});
-    await SR.addListener('partialResults', (e) => { const x = e.accumulatedText || e.matches?.[0]; if (x) { micTexto = x; micMostrar(null, x); } });
-    await SR.addListener('listeningState', (e) => { if ((e.state || e.status) === 'stopped') micFim?.(); });
-    micParar = () => SR.stop().catch(() => {});
-    await SR.start({ language: 'pt-BR', maxResults: 3, partialResults: true, popup: false });
+    let parando = false, juntado = '';
+    const acabar = () => { clearInterval(micSilencio); micFim?.(); };
+    const parar = async () => {
+      if (parando) return;
+      parando = true;
+      clearInterval(micSilencio);
+      await SR.setPTTState({ held: false }).catch(() => {});
+      await SR.stop().catch(() => {});
+      setTimeout(acabar, 1500); // se o "parou" não chegar, termina assim mesmo
+    };
+    const ouviu = vigiarSilencio(parar);
+    await SR.addListener('partialResults', (e) => {
+      // Entre uma pausa e outra o plugin junta o que já foi dito em "accumulated"; o trecho atual vem em "matches".
+      if (e.accumulated != null) juntado = e.accumulated;
+      const atual = e.isRestarting ? '' : (e.matches?.[0] || '');
+      const x = (e.accumulatedText || [juntado, atual].filter(Boolean).join(' ')).trim();
+      if (x && x !== micTexto) { micTexto = x; micMostrar(null, x); ouviu(); }
+    });
+    // "Parou" também acontece a cada pausa (ele recomeça sozinho): só termina quando o app mandou parar.
+    await SR.addListener('listeningState', (e) => { if ((e.state || e.status) === 'stopped' && parando) acabar(); });
+    await SR.addListener('error', (e) => { if (!/NO_MATCH|SPEECH_TIMEOUT|no.?match|timeout/i.test(`${e.code} ${e.message}`)) parar(); });
+    micParar = parar;
+    await SR.setPTTState({ held: true }).catch(() => {});
+    await SR.start({ language: 'pt-BR', maxResults: 3, partialResults: true, popup: false, continuousPTT: true });
     return;
   }
   const W = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!W) throw new Error('Este navegador não tem reconhecimento de voz. Use o Chrome ou o app.');
   const r = new W();
-  r.lang = 'pt-BR'; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
-  r.onresult = (e) => { micTexto = [...e.results].map((x) => x[0].transcript).join(' '); micMostrar(null, micTexto); };
+  r.lang = 'pt-BR'; r.interimResults = true; r.continuous = true; r.maxAlternatives = 1;
+  const parar = () => { clearInterval(micSilencio); try { r.stop(); } catch {} };
+  const ouviu = vigiarSilencio(parar);
+  r.onresult = (e) => { const x = [...e.results].map((y) => y[0].transcript).join(' ').trim(); if (x && x !== micTexto) { micTexto = x; micMostrar(null, x); ouviu(); } };
   r.onerror = (e) => { if (e.error === 'not-allowed') micMostrar('Libere o microfone para usar.', ''); };
-  r.onend = () => micFim?.();
-  micParar = () => { try { r.stop(); } catch {} };
+  r.onend = () => { clearInterval(micSilencio); micFim?.(); };
+  micParar = parar;
   r.start();
 }
 const NOME_DESTINO = { notas25: 'Nota 25%', notas4050: 'Nota 40% e 50%', feitas: 'Nota feita' };
@@ -2618,7 +2652,7 @@ async function micAbrir() {
   let terminou = false;
   const acabou = new Promise((ok) => { micFim = () => { if (!terminou) { terminou = true; ok(); } }; });
   try { await micOuvir(); } catch (err) { micModo('erro'); micMostrar(err.message || 'Não deu para usar o microfone.', ''); return; }
-  const limite = setTimeout(() => micParar?.(), 25000);
+  const limite = setTimeout(() => micParar?.(), 60000);
   await acabou;
   clearTimeout(limite);
   if (!dlgMic.open) return; // cancelou
