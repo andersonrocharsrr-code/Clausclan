@@ -374,7 +374,7 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
       <button class="item__mover">↕ Mover para ${nome === 'notas25' ? '40% e 50%' : '25%'}</button></div>` : '') +
     (nome === 'parciais' ? `<span class="item__devendo">ficou devendo ${R$(item.devendo)}</span>` : '') +
     (nome === 'parciais' && modo === 'travada' ? `<div class="item__moverParc"><button type="button" class="item__moverAbrir">↕ Mover</button>
-      <span class="mover-ops" hidden><button type="button" class="mover-op" data-para="notas25">25%</button><button type="button" class="mover-op" data-para="notas4050">40% e 50%</button></span></div>` : '') +
+      <span class="mover-ops" hidden><button type="button" class="mover-op" data-para="notas25">25%</button><button type="button" class="mover-op" data-para="notas4050">40%</button></span></div>` : '') +
     (item.parcialPago ? `<p class="item__acr">Pago antes no parcial (${fmtDia(item.parcialDia)}): ${R$(item.parcialPago)}</p>` : '') +
     (acr.length ? `<p class="item__acr">Lançado em ${fmtDia(item.data || item.dia)} · ${acr.join(' · ')}</p>` : '') +
     (edita && (nome === 'feitas' || nome === 'antecipadas') && modo === 'editando' && (item.data || item.dia) && (item.data || item.dia) !== hoje()
@@ -540,7 +540,7 @@ function moverParcial(item, para) {
   st[para].push(nota);
   abrirLista(para);
   salvarAtual(); pintarLista('parciais'); pintarLista(para); pintarTotais();
-  oferecerDesfazer(`Movido para ${para === 'notas25' ? '25%' : '40% e 50%'} ✓`, () => {
+  oferecerDesfazer(`Movido para ${para === 'notas25' ? '25%' : '40%'} ✓`, () => {
     const i = st[para].indexOf(nota);
     if (i >= 0) st[para].splice(i, 1);
     st.parciais.splice(Math.min(pos, st.parciais.length), 0, item);
