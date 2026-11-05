@@ -417,3 +417,9 @@ body{overflow-x:clip}
 .mic-conf div span{color:var(--muted)}
 .mic-texto{font-size:14px;color:var(--muted)}
 .dlg-mic .row-actions{flex-wrap:wrap}
+.mic-botoes{display:flex;flex-direction:column;gap:8px}
+.mic-botoes .btn{width:100%;justify-content:center}
+.mic-botoes [hidden]{display:none}
+.mic-sessao{text-align:left;margin:0 0 10px;font-size:13px;color:var(--pos,#16a34a)}
+.mic-sessao p{margin:2px 0}
+.mic-sessao[hidden]{display:none}
