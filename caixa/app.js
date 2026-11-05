@@ -2456,3 +2456,136 @@ if (NATIVO) {
 }
 
 if (!NATIVO && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+
+/* ---------- microfone: falar a nota em vez de digitar ---------- */
+// "Francisca de Oliveira pagou 350, devolveu 200 em mercadoria, nos 25%" → abre a linha da nota já preenchida
+// (cliente, valor recebido, devolução) na faixa certa; falta só tocar em "✓ Lançar".
+// "40", "50" ou "comissão" vai para Notas 40% e 50%; "25" (ou nada) vai para Notas 25%.
+const NUM_PALAVRAS = { zero: 0, um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8, nove: 9,
+  dez: 10, onze: 11, doze: 12, treze: 13, quatorze: 14, catorze: 14, quinze: 15, dezesseis: 16, dezessete: 17, dezoito: 18, dezenove: 19,
+  vinte: 20, trinta: 30, quarenta: 40, cinquenta: 50, sessenta: 60, setenta: 70, oitenta: 80, noventa: 90,
+  cem: 100, cento: 100, duzentos: 200, duzentas: 200, trezentos: 300, trezentas: 300, quatrocentos: 400, quatrocentas: 400,
+  quinhentos: 500, quinhentas: 500, seiscentos: 600, seiscentas: 600, setecentos: 700, setecentas: 700,
+  oitocentos: 800, oitocentas: 800, novecentos: 900, novecentas: 900 };
+const semAcento = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '');
+// Números por extenso viram dígitos: "trezentos e cinquenta" → 350, "mil e duzentos" → 1200.
+function numerosPorExtenso(t) {
+  return t.replace(/\b(?:(?:zero|uma?|duas|dois|tres|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|quatorze|catorze|quinze|dezesseis|dezessete|dezoito|dezenove|vinte|trinta|quarenta|cinquenta|sessenta|setenta|oitenta|noventa|cem|cento|duzent[oa]s|trezent[oa]s|quatrocent[oa]s|quinhent[oa]s|seiscent[oa]s|setecent[oa]s|oitocent[oa]s|novecent[oa]s|mil)(?:\s+e\s+|\s+|$))+/g, (trecho) => {
+    let total = 0, atual = 0, achou = false;
+    for (const w of trecho.trim().split(/\s+/)) {
+      if (w === 'e') continue;
+      if (w === 'mil') { total += (atual || 1) * 1000; atual = 0; achou = true; continue; }
+      if (w in NUM_PALAVRAS) { atual += NUM_PALAVRAS[w]; achou = true; }
+    }
+    return achou ? `${total + atual} ` : trecho;
+  });
+}
+// Valor depois de uma palavra-chave: "pagou R$ 350", "pagou 350,50", "devolveu 1.200 reais".
+function valorDepois(t, chaves) {
+  const m = t.match(new RegExp(`\\b(?:${chaves})\\b[^0-9]{0,24}?(\\d[\\d.]*(?:,\\d{1,2})?)`));
+  if (!m) return 0;
+  let v = numero(m[1].replace(/\.(?=\d{3}\b)/g, ''));
+  const cent = t.slice(m.index + m[0].length).match(/^\s*(?:reais)?\s*e\s+(\d{1,2})\s*centavos?/);
+  if (cent) v += Number(cent[1]) / 100;
+  return arred(v);
+}
+function lerFalaNota(falado) {
+  let t = numerosPorExtenso(semAcento(String(falado).toLowerCase()).replace(/r\$\s*/g, ' ').replace(/[“”"]/g, ' ').replace(/\s+/g, ' '));
+  t = t.replace(/(\d)\s*por\s*cento/g, '$1%');
+  // Faixa: "nos 40%", "40, 50%", "nota 25", "comissão em mercadoria".
+  const FAIXA_4050 = /\b(?:(?:nos|nas|na|no|nota|notas|de)\s+)?(?:40|50)\s*%?(?:\s*(?:,|e|ou)?\s*(?:40|50)\s*%)?(?=\s|,|\.|$)/;
+  const marca4050 = /\b(?:40|50)\s*%|\b(?:nos|nas|na|no|nota|notas)\s+(?:40|50)\b|\b40\s*(?:,|e|ou)?\s*50\b|comiss/;
+  const lista = marca4050.test(t) ? 'notas4050' : 'notas25';
+  if (lista === 'notas4050') t = t.replace(FAIXA_4050, ' ');
+  t = t.replace(/\b(?:(?:nos|nas|na|no|nota|notas|de)\s+)?25\s*%?(?=\s|,|\.|$)/, ' ').replace(/comiss[a-z]*\s*(?:em|de)?\s*mercadorias?/g, ' ');
+  const valor = valorDepois(t, 'pagou|pago|paguei|recebi|recebido|recebeu|valor');
+  const devolucao = valorDepois(t, 'devolveu|devolvi|devolucao|devolvido|devolveram|devolve');
+  const antecipado = valorDepois(t, 'antecipado|antecipou|adiantado');
+  // Nome: o que vem antes de "pagou" (sem "nota", "cliente", "a/o" no começo).
+  const corte = t.search(/\b(?:pagou|pago|paguei|recebi|recebido|recebeu|devolveu|devolvi)\b/);
+  let nome = (corte > 0 ? t.slice(0, corte) : '')
+    .replace(/[.,;:!?%]/g, ' ').replace(/\b(?:nota|notas|nos|nas)\b/g, ' ')
+    .replace(/^\s*(?:a|o)?\s*(?:cliente|clienta)\s*/, ' ').replace(/^\s*(?:a|o)\s+/, ' ').replace(/\b\d+\b/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+  // Volta com os acentos do que foi falado e põe maiúscula nos nomes ("de", "da", "dos" ficam minúsculos).
+  const original = String(falado).split(/\s+/);
+  nome = nome.split(' ').filter(Boolean).map((w) => {
+    const o = original.find((x) => semAcento(x.toLowerCase()).replace(/[^a-z]/g, '') === w);
+    const p = (o || w).replace(/[.,;:!?]/g, '').toLowerCase();
+    return /^(de|da|do|das|dos|e)$/.test(p) ? p : p.charAt(0).toUpperCase() + p.slice(1);
+  }).join(' ');
+  return { lista, cliente: nome, valor, devolucao, antecipado };
+}
+
+const dlgMic = $('#dlgMic');
+let micTexto = '', micFim = null, micParar = null;
+function micMostrar(estado, texto) {
+  if (estado != null) $('#micEstado').textContent = estado;
+  if (texto != null) $('#micTexto').textContent = texto;
+}
+// Reconhecimento: no APK pelo plugin nativo (o WebView não tem); no navegador pelo do Chrome.
+async function micOuvir() {
+  micTexto = '';
+  if (NATIVO) {
+    const SR = plugin('SpeechRecognition');
+    const perm = await SR.requestPermissions().catch(() => null);
+    if (perm && perm.speechRecognition && perm.speechRecognition !== 'granted') throw new Error('Libere o microfone para o Caixa nas configurações do celular.');
+    const { available } = await SR.available().catch(() => ({ available: false }));
+    if (!available) throw new Error('Este celular não tem o reconhecimento de voz do Google.');
+    await SR.removeAllListeners().catch(() => {});
+    await SR.addListener('partialResults', (e) => { const x = e.accumulatedText || e.matches?.[0]; if (x) { micTexto = x; micMostrar(null, x); } });
+    await SR.addListener('listeningState', (e) => { if ((e.state || e.status) === 'stopped') micFim?.(); });
+    micParar = () => SR.stop().catch(() => {});
+    await SR.start({ language: 'pt-BR', maxResults: 3, partialResults: true, popup: false });
+    return;
+  }
+  const W = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!W) throw new Error('Este navegador não tem reconhecimento de voz. Use o Chrome ou o app.');
+  const r = new W();
+  r.lang = 'pt-BR'; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
+  r.onresult = (e) => { micTexto = [...e.results].map((x) => x[0].transcript).join(' '); micMostrar(null, micTexto); };
+  r.onerror = (e) => { if (e.error === 'not-allowed') micMostrar('Libere o microfone para usar.', ''); };
+  r.onend = () => micFim?.();
+  micParar = () => { try { r.stop(); } catch {} };
+  r.start();
+}
+async function micAbrir() {
+  micMostrar('Pode falar…', '');
+  $('#micDica').hidden = false;
+  dlgMic.classList.add('ouvindo');
+  if (!dlgMic.open) dlgMic.showModal();
+  let terminou = false;
+  const acabou = new Promise((ok) => { micFim = () => { if (!terminou) { terminou = true; ok(); } }; });
+  try { await micOuvir(); } catch (err) { dlgMic.classList.remove('ouvindo'); micMostrar(err.message || 'Não deu para usar o microfone.', ''); return; }
+  const limite = setTimeout(() => micParar?.(), 25000);
+  await acabou;
+  clearTimeout(limite);
+  dlgMic.classList.remove('ouvindo');
+  if (!dlgMic.open) return; // cancelou
+  const falado = micTexto.trim();
+  const x = falado ? lerFalaNota(falado) : null;
+  if (!x || !x.valor) {
+    micMostrar(falado ? 'Não entendi o valor. Toque em 🎤 e fale de novo.' : 'Não ouvi nada. Toque em 🎤 e fale de novo.', falado);
+    $('#micDica').hidden = false;
+    $('#micPronto').textContent = '🎤 Falar de novo';
+    return;
+  }
+  dlgMic.close();
+  const extra = { cliente: x.cliente, valor: x.valor };
+  if (x.devolucao) extra.devolucao = x.devolucao;
+  if (x.antecipado) extra.antecipado = x.antecipado;
+  document.activeElement?.blur(); // o diálogo devolve o foco ao 🎤 e isso atrapalharia a rolagem até a nota
+  if (abaAtual !== 'receb') abrirAba('receb');
+  await new Promise((ok) => setTimeout(ok, 60));
+  novaLinha(x.lista, extra);
+  toast(`${x.lista === 'notas25' ? 'Nota 25%' : 'Nota 40% e 50%'} preenchida. Confira e toque em ✓ Lançar.`);
+}
+$('#btnMic').addEventListener('click', (e) => { e.stopPropagation(); $('#micPronto').textContent = 'Pronto'; micAbrir(); });
+$('#micPronto').addEventListener('click', () => {
+  if (dlgMic.classList.contains('ouvindo')) { micParar?.(); return; }
+  $('#micPronto').textContent = 'Pronto';
+  micAbrir();
+});
+$('#micCancelar').addEventListener('click', () => { dlgMic.close(); micParar?.(); micFim?.(); });
+dlgMic.addEventListener('close', () => { if (dlgMic.classList.contains('ouvindo')) micParar?.(); });
+window.lerFalaNota = lerFalaNota; // para teste

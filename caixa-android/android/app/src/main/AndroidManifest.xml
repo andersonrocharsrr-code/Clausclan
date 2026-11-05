@@ -40,7 +40,14 @@
         <intent>
             <action android:name="android.media.action.IMAGE_CAPTURE" />
         </intent>
+        <!-- Microfone das notas: o app precisa "enxergar" o reconhecimento de voz do Google -->
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
     </queries>
+
+    <!-- Microfone: falar a nota (cliente, valor e devolução) em vez de digitar -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <!-- Câmera para tirar foto das notas e da folha de caixa -->
     <uses-permission android:name="android.permission.CAMERA" />
