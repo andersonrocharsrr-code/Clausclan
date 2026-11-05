@@ -128,6 +128,8 @@ function novo() {
 }
 
 const soma = (lista) => arred(lista.reduce((t, i) => t + (Number(i.valor) || 0), 0));
+// Nota que veio de um pepino parcial: o que a cliente já tinha pago no parcial (recebido no dia do parcial).
+const somaNotas = (lista) => arred(soma(lista) + lista.reduce((t, n) => t + numero(n.parcialPago), 0));
 
 // Fechamentos salvos antes de existirem campos novos ganham os valores padrão.
 function normalizar(s) {
@@ -195,8 +197,8 @@ const tipoDeposito = (s) => (semanaPagamento(s) ? 'empresa' : 'banco');
 function calcular(s = st) {
   const c = {};
   c.vPep5 = arred(s.foiCobrar * 0.05);
-  c.notas25 = soma(s.notas25);
-  c.notas4050 = soma(s.notas4050);
+  c.notas25 = somaNotas(s.notas25);
+  c.notas4050 = somaNotas(s.notas4050);
   c.extras = soma(s.extras);
   c.antecipados = soma(s.antecipadas || []);
   c.pepinoParcial = soma(s.parciais || []);
@@ -371,6 +373,9 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
     (nome.startsWith('notas') && modo === 'travada' ? `<div class="item__extra">${item.faixa ? `<span class="tag">${esc(item.faixa)}%</span>` : ''}
       <button class="item__mover">↕ Mover para ${nome === 'notas25' ? '40% e 50%' : '25%'}</button></div>` : '') +
     (nome === 'parciais' ? `<span class="item__devendo">ficou devendo ${R$(item.devendo)}</span>` : '') +
+    (nome === 'parciais' && modo === 'travada' ? `<div class="item__moverParc"><button type="button" class="item__moverAbrir">↕ Mover</button>
+      <span class="mover-ops" hidden><button type="button" class="mover-op" data-para="notas25">25%</button><button type="button" class="mover-op" data-para="notas4050">40% e 50%</button></span></div>` : '') +
+    (item.parcialPago ? `<p class="item__acr">Pago antes no parcial (${fmtDia(item.parcialDia)}): ${R$(item.parcialPago)}</p>` : '') +
     (acr.length ? `<p class="item__acr">Lançado em ${fmtDia(item.data || item.dia)} · ${acr.join(' · ')}</p>` : '') +
     (edita && (nome === 'feitas' || nome === 'antecipadas') && modo === 'editando' && (item.data || item.dia) && (item.data || item.dia) !== hoje()
       ? `<p class="item__dica">O valor que você acrescentar entra no relatório de hoje (${fmtDia(hoje())}).</p>` : '') +
@@ -499,6 +504,13 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
     st[outra].push({ ...item, faixa: outra === 'notas25' ? '25' : (item.faixa === '50' ? '50' : '40') });
     salvarAtual(); pintarLista(nome); pintarLista(outra); pintarTotais();
   });
+  // Parcial que a cliente terminou de pagar: vira nota paga de 25% ou de 40% e 50% sem precisar apagar e lançar de novo.
+  row.querySelector('.item__moverAbrir')?.addEventListener('click', (e) => {
+    const ops = row.querySelector('.mover-ops');
+    ops.hidden = !ops.hidden;
+    e.currentTarget.textContent = ops.hidden ? '↕ Mover' : 'Mover para:';
+  });
+  row.querySelectorAll('.mover-op').forEach((b) => b.addEventListener('click', () => moverParcial(item, b.dataset.para)));
   row.querySelector('.item__del')?.addEventListener('click', async () => {
     if (!(await perguntarRemover(descreverItem(nome, item)))) return;
     const pos = st[nome].indexOf(item);
@@ -512,6 +524,28 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
     });
   });
   return row;
+}
+
+// O que ela pagou agora (o que estava devendo) entra no recebido de hoje; o que já tinha pago no parcial
+// continua no dia do parcial. A nota sai das notas em branco pelo valor dela, como antes.
+function moverParcial(item, para) {
+  if (!(numero(item.valorNota) > 0)) { toast('Edite o parcial e coloque o valor da nota antes de mover.'); return; }
+  const pos = st.parciais.indexOf(item);
+  if (pos < 0) return;
+  const nota = { id: uid(), dia: hoje(), cliente: item.cliente || '', valor: arred(numero(item.devendo)),
+    devolucao: numero(item.devolucao), parcialPago: arred(numero(item.valor)), parcialDia: item.dia,
+    total: arred(numero(item.valorNota) - numero(item.devolucao)), deParcial: { ...item } };
+  if (para === 'notas4050') nota.faixa = '40';
+  st.parciais.splice(pos, 1);
+  st[para].push(nota);
+  abrirLista(para);
+  salvarAtual(); pintarLista('parciais'); pintarLista(para); pintarTotais();
+  oferecerDesfazer(`Movido para ${para === 'notas25' ? '25%' : '40% e 50%'} ✓`, () => {
+    const i = st[para].indexOf(nota);
+    if (i >= 0) st[para].splice(i, 1);
+    st.parciais.splice(Math.min(pos, st.parciais.length), 0, item);
+    salvarAtual(); pintarLista('parciais'); pintarLista(para); pintarTotais();
+  });
 }
 
 function pintarLista(nome) {
@@ -1726,7 +1760,7 @@ const qtdParcial = (x) => numero(x.qtd) || 1;
 // O que a cliente pagou antecipado também entra (recebido + antecipado = tudo o que ela pagou da nota).
 // As notas são sempre preço cheio (sem centavos): o valor é arredondado para o real inteiro.
 function valorDeFace(n, lista) {
-  const valor = (Number(n.valor) || 0) + (Number(n.antecipado) || 0);
+  const valor = (Number(n.valor) || 0) + (Number(n.antecipado) || 0) + (Number(n.parcialPago) || 0);
   const pago = lista === 'notas25' ? 0.75 : 1;
   const vendido = Number(n.total) > valor ? Number(n.total) : valor / pago; // TOTAL impresso, quando foi lido
   return Math.round(vendido + (Number(n.devolucao) || 0));
@@ -1811,9 +1845,13 @@ function relatorio(dia) {
   const parcAte = st.parciais.filter((x) => ate(x.dia));
   const parcPagoTotal = soma(parcAte);
   const parcQtd = (l) => l.reduce((t, x) => t + qtdParcial(x), 0);
+  // Notas que vieram de um parcial: o que foi pago no parcial conta no dia do parcial.
+  const doParcial = [...st.notas25, ...st.notas4050].filter((n) => numero(n.parcialPago) > 0);
+  const doParcialDia = doParcial.filter((n) => n.parcialDia === dia).reduce((t, n) => t + numero(n.parcialPago), 0);
+  const doParcialAte = doParcial.filter((n) => ate(n.parcialDia)).reduce((t, n) => t + numero(n.parcialPago), 0);
   const recebidoDia = arred(soma(n25) + soma(n4050) + pepDia.reduce((t, v) => t + v, 0)
-    + soma(antecDia) + soma(parcDia));
-  const recebidoTotal = arred(soma(pagas) + pepTotal.reduce((t, v) => t + v, 0) + antecTotalValor + parcPagoTotal);
+    + soma(antecDia) + soma(parcDia) + doParcialDia);
+  const recebidoTotal = arred(soma(pagas) + pepTotal.reduce((t, v) => t + v, 0) + antecTotalValor + parcPagoTotal + doParcialAte);
   const { qt: emBrancoQt, valor: emBrancoValor } = notasEmBranco(ate);
   const depDia = st.depositos.filter((d) => d.data === dia);
   const depAte = st.depositos.filter((d) => ate(d.data));
