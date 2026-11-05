@@ -374,7 +374,7 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
       <button class="item__mover">↕ Mover para ${nome === 'notas25' ? '40% e 50%' : '25%'}</button></div>` : '') +
     (nome === 'parciais' ? `<span class="item__devendo">ficou devendo ${R$(item.devendo)}</span>` : '') +
     (nome === 'parciais' && modo === 'travada' ? `<div class="item__moverParc"><button type="button" class="item__moverAbrir">↕ Mover</button>
-      <span class="mover-ops" hidden><button type="button" class="mover-op" data-para="notas25">25%</button><button type="button" class="mover-op" data-para="notas4050">40% e 50%</button></span></div>` : '') +
+      <span class="mover-ops" hidden><button type="button" class="mover-op" data-para="notas25">25%</button><button type="button" class="mover-op" data-para="notas4050">40%</button></span></div>` : '') +
     (item.parcialPago ? `<p class="item__acr">Pago antes no parcial (${fmtDia(item.parcialDia)}): ${R$(item.parcialPago)}</p>` : '') +
     (acr.length ? `<p class="item__acr">Lançado em ${fmtDia(item.data || item.dia)} · ${acr.join(' · ')}</p>` : '') +
     (edita && (nome === 'feitas' || nome === 'antecipadas') && modo === 'editando' && (item.data || item.dia) && (item.data || item.dia) !== hoje()
@@ -540,7 +540,7 @@ function moverParcial(item, para) {
   st[para].push(nota);
   abrirLista(para);
   salvarAtual(); pintarLista('parciais'); pintarLista(para); pintarTotais();
-  oferecerDesfazer(`Movido para ${para === 'notas25' ? '25%' : '40% e 50%'} ✓`, () => {
+  oferecerDesfazer(`Movido para ${para === 'notas25' ? '25%' : '40%'} ✓`, () => {
     const i = st[para].indexOf(nota);
     if (i >= 0) st[para].splice(i, 1);
     st.parciais.splice(Math.min(pos, st.parciais.length), 0, item);
@@ -779,7 +779,7 @@ function perguntarNovaNota(cliente = '') {
   dlg.onclose = () => {
     if (dlg.returnValue !== 'sim') return;
     if (abaAtual !== 'receb') abrirAba('receb');
-    novaLinha('feitas', { cliente }); // já vem com o nome do cliente da nota quitada
+    novaLinha('feitas', { cliente, tipo: 'rp', ab: 0, rp: 1 }); // nome da cliente e reposição (ela acabou de pagar)
   };
   dlg.showModal();
 }
@@ -2456,3 +2456,185 @@ if (NATIVO) {
 }
 
 if (!NATIVO && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+
+/* ---------- microfone: falar a nota em vez de digitar ---------- */
+// "Francisca de Oliveira pagou 350, devolveu 200 em mercadoria, nos 25%" → abre a linha da nota já preenchida
+// (cliente, valor recebido, devolução) na faixa certa; falta só tocar em "✓ Lançar".
+// "40", "50" ou "comissão" vai para Notas 40% e 50%; "25" (ou nada) vai para Notas 25%.
+const NUM_PALAVRAS = { zero: 0, um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8, nove: 9,
+  dez: 10, onze: 11, doze: 12, treze: 13, quatorze: 14, catorze: 14, quinze: 15, dezesseis: 16, dezessete: 17, dezoito: 18, dezenove: 19,
+  vinte: 20, trinta: 30, quarenta: 40, cinquenta: 50, sessenta: 60, setenta: 70, oitenta: 80, noventa: 90,
+  cem: 100, cento: 100, duzentos: 200, duzentas: 200, trezentos: 300, trezentas: 300, quatrocentos: 400, quatrocentas: 400,
+  quinhentos: 500, quinhentas: 500, seiscentos: 600, seiscentas: 600, setecentos: 700, setecentas: 700,
+  oitocentos: 800, oitocentas: 800, novecentos: 900, novecentas: 900 };
+const semAcento = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '');
+// Números por extenso viram dígitos: "trezentos e cinquenta" → 350, "mil e duzentos" → 1200.
+function numerosPorExtenso(t) {
+  return t.replace(/\b(?:(?:zero|uma?|duas|dois|tres|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|quatorze|catorze|quinze|dezesseis|dezessete|dezoito|dezenove|vinte|trinta|quarenta|cinquenta|sessenta|setenta|oitenta|noventa|cem|cento|duzent[oa]s|trezent[oa]s|quatrocent[oa]s|quinhent[oa]s|seiscent[oa]s|setecent[oa]s|oitocent[oa]s|novecent[oa]s|mil)(?:\s+e\s+|\s+|$))+/g, (trecho) => {
+    let total = 0, atual = 0, achou = false;
+    for (const w of trecho.trim().split(/\s+/)) {
+      if (w === 'e') continue;
+      if (w === 'mil') { total += (atual || 1) * 1000; atual = 0; achou = true; continue; }
+      if (w in NUM_PALAVRAS) { atual += NUM_PALAVRAS[w]; achou = true; }
+    }
+    return achou ? `${total + atual} ` : trecho;
+  });
+}
+// Valor depois de uma palavra-chave: "pagou R$ 350", "pagou 350,50", "devolveu 1.200 reais".
+function valorDepois(t, chaves) {
+  const m = t.match(new RegExp(`\\b(?:${chaves})\\b[^0-9]{0,24}?(\\d[\\d.]*(?:,\\d{1,2})?)`));
+  if (!m) return 0;
+  let v = numero(m[1].replace(/\.(?=\d{3}\b)/g, ''));
+  const cent = t.slice(m.index + m[0].length).match(/^\s*(?:reais)?\s*e\s+(\d{1,2})\s*centavos?/);
+  if (cent) v += Number(cent[1]) / 100;
+  return arred(v);
+}
+// Nome falado → com acentos do que foi dito e maiúscula nos nomes ("de", "da", "dos" ficam minúsculos).
+function nomeFalado(trecho, falado) {
+  const original = String(falado).split(/\s+/);
+  return trecho.replace(/[.,;:!?%]/g, ' ').replace(/\b\d+\b/g, ' ').replace(/\s+/g, ' ').trim()
+    .split(' ').filter(Boolean).map((w) => {
+      const o = original.find((x) => semAcento(x.toLowerCase()).replace(/[^a-z]/g, '') === w);
+      const p = (o || w).replace(/[.,;:!?]/g, '').toLowerCase();
+      return /^(de|da|do|das|dos|e)$/.test(p) ? p : p.charAt(0).toUpperCase() + p.slice(1);
+    }).join(' ');
+}
+const mesmoNome = (a, b) => { const x = semAcento(String(a || '').toLowerCase()).trim(), y = semAcento(String(b || '').toLowerCase()).trim(); return !!x && !!y && (x === y || x.startsWith(y + ' ') || y.startsWith(x + ' ')); };
+// A cliente já pagou nota nesta semana? Então a nota feita para ela é reposição; se não, é abertura.
+const clientePagou = (nome) => [...st.notas25, ...st.notas4050].some((n) => mesmoNome(n.cliente, nome));
+
+// Lê o que foi falado. Com "pagou"/"devolveu" é nota paga (25% ou 40/50%); só nome e valor é nota feita.
+function lerFalaNota(falado) {
+  let t = numerosPorExtenso(semAcento(String(falado).toLowerCase()).replace(/r\$\s*/g, ' ').replace(/[“”"]/g, ' ').replace(/\s+/g, ' '));
+  t = t.replace(/(\d)\s*por\s*cento/g, '$1%');
+  const paga = /\b(?:pagou|pago|paguei|recebi|recebido|recebeu|devolveu|devolvi|devolucao|devolvido|quitou)\b/.test(t);
+  if (!paga) {
+    // Nota feita: "Francisca de Oliveira, reposição de 1.385" ou só "Francisca de Oliveira, 1.385".
+    let tipo = /\breposic|\brepos\b/.test(t) ? 'rp' : /\babertura\b/.test(t) ? 'ab' : '';
+    const m = t.match(/(\d[\d.]*(?:,\d{1,2})?)/);
+    const valor = m ? arred(numero(m[1].replace(/\.(?=\d{3}\b)/g, ''))) : 0;
+    const nomeTxt = (m ? t.slice(0, m.index) : t)
+      .replace(/\b(?:nota|notas|feita|feitas|fazer|fez|nova|de|em|no|na|valor|reais|uma|um)\b(?=\s*$)/g, ' ')
+      .replace(/\b(?:reposicao|reposicoes|abertura|nota feita|fazer nota|fez nota|nova nota)\b/g, ' ')
+      .replace(/^\s*(?:a|o)?\s*(?:cliente|clienta)\s*/, ' ').replace(/^\s*(?:a|o|de|da|do|das|dos)\s+/, ' ')
+      .replace(/\s+(?:de|em|no|na|valor|com)\s*$/, ' ');
+    const cliente = nomeFalado(nomeTxt.replace(/\s+(?:de|em|no|na|valor|com)\s*$/, ''), falado);
+    if (!tipo) tipo = cliente && clientePagou(cliente) ? 'rp' : 'ab';
+    return { lista: 'feitas', cliente, valor, tipo };
+  }
+  // Faixa: "nos 40%", "40, 50%", "nota 25", "comissão em mercadoria".
+  const FAIXA_4050 = /\b(?:(?:nos|nas|na|no|nota|notas|de)\s+)?(?:40|50)\s*%?(?:\s*(?:,|e|ou)?\s*(?:40|50)\s*%)?(?=\s|,|\.|$)/;
+  const marca4050 = /\b(?:40|50)\s*%|\b(?:nos|nas|na|no|nota|notas)\s+(?:40|50)\b|\b40\s*(?:,|e|ou)?\s*50\b|comiss/;
+  const lista = marca4050.test(t) ? 'notas4050' : 'notas25';
+  if (lista === 'notas4050') t = t.replace(FAIXA_4050, ' ');
+  t = t.replace(/\b(?:(?:nos|nas|na|no|nota|notas|de)\s+)?25\s*%?(?=\s|,|\.|$)/, ' ').replace(/comiss[a-z]*\s*(?:em|de)?\s*mercadorias?/g, ' ');
+  const valor = valorDepois(t, 'pagou|pago|paguei|recebi|recebido|recebeu|valor|quitou');
+  const devolucao = valorDepois(t, 'devolveu|devolvi|devolucao|devolvido|devolveram|devolve');
+  const antecipado = valorDepois(t, 'antecipado|antecipou|adiantado');
+  // Nome: o que vem antes de "pagou" (sem "nota", "cliente", "a/o" no começo).
+  const corte = t.search(/\b(?:pagou|pago|paguei|recebi|recebido|recebeu|devolveu|devolvi|quitou)\b/);
+  const nomeTxt = (corte > 0 ? t.slice(0, corte) : '')
+    .replace(/[.,;:!?%]/g, ' ').replace(/\b(?:nota|notas|nos|nas)\b/g, ' ')
+    .replace(/^\s*(?:a|o)?\s*(?:cliente|clienta)\s*/, ' ').replace(/^\s*(?:a|o)\s+/, ' ');
+  return { lista, cliente: nomeFalado(nomeTxt, falado), valor, devolucao, antecipado };
+}
+
+const dlgMic = $('#dlgMic');
+let micTexto = '', micFim = null, micParar = null, micLido = null;
+function micMostrar(estado, texto) {
+  if (estado != null) $('#micEstado').textContent = estado;
+  if (texto != null) $('#micTexto').textContent = texto;
+}
+// Reconhecimento: no APK pelo plugin nativo (o WebView não tem); no navegador pelo do Chrome.
+async function micOuvir() {
+  micTexto = '';
+  if (NATIVO) {
+    const SR = plugin('SpeechRecognition');
+    const perm = await SR.requestPermissions().catch(() => null);
+    if (perm && perm.speechRecognition && perm.speechRecognition !== 'granted') throw new Error('Libere o microfone para o Caixa nas configurações do celular.');
+    const { available } = await SR.available().catch(() => ({ available: false }));
+    if (!available) throw new Error('Este celular não tem o reconhecimento de voz do Google.');
+    await SR.removeAllListeners().catch(() => {});
+    await SR.addListener('partialResults', (e) => { const x = e.accumulatedText || e.matches?.[0]; if (x) { micTexto = x; micMostrar(null, x); } });
+    await SR.addListener('listeningState', (e) => { if ((e.state || e.status) === 'stopped') micFim?.(); });
+    micParar = () => SR.stop().catch(() => {});
+    await SR.start({ language: 'pt-BR', maxResults: 3, partialResults: true, popup: false });
+    return;
+  }
+  const W = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!W) throw new Error('Este navegador não tem reconhecimento de voz. Use o Chrome ou o app.');
+  const r = new W();
+  r.lang = 'pt-BR'; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
+  r.onresult = (e) => { micTexto = [...e.results].map((x) => x[0].transcript).join(' '); micMostrar(null, micTexto); };
+  r.onerror = (e) => { if (e.error === 'not-allowed') micMostrar('Libere o microfone para usar.', ''); };
+  r.onend = () => micFim?.();
+  micParar = () => { try { r.stop(); } catch {} };
+  r.start();
+}
+const NOME_DESTINO = { notas25: 'Nota 25%', notas4050: 'Nota 40% e 50%', feitas: 'Nota feita' };
+// Conferência: o que vai em cada campo, antes de preencher.
+function micConferencia(x) {
+  const lin = (r, v) => `<div><span>${r}</span><b>${v}</b></div>`;
+  const campos = x.lista === 'feitas'
+    ? [lin('Cliente', esc(x.cliente) || '<i>sem nome</i>'), lin('Nota', x.tipo === 'rp' ? 'Rp (reposição)' : 'Ab (abertura)'), lin('Valor', R$(x.valor))]
+    : [lin('Cliente', esc(x.cliente) || '<i>sem nome</i>'), lin('Valor recebido', R$(x.valor)), lin('Devolução', R$(x.devolucao || 0)),
+      ...(x.antecipado ? [lin('Antecipado', R$(x.antecipado))] : [])];
+  $('#micConf').innerHTML = `<p class="mic-conf__tit">${NOME_DESTINO[x.lista]}</p>${campos.join('')}`;
+  $('#micConf').hidden = false;
+}
+function micModo(modo) { // 'ouvindo' | 'conferir' | 'erro'
+  dlgMic.classList.toggle('ouvindo', modo === 'ouvindo');
+  $('#micDica').hidden = modo === 'conferir';
+  if (modo !== 'conferir') $('#micConf').hidden = true;
+  $('#micPronto').textContent = modo === 'ouvindo' ? 'Parar' : modo === 'conferir' ? '✓ Pronto' : '🎤 Falar de novo';
+  $('#micDeNovo').hidden = modo !== 'conferir';
+}
+async function micAbrir() {
+  micLido = null;
+  micMostrar('Pode falar…', '');
+  micModo('ouvindo');
+  if (!dlgMic.open) dlgMic.showModal();
+  let terminou = false;
+  const acabou = new Promise((ok) => { micFim = () => { if (!terminou) { terminou = true; ok(); } }; });
+  try { await micOuvir(); } catch (err) { micModo('erro'); micMostrar(err.message || 'Não deu para usar o microfone.', ''); return; }
+  const limite = setTimeout(() => micParar?.(), 25000);
+  await acabou;
+  clearTimeout(limite);
+  if (!dlgMic.open) return; // cancelou
+  const falado = micTexto.trim();
+  const x = falado ? lerFalaNota(falado) : null;
+  if (!x || !x.valor) {
+    micModo('erro');
+    micMostrar(falado ? 'Não entendi o valor. Fale de novo.' : 'Não ouvi nada. Fale de novo.', falado);
+    return;
+  }
+  // Mostra o que entendeu e só preenche quando tocar em "Pronto".
+  micLido = x;
+  micModo('conferir');
+  micMostrar('Confira:', `“${falado}”`);
+  micConferencia(x);
+}
+async function micPreencher(x) {
+  dlgMic.close();
+  document.activeElement?.blur(); // o diálogo devolve o foco ao 🎤 e isso atrapalharia a rolagem até a nota
+  if (abaAtual !== 'receb') abrirAba('receb');
+  await new Promise((ok) => setTimeout(ok, 60));
+  if (x.lista === 'feitas') novaLinha('feitas', { cliente: x.cliente, tipo: x.tipo, ab: x.tipo === 'ab' ? 1 : 0, rp: x.tipo === 'rp' ? 1 : 0, valor: x.valor });
+  else {
+    const extra = { cliente: x.cliente, valor: x.valor };
+    if (x.devolucao) extra.devolucao = x.devolucao;
+    if (x.antecipado) extra.antecipado = x.antecipado;
+    novaLinha(x.lista, extra);
+  }
+  toast(`${NOME_DESTINO[x.lista]} preenchida. Toque em ✓ Lançar.`);
+}
+$('#btnMic').addEventListener('click', (e) => { e.stopPropagation(); micAbrir(); });
+$('#micPronto').addEventListener('click', () => {
+  if (dlgMic.classList.contains('ouvindo')) { micParar?.(); return; }
+  if (micLido) { micPreencher(micLido); return; }
+  micAbrir();
+});
+$('#micDeNovo').addEventListener('click', () => micAbrir());
+$('#micCancelar').addEventListener('click', () => { dlgMic.close(); micParar?.(); micFim?.(); });
+dlgMic.addEventListener('close', () => { if (dlgMic.classList.contains('ouvindo')) micParar?.(); });
+window.lerFalaNota = lerFalaNota; // para teste
