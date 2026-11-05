@@ -2470,6 +2470,7 @@ const NUM_PALAVRAS = { zero: 0, um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro
 const semAcento = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '');
 // Números por extenso viram dígitos: "trezentos e cinquenta" → 350, "mil e duzentos" → 1200.
 function numerosPorExtenso(t) {
+  t = t.replace(/\b(\d+)\s+mil(?:\s+e\s+(\d{1,3}))?\b/g, (_, a, b) => String(Number(a) * 1000 + Number(b || 0)));
   return t.replace(/\b(?:(?:zero|uma?|duas|dois|tres|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|quatorze|catorze|quinze|dezesseis|dezessete|dezoito|dezenove|vinte|trinta|quarenta|cinquenta|sessenta|setenta|oitenta|noventa|cem|cento|duzent[oa]s|trezent[oa]s|quatrocent[oa]s|quinhent[oa]s|seiscent[oa]s|setecent[oa]s|oitocent[oa]s|novecent[oa]s|mil)(?:\s+e\s+|\s+|$))+/g, (trecho) => {
     let total = 0, atual = 0, achou = false;
     for (const w of trecho.trim().split(/\s+/)) {
@@ -2491,14 +2492,29 @@ function valorDepois(t, chaves) {
   return arred(v);
 }
 // Nome falado → com acentos do que foi dito e maiúscula nos nomes ("de", "da", "dos" ficam minúsculos).
+// Palavras que não são nome de gente: verbos, "mercadoria", "reais", "nota"… nunca vão para o nome da cliente.
+const NAO_NOME = new Set(('pegou pegar pega pego peguei levou levar leva levei ficou ficar fica com tirou tirar tira comprou comprar compra '
+  + 'fez fazer faz deixou deixei deixar deixa recebeu recebi receber recebe pagou pago paguei pagar paga quitou devolveu devolvi devolucao '
+  + 'devolvido quer queria vai foi tem teve mais menos outra outro nova novo mercadoria mercadorias produto produtos roupa roupas peca pecas '
+  + 'reais real centavos valor total nota notas feita feitas reposicao abertura cliente clienta senhora senhor dona seu sua ela ele '
+  + 'em no na nos nas um uma uns umas o a os as que pra para por ai entao agora hoje ontem amanha tambem so de novo mil '
+  + 'antecipado antecipou adiantado comissao porcento por cento').split(' '));
+const LIGA_NOME = /^(de|da|do|das|dos|e)$/;
 function nomeFalado(trecho, falado) {
   const original = String(falado).split(/\s+/);
-  return trecho.replace(/[.,;:!?%]/g, ' ').replace(/\b\d+\b/g, ' ').replace(/\s+/g, ' ').trim()
-    .split(' ').filter(Boolean).map((w) => {
-      const o = original.find((x) => semAcento(x.toLowerCase()).replace(/[^a-z]/g, '') === w);
-      const p = (o || w).replace(/[.,;:!?]/g, '').toLowerCase();
-      return /^(de|da|do|das|dos|e)$/.test(p) ? p : p.charAt(0).toUpperCase() + p.slice(1);
-    }).join(' ');
+  let ws = trecho.replace(/[.,;:!?%]/g, ' ').replace(/\b\d+\b/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+  // Palavras soltas antes do nome ("a cliente", "nota da") saem; depois, só nome e sobrenome: corta na primeira
+  // palavra que não é nome ("Fernando pegou…" → "Fernando").
+  while (ws.length && (NAO_NOME.has(ws[0]) || LIGA_NOME.test(ws[0]))) ws.shift();
+  const corte = ws.findIndex((w) => NAO_NOME.has(w) && !LIGA_NOME.test(w));
+  if (corte >= 0) ws = ws.slice(0, corte);
+  while (ws.length && LIGA_NOME.test(ws[0])) ws.shift(); // "de", "da" sozinhos no começo ou no fim não são nome
+  while (ws.length && LIGA_NOME.test(ws[ws.length - 1])) ws.pop();
+  return ws.map((w) => {
+    const o = original.find((x) => semAcento(x.toLowerCase()).replace(/[^a-z]/g, '') === w);
+    const p = (o || w).replace(/[.,;:!?]/g, '').toLowerCase();
+    return LIGA_NOME.test(p) ? p : p.charAt(0).toUpperCase() + p.slice(1);
+  }).join(' ');
 }
 const mesmoNome = (a, b) => { const x = semAcento(String(a || '').toLowerCase()).trim(), y = semAcento(String(b || '').toLowerCase()).trim(); return !!x && !!y && (x === y || x.startsWith(y + ' ') || y.startsWith(x + ' ')); };
 // A cliente já pagou nota nesta semana? Então a nota feita para ela é reposição; se não, é abertura.
