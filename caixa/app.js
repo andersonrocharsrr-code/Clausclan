@@ -2748,7 +2748,7 @@ function micLancar() {
   const ult = itens[itens.length - 1];
   if (ult.lista !== 'feitas') setTimeout(() => perguntarNovaNota(ult.cliente), 3200);
 }
-$('#btnMic').addEventListener('click', (e) => { e.stopPropagation(); micSessao = []; micAbrir(); });
+$('#btnMic').addEventListener('click', (e) => { e.stopPropagation(); e.currentTarget.blur(); micSessao = []; micAbrir(); });
 $('#micParar').addEventListener('click', () => micParar?.());
 // "✓ Correto": guarda esta nota e já escuta a próxima (ex.: a reposição que ela pegou).
 $('#micCorreto').addEventListener('click', () => { if (micLido) micSessao.push(micLido); micLido = null; micAbrir(); });
@@ -2756,5 +2756,7 @@ $('#micPronto').addEventListener('click', () => micLancar());
 $('#micDeNovo').addEventListener('click', () => micAbrir());
 $('#micCancelar').addEventListener('click', () => { micSessao = []; micLido = null; micParar?.(); micVez++; clearInterval(micSilencio); dlgMic.close(); });
 // Fechou a janela (botão voltar do celular) com o microfone ligado: desliga.
-dlgMic.addEventListener('close', () => { if (dlgMic.classList.contains('ouvindo')) { micParar?.(); micVez++; clearInterval(micSilencio); dlgMic.classList.remove('ouvindo'); } });
+dlgMic.addEventListener('close', () => {
+  setTimeout(() => $('#btnMic').blur(), 0); // o diálogo devolve o foco ao 🎤: tira para não ficar marcado
+  if (dlgMic.classList.contains('ouvindo')) { micParar?.(); micVez++; clearInterval(micSilencio); dlgMic.classList.remove('ouvindo'); } });
 window.lerFalaNota = lerFalaNota; // para teste

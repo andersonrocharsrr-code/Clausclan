@@ -1,6 +1,6 @@
 /* Service worker: abre o app sem internet (a leitura por foto precisa de conexão). */
-const CACHE = 'caixa-v115';
-const FILES = ['./', 'index.html', 'style.css?v=76', 'app.js?v=102', 'folha.js?v=12', 'leitor.js?v=21', 'vendor/nacl-fast.min.js?v=1', 'licenca-config.js?v=2', 'versao-app.js?v=1', 'fonts/caveat-600.woff2', 'vendor/anthropic.js', 'icon.svg', 'manifest.webmanifest'];
+const CACHE = 'caixa-v116';
+const FILES = ['./', 'index.html', 'style.css?v=77', 'app.js?v=103', 'folha.js?v=12', 'leitor.js?v=21', 'vendor/nacl-fast.min.js?v=1', 'licenca-config.js?v=2', 'versao-app.js?v=1', 'fonts/caveat-600.woff2', 'vendor/anthropic.js', 'icon.svg', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
