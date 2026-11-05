@@ -2482,7 +2482,8 @@ function numerosPorExtenso(t) {
 }
 // Valor depois de uma palavra-chave: "pagou R$ 350", "pagou 350,50", "devolveu 1.200 reais".
 function valorDepois(t, chaves) {
-  const m = t.match(new RegExp(`\\b(?:${chaves})\\b[^0-9]{0,24}?(\\d[\\d.]*(?:,\\d{1,2})?)`));
+  // Entre a palavra e o número não pode ter outra palavra-chave ("não devolveu, pagou 350" não é devolução de 350).
+  const m = t.match(new RegExp(`\\b(?:${chaves})\\b(?:(?!pag|receb|devol|antecip|adiant|quit)[^0-9]){0,24}?(\\d[\\d.]*(?:,\\d{1,2})?)`));
   if (!m) return 0;
   let v = numero(m[1].replace(/\.(?=\d{3}\b)/g, ''));
   const cent = t.slice(m.index + m[0].length).match(/^\s*(?:reais)?\s*e\s+(\d{1,2})\s*centavos?/);
@@ -2507,6 +2508,9 @@ const clientePagou = (nome) => [...st.notas25, ...st.notas4050].some((n) => mesm
 function lerFalaNota(falado) {
   let t = numerosPorExtenso(semAcento(String(falado).toLowerCase()).replace(/r\$\s*/g, ' ').replace(/[“”"]/g, ' ').replace(/\s+/g, ' '));
   t = t.replace(/(\d)\s*por\s*cento/g, '$1%');
+  // "não devolveu (nada)", "sem devolução", "devolveu nada" = devolução zero.
+  t = t.replace(/\b(?:nao|sem)\s+(?:devolveu|devolvi|devolucao|devolveram|teve devolucao)(?:\s+nada)?\b/g, ' devolucao 0 ')
+    .replace(/\b(devolveu|devolvi|devolucao)\s+nada\b/g, '$1 0');
   const paga = /\b(?:pagou|pago|paguei|recebi|recebido|recebeu|devolveu|devolvi|devolucao|devolvido|quitou)\b/.test(t);
   if (!paga) {
     // Nota feita: "Francisca de Oliveira, reposição de 1.385" ou só "Francisca de Oliveira, 1.385".
@@ -2532,7 +2536,7 @@ function lerFalaNota(falado) {
   const devolucao = valorDepois(t, 'devolveu|devolvi|devolucao|devolvido|devolveram|devolve');
   const antecipado = valorDepois(t, 'antecipado|antecipou|adiantado');
   // Nome: o que vem antes de "pagou" (sem "nota", "cliente", "a/o" no começo).
-  const corte = t.search(/\b(?:pagou|pago|paguei|recebi|recebido|recebeu|devolveu|devolvi|quitou)\b/);
+  const corte = t.search(/\b(?:pagou|pago|paguei|recebi|recebido|recebeu|devolveu|devolvi|devolucao|devolvido|quitou)\b/);
   const nomeTxt = (corte > 0 ? t.slice(0, corte) : '')
     .replace(/[.,;:!?%]/g, ' ').replace(/\b(?:nota|notas|nos|nas)\b/g, ' ')
     .replace(/^\s*(?:a|o)?\s*(?:cliente|clienta)\s*/, ' ').replace(/^\s*(?:a|o)\s+/, ' ');
