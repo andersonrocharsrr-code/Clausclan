@@ -2471,14 +2471,21 @@ const semAcento = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '');
 // Números por extenso viram dígitos: "trezentos e cinquenta" → 350, "mil e duzentos" → 1200.
 function numerosPorExtenso(t) {
   t = t.replace(/\b(\d+)\s+mil(?:\s+e\s+(\d{1,3}))?\b/g, (_, a, b) => String(Number(a) * 1000 + Number(b || 0)));
-  return t.replace(/\b(?:(?:zero|uma?|duas|dois|tres|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|quatorze|catorze|quinze|dezesseis|dezessete|dezoito|dezenove|vinte|trinta|quarenta|cinquenta|sessenta|setenta|oitenta|noventa|cem|cento|duzent[oa]s|trezent[oa]s|quatrocent[oa]s|quinhent[oa]s|seiscent[oa]s|setecent[oa]s|oitocent[oa]s|novecent[oa]s|mil)(?:\s+e\s+|\s+|$))+/g, (trecho) => {
-    let total = 0, atual = 0, achou = false;
-    for (const w of trecho.trim().split(/\s+/)) {
-      if (w === 'e') continue;
-      if (w === 'mil') { total += (atual || 1) * 1000; atual = 0; achou = true; continue; }
-      if (w in NUM_PALAVRAS) { atual += NUM_PALAVRAS[w]; achou = true; }
+  return t.replace(/\b(?:(?:zero|uma?|duas|dois|tres|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|quatorze|catorze|quinze|dezesseis|dezessete|dezoito|dezenove|vinte|trinta|quarenta|cinquenta|sessenta|setenta|oitenta|noventa|cem|cento|duzent[oa]s|trezent[oa]s|quatrocent[oa]s|quinhent[oa]s|seiscent[oa]s|setecent[oa]s|oitocent[oa]s|novecent[oa]s|mil)(?:[\s,]+e\s+|[\s,]+|(?=%)|$))+/g, (trecho) => {
+    // Em português as partes de um número vêm ligadas por "e" ("quinhentos e vinte e cinco"); sem o "e"
+    // ("quinhentos, vinte e cinco por cento") são dois números: 500 e 25.
+    const saida = [];
+    let total = 0, atual = 0, achou = false, ligado = true;
+    const fechar = () => { if (achou) saida.push(String(total + atual)); total = 0; atual = 0; achou = false; };
+    for (const w of trecho.replace(/,/g, ' ').trim().split(/\s+/)) {
+      if (w === 'e') { ligado = true; continue; }
+      if (w === 'mil') { total += (atual || 1) * 1000; atual = 0; achou = true; ligado = true; continue; }
+      if (!(w in NUM_PALAVRAS)) continue;
+      if (achou && !ligado) fechar();
+      atual += NUM_PALAVRAS[w]; achou = true; ligado = false;
     }
-    return achou ? `${total + atual} ` : trecho;
+    fechar();
+    return saida.length ? `${saida.join(' ')} ` : trecho;
   });
 }
 // Valor depois de uma palavra-chave: "pagou R$ 350", "pagou 350,50", "devolveu 1.200 reais".
@@ -2523,12 +2530,15 @@ const clientePagou = (nome) => [...st.notas25, ...st.notas4050, ...micSessao.fil
 
 // Lê o que foi falado. Com "pagou"/"devolveu" é nota paga (25% ou 40/50%); só nome e valor é nota feita.
 function lerFalaNota(falado) {
-  let t = numerosPorExtenso(semAcento(String(falado).toLowerCase()).replace(/r\$\s*/g, ' ').replace(/[“”"]/g, ' ').replace(/\s+/g, ' '));
+  // "por cento" vira % antes de ler os números (senão o "cento" virava 100).
+  let t = numerosPorExtenso(semAcento(String(falado).toLowerCase()).replace(/r\$\s*/g, ' ').replace(/[“”"]/g, ' ').replace(/\s*por\s*cento\b/g, '%').replace(/\s+/g, ' '));
   t = t.replace(/(\d)\s*por\s*cento/g, '$1%');
   // "não devolveu (nada)", "sem devolução", "devolveu nada" = devolução zero.
   t = t.replace(/\b(?:nao|sem)\s+(?:devolveu|devolvi|devolucao|devolveram|teve devolucao)(?:\s+nada)?\b/g, ' devolucao 0 ')
     .replace(/\b(devolveu|devolvi|devolucao)\s+nada\b/g, '$1 0');
-  const paga = /\b(?:pagou|pago|paguei|recebi|recebido|recebeu|devolveu|devolvi|devolucao|devolvido|quitou)\b/.test(t);
+  // Nota paga: falou "pagou/recebido/devolveu" ou falou a faixa ("Raimunda, 500, 25%" = nota de 25% com 500 recebidos).
+  const FALOU_FAIXA = /\b(?:25|40|50)\s*%|\bnos\s+(?:25|40|50)\b|\b40\s*(?:,|e|ou)?\s*50\b|comiss/;
+  const paga = /\b(?:pagou|pago|paguei|recebi|recebido|recebeu|devolveu|devolvi|devolucao|devolvido|quitou)\b/.test(t) || FALOU_FAIXA.test(t);
   if (!paga) {
     // Nota feita: "Francisca de Oliveira, reposição de 1.385" ou só "Francisca de Oliveira, 1.385".
     let tipo = /\breposic|\brepos\b/.test(t) ? 'rp' : /\babertura\b/.test(t) ? 'ab' : '';
@@ -2545,17 +2555,23 @@ function lerFalaNota(falado) {
     return { lista: 'feitas', cliente, valor, tipo, tipoFalado };
   }
   // Faixa: "nos 40%", "40, 50%", "nota 25", "comissão em mercadoria".
-  const FAIXA_4050 = /\b(?:(?:nos|nas|na|no|nota|notas|de)\s+)?(?:40|50)\s*%?(?:\s*(?:,|e|ou)?\s*(?:40|50)\s*%)?(?=\s|,|\.|$)/;
+  // A faixa só é "40/50" com % ou com "nos/nota" antes ("pagou 40" é valor, não faixa).
+  const FAIXA_4050 = /(?:\b(?:nos|nas|na|no|nota|notas)\s+(?:40|50)\s*%?|\b(?:40|50)\s*%)(?:\s*(?:,|e|ou)?\s*(?:40|50)\s*%?)?(?=\s|,|\.|$)|\b40\s*(?:,|e|ou)?\s*50\b\s*%?/;
   const marca4050 = /\b(?:40|50)\s*%|\b(?:nos|nas|na|no|nota|notas)\s+(?:40|50)\b|\b40\s*(?:,|e|ou)?\s*50\b|comiss/;
   const lista = marca4050.test(t) ? 'notas4050' : 'notas25';
   if (lista === 'notas4050') t = t.replace(FAIXA_4050, ' ');
-  t = t.replace(/\b(?:(?:nos|nas|na|no|nota|notas|de)\s+)?25\s*%?(?=\s|,|\.|$)/, ' ').replace(/comiss[a-z]*\s*(?:em|de)?\s*mercadorias?/g, ' ');
-  const valor = valorDepois(t, 'pagou|pago|paguei|recebi|recebido|recebeu|valor|quitou');
+  t = t.replace(/\b(?:nos|nas|na|no|nota|notas)\s+25\s*%?(?=\s|,|\.|$)|\b25\s*%/, ' ').replace(/comiss[a-z]*\s*(?:em|de)?\s*mercadorias?/g, ' ');
+  // Sem "pagou": o valor é o primeiro número que sobrou (a faixa já saiu do texto).
+  const solto = t.replace(/\b(?:devolveu|devolvi|devolucao|devolvido|devolveram|devolve|antecipado|antecipou|adiantado)\b\D{0,24}\d[\d.]*(?:,\d{1,2})?/g, ' ')
+    .match(/\d[\d.]*(?:,\d{1,2})?/);
+  const valor = valorDepois(t, 'pagou|pago|paguei|recebi|recebido|recebeu|valor|quitou')
+    || (solto ? arred(numero(solto[0].replace(/\.(?=\d{3}\b)/g, ''))) : 0);
   const devolucao = valorDepois(t, 'devolveu|devolvi|devolucao|devolvido|devolveram|devolve');
   const antecipado = valorDepois(t, 'antecipado|antecipou|adiantado');
   // Nome: o que vem antes de "pagou" (sem "nota", "cliente", "a/o" no começo).
   const corte = t.search(/\b(?:pagou|pago|paguei|recebi|recebido|recebeu|devolveu|devolvi|devolucao|devolvido|quitou)\b/);
-  const nomeTxt = (corte > 0 ? t.slice(0, corte) : '')
+  const corteNome = corte > 0 ? corte : t.search(/\d/); // sem "pagou": o nome vem antes do primeiro número
+  const nomeTxt = (corteNome > 0 ? t.slice(0, corteNome) : '')
     .replace(/[.,;:!?%]/g, ' ').replace(/\b(?:nota|notas|nos|nas)\b/g, ' ')
     .replace(/^\s*(?:a|o)?\s*(?:cliente|clienta)\s*/, ' ').replace(/^\s*(?:a|o)\s+/, ' ');
   return { lista, cliente: nomeFalado(nomeTxt, falado), valor, devolucao, antecipado };
