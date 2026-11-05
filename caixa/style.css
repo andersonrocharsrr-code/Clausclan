@@ -423,3 +423,5 @@ body{overflow-x:clip}
 .mic-sessao{text-align:left;margin:0 0 10px;font-size:13px;color:var(--pos,#16a34a)}
 .mic-sessao p{margin:2px 0}
 .mic-sessao[hidden]{display:none}
+/* Microfone: "✓ Correto, falar mais" em verde (concorda e já abre o microfone para a próxima nota) */
+.btn--verde{background:#16a34a;color:#fff;border-color:transparent;box-shadow:0 6px 18px rgba(22,163,74,.35)}
