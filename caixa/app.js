@@ -2470,6 +2470,7 @@ const NUM_PALAVRAS = { zero: 0, um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro
 const semAcento = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '');
 // Números por extenso viram dígitos: "trezentos e cinquenta" → 350, "mil e duzentos" → 1200.
 function numerosPorExtenso(t) {
+  t = t.replace(/\b(\d+)\s+mil(?:\s+e\s+(\d{1,3}))?\b/g, (_, a, b) => String(Number(a) * 1000 + Number(b || 0)));
   return t.replace(/\b(?:(?:zero|uma?|duas|dois|tres|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|quatorze|catorze|quinze|dezesseis|dezessete|dezoito|dezenove|vinte|trinta|quarenta|cinquenta|sessenta|setenta|oitenta|noventa|cem|cento|duzent[oa]s|trezent[oa]s|quatrocent[oa]s|quinhent[oa]s|seiscent[oa]s|setecent[oa]s|oitocent[oa]s|novecent[oa]s|mil)(?:\s+e\s+|\s+|$))+/g, (trecho) => {
     let total = 0, atual = 0, achou = false;
     for (const w of trecho.trim().split(/\s+/)) {
@@ -2491,14 +2492,29 @@ function valorDepois(t, chaves) {
   return arred(v);
 }
 // Nome falado → com acentos do que foi dito e maiúscula nos nomes ("de", "da", "dos" ficam minúsculos).
+// Palavras que não são nome de gente: verbos, "mercadoria", "reais", "nota"… nunca vão para o nome da cliente.
+const NAO_NOME = new Set(('pegou pegar pega pego peguei levou levar leva levei ficou ficar fica com tirou tirar tira comprou comprar compra '
+  + 'fez fazer faz deixou deixei deixar deixa recebeu recebi receber recebe pagou pago paguei pagar paga quitou devolveu devolvi devolucao '
+  + 'devolvido quer queria vai foi tem teve mais menos outra outro nova novo mercadoria mercadorias produto produtos roupa roupas peca pecas '
+  + 'reais real centavos valor total nota notas feita feitas reposicao abertura cliente clienta senhora senhor dona seu sua ela ele '
+  + 'em no na nos nas um uma uns umas o a os as que pra para por ai entao agora hoje ontem amanha tambem so de novo mil '
+  + 'antecipado antecipou adiantado comissao porcento por cento').split(' '));
+const LIGA_NOME = /^(de|da|do|das|dos|e)$/;
 function nomeFalado(trecho, falado) {
   const original = String(falado).split(/\s+/);
-  return trecho.replace(/[.,;:!?%]/g, ' ').replace(/\b\d+\b/g, ' ').replace(/\s+/g, ' ').trim()
-    .split(' ').filter(Boolean).map((w) => {
-      const o = original.find((x) => semAcento(x.toLowerCase()).replace(/[^a-z]/g, '') === w);
-      const p = (o || w).replace(/[.,;:!?]/g, '').toLowerCase();
-      return /^(de|da|do|das|dos|e)$/.test(p) ? p : p.charAt(0).toUpperCase() + p.slice(1);
-    }).join(' ');
+  let ws = trecho.replace(/[.,;:!?%]/g, ' ').replace(/\b\d+\b/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+  // Palavras soltas antes do nome ("a cliente", "nota da") saem; depois, só nome e sobrenome: corta na primeira
+  // palavra que não é nome ("Fernando pegou…" → "Fernando").
+  while (ws.length && (NAO_NOME.has(ws[0]) || LIGA_NOME.test(ws[0]))) ws.shift();
+  const corte = ws.findIndex((w) => NAO_NOME.has(w) && !LIGA_NOME.test(w));
+  if (corte >= 0) ws = ws.slice(0, corte);
+  while (ws.length && LIGA_NOME.test(ws[0])) ws.shift(); // "de", "da" sozinhos no começo ou no fim não são nome
+  while (ws.length && LIGA_NOME.test(ws[ws.length - 1])) ws.pop();
+  return ws.map((w) => {
+    const o = original.find((x) => semAcento(x.toLowerCase()).replace(/[^a-z]/g, '') === w);
+    const p = (o || w).replace(/[.,;:!?]/g, '').toLowerCase();
+    return LIGA_NOME.test(p) ? p : p.charAt(0).toUpperCase() + p.slice(1);
+  }).join(' ');
 }
 const mesmoNome = (a, b) => { const x = semAcento(String(a || '').toLowerCase()).trim(), y = semAcento(String(b || '').toLowerCase()).trim(); return !!x && !!y && (x === y || x.startsWith(y + ' ') || y.startsWith(x + ' ')); };
 // A cliente já pagou nota nesta semana? Então a nota feita para ela é reposição; se não, é abertura.
@@ -2556,7 +2572,8 @@ function micMostrar(estado, texto) {
 // Escuta até ficar MIC_SILENCIO ms sem falar nada (o reconhecimento do celular sozinho para com 1 ou 2 s de
 // pausa: aqui ele recomeça na hora e junta o texto, e quem decide parar é o app). No começo espera um pouco mais.
 const MIC_SILENCIO = 4000, MIC_INICIO = 6000;
-let micSilencio = null;
+const esperar = (ms) => new Promise((ok) => setTimeout(ok, ms));
+let micSilencio = null, micVez = 0, micWeb = null;
 function vigiarSilencio(parar) {
   let ultimo = Date.now(), falou = false;
   clearInterval(micSilencio);
@@ -2565,27 +2582,48 @@ function vigiarSilencio(parar) {
   }, 250);
   return () => { ultimo = Date.now(); falou = true; }; // chamar sempre que chegar texto novo
 }
-async function micOuvir() {
+// Garante que nenhuma escuta anterior ficou ligada (senão o celular responde "já está escutando").
+async function micDesligarNativo(SR) {
+  await SR.setPTTState({ held: false }).catch(() => {});
+  const ligado = async () => !!(await SR.isListening().catch(() => ({ listening: false })))?.listening;
+  if (!(await ligado())) { await esperar(150); if (!(await ligado())) return; }
+  await SR.stop().catch(() => {});
+  for (let i = 0; i < 12 && (await ligado()); i++) await esperar(150);
+  if (await ligado()) { await SR.forceStop({ timeout: 300 }).catch(() => {}); for (let i = 0; i < 10 && (await ligado()); i++) await esperar(150); }
+  await esperar(250); // o celular precisa de um instante para liberar o microfone
+}
+// Mensagens do celular (em inglês) em português.
+function erroMic(err) {
+  const m = String(err?.message || err || '');
+  if (/permission|denied|not.?allowed|insufficient/i.test(m)) return 'Libere o microfone para o Caixa nas configurações do celular.';
+  if (/network|internet|server/i.test(m)) return 'Sem internet para entender a voz. Tente de novo com sinal.';
+  if (/busy|already|running/i.test(m)) return 'O microfone ainda estava ocupado. Toque em Falar de novo.';
+  return 'Não deu para usar o microfone. Toque em Falar de novo.';
+}
+async function micOuvir(vez) {
   micTexto = '';
   if (NATIVO) {
     const SR = plugin('SpeechRecognition');
     const perm = await SR.requestPermissions().catch(() => null);
-    if (perm && perm.speechRecognition && perm.speechRecognition !== 'granted') throw new Error('Libere o microfone para o Caixa nas configurações do celular.');
+    if (perm && perm.speechRecognition && perm.speechRecognition !== 'granted') throw new Error('permission denied');
     const { available } = await SR.available().catch(() => ({ available: false }));
     if (!available) throw new Error('Este celular não tem o reconhecimento de voz do Google.');
     await SR.removeAllListeners().catch(() => {});
+    await micDesligarNativo(SR);
+    if (vez !== micVez) return; // tocou de novo enquanto desligava a anterior
     let parando = false, juntado = '';
-    const acabar = () => { clearInterval(micSilencio); micFim?.(); };
+    const acabar = () => { clearInterval(micSilencio); if (vez === micVez) micFim?.(); };
     const parar = async () => {
       if (parando) return;
       parando = true;
       clearInterval(micSilencio);
       await SR.setPTTState({ held: false }).catch(() => {});
       await SR.stop().catch(() => {});
-      setTimeout(acabar, 1500); // se o "parou" não chegar, termina assim mesmo
+      setTimeout(acabar, 2000); // se o "parou" não chegar, termina assim mesmo
     };
     const ouviu = vigiarSilencio(parar);
     await SR.addListener('partialResults', (e) => {
+      if (vez !== micVez) return;
       // Entre uma pausa e outra o plugin junta o que já foi dito em "accumulated"; o trecho atual vem em "matches".
       if (e.accumulated != null) juntado = e.accumulated;
       const atual = e.isRestarting ? '' : (e.matches?.[0] || '');
@@ -2597,18 +2635,33 @@ async function micOuvir() {
     await SR.addListener('error', (e) => { if (!/NO_MATCH|SPEECH_TIMEOUT|no.?match|timeout/i.test(`${e.code} ${e.message}`)) parar(); });
     micParar = parar;
     await SR.setPTTState({ held: true }).catch(() => {});
-    await SR.start({ language: 'pt-BR', maxResults: 3, partialResults: true, popup: false, continuousPTT: true });
+    // Sem mexer no volume do celular (o "silenciar bipe" do plugin abaixava o volume das notificações).
+    const opcoes = { language: 'pt-BR', maxResults: 3, partialResults: true, popup: false, continuousPTT: true, muteRecognizerBeep: false };
+    // Se ainda tinha uma escuta terminando, desliga à força e tenta de novo (até 3 vezes) antes de dar erro.
+    for (let tentativa = 1; ; tentativa++) {
+      try { await SR.start(opcoes); break; } catch (err) {
+        if (tentativa >= 3 || !/already|running|busy/i.test(String(err?.message || err))) { clearInterval(micSilencio); throw err; }
+        await SR.setPTTState({ held: false }).catch(() => {});
+        await SR.stop().catch(() => {});
+        await SR.forceStop({ timeout: 300 }).catch(() => {});
+        await esperar(700 * tentativa);
+        if (vez !== micVez) return;
+        await SR.setPTTState({ held: true }).catch(() => {});
+      }
+    }
     return;
   }
   const W = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!W) throw new Error('Este navegador não tem reconhecimento de voz. Use o Chrome ou o app.');
+  try { micWeb?.abort(); } catch {}
   const r = new W();
+  micWeb = r;
   r.lang = 'pt-BR'; r.interimResults = true; r.continuous = true; r.maxAlternatives = 1;
   const parar = () => { clearInterval(micSilencio); try { r.stop(); } catch {} };
   const ouviu = vigiarSilencio(parar);
   r.onresult = (e) => { const x = [...e.results].map((y) => y[0].transcript).join(' ').trim(); if (x && x !== micTexto) { micTexto = x; micMostrar(null, x); ouviu(); } };
   r.onerror = (e) => { if (e.error === 'not-allowed') micMostrar('Libere o microfone para usar.', ''); };
-  r.onend = () => { clearInterval(micSilencio); micFim?.(); };
+  r.onend = () => { clearInterval(micSilencio); if (vez === micVez) micFim?.(); };
   micParar = parar;
   r.start();
 }
@@ -2645,17 +2698,22 @@ function micModo(modo) { // 'ouvindo' | 'conferir' | 'erro'
   pintarSessao();
 }
 async function micAbrir() {
+  const vez = ++micVez; // cada toque é uma escuta nova; o que sobrar da anterior é ignorado
   micLido = null;
   micMostrar(micSessao.length ? 'Pode falar a próxima…' : 'Pode falar…', '');
   micModo('ouvindo');
   if (!dlgMic.open) dlgMic.showModal();
   let terminou = false;
   const acabou = new Promise((ok) => { micFim = () => { if (!terminou) { terminou = true; ok(); } }; });
-  try { await micOuvir(); } catch (err) { micModo('erro'); micMostrar(err.message || 'Não deu para usar o microfone.', ''); return; }
-  const limite = setTimeout(() => micParar?.(), 60000);
+  try { await micOuvir(vez); } catch (err) {
+    if (vez !== micVez) return;
+    micModo('erro'); micMostrar(/navegador|não tem o reconhecimento/.test(err?.message || '') ? err.message : erroMic(err), ''); return;
+  }
+  if (vez !== micVez) return;
+  const limite = setTimeout(() => { if (vez === micVez) micParar?.(); }, 60000);
   await acabou;
   clearTimeout(limite);
-  if (!dlgMic.open) return; // cancelou
+  if (vez !== micVez || !dlgMic.open) return; // cancelou ou já começou outra escuta
   const falado = micTexto.trim();
   const x = falado ? lerFalaNota(falado) : null;
   if (!x || !x.valor) {
@@ -2706,12 +2764,15 @@ function micLancar() {
   const ult = itens[itens.length - 1];
   if (ult.lista !== 'feitas') setTimeout(() => perguntarNovaNota(ult.cliente), 3200);
 }
-$('#btnMic').addEventListener('click', (e) => { e.stopPropagation(); micSessao = []; micAbrir(); });
+$('#btnMic').addEventListener('click', (e) => { e.stopPropagation(); e.currentTarget.blur(); micSessao = []; micAbrir(); });
 $('#micParar').addEventListener('click', () => micParar?.());
 // "✓ Correto": guarda esta nota e já escuta a próxima (ex.: a reposição que ela pegou).
 $('#micCorreto').addEventListener('click', () => { if (micLido) micSessao.push(micLido); micLido = null; micAbrir(); });
 $('#micPronto').addEventListener('click', () => micLancar());
 $('#micDeNovo').addEventListener('click', () => micAbrir());
-$('#micCancelar').addEventListener('click', () => { micSessao = []; micLido = null; dlgMic.close(); micParar?.(); micFim?.(); });
-dlgMic.addEventListener('close', () => { if (dlgMic.classList.contains('ouvindo')) micParar?.(); });
+$('#micCancelar').addEventListener('click', () => { micSessao = []; micLido = null; micParar?.(); micVez++; clearInterval(micSilencio); dlgMic.close(); });
+// Fechou a janela (botão voltar do celular) com o microfone ligado: desliga.
+dlgMic.addEventListener('close', () => {
+  setTimeout(() => $('#btnMic').blur(), 0); // o diálogo devolve o foco ao 🎤: tira para não ficar marcado
+  if (dlgMic.classList.contains('ouvindo')) { micParar?.(); micVez++; clearInterval(micSilencio); dlgMic.classList.remove('ouvindo'); } });
 window.lerFalaNota = lerFalaNota; // para teste

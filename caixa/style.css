@@ -425,3 +425,6 @@ body{overflow-x:clip}
 .mic-sessao[hidden]{display:none}
 /* Microfone: "✓ Correto, falar mais" em verde (concorda e já abre o microfone para a próxima nota) */
 .btn--verde{background:#16a34a;color:#fff;border-color:transparent;box-shadow:0 6px 18px rgba(22,163,74,.35)}
+/* O 🎤 não fica com o quadrado azul do toque nem do foco (ao abrir e ao fechar a janela do microfone) */
+.mic{-webkit-tap-highlight-color:transparent;outline:none}
+.mic:focus,.mic:focus-visible,.mic:active{outline:none;box-shadow:none}
