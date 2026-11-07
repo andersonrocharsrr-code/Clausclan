@@ -1923,7 +1923,6 @@ $('#relData').addEventListener('change', () => { pintarCamposRel(); pintarRelato
 $$('[data-rg]').forEach((el) => el.addEventListener('input', () => {
   const g = ls.get(KEY_REL, {});
   g[el.dataset.rg] = el.value;
-  if (el.dataset.rg === 'km') { g.kmResto = 0; pintarKm(); } // Km digitado à mão: o GPS continua a partir dele
   ls.set(KEY_REL, g);
   pintarRelatorio();
 }));
