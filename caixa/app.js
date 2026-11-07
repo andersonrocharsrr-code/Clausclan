@@ -2774,10 +2774,10 @@ window.lerFalaNota = lerFalaNota; // para teste
 /* ---------- treinamento: como fechar o caixa (o ⚙ abre o guia) ---------- */
 // Folha de caixa do exemplo do treinamento: desenhada com o mesmo código do "Gerar caixa".
 const FOLHA_EXEMPLO = {
-  nome: 'Anderson', cidade: 'Rio Branco', data: '06/11/2026', semana: '1', foiCobrar: '15.474,00', qtNotas: '19', vPep5: '773,70',
+  nome: '', cidade: 'Rio Branco', data: '26/10/2026', semana: '4', foiCobrar: '23.500,00', qtNotas: '25', vPep5: '1.175,00',
   antecipados: '335,50', qtNotasDeixadas: '19', pinos: '3', valorPepinos: '687,00', pepinoParcial: '200,00',
   notas25: '9.000,00', notas4050: '2.500,00', pepinoExtra: '900,00', recebimento: '12.935,50',
-  depEspecie: '11.395,50', depPix: '', depBanco: '', vale: '360,00', ajuda: '280,00', mecanica: '', despSupervisor: '',
+  depEspecie: '', depPix: '', depBanco: '11.395,50', // semana 4 (não é a de pagamento): depósito no banco/TED vale: '360,00', ajuda: '280,00', mecanica: '', despSupervisor: '',
   excedido: '', valorDeixado: '16.830,00', assinatura: '',
   outros: ['Salário (400,00)', '350,00 (Semanal)', '150,00 (Despesa pila)'], obs: [],
   extras: [
