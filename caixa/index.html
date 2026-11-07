@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=87">
+  <link rel="stylesheet" href="style.css?v=88">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -787,43 +787,11 @@
             delas.</li>
         </ul>
         <p>Com o exemplo do treinamento, a folha fica assim:</p>
-        <div class="folha-mini" aria-label="Folha de caixa preenchida com o exemplo">
-          <div class="fm-l fm-tit"><span class="fm-caixa">CAIXA</span><span>NOME: <b>Anderson</b></span></div>
-          <div class="fm-l fm-5"><span>CIDADE: <b>Rio Branco</b></span><span>DATA: <b>06/11/2026</b></span><span>SEMANA: <b>1</b></span>
-            <span>FOI COBRAR: <b>15.474,00</b></span><span>QT. NOTAS: <b>19</b></span></div>
-          <div class="fm-l fm-4"><span>ANTECIPADOS:R$ <i>335,50</i></span><span>V. PEP. 5%: <b>773,70</b></span>
-            <span>QT.NOTAS DEIXADAS: <i>19</i></span><span>Nº DE PINOS: <i>3</i></span></div>
-          <div class="fm-l fm-2"><span>VALOR DOS PEPINOS:R$ <i>687,00</i></span><span>PEPINO PARCIAL:R$ <i>200,00</i></span></div>
-          <div class="fm-l fm-3"><span>NOTAS 25%:R$ <i>9.000,00</i></span><span>NOTAS 40% e 50%:R$ <i>2.500,00</i></span>
-            <span>PEPINO EXTRA R$ <i>900,00</i></span></div>
-          <div class="fm-corpo">
-            <div class="fm-esq">
-              <div class="fm-c fm-forte">RECEBIMENTO:R$ <i>12.935,50</i></div>
-              <div class="fm-c">DEPTO. EMPRESA ESPECIE:R$ <i>11.395,50</i></div>
-              <div class="fm-c">DEPTO PIX:R$</div>
-              <div class="fm-c">DEPTO BANCO/TED/TRANS.:R$</div>
-              <div class="fm-c">VALE ADIANTADO:R$ <i>360,00</i></div>
-              <div class="fm-c">AJUDA DE CUSTO:R$ <i>280,00</i></div>
-              <div class="fm-c">MECANICA:R$</div>
-              <div class="fm-c">DESPESAS SUPERVISOR:R$</div>
-              <div class="fm-c">EXCEDIDO DA DESPESA:R$</div>
-              <div class="fm-c">OUTROS:R$ <i>400,00 (Salário)</i></div>
-              <div class="fm-c"><i>350,00 (Semanal)</i></div>
-              <div class="fm-c"><i>150,00 (Despesa pila)</i></div>
-              <div class="fm-c">OBS:R$</div>
-              <div class="fm-c fm-forte">VALOR DEIXADO:R$ <i>16.830,00</i></div>
-            </div>
-            <div class="fm-dir">
-              <div class="fm-x"><span>Nº</span><span>CIDADE</span><span>VALOR</span></div>
-              <div class="fm-x"><i>117926</i><i>Rio Branco</i><i>226,50</i></div>
-              <div class="fm-v">VENDEDORA: <i>Antonia Conceição</i></div>
-              <div class="fm-x"><span>Nº</span><span>CIDADE</span><span>VALOR</span></div>
-              <div class="fm-x"><i>…</i><i></i><i></i></div>
-              <div class="fm-v">VENDEDORA:</div>
-            </div>
-          </div>
-          <div class="fm-l">ASSINATURA VENDEDOR:</div>
-        </div>
+        <!-- A folha de verdade, desenhada pelo app (a mesma do "Gerar caixa") com os valores do exemplo. -->
+        <button type="button" class="folha-recorte" id="guiaFolhaAbrir" aria-label="Ver a folha de caixa inteira">
+          <img id="guiaFolhaMini" alt="Recorte da folha de caixa preenchida com o exemplo">
+          <span class="folha-recorte-tag">🔍 Toque para ver a folha inteira</span>
+        </button>
         <p class="guia-dica">💡 Os valores de "QT. NOTAS DEIXADAS" (19) e "VALOR DEIXADO" (R$ 16.830,00) são só de exemplo.
           A parte impressa vem pronta na folha da semana.</p>
         <p>Assine a folha e o caixa está fechado. ✅</p>
@@ -849,6 +817,13 @@
     <form method="dialog" class="row-actions">
       <button class="btn btn--primary" value="ok">Entendi</button>
     </form>
+  </dialog>
+
+  <!-- Folha de caixa do treinamento em tela cheia -->
+  <dialog id="dlgFolhaGuia" class="dlg-tela" aria-label="Folha de caixa do exemplo">
+    <button type="button" class="tela-fechar" id="guiaFolhaFechar" aria-label="Fechar">✕</button>
+    <div class="tela-rolar"><img id="guiaFolhaGrande" alt="Folha de caixa preenchida com o exemplo do treinamento"></div>
+    <p class="tela-dica">Toque na folha para aumentar ou diminuir</p>
   </dialog>
 
   <dialog id="dlgCaixa" class="dlg-caixa">
@@ -1043,6 +1018,6 @@
   <script src="vendor/nacl-fast.min.js?v=1"></script>
   <script src="licenca-config.js?v=2"></script>
   <script src="versao-app.js?v=1"></script>
-  <script type="module" src="app.js?v=107"></script>
+  <script type="module" src="app.js?v=108"></script>
 </body>
 </html>

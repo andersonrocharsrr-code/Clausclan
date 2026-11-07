@@ -2772,8 +2772,37 @@ dlgMic.addEventListener('close', () => {
 window.lerFalaNota = lerFalaNota; // para teste
 
 /* ---------- treinamento: como fechar o caixa (o ⚙ abre o guia) ---------- */
+// Folha de caixa do exemplo do treinamento: desenhada com o mesmo código do "Gerar caixa".
+const FOLHA_EXEMPLO = {
+  nome: 'Anderson', cidade: 'Rio Branco', data: '06/11/2026', semana: '1', foiCobrar: '15.474,00', qtNotas: '19', vPep5: '773,70',
+  antecipados: '335,50', qtNotasDeixadas: '19', pinos: '3', valorPepinos: '687,00', pepinoParcial: '200,00',
+  notas25: '9.000,00', notas4050: '2.500,00', pepinoExtra: '900,00', recebimento: '12.935,50',
+  depEspecie: '11.395,50', depPix: '', depBanco: '', vale: '360,00', ajuda: '280,00', mecanica: '', despSupervisor: '',
+  excedido: '', valorDeixado: '16.830,00', assinatura: '',
+  outros: ['Salário (400,00)', '350,00 (Semanal)', '150,00 (Despesa pila)'], obs: [],
+  extras: [
+    { numero: '117926', cidade: 'Rio Branco', valor: '226,50', vendedora: 'Antonia Conceição' },
+    { numero: '117641', cidade: 'Rio Branco', valor: '306,00', vendedora: 'Joana Lima' },
+    { numero: '118210', cidade: 'Rio Branco', valor: '367,50', vendedora: 'Rita Alves' },
+  ],
+};
+let folhaGuiaUrl = null;
+async function folhaDoGuia() {
+  if (!folhaGuiaUrl) folhaGuiaUrl = URL.createObjectURL(await desenharCaixa(FOLHA_EXEMPLO));
+  return folhaGuiaUrl;
+}
+$('#guiaFolhaAbrir').addEventListener('click', async () => {
+  const img = $('#guiaFolhaGrande');
+  img.src = await folhaDoGuia();
+  img.classList.remove('zoom');
+  $('#dlgFolhaGuia').showModal();
+  $('#dlgFolhaGuia .tela-rolar').scrollTo(0, 0);
+});
+$('#guiaFolhaGrande').addEventListener('click', (e) => e.currentTarget.classList.toggle('zoom'));
+$('#guiaFolhaFechar').addEventListener('click', () => $('#dlgFolhaGuia').close());
 $('#btnConfig').addEventListener('click', () => {
   const d = $('#dlgGuia');
+  folhaDoGuia().then((u) => { $('#guiaFolhaMini').src = u; }).catch(() => {});
   d.showModal();
   d.scrollTop = 0;
 });

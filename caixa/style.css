@@ -533,3 +533,18 @@ body{overflow-x:clip}
 .parc-cartao small{font-size:12.5px;color:var(--muted)}
 .parc-mais{align-self:center;font-size:24px;font-weight:800;color:var(--accent)}
 .parc-seta{text-align:center;font-size:22px;margin:2px 0 !important;color:var(--accent)}
+/* Recorte da folha de caixa no treinamento; toque abre em tela cheia */
+.folha-recorte{display:block;position:relative;width:100%;height:260px;overflow:hidden;padding:0;margin:10px 0;border:2px solid var(--line);
+  border-radius:12px;background:#fff;cursor:zoom-in;-webkit-tap-highlight-color:transparent}
+.folha-recorte img{display:block;width:100%;height:auto}
+.folha-recorte-tag{position:absolute;left:0;right:0;bottom:0;padding:22px 10px 10px;font:700 15px Inter,sans-serif;color:#fff;
+  background:linear-gradient(transparent,rgba(5,10,24,.92))}
+.dlg-tela{width:100vw;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border-radius:0;background:#0b0f19;overflow:hidden}
+.dlg-tela::backdrop{background:#000}
+.tela-rolar{width:100%;height:100%;overflow:auto;-webkit-overflow-scrolling:touch}
+.tela-rolar img{display:block;width:100%;height:auto;cursor:zoom-in}
+.tela-rolar img.zoom{width:220%;max-width:none;cursor:zoom-out}
+.tela-fechar{position:fixed;top:12px;right:12px;z-index:2;width:48px;height:48px;border-radius:50%;border:0;background:rgba(15,23,42,.88);
+  color:#fff;font-size:24px;line-height:1;box-shadow:0 4px 14px rgba(0,0,0,.4);cursor:pointer}
+.tela-dica{position:fixed;left:0;right:0;bottom:10px;margin:0;text-align:center;font-size:13px;color:#cbd5e1;pointer-events:none;
+  text-shadow:0 1px 4px #000}
