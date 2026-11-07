@@ -14,7 +14,7 @@ const MODOS = {
   economica: { nome: 'IA econômica', modelo: 'claude-haiku-5-5' },
   precisa: { nome: 'IA mais precisa', modelo: 'claude-opus-5-5' },
 };
-const modoLeitura = () => (MODOS[ls.get(KEY_MODO, 'gratis')] ? ls.get(KEY_MODO, 'gratis') : 'gratis');
+const modoLeitura = () => 'gratis'; // só a leitura gratuita, no celular (as opções de IA saíram)
 
 /* ---------- utilidades ---------- */
 const $ = (s, el = document) => el.querySelector(s);
@@ -1019,8 +1019,7 @@ async function lerFotos(tipo, files) {
   if (modo === 'gratis') { await lerFotosGratis(tipo, files); return; }
   const api = getCliente();
   if (!api) {
-    toast('Para usar a IA, cole a chave em ⚙ (ou volte para a leitura gratuita).');
-    abrirConfig();
+    await lerFotosGratis(tipo, files); // sem chave da IA: usa a leitura gratuita
     return;
   }
   const pedido = PEDIDOS[tipo === 'notas' ? 'notas' : tipo];
@@ -1324,27 +1323,6 @@ function progressoSimulado(titulo) {
   clearInterval(simulacao);
   simulacao = setInterval(() => { p += (0.9 - p) * 0.06; progresso({ pct: p }); }, 200);
 }
-
-/* ---------- configurar chave ---------- */
-function mostrarChave() {
-  $('#campoChave').hidden = $('input[name="modo"]:checked')?.value === 'gratis';
-}
-$$('input[name="modo"]').forEach((r) => r.addEventListener('change', mostrarChave));
-function abrirConfig() {
-  $('#apiKey').value = ls.get(KEY_API, '');
-  const modo = modoLeitura();
-  $$('input[name="modo"]').forEach((r) => { r.checked = r.value === modo; });
-  mostrarChave();
-  $('#dlgConfig').showModal();
-}
-$('#btnConfig').addEventListener('click', abrirConfig);
-$('#btnSalvarChave').addEventListener('click', () => {
-  const modo = $('input[name="modo"]:checked')?.value || 'gratis';
-  ls.set(KEY_MODO, modo);
-  ls.set(KEY_API, $('#apiKey').value.trim());
-  if (modo !== 'gratis' && !$('#apiKey').value.trim()) toast('Sem chave a IA não funciona: cole a chave ou use a leitura gratuita.');
-  toast('Chave salva neste aparelho.');
-});
 
 /* ---------- salvar / lista / novo ---------- */
 function guardar(f) {
@@ -2793,9 +2771,8 @@ dlgMic.addEventListener('close', () => {
   if (dlgMic.classList.contains('ouvindo')) { micParar?.(); micVez++; clearInterval(micSilencio); dlgMic.classList.remove('ouvindo'); } });
 window.lerFalaNota = lerFalaNota; // para teste
 
-/* ---------- guia: como fechar o caixa (fica nas configurações ⚙) ---------- */
-$('#btnGuia').addEventListener('click', () => {
-  $('#dlgConfig').close();
+/* ---------- treinamento: como fechar o caixa (o ⚙ abre o guia) ---------- */
+$('#btnConfig').addEventListener('click', () => {
   const d = $('#dlgGuia');
   d.showModal();
   d.scrollTop = 0;

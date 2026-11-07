@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=78">
+  <link rel="stylesheet" href="style.css?v=79">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -46,7 +46,7 @@
     </div>
     <div class="top__actions">
       <button class="icon-btn icon-btn--sino" id="btnLista" title="Fechamentos salvos e notificações" aria-label="Fechamentos salvos e notificações">☰<span class="sino-ponto" id="sinoPonto" hidden></span></button>
-      <button class="icon-btn" id="btnConfig" title="Configurar" aria-label="Configurar">⚙</button>
+      <button class="icon-btn" id="btnConfig" title="Treinamento: como fechar o caixa" aria-label="Treinamento: como fechar o caixa">⚙</button>
     </div>
   </header>
 
@@ -372,54 +372,41 @@
   <div id="folha" class="folha" aria-hidden="true"></div>
 
   <!-- Janelas -->
-  <dialog id="dlgConfig">
-    <form method="dialog">
-      <button type="button" class="btn guia-abrir" id="btnGuia">📖 Como fechar o caixa <small>passo a passo</small></button>
-      <h2>Leitura das fotos</h2>
-      <div class="escolha" role="radiogroup">
-        <label><input type="radio" name="modo" value="gratis"> <span><b>Gratuita</b> (no celular)<br><small>Lê as notas e a folha em branco, que são impressas. Não lê letra de mão. Tire fotos nítidas.</small></span></label>
-        <label><input type="radio" name="modo" value="economica"> <span><b>IA econômica</b> (paga, centavos)<br><small>Lê melhor foto tremida e também letra de mão (pepino extra).</small></span></label>
-        <label><input type="radio" name="modo" value="precisa"> <span><b>IA mais precisa</b> (paga, mais cara)<br><small>Para quando a econômica errar.</small></span></label>
-      </div>
-      <div id="campoChave">
-        <p class="muted small">A IA é da Anthropic: crie a chave em
-          <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>
-          e cole aqui. Ela fica salva só neste aparelho; cada foto lida é cobrada na sua conta.</p>
-        <label>Chave da API<input id="apiKey" type="password" autocomplete="off" placeholder="sk-ant-..."></label>
-      </div>
-      <div class="row-actions">
-        <button class="btn" value="cancel">Cancelar</button>
-        <button class="btn btn--primary" id="btnSalvarChave" value="ok">Salvar</button>
-      </div>
-    </form>
-  </dialog>
 
   <!-- Guia: como fechar o caixa à mão (papel e calculadora), do jeito que o Anderson ensina. -->
   <dialog id="dlgGuia" class="dlg-guia">
-    <h2>📖 Como fechar o caixa</h2>
-    <p class="muted small">Passo a passo, do zero até o valor para depositar. Os valores são só um exemplo.</p>
+    <div class="guia-topo">
+      <p class="guia-selo">TREINAMENTO</p>
+      <h2>📖 Como fechar o caixa</h2>
+      <p class="muted">Passo a passo do fechamento à mão, com papel e calculadora, do zero até o valor para depositar.
+        Os valores são só um exemplo.</p>
+    </div>
     <ol class="guia">
       <li>
         <h3>É dia de fechar o caixa</h3>
-        <p>Terminou a rota? Separe <b>todas as notas</b>, cada tipo num montinho:</p>
+        <p>Terminou a rota? Antes de somar qualquer coisa, separe <b>todas as notas</b>, cada tipo num montinho:</p>
         <ul>
-          <li><b>Notas 25%</b> quitadas.</li>
-          <li><b>Notas 40% e 50%</b> quitadas: pagas comissão e mercadoria.</li>
-          <li><b>Pepino extra</b> que você recebeu (se não recebeu nenhum, não tem).</li>
+          <li><b>Notas 25%</b>: notas quitadas com o desconto de 25%.</li>
+          <li><b>Notas 40% e 50%</b>: notas quitadas com a <b>comissão em mercadoria</b>.</li>
+          <li><b>Pepino extra</b>: nota de outra vendedora que você recebeu. Se não recebeu nenhum, não tem.</li>
           <li><b>Antecipadas</b>, se tiver.</li>
-          <li><b>Pepino parcial</b>: grampeado na promissória, deixe separado.</li>
+          <li><b>Pepino parcial</b>: fica <b>grampeado na promissória</b>, separado das outras.</li>
         </ul>
+        <p class="guia-dica">💡 Cada montinho vai para um lugar diferente da folha de caixa. Separando antes, nada se mistura
+          e nenhuma nota fica esquecida na pasta.</p>
         <p>Pegue uma <b>folhinha de papel em branco</b> e a <b>calculadora</b>.</p>
       </li>
       <li>
         <h3>Some as notas de 25%</h3>
-        <p>Com todas as notas de 25% na mão, some na calculadora.</p>
+        <p>Com todas as notas de 25% na mão, some uma por uma na calculadora.</p>
         <p class="guia-anote">Anote no papel: <b>25% — R$ 9.000,00</b></p>
         <p>Deixe essas notas organizadas e separadas.</p>
+        <p class="guia-dica">💡 Some duas vezes. Se der o mesmo resultado, está certo.</p>
       </li>
       <li>
         <h3>Some as notas de 40% e 50%</h3>
-        <p>Exemplo: duas notas de 40% (comissão paga e mercadoria) deram R$ 2.500.</p>
+        <p>Nessas notas a <b>comissão da cliente foi paga em mercadoria</b>, não em dinheiro.</p>
+        <p>Exemplo: duas notas de 40% deram R$ 2.500.</p>
         <p class="guia-anote">Anote no papel: <b>40% — R$ 2.500,00</b></p>
         <p>Dobre direitinho e guarde.</p>
       </li>
@@ -431,29 +418,33 @@
       </li>
       <li>
         <h3>Some o recebimento e confira com o sistema</h3>
-        <p>Some o que anotou: 9.000 + 2.500 + 900.</p>
+        <p>Some tudo o que anotou: 9.000 + 2.500 + 900.</p>
         <p class="guia-anote">Recebimento: <b>R$ 12.400,00</b></p>
         <p>A soma das notas <b>tem que bater com o recebimento do seu sistema</b>, até os centavos. Bateu? Está certo.
           Guarde esse papelzinho: é dele que você passa para a folha de caixa.</p>
+        <p class="guia-dica">⚠️ Não bateu? Some de novo cada montinho e procure uma nota que ficou de fora ou um valor
+          lançado errado no sistema. Só siga quando bater.</p>
       </li>
       <li>
         <h3>Separe os gastos</h3>
-        <p>Pegue todos os gastos e vales, com os recibos:</p>
+        <p>Pegue todos os gastos e vales, <b>com os recibos</b>:</p>
         <ul>
           <li><b>Ajuda de custo</b> (exemplo de Rio Branco): <b>R$ 280,00</b></li>
-          <li><b>Vale da semana</b> (abastecimentos e alimentação, com os recibos): <b>R$ 360,00</b></li>
+          <li><b>Vale da semana</b> (abastecimentos e alimentação): <b>R$ 360,00</b></li>
           <li><b>Semanal</b> (salário), <b>só</b> se o vendedor ainda está em treinamento: <b>R$ 350,00</b>.
             Quem não está em treinamento não tem semanal, só o salário do mês.</li>
-          <li>Outro vale ou <b>excedente de combustível</b>: some todos os recibos e anote.</li>
+          <li>Outro vale ou <b>excedente de combustível</b>: some todos os recibos e anote o total.</li>
         </ul>
         <p class="guia-anote">Anote cada gasto no papel.</p>
+        <p class="guia-dica">💡 Guarde os recibos junto com o papelzinho: são eles que comprovam cada gasto.</p>
       </li>
       <li>
         <h3>Calcule o que tem que depositar</h3>
-        <p>Pegue o recebimento e tire os gastos:</p>
+        <p>Pegue o recebimento e tire os gastos, um por um:</p>
         <p class="guia-conta">12.400 − 280 − 360 − 350 = <b>11.410</b></p>
         <p class="guia-anote">Anote no papel: <b>Depositar — R$ 11.410,00</b></p>
         <p>Esse é o valor que vai na folha de caixa.</p>
+        <p class="guia-dica">💡 Confira a conta mais uma vez antes de passar para a folha.</p>
       </li>
     </ol>
 
@@ -666,6 +657,6 @@
   <script src="vendor/nacl-fast.min.js?v=1"></script>
   <script src="licenca-config.js?v=2"></script>
   <script src="versao-app.js?v=1"></script>
-  <script type="module" src="app.js?v=106"></script>
+  <script type="module" src="app.js?v=107"></script>
 </body>
 </html>
