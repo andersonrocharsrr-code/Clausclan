@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=82">
+  <link rel="stylesheet" href="style.css?v=83">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -524,7 +524,7 @@
         <!-- Recriação de uma nota de pepino extra real (sem CPF, endereço, cidade, telefones e nome do vendedor). -->
         <figure class="cupom" aria-label="Exemplo de nota de pepino extra">
           <p class="cupom-mao" aria-label="escrito à mão: extra">extra</p>
-          <div class="cupom-cod">N. 117926<br><span class="cupom-barras" aria-hidden="true"></span></div>
+          <div class="cupom-cod"><span class="marca marca--num">N. 117926</span><br><span class="cupom-barras" aria-hidden="true"></span></div>
           <hr>
           <p>Representante:</p>
           <p>Contato:</p>
@@ -533,12 +533,12 @@
           <hr>
           <p class="c">Ao efetuar pagamento<br>exija seu comprovante e comissao</p>
           <hr>
-          <p>ANTONIA CONCEICAO</p>
+          <p><span class="marca marca--nome">ANTONIA CONCEICAO</span></p>
           <p>CPF:</p>
           <p>End.:</p>
           <p>Ref.:</p>
           <p>Bairro:</p>
-          <p>Cidade: &nbsp; &nbsp; &nbsp; &nbsp; UF:</p>
+          <p>Cidade:<span class="marca marca--cid">Rio Branco</span> UF:AC</p>
           <p>Nome contato 1:</p>
           <p>Contato 1:</p>
           <p>Contato 2:</p>
@@ -561,10 +561,24 @@
           <p class="c cupom-ass">&nbsp;</p>
           <p class="c">Emissao:06/11/2026</p>
         </figure>
-        <p class="cupom-legenda"><span class="leg leg--data"></span> data do acerto × data do pagamento: <b>diferentes</b>
-          &nbsp; <span class="leg leg--valor"></span> o <b>valor recebido</b></p>
+        <p class="cupom-legenda"><span class="leg leg--data"></span> data do acerto × data do pagamento: <b>diferentes</b></p>
         <p class="guia-dica">💡 O acerto era dia 12/10, mas a cliente só pagou dia 06/11: por isso é extra. Ela pagou
           <b>R$ 226,50</b>, e é esse valor recebido que você soma.</p>
+        <p><b>Na folha de caixa</b>, cada pepino extra tem o seu quadro. Passe da nota para a folha:</p>
+        <ul class="guia-cores">
+          <li><span class="leg leg--num"></span> o <b>número da nota</b> vai em <b>Nº</b>;</li>
+          <li><span class="leg leg--cid"></span> a <b>cidade</b> vai em <b>CIDADE</b>;</li>
+          <li><span class="leg leg--valor"></span> o <b>valor recebido</b> vai em <b>VALOR</b>;</li>
+          <li><span class="leg leg--nome"></span> o <b>nome da cliente</b> vai em <b>VENDEDORA</b>.</li>
+        </ul>
+        <div class="folha-extra" aria-label="Quadro de pepino extra na folha de caixa">
+          <div class="fx-cab"><span>Nº</span><span>CIDADE</span><span>VALOR</span></div>
+          <div class="fx-lin"><span class="fx-num">117926</span><span class="fx-cid">Rio Branco</span><span class="fx-val">226,50</span></div>
+          <div class="fx-vend">VENDEDORA: <span class="fx-nome">Antonia Conceição</span></div>
+        </div>
+        <p>Faça um quadro para cada pepino extra. Depois <b>some todos</b> e escreva o total em
+          <b>PEPINO EXTRA R$</b>, lá em cima da folha.</p>
+        <div class="folha-extra folha-extra--total"><span>PEPINO EXTRA R$</span><span class="fx-tot">900,00</span></div>
         <p>Exemplo: 3 pepinos extras que somam R$ 900.</p>
         <p class="guia-anote">Anote no papel: <b>Pepino extra — R$ 900,00</b></p>
         <p>Separe essas notas também.</p>

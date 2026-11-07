@@ -477,3 +477,24 @@ body{overflow-x:clip}
 .cupom .marca--data{background:rgba(249,115,22,.22);box-shadow:0 0 0 2px rgba(234,88,12,.6);border-radius:4px;padding:1px 3px}
 .cupom-mao{font:600 34px/1 Caveat,cursive !important;color:#1f3a9e;text-align:center;margin:-4px 0 6px !important;transform:rotate(-4deg)}
 .leg--data{background:#fdba74}
+/* Pepino extra: o que passa da nota para a folha (cores iguais na nota e no quadro da folha) */
+.cupom .marca--num{background:rgba(168,85,247,.22);box-shadow:0 0 0 2px rgba(147,51,234,.55);border-radius:4px;padding:1px 4px}
+.cupom .marca--nome{background:rgba(236,72,153,.18);box-shadow:0 0 0 2px rgba(219,39,119,.5);border-radius:4px;padding:1px 4px}
+.cupom .marca--cid{background:rgba(34,197,94,.2);box-shadow:0 0 0 2px rgba(22,163,74,.55);border-radius:4px;padding:0 3px}
+.leg--num{background:#c4b5fd}
+.leg--nome{background:#f9a8d4}
+.leg--cid{background:#86efac}
+.guia-cores{list-style:none;padding-left:0 !important}
+.guia-cores li{margin:5px 0}
+.folha-extra{max-width:330px;margin:10px auto;background:#fff;color:#111;border:2px solid #111;font:600 13px Arial,sans-serif}
+.folha-extra > div{display:flex}
+.folha-extra .fx-cab span,.folha-extra .fx-lin span{flex:1;text-align:center;padding:5px 2px;border-right:2px solid #111}
+.folha-extra .fx-cab span:last-child,.folha-extra .fx-lin span:last-child{border-right:0}
+.folha-extra .fx-cab,.folha-extra .fx-lin{border-bottom:2px solid #111}
+.folha-extra .fx-lin span,.fx-nome,.fx-tot{font:600 24px/1.1 Caveat,cursive;color:#1f3a9e}
+.folha-extra .fx-vend{padding:5px 8px;align-items:baseline;gap:6px}
+.fx-num{box-shadow:inset 0 0 0 3px #a855f7}
+.fx-cid{box-shadow:inset 0 0 0 3px #22c55e}
+.fx-val{box-shadow:inset 0 0 0 3px #3b82f6}
+.fx-nome{box-shadow:0 0 0 2px #ec4899;border-radius:3px;padding:0 4px}
+.folha-extra--total{display:flex;justify-content:space-between;align-items:baseline;padding:8px 10px}
