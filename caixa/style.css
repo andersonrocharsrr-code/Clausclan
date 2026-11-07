@@ -548,3 +548,42 @@ body{overflow-x:clip}
   color:#fff;font-size:24px;line-height:1;box-shadow:0 4px 14px rgba(0,0,0,.4);cursor:pointer}
 .tela-dica{position:fixed;left:0;right:0;bottom:10px;margin:0;text-align:center;font-size:13px;color:#cbd5e1;pointer-events:none;
   text-shadow:0 1px 4px #000}
+
+/* ===== Guia em telas (um passo por vez) ===== */
+.dlg-guia{display:none;flex-direction:column;width:min(96vw,620px);height:calc(100dvh - 20px);max-height:none;padding:0;overflow:hidden}
+.dlg-guia[open]{display:flex}
+.guia-cab{position:relative;padding:14px 18px 10px;border-bottom:1px solid var(--line)}
+.guia-cab .guia-selo{margin:0 40px 2px 0}
+.guia-etapa{margin:0 0 8px;font-weight:800;font-size:15px}
+.guia-barra{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.guia-barra span{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .35s ease}
+.guia-x{position:absolute;top:10px;right:10px;width:40px;height:40px;border-radius:50%;border:0;background:var(--bg);color:var(--ink);
+  font-size:20px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.guia-corpo{flex:1;overflow:auto;padding:4px 18px 18px;overscroll-behavior:contain}
+.guia-corpo .guia{margin:0}
+.guia-corpo .guia > li{border-top:0;padding:14px 0 6px}
+.guia-corpo .guia > li::before{display:none}
+.guia-corpo .guia > li > h3,.guia-corpo .guia-papel-tit{font-size:23px;line-height:1.2;margin:4px 0 12px}
+.guia-corpo .guia > li.entra-dir{animation:guiaDir .3s ease-out}
+.guia-corpo .guia > li.entra-esq{animation:guiaEsq .3s ease-out}
+@keyframes guiaDir{from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:none}}
+@keyframes guiaEsq{from{opacity:0;transform:translateX(-36px)}to{opacity:1;transform:none}}
+.guia-nav{display:flex;gap:10px;padding:12px 18px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--card)}
+.guia-nav .btn{flex:1;justify-content:center;font-size:16px;padding:14px}
+.guia-nav .btn[hidden]{display:none}
+/* Capa do guia */
+.guia-capa{text-align:center}
+.guia-capa-ico{font-size:56px;margin:10px 0 4px}
+.guia-capa h2{font-size:26px;margin:0 0 10px}
+.guia-indice{list-style:none;padding:0 !important;margin:16px 0 0 !important;text-align:left;display:grid;gap:6px}
+.guia-indice button{width:100%;display:flex;align-items:center;gap:10px;font:inherit;font-size:15.5px;text-align:left;color:var(--ink);
+  background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer}
+.guia-indice button span{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);
+  color:var(--accent);font-weight:800;font-size:14px}
+/* Cartão do guia no menu ⚙ */
+.guia-cartao{width:100%;display:flex;align-items:center;gap:14px;text-align:left;font:inherit;color:var(--ink);background:var(--bg);
+  border:1px solid var(--line);border-radius:16px;padding:14px;margin:6px 0 4px;cursor:pointer}
+.guia-cartao b{display:block;font-size:17px}
+.guia-cartao small{display:block;color:var(--muted);font-size:14px;margin-top:2px}
+.guia-cartao-ico{font-size:30px}
+.guia-cartao-seta{margin-left:auto;font-size:28px;color:var(--accent)}

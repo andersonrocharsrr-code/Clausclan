@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=88">
+  <link rel="stylesheet" href="style.css?v=89">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -46,7 +46,7 @@
     </div>
     <div class="top__actions">
       <button class="icon-btn icon-btn--sino" id="btnLista" title="Fechamentos salvos e notificações" aria-label="Fechamentos salvos e notificações">☰<span class="sino-ponto" id="sinoPonto" hidden></span></button>
-      <button class="icon-btn" id="btnConfig" title="Treinamento: como fechar o caixa" aria-label="Treinamento: como fechar o caixa">⚙</button>
+      <button class="icon-btn" id="btnConfig" title="Configurações" aria-label="Configurações">⚙</button>
     </div>
   </header>
 
@@ -375,13 +375,22 @@
 
   <!-- Guia: como fechar o caixa à mão (papel e calculadora), do jeito que o Anderson ensina. -->
   <dialog id="dlgGuia" class="dlg-guia">
-    <div class="guia-topo">
-      <p class="guia-selo">TREINAMENTO</p>
-      <h2>📖 Como fechar o caixa</h2>
-      <p class="muted">Passo a passo do fechamento à mão, com papel e calculadora, do zero até o valor para depositar.
-        Os valores são só um exemplo.</p>
+    <div class="guia-cab">
+      <button type="button" class="guia-x" id="guiaFechar" aria-label="Fechar o guia">✕</button>
+      <p class="guia-selo">GUIA · FECHAMENTO DE CAIXA</p>
+      <p class="guia-etapa" id="guiaEtapa"></p>
+      <div class="guia-barra"><span id="guiaBarra"></span></div>
     </div>
+    <div class="guia-corpo" id="guiaCorpo">
     <ol class="guia">
+      <li class="guia-capa">
+        <div class="guia-capa-ico">📖</div>
+        <h2>Como fechar o caixa</h2>
+        <p>Passo a passo do fechamento à mão, com papel e calculadora, do zero até o valor para depositar.</p>
+        <p class="muted">Os valores são só um exemplo. Toque em <b>Próximo</b> (ou arraste para o lado) para passar
+          cada passo.</p>
+        <ul class="guia-indice" id="guiaIndice"></ul>
+      </li>
       <li>
         <h3>É dia de fechar o caixa</h3>
         <p>Terminou a rota? Antes de somar qualquer coisa, separe <b>todas as notas</b>, cada tipo num montinho:</p>
@@ -797,8 +806,7 @@
           A parte impressa vem pronta na folha da semana.</p>
         <p>Assine a folha e o caixa está fechado. ✅</p>
       </li>
-    </ol>
-
+      <li>
     <h3 class="guia-papel-tit">Como fica o papelzinho</h3>
     <div class="guia-papel">
       <div><span>25%</span><b>R$ 9.000,00</b></div>
@@ -814,10 +822,25 @@
       <div><span>− Pila: almoços</span><b>R$ 150,00</b></div>
       <div class="soma final"><span>Depositar</span><b>R$ 11.395,50</b></div>
     </div>
+    <p class="guia-dica">✅ Pronto! Esse é o papelzinho completo. É dele que você passa tudo para a folha de caixa.</p>
+      </li>
+    </ol>
+    </div>
+    <div class="guia-nav">
+      <button type="button" class="btn btn--ghost" id="guiaVoltar">‹ Voltar</button>
+      <button type="button" class="btn btn--primary" id="guiaProximo">Próximo ›</button>
+    </div>
+  </dialog>
 
-    <form method="dialog" class="row-actions">
-      <button class="btn btn--primary" value="ok">Entendi</button>
-    </form>
+  <!-- ⚙: menu com o guia (o guia só abre quando toca no botão) -->
+  <dialog id="dlgMenuConfig" class="dlg-remover">
+    <h2>⚙ Configurações</h2>
+    <button type="button" class="guia-cartao" id="btnAbrirGuia">
+      <span class="guia-cartao-ico">📖</span>
+      <span><b>Guia para fechamento de caixa</b><small>Passo a passo, do zero até a folha de caixa pronta</small></span>
+      <span class="guia-cartao-seta">›</span>
+    </button>
+    <form method="dialog" class="row-actions"><button class="btn" value="ok">Fechar</button></form>
   </dialog>
 
   <!-- Folha de caixa do treinamento em tela cheia -->
@@ -1019,6 +1042,6 @@
   <script src="vendor/nacl-fast.min.js?v=1"></script>
   <script src="licenca-config.js?v=2"></script>
   <script src="versao-app.js?v=1"></script>
-  <script type="module" src="app.js?v=113"></script>
+  <script type="module" src="app.js?v=114"></script>
 </body>
 </html>

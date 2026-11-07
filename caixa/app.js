@@ -2800,9 +2800,51 @@ $('#guiaFolhaAbrir').addEventListener('click', async () => {
 });
 $('#guiaFolhaGrande').addEventListener('click', (e) => e.currentTarget.classList.toggle('zoom'));
 $('#guiaFolhaFechar').addEventListener('click', () => $('#dlgFolhaGuia').close());
-$('#btnConfig').addEventListener('click', () => {
-  const d = $('#dlgGuia');
-  folhaDoGuia().then((u) => { $('#guiaFolhaMini').src = u; }).catch(() => {});
-  d.showModal();
-  d.scrollTop = 0;
+// O guia em telas: um passo por vez, com Voltar/Próximo, barra de progresso e arrastar para o lado.
+const guiaPassos = [...$$('#dlgGuia .guia > li')];
+let guiaAtual = 0;
+// Índice na capa: o título de cada passo; tocar leva direto até ele.
+$('#guiaIndice').innerHTML = guiaPassos.slice(1).map((li, i) =>
+  `<li><button type="button" data-ir="${i + 1}"><span>${i + 1}</span>${esc(li.querySelector('h3')?.textContent || '')}</button></li>`).join('');
+$('#guiaIndice').addEventListener('click', (e) => { const b = e.target.closest('[data-ir]'); if (b) guiaIr(Number(b.dataset.ir)); });
+function guiaIr(n, dir = n > guiaAtual ? 1 : -1) {
+  guiaAtual = Math.max(0, Math.min(guiaPassos.length - 1, n));
+  guiaPassos.forEach((li, i) => {
+    li.hidden = i !== guiaAtual;
+    li.classList.remove('entra-dir', 'entra-esq');
+  });
+  const li = guiaPassos[guiaAtual];
+  void li.offsetWidth; // reinicia a animação
+  li.classList.add(dir > 0 ? 'entra-dir' : 'entra-esq');
+  const total = guiaPassos.length - 1;
+  $('#guiaEtapa').textContent = guiaAtual === 0 ? `${total} passos` : `Passo ${guiaAtual} de ${total}`;
+  $('#guiaBarra').style.width = `${(guiaAtual / total) * 100}%`;
+  $('#guiaVoltar').hidden = guiaAtual === 0;
+  $('#guiaProximo').textContent = guiaAtual === 0 ? 'Começar ›' : guiaAtual === total ? 'Concluir ✓' : 'Próximo ›';
+  $('#guiaCorpo').scrollTop = 0;
+}
+$('#guiaProximo').addEventListener('click', () => {
+  if (guiaAtual === guiaPassos.length - 1) { $('#dlgGuia').close(); toast('Guia concluído ✓'); return; }
+  guiaIr(guiaAtual + 1, 1);
 });
+$('#guiaVoltar').addEventListener('click', () => guiaIr(guiaAtual - 1, -1));
+$('#guiaFechar').addEventListener('click', () => $('#dlgGuia').close());
+// Arrastar para o lado passa o passo (só se o gesto for mais de lado do que para cima/baixo).
+let guiaToque = null;
+$('#guiaCorpo').addEventListener('touchstart', (e) => { const t = e.touches[0]; guiaToque = { x: t.clientX, y: t.clientY }; }, { passive: true });
+$('#guiaCorpo').addEventListener('touchend', (e) => {
+  if (!guiaToque) return;
+  const t = e.changedTouches[0], dx = t.clientX - guiaToque.x, dy = t.clientY - guiaToque.y;
+  guiaToque = null;
+  if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+  if (dx < 0 && guiaAtual < guiaPassos.length - 1) guiaIr(guiaAtual + 1, 1);
+  if (dx > 0 && guiaAtual > 0) guiaIr(guiaAtual - 1, -1);
+}, { passive: true });
+function abrirGuia() {
+  folhaDoGuia().then((u) => { $('#guiaFolhaMini').src = u; }).catch(() => {});
+  guiaIr(0, 1);
+  $('#dlgGuia').showModal();
+}
+// ⚙ abre o menu; o guia só abre quando toca em "Guia para fechamento de caixa".
+$('#btnConfig').addEventListener('click', () => $('#dlgMenuConfig').showModal());
+$('#btnAbrirGuia').addEventListener('click', () => { $('#dlgMenuConfig').close(); abrirGuia(); });
