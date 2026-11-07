@@ -591,3 +591,9 @@ body{overflow-x:clip}
 .cupom{background:linear-gradient(180deg,#f6f5f1,#eeede8);color:#34312d;letter-spacing:-.03em;border-radius:0;padding-bottom:30px;box-shadow:none;
   -webkit-mask:linear-gradient(#000 0 0) top/100% calc(100% - 11px) no-repeat,conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/13px 12px repeat-x;
   mask:linear-gradient(#000 0 0) top/100% calc(100% - 11px) no-repeat,conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/13px 12px repeat-x}
+/* Vídeo explicativo em tela cheia */
+.guia-obs{margin:8px 2px 0}
+.dlg-video{display:none;align-items:center;justify-content:center;background:#000}
+.dlg-video[open]{display:flex}
+.dlg-video video{width:100%;max-height:100%;background:#000}
+.video-erro{position:fixed;left:16px;right:16px;bottom:24px;text-align:center;color:#fff;background:rgba(220,38,38,.9);padding:12px;border-radius:12px;margin:0}

@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=90">
+  <link rel="stylesheet" href="style.css?v=91">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -846,7 +846,22 @@
       <span><b>Guia para fechamento de caixa</b><small>Passo a passo, do zero até a folha de caixa pronta</small></span>
       <span class="guia-cartao-seta">›</span>
     </button>
+    <button type="button" class="guia-cartao" id="btnAbrirVideo">
+      <span class="guia-cartao-ico">🎬</span>
+      <span><b>Vídeo explicativo</b><small>Como fechar o caixa, do zero até a folha pronta (8 min)</small></span>
+      <span class="guia-cartao-seta">›</span>
+    </button>
+    <p class="muted small guia-obs">📶 O vídeo precisa de internet para assistir.</p>
     <form method="dialog" class="row-actions"><button class="btn" value="ok">Fechar</button></form>
+  </dialog>
+
+  <!-- Vídeo explicativo (fica no GitHub Pages; não vai dentro do app para não pesar a atualização) -->
+  <dialog id="dlgVideo" class="dlg-tela dlg-video" aria-label="Vídeo explicativo: como fechar o caixa">
+    <button type="button" class="tela-fechar" id="videoFechar" aria-label="Fechar o vídeo">✕</button>
+    <video id="videoGuia" controls playsinline preload="none"
+      poster="https://andersonrocharsrr-code.github.io/Clausclan/videos/fechamento-de-caixa.jpg"
+      data-src="https://andersonrocharsrr-code.github.io/Clausclan/videos/fechamento-de-caixa.mp4"></video>
+    <p class="video-erro" id="videoErro" hidden>Não deu para abrir o vídeo. Confira a internet e tente de novo.</p>
   </dialog>
 
   <!-- Folha de caixa do treinamento em tela cheia -->
@@ -1048,6 +1063,6 @@
   <script src="vendor/nacl-fast.min.js?v=1"></script>
   <script src="licenca-config.js?v=2"></script>
   <script src="versao-app.js?v=1"></script>
-  <script type="module" src="app.js?v=114"></script>
+  <script type="module" src="app.js?v=115"></script>
 </body>
 </html>
