@@ -522,3 +522,14 @@ body{overflow-x:clip}
 .fm-x > *:last-child{border-right:0}
 .fm-x i{font-size:13px;letter-spacing:-.02em}
 .fm-v{padding:4px;border-bottom:1.5px solid #111;min-height:24px}
+/* Regra do pepino parcial (o que vai na folha) */
+.guia-regra{border:2px solid var(--accent);border-radius:14px;padding:12px 14px;margin:12px 0;background:var(--bg)}
+.guia-regra p{margin:6px 0}
+.guia-regra-tit{font-size:17px;margin-top:0 !important}
+.parc-cartoes{display:flex;align-items:stretch;gap:8px;margin:8px 0}
+.parc-cartao{flex:1;display:flex;flex-direction:column;gap:3px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.parc-cartao span{font-size:14px;color:var(--muted)}
+.parc-cartao b{font-size:18px;color:#4ade80}
+.parc-cartao small{font-size:12.5px;color:var(--muted)}
+.parc-mais{align-self:center;font-size:24px;font-weight:800;color:var(--accent)}
+.parc-seta{text-align:center;font-size:22px;margin:2px 0 !important;color:var(--accent)}

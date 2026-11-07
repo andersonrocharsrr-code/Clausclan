@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=86">
+  <link rel="stylesheet" href="style.css?v=87">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -699,6 +699,21 @@
         <p>Ela ainda deve <b>R$ 187,00</b>. <b>Confirme com o sistema.</b></p>
         <p class="guia-anote">Anote no papel: <b>Pepino parcial — R$ 200,00</b></p>
         <p>Em <b>todos os pepinos parciais</b>, o valor que a cliente pagou <b>entra no recebimento</b>.</p>
+        <div class="guia-regra">
+          <p class="guia-regra-tit">📌 Na folha, em <b>PEPINO PARCIAL</b> vai só o que a cliente <b>PAGOU</b></p>
+          <p>Não é o valor da nota, nem o que ela ficou devendo. É só o dinheiro que ela deu.</p>
+          <p><b>Exemplo com 2 pepinos parciais na semana:</b></p>
+          <div class="parc-cartoes">
+            <div class="parc-cartao"><span>Eduarda</span><b>pagou R$ 200</b><small>ficou devendo uma parte</small></div>
+            <div class="parc-mais">+</div>
+            <div class="parc-cartao"><span>Outra cliente</span><b>pagou R$ 300</b><small>ficou devendo uma parte</small></div>
+          </div>
+          <p class="parc-seta">⬇</p>
+          <div class="folha-extra folha-extra--total"><span>PEPINO PARCIAL:R$</span><span class="fx-tot">500,00</span></div>
+          <p>200 + 300 = <b>R$ 500,00</b>. Some só o que elas pagaram.</p>
+          <p class="guia-dica">⚠️ O que elas <b>ficaram devendo</b> não vai aqui: vai em <b>Nº DE PINOS</b> e
+            <b>VALOR DOS PEPINOS</b>, que você vê mais adiante.</p>
+        </div>
       </li>
       <li>
         <h3>Some o recebimento e confira com o sistema</h3>
@@ -756,8 +771,10 @@
         <p>A parte de cima da folha já vem <b>impressa</b>: cidade, data, semana, foi cobrar, quantidade de notas e o
           V. PEP. 5%. Você preenche o resto, à mão, com o que está no papelzinho:</p>
         <ul>
-          <li><b>NOTAS 25%</b>, <b>NOTAS 40% e 50%</b>, <b>PEPINO EXTRA</b>, <b>ANTECIPADOS</b> e
-            <b>PEPINO PARCIAL</b> (o que ela pagou): cada valor no seu campo.</li>
+          <li><b>NOTAS 25%</b>, <b>NOTAS 40% e 50%</b>, <b>PEPINO EXTRA</b> e <b>ANTECIPADOS</b>: cada valor no seu
+            campo.</li>
+          <li><b>PEPINO PARCIAL</b>: <b>só o que as clientes pagaram</b> nos parciais (no exemplo, R$ 200,00).
+            O que ficaram devendo vai em VALOR DOS PEPINOS.</li>
           <li><b>RECEBIMENTO</b>: a soma de tudo.</li>
           <li><b>Nº DE PINOS</b> e <b>VALOR DOS PEPINOS</b>: o que as clientes ficaram devendo.</li>
           <li>Os quadros de cada <b>pepino extra</b> (Nº, cidade, valor e o nome em VENDEDORA).</li>
