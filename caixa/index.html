@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=81">
+  <link rel="stylesheet" href="style.css?v=82">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -388,7 +388,7 @@
         <ul>
           <li><b>Notas 25%</b>: notas quitadas com o desconto de 25%.</li>
           <li><b>Notas 40% e 50%</b>: notas quitadas com a <b>comissão em mercadoria</b>.</li>
-          <li><b>Pepino extra</b>: nota de outra vendedora que você recebeu. Se não recebeu nenhum, não tem.</li>
+          <li><b>Pepino extra</b>: nota que a cliente pagou <b>depois da data do acerto</b>. Se não recebeu nenhum, não tem.</li>
           <li><b>Antecipadas</b>, se tiver.</li>
           <li><b>Pepino parcial</b>: fica <b>grampeado na promissória</b>, separado das outras.</li>
         </ul>
@@ -518,6 +518,53 @@
       </li>
       <li>
         <h3>Some os pepinos extras</h3>
+        <p><b>Como saber se a nota é pepino extra?</b> É uma nota que <b>não foi paga na data do acerto</b>: a cliente
+          pagou dias depois. Compare a <b>"DATA DO ACERTO"</b>, lá em cima, com a <b>data do pagamento</b>, lá embaixo:
+          são diferentes. Escreva <b>"extra"</b> em cima da nota para não misturar com as outras.</p>
+        <!-- Recriação de uma nota de pepino extra real (sem CPF, endereço, cidade, telefones e nome do vendedor). -->
+        <figure class="cupom" aria-label="Exemplo de nota de pepino extra">
+          <p class="cupom-mao" aria-label="escrito à mão: extra">extra</p>
+          <div class="cupom-cod">N. 117926<br><span class="cupom-barras" aria-hidden="true"></span></div>
+          <hr>
+          <p>Representante:</p>
+          <p>Contato:</p>
+          <hr>
+          <p class="c marca marca--data">DATA DO ACERTO<br>12/10/2026</p>
+          <hr>
+          <p class="c">Ao efetuar pagamento<br>exija seu comprovante e comissao</p>
+          <hr>
+          <p>ANTONIA CONCEICAO</p>
+          <p>CPF:</p>
+          <p>End.:</p>
+          <p>Ref.:</p>
+          <p>Bairro:</p>
+          <p>Cidade: &nbsp; &nbsp; &nbsp; &nbsp; UF:</p>
+          <p>Nome contato 1:</p>
+          <p>Contato 1:</p>
+          <p>Contato 2:</p>
+          <p>what:</p>
+          <hr>
+          <p>TAPETE INDIANO SALA 1.40 X 2.00</p>
+          <p>001 x 302,00 = 302,00</p>
+          <p><b>Total de pecas:1</b></p>
+          <p><b>TOTAL R$302,00</b></p>
+          <hr>
+          <p><b>PAGAMENTOS</b></p>
+          <p>DATA &nbsp; &nbsp; &nbsp; VALOR</p>
+          <p><span class="marca marca--data">06/11/26</span> 226,50</p>
+          <p>Total de pagamentos:226,50</p>
+          <hr>
+          <p class="marca marca--valor">Recebi o valor de R$226,50</p>
+          <p>Nota quitada com 25% de desconto, sem direito a comissao</p>
+          <hr>
+          <hr>
+          <p class="c cupom-ass">&nbsp;</p>
+          <p class="c">Emissao:06/11/2026</p>
+        </figure>
+        <p class="cupom-legenda"><span class="leg leg--data"></span> data do acerto × data do pagamento: <b>diferentes</b>
+          &nbsp; <span class="leg leg--valor"></span> o <b>valor recebido</b></p>
+        <p class="guia-dica">💡 O acerto era dia 12/10, mas a cliente só pagou dia 06/11: por isso é extra. Ela pagou
+          <b>R$ 226,50</b>, e é esse valor recebido que você soma.</p>
         <p>Exemplo: 3 pepinos extras que somam R$ 900.</p>
         <p class="guia-anote">Anote no papel: <b>Pepino extra — R$ 900,00</b></p>
         <p>Separe essas notas também.</p>
