@@ -239,6 +239,10 @@ function pintarTotais() {
       el.classList.toggle('pos', v === 0 && c.aDepositar > 0);
     }
   });
+  // Quanto foi em cada tipo de depósito (é o que vai em cada campo da folha).
+  const tipos = [['empresa', c.depEspecie], ['banco', c.depBanco], ['pix', c.depPix]].filter(([, v]) => v > 0);
+  $('#depPorTipo').hidden = !tipos.length;
+  $('#depPorTipo').innerHTML = tipos.map(([o, v]) => `<div><span>${ONDE[o]}</span><b>${liberado ? R$(v) : '—'}</b></div>`).join('');
   $$('[data-status]').forEach((el) => {
     el.textContent = !liberado ? '🔒 Licença vencida: os cálculos estão travados.' : c.aDepositar < 0 ? `As despesas passaram o recebimento em ${R$(-c.aDepositar)}`
       : c.falta > 0 ? `Falta depositar ${R$(c.falta)}`
@@ -2035,10 +2039,11 @@ function dadosCaixa() {
   ];
   // Na folha o OBS é escrito "4.000,00 (Fernando)".
   const obs = st.obs.filter((o) => o.valor).map((o) => `${brl(o.valor)}${o.desc ? ` (${o.desc})` : ''}`);
-  // Depósito na folha: o TOTAL a depositar (já depositado + o que falta), num campo só:
-  // semana de pagamento → Depto. empresa espécie; outras semanas → Depto. banco/TED. Pix é só controle no app.
-  const totalDep = c.aDepositar > 0 ? c.aDepositar : 0;
-  const naEmpresa = tipoDeposito(st) === 'empresa';
+  // Depósito na folha: cada tipo no seu campo, com o que foi lançado nele (empresa espécie, banco/TED, Pix).
+  // O que ainda falta depositar entra no campo da semana (pagamento → empresa; outras → banco),
+  // então sem nada lançado o total fica todo num campo só, como antes.
+  const dep = { empresa: c.depEspecie, banco: c.depBanco, pix: c.depPix };
+  if (c.falta > 0) dep[tipoDeposito(st)] = arred(dep[tipoDeposito(st)] + c.falta);
   // E no OBS continua o aviso do que ainda falta depositar.
   if (c.falta > 0) obs.push(`Falta depositar ${brl(c.falta)}`);
   if (c.falta < 0) obs.push(`Depositou a mais ${brl(-c.falta)}`);
@@ -2049,8 +2054,8 @@ function dadosCaixa() {
     antecipados: vazioOu(st.antecipados), qtNotasDeixadas: st.qtNotasDeixadas, pinos: pep.pinos ? String(pep.pinos) : '',
     valorPepinos: vazioOu(pep.valor), pepinoParcial: vazioOu(st.pepinoParcial),
     notas25: vazioOu(c.notas25), notas4050: vazioOu(c.notas4050), pepinoExtra: vazioOu(c.extras),
-    recebimento: vazioOu(c.recebimento), depEspecie: naEmpresa ? vazioOu(totalDep) : '', depPix: '',
-    depBanco: naEmpresa ? '' : vazioOu(totalDep), vale: [st.vale, st.vale2].filter((v) => Number(v)).map(brl).join(' / '), ajuda: vazioOu(st.ajuda), mecanica: vazioOu(st.mecanica),
+    recebimento: vazioOu(c.recebimento), depEspecie: vazioOu(dep.empresa), depPix: vazioOu(dep.pix),
+    depBanco: vazioOu(dep.banco), vale: [st.vale, st.vale2].filter((v) => Number(v)).map(brl).join(' / '), ajuda: vazioOu(st.ajuda), mecanica: vazioOu(st.mecanica),
     despSupervisor: vazioOu(st.despSupervisor), excedido: vazioOu(st.excedido), valorDeixado: vazioOu(st.valorDeixado),
     assinatura: st.assinatura, outros, obs,
     extras: st.extras.map((x) => ({ numero: x.numero || '', cidade: x.cidade || '', valor: vazioOu(x.valor), vendedora: x.vendedora || '' })),
