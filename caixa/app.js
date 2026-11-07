@@ -2848,3 +2848,15 @@ function abrirGuia() {
 // ⚙ abre o menu; o guia só abre quando toca em "Guia para fechamento de caixa".
 $('#btnConfig').addEventListener('click', () => $('#dlgMenuConfig').showModal());
 $('#btnAbrirGuia').addEventListener('click', () => { $('#dlgMenuConfig').close(); abrirGuia(); });
+// Vídeo explicativo: só carrega quando abre (vem da internet) e para quando fecha.
+const videoGuia = $('#videoGuia');
+$('#btnAbrirVideo').addEventListener('click', () => {
+  $('#dlgMenuConfig').close();
+  $('#videoErro').hidden = true;
+  if (!videoGuia.src) videoGuia.src = videoGuia.dataset.src;
+  $('#dlgVideo').showModal();
+  videoGuia.play().catch(() => {});
+});
+videoGuia.addEventListener('error', () => { $('#videoErro').hidden = false; });
+$('#videoFechar').addEventListener('click', () => $('#dlgVideo').close());
+$('#dlgVideo').addEventListener('close', () => videoGuia.pause());
