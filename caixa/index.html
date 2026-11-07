@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=77">
+  <link rel="stylesheet" href="style.css?v=88">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -46,7 +46,7 @@
     </div>
     <div class="top__actions">
       <button class="icon-btn icon-btn--sino" id="btnLista" title="Fechamentos salvos e notificações" aria-label="Fechamentos salvos e notificações">☰<span class="sino-ponto" id="sinoPonto" hidden></span></button>
-      <button class="icon-btn" id="btnConfig" title="Configurar" aria-label="Configurar">⚙</button>
+      <button class="icon-btn" id="btnConfig" title="Treinamento: como fechar o caixa" aria-label="Treinamento: como fechar o caixa">⚙</button>
     </div>
   </header>
 
@@ -372,25 +372,459 @@
   <div id="folha" class="folha" aria-hidden="true"></div>
 
   <!-- Janelas -->
-  <dialog id="dlgConfig">
-    <form method="dialog">
-      <h2>Leitura das fotos</h2>
-      <div class="escolha" role="radiogroup">
-        <label><input type="radio" name="modo" value="gratis"> <span><b>Gratuita</b> (no celular)<br><small>Lê as notas e a folha em branco, que são impressas. Não lê letra de mão. Tire fotos nítidas.</small></span></label>
-        <label><input type="radio" name="modo" value="economica"> <span><b>IA econômica</b> (paga, centavos)<br><small>Lê melhor foto tremida e também letra de mão (pepino extra).</small></span></label>
-        <label><input type="radio" name="modo" value="precisa"> <span><b>IA mais precisa</b> (paga, mais cara)<br><small>Para quando a econômica errar.</small></span></label>
-      </div>
-      <div id="campoChave">
-        <p class="muted small">A IA é da Anthropic: crie a chave em
-          <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>
-          e cole aqui. Ela fica salva só neste aparelho; cada foto lida é cobrada na sua conta.</p>
-        <label>Chave da API<input id="apiKey" type="password" autocomplete="off" placeholder="sk-ant-..."></label>
-      </div>
-      <div class="row-actions">
-        <button class="btn" value="cancel">Cancelar</button>
-        <button class="btn btn--primary" id="btnSalvarChave" value="ok">Salvar</button>
-      </div>
+
+  <!-- Guia: como fechar o caixa à mão (papel e calculadora), do jeito que o Anderson ensina. -->
+  <dialog id="dlgGuia" class="dlg-guia">
+    <div class="guia-topo">
+      <p class="guia-selo">TREINAMENTO</p>
+      <h2>📖 Como fechar o caixa</h2>
+      <p class="muted">Passo a passo do fechamento à mão, com papel e calculadora, do zero até o valor para depositar.
+        Os valores são só um exemplo.</p>
+    </div>
+    <ol class="guia">
+      <li>
+        <h3>É dia de fechar o caixa</h3>
+        <p>Terminou a rota? Antes de somar qualquer coisa, separe <b>todas as notas</b>, cada tipo num montinho:</p>
+        <ul>
+          <li><b>Notas 25%</b>: notas quitadas com o desconto de 25%.</li>
+          <li><b>Notas 40% e 50%</b>: notas quitadas com a <b>comissão em mercadoria</b>.</li>
+          <li><b>Pepino extra</b>: nota que a cliente pagou <b>depois da data do acerto</b>. Se não recebeu nenhum, não tem.</li>
+          <li><b>Antecipadas</b>, se tiver.</li>
+          <li><b>Pepino parcial</b>: fica <b>grampeado na promissória</b>, separado das outras.</li>
+        </ul>
+        <p class="guia-dica">💡 Cada montinho vai para um lugar diferente da folha de caixa. Separando antes, nada se mistura
+          e nenhuma nota fica esquecida na pasta.</p>
+        <p>Pegue uma <b>folhinha de papel em branco</b> e a <b>calculadora</b>.</p>
+      </li>
+      <li>
+        <h3>Some as notas de 25%</h3>
+        <p><b>Como saber se a nota é 25%?</b> Olhe o <b>final da nota</b>: está escrito
+          <b>"Nota quitada com 25% de desconto"</b>. O valor que você recebeu aparece logo acima, em
+          <b>"Recebi o valor de R$…"</b>.</p>
+        <!-- Recriação de uma nota de 25% real (sem CPF, telefones, endereço e nome do vendedor). -->
+        <figure class="cupom" aria-label="Exemplo de nota de 25%">
+          <div class="cupom-cod">N. 117403<br><span class="cupom-barras" aria-hidden="true"></span></div>
+          <hr>
+          <p>Representante:</p>
+          <p>Contato:</p>
+          <hr>
+          <p class="c">DATA DO ACERTO<br>05/10/2026</p>
+          <hr>
+          <p class="c">Ao efetuar pagamento<br>exija seu comprovante e comissao</p>
+          <hr>
+          <p>ANTONIA VASCONCELOS</p>
+          <p>CPF:</p>
+          <p>End.:</p>
+          <p>Ref.:</p>
+          <p>Bairro:</p>
+          <p>Cidade:Rio Branco UF:AC</p>
+          <p>Contato 1:</p>
+          <p>Contato 2:</p>
+          <p>what:</p>
+          <hr>
+          <p>CONJ TACAS L SERVIR SPRING 350 ML</p>
+          <p>004 x 142,00 = 568,00</p>
+          <p><b>Total de pecas:4</b></p>
+          <p><b>TOTAL R$568,00</b></p>
+          <hr>
+          <p><b>DEVOLUCOES</b></p>
+          <p>CONJ TACAS L SERVIR SPRING 350 ML</p>
+          <p>002 x 142,00 = 284,00</p>
+          <p><b>TOTAL DE DEVOLUCOES R$284,00</b></p>
+          <hr>
+          <p><b>PAGAMENTOS</b></p>
+          <p>DATA &nbsp; &nbsp; &nbsp; VALOR</p>
+          <p>10/10/26 426,00</p>
+          <p>Total de pagamentos:426,00</p>
+          <hr>
+          <p class="marca marca--valor">Recebi o valor de R$426,00</p>
+          <p class="marca marca--25"><b>Nota quitada com 25% de desconto</b>, sem direito a comissao</p>
+          <hr>
+          <hr>
+          <p class="c cupom-ass">&nbsp;</p>
+          <p class="c">Emissao:10/10/2026</p>
+        </figure>
+        <p class="cupom-legenda"><span class="leg leg--25"></span> é aqui que diz que a nota é <b>25%</b> &nbsp;
+          <span class="leg leg--valor"></span> o <b>valor recebido</b></p>
+        <p class="guia-dica">💡 Nessa nota a cliente pagou <b>R$ 426,00</b>. No fechamento você só precisa do
+          <b>valor recebido</b>: é ele que você soma.</p>
+        <p>Com todas as notas de 25% na mão, some uma por uma na calculadora.</p>
+        <p class="guia-anote">Anote no papel: <b>25% — R$ 9.000,00</b></p>
+        <p>Deixe essas notas organizadas e separadas.</p>
+        <p class="guia-dica">💡 Some duas vezes. Se der o mesmo resultado, está certo.</p>
+      </li>
+      <li>
+        <h3>Some as notas de 40% e 50%</h3>
+        <p>Nessas notas a <b>comissão da cliente foi paga em mercadoria</b>, não em dinheiro.</p>
+        <p><b>Como saber se a nota é 40% e 50%?</b> A nota tem a parte <b>"COMISSAO"</b>, com a mercadoria que a
+          cliente levou de comissão, e no final está escrito <b>"Nota quitada."</b></p>
+        <!-- Recriação de uma nota de 40/50% real (sem CPF, cidade, telefones, endereço e nome do vendedor). -->
+        <figure class="cupom" aria-label="Exemplo de nota de 40% e 50%, comissão em mercadoria">
+          <div class="cupom-cod">N. 117613<br><span class="cupom-barras" aria-hidden="true"></span></div>
+          <hr>
+          <p>Representante:</p>
+          <p>Contato:</p>
+          <hr>
+          <p class="c">DATA DO ACERTO<br>05/10/2026</p>
+          <hr>
+          <p class="c">Ao efetuar pagamento<br>exija seu comprovante e comissao</p>
+          <hr>
+          <p>RAISSA DA SILVA</p>
+          <p>CPF:</p>
+          <p>End.:</p>
+          <p>Ref.:</p>
+          <p>Bairro:</p>
+          <p>Cidade: &nbsp; &nbsp; &nbsp; &nbsp; UF:</p>
+          <p>Nome contato 1:</p>
+          <p>Contato 1:</p>
+          <p>Contato 2:</p>
+          <p>what:</p>
+          <hr>
+          <p>CAPA SOFA 2 E 3 ESTAMPADA</p>
+          <p>001 x 280,00 = 280,00</p>
+          <p>JOGO COPOS TOPAZIO 380 ML/SUN STONE 360 ML</p>
+          <p>003 x 112,00 = 336,00</p>
+          <p><b>Total de pecas:4</b></p>
+          <p><b>TOTAL R$616,00</b></p>
+          <hr>
+          <div class="marca marca--com">
+            <p><b>COMISSAO</b></p>
+            <p>LENCOL CASAL</p>
+            <p>002 x 132,00 = 264,00</p>
+            <p>PANO PRATO COM GLITER</p>
+            <p>004 x 11,00 = 44,00</p>
+            <p><b>TOTAL DE COMISSAO R$308,00</b></p>
+          </div>
+          <hr>
+          <p><b>PAGAMENTOS</b></p>
+          <p>DATA &nbsp; &nbsp; &nbsp; VALOR</p>
+          <p>08/10/26 616,00</p>
+          <p>Total de pagamentos:616,00</p>
+          <hr>
+          <p class="marca marca--valor">Recebi o valor de R$616,00</p>
+          <p class="marca marca--25"><b>Nota quitada.</b></p>
+          <hr>
+          <hr>
+          <p class="c cupom-ass">&nbsp;</p>
+          <p class="c">Emissao:08/10/2026</p>
+        </figure>
+        <p class="cupom-legenda"><span class="leg leg--com"></span> comissão em mercadoria &nbsp;
+          <span class="leg leg--25"></span> <b>"Nota quitada."</b> &nbsp;
+          <span class="leg leg--valor"></span> o <b>valor recebido</b></p>
+        <p class="guia-dica">💡 Nessa nota a cliente pagou <b>R$ 616,00</b>. É esse valor recebido que você soma.</p>
+        <p>Exemplo: duas notas de 40% deram R$ 2.500.</p>
+        <p class="guia-anote">Anote no papel: <b>40% — R$ 2.500,00</b></p>
+        <p>Dobre direitinho e guarde.</p>
+      </li>
+      <li>
+        <h3>Some os pepinos extras</h3>
+        <p><b>Como saber se a nota é pepino extra?</b> É uma nota que <b>não foi paga na data do acerto</b>: a cliente
+          pagou dias depois. Compare a <b>"DATA DO ACERTO"</b>, lá em cima, com a <b>data do pagamento</b>, lá embaixo:
+          são diferentes. Escreva <b>"extra"</b> em cima da nota para não misturar com as outras.</p>
+        <!-- Recriação de uma nota de pepino extra real (sem CPF, endereço, cidade, telefones e nome do vendedor). -->
+        <figure class="cupom" aria-label="Exemplo de nota de pepino extra">
+          <p class="cupom-mao" aria-label="escrito à mão: extra">extra</p>
+          <div class="cupom-cod"><span class="marca marca--num">N. 117926</span><br><span class="cupom-barras" aria-hidden="true"></span></div>
+          <hr>
+          <p>Representante:</p>
+          <p>Contato:</p>
+          <hr>
+          <p class="c marca marca--data">DATA DO ACERTO<br>12/10/2026</p>
+          <hr>
+          <p class="c">Ao efetuar pagamento<br>exija seu comprovante e comissao</p>
+          <hr>
+          <p><span class="marca marca--nome">ANTONIA CONCEICAO</span></p>
+          <p>CPF:</p>
+          <p>End.:</p>
+          <p>Ref.:</p>
+          <p>Bairro:</p>
+          <p>Cidade:<span class="marca marca--cid">Rio Branco</span> UF:AC</p>
+          <p>Nome contato 1:</p>
+          <p>Contato 1:</p>
+          <p>Contato 2:</p>
+          <p>what:</p>
+          <hr>
+          <p>TAPETE INDIANO SALA 1.40 X 2.00</p>
+          <p>001 x 302,00 = 302,00</p>
+          <p><b>Total de pecas:1</b></p>
+          <p><b>TOTAL R$302,00</b></p>
+          <hr>
+          <p><b>PAGAMENTOS</b></p>
+          <p>DATA &nbsp; &nbsp; &nbsp; VALOR</p>
+          <p><span class="marca marca--data">06/11/26</span> 226,50</p>
+          <p>Total de pagamentos:226,50</p>
+          <hr>
+          <p class="marca marca--valor">Recebi o valor de R$226,50</p>
+          <p>Nota quitada com 25% de desconto, sem direito a comissao</p>
+          <hr>
+          <hr>
+          <p class="c cupom-ass">&nbsp;</p>
+          <p class="c">Emissao:06/11/2026</p>
+        </figure>
+        <p class="cupom-legenda"><span class="leg leg--data"></span> data do acerto × data do pagamento: <b>diferentes</b></p>
+        <p class="guia-dica">💡 O acerto era dia 12/10, mas a cliente só pagou dia 06/11: por isso é extra. Ela pagou
+          <b>R$ 226,50</b>, e é esse valor recebido que você soma.</p>
+        <p><b>Na folha de caixa</b>, cada pepino extra tem o seu quadro. Passe da nota para a folha:</p>
+        <ul class="guia-cores">
+          <li><span class="leg leg--num"></span> o <b>número da nota</b> vai em <b>Nº</b>;</li>
+          <li><span class="leg leg--cid"></span> a <b>cidade</b> vai em <b>CIDADE</b>;</li>
+          <li><span class="leg leg--valor"></span> o <b>valor recebido</b> vai em <b>VALOR</b>;</li>
+          <li><span class="leg leg--nome"></span> o <b>nome da cliente</b> vai em <b>VENDEDORA</b>.</li>
+        </ul>
+        <div class="folha-extra" aria-label="Quadro de pepino extra na folha de caixa">
+          <div class="fx-cab"><span>Nº</span><span>CIDADE</span><span>VALOR</span></div>
+          <div class="fx-lin"><span class="fx-num">117926</span><span class="fx-cid">Rio Branco</span><span class="fx-val">226,50</span></div>
+          <div class="fx-vend">VENDEDORA: <span class="fx-nome">Antonia Conceição</span></div>
+        </div>
+        <p>Faça um quadro para cada pepino extra. Depois <b>some todos</b> e escreva o total em
+          <b>PEPINO EXTRA R$</b>, lá em cima da folha.</p>
+        <div class="folha-extra folha-extra--total"><span>PEPINO EXTRA R$</span><span class="fx-tot">900,00</span></div>
+        <p>Exemplo: 3 pepinos extras que somam R$ 900.</p>
+        <p class="guia-anote">Anote no papel: <b>Pepino extra — R$ 900,00</b></p>
+        <p>Separe essas notas também.</p>
+      </li>
+      <li>
+        <h3>Separe as notas antecipadas</h3>
+        <p><b>Como saber se a nota é antecipada?</b> A cliente <b>quitou a nota antes da data do acerto</b>.
+          Compare a <b>"DATA DO ACERTO"</b>, lá em cima, com a data do pagamento: o acerto ainda ia ser no dia 16/11,
+          mas ela pagou nesta semana, no dia 05/11.</p>
+        <!-- Recriação de uma nota antecipada real (sem CPF, endereço, telefones e nome do vendedor);
+             os dois pagamentos de 05/11 (335,00 e 0,50) viraram um só de 335,50. -->
+        <figure class="cupom" aria-label="Exemplo de nota antecipada">
+          <div class="cupom-cod">N. 119832<br><span class="cupom-barras" aria-hidden="true"></span></div>
+          <hr>
+          <p>Representante:</p>
+          <p>Contato:</p>
+          <hr>
+          <p class="c marca marca--data">DATA DO ACERTO<br>16/11/2026</p>
+          <hr>
+          <p class="c">Ao efetuar pagamento<br>exija seu comprovante e comissao</p>
+          <hr>
+          <p>MONICA FONSECA</p>
+          <p>CPF:</p>
+          <p>End.:</p>
+          <p>Ref.:</p>
+          <p>Bairro:</p>
+          <p>Cidade:Rio Branco UF:AC</p>
+          <p>Nome contato 1:</p>
+          <p>Contato 1:</p>
+          <p>Nome contato 2:</p>
+          <p>Contato 2:</p>
+          <p>what:</p>
+          <hr>
+          <p>COBERTOR QUEEN</p>
+          <p>001 x 218,00 = 218,00</p>
+          <p>KIT FRIGIDEIRA CERAMICA N-24</p>
+          <p>001 x 248,00 = 248,00</p>
+          <p>TOALHA BANHO AZALEIA</p>
+          <p>003 x 60,00 = 180,00</p>
+          <p><b>Total de pecas:5</b></p>
+          <p><b>TOTAL R$646,00</b></p>
+          <hr>
+          <p><b>PAGAMENTOS</b></p>
+          <p>DATA &nbsp; &nbsp; &nbsp; VALOR</p>
+          <p>07/10/26 149,00</p>
+          <p><span class="marca marca--data">05/11/26</span> 335,50</p>
+          <p>Total de pagamentos:484,50</p>
+          <hr>
+          <p class="marca marca--valor">Recebi o valor de R$335,50</p>
+          <p>Nota quitada com 25% de desconto, sem direito a comissao</p>
+          <hr>
+          <hr>
+          <p class="c cupom-ass">&nbsp;</p>
+          <p class="c">Emissao:05/11/2026</p>
+        </figure>
+        <p class="cupom-legenda"><span class="leg leg--data"></span> acerto em 16/11, pagou antes, em 05/11 &nbsp;
+          <span class="leg leg--valor"></span> o <b>valor recebido</b></p>
+        <p class="guia-dica">💡 A cliente já tinha pago R$ 149,00 em 07/10. Agora, nesta semana, ela pagou
+          <b>R$ 335,50</b> e quitou a nota: é o <b>"Recebi o valor de"</b> que conta no fechamento.</p>
+        <p class="guia-anote">Anote no papel: <b>Antecipada — R$ 335,50</b></p>
+        <p>Separe essas notas também.</p>
+      </li>
+      <li>
+        <h3>Separe os pepinos parciais</h3>
+        <p><b>Como saber se a nota é pepino parcial?</b> A cliente pagou <b>só uma parte</b> da nota. No final está
+          escrito <b>"Recebi o valor parcial de R$…"</b> e <b>"Este comprovante nao quita a divida."</b></p>
+        <!-- Recriação de uma nota de pepino parcial real (sem CPF, endereço, telefones e nome do vendedor). -->
+        <figure class="cupom" aria-label="Exemplo de nota de pepino parcial">
+          <div class="cupom-cod">N. 118935<br><span class="cupom-barras" aria-hidden="true"></span></div>
+          <hr>
+          <p>Representante:</p>
+          <p>Contato:</p>
+          <hr>
+          <p class="c">DATA DO ACERTO<br>02/11/2026</p>
+          <hr>
+          <p class="c">Ao efetuar pagamento<br>exija seu comprovante e comissao</p>
+          <hr>
+          <p>EDUARDA MARTINS</p>
+          <p>CPF:</p>
+          <p>End.:</p>
+          <p>Ref.:</p>
+          <p>Bairro:</p>
+          <p>Cidade:Rio Branco UF:AC</p>
+          <p>Contato 1:</p>
+          <p>Contato 2:</p>
+          <p>what:</p>
+          <hr>
+          <p>COLCHA LENCOL CASAL</p>
+          <p>001 x 216,00 = 216,00</p>
+          <p>LENCOL CASAL</p>
+          <p>001 x 130,00 = 130,00</p>
+          <p>LENCOL KING</p>
+          <p>001 x 170,00 = 170,00</p>
+          <p><b>Total de pecas:3</b></p>
+          <p><b>TOTAL R$516,00</b></p>
+          <p><b>META DE VENDA R$412,80</b></p>
+          <hr>
+          <p><b>PAGAMENTOS</b></p>
+          <p>DATA &nbsp; &nbsp; &nbsp; VALOR</p>
+          <p>06/11/26 200,00</p>
+          <p>Total de pagamentos:200,00</p>
+          <hr>
+          <p class="marca marca--deve"><b>SALDO DEVEDOR R$316,00</b></p>
+          <p class="marca marca--valor">Recebi o valor parcial de R$200,00</p>
+          <p class="marca marca--25">Este comprovante<br>nao quita a divida.</p>
+          <hr>
+          <hr>
+          <p class="c cupom-ass">&nbsp;</p>
+          <p class="c">Emissao:06/11/2026</p>
+        </figure>
+        <p class="cupom-legenda"><span class="leg leg--valor"></span> o <b>valor recebido</b> (parcial) &nbsp;
+          <span class="leg leg--deve"></span> <b>saldo devedor</b>: calcule abaixo &nbsp;
+          <span class="leg leg--25"></span> <b>não quita</b> a nota</p>
+        <p class="guia-dica">💡 Nessa nota a cliente pagou <b>R$ 200,00</b>. Deixe a nota
+          <b>grampeada na promissória</b>, separada das outras.</p>
+        <p><b>Como calcular o saldo devedor:</b> pegue o total da nota, tire os 25% e tire o que ela pagou.</p>
+        <p class="guia-conta">516 − 25% = 387<br>387 − 200 = <b>187</b></p>
+        <p>Ela ainda deve <b>R$ 187,00</b>. <b>Confirme com o sistema.</b></p>
+        <p class="guia-anote">Anote no papel: <b>Pepino parcial — R$ 200,00</b></p>
+        <p>Em <b>todos os pepinos parciais</b>, o valor que a cliente pagou <b>entra no recebimento</b>.</p>
+        <div class="guia-regra">
+          <p class="guia-regra-tit">📌 Na folha, em <b>PEPINO PARCIAL</b> vai só o que a cliente <b>PAGOU</b></p>
+          <p>Não é o valor da nota, nem o que ela ficou devendo. É só o dinheiro que ela deu.</p>
+          <p><b>Exemplo com 2 pepinos parciais na semana:</b></p>
+          <div class="parc-cartoes">
+            <div class="parc-cartao"><span>Eduarda</span><b>pagou R$ 200</b><small>ficou devendo uma parte</small></div>
+            <div class="parc-mais">+</div>
+            <div class="parc-cartao"><span>Outra cliente</span><b>pagou R$ 300</b><small>ficou devendo uma parte</small></div>
+          </div>
+          <p class="parc-seta">⬇</p>
+          <div class="folha-extra folha-extra--total"><span>PEPINO PARCIAL:R$</span><span class="fx-tot">500,00</span></div>
+          <p>200 + 300 = <b>R$ 500,00</b>. Some só o que elas pagaram.</p>
+          <p class="guia-dica">⚠️ O que elas <b>ficaram devendo</b> não vai aqui: vai em <b>Nº DE PINOS</b> e
+            <b>VALOR DOS PEPINOS</b>, que você vê mais adiante.</p>
+        </div>
+      </li>
+      <li>
+        <h3>Some o recebimento e confira com o sistema</h3>
+        <p>Some tudo o que anotou: 25%, 40%, pepino extra, antecipadas e pepino parcial: 9.000 + 2.500 + 900 + 335,50 + 200.</p>
+        <p class="guia-anote">Recebimento: <b>R$ 12.935,50</b></p>
+        <p>A soma das notas <b>tem que bater com o recebimento do seu sistema</b>, até os centavos. Bateu? Está certo.
+          Guarde esse papelzinho: é dele que você passa para a folha de caixa.</p>
+        <p class="guia-dica">⚠️ Não bateu? Some de novo cada montinho e procure uma nota que ficou de fora ou um valor
+          lançado errado no sistema. Só siga quando bater.</p>
+      </li>
+      <li>
+        <h3>Separe os gastos</h3>
+        <p>Pegue todos os gastos e vales, <b>com os recibos</b>:</p>
+        <ul>
+          <li><b>Ajuda de custo</b> (exemplo de Rio Branco): <b>R$ 280,00</b></li>
+          <li><b>Vale da semana</b> (abastecimentos e alimentação): <b>R$ 360,00</b></li>
+          <li><b>Salário da semana do vendedor</b>, <b>só</b> se ele ainda está em treinamento (vale pela empresa):
+            <b>R$ 400,00</b>. Quem não está em treinamento não tem salário da semana, só o do mês.</li>
+          <li>Outro vale ou <b>excedente de combustível</b>: some todos os recibos e anote o total.</li>
+        </ul>
+        <p><b>Andou com pila?</b> Anote também os gastos do pila:</p>
+        <ul>
+          <li><b>Semanal do pila</b>: <b>R$ 350,00</b>.</li>
+          <li><b>Alimentação</b>: os almoços de segunda a sexta (ou de segunda a sábado), cada um com o recibo.
+            Exemplo: <b>R$ 150,00</b>.</li>
+          <li><b>Hotel</b>, se estiver viajando, com o recibo.</li>
+        </ul>
+        <p class="guia-anote">Anote cada gasto no papel.</p>
+        <p class="guia-dica">💡 <b>Grampeie todos os recibos</b> juntos e guarde com o papelzinho: são eles que comprovam
+          cada gasto. Todos esses gastos vão ser <b>abatidos</b> do que você tem que depositar.</p>
+      </li>
+      <li>
+        <h3>Calcule o que tem que depositar</h3>
+        <p>Pegue o recebimento e tire os gastos, um por um:</p>
+        <p class="guia-conta">12.935,50 − 280 − 360 − 400 − 350 − 150 = <b>11.395,50</b></p>
+        <p class="guia-anote">Anote no papel: <b>Depositar — R$ 11.395,50</b></p>
+        <p>Esse é o valor que vai na folha de caixa.</p>
+        <p class="guia-dica">💡 Confira a conta mais uma vez antes de passar para a folha.</p>
+      </li>
+      <li>
+        <h3>Pinos e valor dos pepinos</h3>
+        <p><b>Pinos</b> são as notas que <b>não foram quitadas</b>: as notas em branco (a cliente não pagou nada) e
+          os pepinos parciais.</p>
+        <p>Para cada uma, olhe no sistema o <b>valor com desconto</b>, que é o que a cliente ficou devendo, e some tudo.
+          Esse é o <b>valor dos pepinos</b>.</p>
+        <p class="guia-dica">⚠️ <b>Valor dos pepinos</b> é diferente do pepino recebido: é o que as clientes
+          <b>ficaram devendo</b>.</p>
+        <p>Exemplo: 2 notas em branco que somam <b>R$ 500,00</b> com desconto, mais o pepino parcial que ficou devendo
+          <b>R$ 187,00</b>:</p>
+        <p class="guia-conta">2 notas em branco + 1 parcial = <b>3 pinos</b><br>500 + 187 = <b>687</b></p>
+        <p class="guia-anote">Anote no papel: <b>Nº de pinos — 3</b> e <b>Valor dos pepinos — R$ 687,00</b></p>
+      </li>
+      <li>
+        <h3>Passe tudo para a folha de caixa</h3>
+        <p>A parte de cima da folha já vem <b>impressa</b>: cidade, data, semana, foi cobrar, quantidade de notas e o
+          V. PEP. 5%. Você preenche o resto, à mão, com o que está no papelzinho:</p>
+        <ul>
+          <li><b>NOTAS 25%</b>, <b>NOTAS 40% e 50%</b>, <b>PEPINO EXTRA</b> e <b>ANTECIPADOS</b>: cada valor no seu
+            campo.</li>
+          <li><b>PEPINO PARCIAL</b>: <b>só o que as clientes pagaram</b> nos parciais (no exemplo, R$ 200,00).
+            O que ficaram devendo vai em VALOR DOS PEPINOS.</li>
+          <li><b>RECEBIMENTO</b>: a soma de tudo.</li>
+          <li><b>Nº DE PINOS</b> e <b>VALOR DOS PEPINOS</b>: o que as clientes ficaram devendo.</li>
+          <li>Os quadros de cada <b>pepino extra</b> (Nº, cidade, valor e o nome em VENDEDORA).</li>
+          <li><b>VALE ADIANTADO</b> e <b>AJUDA DE CUSTO</b>.</li>
+          <li>Em <b>OUTROS</b>, cada um numa linha: o <b>salário com o nome do vendedor</b> em treinamento
+            (ex.: 400,00 Salário seu nome), o <b>semanal com o nome do pila</b> (ex.: 350,00 Semanal nome do pila) e a despesa
+            do pila (almoços e hotel).</li>
+          <li><b>Depósito</b>: o valor para depositar vai em <b>DEPTO. EMPRESA ESPÉCIE</b> na semana de pagamento
+            (semana 1); nas outras semanas, em <b>DEPTO. BANCO/TED</b>.</li>
+          <li><b>QT. NOTAS DEIXADAS</b> e <b>VALOR DEIXADO</b>: as notas novas que você deixou na semana e a soma
+            delas.</li>
+        </ul>
+        <p>Com o exemplo do treinamento, a folha fica assim:</p>
+        <!-- A folha de verdade, desenhada pelo app (a mesma do "Gerar caixa") com os valores do exemplo. -->
+        <button type="button" class="folha-recorte" id="guiaFolhaAbrir" aria-label="Ver a folha de caixa inteira">
+          <img id="guiaFolhaMini" alt="Recorte da folha de caixa preenchida com o exemplo">
+          <span class="folha-recorte-tag">🔍 Toque para ver a folha inteira</span>
+        </button>
+        <p class="guia-dica">💡 Os valores de "QT. NOTAS DEIXADAS" (25) e "VALOR DEIXADO" (R$ 23.690,00) são só de exemplo.
+          A parte impressa vem pronta na folha da semana.</p>
+        <p>Assine a folha e o caixa está fechado. ✅</p>
+      </li>
+    </ol>
+
+    <h3 class="guia-papel-tit">Como fica o papelzinho</h3>
+    <div class="guia-papel">
+      <div><span>25%</span><b>R$ 9.000,00</b></div>
+      <div><span>40%</span><b>R$ 2.500,00</b></div>
+      <div><span>Pepino extra</span><b>R$ 900,00</b></div>
+      <div><span>Antecipadas</span><b>R$ 335,50</b></div>
+      <div><span>Pepino parcial</span><b>R$ 200,00</b></div>
+      <div class="soma"><span>Recebimento</span><b>R$ 12.935,50</b></div>
+      <div><span>− Ajuda de custo</span><b>R$ 280,00</b></div>
+      <div><span>− Vale da semana</span><b>R$ 360,00</b></div>
+      <div><span>− Salário (treinamento)</span><b>R$ 400,00</b></div>
+      <div><span>− Pila: semanal</span><b>R$ 350,00</b></div>
+      <div><span>− Pila: almoços</span><b>R$ 150,00</b></div>
+      <div class="soma final"><span>Depositar</span><b>R$ 11.395,50</b></div>
+    </div>
+
+    <form method="dialog" class="row-actions">
+      <button class="btn btn--primary" value="ok">Entendi</button>
     </form>
+  </dialog>
+
+  <!-- Folha de caixa do treinamento em tela cheia -->
+  <dialog id="dlgFolhaGuia" class="dlg-tela" aria-label="Folha de caixa do exemplo">
+    <button type="button" class="tela-fechar" id="guiaFolhaFechar" aria-label="Fechar">✕</button>
+    <div class="tela-rolar"><img id="guiaFolhaGrande" alt="Folha de caixa preenchida com o exemplo do treinamento"></div>
+    <p class="tela-dica">Toque na folha para aumentar ou diminuir</p>
   </dialog>
 
   <dialog id="dlgCaixa" class="dlg-caixa">
@@ -585,6 +1019,6 @@
   <script src="vendor/nacl-fast.min.js?v=1"></script>
   <script src="licenca-config.js?v=2"></script>
   <script src="versao-app.js?v=1"></script>
-  <script type="module" src="app.js?v=105"></script>
+  <script type="module" src="app.js?v=113"></script>
 </body>
 </html>

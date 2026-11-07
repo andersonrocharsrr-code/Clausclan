@@ -428,3 +428,123 @@ body{overflow-x:clip}
 /* O 🎤 não fica com o quadrado azul do toque nem do foco (ao abrir e ao fechar a janela do microfone) */
 .mic{-webkit-tap-highlight-color:transparent;outline:none}
 .mic:focus,.mic:focus-visible,.mic:active{outline:none;box-shadow:none}
+
+/* Guia "Como fechar o caixa" (nas configurações) */
+.dlg-guia{width:min(96vw,680px);max-height:calc(100dvh - 20px);padding:20px 20px 16px}
+.dlg-guia h2{margin-top:0}
+.guia{margin:12px 0 0;padding-left:0;list-style:none;counter-reset:passo}
+.guia > li{counter-increment:passo;position:relative;padding:12px 0 12px 46px;border-top:1px solid var(--line)}
+.guia > li::before{content:counter(passo);position:absolute;left:0;top:12px;width:32px;height:32px;border-radius:50%;
+  display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-weight:800}
+.guia h3{margin:4px 0 8px;font-size:20px;text-transform:none;letter-spacing:0;color:var(--ink)}
+.guia p{margin:8px 0;line-height:1.5;font-size:16.5px}
+.guia ul{margin:8px 0;padding-left:20px;line-height:1.5;font-size:16.5px}
+.guia ul li{margin:3px 0}
+.guia-anote{background:var(--bg);border-left:4px solid var(--accent);border-radius:8px;padding:8px 10px}
+.guia-conta{font-size:18px;font-variant-numeric:tabular-nums}
+.guia-papel-tit{margin:18px 0 8px;font-size:17px}
+.guia-papel{background:#fffdf3;color:#1f2937;border-radius:10px;padding:12px 14px;font-variant-numeric:tabular-nums;
+  background-image:repeating-linear-gradient(transparent 0 33px,#dbe4f0 33px 34px);box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.guia-papel div{display:flex;justify-content:space-between;gap:10px;height:34px;align-items:center}
+.guia-papel .soma{font-weight:800}
+.guia-papel .final{color:#15803d}
+.dlg-guia .row-actions{justify-content:flex-end;margin-top:14px}
+.guia-topo h2{margin:2px 0 6px;font-size:24px}
+.guia-selo{margin:0;font-size:12px;font-weight:800;letter-spacing:.12em;color:var(--accent)}
+.guia-dica{background:rgba(250,204,21,.10);border-radius:8px;padding:8px 10px;font-size:15px}
+.guia-papel-tit{text-transform:none;letter-spacing:0;font-size:20px}
+
+/* Nota de exemplo (cupom) dentro do treinamento */
+.cupom{position:relative;margin:12px auto;max-width:330px;background:#f7f7f2;color:#1b1b1b;border-radius:4px;padding:14px 16px 18px;
+  font:13.5px/1.35 "Courier New",ui-monospace,monospace;box-shadow:0 3px 14px rgba(0,0,0,.35);transform:rotate(-.6deg)}
+.cupom p{margin:0;font-size:13.5px;line-height:1.35}
+.cupom .c{text-align:center}
+.cupom hr{border:0;border-top:1.5px dashed #555;margin:8px 0}
+.cupom-cod{text-align:center;font-size:12.5px}
+.cupom-barras{display:block;height:38px;margin:4px auto 0;width:78%;
+  background:repeating-linear-gradient(90deg,#111 0 2px,transparent 2px 4px,#111 4px 5px,transparent 5px 8px,#111 8px 11px,transparent 11px 12px)}
+.cupom .marca{border-radius:4px;padding:2px 4px;margin:3px -4px}
+.cupom .marca--valor{background:rgba(59,130,246,.22)}
+.cupom .marca--25{background:#fde047;box-shadow:0 0 0 2px #eab308}
+.cupom-ass{border-bottom:1px solid #999;margin:14px 20px 6px !important}
+.cupom-legenda{text-align:center;font-size:15px;margin-top:4px !important}
+.leg{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:4px}
+.leg--25{background:#fde047}
+.leg--valor{background:#93b4f5}
+.cupom .marca--com{background:rgba(34,197,94,.20);box-shadow:0 0 0 2px rgba(22,163,74,.55)}
+.leg--com{background:#86efac}
+@font-face{font-family:Caveat;src:url(fonts/caveat-600.woff2) format("woff2");font-weight:600;font-display:swap}
+.cupom .marca--data{background:rgba(249,115,22,.22);box-shadow:0 0 0 2px rgba(234,88,12,.6);border-radius:4px;padding:1px 3px}
+.cupom-mao{font:600 34px/1 Caveat,cursive !important;color:#1f3a9e;text-align:center;margin:-4px 0 6px !important;transform:rotate(-4deg)}
+.leg--data{background:#fdba74}
+/* Pepino extra: o que passa da nota para a folha (cores iguais na nota e no quadro da folha) */
+.cupom .marca--num{background:rgba(168,85,247,.22);box-shadow:0 0 0 2px rgba(147,51,234,.55);border-radius:4px;padding:1px 4px}
+.cupom .marca--nome{background:rgba(236,72,153,.18);box-shadow:0 0 0 2px rgba(219,39,119,.5);border-radius:4px;padding:1px 4px}
+.cupom .marca--cid{background:rgba(34,197,94,.2);box-shadow:0 0 0 2px rgba(22,163,74,.55);border-radius:4px;padding:0 3px}
+.leg--num{background:#c4b5fd}
+.leg--nome{background:#f9a8d4}
+.leg--cid{background:#86efac}
+.guia-cores{list-style:none;padding-left:0 !important}
+.guia-cores li{margin:5px 0}
+.folha-extra{max-width:330px;margin:10px auto;background:#fff;color:#111;border:2px solid #111;font:600 13px Arial,sans-serif}
+.folha-extra > div{display:flex}
+.folha-extra .fx-cab span,.folha-extra .fx-lin span{flex:1;text-align:center;padding:5px 2px;border-right:2px solid #111}
+.folha-extra .fx-cab span:last-child,.folha-extra .fx-lin span:last-child{border-right:0}
+.folha-extra .fx-cab,.folha-extra .fx-lin{border-bottom:2px solid #111}
+.folha-extra .fx-lin span,.fx-nome,.fx-tot{font:600 24px/1.1 Caveat,cursive;color:#1f3a9e}
+.folha-extra .fx-vend{padding:5px 8px;align-items:baseline;gap:6px}
+.fx-num{box-shadow:inset 0 0 0 3px #a855f7}
+.fx-cid{box-shadow:inset 0 0 0 3px #22c55e}
+.fx-val{box-shadow:inset 0 0 0 3px #3b82f6}
+.fx-nome{box-shadow:0 0 0 2px #ec4899;border-radius:3px;padding:0 4px}
+.folha-extra--total{display:flex;justify-content:space-between;align-items:baseline;padding:8px 10px}
+.cupom .marca--deve{background:rgba(239,68,68,.18);box-shadow:0 0 0 2px rgba(220,38,38,.5)}
+.leg--deve{background:#fca5a5}
+.guia-papel b{white-space:nowrap}
+/* Folha de caixa (miniatura) no treinamento */
+.folha-mini{background:#fff;color:#111;border:2px solid #111;font:600 10.5px/1.2 Arial,sans-serif;margin:10px 0;letter-spacing:-.01em}
+.folha-mini i{font:600 17px/1 Caveat,cursive;color:#1f3a9e;font-style:normal;white-space:nowrap}
+.folha-mini b{font-weight:800}
+.fm-l{display:flex;border-bottom:1.5px solid #111}
+.fm-l > span{flex:1;padding:5px 4px;border-right:1.5px solid #111;display:flex;align-items:baseline;gap:3px;flex-wrap:wrap}
+.fm-l > span:last-child{border-right:0}
+.fm-l:last-child{border-bottom:0;padding:8px 6px}
+.fm-tit > span{font-size:15px;font-weight:800;align-items:center;justify-content:center}
+.fm-caixa{text-decoration:underline;font-size:17px !important}
+.fm-corpo{display:flex;border-bottom:1.5px solid #111}
+.fm-esq{flex:1.15;border-right:1.5px solid #111}
+.fm-dir{flex:1}
+.fm-c{padding:4px;border-bottom:1.5px solid #111;min-height:24px;display:flex;align-items:baseline;gap:3px;flex-wrap:wrap}
+.fm-c:last-child{border-bottom:0}
+.fm-forte{font-size:11.5px}
+.fm-x{display:flex;border-bottom:1.5px solid #111;min-height:24px}
+.fm-x > *{flex:1;text-align:center;padding:4px 2px;border-right:1.5px solid #111;overflow:hidden}
+.fm-x > *:last-child{border-right:0}
+.fm-x i{font-size:13px;letter-spacing:-.02em}
+.fm-v{padding:4px;border-bottom:1.5px solid #111;min-height:24px}
+/* Regra do pepino parcial (o que vai na folha) */
+.guia-regra{border:2px solid var(--accent);border-radius:14px;padding:12px 14px;margin:12px 0;background:var(--bg)}
+.guia-regra p{margin:6px 0}
+.guia-regra-tit{font-size:17px;margin-top:0 !important}
+.parc-cartoes{display:flex;align-items:stretch;gap:8px;margin:8px 0}
+.parc-cartao{flex:1;display:flex;flex-direction:column;gap:3px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.parc-cartao span{font-size:14px;color:var(--muted)}
+.parc-cartao b{font-size:18px;color:#4ade80}
+.parc-cartao small{font-size:12.5px;color:var(--muted)}
+.parc-mais{align-self:center;font-size:24px;font-weight:800;color:var(--accent)}
+.parc-seta{text-align:center;font-size:22px;margin:2px 0 !important;color:var(--accent)}
+/* Recorte da folha de caixa no treinamento; toque abre em tela cheia */
+.folha-recorte{display:block;position:relative;width:100%;height:260px;overflow:hidden;padding:0;margin:10px 0;border:2px solid var(--line);
+  border-radius:12px;background:#fff;cursor:zoom-in;-webkit-tap-highlight-color:transparent}
+.folha-recorte img{display:block;width:100%;height:auto}
+.folha-recorte-tag{position:absolute;left:0;right:0;bottom:0;padding:22px 10px 10px;font:700 15px Inter,sans-serif;color:#fff;
+  background:linear-gradient(transparent,rgba(5,10,24,.92))}
+.dlg-tela{width:100vw;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border-radius:0;background:#0b0f19;overflow:hidden}
+.dlg-tela::backdrop{background:#000}
+.tela-rolar{width:100%;height:100%;overflow:auto;-webkit-overflow-scrolling:touch}
+.tela-rolar img{display:block;width:100%;height:auto;cursor:zoom-in}
+.tela-rolar img.zoom{width:220%;max-width:none;cursor:zoom-out}
+.tela-fechar{position:fixed;top:12px;right:12px;z-index:2;width:48px;height:48px;border-radius:50%;border:0;background:rgba(15,23,42,.88);
+  color:#fff;font-size:24px;line-height:1;box-shadow:0 4px 14px rgba(0,0,0,.4);cursor:pointer}
+.tela-dica{position:fixed;left:0;right:0;bottom:10px;margin:0;text-align:center;font-size:13px;color:#cbd5e1;pointer-events:none;
+  text-shadow:0 1px 4px #000}

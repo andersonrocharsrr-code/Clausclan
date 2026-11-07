@@ -14,7 +14,7 @@ const MODOS = {
   economica: { nome: 'IA econômica', modelo: 'claude-haiku-5-5' },
   precisa: { nome: 'IA mais precisa', modelo: 'claude-opus-5-5' },
 };
-const modoLeitura = () => (MODOS[ls.get(KEY_MODO, 'gratis')] ? ls.get(KEY_MODO, 'gratis') : 'gratis');
+const modoLeitura = () => 'gratis'; // só a leitura gratuita, no celular (as opções de IA saíram)
 
 /* ---------- utilidades ---------- */
 const $ = (s, el = document) => el.querySelector(s);
@@ -1019,8 +1019,7 @@ async function lerFotos(tipo, files) {
   if (modo === 'gratis') { await lerFotosGratis(tipo, files); return; }
   const api = getCliente();
   if (!api) {
-    toast('Para usar a IA, cole a chave em ⚙ (ou volte para a leitura gratuita).');
-    abrirConfig();
+    await lerFotosGratis(tipo, files); // sem chave da IA: usa a leitura gratuita
     return;
   }
   const pedido = PEDIDOS[tipo === 'notas' ? 'notas' : tipo];
@@ -1324,27 +1323,6 @@ function progressoSimulado(titulo) {
   clearInterval(simulacao);
   simulacao = setInterval(() => { p += (0.9 - p) * 0.06; progresso({ pct: p }); }, 200);
 }
-
-/* ---------- configurar chave ---------- */
-function mostrarChave() {
-  $('#campoChave').hidden = $('input[name="modo"]:checked')?.value === 'gratis';
-}
-$$('input[name="modo"]').forEach((r) => r.addEventListener('change', mostrarChave));
-function abrirConfig() {
-  $('#apiKey').value = ls.get(KEY_API, '');
-  const modo = modoLeitura();
-  $$('input[name="modo"]').forEach((r) => { r.checked = r.value === modo; });
-  mostrarChave();
-  $('#dlgConfig').showModal();
-}
-$('#btnConfig').addEventListener('click', abrirConfig);
-$('#btnSalvarChave').addEventListener('click', () => {
-  const modo = $('input[name="modo"]:checked')?.value || 'gratis';
-  ls.set(KEY_MODO, modo);
-  ls.set(KEY_API, $('#apiKey').value.trim());
-  if (modo !== 'gratis' && !$('#apiKey').value.trim()) toast('Sem chave a IA não funciona: cole a chave ou use a leitura gratuita.');
-  toast('Chave salva neste aparelho.');
-});
 
 /* ---------- salvar / lista / novo ---------- */
 function guardar(f) {
@@ -2792,3 +2770,39 @@ dlgMic.addEventListener('close', () => {
   setTimeout(() => $('#btnMic').blur(), 0); // o diálogo devolve o foco ao 🎤: tira para não ficar marcado
   if (dlgMic.classList.contains('ouvindo')) { micParar?.(); micVez++; clearInterval(micSilencio); dlgMic.classList.remove('ouvindo'); } });
 window.lerFalaNota = lerFalaNota; // para teste
+
+/* ---------- treinamento: como fechar o caixa (o ⚙ abre o guia) ---------- */
+// Folha de caixa do exemplo do treinamento: desenhada com o mesmo código do "Gerar caixa".
+const FOLHA_EXEMPLO = {
+  nome: '', cidade: 'Rio Branco', data: '26/10/2026', semana: '4', foiCobrar: '23.500,00', qtNotas: '25', vPep5: '1.175,00',
+  antecipados: '335,50', qtNotasDeixadas: '25', pinos: '3', valorPepinos: '687,00', pepinoParcial: '200,00',
+  notas25: '9.000,00', notas4050: '2.500,00', pepinoExtra: '900,00', recebimento: '12.935,50',
+  depEspecie: '', depPix: '', depBanco: '11.395,50', // semana 4 (não é a de pagamento): depósito no banco/TED vale: '360,00', ajuda: '280,00', mecanica: '', despSupervisor: '',
+  excedido: '', valorDeixado: '23.690,00', assinatura: '',
+  outros: ['400,00 (Salário seu nome)', '350,00 (Semanal nome do pila)', '150,00 (Despesa pila)'], obs: [],
+  extras: [
+    { numero: '117926', cidade: 'Rio Branco', valor: '226,50', vendedora: 'Antonia Conceição' },
+    { numero: '117641', cidade: 'Rio Branco', valor: '306,00', vendedora: 'Joana Lima' },
+    { numero: '118210', cidade: 'Rio Branco', valor: '367,50', vendedora: 'Rita Alves' },
+  ],
+};
+let folhaGuiaUrl = null;
+async function folhaDoGuia() {
+  if (!folhaGuiaUrl) folhaGuiaUrl = URL.createObjectURL(await desenharCaixa(FOLHA_EXEMPLO));
+  return folhaGuiaUrl;
+}
+$('#guiaFolhaAbrir').addEventListener('click', async () => {
+  const img = $('#guiaFolhaGrande');
+  img.src = await folhaDoGuia();
+  img.classList.remove('zoom');
+  $('#dlgFolhaGuia').showModal();
+  $('#dlgFolhaGuia .tela-rolar').scrollTo(0, 0);
+});
+$('#guiaFolhaGrande').addEventListener('click', (e) => e.currentTarget.classList.toggle('zoom'));
+$('#guiaFolhaFechar').addEventListener('click', () => $('#dlgFolhaGuia').close());
+$('#btnConfig').addEventListener('click', () => {
+  const d = $('#dlgGuia');
+  folhaDoGuia().then((u) => { $('#guiaFolhaMini').src = u; }).catch(() => {});
+  d.showModal();
+  d.scrollTop = 0;
+});
