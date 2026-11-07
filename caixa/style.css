@@ -587,3 +587,7 @@ body{overflow-x:clip}
 .guia-cartao small{display:block;color:var(--muted);font-size:14px;margin-top:2px}
 .guia-cartao-ico{font-size:30px}
 .guia-cartao-seta{margin-left:auto;font-size:28px;color:var(--accent)}
+/* Notas de exemplo como papel térmico: tira clara, letra de impressora e a borda de baixo rasgada */
+.cupom{background:linear-gradient(180deg,#f6f5f1,#eeede8);color:#34312d;letter-spacing:-.03em;border-radius:0;padding-bottom:30px;box-shadow:none;
+  -webkit-mask:linear-gradient(#000 0 0) top/100% calc(100% - 11px) no-repeat,conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/13px 12px repeat-x;
+  mask:linear-gradient(#000 0 0) top/100% calc(100% - 11px) no-repeat,conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/13px 12px repeat-x}

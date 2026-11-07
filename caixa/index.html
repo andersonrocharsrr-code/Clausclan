@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=89">
+  <link rel="stylesheet" href="style.css?v=90">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -458,7 +458,8 @@
         <p class="guia-dica">💡 Nessa nota a cliente pagou <b>R$ 426,00</b>. No fechamento você só precisa do
           <b>valor recebido</b>: é ele que você soma.</p>
         <p>Com todas as notas de 25% na mão, some uma por uma na calculadora.</p>
-        <p class="guia-anote">Anote no papel: <b>25% — R$ 9.000,00</b></p>
+        <p>Exemplo: digamos que as notas de 25% deram <b>R$ 9.000,00</b>.</p>
+        <p class="guia-anote">Anote no papel: <b>25% — R$ 9.000,00</b> <small class="muted">(exemplo)</small></p>
         <p>Deixe essas notas organizadas e separadas.</p>
         <p class="guia-dica">💡 Some duas vezes. Se der o mesmo resultado, está certo.</p>
       </li>
@@ -529,10 +530,10 @@
         <h3>Some os pepinos extras</h3>
         <p><b>Como saber se a nota é pepino extra?</b> É uma nota que <b>não foi paga na data do acerto</b>: a cliente
           pagou dias depois. Compare a <b>"DATA DO ACERTO"</b>, lá em cima, com a <b>data do pagamento</b>, lá embaixo:
-          são diferentes. Escreva <b>"extra"</b> em cima da nota para não misturar com as outras.</p>
+          são diferentes. Escreva <b>"Extra"</b> em cima da nota para não misturar com as outras.</p>
         <!-- Recriação de uma nota de pepino extra real (sem CPF, endereço, cidade, telefones e nome do vendedor). -->
         <figure class="cupom" aria-label="Exemplo de nota de pepino extra">
-          <p class="cupom-mao" aria-label="escrito à mão: extra">extra</p>
+          <p class="cupom-mao" aria-label="escrito à mão: Extra">Extra</p>
           <div class="cupom-cod"><span class="marca marca--num">N. 117926</span><br><span class="cupom-barras" aria-hidden="true"></span></div>
           <hr>
           <p>Representante:</p>
@@ -573,6 +574,9 @@
         <p class="cupom-legenda"><span class="leg leg--data"></span> data do acerto × data do pagamento: <b>diferentes</b></p>
         <p class="guia-dica">💡 O acerto era dia 12/10, mas a cliente só pagou dia 06/11: por isso é extra. Ela pagou
           <b>R$ 226,50</b>, e é esse valor recebido que você soma.</p>
+        <p class="guia-dica">⚠️ <b>Pagou em partes?</b> Se a cliente já tinha pago uma parte em outra semana e pagou o
+          restante agora, some <b>só o que você recebeu nesta semana</b>. O que foi recebido nas semanas anteriores não
+          entra no seu fechamento.</p>
         <p><b>Na folha de caixa</b>, cada pepino extra tem o seu quadro. Passe da nota para a folha:</p>
         <ul class="guia-cores">
           <li><span class="leg leg--num"></span> o <b>número da nota</b> vai em <b>Nº</b>;</li>
@@ -596,10 +600,12 @@
         <h3>Separe as notas antecipadas</h3>
         <p><b>Como saber se a nota é antecipada?</b> A cliente <b>quitou a nota antes da data do acerto</b>.
           Compare a <b>"DATA DO ACERTO"</b>, lá em cima, com a data do pagamento: o acerto ainda ia ser no dia 16/11,
-          mas ela pagou nesta semana, no dia 05/11.</p>
+          mas ela pagou nesta semana, no dia 05/11. Escreva <b>"Antecipada"</b> no topo da nota, como no extra, para não
+          misturar com as outras notas.</p>
         <!-- Recriação de uma nota antecipada real (sem CPF, endereço, telefones e nome do vendedor);
              os dois pagamentos de 05/11 (335,00 e 0,50) viraram um só de 335,50. -->
         <figure class="cupom" aria-label="Exemplo de nota antecipada">
+          <p class="cupom-mao" aria-label="escrito à mão: Antecipada">Antecipada</p>
           <div class="cupom-cod">N. 119832<br><span class="cupom-barras" aria-hidden="true"></span></div>
           <hr>
           <p>Representante:</p>
