@@ -1,0 +1,23 @@
+name: Narração ElevenLabs (voz Will)
+on:
+  push:
+    branches: ['ccr-**']
+    paths: ['narracao-eleven/**', '.github/workflows/narracao-eleven.yml']
+permissions:
+  contents: write
+jobs:
+  gerar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: python3 narracao-eleven/gerar.py "$RUNNER_TEMP/eleven" && cd "$RUNNER_TEMP/eleven" && zip -qr ../eleven.zip .
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view narracao --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create narracao --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest=false --prerelease \
+              --title "Narração do vídeo tutorial" --notes "Áudios gerados para os vídeos do Caixa."
+          fi
+          gh release upload narracao "$RUNNER_TEMP/eleven.zip" --repo "$GITHUB_REPOSITORY" --clobber
