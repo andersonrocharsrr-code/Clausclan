@@ -471,3 +471,5 @@ body{overflow-x:clip}
 .leg{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:4px}
 .leg--25{background:#fde047}
 .leg--valor{background:#93b4f5}
+.cupom .marca--com{background:rgba(34,197,94,.20);box-shadow:0 0 0 2px rgba(22,163,74,.55)}
+.leg--com{background:#86efac}

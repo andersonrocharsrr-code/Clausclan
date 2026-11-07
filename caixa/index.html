@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=80">
+  <link rel="stylesheet" href="style.css?v=81">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -456,6 +456,62 @@
       <li>
         <h3>Some as notas de 40% e 50%</h3>
         <p>Nessas notas a <b>comissão da cliente foi paga em mercadoria</b>, não em dinheiro.</p>
+        <p><b>Como saber se a nota é 40% e 50%?</b> A nota tem a parte <b>"COMISSAO"</b>, com a mercadoria que a
+          cliente levou de comissão, e no final está escrito só <b>"Nota quitada."</b>, sem o 25%.</p>
+        <!-- Recriação de uma nota de 40/50% real (sem CPF, cidade, telefones, endereço e nome do vendedor). -->
+        <figure class="cupom" aria-label="Exemplo de nota de 40% e 50%, comissão em mercadoria">
+          <div class="cupom-cod">N. 117613<br><span class="cupom-barras" aria-hidden="true"></span></div>
+          <hr>
+          <p>Representante:</p>
+          <p>Contato:</p>
+          <hr>
+          <p class="c">DATA DO ACERTO<br>05/10/2026</p>
+          <hr>
+          <p class="c">Ao efetuar pagamento<br>exija seu comprovante e comissao</p>
+          <hr>
+          <p>RAISSA DA SILVA</p>
+          <p>CPF:</p>
+          <p>End.:</p>
+          <p>Ref.:</p>
+          <p>Bairro:</p>
+          <p>Cidade: &nbsp; &nbsp; &nbsp; &nbsp; UF:</p>
+          <p>Nome contato 1:</p>
+          <p>Contato 1:</p>
+          <p>Contato 2:</p>
+          <p>what:</p>
+          <hr>
+          <p>CAPA SOFA 2 E 3 ESTAMPADA</p>
+          <p>001 x 280,00 = 280,00</p>
+          <p>JOGO COPOS TOPAZIO 380 ML/SUN STONE 360 ML</p>
+          <p>003 x 112,00 = 336,00</p>
+          <p><b>Total de pecas:4</b></p>
+          <p><b>TOTAL R$616,00</b></p>
+          <hr>
+          <div class="marca marca--com">
+            <p><b>COMISSAO</b></p>
+            <p>LENCOL CASAL</p>
+            <p>002 x 132,00 = 264,00</p>
+            <p>PANO PRATO COM GLITER</p>
+            <p>004 x 11,00 = 44,00</p>
+            <p><b>TOTAL DE COMISSAO R$308,00</b></p>
+          </div>
+          <hr>
+          <p><b>PAGAMENTOS</b></p>
+          <p>DATA &nbsp; &nbsp; &nbsp; VALOR</p>
+          <p>08/10/26 616,00</p>
+          <p>Total de pagamentos:616,00</p>
+          <hr>
+          <p class="marca marca--valor">Recebi o valor de R$616,00</p>
+          <p class="marca marca--25"><b>Nota quitada.</b></p>
+          <hr>
+          <hr>
+          <p class="c cupom-ass">&nbsp;</p>
+          <p class="c">Emissao:08/10/2026</p>
+        </figure>
+        <p class="cupom-legenda"><span class="leg leg--com"></span> comissão em mercadoria &nbsp;
+          <span class="leg leg--25"></span> só <b>"Nota quitada."</b> &nbsp;
+          <span class="leg leg--valor"></span> o <b>valor recebido</b></p>
+        <p class="guia-dica">💡 Nessa nota a cliente pagou <b>R$ 616,00</b>. É esse valor recebido que você soma.</p>
         <p>Exemplo: duas notas de 40% deram R$ 2.500.</p>
         <p class="guia-anote">Anote no papel: <b>40% — R$ 2.500,00</b></p>
         <p>Dobre direitinho e guarde.</p>
