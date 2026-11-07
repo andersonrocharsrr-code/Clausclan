@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=84">
+  <link rel="stylesheet" href="style.css?v=85">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -715,18 +715,26 @@
         <ul>
           <li><b>Ajuda de custo</b> (exemplo de Rio Branco): <b>R$ 280,00</b></li>
           <li><b>Vale da semana</b> (abastecimentos e alimentação): <b>R$ 360,00</b></li>
-          <li><b>Semanal</b> (salário), <b>só</b> se o vendedor ainda está em treinamento: <b>R$ 350,00</b>.
-            Quem não está em treinamento não tem semanal, só o salário do mês.</li>
+          <li><b>Salário da semana do vendedor</b>, <b>só</b> se ele ainda está em treinamento (vale pela empresa):
+            <b>R$ 400,00</b>. Quem não está em treinamento não tem salário da semana, só o do mês.</li>
           <li>Outro vale ou <b>excedente de combustível</b>: some todos os recibos e anote o total.</li>
         </ul>
+        <p><b>Andou com pila?</b> Anote também os gastos do pila:</p>
+        <ul>
+          <li><b>Semanal do pila</b>: <b>R$ 350,00</b>.</li>
+          <li><b>Alimentação</b>: os almoços de segunda a sexta (ou de segunda a sábado), cada um com o recibo.
+            Exemplo: <b>R$ 150,00</b>.</li>
+          <li><b>Hotel</b>, se estiver viajando, com o recibo.</li>
+        </ul>
         <p class="guia-anote">Anote cada gasto no papel.</p>
-        <p class="guia-dica">💡 Guarde os recibos junto com o papelzinho: são eles que comprovam cada gasto.</p>
+        <p class="guia-dica">💡 <b>Grampeie todos os recibos</b> juntos e guarde com o papelzinho: são eles que comprovam
+          cada gasto. Todos esses gastos vão ser <b>abatidos</b> do que você tem que depositar.</p>
       </li>
       <li>
         <h3>Calcule o que tem que depositar</h3>
         <p>Pegue o recebimento e tire os gastos, um por um:</p>
-        <p class="guia-conta">12.935,50 − 280 − 360 − 350 = <b>11.945,50</b></p>
-        <p class="guia-anote">Anote no papel: <b>Depositar — R$ 11.945,50</b></p>
+        <p class="guia-conta">12.935,50 − 280 − 360 − 400 − 350 − 150 = <b>11.395,50</b></p>
+        <p class="guia-anote">Anote no papel: <b>Depositar — R$ 11.395,50</b></p>
         <p>Esse é o valor que vai na folha de caixa.</p>
         <p class="guia-dica">💡 Confira a conta mais uma vez antes de passar para a folha.</p>
       </li>
@@ -742,8 +750,10 @@
       <div class="soma"><span>Recebimento</span><b>R$ 12.935,50</b></div>
       <div><span>− Ajuda de custo</span><b>R$ 280,00</b></div>
       <div><span>− Vale da semana</span><b>R$ 360,00</b></div>
-      <div><span>− Semanal (treinamento)</span><b>R$ 350,00</b></div>
-      <div class="soma final"><span>Depositar</span><b>R$ 11.945,50</b></div>
+      <div><span>− Salário (treinamento)</span><b>R$ 400,00</b></div>
+      <div><span>− Pila: semanal</span><b>R$ 350,00</b></div>
+      <div><span>− Pila: almoços</span><b>R$ 150,00</b></div>
+      <div class="soma final"><span>Depositar</span><b>R$ 11.395,50</b></div>
     </div>
 
     <form method="dialog" class="row-actions">

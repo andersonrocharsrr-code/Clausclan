@@ -500,3 +500,4 @@ body{overflow-x:clip}
 .folha-extra--total{display:flex;justify-content:space-between;align-items:baseline;padding:8px 10px}
 .cupom .marca--deve{background:rgba(239,68,68,.18);box-shadow:0 0 0 2px rgba(220,38,38,.5)}
 .leg--deve{background:#fca5a5}
+.guia-papel b{white-space:nowrap}
