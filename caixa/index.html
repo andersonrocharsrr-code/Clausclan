@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=85">
+  <link rel="stylesheet" href="style.css?v=86">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -737,6 +737,79 @@
         <p class="guia-anote">Anote no papel: <b>Depositar — R$ 11.395,50</b></p>
         <p>Esse é o valor que vai na folha de caixa.</p>
         <p class="guia-dica">💡 Confira a conta mais uma vez antes de passar para a folha.</p>
+      </li>
+      <li>
+        <h3>Pinos e valor dos pepinos</h3>
+        <p><b>Pinos</b> são as notas que <b>não foram quitadas</b>: as notas em branco (a cliente não pagou nada) e
+          os pepinos parciais.</p>
+        <p>Para cada uma, olhe no sistema o <b>valor com desconto</b>, que é o que a cliente ficou devendo, e some tudo.
+          Esse é o <b>valor dos pepinos</b>.</p>
+        <p class="guia-dica">⚠️ <b>Valor dos pepinos</b> é diferente do pepino recebido: é o que as clientes
+          <b>ficaram devendo</b>.</p>
+        <p>Exemplo: 2 notas em branco que somam <b>R$ 500,00</b> com desconto, mais o pepino parcial que ficou devendo
+          <b>R$ 187,00</b>:</p>
+        <p class="guia-conta">2 notas em branco + 1 parcial = <b>3 pinos</b><br>500 + 187 = <b>687</b></p>
+        <p class="guia-anote">Anote no papel: <b>Nº de pinos — 3</b> e <b>Valor dos pepinos — R$ 687,00</b></p>
+      </li>
+      <li>
+        <h3>Passe tudo para a folha de caixa</h3>
+        <p>A parte de cima da folha já vem <b>impressa</b>: cidade, data, semana, foi cobrar, quantidade de notas e o
+          V. PEP. 5%. Você preenche o resto, à mão, com o que está no papelzinho:</p>
+        <ul>
+          <li><b>NOTAS 25%</b>, <b>NOTAS 40% e 50%</b>, <b>PEPINO EXTRA</b>, <b>ANTECIPADOS</b> e
+            <b>PEPINO PARCIAL</b> (o que ela pagou): cada valor no seu campo.</li>
+          <li><b>RECEBIMENTO</b>: a soma de tudo.</li>
+          <li><b>Nº DE PINOS</b> e <b>VALOR DOS PEPINOS</b>: o que as clientes ficaram devendo.</li>
+          <li>Os quadros de cada <b>pepino extra</b> (Nº, cidade, valor e o nome em VENDEDORA).</li>
+          <li><b>VALE ADIANTADO</b> e <b>AJUDA DE CUSTO</b>.</li>
+          <li>Em <b>OUTROS</b>: o salário do vendedor em treinamento, o semanal do pila e a despesa do pila
+            (almoços e hotel), cada um numa linha.</li>
+          <li><b>Depósito</b>: o valor para depositar vai em <b>DEPTO. EMPRESA ESPÉCIE</b> na semana de pagamento
+            (semana 1); nas outras semanas, em <b>DEPTO. BANCO/TED</b>.</li>
+          <li><b>QT. NOTAS DEIXADAS</b> e <b>VALOR DEIXADO</b>: as notas novas que você deixou na semana e a soma
+            delas.</li>
+        </ul>
+        <p>Com o exemplo do treinamento, a folha fica assim:</p>
+        <div class="folha-mini" aria-label="Folha de caixa preenchida com o exemplo">
+          <div class="fm-l fm-tit"><span class="fm-caixa">CAIXA</span><span>NOME: <b>Anderson</b></span></div>
+          <div class="fm-l fm-5"><span>CIDADE: <b>Rio Branco</b></span><span>DATA: <b>06/11/2026</b></span><span>SEMANA: <b>1</b></span>
+            <span>FOI COBRAR: <b>15.474,00</b></span><span>QT. NOTAS: <b>19</b></span></div>
+          <div class="fm-l fm-4"><span>ANTECIPADOS:R$ <i>335,50</i></span><span>V. PEP. 5%: <b>773,70</b></span>
+            <span>QT.NOTAS DEIXADAS: <i>19</i></span><span>Nº DE PINOS: <i>3</i></span></div>
+          <div class="fm-l fm-2"><span>VALOR DOS PEPINOS:R$ <i>687,00</i></span><span>PEPINO PARCIAL:R$ <i>200,00</i></span></div>
+          <div class="fm-l fm-3"><span>NOTAS 25%:R$ <i>9.000,00</i></span><span>NOTAS 40% e 50%:R$ <i>2.500,00</i></span>
+            <span>PEPINO EXTRA R$ <i>900,00</i></span></div>
+          <div class="fm-corpo">
+            <div class="fm-esq">
+              <div class="fm-c fm-forte">RECEBIMENTO:R$ <i>12.935,50</i></div>
+              <div class="fm-c">DEPTO. EMPRESA ESPECIE:R$ <i>11.395,50</i></div>
+              <div class="fm-c">DEPTO PIX:R$</div>
+              <div class="fm-c">DEPTO BANCO/TED/TRANS.:R$</div>
+              <div class="fm-c">VALE ADIANTADO:R$ <i>360,00</i></div>
+              <div class="fm-c">AJUDA DE CUSTO:R$ <i>280,00</i></div>
+              <div class="fm-c">MECANICA:R$</div>
+              <div class="fm-c">DESPESAS SUPERVISOR:R$</div>
+              <div class="fm-c">EXCEDIDO DA DESPESA:R$</div>
+              <div class="fm-c">OUTROS:R$ <i>400,00 (Salário)</i></div>
+              <div class="fm-c"><i>350,00 (Semanal)</i></div>
+              <div class="fm-c"><i>150,00 (Despesa pila)</i></div>
+              <div class="fm-c">OBS:R$</div>
+              <div class="fm-c fm-forte">VALOR DEIXADO:R$ <i>16.830,00</i></div>
+            </div>
+            <div class="fm-dir">
+              <div class="fm-x"><span>Nº</span><span>CIDADE</span><span>VALOR</span></div>
+              <div class="fm-x"><i>117926</i><i>Rio Branco</i><i>226,50</i></div>
+              <div class="fm-v">VENDEDORA: <i>Antonia Conceição</i></div>
+              <div class="fm-x"><span>Nº</span><span>CIDADE</span><span>VALOR</span></div>
+              <div class="fm-x"><i>…</i><i></i><i></i></div>
+              <div class="fm-v">VENDEDORA:</div>
+            </div>
+          </div>
+          <div class="fm-l">ASSINATURA VENDEDOR:</div>
+        </div>
+        <p class="guia-dica">💡 Os valores de "QT. NOTAS DEIXADAS" (19) e "VALOR DEIXADO" (R$ 16.830,00) são só de exemplo.
+          A parte impressa vem pronta na folha da semana.</p>
+        <p>Assine a folha e o caixa está fechado. ✅</p>
       </li>
     </ol>
 
