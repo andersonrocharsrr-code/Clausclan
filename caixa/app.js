@@ -2792,3 +2792,11 @@ dlgMic.addEventListener('close', () => {
   setTimeout(() => $('#btnMic').blur(), 0); // o diálogo devolve o foco ao 🎤: tira para não ficar marcado
   if (dlgMic.classList.contains('ouvindo')) { micParar?.(); micVez++; clearInterval(micSilencio); dlgMic.classList.remove('ouvindo'); } });
 window.lerFalaNota = lerFalaNota; // para teste
+
+/* ---------- guia: como fechar o caixa (fica nas configurações ⚙) ---------- */
+$('#btnGuia').addEventListener('click', () => {
+  $('#dlgConfig').close();
+  const d = $('#dlgGuia');
+  d.showModal();
+  d.scrollTop = 0;
+});

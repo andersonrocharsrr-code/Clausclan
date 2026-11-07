@@ -428,3 +428,26 @@ body{overflow-x:clip}
 /* O 🎤 não fica com o quadrado azul do toque nem do foco (ao abrir e ao fechar a janela do microfone) */
 .mic{-webkit-tap-highlight-color:transparent;outline:none}
 .mic:focus,.mic:focus-visible,.mic:active{outline:none;box-shadow:none}
+
+/* Guia "Como fechar o caixa" (nas configurações) */
+.guia-abrir{width:100%;justify-content:flex-start;gap:8px;margin-bottom:14px;font-weight:700}
+.guia-abrir small{color:var(--muted);font-weight:500}
+.dlg-guia{width:min(94vw,560px)}
+.dlg-guia h2{margin-top:0}
+.guia{margin:12px 0 0;padding-left:0;list-style:none;counter-reset:passo}
+.guia > li{counter-increment:passo;position:relative;padding:12px 0 12px 46px;border-top:1px solid var(--line)}
+.guia > li::before{content:counter(passo);position:absolute;left:0;top:12px;width:32px;height:32px;border-radius:50%;
+  display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-weight:800}
+.guia h3{margin:4px 0 6px;font-size:17px}
+.guia p{margin:6px 0;line-height:1.45}
+.guia ul{margin:6px 0;padding-left:18px;line-height:1.45}
+.guia ul li{margin:3px 0}
+.guia-anote{background:var(--bg);border-left:4px solid var(--accent);border-radius:8px;padding:8px 10px}
+.guia-conta{font-size:18px;font-variant-numeric:tabular-nums}
+.guia-papel-tit{margin:18px 0 8px;font-size:17px}
+.guia-papel{background:#fffdf3;color:#1f2937;border-radius:10px;padding:12px 14px;font-variant-numeric:tabular-nums;
+  background-image:repeating-linear-gradient(transparent 0 33px,#dbe4f0 33px 34px);box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.guia-papel div{display:flex;justify-content:space-between;gap:10px;height:34px;align-items:center}
+.guia-papel .soma{font-weight:800}
+.guia-papel .final{color:#15803d}
+.dlg-guia .row-actions{justify-content:flex-end;margin-top:14px}

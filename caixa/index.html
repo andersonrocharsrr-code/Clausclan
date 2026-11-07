@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=77">
+  <link rel="stylesheet" href="style.css?v=78">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -374,6 +374,7 @@
   <!-- Janelas -->
   <dialog id="dlgConfig">
     <form method="dialog">
+      <button type="button" class="btn guia-abrir" id="btnGuia">📖 Como fechar o caixa <small>passo a passo</small></button>
       <h2>Leitura das fotos</h2>
       <div class="escolha" role="radiogroup">
         <label><input type="radio" name="modo" value="gratis"> <span><b>Gratuita</b> (no celular)<br><small>Lê as notas e a folha em branco, que são impressas. Não lê letra de mão. Tire fotos nítidas.</small></span></label>
@@ -390,6 +391,86 @@
         <button class="btn" value="cancel">Cancelar</button>
         <button class="btn btn--primary" id="btnSalvarChave" value="ok">Salvar</button>
       </div>
+    </form>
+  </dialog>
+
+  <!-- Guia: como fechar o caixa à mão (papel e calculadora), do jeito que o Anderson ensina. -->
+  <dialog id="dlgGuia" class="dlg-guia">
+    <h2>📖 Como fechar o caixa</h2>
+    <p class="muted small">Passo a passo, do zero até o valor para depositar. Os valores são só um exemplo.</p>
+    <ol class="guia">
+      <li>
+        <h3>É dia de fechar o caixa</h3>
+        <p>Terminou a rota? Separe <b>todas as notas</b>, cada tipo num montinho:</p>
+        <ul>
+          <li><b>Notas 25%</b> quitadas.</li>
+          <li><b>Notas 40% e 50%</b> quitadas: pagas comissão e mercadoria.</li>
+          <li><b>Pepino extra</b> que você recebeu (se não recebeu nenhum, não tem).</li>
+          <li><b>Antecipadas</b>, se tiver.</li>
+          <li><b>Pepino parcial</b>: grampeado na promissória, deixe separado.</li>
+        </ul>
+        <p>Pegue uma <b>folhinha de papel em branco</b> e a <b>calculadora</b>.</p>
+      </li>
+      <li>
+        <h3>Some as notas de 25%</h3>
+        <p>Com todas as notas de 25% na mão, some na calculadora.</p>
+        <p class="guia-anote">Anote no papel: <b>25% — R$ 9.000,00</b></p>
+        <p>Deixe essas notas organizadas e separadas.</p>
+      </li>
+      <li>
+        <h3>Some as notas de 40% e 50%</h3>
+        <p>Exemplo: duas notas de 40% (comissão paga e mercadoria) deram R$ 2.500.</p>
+        <p class="guia-anote">Anote no papel: <b>40% — R$ 2.500,00</b></p>
+        <p>Dobre direitinho e guarde.</p>
+      </li>
+      <li>
+        <h3>Some os pepinos extras</h3>
+        <p>Exemplo: 3 pepinos extras que somam R$ 900.</p>
+        <p class="guia-anote">Anote no papel: <b>Pepino extra — R$ 900,00</b></p>
+        <p>Separe essas notas também.</p>
+      </li>
+      <li>
+        <h3>Some o recebimento e confira com o sistema</h3>
+        <p>Some o que anotou: 9.000 + 2.500 + 900.</p>
+        <p class="guia-anote">Recebimento: <b>R$ 12.400,00</b></p>
+        <p>A soma das notas <b>tem que bater com o recebimento do seu sistema</b>, até os centavos. Bateu? Está certo.
+          Guarde esse papelzinho: é dele que você passa para a folha de caixa.</p>
+      </li>
+      <li>
+        <h3>Separe os gastos</h3>
+        <p>Pegue todos os gastos e vales, com os recibos:</p>
+        <ul>
+          <li><b>Ajuda de custo</b> (exemplo de Rio Branco): <b>R$ 280,00</b></li>
+          <li><b>Vale da semana</b> (abastecimentos e alimentação, com os recibos): <b>R$ 360,00</b></li>
+          <li><b>Semanal</b> (salário), <b>só</b> se o vendedor ainda está em treinamento: <b>R$ 350,00</b>.
+            Quem não está em treinamento não tem semanal, só o salário do mês.</li>
+          <li>Outro vale ou <b>excedente de combustível</b>: some todos os recibos e anote.</li>
+        </ul>
+        <p class="guia-anote">Anote cada gasto no papel.</p>
+      </li>
+      <li>
+        <h3>Calcule o que tem que depositar</h3>
+        <p>Pegue o recebimento e tire os gastos:</p>
+        <p class="guia-conta">12.400 − 280 − 360 − 350 = <b>11.410</b></p>
+        <p class="guia-anote">Anote no papel: <b>Depositar — R$ 11.410,00</b></p>
+        <p>Esse é o valor que vai na folha de caixa.</p>
+      </li>
+    </ol>
+
+    <h3 class="guia-papel-tit">Como fica o papelzinho</h3>
+    <div class="guia-papel">
+      <div><span>25%</span><b>R$ 9.000,00</b></div>
+      <div><span>40%</span><b>R$ 2.500,00</b></div>
+      <div><span>Pepino extra</span><b>R$ 900,00</b></div>
+      <div class="soma"><span>Recebimento</span><b>R$ 12.400,00</b></div>
+      <div><span>− Ajuda de custo</span><b>R$ 280,00</b></div>
+      <div><span>− Vale da semana</span><b>R$ 360,00</b></div>
+      <div><span>− Semanal (treinamento)</span><b>R$ 350,00</b></div>
+      <div class="soma final"><span>Depositar</span><b>R$ 11.410,00</b></div>
+    </div>
+
+    <form method="dialog" class="row-actions">
+      <button class="btn btn--primary" value="ok">Entendi</button>
     </form>
   </dialog>
 
@@ -585,6 +666,6 @@
   <script src="vendor/nacl-fast.min.js?v=1"></script>
   <script src="licenca-config.js?v=2"></script>
   <script src="versao-app.js?v=1"></script>
-  <script type="module" src="app.js?v=105"></script>
+  <script type="module" src="app.js?v=106"></script>
 </body>
 </html>
