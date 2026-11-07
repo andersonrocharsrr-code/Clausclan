@@ -2779,7 +2779,7 @@ const FOLHA_EXEMPLO = {
   notas25: '9.000,00', notas4050: '2.500,00', pepinoExtra: '900,00', recebimento: '12.935,50',
   depEspecie: '', depPix: '', depBanco: '11.395,50', // semana 4 (não é a de pagamento): depósito no banco/TED vale: '360,00', ajuda: '280,00', mecanica: '', despSupervisor: '',
   excedido: '', valorDeixado: '23.690,00', assinatura: '',
-  outros: ['Salário (400,00)', '350,00 (Semanal)', '150,00 (Despesa pila)'], obs: [],
+  outros: ['400,00 (Salário Carlos)', '350,00 (Semanal Pedro)', '150,00 (Despesa pila)'], obs: [],
   extras: [
     { numero: '117926', cidade: 'Rio Branco', valor: '226,50', vendedora: 'Antonia Conceição' },
     { numero: '117641', cidade: 'Rio Branco', valor: '306,00', vendedora: 'Joana Lima' },
