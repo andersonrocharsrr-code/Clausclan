@@ -1,15 +1,18 @@
-/* Sereno — figura das posturas, desenhada pelo app (SVG, sem imagens).
-   O boneco tem juntas: o app calcula onde fica cada uma a partir dos ângulos da postura, encosta o ponto
-   mais baixo no tapete e centraliza. Nas transições, interpola os ângulos, então os membros nunca esticam. */
+/* Sereno — figura das posturas: uma pessoa ilustrada, desenhada pelo app (SVG, sem imagens).
+   Por baixo existe um esqueleto com juntas: o app calcula onde fica cada junta a partir dos ângulos da postura,
+   encosta o corpo no tapete e centraliza. Por cima, desenha o corpo com volume (cada parte é uma "cápsula"
+   que afina de uma junta para a outra), pele, cabelo, regata e legging. Nas transições, interpola os ângulos,
+   então os membros nunca esticam. */
 (() => {
   'use strict';
-  const K = 0.88; // escala geral do boneco
+  const K = 0.88; // escala geral da pessoa
   const L = { torso: 50 * K, neck: 14 * K, up: 25 * K, fore: 23 * K, thigh: 38 * K, shin: 36 * K, foot: 10 * K };
-  const HEAD = 8.5, FLOOR = 178, W = 200, LIMB = 4;
+  const FLOOR = 176, W = 200;
+  // Espessura (raio) de cada junta.
+  const R = { hip: 9, waist: 7, chest: 8.3, sho: 6, neck: 3.1, head: 8.4, el: 3.6, wr: 2.6, hand: 3.1, kn: 5, an: 3.2, toe: 2.3, thighTop: 7.7 };
   const RAD = Math.PI / 180;
   const at = (p, a, l) => [p[0] + Math.cos(a * RAD) * l, p[1] + Math.sin(a * RAD) * l];
-  const r1 = (n) => Math.round(n * 10) / 10;
-  const pts = (...ps) => ps.map((p) => `${r1(p[0])},${r1(p[1])}`).join(' ');
+  const f1 = (n) => Math.round(n * 10) / 10;
   const ease = (x) => 0.5 - Math.cos(Math.PI * x) / 2;
   const reduce = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -32,16 +35,17 @@
     const arm = (v) => (Array.isArray(v) ? v : ik(neck, v.x * K, v.y * K, L.up, L.fore, v.k));
     const leg = (v) => (Array.isArray(v) ? v : ik([0, 0], v.x * K, v.y * K, L.thigh, L.shin, v.k));
     const a = arm(f.a), b = arm(f.b || f.a), l = leg(f.l), r = leg(f.r || f.l);
+    const h = f.h ?? f.t;
     const n = {
-      t: f.t, h: f.h ?? f.t, c: f.c || 0,
+      t: f.t, h, c: f.c || 0, face: f.face ?? h + 90, // para onde o rosto aponta
       a0: a[0], a1: a[1], b0: b[0], b1: b[1], l0: l[0], l1: l[1], r0: r[0], r1: r[1],
       fl: f.fl ?? l[1] - 90, fr: f.fr ?? r[1] - 90,
     };
     cache.set(f, n);
     return n;
   }
-  const ANG = ['t', 'h', 'a0', 'a1', 'b0', 'b1', 'l0', 'l1', 'r0', 'r1', 'fl', 'fr'];
-  // Espelha (lado esquerdo): a figura passa a olhar para a esquerda.
+  const ANG = ['t', 'h', 'face', 'a0', 'a1', 'b0', 'b1', 'l0', 'l1', 'r0', 'r1', 'fl', 'fr'];
+  // Espelha (lado esquerdo): a pessoa passa a olhar para a esquerda.
   function mirror(n) {
     const o = { c: -n.c };
     for (const k of ANG) o[k] = 180 - n[k];
@@ -57,51 +61,96 @@
     return o;
   }
 
-  // Calcula as juntas, encosta o ponto mais baixo no tapete e centraliza.
+  // Calcula as juntas, encosta o corpo no tapete e centraliza.
+  const RAIO = { hip: R.hip, sp1: R.waist, sp2: R.chest, sho: R.sho, head: R.head + 1, bun: 4, ae: R.el, ah: R.hand, be: R.el, bh: R.hand, lk: R.kn, la: R.an, lt: R.toe, rk: R.kn, ra: R.an, rt: R.toe };
   function solve(n) {
     const P = {};
     P.hip = [0, 0];
     P.neck = at(P.hip, n.t, L.torso);
+    // Curvatura da coluna: ponto de controle deslocado para o lado do tronco.
+    const v = [P.neck[0], P.neck[1]], len = Math.hypot(v[0], v[1]) || 1;
+    const ctrl = [P.neck[0] / 2 + (v[1] / len) * n.c * 1.6, P.neck[1] / 2 - (v[0] / len) * n.c * 1.6];
+    const bz = (t) => [2 * (1 - t) * t * ctrl[0] + t * t * P.neck[0], 2 * (1 - t) * t * ctrl[1] + t * t * P.neck[1]];
+    P.sp1 = bz(0.32); P.sp2 = bz(0.68); P.sho = bz(0.9);
     P.head = at(P.neck, n.h, L.neck);
-    P.ae = at(P.neck, n.a0, L.up); P.ah = at(P.ae, n.a1, L.fore);
-    P.be = at(P.neck, n.b0, L.up); P.bh = at(P.be, n.b1, L.fore);
+    const fd = at([0, 0], n.face, 1), up = at([0, 0], n.h, 1);
+    P.bun = [P.head[0] - fd[0] * 6.4 + up[0] * 4.6, P.head[1] - fd[1] * 6.4 + up[1] * 4.6];
+    P.ae = at(P.sho, n.a0, L.up); P.ah = at(P.ae, n.a1, L.fore);
+    P.be = at(P.sho, n.b0, L.up); P.bh = at(P.be, n.b1, L.fore);
     P.lk = at(P.hip, n.l0, L.thigh); P.la = at(P.lk, n.l1, L.shin); P.lt = at(P.la, n.fl, L.foot);
     P.rk = at(P.hip, n.r0, L.thigh); P.ra = at(P.rk, n.r1, L.shin); P.rt = at(P.ra, n.fr, L.foot);
-    let maxY = P.head[1] + HEAD, minX = P.head[0] - HEAD, maxX = P.head[0] + HEAD;
-    for (const k in P) {
-      if (k === 'head') continue;
-      maxY = Math.max(maxY, P[k][1] + LIMB);
-      minX = Math.min(minX, P[k][0] - LIMB); maxX = Math.max(maxX, P[k][0] + LIMB);
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const k in RAIO) {
+      const p = P[k], r = RAIO[k];
+      minX = Math.min(minX, p[0] - r); maxX = Math.max(maxX, p[0] + r);
+      minY = Math.min(minY, p[1] - r); maxY = Math.max(maxY, p[1] + r);
     }
-    // Se a postura não couber no quadro, diminui um pouco (em volta do ponto mais baixo, no centro).
-    const minY = Math.min(...Object.entries(P).map(([k, p]) => p[1] - (k === 'head' ? HEAD : LIMB)));
-    const s = Math.min(1, (FLOOR - 6) / (maxY - minY), (W - 14) / (maxX - minX));
+    // Se a postura não couber no quadro, diminui um pouco.
+    const s = Math.min(1, (FLOOR - 6) / (maxY - minY), (W - 12) / (maxX - minX));
     const cx = (minX + maxX) / 2;
-    for (const k in P) P[k] = [W / 2 + (P[k][0] - cx) * s, FLOOR + (P[k][1] - maxY) * s];
-    // Curvatura da coluna: ponto de controle deslocado para o lado do tronco.
-    const v = [P.neck[0] - P.hip[0], P.neck[1] - P.hip[1]], len = Math.hypot(v[0], v[1]) || 1;
-    const mid = [(P.hip[0] + P.neck[0]) / 2, (P.hip[1] + P.neck[1]) / 2];
-    P.ctrl = [mid[0] + (v[1] / len) * n.c * 1.6, mid[1] - (v[0] / len) * n.c * 1.6];
+    const T = (p) => [W / 2 + (p[0] - cx) * s, FLOOR + (p[1] - maxY) * s];
+    for (const k in P) P[k] = T(P[k]);
+    P.s = s; P.fd = fd; P.up = up;
+    P.minX = W / 2 + (minX - cx) * s; P.maxX = W / 2 + (maxX - cx) * s;
     return P;
   }
 
+  /* ---------------- Desenho ---------------- */
+  // Cápsula: une dois círculos (raios r1 e r2) pelas tangentes externas.
+  function cap(c1, r1, c2, r2) {
+    const dx = c2[0] - c1[0], dy = c2[1] - c1[1], d = Math.hypot(dx, dy);
+    if (d <= Math.abs(r1 - r2) + 0.01) return circ(r1 >= r2 ? c1 : c2, Math.max(r1, r2));
+    const th = Math.atan2(dy, dx), al = Math.acos((r1 - r2) / d);
+    const p = (c, r, a) => `${f1(c[0] + Math.cos(a) * r)} ${f1(c[1] + Math.sin(a) * r)}`;
+    return `M${p(c1, r1, th + al)}L${p(c2, r2, th + al)}A${f1(r2)} ${f1(r2)} 0 0 0 ${p(c2, r2, th - al)}L${p(c1, r1, th - al)}A${f1(r1)} ${f1(r1)} 0 1 0 ${p(c1, r1, th + al)}Z`;
+  }
+  function circ(c, r) {
+    return `M${f1(c[0] - r)} ${f1(c[1])}a${f1(r)} ${f1(r)} 0 1 0 ${f1(2 * r)} 0a${f1(r)} ${f1(r)} 0 1 0 ${f1(-2 * r)} 0Z`;
+  }
+  const off = (p, d, k) => [p[0] + d[0] * k, p[1] + d[1] * k];
+  const unit = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1; return [dx / l, dy / l]; };
+
+  // Partes do corpo, na ordem em que são pintadas (de trás para a frente).
+  const PARTS = [
+    ['shadow', 'fig__shadow'],
+    ['bArm', 'fig__skin2'], ['bFore', 'fig__skin2'],
+    ['rThigh', 'fig__pants2'], ['rShin', 'fig__pants2'], ['rFoot', 'fig__skin2'],
+    ['bun', 'fig__hair'],
+    ['torso1', 'fig__top'], ['torso2', 'fig__top'], ['torso3', 'fig__top'],
+    ['pelvis', 'fig__pants'],
+    ['lThigh', 'fig__pants'], ['lShin', 'fig__pants'], ['lFoot', 'fig__skin'],
+    ['neck', 'fig__skin'], ['hair', 'fig__hair'], ['face', 'fig__skin'],
+    ['aArm', 'fig__skin'], ['aFore', 'fig__skin'],
+  ];
   function shapes(P) {
-    return {
-      r: pts(P.hip, P.rk, P.ra, P.rt),
-      b: pts(P.neck, P.be, P.bh),
-      torso: `M${r1(P.hip[0])} ${r1(P.hip[1])}Q${r1(P.ctrl[0])} ${r1(P.ctrl[1])} ${r1(P.neck[0])} ${r1(P.neck[1])}`,
-      l: pts(P.hip, P.lk, P.la, P.lt),
-      a: pts(P.neck, P.ae, P.ah),
-      hx: r1(P.head[0]), hy: r1(P.head[1]),
-    };
+    const s = P.s, S = (r) => r * s;
+    const hand = (e, w) => off(w, unit(e, w), S(1.6));
+    const d = {};
+    d.shadow = `M${f1(P.minX + 6)} ${FLOOR}a${f1((P.maxX - P.minX) / 2 - 6)} ${f1(S(3.2))} 0 1 0 ${f1(P.maxX - P.minX - 12)} 0a${f1((P.maxX - P.minX) / 2 - 6)} ${f1(S(3.2))} 0 1 0 ${f1(-(P.maxX - P.minX - 12))} 0Z`;
+    d.bArm = cap(P.sho, S(R.el + 1.1), P.be, S(R.el));
+    d.bFore = cap(P.be, S(R.el - 0.2), P.bh, S(R.wr)) + circ(hand(P.be, P.bh), S(R.hand));
+    d.rThigh = cap(P.hip, S(R.thighTop), P.rk, S(R.kn));
+    d.rShin = cap(P.rk, S(R.kn - 0.3), P.ra, S(R.an));
+    d.rFoot = cap(P.ra, S(R.an - 0.2), P.rt, S(R.toe));
+    d.bun = circ(P.bun, S(4));
+    d.torso1 = cap(P.hip, S(R.hip - 0.6), P.sp1, S(R.waist));
+    d.torso2 = cap(P.sp1, S(R.waist), P.sp2, S(R.chest));
+    d.torso3 = cap(P.sp2, S(R.chest), P.sho, S(R.sho));
+    d.pelvis = cap(P.hip, S(R.hip), off(P.hip, unit(P.hip, P.sp1), S(7)), S(R.waist + 0.6));
+    d.lThigh = cap(P.hip, S(R.thighTop), P.lk, S(R.kn));
+    d.lShin = cap(P.lk, S(R.kn - 0.3), P.la, S(R.an));
+    d.lFoot = cap(P.la, S(R.an - 0.2), P.lt, S(R.toe));
+    d.neck = cap(P.sho, S(R.neck + 0.6), P.head, S(R.neck));
+    d.hair = circ(off(off(P.head, P.fd, -S(1.3)), P.up, S(0.7)), S(R.head + 0.6));
+    d.face = circ(off(off(P.head, P.fd, S(1.4)), P.up, -S(0.5)), S(R.head - 0.6));
+    d.aArm = cap(P.sho, S(R.el + 1.1), P.ae, S(R.el));
+    d.aFore = cap(P.ae, S(R.el - 0.2), P.ah, S(R.wr)) + circ(hand(P.ae, P.ah), S(R.hand));
+    return d;
   }
 
-  const MAT = `<rect class="fig__mat" x="16" y="${FLOOR}" width="168" height="5" rx="2.5"/>`;
-  function markup(s, cls) {
-    return `<svg class="fig ${cls || ''}" viewBox="0 0 ${W} 192" aria-hidden="true" focusable="false">${MAT}
-<g class="fig__body"><polyline class="fig__far" data-k="r" points="${s.r}"/><polyline class="fig__far" data-k="b" points="${s.b}"/>
-<path class="fig__torso" d="${s.torso}"/><polyline class="fig__near" data-k="l" points="${s.l}"/>
-<circle class="fig__head" r="${HEAD}" cx="${s.hx}" cy="${s.hy}"/><polyline class="fig__near" data-k="a" points="${s.a}"/></g></svg>`;
+  const MAT = `<rect class="fig__mat" x="14" y="${FLOOR}" width="172" height="6" rx="3"/>`;
+  function markup(d, cls) {
+    return `<svg class="fig ${cls || ''}" viewBox="0 0 ${W} 190" aria-hidden="true" focusable="false">${MAT}<g class="fig__body">${PARTS.map(([k, c]) => `<path class="${c}" data-k="${k}" d="${d[k]}"/>`).join('')}</g></svg>`;
   }
 
   // Figura parada (listas e miniaturas).
@@ -113,14 +162,10 @@
   function mount(el, cls) {
     let cur = null, raf = 0;
     el.innerHTML = markup(shapes(solve(angles(POSES[0].f))), cls);
-    const q = (s) => el.querySelector(s);
-    const E = { r: q('[data-k="r"]'), b: q('[data-k="b"]'), l: q('[data-k="l"]'), a: q('[data-k="a"]'), torso: q('.fig__torso'), head: q('.fig__head') };
+    const E = Object.fromEntries(PARTS.map(([k]) => [k, el.querySelector(`[data-k="${k}"]`)]));
     function draw(n) {
-      const s = shapes(solve(n));
-      E.r.setAttribute('points', s.r); E.b.setAttribute('points', s.b);
-      E.l.setAttribute('points', s.l); E.a.setAttribute('points', s.a);
-      E.torso.setAttribute('d', s.torso);
-      E.head.setAttribute('cx', s.hx); E.head.setAttribute('cy', s.hy);
+      const d = shapes(solve(n));
+      for (const k in E) E[k].setAttribute('d', d[k]);
     }
     return {
       set(f, mir) { cancelAnimationFrame(raf); cur = prep(f, mir); draw(cur); },

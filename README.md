@@ -226,7 +226,8 @@ Abra `ioga/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server
 - **Perfil**: objetivo, nível, tempo, voz, sino, tempo de preparo, tema claro/escuro e backup (`.json`).
 
 ## Observações
-- As figuras são desenhadas pelo próprio app (`ioga/figure.js`), sem imagens nem vídeos. Para criar ou ajustar
+- As figuras mostram uma pessoa ilustrada (corpo com volume, pele, cabelo, regata e legging), desenhada pelo próprio
+  app (`ioga/figure.js`), sem imagens nem vídeos, e animada de uma postura para a outra. Para criar ou ajustar
   uma postura, edite os ângulos no campo `f` em `ioga/data.js`.
 - Os dados ficam salvos **somente neste aparelho**. Faça backup de vez em quando (Perfil).
 - O app traz orientações gerais de ioga e não substitui um profissional de saúde.

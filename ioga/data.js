@@ -276,7 +276,7 @@ const POSES = [
     ],
     cuidado: 'Gire a partir do peito, sem forçar o pescoço.',
     dica: 'Cresça na inspiração e gire um pouco mais na expiração.',
-    f: { t: -90, h: 175, a: { x: 30, y: 2, k: -1 }, b: { x: -24, y: 6, k: 1 }, l: [8, 172], r: [14, 176], fl: 120, fr: 120 },
+    f: { t: -90, h: -92, face: 182, a: { x: 30, y: 2, k: -1 }, b: { x: -24, y: 6, k: 1 }, l: [8, 172], r: [14, 176], fl: 120, fr: 120 },
   },
   {
     id: 'pinca', nome: 'Pinça sentada', sans: 'Paschimottanasana', tipo: 'sentada', nivel: 1, foco: ['pernas', 'costas', 'relaxar'],
