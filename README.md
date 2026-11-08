@@ -226,7 +226,8 @@ Abra `ioga/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server
 - **Perfil**: objetivo, nível, tempo, voz, sino, tempo de preparo, tema claro/escuro e backup (`.json`).
 
 ## Observações
-- As figuras mostram uma pessoa ilustrada (corpo com volume, pele, cabelo, regata e legging), desenhada pelo próprio
+- As figuras mostram uma pessoa ilustrada (corpo com volume, rosto com olho, sobrancelha, nariz, boca e orelha,
+  mãos com polegar, pés com calcanhar, cabelo, regata e legging), desenhada pelo próprio
   app (`ioga/figure.js`), sem imagens nem vídeos, e animada de uma postura para a outra. Para criar ou ajustar
   uma postura, edite os ângulos no campo `f` em `ioga/data.js`.
 - Os dados ficam salvos **somente neste aparelho**. Faça backup de vez em quando (Perfil).

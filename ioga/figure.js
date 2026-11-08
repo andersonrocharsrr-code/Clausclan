@@ -37,7 +37,7 @@
     const a = arm(f.a), b = arm(f.b || f.a), l = leg(f.l), r = leg(f.r || f.l);
     const h = f.h ?? f.t;
     const n = {
-      t: f.t, h, c: f.c || 0, face: f.face ?? h + 90, // para onde o rosto aponta
+      t: f.t, h, c: f.c || 0, ec: f.olhos === 'fechados' ? 1 : 0, face: f.face ?? h + 90, // para onde o rosto aponta
       a0: a[0], a1: a[1], b0: b[0], b1: b[1], l0: l[0], l1: l[1], r0: r[0], r1: r[1],
       fl: f.fl ?? l[1] - 90, fr: f.fr ?? r[1] - 90,
     };
@@ -47,19 +47,21 @@
   const ANG = ['t', 'h', 'face', 'a0', 'a1', 'b0', 'b1', 'l0', 'l1', 'r0', 'r1', 'fl', 'fr'];
   // Espelha (lado esquerdo): a pessoa passa a olhar para a esquerda.
   function mirror(n) {
-    const o = { c: -n.c };
+    const o = { c: -n.c, ec: n.ec };
     for (const k of ANG) o[k] = 180 - n[k];
     return o;
   }
   const prep = (f, mir) => (mir ? mirror(angles(f)) : { ...angles(f) });
   function lerp(A, B, k) {
-    const o = { c: A.c + (B.c - A.c) * k };
+    const o = { c: A.c + (B.c - A.c) * k, ec: A.ec + (B.ec - A.ec) * k };
     for (const key of ANG) {
       const d = ((((B[key] - A[key]) % 360) + 540) % 360) - 180; // caminho mais curto
       o[key] = A[key] + d * k;
     }
     return o;
   }
+
+  const unit = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1; return [dx / l, dy / l]; };
 
   // Calcula as juntas, encosta o corpo no tapete e centraliza.
   const RAIO = { hip: R.hip, sp1: R.waist, sp2: R.chest, sho: R.sho, head: R.head + 1, bun: 4, ae: R.el, ah: R.hand, be: R.el, bh: R.hand, lk: R.kn, la: R.an, lt: R.toe, rk: R.kn, ra: R.an, rt: R.toe };
@@ -90,7 +92,7 @@
     const cx = (minX + maxX) / 2;
     const T = (p) => [W / 2 + (p[0] - cx) * s, FLOOR + (p[1] - maxY) * s];
     for (const k in P) P[k] = T(P[k]);
-    P.s = s; P.fd = fd; P.up = up;
+    P.s = s; P.fd = fd; P.up = up; P.ec = n.ec; P.sha = unit(P.lk, P.la); P.shb = unit(P.rk, P.ra);
     P.minX = W / 2 + (minX - cx) * s; P.maxX = W / 2 + (maxX - cx) * s;
     return P;
   }
@@ -108,30 +110,49 @@
     return `M${f1(c[0] - r)} ${f1(c[1])}a${f1(r)} ${f1(r)} 0 1 0 ${f1(2 * r)} 0a${f1(r)} ${f1(r)} 0 1 0 ${f1(-2 * r)} 0Z`;
   }
   const off = (p, d, k) => [p[0] + d[0] * k, p[1] + d[1] * k];
-  const unit = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1; return [dx / l, dy / l]; };
 
   // Partes do corpo, na ordem em que são pintadas (de trás para a frente).
   const PARTS = [
     ['shadow', 'fig__shadow'],
     ['bArm', 'fig__skin2'], ['bFore', 'fig__skin2'],
+    ['bHand', 'fig__skin2'],
     ['rThigh', 'fig__pants2'], ['rShin', 'fig__pants2'], ['rFoot', 'fig__skin2'],
     ['bun', 'fig__hair'],
     ['torso1', 'fig__top'], ['torso2', 'fig__top'], ['torso3', 'fig__top'],
     ['pelvis', 'fig__pants'],
     ['lThigh', 'fig__pants'], ['lShin', 'fig__pants'], ['lFoot', 'fig__skin'],
-    ['neck', 'fig__skin'], ['hair', 'fig__hair'], ['face', 'fig__skin'],
-    ['aArm', 'fig__skin'], ['aFore', 'fig__skin'],
+    ['neck', 'fig__skin'], ['hair', 'fig__hair'], ['face', 'fig__skin'], ['nose', 'fig__skin'],
+    ['ear', 'fig__skin2'], ['blush', 'fig__blush'], ['eye', 'fig__eye'], ['lid', 'fig__line'], ['brow', 'fig__brow'], ['mouth', 'fig__mouth'],
+    ['aArm', 'fig__skin'], ['aFore', 'fig__skin'], ['aHand', 'fig__skin'],
   ];
   function shapes(P) {
     const s = P.s, S = (r) => r * s;
-    const hand = (e, w) => off(w, unit(e, w), S(1.6));
     const d = {};
+    // Mão: palma que afina até os dedos, com o polegar para o lado do rosto.
+    const hand = (e, w) => {
+      const u = unit(e, w);
+      let q = [-u[1], u[0]];
+      if (q[0] * P.fd[0] + q[1] * P.fd[1] < 0) q = [-q[0], -q[1]];
+      const tip = off(w, u, S(6.2));
+      const th0 = off(off(w, u, S(1.2)), q, S(1.4));
+      const th1 = off(off(w, u, S(3.6)), q, S(2.6));
+      return cap(w, S(R.wr + 0.3), off(w, u, S(3)), S(R.hand)) + cap(off(w, u, S(3)), S(R.hand), tip, S(1.6)) + cap(th0, S(1.2), th1, S(0.95));
+    };
+    // Pé: calcanhar atrás do tornozelo, peito do pé e dedos.
+    const foot = (a, t, sh) => {
+      const u = unit(a, t);
+      const heel = off(off(a, u, -S(2.2)), sh, S(1.6));
+      const ball = off(off(a, u, S(L.foot * 0.8)), sh, S(1.6));
+      const toe = off(off(a, u, S(L.foot + 2.4)), sh, S(1.7));
+      return cap(a, S(R.an), heel, S(2.6)) + cap(heel, S(2.4), ball, S(2.3)) + cap(ball, S(2.3), toe, S(1.5)) + cap(a, S(R.an), ball, S(2.1));
+    };
     d.shadow = `M${f1(P.minX + 6)} ${FLOOR}a${f1((P.maxX - P.minX) / 2 - 6)} ${f1(S(3.2))} 0 1 0 ${f1(P.maxX - P.minX - 12)} 0a${f1((P.maxX - P.minX) / 2 - 6)} ${f1(S(3.2))} 0 1 0 ${f1(-(P.maxX - P.minX - 12))} 0Z`;
     d.bArm = cap(P.sho, S(R.el + 1.1), P.be, S(R.el));
-    d.bFore = cap(P.be, S(R.el - 0.2), P.bh, S(R.wr)) + circ(hand(P.be, P.bh), S(R.hand));
+    d.bFore = cap(P.be, S(R.el - 0.2), P.bh, S(R.wr));
+    d.bHand = hand(P.be, P.bh);
     d.rThigh = cap(P.hip, S(R.thighTop), P.rk, S(R.kn));
     d.rShin = cap(P.rk, S(R.kn - 0.3), P.ra, S(R.an));
-    d.rFoot = cap(P.ra, S(R.an - 0.2), P.rt, S(R.toe));
+    d.rFoot = foot(P.ra, P.rt, P.shb);
     d.bun = circ(P.bun, S(4));
     d.torso1 = cap(P.hip, S(R.hip - 0.6), P.sp1, S(R.waist));
     d.torso2 = cap(P.sp1, S(R.waist), P.sp2, S(R.chest));
@@ -139,12 +160,25 @@
     d.pelvis = cap(P.hip, S(R.hip), off(P.hip, unit(P.hip, P.sp1), S(7)), S(R.waist + 0.6));
     d.lThigh = cap(P.hip, S(R.thighTop), P.lk, S(R.kn));
     d.lShin = cap(P.lk, S(R.kn - 0.3), P.la, S(R.an));
-    d.lFoot = cap(P.la, S(R.an - 0.2), P.lt, S(R.toe));
+    d.lFoot = foot(P.la, P.lt, P.sha);
     d.neck = cap(P.sho, S(R.neck + 0.6), P.head, S(R.neck));
     d.hair = circ(off(off(P.head, P.fd, -S(1.3)), P.up, S(0.7)), S(R.head + 0.6));
-    d.face = circ(off(off(P.head, P.fd, S(1.4)), P.up, -S(0.5)), S(R.head - 0.6));
+    const fc = off(off(P.head, P.fd, S(1.4)), P.up, -S(0.5));
+    d.face = circ(fc, S(R.head - 0.6));
+    // Rosto de perfil: x = para a frente (para onde o rosto aponta), y = para cima da cabeça.
+    const G = (x, y) => [fc[0] + (P.fd[0] * x + P.up[0] * y) * s, fc[1] + (P.fd[1] * x + P.up[1] * y) * s];
+    const pt = (x, y) => { const g = G(x, y); return `${f1(g[0])} ${f1(g[1])}`; };
+    d.nose = `M${pt(6.5, 2.2)}Q${pt(8.2, 0.6)} ${pt(9.3, -1.0)}Q${pt(8.6, -1.9)} ${pt(6.6, -1.7)}Z`;
+    d.ear = cap(G(-1.6, 1.3), S(1.5), G(-1.2, -1.0), S(1.1)) + `M${pt(-1.0, 1.0)}Q${pt(-2.0, 0.2)} ${pt(-1.1, -0.5)}`;
+    d.blush = circ(G(4.0, -1.9), S(1.6));
+    const open = P.ec < 0.5;
+    d.eye = open ? circ(G(4.1, 0.9), S(1.05)) + cap(G(3.4, 1.9), S(0.28), G(5.2, 2.0), S(0.22)) : 'M0 0';
+    d.lid = open ? 'M0 0' : `M${pt(2.6, 1.0)}Q${pt(3.6, 0.2)} ${pt(4.7, 1.0)}`;
+    d.brow = `M${pt(2.4, 3.3)}Q${pt(3.8, 4.1)} ${pt(5.4, 3.4)}`;
+    d.mouth = `M${pt(5.0, -3.4)}Q${pt(6.2, -4.4)} ${pt(7.3, -3.3)}`;
     d.aArm = cap(P.sho, S(R.el + 1.1), P.ae, S(R.el));
-    d.aFore = cap(P.ae, S(R.el - 0.2), P.ah, S(R.wr)) + circ(hand(P.ae, P.ah), S(R.hand));
+    d.aFore = cap(P.ae, S(R.el - 0.2), P.ah, S(R.wr));
+    d.aHand = hand(P.ae, P.ah);
     return d;
   }
 

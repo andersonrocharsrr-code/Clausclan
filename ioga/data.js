@@ -130,7 +130,7 @@ const POSES = [
     ],
     cuidado: 'Com dor no joelho, coloque uma almofada entre a coxa e a panturrilha.',
     dica: 'Solte o peso do corpo e respire nas costas.',
-    f: { t: 14, h: 20, c: 8, a: [6, 2], b: [8, 3], l: [38, 182], r: [36, 182], fl: 182, fr: 182 },
+    f: { olhos: 'fechados', t: 14, h: 20, c: 8, a: [6, 2], b: [8, 3], l: [38, 182], r: [36, 182], fl: 182, fr: 182 },
   },
   {
     id: 'mesa', nome: 'Quatro apoios', sans: 'Bharmanasana', tipo: 'apoio', nivel: 1, foco: ['costas', 'postura'],
@@ -350,7 +350,7 @@ const POSES = [
     ],
     cuidado: 'Mantenha a cabeça apoiada no chão.',
     dica: 'Abrace os joelhos e solte a lombar no chão.',
-    f: { t: 180, h: 180, a: { x: -18, y: -32, k: -1 }, b: { x: -16, y: -30, k: -1 }, l: [-118, -8], r: [-114, -6], fl: -100, fr: -100 },
+    f: { olhos: 'fechados', t: 180, h: 180, a: { x: -18, y: -32, k: -1 }, b: { x: -16, y: -30, k: -1 }, l: [-118, -8], r: [-114, -6], fl: -100, fr: -100 },
   },
   {
     id: 'parede', nome: 'Pernas na parede', sans: 'Viparita Karani', tipo: 'deitada', nivel: 1, foco: ['relaxar', 'pernas'],
@@ -362,7 +362,7 @@ const POSES = [
     ],
     cuidado: 'Com glaucoma ou pressão alta sem controle, converse com seu médico antes.',
     dica: 'Pernas soltas, ombros pesados, respire devagar.',
-    f: { t: 180, h: 180, a: [172, 176], b: [174, 178], l: [-90, -90], r: [-92, -92], fl: 0, fr: 0 },
+    f: { olhos: 'fechados', t: 180, h: 180, a: [172, 176], b: [174, 178], l: [-90, -90], r: [-92, -92], fl: 0, fr: 0 },
   },
   {
     id: 'savasana', nome: 'Relaxamento final', sans: 'Savasana', tipo: 'deitada', nivel: 1, foco: ['relaxar'],
@@ -374,7 +374,7 @@ const POSES = [
     ],
     cuidado: 'Coloque uma almofada sob os joelhos se a lombar incomodar.',
     dica: 'Solte o peso do corpo no chão. Não há nada para fazer agora.',
-    f: { t: 180, h: 180, a: [6, 2], b: [4, 1], l: [1, 0], r: [3, 0], fl: -70, fr: -60 },
+    f: { olhos: 'fechados', t: 180, h: 180, a: [6, 2], b: [4, 1], l: [1, 0], r: [3, 0], fl: -70, fr: -60 },
   },
 ];
 

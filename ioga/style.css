@@ -143,6 +143,13 @@ svg { display: block; }
 .fig__pants { fill: var(--pants); }
 .fig__pants2 { fill: var(--pants-2); }
 .fig__shadow { fill: #000; opacity: .1; }
+.fig__eye { fill: var(--hair); }
+.fig .fig__line, .fig .fig__brow, .fig .fig__mouth { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.fig .fig__line { stroke: var(--hair); stroke-width: .8; }
+.fig .fig__brow { stroke: var(--hair); stroke-width: .9; opacity: .9; }
+.fig .fig__mouth { stroke: #8a3a2e; stroke-width: .95; }
+.fig__blush { fill: #e8806e; opacity: .32; }
+.fig--mini .fig__brow, .fig--mini .fig__mouth, .fig--mini .fig__blush, .fig--mini .fig__line { display: none; }
 .fig__mat { fill: var(--mat); }
 .fig--mini .fig__mat, .fig--mini .fig__shadow { display: none; }
 .fig--breathe .fig__body { animation: breathe 5s ease-in-out infinite; transform-origin: 100px 176px; }
