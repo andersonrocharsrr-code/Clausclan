@@ -22,7 +22,7 @@ const ICON = {
 
 /* ---------------- Dados salvos ---------------- */
 const KEY = 'sereno-v1';
-const DEFAULT = () => ({ v: 1, profile: null, settings: { voz: true, som: true, tema: 'auto', prep: 10, look: {}, amb: 'tacas', ambVol: 0.5 }, hist: [], jornada: { feitos: {} }, minhas: [] });
+const DEFAULT = () => ({ v: 1, profile: null, settings: { voz: true, som: true, tema: 'auto', prep: 10, look: {}, amb: 'tacas', ambVol: 0.5, lembrete: { on: false, hora: '08:00' } }, hist: [], jornada: { feitos: {} }, minhas: [] });
 let S = load();
 function load() {
   try {
@@ -196,14 +196,91 @@ function cycleAmb() {
   ambStart(); paintAmb();
   toast(Amb.SONS.find((x) => x[0] === S.settings.amb)[1]);
 }
+/* ---------------- App Android (Capacitor) ---------------- */
+const Cap = window.Capacitor;
+const NATIVE = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
+const plugin = (name) => (NATIVE ? (Cap.Plugins && Cap.Plugins[name]) || (Cap.registerPlugin && Cap.registerPlugin(name)) || null : null);
+const LN = plugin('LocalNotifications'), FS = plugin('Filesystem'), SHARE = plugin('Share'), NAT = plugin('SerenoNative'), APP = plugin('App');
+if (NATIVE) document.documentElement.classList.add('is-native');
+
 let lock = null;
 async function keepAwake(on) {
+  if (NAT) { NAT.keepAwake({ on }).catch(() => {}); return; }
   try {
     if (on && 'wakeLock' in navigator && !lock) { lock = await navigator.wakeLock.request('screen'); lock.addEventListener('release', () => { lock = null; }); }
     if (!on && lock) { await lock.release(); lock = null; }
   } catch { lock = null; }
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && (P || B)) keepAwake(true); });
+
+/* ---------------- Lembrete diário ---------------- */
+// No app Android, agenda avisos para os próximos 14 dias no horário escolhido. Não avisa no dia em que
+// você já praticou. É reagendado sempre que o app abre e depois de cada prática.
+const REM_BASE = 7100, REM_DAYS = 14;
+const REM_MSGS = [
+  ['Hora da sua prática 🌿', 'Alguns minutos no tapete já fazem diferença.'],
+  ['Seu tapete te espera 🧘', 'Que tal uma prática curta agora?'],
+  ['Um momento para você 🌸', 'Respire fundo e venha se alongar.'],
+  ['Pausa para o corpo 🌿', 'Uma prática leve para soltar a tensão do dia.'],
+  ['Hoje é dia de ioga ✨', 'Mantenha o ritmo, um dia de cada vez.'],
+];
+function remText(d, i) {
+  const n = jNext();
+  if (n && jCount() > 0 && i % 2 === 0) return [`Dia ${n} da Jornada te espera 🌿`, `${JORNADA[n - 1][0]}: ${fmtMin(progSecs(getProg('dia:' + n)))} de prática.`];
+  return REM_MSGS[(d.getDate() + i) % REM_MSGS.length];
+}
+async function askNotify() {
+  if (NATIVE && LN) {
+    try { let pm = await LN.checkPermissions(); if (pm.display !== 'granted') pm = await LN.requestPermissions(); return pm.display === 'granted'; } catch { return false; }
+  }
+  return false;
+}
+async function syncReminder() {
+  if (!NATIVE || !LN) return;
+  try {
+    await LN.cancel({ notifications: Array.from({ length: REM_DAYS }, (_, i) => ({ id: REM_BASE + i })) });
+    const lr = S.settings.lembrete || {};
+    if (!lr.on) return;
+    const [hh, mm] = (lr.hora || '08:00').split(':').map(Number);
+    const practicedToday = S.hist.some((h) => h.d === dkey());
+    const now = new Date(), list = [];
+    for (let i = 0; i < REM_DAYS; i++) {
+      const at = addDays(now, i); at.setHours(hh, mm, 0, 0);
+      if (at <= now || (i === 0 && practicedToday)) continue;
+      const [title, body] = remText(at, i);
+      list.push({ id: REM_BASE + i, title, body, schedule: { at, allowWhileIdle: true }, channelId: 'lembrete', smallIcon: 'ic_stat_sereno', iconColor: '#4f7d63', autoCancel: true });
+    }
+    if (list.length) await LN.schedule({ notifications: list });
+  } catch { /* sem permissão ou sem suporte */ }
+}
+// No navegador não dá para avisar com o app fechado: oferece um evento diário no calendário (.ics) com alarme.
+function reminderIcs() {
+  const [hh, mm] = (S.settings.lembrete?.hora || '08:00').split(':').map(Number);
+  const d = new Date(); d.setHours(hh, mm, 0, 0);
+  const f = (x) => `${x.getFullYear()}${pad(x.getMonth() + 1)}${pad(x.getDate())}T${pad(x.getHours())}${pad(x.getMinutes())}00`;
+  const end = new Date(d.getTime() + 15 * 60000);
+  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Sereno//Ioga//PT', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT',
+    `UID:sereno-lembrete-${Date.now()}@sereno`, `DTSTAMP:${f(new Date())}`, `DTSTART:${f(d)}`, `DTEND:${f(end)}`, 'RRULE:FREQ=DAILY',
+    'SUMMARY:Prática de ioga (Sereno) 🌿', 'DESCRIPTION:Alguns minutos no tapete. Abra o Sereno para praticar.',
+    'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:Hora da sua prática de ioga', 'TRIGGER:PT0M', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+  saveFile('sereno-lembrete.ics', ics, 'text/calendar', 'Abra o arquivo para adicionar o lembrete ao calendário');
+}
+// Salva um arquivo: no Android, abre o "Compartilhar"; no navegador, baixa.
+async function saveFile(name, text, type, okMsg) {
+  if (NATIVE && FS && SHARE) {
+    try {
+      const r = await FS.writeFile({ path: name, data: text, directory: 'CACHE', encoding: 'utf8' });
+      await SHARE.share({ title: name, files: [r.uri] });
+      return;
+    } catch { toast('Não foi possível salvar o arquivo.'); return; }
+  }
+  const blob = new Blob([text], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast(okMsg);
+}
 
 /* ---------------- Interface geral ---------------- */
 let toastT = 0;
@@ -540,6 +617,13 @@ function vPerfil() {
     <div class="row"><span>Objetivo</span>${sel('pfGoal', GOALS.map((g) => [g.id, g.nome]), pr.goal)}</div>
     <div class="row"><span>Nível</span>${sel('pfLevel', [[1, 'Iniciante'], [2, 'Intermediário'], [3, 'Avançado']], pr.level || 1)}</div>
     <div class="row"><span>Tempo por dia</span>${sel('pfMins', [[5, '5 min'], [10, '10 min'], [15, '15 min'], [20, '20 min ou mais']], pr.mins || 10)}</div>
+  </div>
+  <h3 class="sec-title">Lembrete diário</h3>
+  <div class="card group">
+    <div class="row"><span>Me lembrar de praticar<small>${NATIVE ? 'Um aviso por dia no horário escolhido. Não avisa se você já praticou.' : 'No navegador o aviso vai para o seu calendário.'}</small></span>${sw('stLem', S.settings.lembrete?.on)}</div>
+    <div class="row"><span>Horário</span><input type="time" id="stLemHora" value="${esc(S.settings.lembrete?.hora || '08:00')}" class="time-in" aria-label="Horário do lembrete"></div>
+    ${NATIVE ? '' : `<div class="row"><span>Adicionar ao calendário<small>Cria um evento diário com alarme (Google Agenda, calendário do celular)</small></span><button type="button" class="btn btn--soft btn--sm" data-act="ics">Adicionar</button></div>
+    <p class="muted" style="font-size:12.5px;padding:0 0 12px">No app para Android o lembrete chega como notificação, mesmo com o app fechado.</p>`}
   </div>
   <h3 class="sec-title">Aparência da instrutora</h3>
   <div class="card group look">
@@ -910,6 +994,7 @@ document.addEventListener('click', (e) => {
     case 'start': startProg(id); break;
     case 'jornada': openJornada(); break;
     case 'newcustom': edOpen(null); break;
+    case 'ics': reminderIcs(); break;
     case 'ambtest':
       if (Amb.playing()) { Amb.stop(); el.textContent = 'Ouvir'; }
       else if (S.settings.amb === 'nenhum') toast('Escolha um som ambiente acima');
@@ -980,6 +1065,13 @@ document.addEventListener('change', (e) => {
     pfGoal: () => { pr.goal = t.value; }, pfLevel: () => { pr.level = Number(t.value); }, pfMins: () => { pr.mins = Number(t.value); },
     stVoz: () => { S.settings.voz = t.checked; }, stSom: () => { S.settings.som = t.checked; if (t.checked) { audio(); bell(); } },
     stPrep: () => { S.settings.prep = Number(t.value); },
+    stLem: async () => {
+      S.settings.lembrete = { ...(S.settings.lembrete || {}), on: t.checked };
+      if (t.checked && NATIVE && !(await askNotify())) { t.checked = false; S.settings.lembrete.on = false; save(); toast('Permita as notificações do Sereno nas configurações do Android.'); return; }
+      if (t.checked && !NATIVE) { save(); reminderIcs(); return; }
+      save(); syncReminder();
+    },
+    stLemHora: () => { S.settings.lembrete = { ...(S.settings.lembrete || {}), hora: t.value || '08:00' }; syncReminder(); },
     stAmb: () => { S.settings.amb = t.value; if (Amb.playing()) ambStart(); },
     stAmbVol: () => { S.settings.ambVol = Number(t.value); Amb.setVolume(S.settings.ambVol); }, stTema: () => { S.settings.tema = t.value; applyTheme(); },
   };
@@ -988,13 +1080,7 @@ document.addEventListener('change', (e) => {
 
 /* ---------------- Backup ---------------- */
 function exportData() {
-  const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `sereno-backup-${dkey()}.json`;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-  toast('Backup salvo na pasta de downloads');
+  saveFile(`sereno-backup-${dkey()}.json`, JSON.stringify(S, null, 2), 'application/json', 'Backup salvo na pasta de downloads');
 }
 $('#fileIn').addEventListener('change', async (e) => {
   const f = e.target.files[0]; e.target.value = '';
@@ -1015,7 +1101,26 @@ function showOnb() {
 }
 applyTheme();
 go('inicio');
+if (NATIVE) {
+  if (LN) {
+    LN.createChannel({ id: 'lembrete', name: 'Lembrete diário', description: 'Avisa no horário escolhido para praticar', importance: 4, visibility: 1, vibration: true }).catch(() => {});
+    LN.addListener('localNotificationActionPerformed', () => { if (!P && !B) go('inicio'); });
+  }
+  syncReminder();
+  if (APP) {
+    APP.addListener('resume', () => { syncReminder(); if (!P && !B && tab === 'inicio') render(); });
+    // Botão "voltar" do Android: fecha janelas e telas cheias, volta para o Início, depois minimiza.
+    APP.addListener('backButton', () => {
+      if ($('#sheet').open) { if (ED && ED.pick) { ED.pick = false; edRender(true); } else closeSheet(); return; }
+      if (!$('#onb').hidden) { if (onbStep) { onbStep--; onbRender(); } else APP.minimizeApp(); return; }
+      if (P) { $('#playClose').click(); return; }
+      if (B) { $('#brClose').click(); return; }
+      if (tab !== 'inicio') { go('inicio'); return; }
+      APP.minimizeApp();
+    });
+  }
+}
 if (!S.profile) showOnb();
-if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+if (!NATIVE && 'serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('sw.js').catch(() => { /* sem modo offline */ });
 }

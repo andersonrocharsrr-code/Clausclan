@@ -427,3 +427,4 @@ svg { display: block; }
 
 .amb-btn { font-size: 19px; line-height: 1; }
 .row input[type="range"] { width: 46%; accent-color: var(--accent); }
+.time-in { min-height: 38px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); padding: 0 10px; }

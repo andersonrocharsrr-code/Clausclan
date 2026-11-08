@@ -202,7 +202,7 @@ Sem o segredo, o APK de teste fica em "Artifacts" na execução.
 
 ---
 
-# Sereno — ioga em casa (`ioga/`)
+# Sereno — ioga em casa (`ioga/` e `ioga-android/`)
 
 App web instalável (PWA, sem build) com **práticas de ioga guiadas**, **30 posturas explicadas** e
 **exercícios de respiração**.
@@ -213,6 +213,14 @@ Abra `ioga/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server
 ## O que faz
 - **Primeiro acesso**: aviso de saúde, nome, objetivo (estresse e sono, flexibilidade, costas, força, energia),
   experiência e tempo por dia. O app sugere a **prática de hoje** com base nisso (à noite, sugere relaxar).
+- **Jornada de 30 dias** para iniciantes: quatro semanas que aumentam aos poucos (conhecer o corpo, força suave,
+  abrir, fluir), com um dia de descanso ativo por semana. O dia de hoje aparece na tela inicial e fica marcado
+  ao terminar a prática.
+- **Monte sua prática**: escolha as posturas, a ordem e o tempo de cada uma, salve com um nome e edite depois.
+- **Som ambiente** gerado pelo próprio app (`ioga/ambient.js`, sem arquivos de áudio): taças tibetanas, chuva,
+  mar ou floresta, com volume no Perfil e um botão para trocar durante a prática e a respiração.
+- **Lembrete diário**: no app Android, notificação no horário escolhido (não avisa se você já praticou no dia);
+  no navegador, um evento diário com alarme para o calendário (`.ics`).
 - **8 práticas guiadas**: Primeiros passos, Saudação ao Sol (em fluxo, um movimento por respiração),
   Despertar suave, Costas leves, Quadril livre, Força e equilíbrio, Antes de dormir e Pausa de 5 minutos.
 - **Prática guiada**: figura animada que passa de uma postura para a outra, timer com anel, dica de cada postura,
@@ -227,6 +235,13 @@ Abra `ioga/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server
 - **Aparência da instrutora** (Perfil): tom de pele, cor do cabelo, penteado (coque, rabo de cavalo, curto ou solto),
   cor da regata e da calça, com prévia ao vivo. A expressão muda com a postura: serena e focada nas de força e
   equilíbrio, sorrindo nas de descanso.
+
+## App Android
+O projeto Capacitor fica em `ioga-android/`. O GitHub Actions (`.github/workflows/sereno-apk.yml`) gera o APK
+a cada mudança em `ioga/` ou `ioga-android/`. No `main`, com o segredo `NEXA_SIGNING_SEED` configurado (o mesmo
+do Nexa Money), publica em:
+`https://github.com/andersonrocharsrr-code/Clausclan/releases/download/sereno/sereno.apk`.
+Sem o segredo, o APK de teste fica em "Artifacts" na execução.
 
 ## Observações
 - As figuras mostram uma pessoa ilustrada (corpo com volume, rosto com olho, sobrancelha, nariz, boca e orelha,

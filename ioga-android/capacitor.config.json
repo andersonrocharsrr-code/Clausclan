@@ -1,0 +1,14 @@
+{
+  "appId": "io.github.andersonrocharsrr_code.sereno",
+  "appName": "Sereno",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#2f4a3b"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_sereno",
+      "iconColor": "#4f7d63"
+    }
+  }
+}

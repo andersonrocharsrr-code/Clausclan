@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Verde da marca (o mesmo do ícone), usado na abertura do app. -->
+    <color name="sereno_bg">#2F4A3B</color>
+</resources>
