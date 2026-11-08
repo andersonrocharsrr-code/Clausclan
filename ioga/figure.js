@@ -37,7 +37,7 @@
     const a = arm(f.a), b = arm(f.b || f.a), l = leg(f.l), r = leg(f.r || f.l);
     const h = f.h ?? f.t;
     const n = {
-      t: f.t, h, c: f.c || 0, ec: f.olhos === 'fechados' ? 1 : 0, face: f.face ?? h + 90, // para onde o rosto aponta
+      t: f.t, h, c: f.c || 0, ec: f.olhos === 'fechados' ? 1 : 0, ex: f.ex ?? 0.3, face: f.face ?? h + 90, // para onde o rosto aponta
       a0: a[0], a1: a[1], b0: b[0], b1: b[1], l0: l[0], l1: l[1], r0: r[0], r1: r[1],
       fl: f.fl ?? l[1] - 90, fr: f.fr ?? r[1] - 90,
     };
@@ -47,13 +47,13 @@
   const ANG = ['t', 'h', 'face', 'a0', 'a1', 'b0', 'b1', 'l0', 'l1', 'r0', 'r1', 'fl', 'fr'];
   // Espelha (lado esquerdo): a pessoa passa a olhar para a esquerda.
   function mirror(n) {
-    const o = { c: -n.c, ec: n.ec };
+    const o = { c: -n.c, ec: n.ec, ex: n.ex };
     for (const k of ANG) o[k] = 180 - n[k];
     return o;
   }
   const prep = (f, mir) => (mir ? mirror(angles(f)) : { ...angles(f) });
   function lerp(A, B, k) {
-    const o = { c: A.c + (B.c - A.c) * k, ec: A.ec + (B.ec - A.ec) * k };
+    const o = { c: A.c + (B.c - A.c) * k, ec: A.ec + (B.ec - A.ec) * k, ex: A.ex + (B.ex - A.ex) * k };
     for (const key of ANG) {
       const d = ((((B[key] - A[key]) % 360) + 540) % 360) - 180; // caminho mais curto
       o[key] = A[key] + d * k;
@@ -92,7 +92,7 @@
     const cx = (minX + maxX) / 2;
     const T = (p) => [W / 2 + (p[0] - cx) * s, FLOOR + (p[1] - maxY) * s];
     for (const k in P) P[k] = T(P[k]);
-    P.s = s; P.fd = fd; P.up = up; P.ec = n.ec; P.sha = unit(P.lk, P.la); P.shb = unit(P.rk, P.ra);
+    P.s = s; P.fd = fd; P.up = up; P.ec = n.ec; P.ex = n.ex; P.sha = unit(P.lk, P.la); P.shb = unit(P.rk, P.ra);
     P.minX = W / 2 + (minX - cx) * s; P.maxX = W / 2 + (maxX - cx) * s;
     return P;
   }
@@ -110,6 +110,25 @@
     return `M${f1(c[0] - r)} ${f1(c[1])}a${f1(r)} ${f1(r)} 0 1 0 ${f1(2 * r)} 0a${f1(r)} ${f1(r)} 0 1 0 ${f1(-2 * r)} 0Z`;
   }
   const off = (p, d, k) => [p[0] + d[0] * k, p[1] + d[1] * k];
+
+  // Aparência escolhida no Perfil (o penteado muda o desenho; as cores vêm do CSS).
+  const look = { hair: 'coque' };
+  // Cabelo atrás da cabeça, conforme o penteado. Rabo de cavalo e cabelo solto caem com a gravidade.
+  function hairBack(P, S) {
+    const h = P.head, fd = P.fd, up = P.up;
+    const loc = (x, y) => [h[0] + (fd[0] * x + up[0] * y) * P.s, h[1] + (fd[1] * x + up[1] * y) * P.s];
+    const fall = (p, dy, dx) => [p[0] - fd[0] * dx * P.s, Math.min(p[1] + dy * P.s, FLOOR - 1.5)];
+    if (look.hair === 'rabo') {
+      const r0 = loc(-7.2, 3.2), m = fall(r0, 6, 3.2), tip = fall(r0, 13, 3.6);
+      return circ(loc(-7, 3.4), S(2.6)) + cap(r0, S(3), m, S(2.6)) + cap(m, S(2.6), tip, S(1.3));
+    }
+    if (look.hair === 'curto') return cap(loc(-1.6, 1.2), S(R.head + 1.1), loc(-3.6, -4.2), S(6));
+    if (look.hair === 'solto') {
+      const r0 = loc(-4.2, 0.5), tip = fall(r0, 17, 2.4);
+      return cap(loc(-1.4, 1.4), S(R.head + 1.2), r0, S(7.4)) + cap(r0, S(7.2), tip, S(5));
+    }
+    return circ(P.bun, S(4)); // coque
+  }
 
   // Partes do corpo, na ordem em que são pintadas (de trás para a frente).
   const PARTS = [
@@ -153,7 +172,7 @@
     d.rThigh = cap(P.hip, S(R.thighTop), P.rk, S(R.kn));
     d.rShin = cap(P.rk, S(R.kn - 0.3), P.ra, S(R.an));
     d.rFoot = foot(P.ra, P.rt, P.shb);
-    d.bun = circ(P.bun, S(4));
+    d.bun = hairBack(P, S);
     d.torso1 = cap(P.hip, S(R.hip - 0.6), P.sp1, S(R.waist));
     d.torso2 = cap(P.sp1, S(R.waist), P.sp2, S(R.chest));
     d.torso3 = cap(P.sp2, S(R.chest), P.sho, S(R.sho));
@@ -170,12 +189,15 @@
     const pt = (x, y) => { const g = G(x, y); return `${f1(g[0])} ${f1(g[1])}`; };
     d.nose = `M${pt(6.5, 2.2)}Q${pt(8.2, 0.6)} ${pt(9.3, -1.0)}Q${pt(8.6, -1.9)} ${pt(6.6, -1.7)}Z`;
     d.ear = cap(G(-1.6, 1.3), S(1.5), G(-1.2, -1.0), S(1.1)) + `M${pt(-1.0, 1.0)}Q${pt(-2.0, 0.2)} ${pt(-1.1, -0.5)}`;
-    d.blush = circ(G(4.0, -1.9), S(1.6));
+    d.blush = circ(G(4.0, -1.9), S(1.4 + 0.5 * Math.max(0, P.ex)));
     const open = P.ec < 0.5;
     d.eye = open ? circ(G(4.1, 0.9), S(1.05)) + cap(G(3.4, 1.9), S(0.28), G(5.2, 2.0), S(0.22)) : 'M0 0';
     d.lid = open ? 'M0 0' : `M${pt(2.6, 1.0)}Q${pt(3.6, 0.2)} ${pt(4.7, 1.0)}`;
-    d.brow = `M${pt(2.4, 3.3)}Q${pt(3.8, 4.1)} ${pt(5.4, 3.4)}`;
-    d.mouth = `M${pt(5.0, -3.4)}Q${pt(6.2, -4.4)} ${pt(7.3, -3.3)}`;
+    // Expressão: ex = -1 concentrada (sobrancelha baixa na frente, boca reta), 1 sorrindo.
+    const ex = P.ex;
+    const fo = Math.max(0, -ex), sm = Math.max(0, ex);
+    d.brow = `M${pt(2.2, 3.3 + 0.35 * fo + 0.3 * sm)}Q${pt(3.8, 4.0 - 0.3 * fo + 0.5 * sm)} ${pt(5.5, 3.3 - 0.95 * fo + 0.45 * sm)}`;
+    d.mouth = `M${pt(5.0 + 0.7 * fo - 0.3 * sm, -3.4 + 0.15 * sm)}Q${pt(6.3, -3.45 - 1.5 * sm + 0.1 * fo)} ${pt(7.3 + 0.2 * sm, -3.3 + 0.35 * sm)}`;
     d.aArm = cap(P.sho, S(R.el + 1.1), P.ae, S(R.el));
     d.aFore = cap(P.ae, S(R.el - 0.2), P.ah, S(R.wr));
     d.aHand = hand(P.ae, P.ah);
@@ -220,5 +242,5 @@
     };
   }
 
-  window.Fig = { svg, mount };
+  window.Fig = { svg, mount, look };
 })();

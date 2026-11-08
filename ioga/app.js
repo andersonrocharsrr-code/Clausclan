@@ -22,7 +22,7 @@ const ICON = {
 
 /* ---------------- Dados salvos ---------------- */
 const KEY = 'sereno-v1';
-const DEFAULT = () => ({ v: 1, profile: null, settings: { voz: true, som: true, tema: 'auto', prep: 10 }, hist: [] });
+const DEFAULT = () => ({ v: 1, profile: null, settings: { voz: true, som: true, tema: 'auto', prep: 10, look: {} }, hist: [] });
 let S = load();
 function load() {
   try {
@@ -145,9 +145,34 @@ function toast(msg) {
   const t = $('#toast'); t.textContent = msg; t.classList.add('on');
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600);
 }
+// Aparência da pessoa: cores viram variáveis do CSS; o penteado vai para a figura.
+const LOOK_DEF = { pele: 'p3', cabelo: 'c1', estilo: 'coque', roupa: 'r1', calca: 'k1' };
+const darkNow = () => S.settings.tema === 'dark' || (S.settings.tema === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+function mix(hex, to, k) {
+  const a = parseInt(hex.slice(1), 16), b = parseInt(to.slice(1), 16);
+  const c = [16, 8, 0].map((sh) => Math.round(((a >> sh) & 255) * (1 - k) + ((b >> sh) & 255) * k));
+  return '#' + c.map((x) => x.toString(16).padStart(2, '0')).join('');
+}
+function applyLook() {
+  const lk = { ...LOOK_DEF, ...(S.settings.look || {}) };
+  Fig.look.hair = lk.estilo;
+  const st = document.documentElement.style;
+  const pick = (k) => LOOKS[k].find((o) => o[0] === lk[k])?.[1];
+  const custom = S.settings.look && Object.keys(S.settings.look).length;
+  if (!custom) { ['--skin', '--skin-2', '--hair', '--top', '--pants', '--pants-2'].forEach((v) => st.removeProperty(v)); return; }
+  const skin = pick('pele'), hair = pick('cabelo'), top = pick('roupa');
+  // No modo escuro, a calça clareia um pouco para não sumir no fundo.
+  const pants = darkNow() ? mix(pick('calca'), '#ffffff', 0.28) : pick('calca');
+  st.setProperty('--skin', skin); st.setProperty('--skin-2', mix(skin, '#3a1f12', 0.2));
+  st.setProperty('--hair', hair); st.setProperty('--top', top);
+  st.setProperty('--pants', pants); st.setProperty('--pants-2', mix(pants, '#000000', 0.25));
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => applyLook());
+
 function applyTheme() {
   const t = S.settings.tema;
   if (t === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+  applyLook();
 }
 const mini = (id, mir) => `<span class="mini">${Fig.svg(POSE[id].f, mir, 'fig--mini')}</span>`;
 
@@ -163,6 +188,7 @@ function go(t) {
 }
 function render() {
   $('#view').innerHTML = VIEWS[tab]();
+  if (tab === 'perfil') mountLook();
   const name = S.profile?.name?.trim();
   $('#btnProfile').textContent = name ? name[0].toUpperCase() : 'S';
 }
@@ -348,6 +374,12 @@ function vPerfil() {
     <div class="row"><span>Nível</span>${sel('pfLevel', [[1, 'Iniciante'], [2, 'Intermediário'], [3, 'Avançado']], pr.level || 1)}</div>
     <div class="row"><span>Tempo por dia</span>${sel('pfMins', [[5, '5 min'], [10, '10 min'], [15, '15 min'], [20, '20 min ou mais']], pr.mins || 10)}</div>
   </div>
+  <h3 class="sec-title">Aparência da instrutora</h3>
+  <div class="card group look">
+    <div class="look__prev"><div id="lookFig"></div></div>
+    ${lookRows()}
+    <div class="btns"><button class="btn btn--ghost btn--sm" data-act="lookreset">Voltar ao padrão</button></div>
+  </div>
   <h3 class="sec-title">Prática</h3>
   <div class="card group">
     <div class="row"><span>Guia por voz<small>Fala o nome de cada postura e a dica</small></span>${sw('stVoz', st.voz)}</div>
@@ -365,6 +397,21 @@ function vPerfil() {
     </div>
   </div>
   <p class="note" style="margin-top:6px">O Sereno traz orientações gerais de ioga e não substitui um profissional de saúde. Se estiver grávida, tiver lesões, pressão alta ou outra condição, converse com seu médico antes. Respeite seus limites: desconforto de alongamento é normal, dor não.</p>`;
+}
+
+function lookRows() {
+  const lk = { ...LOOK_DEF, ...(S.settings.look || {}) };
+  const sw = (k, nome) => `<div class="look__row"><span>${nome}</span><div class="swatches">${LOOKS[k].map(([id, cor, t]) =>
+    `<button class="swatch${lk[k] === id ? ' on' : ''}" style="--sw:${cor}" data-act="look" data-k="${k}" data-v="${id}" aria-label="${t}" aria-pressed="${lk[k] === id}" title="${t}"></button>`).join('')}</div></div>`;
+  return sw('pele', 'Pele') + sw('cabelo', 'Cabelo') +
+    `<div class="look__row"><span>Penteado</span><div class="chips">${LOOKS.estilo.map(([id, t]) => `<button class="chip${lk.estilo === id ? ' on' : ''}" data-act="look" data-k="estilo" data-v="${id}">${t}</button>`).join('')}</div></div>` +
+    sw('roupa', 'Regata') + sw('calca', 'Calça');
+}
+let lookFig = null;
+function mountLook() {
+  const el = $('#lookFig'); if (!el) return;
+  lookFig = Fig.mount(el, 'fig--breathe');
+  lookFig.set(POSE.guerreiro2.f);
 }
 
 const VIEWS = { inicio: vInicio, praticas: vPraticas, posturas: vPosturas, respirar: vRespirar, progresso: vProgresso, perfil: vPerfil };
@@ -695,6 +742,18 @@ document.addEventListener('click', (e) => {
     case 'delhist':
       if (confirm('Apagar esta prática do histórico?')) { S.hist = S.hist.filter((h) => h.id !== id); save(); render(); }
       break;
+    case 'look': {
+      S.settings.look = { ...LOOK_DEF, ...(S.settings.look || {}), [el.dataset.k]: el.dataset.v };
+      save(); applyLook();
+      const y = window.scrollY; render(); window.scrollTo(0, y);
+      break;
+    }
+    case 'lookreset': {
+      S.settings.look = {}; save(); applyLook();
+      const y = window.scrollY; render(); window.scrollTo(0, y);
+      toast('Aparência padrão');
+      break;
+    }
     case 'export': exportData(); break;
     case 'import': $('#fileIn').click(); break;
     case 'reset':

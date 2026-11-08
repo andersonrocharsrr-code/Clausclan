@@ -379,3 +379,13 @@ svg { display: block; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Aparência da instrutora (Perfil) */
+.look__prev { margin: 14px 0 6px; border-radius: 18px; background: var(--stage); display: grid; place-items: center; padding: 8px; }
+.look__prev > div { width: min(100%, 260px); }
+.look__row { display: grid; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.look__row > span { font-weight: 500; }
+.look__row .chips { padding: 0; flex-wrap: wrap; }
+.swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+.swatch { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--surface); background: var(--sw); box-shadow: 0 0 0 1px var(--line); padding: 0; }
+.swatch.on { box-shadow: 0 0 0 2.5px var(--accent); }

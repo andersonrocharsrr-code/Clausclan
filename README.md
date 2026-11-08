@@ -224,6 +224,9 @@ Abra `ioga/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server
   com um círculo que cresce e diminui no ritmo.
 - **Progresso**: dias seguidos, minutos, gráfico da semana, calendário das últimas 5 semanas e histórico.
 - **Perfil**: objetivo, nível, tempo, voz, sino, tempo de preparo, tema claro/escuro e backup (`.json`).
+- **Aparência da instrutora** (Perfil): tom de pele, cor do cabelo, penteado (coque, rabo de cavalo, curto ou solto),
+  cor da regata e da calça, com prévia ao vivo. A expressão muda com a postura: concentrada nas de força e
+  equilíbrio, sorrindo nas de descanso.
 
 ## Observações
 - As figuras mostram uma pessoa ilustrada (corpo com volume, rosto com olho, sobrancelha, nariz, boca e orelha,

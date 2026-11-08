@@ -504,3 +504,20 @@ const TIPS = [
   'Se um lado do corpo for mais rígido, comece por ele.',
   'Pratique descalço, num tapete ou numa superfície que não escorregue.',
 ];
+
+// Expressão de cada postura: -1 concentrada, 0 neutra, 1 sorrindo (o padrão é um meio-sorriso).
+const EXPRESSAO = {
+  prancha: -1, cadeira: -1, guerreiro1: -0.8, guerreiro2: -0.8, guerreiro3: -1, barco: -1, caocima: -0.6,
+  triangulo: -0.5, arvore: -0.6, avanco: -0.3, ponte: -0.2,
+  savasana: 1, crianca: 1, parede: 1, joelhos: 1, sentado: 0.8, borboleta: 0.8, torcao: 0.6, pinca: 0.6, montanha: 0.6,
+};
+for (const p of POSES) if (EXPRESSAO[p.id] != null) p.f.ex = EXPRESSAO[p.id];
+
+// Opções de aparência da pessoa (Perfil).
+const LOOKS = {
+  pele: [['p1', '#f2cdb0', 'Muito clara'], ['p2', '#e6b48f', 'Clara'], ['p3', '#d9a07a', 'Média'], ['p4', '#b07a55', 'Morena'], ['p5', '#7d5137', 'Negra']],
+  cabelo: [['c1', '#3b2a22', 'Castanho escuro'], ['c2', '#18120f', 'Preto'], ['c3', '#80522e', 'Castanho claro'], ['c4', '#caa05a', 'Loiro'], ['c5', '#a8472b', 'Ruivo'], ['c6', '#a19d97', 'Grisalho']],
+  estilo: [['coque', 'Coque'], ['rabo', 'Rabo de cavalo'], ['curto', 'Curto'], ['solto', 'Solto']],
+  roupa: [['r1', '#c8663f', 'Terracota'], ['r2', '#5e8f6e', 'Verde'], ['r3', '#4f6fa8', 'Azul'], ['r4', '#8d6bb0', 'Lilás'], ['r5', '#d3a13b', 'Mostarda'], ['r6', '#d8708a', 'Rosa']],
+  calca: [['k1', '#2f4a3e', 'Verde-escuro'], ['k2', '#2a2a2c', 'Preta'], ['k3', '#2b3a5c', 'Azul-marinho'], ['k4', '#5d636b', 'Cinza'], ['k5', '#6b2e3a', 'Vinho']],
+};
