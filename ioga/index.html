@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Sereno — Ioga em casa</title>
+  <meta name="description" content="Sereno: práticas de ioga guiadas, posturas explicadas passo a passo e exercícios de respiração.">
+  <meta name="theme-color" content="#f6f2ec" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#111513" media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <div class="brand">
+        <svg class="brand__logo" viewBox="0 0 512 512" aria-hidden="true"><use href="#logo"/></svg>
+        <div>
+          <h1 class="brand__name">Sereno</h1>
+          <p class="brand__sub" id="topSub">Ioga em casa</p>
+        </div>
+      </div>
+      <button class="avatar" id="btnProfile" type="button" aria-label="Perfil e ajustes">S</button>
+    </header>
+
+    <main id="view" class="view" tabindex="-1"></main>
+
+    <nav class="tabs" aria-label="Seções">
+      <button type="button" class="tab" data-tab="inicio">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/></svg>
+        <span>Início</span>
+      </button>
+      <button type="button" class="tab" data-tab="praticas">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m10 8.5 5.5 3.5-5.5 3.5z"/></svg>
+        <span>Práticas</span>
+      </button>
+      <button type="button" class="tab" data-tab="posturas">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="4.5" r="2"/><path d="M12 7.5v7M5 9.5l7 1.5 7-1.5M8.5 21l3.5-6.5 3.5 6.5"/></svg>
+        <span>Posturas</span>
+      </button>
+      <button type="button" class="tab" data-tab="respirar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.5h11a3 3 0 1 0-3-3"/><path d="M3 12.5h15a3 3 0 1 1-3 3"/><path d="M3 16.5h7"/></svg>
+        <span>Respirar</span>
+      </button>
+      <button type="button" class="tab" data-tab="progresso">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"/><path d="M7 19v-5M12 19V9M17 19v-8"/></svg>
+        <span>Progresso</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Primeiro acesso -->
+  <section class="onb" id="onb" hidden aria-label="Começar">
+    <div class="onb__top">
+      <button type="button" class="icon-btn" id="onbBack" aria-label="Voltar"><svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button>
+      <div class="onb__bar"><i id="onbFill"></i></div>
+      <button type="button" class="link" id="onbSkip">Pular</button>
+    </div>
+    <div class="onb__body" id="onbBody"></div>
+    <div class="onb__foot"><button type="button" class="btn btn--primary btn--block btn--lg" id="onbNext">Continuar</button></div>
+  </section>
+
+  <!-- Prática guiada -->
+  <section class="play" id="play" hidden aria-label="Prática guiada">
+    <header class="play__top">
+      <button class="icon-btn" id="playClose" type="button" aria-label="Encerrar prática"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <div class="play__title"><strong id="playName"></strong><small id="playMeta"></small></div>
+      <button class="icon-btn" id="playVoice" type="button" aria-label="Guia por voz" aria-pressed="true"></button>
+    </header>
+    <div class="play__prog"><i id="playBar"></i></div>
+    <div class="play__body" id="playBody">
+      <div class="play__stage"><div class="play__fig" id="playFig"></div></div>
+      <p class="play__phase" id="playPhase"></p>
+      <h2 class="play__pose" id="playPose"></h2>
+      <p class="play__sans" id="playSans"></p>
+      <div class="play__row">
+        <div class="timer">
+          <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" class="timer__bg"/><circle cx="50" cy="50" r="44" class="timer__fg" id="playRing"/></svg>
+          <strong id="playTime">0</strong>
+        </div>
+        <p class="play__cue" id="playCue"></p>
+      </div>
+      <p class="play__next" id="playNext"></p>
+    </div>
+    <div class="play__done" id="playDone" hidden></div>
+    <footer class="play__ctrl" id="playCtrl">
+      <button type="button" class="ctrl" id="playPrev" aria-label="Postura anterior"><svg viewBox="0 0 24 24"><path d="M6 5v14M18 5 9 12l9 7z"/></svg></button>
+      <button type="button" class="ctrl ctrl--main" id="playPause" aria-label="Pausar"></button>
+      <button type="button" class="ctrl" id="playSkip" aria-label="Próxima postura"><svg viewBox="0 0 24 24"><path d="M18 5v14M6 5l9 7-9 7z"/></svg></button>
+    </footer>
+  </section>
+
+  <!-- Respiração guiada -->
+  <section class="breath" id="breath" hidden aria-label="Respiração guiada">
+    <header class="play__top">
+      <button class="icon-btn" id="brClose" type="button" aria-label="Encerrar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <div class="play__title"><strong id="brName"></strong><small id="brLeft"></small></div>
+      <span class="icon-btn" aria-hidden="true"></span>
+    </header>
+    <div class="breath__stage">
+      <div class="breath__orb" id="brOrb"><i></i></div>
+      <div class="breath__txt"><strong id="brPhase">Prepare-se</strong><span id="brCount"></span></div>
+    </div>
+    <p class="breath__hint" id="brHint">Sente-se confortável e relaxe os ombros.</p>
+    <div class="breath__end" id="brEnd" hidden></div>
+  </section>
+
+  <dialog class="sheet" id="sheet">
+    <div class="sheet__inner">
+      <header class="sheet__head">
+        <h2 id="sheetTitle"></h2>
+        <button class="icon-btn" type="button" id="sheetClose" aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </header>
+      <div id="sheetBody"></div>
+    </div>
+  </dialog>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="logo" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="var(--logo-bg)"/>
+      <g fill="var(--logo-fg)">
+        <path d="M256 118c38 44 56 92 56 138s-18 88-56 118c-38-30-56-72-56-118s18-94 56-138z"/>
+        <path d="M120 214c56 4 100 28 124 68 14 24 18 54 12 92-48-2-90-20-118-54-24-30-28-66-18-106z" opacity=".78"/>
+        <path d="M392 214c-56 4-100 28-124 68-14 24-18 54-12 92 48-2 90-20 118-54 24-30 28-66 18-106z" opacity=".78"/>
+      </g>
+      <path d="M150 388h212" stroke="var(--logo-fg)" stroke-width="22" stroke-linecap="round" opacity=".55"/>
+    </symbol>
+  </svg>
+
+  <input type="file" id="fileIn" accept="application/json,.json" hidden>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="data.js?v=1"></script>
+  <script src="figure.js?v=1"></script>
+  <script src="app.js?v=1"></script>
+</body>
+</html>

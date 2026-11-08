@@ -202,6 +202,37 @@ Sem o segredo, o APK de teste fica em "Artifacts" na execução.
 
 ---
 
+# Sereno — ioga em casa (`ioga/`)
+
+App web instalável (PWA, sem build) com **práticas de ioga guiadas**, **30 posturas explicadas** e
+**exercícios de respiração**.
+
+Abra `ioga/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server` na raiz e acesse
+`http://localhost:8000/ioga/`). No celular, use o menu do navegador → "Instalar app" / "Adicionar à tela inicial".
+
+## O que faz
+- **Primeiro acesso**: aviso de saúde, nome, objetivo (estresse e sono, flexibilidade, costas, força, energia),
+  experiência e tempo por dia. O app sugere a **prática de hoje** com base nisso (à noite, sugere relaxar).
+- **8 práticas guiadas**: Primeiros passos, Saudação ao Sol (em fluxo, um movimento por respiração),
+  Despertar suave, Costas leves, Quadril livre, Força e equilíbrio, Antes de dormir e Pausa de 5 minutos.
+- **Prática guiada**: figura animada que passa de uma postura para a outra, timer com anel, dica de cada postura,
+  lado direito/esquerdo automático, pausar/voltar/pular, **guia por voz** (fala o nome e a dica) e **sino**.
+  A tela fica acesa durante a prática. No fim, você marca como está se sentindo.
+- **Posturas**: busca e filtros (em pé, equilíbrio, no apoio, sentadas, deitadas). Cada uma tem figura animada,
+  nome em sânscrito, benefício, passo a passo, cuidados e o botão "Praticar 1 minuto".
+- **Respirar**: coerente (5-5), expiração longa (4-6), quadrada (4-4-4-4) e 4-7-8, em 1, 3 ou 5 minutos,
+  com um círculo que cresce e diminui no ritmo.
+- **Progresso**: dias seguidos, minutos, gráfico da semana, calendário das últimas 5 semanas e histórico.
+- **Perfil**: objetivo, nível, tempo, voz, sino, tempo de preparo, tema claro/escuro e backup (`.json`).
+
+## Observações
+- As figuras são desenhadas pelo próprio app (`ioga/figure.js`), sem imagens nem vídeos. Para criar ou ajustar
+  uma postura, edite os ângulos no campo `f` em `ioga/data.js`.
+- Os dados ficam salvos **somente neste aparelho**. Faça backup de vez em quando (Perfil).
+- O app traz orientações gerais de ioga e não substitui um profissional de saúde.
+
+---
+
 # Fechamento de Caixa — app de caixa semanal (`caixa/`)
 
 App web instalável (PWA, sem build) que faz as contas da folha **CAIXA** e **lê fotos com IA** (Claude).
