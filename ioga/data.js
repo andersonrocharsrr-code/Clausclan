@@ -505,7 +505,7 @@ const TIPS = [
   'Pratique descalço, num tapete ou numa superfície que não escorregue.',
 ];
 
-// Expressão de cada postura: -1 concentrada, 0 neutra, 1 sorrindo (o padrão é um meio-sorriso).
+// Expressão de cada postura: -1 focada e serena, 0 neutra, 1 sorrindo (o padrão é um meio-sorriso).
 const EXPRESSAO = {
   prancha: -1, cadeira: -1, guerreiro1: -0.8, guerreiro2: -0.8, guerreiro3: -1, barco: -1, caocima: -0.6,
   triangulo: -0.5, arvore: -0.6, avanco: -0.3, ponte: -0.2,

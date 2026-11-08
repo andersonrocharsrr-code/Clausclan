@@ -193,11 +193,12 @@
     const open = P.ec < 0.5;
     d.eye = open ? circ(G(4.1, 0.9), S(1.05)) + cap(G(3.4, 1.9), S(0.28), G(5.2, 2.0), S(0.22)) : 'M0 0';
     d.lid = open ? 'M0 0' : `M${pt(2.6, 1.0)}Q${pt(3.6, 0.2)} ${pt(4.7, 1.0)}`;
-    // Expressão: ex = -1 concentrada (sobrancelha baixa na frente, boca reta), 1 sorrindo.
+    // Expressão: ex = -1 focada e serena, 1 sorrindo.
     const ex = P.ex;
     const fo = Math.max(0, -ex), sm = Math.max(0, ex);
-    d.brow = `M${pt(2.2, 3.3 + 0.35 * fo + 0.3 * sm)}Q${pt(3.8, 4.0 - 0.3 * fo + 0.5 * sm)} ${pt(5.5, 3.3 - 0.95 * fo + 0.45 * sm)}`;
-    d.mouth = `M${pt(5.0 + 0.7 * fo - 0.3 * sm, -3.4 + 0.15 * sm)}Q${pt(6.3, -3.45 - 1.5 * sm + 0.1 * fo)} ${pt(7.3 + 0.2 * sm, -3.3 + 0.35 * sm)}`;
+    // Focada (fo): sobrancelha reta e serena, boca fechada com um leve sorriso — nunca brava.
+    d.brow = `M${pt(2.2, 3.3 - 0.1 * fo + 0.3 * sm)}Q${pt(3.8, 4.0 - 0.45 * fo + 0.5 * sm)} ${pt(5.5, 3.3 - 0.1 * fo + 0.45 * sm)}`;
+    d.mouth = `M${pt(5.0 + 0.4 * fo - 0.3 * sm, -3.4 + 0.15 * sm)}Q${pt(6.3, -3.8 + 0.1 * fo - 1.1 * sm)} ${pt(7.3 + 0.2 * sm, -3.3 + 0.35 * sm)}`;
     d.aArm = cap(P.sho, S(R.el + 1.1), P.ae, S(R.el));
     d.aFore = cap(P.ae, S(R.el - 0.2), P.ah, S(R.wr));
     d.aHand = hand(P.ae, P.ah);
