@@ -389,3 +389,41 @@ svg { display: block; }
 .swatches { display: flex; gap: 10px; flex-wrap: wrap; }
 .swatch { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--surface); background: var(--sw); box-shadow: 0 0 0 1px var(--line); padding: 0; }
 .swatch.on { box-shadow: 0 0 0 2.5px var(--accent); }
+
+/* Jornada de 30 dias */
+.jcard { padding: 18px; margin-top: 14px; }
+.jcard h3 { font: 600 20px/1.2 var(--serif); margin: 4px 0 4px; }
+.jcard .btns { padding-bottom: 0; }
+.jbar { height: 8px; border-radius: 8px; background: var(--surface-2); overflow: hidden; margin-top: 12px; }
+.jbar i { display: block; height: 100%; border-radius: 8px; background: var(--warm); }
+.jgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+@media (min-width: 420px) { .jgrid { grid-template-columns: repeat(7, 1fr); } }
+.jday { display: grid; gap: 2px; justify-items: center; align-content: start; padding: 8px 4px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); min-height: 74px; }
+.jday b { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); font-size: 13px; }
+.jday small { font-size: 10.5px; line-height: 1.2; color: var(--muted); text-align: center; }
+.jday.done b { background: var(--accent); color: var(--on-accent); }
+.jday.next { border: 2px solid var(--warm); }
+.jday.next b { background: var(--warm); color: #fff; }
+
+/* Minhas práticas e editor */
+.newcard { display: grid; justify-items: center; gap: 4px; padding: 18px; border: 2px dashed var(--line); background: transparent; box-shadow: none; text-align: center; }
+.newcard span { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-size: 22px; font-weight: 700; }
+.newcard small { color: var(--muted); font-size: 13px; }
+.edlist { display: grid; gap: 8px; }
+.edrow { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 16px; background: var(--surface); }
+.edrow .mini { width: 54px; flex: none; }
+.edrow__txt { flex: 1; min-width: 0; }
+.edrow__txt strong { display: block; font-size: 14px; }
+.edrow__txt small { color: var(--muted); font-size: 12px; }
+.edrow__acts { display: flex; flex-direction: column; }
+.edrow__acts .icon-btn { width: 34px; height: 30px; color: var(--muted); }
+.edrow__acts .icon-btn svg { width: 18px; height: 18px; }
+.edrow__acts .icon-btn:disabled { opacity: .25; }
+.stepper { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 2px; }
+.stepper button { width: 30px; height: 30px; border-radius: 50%; border: 0; background: var(--surface-2); font-size: 17px; font-weight: 600; }
+.stepper span { min-width: 48px; text-align: center; font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.edfoot { display: flex; gap: 10px; }
+.edfoot .btn--primary { flex: 1; }
+
+.amb-btn { font-size: 19px; line-height: 1; }
+.row input[type="range"] { width: 46%; accent-color: var(--accent); }

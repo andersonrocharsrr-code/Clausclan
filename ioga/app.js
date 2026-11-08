@@ -22,7 +22,7 @@ const ICON = {
 
 /* ---------------- Dados salvos ---------------- */
 const KEY = 'sereno-v1';
-const DEFAULT = () => ({ v: 1, profile: null, settings: { voz: true, som: true, tema: 'auto', prep: 10, look: {} }, hist: [] });
+const DEFAULT = () => ({ v: 1, profile: null, settings: { voz: true, som: true, tema: 'auto', prep: 10, look: {}, amb: 'tacas', ambVol: 0.5 }, hist: [], jornada: { feitos: {} }, minhas: [] });
 let S = load();
 function load() {
   try {
@@ -54,6 +54,59 @@ function progSecs(p) {
   const st = expand(p.itens);
   return st.reduce((s, x) => s + x.secs, 0) + (p.flow ? 0 : TRANS * (st.length - 1)) + S.settings.prep;
 }
+// Uma prática pode ser pronta (PROGRAMS), um dia da Jornada ("dia:7") ou criada por você ("minha:abc").
+const JCOR = '#c9774f';
+function getProg(id) {
+  if (PROG[id]) return PROG[id];
+  if (id?.startsWith('dia:')) {
+    const n = Number(id.slice(4)), d = JORNADA[n - 1];
+    if (!d) return null;
+    return { id, dia: n, nome: `Dia ${n} · ${d[0]}`, titulo: d[0], nivel: n > 21 ? 2 : 1, tag: 'Jornada de 30 dias', cor: JCOR, desc: d[1], itens: d[2], flow: !!d[3] };
+  }
+  if (id?.startsWith('minha:')) {
+    const m = (S.minhas || []).find((x) => x.id === id.slice(6));
+    if (!m) return null;
+    return { id, minha: m.id, nome: m.nome, nivel: 1, tag: 'Minha prática', cor: '#8a7fb8', desc: 'Prática criada por você.', itens: m.itens, flow: false };
+  }
+  return null;
+}
+const jFeitos = () => (S.jornada && S.jornada.feitos) || {};
+const jCount = () => Object.keys(jFeitos()).length;
+function jNext() { for (let n = 1; n <= JORNADA.length; n++) if (!jFeitos()[n]) return n; return null; }
+const jDoneToday = () => Object.values(jFeitos()).includes(dkey());
+function jornadaCard(compact) {
+  const n = jNext(), done = jCount(), pct = Math.round((done / JORNADA.length) * 100);
+  const bar = `<div class="jbar"><i style="width:${pct}%"></i></div>`;
+  if (!n) {
+    return `<article class="card jcard"><p class="eyebrow">Jornada de 30 dias</p><h3>Jornada concluída 🎉</h3>
+      <p class="muted">Você completou os 30 dias. Pode repetir qualquer dia quando quiser.</p>${bar}
+      <div class="btns"><button class="btn btn--soft btn--sm" data-act="jornada">Ver os 30 dias</button><button class="btn btn--ghost btn--sm" data-act="jreset">Recomeçar</button></div></article>`;
+  }
+  const d = getProg('dia:' + n);
+  if (done === 0 && compact) {
+    return `<article class="card jcard"><p class="eyebrow">Jornada de 30 dias</p><h3>Comece do zero, um dia por vez</h3>
+      <p class="muted">30 práticas curtas que aumentam aos poucos. Ideal para criar o hábito.</p>
+      <div class="btns"><button class="btn btn--primary btn--sm" data-act="start" data-id="dia:1">Começar o Dia 1</button><button class="btn btn--ghost btn--sm" data-act="jornada">Ver os 30 dias</button></div></article>`;
+  }
+  const hoje = jDoneToday();
+  return `<article class="card jcard"><p class="eyebrow">Jornada de 30 dias · ${done} de 30</p>
+    <h3>${hoje ? 'Dia de hoje feito ✓' : `Dia ${n}: ${esc(d.titulo)}`}</h3>
+    <p class="muted">${hoje ? `Amanhã: Dia ${n}, ${esc(d.titulo)}. Se quiser, pode fazer agora.` : `${fmtMin(progSecs(d))} · ${esc(d.desc)}`}</p>${bar}
+    <div class="btns"><button class="btn ${hoje ? 'btn--ghost' : 'btn--primary'} btn--sm" data-act="start" data-id="dia:${n}">${hoje ? `Fazer o Dia ${n}` : 'Começar'}</button>
+    <button class="btn btn--ghost btn--sm" data-act="jornada">Ver os 30 dias</button></div></article>`;
+}
+function openJornada() {
+  const f = jFeitos(), n = jNext();
+  const semanas = ['Conhecer o corpo', 'Força suave', 'Abrir', 'Fluir'];
+  openSheet('Jornada de 30 dias', `
+    <p class="muted">Uma prática curta por dia, em quatro semanas que aumentam aos poucos. Um dia por semana é de descanso ativo. Se pular um dia, tudo bem: continue de onde parou.</p>
+    ${semanas.map((t, w) => `<h4>Semana ${w + 1} · ${t}</h4><div class="jgrid">${JORNADA.slice(w * 7, w === 3 ? 30 : w * 7 + 7).map((d, i) => {
+      const k = w * 7 + i + 1;
+      return `<button class="jday${f[k] ? ' done' : ''}${k === n ? ' next' : ''}" data-act="prog" data-id="dia:${k}" aria-label="Dia ${k}: ${esc(d[0])}${f[k] ? ', concluído' : ''}"><b>${f[k] ? '✓' : k}</b><small>${esc(d[0])}</small></button>`;
+    }).join('')}</div>`).join('')}
+    ${n ? `<div class="sheet__foot"><button class="btn btn--primary btn--block btn--lg" data-act="start" data-id="dia:${n}">Fazer o Dia ${n}</button></div>` : ''}`);
+}
+
 const minutesOn = (k) => S.hist.filter((h) => h.d === k).reduce((s, h) => s + h.secs, 0) / 60;
 function streak() {
   const set = new Set(S.hist.map((h) => h.d));
@@ -130,6 +183,19 @@ function speak(txt) {
   } catch { /* sem voz neste aparelho */ }
 }
 const hush = () => { try { speechSynthesis.cancel(); } catch { /* nada */ } };
+// Som ambiente (ambient.js): começa com a prática/respiração e para ao sair.
+const ambStart = () => Amb.start(S.settings.amb, audio(), S.settings.ambVol);
+const ambIcon = () => (Amb.SONS.find((x) => x[0] === S.settings.amb) || Amb.SONS[0])[2];
+function paintAmb() {
+  const nome = (Amb.SONS.find((x) => x[0] === S.settings.amb) || Amb.SONS[0])[1];
+  ['#playAmb', '#brAmb'].forEach((q) => { const b = $(q); if (b) { b.textContent = ambIcon(); b.setAttribute('aria-label', `Som ambiente: ${nome}. Toque para trocar.`); } });
+}
+function cycleAmb() {
+  const i = Amb.SONS.findIndex((x) => x[0] === S.settings.amb);
+  S.settings.amb = Amb.SONS[(i + 1) % Amb.SONS.length][0]; save();
+  ambStart(); paintAmb();
+  toast(Amb.SONS.find((x) => x[0] === S.settings.amb)[1]);
+}
 let lock = null;
 async function keepAwake(on) {
   try {
@@ -180,6 +246,7 @@ let tab = 'inicio';
 let poseFilter = 'todas', poseQ = '', progFilter = 'todas';
 const SUB = { inicio: 'Ioga em casa', praticas: 'Práticas guiadas', posturas: `${POSES.length} posturas explicadas`, respirar: 'Respiração guiada', progresso: 'Seu progresso', perfil: 'Perfil e ajustes' };
 function go(t) {
+  if (tab === 'perfil' && t !== 'perfil' && !P && !B) Amb.stop();
   tab = t;
   $$('.tab').forEach((b) => b.classList.toggle('on', b.dataset.tab === t));
   $('#topSub').textContent = SUB[t];
@@ -225,6 +292,7 @@ function vInicio() {
       <button class="btn btn--ghost btn--lg" data-act="prog" data-id="${rec.id}">Ver posturas</button>
     </div>
   </article>
+  ${jornadaCard(true)}
   <section class="stats">
     <div class="card stat"><strong>${st}</strong><span>${st === 1 ? 'dia seguido' : 'dias seguidos'}</span></div>
     <div class="card stat"><strong>${Math.round(wkMin)}</strong><span>min na semana</span></div>
@@ -245,7 +313,18 @@ function vInicio() {
 function vPraticas() {
   const tags = ['todas', ...new Set(PROGRAMS.map((p) => p.tag))];
   const list = PROGRAMS.filter((p) => progFilter === 'todas' || p.tag === progFilter);
+  const minhas = S.minhas || [];
   return `
+  ${jornadaCard(false)}
+  <h3 class="sec-title">Minhas práticas</h3>
+  <div class="plist">
+    ${minhas.map((m) => { const p = getProg('minha:' + m.id); return `<button class="card pcard" style="--c:${p.cor}" data-act="prog" data-id="${p.id}">
+      <div><h3>${esc(m.nome)}</h3><p>${m.itens.length} ${m.itens.length === 1 ? 'postura' : 'posturas'}: ${esc(m.itens.slice(0, 4).map((i) => POSE[i[0]].nome).join(', '))}${m.itens.length > 4 ? '…' : ''}</p>
+      <div class="meta"><span class="pill pill--c">${fmtMin(progSecs(p))}</span></div></div>
+      <div class="fig-wrap">${Fig.svg(POSE[m.itens[0][0]].f, false, 'fig--mini')}</div></button>`; }).join('')}
+    <button class="card newcard" data-act="newcustom"><span>＋</span><strong>Monte sua prática</strong><small>Escolha as posturas, a ordem e o tempo de cada uma</small></button>
+  </div>
+  <h3 class="sec-title">Práticas guiadas</h3>
   <div class="chips">${tags.map((t) => `<button class="chip${t === progFilter ? ' on' : ''}" data-act="pfilter" data-id="${t}">${t === 'todas' ? 'Todas' : t}</button>`).join('')}</div>
   <div class="plist">
   ${list.map((p) => {
@@ -261,9 +340,12 @@ function vPraticas() {
 }
 
 function openProg(id) {
-  const p = PROG[id], st = expand(p.itens);
+  const p = getProg(id); if (!p) return;
+  const st = expand(p.itens);
+  const extra = p.minha ? `<div class="btns"><button class="btn btn--ghost btn--sm" data-act="editcustom" data-id="${p.minha}">Editar</button></div>`
+    : p.dia ? `<p class="note" style="margin-top:12px">${jFeitos()[p.dia] ? `✓ Você fez este dia em ${fromKey(jFeitos()[p.dia]).toLocaleDateString('pt-BR')}.` : 'Ao terminar a prática inteira, o dia fica marcado como feito.'}</p>` : '';
   openSheet(p.nome, `
-    <p class="muted">${p.desc}</p>
+    <p class="muted">${esc(p.desc)}</p>${extra}
     <div class="meta" style="--c:${p.cor};margin:12px 0 4px"><span class="pill pill--c">${fmtMin(progSecs(p))}</span><span class="pill">${NIVEL[p.nivel]}</span><span class="pill">${p.tag}</span>${p.flow ? '<span class="pill">Em fluxo: um movimento por respiração</span>' : ''}</div>
     <h4>Sequência</h4>
     <div class="seq">${st.map((s) => {
@@ -273,6 +355,91 @@ function openProg(id) {
         <time>${fmtClock(s.secs)}${s.secs < 60 ? ' s' : ''}</time></button>`;
     }).join('')}</div>
     <div class="sheet__foot"><button class="btn btn--primary btn--block btn--lg" data-act="start" data-id="${p.id}">Começar prática</button></div>`);
+}
+
+/* ---------------- Monte sua prática ---------------- */
+let ED = null;
+function edOpen(id) {
+  const m = id ? (S.minhas || []).find((x) => x.id === id) : null;
+  ED = { id: m ? m.id : null, nome: m ? m.nome : '', itens: m ? m.itens.map((i) => [i[0], i[1]]) : [], pick: false, q: '' };
+  edRender();
+}
+function keepScroll(fn) {
+  const d = $('#sheet'), y = d.scrollTop;
+  fn();
+  d.scrollTop = y;
+}
+function edRender(scrollEnd) {
+  if (ED.pick) return edPicker();
+  const total = ED.itens.length ? progSecs({ itens: ED.itens }) : 0;
+  const html = `
+    <label class="field"><span>Nome da prática</span><input id="edNome" type="text" maxlength="40" value="${esc(ED.nome)}" placeholder="Ex.: Minha manhã"></label>
+    <p class="muted" style="margin:2px 0 10px">${ED.itens.length ? `${ED.itens.length} ${ED.itens.length === 1 ? 'postura' : 'posturas'} · cerca de ${fmtMin(total)}` : 'Adicione as posturas na ordem em que quer praticar.'}</p>
+    <div class="edlist">${ED.itens.map(([pid, secs], i) => `<div class="edrow">${mini(pid)}
+      <div class="edrow__txt"><strong>${POSE[pid].nome}</strong>${POSE[pid].lados ? '<small>Cada lado</small>' : ''}
+        <div class="stepper"><button type="button" data-act="ed-time" data-i="${i}" data-d="-10" aria-label="Menos 10 segundos">−</button><span>${fmtClock(secs)}${secs < 60 ? ' s' : ''}</span><button type="button" data-act="ed-time" data-i="${i}" data-d="10" aria-label="Mais 10 segundos">+</button></div></div>
+      <div class="edrow__acts">
+        <button type="button" class="icon-btn" data-act="ed-move" data-i="${i}" data-d="-1" aria-label="Subir"${i === 0 ? ' disabled' : ''}><svg viewBox="0 0 24 24"><path d="m6 14 6-6 6 6"/></svg></button>
+        <button type="button" class="icon-btn" data-act="ed-move" data-i="${i}" data-d="1" aria-label="Descer"${i === ED.itens.length - 1 ? ' disabled' : ''}><svg viewBox="0 0 24 24"><path d="m6 10 6 6 6-6"/></svg></button>
+        <button type="button" class="icon-btn" data-act="ed-del" data-i="${i}" aria-label="Tirar da prática">${ICON.trash}</button>
+      </div></div>`).join('')}</div>
+    <button type="button" class="btn btn--soft btn--block" data-act="ed-add" style="margin-top:10px">+ Adicionar postura</button>
+    <div class="sheet__foot edfoot">${ED.id ? '<button type="button" class="btn btn--danger" data-act="ed-remove">Excluir</button>' : ''}
+      <button type="button" class="btn btn--primary btn--lg" data-act="ed-save"${ED.itens.length ? '' : ' disabled'}>Salvar prática</button></div>`;
+  const title = ED.id ? 'Editar prática' : 'Monte sua prática';
+  if (scrollEnd) { openSheet(title, html); const d = $('#sheet'); d.scrollTop = d.scrollHeight; }
+  else keepScroll(() => openSheet(title, html));
+}
+function edPickList() {
+  const q = norm(ED.q.trim());
+  const list = POSES.filter((p) => !q || norm(`${p.nome} ${p.sans} ${p.foco.join(' ')} ${p.tipo}`).includes(q));
+  if (!list.length) return '<p class="empty">Nenhuma postura encontrada.</p>';
+  return `<div class="pgrid">${list.map((p) => `<button type="button" class="card posecard" data-act="ed-pick" data-id="${p.id}">
+    <div class="stage">${Fig.svg(p.f, false, 'fig--mini')}</div><strong>${p.nome}</strong><small>${p.lados ? 'Dois lados' : p.sans}</small></button>`).join('')}</div>`;
+}
+function edPicker() {
+  openSheet('Adicionar postura', `
+    <button type="button" class="btn btn--ghost btn--sm" data-act="ed-back">← Voltar para a prática</button>
+    <label class="search" style="margin-top:12px"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" id="edQ" placeholder="Buscar postura ou parte do corpo" value="${esc(ED.q)}" autocomplete="off" aria-label="Buscar postura"></label>
+    <div id="edPick">${edPickList()}</div>`);
+}
+function edAction(act, el) {
+  const i = Number(el.dataset.i);
+  switch (act) {
+    case 'ed-time': ED.itens[i][1] = Math.min(300, Math.max(10, ED.itens[i][1] + Number(el.dataset.d))); edRender(); break;
+    case 'ed-move': {
+      const j = i + Number(el.dataset.d);
+      if (j < 0 || j >= ED.itens.length) return;
+      [ED.itens[i], ED.itens[j]] = [ED.itens[j], ED.itens[i]]; edRender(); break;
+    }
+    case 'ed-del': ED.itens.splice(i, 1); edRender(); break;
+    case 'ed-add': ED.pick = true; ED.q = ''; edPicker(); break;
+    case 'ed-back': ED.pick = false; edRender(true); break;
+    case 'ed-pick': {
+      const p = POSE[el.dataset.id];
+      ED.itens.push([p.id, p.tipo === 'deitada' && p.id === 'savasana' ? 90 : 30]);
+      ED.pick = false; edRender(true);
+      toast(`${p.nome} adicionada`);
+      break;
+    }
+    case 'ed-save': {
+      if (!ED.itens.length) return;
+      const nome = ED.nome.trim() || 'Minha prática';
+      S.minhas = S.minhas || [];
+      if (ED.id) { const m = S.minhas.find((x) => x.id === ED.id); if (m) { m.nome = nome; m.itens = ED.itens; } }
+      else S.minhas.push({ id: Date.now().toString(36), nome, itens: ED.itens });
+      save(); closeSheet(); ED = null;
+      if (tab === 'praticas') render(); else go('praticas');
+      toast('Prática salva');
+      break;
+    }
+    case 'ed-remove':
+      if (!confirm('Excluir esta prática?')) return;
+      S.minhas = (S.minhas || []).filter((x) => x.id !== ED.id);
+      save(); closeSheet(); ED = null; render(); toast('Prática excluída');
+      break;
+  }
 }
 
 /* ---------------- Posturas ---------------- */
@@ -384,6 +551,9 @@ function vPerfil() {
   <div class="card group">
     <div class="row"><span>Guia por voz<small>Fala o nome de cada postura e a dica</small></span>${sw('stVoz', st.voz)}</div>
     <div class="row"><span>Sino<small>Toca ao começar cada postura e ao terminar</small></span>${sw('stSom', st.som)}</div>
+    <div class="row"><span>Som ambiente<small>Toca durante a prática e a respiração</small></span>${sel('stAmb', Amb.SONS.map(([v, t]) => [v, t]), st.amb)}</div>
+    <div class="row"><span>Volume do som ambiente</span><input type="range" id="stAmbVol" min="0" max="1" step="0.05" value="${st.ambVol}" aria-label="Volume do som ambiente"></div>
+    <div class="row"><span>Ouvir o som ambiente</span><button type="button" class="btn btn--soft btn--sm" data-act="ambtest">${Amb.playing() ? 'Parar' : 'Ouvir'}</button></div>
     <div class="row"><span>Tempo para se preparar</span>${sel('stPrep', [[5, '5 s'], [10, '10 s'], [15, '15 s']], st.prep)}</div>
     <div class="row"><span>Tema</span>${sel('stTema', [['auto', 'Automático'], ['light', 'Claro'], ['dark', 'Escuro']], st.tema)}</div>
   </div>
@@ -440,7 +610,8 @@ function startSession(cfg) {
   play.hidden = false; play.classList.remove('paused');
   $('#playBody').hidden = false; $('#playCtrl').hidden = false; $('#playDone').hidden = true;
   $('#playName').textContent = cfg.nome;
-  paintVoice();
+  paintVoice(); paintAmb();
+  ambStart();
   playFig = Fig.mount($('#playFig'), 'fig--breathe');
   const s0 = P.steps[0];
   const base = POSE[s0.id].tipo === 'deitada' ? 'savasana' : ['sentada', 'apoio'].includes(POSE[s0.id].tipo) ? 'sentado' : 'montanha';
@@ -452,7 +623,7 @@ function startSession(cfg) {
   timer = setInterval(tick, 200);
 }
 function startProg(id) {
-  const p = PROG[id];
+  const p = getProg(id); if (!p) return;
   startSession({ ref: id, nome: p.nome, flow: !!p.flow, steps: expand(p.itens) });
 }
 function enter(i, skipPrep) {
@@ -560,16 +731,27 @@ function finish() {
     mood = Number(b.dataset.mood);
     $$('.mood', d).forEach((x) => x.classList.toggle('on', x === b));
   }));
-  $('#doneSave').addEventListener('click', () => { record(secs, mood); closePlay(); });
+  $('#doneSave').addEventListener('click', () => { record(secs, mood, true); closePlay(); });
 }
-function record(secs, mood) {
+function record(secs, mood, full) {
   S.hist.push({ id: Date.now().toString(36), d: dkey(), ts: Date.now(), tipo: 'pratica', ref: P.ref, nome: P.nome, secs, poses: P.poses.size, humor: mood });
+  // Dia da Jornada só conta quando a prática vai até o fim.
+  const dia = full && P.ref?.startsWith('dia:') ? Number(P.ref.slice(4)) : 0;
+  if (dia) {
+    S.jornada = S.jornada || { feitos: {} };
+    S.jornada.feitos = S.jornada.feitos || {};
+    if (!S.jornada.feitos[dia]) S.jornada.feitos[dia] = dkey();
+  }
   save();
+  afterPractice();
   const st = streak();
+  if (dia) { toast(dia === 30 ? 'Jornada de 30 dias concluída! 🎉' : `Dia ${dia} da Jornada feito! ✓`); return; }
   toast(st > 1 ? `Prática salva. ${st} dias seguidos!` : 'Prática salva. Até amanhã!');
 }
+// Depois de cada prática salva (o lembrete do app Android usa isto para não avisar quem já praticou).
+function afterPractice() { if (typeof syncReminder === 'function') syncReminder(); }
 function closePlay() {
-  clearInterval(timer); hush(); keepAwake(false);
+  clearInterval(timer); hush(); keepAwake(false); Amb.stop();
   playFig?.stop(); playFig = null; P = null;
   $('#play').hidden = true;
   document.body.style.overflow = '';
@@ -586,6 +768,8 @@ $('#playClose').addEventListener('click', () => {
   closePlay();
 });
 $('#playPause').addEventListener('click', togglePause);
+$('#playAmb').addEventListener('click', cycleAmb);
+$('#brAmb').addEventListener('click', cycleAmb);
 $('#playSkip').addEventListener('click', skip);
 $('#playPrev').addEventListener('click', back);
 $('#playVoice').addEventListener('click', () => {
@@ -603,6 +787,7 @@ function startBreath(id, min) {
   B = { ex, min, i: 0, start: now + 3000, end: now + 3000 + min * 60e3, pEnd: now + 3000, kind: null };
   const el = $('#breath'); el.hidden = false; el.style.setProperty('--c', ex.cor);
   $('#brName').textContent = ex.nome;
+  paintAmb(); ambStart();
   $('#brEnd').hidden = true;
   $('#brPhase').textContent = 'Prepare-se'; $('#brCount').textContent = '';
   $('#brHint').textContent = 'Sente-se confortável, solte os ombros e, se quiser, feche os olhos.';
@@ -653,7 +838,7 @@ function bFinish(complete) {
   $('#brOk').addEventListener('click', () => bClose('Respiração salva.'));
 }
 function bClose(msg) {
-  clearInterval(bTimer); hush(); keepAwake(false); B = null;
+  clearInterval(bTimer); hush(); keepAwake(false); Amb.stop(); B = null;
   $('#breath').hidden = true;
   document.body.style.overflow = '';
   render();
@@ -723,6 +908,20 @@ document.addEventListener('click', (e) => {
   const { act, id } = el.dataset;
   switch (act) {
     case 'start': startProg(id); break;
+    case 'jornada': openJornada(); break;
+    case 'newcustom': edOpen(null); break;
+    case 'ambtest':
+      if (Amb.playing()) { Amb.stop(); el.textContent = 'Ouvir'; }
+      else if (S.settings.amb === 'nenhum') toast('Escolha um som ambiente acima');
+      else { ambStart(); el.textContent = 'Parar'; }
+      break;
+    case 'editcustom': edOpen(id); break;
+    case 'ed-time': case 'ed-move': case 'ed-del': case 'ed-add': case 'ed-back': case 'ed-pick': case 'ed-save': case 'ed-remove':
+      if (ED) edAction(act, el);
+      break;
+    case 'jreset':
+      if (confirm('Recomeçar a Jornada do Dia 1? O histórico de práticas continua salvo.')) { S.jornada = { feitos: {} }; save(); render(); }
+      break;
     case 'prog': openProg(id); break;
     case 'pose': openPose(id); break;
     case 'try': {
@@ -770,6 +969,9 @@ $('#btnProfile').addEventListener('click', () => go('perfil'));
 // Busca de posturas (atualiza só a lista, para não perder o foco do campo).
 document.addEventListener('input', (e) => {
   if (e.target.id === 'poseQ') { poseQ = e.target.value; $('#poseList').innerHTML = poseList(); }
+  if (e.target.id === 'edNome' && ED) ED.nome = e.target.value;
+  if (e.target.id === 'stAmbVol') { S.settings.ambVol = Number(e.target.value); Amb.setVolume(S.settings.ambVol); }
+  if (e.target.id === 'edQ' && ED) { ED.q = e.target.value; $('#edPick').innerHTML = edPickList(); }
   if (e.target.id === 'pfName') { S.profile = { ...(S.profile || {}), name: e.target.value.trim() }; save(); $('#btnProfile').textContent = (S.profile.name[0] || 'S').toUpperCase(); }
 });
 document.addEventListener('change', (e) => {
@@ -777,7 +979,9 @@ document.addEventListener('change', (e) => {
   const map = {
     pfGoal: () => { pr.goal = t.value; }, pfLevel: () => { pr.level = Number(t.value); }, pfMins: () => { pr.mins = Number(t.value); },
     stVoz: () => { S.settings.voz = t.checked; }, stSom: () => { S.settings.som = t.checked; if (t.checked) { audio(); bell(); } },
-    stPrep: () => { S.settings.prep = Number(t.value); }, stTema: () => { S.settings.tema = t.value; applyTheme(); },
+    stPrep: () => { S.settings.prep = Number(t.value); },
+    stAmb: () => { S.settings.amb = t.value; if (Amb.playing()) ambStart(); },
+    stAmbVol: () => { S.settings.ambVol = Number(t.value); Amb.setVolume(S.settings.ambVol); }, stTema: () => { S.settings.tema = t.value; applyTheme(); },
   };
   if (map[t.id]) { map[t.id](); save(); toast('Salvo'); }
 });
