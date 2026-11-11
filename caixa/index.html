@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=92">
+  <link rel="stylesheet" href="style.css?v=93">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -38,9 +38,9 @@
   <div class="topo">
   <header class="top">
     <div class="top__title">
-      <img src="icon.svg" alt="" width="32" height="32">
+      <img src="icon.svg" alt="" width="32" height="32" id="iconeTopo">
       <div>
-        <h1>Fechamento de Caixa</h1>
+        <h1>Fechamento de Caixa<span class="natal-arvore" data-natal hidden> 🎄</span></h1>
         <p id="subtitulo" class="muted">Novo fechamento</p>
       </div>
     </div>
@@ -49,6 +49,7 @@
       <button class="icon-btn" id="btnConfig" title="Configurações" aria-label="Configurações">⚙</button>
     </div>
   </header>
+  <p class="boas-festas" data-natal hidden>🎅 Boas festas! Que o fechamento de dezembro seja o melhor do ano ⭐</p>
 
   <nav class="tabs" role="tablist">
     <button role="tab" data-tabbtn="receb" aria-selected="true">Recebimento</button>
@@ -1064,6 +1065,6 @@
   <script src="vendor/nacl-fast.min.js?v=1"></script>
   <script src="licenca-config.js?v=2"></script>
   <script src="versao-app.js?v=1"></script>
-  <script type="module" src="app.js?v=117"></script>
+  <script type="module" src="app.js?v=118"></script>
 </body>
 </html>
