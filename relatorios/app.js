@@ -12,7 +12,8 @@
   const hojeISO = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
   const dataCurta = (iso) => (iso ? iso.split('-').reverse().slice(0, 2).join('/') : '—');
   const somaDias = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
-  const difDias = (a, b) => Math.round((new Date(a + 'T12:00:00') - new Date(b + 'T12:00:00')) / 864e5);
+  // A semana vai de segunda a domingo: relatório de uma semana nunca é comparado com o da semana anterior.
+  const segundaDe = (iso) => somaDias(iso, -((new Date(iso + 'T12:00:00').getDay() + 6) % 7));
   // No APK (Capacitor) usa os recursos do Android: compartilhar, salvar arquivo e botão voltar.
   const Cap = window.Capacitor;
   const NATIVE = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -45,14 +46,18 @@
   const mesmo = (a, b) => norm(a.nome) === norm(b.nome) && a.data === b.data;
 
   // Todos os relatórios anteriores do vendedor na mesma semana, do mais antigo ao mais novo.
+  // Para no relatório em que os totais recomeçaram (semana nova), mesmo sem o vendedor mudar o "Semana do mês".
   function semanaAntesDe(r) {
-    return db.reports
-      .filter((x) => norm(x.nome) === norm(r.nome) && x.data < r.data && difDias(r.data, x.data) <= 6 &&
+    const lista = db.reports
+      .filter((x) => norm(x.nome) === norm(r.nome) && x.data < r.data && segundaDe(x.data) === segundaDe(r.data) &&
         (r.semana == null || x.semana == null || x.semana === r.semana))
       .sort((a, b) => (a.data < b.data ? -1 : 1));
+    if (R.novaSemana(r, lista[lista.length - 1])) return [];
+    for (let i = lista.length - 1; i > 0; i--) if (R.novaSemana(lista[i], lista[i - 1])) return lista.slice(i);
+    return lista;
   }
 
-  // Relatório anterior do mesmo vendedor, na mesma semana (até 6 dias antes).
+  // Relatório anterior do mesmo vendedor, na mesma semana (de segunda a domingo).
   function anteriorDe(r) {
     const s = semanaAntesDe(r);
     return s[s.length - 1] || null;
@@ -275,8 +280,11 @@
     if (repetidos.length) blocos.push(`<div class="aviso aviso--neg">Relatório repetido: ${repetidos.map((r) => esc(r.nome)).join(', ')}.</div>`);
     if (faltamReais.length) blocos.push(`<div class="aviso aviso--neg">Faltam ${faltamReais.length} relatório${faltamReais.length > 1 ? 's' : ''}: ${faltamReais.map(esc).join(', ')}. Os totais ainda não estão completos.</div>`);
     // O valor a cobrar da equipe é o mesmo a semana toda: compara com o dia anterior que tiver relatório.
-    const ontem = db.reports.filter((r) => r.data < d && difDias(d, r.data) <= 6).reduce((m, r) => (r.data > m ? r.data : m), '');
-    if (ontem && !faltamReais.length) {
+    const ontem = db.reports.filter((r) => r.data < d && segundaDe(r.data) === segundaDe(d)).reduce((m, r) => (r.data > m ? r.data : m), '');
+    // Na virada da semana (vendedor com totais recomeçados e lista de cobrança nova) não compara com a semana passada.
+    const virou = dados.lista.some((r) => R.novaSemana(r, db.reports.filter((x) => norm(x.nome) === norm(r.nome) && x.data < r.data)
+      .reduce((m, x) => (!m || x.data > m.data ? x : m), null)));
+    if (ontem && !faltamReais.length && !virou) {
       const tAntes = R.consolidar(relatoriosDoDia(ontem).lista);
       const mesmosCarros = tAntes.carros === t.carros;
       if (mesmosCarros && Math.abs(tAntes.cobrar - t.cobrar) > 0.005)
@@ -411,7 +419,6 @@
 
   // ---------- Caixas da semana (fechamento) ----------
   // Cada caixa é a folha CAIXA de um vendedor. A semana vai de segunda a domingo, pela data da folha.
-  const segundaDe = (iso) => somaDias(iso, -((new Date(iso + 'T12:00:00').getDay() + 6) % 7));
   const titulo = (s) => String(s || '').toLowerCase().replace(/(^|\s)\S/g, (l) => l.toUpperCase());
   const ultimaCaixa = () => db.caixas.reduce((m, c) => (c.data && c.data > m ? c.data : m), '');
   let semanaCx = segundaDe(ultimaCaixa() || hojeISO());
