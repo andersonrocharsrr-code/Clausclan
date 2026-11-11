@@ -16,7 +16,7 @@ public class MainActivity extends BridgeActivity {
 
     // A troca do ícone é feita quando o vendedor sai do app (e não com ele aberto, para não fechar a tela).
     @Override
-    protected void onStop() {
+    public void onStop() {
         super.onStop();
         trocarIcone();
     }
