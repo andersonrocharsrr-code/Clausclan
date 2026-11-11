@@ -45,11 +45,15 @@
   const mesmo = (a, b) => norm(a.nome) === norm(b.nome) && a.data === b.data;
 
   // Todos os relatórios anteriores do vendedor na mesma semana, do mais antigo ao mais novo.
+  // Para no relatório em que os totais recomeçaram (semana nova), mesmo sem o vendedor mudar o "Semana do mês".
   function semanaAntesDe(r) {
-    return db.reports
+    const lista = db.reports
       .filter((x) => norm(x.nome) === norm(r.nome) && x.data < r.data && difDias(r.data, x.data) <= 6 &&
         (r.semana == null || x.semana == null || x.semana === r.semana))
       .sort((a, b) => (a.data < b.data ? -1 : 1));
+    if (R.novaSemana(r, lista[lista.length - 1])) return [];
+    for (let i = lista.length - 1; i > 0; i--) if (R.novaSemana(lista[i], lista[i - 1])) return lista.slice(i);
+    return lista;
   }
 
   // Relatório anterior do mesmo vendedor, na mesma semana (até 6 dias antes).
@@ -276,7 +280,10 @@
     if (faltamReais.length) blocos.push(`<div class="aviso aviso--neg">Faltam ${faltamReais.length} relatório${faltamReais.length > 1 ? 's' : ''}: ${faltamReais.map(esc).join(', ')}. Os totais ainda não estão completos.</div>`);
     // O valor a cobrar da equipe é o mesmo a semana toda: compara com o dia anterior que tiver relatório.
     const ontem = db.reports.filter((r) => r.data < d && difDias(d, r.data) <= 6).reduce((m, r) => (r.data > m ? r.data : m), '');
-    if (ontem && !faltamReais.length) {
+    // Na virada da semana (vendedor com totais recomeçados e lista de cobrança nova) não compara com a semana passada.
+    const virou = dados.lista.some((r) => R.novaSemana(r, db.reports.filter((x) => norm(x.nome) === norm(r.nome) && x.data < r.data)
+      .reduce((m, x) => (!m || x.data > m.data ? x : m), null)));
+    if (ontem && !faltamReais.length && !virou) {
       const tAntes = R.consolidar(relatoriosDoDia(ontem).lista);
       const mesmosCarros = tAntes.carros === t.carros;
       if (mesmosCarros && Math.abs(tAntes.cobrar - t.cobrar) > 0.005)

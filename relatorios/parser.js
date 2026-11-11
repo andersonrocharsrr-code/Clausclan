@@ -168,6 +168,18 @@
       .map(([nome, q, val]) => `${nome}: ${brl(val)} para ${v(q)} nota${v(q) > 1 ? 's' : ''} parece errado. Confira o valor.`);
   }
 
+  // O relatório já é de outra semana: os totais recomeçaram (total = o do dia) e o valor a cobrar
+  // ou a quantidade de notas mudou. Aí não dá para somar com o relatório anterior.
+  function novaSemana(r, a) {
+    if (!r || !a) return false;
+    const pares = [[r.pgDia, r.pgTotal], [r.feitaDia && r.feitaDia.q, r.feitaTotal && r.feitaTotal.q],
+      [r.feitaDia && r.feitaDia.v, r.feitaTotal && r.feitaTotal.v], [r.recebidoDia, r.recebidoTotal]]
+      .filter(([d, t]) => d != null && t != null);
+    if (!pares.length || !pares.every(([d, t]) => centavos(d, t))) return false;
+    // Vendedor que esquece de somar também escreve total = o do dia: só é semana nova se a lista de cobrança mudou.
+    return (r.cobrar != null && a.cobrar != null && !centavos(r.cobrar, a.cobrar)) || (r.notas != null && a.notas != null && r.notas !== a.notas);
+  }
+
   /* Conferência de um relatório: as contas de dentro dele e, se houver, contra o relatório anterior
      do mesmo vendedor na mesma semana (total de hoje = total de ontem + o do dia). */
   // Quanto o vendedor já tinha de 25% e 40% (pagas dos dias somadas) nos relatórios anteriores da semana, do mais antigo
@@ -469,7 +481,7 @@
     ].join('\n');
   }
 
-  const api = { lerRelatorio, completarBranco, separar, conferir, consolidar, textoEquipe, textoSemana, lerEquipe, numero, dinheiro, dataISO, brl, dois, MESES,
+  const api = { novaSemana, lerRelatorio, completarBranco, separar, conferir, consolidar, textoEquipe, textoSemana, lerEquipe, numero, dinheiro, dataISO, brl, dois, MESES,
     CAIXA_NUM, caixaVazio, lerCaixaTexto, separarCaixas, recebidoCaixa, conferirCaixa, contasCaixa, fechamento, textoFechamento, pct };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else raiz.Relat = api;
