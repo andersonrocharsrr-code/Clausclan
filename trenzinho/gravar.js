@@ -6,7 +6,7 @@ const path = require('path'), fs = require('fs'), os = require('os');
 const FPS = 30, DUR = 137.28, N = Math.ceil(DUR * FPS), W = Math.min(4, os.cpus().length);
 const out = path.resolve(process.argv[2] || 'trenzinho-das-cores.mp4');
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'trenzinho-'));
-const url = 'file://' + path.join(__dirname, 'index.html') + '?render';
+const url = 'file://' + path.join(__dirname, 'gravacao.html');
 
 async function parte(k) {
   const a = Math.floor(N * k / W), b = Math.floor(N * (k + 1) / W), arq = path.join(tmp, `p${k}.mp4`);
