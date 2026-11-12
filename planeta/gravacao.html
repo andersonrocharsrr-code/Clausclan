@@ -1,0 +1,29 @@
+<!doctype html>
+<!-- Não é uma página para assistir: é só o quadro que o gravar.js usa para gerar o vídeo MP4. -->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>A Viagem ao Planeta dos Números (quadro de gravação)</title>
+<style>
+  @font-face { font-family: Fredoka; font-weight: 700; src: url(../trenzinho/fredoka-700.woff2) format('woff2'); font-display: block; }
+  html, body { margin: 0; background: #000; }
+  #palco { display: block; width: 1920px; height: 1080px; }
+</style>
+</head>
+<body>
+<svg id="palco" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg"></svg>
+<script src="js/letra.js"></script>
+<!-- peças em comum com o trenzinho: utilidades, peças de cenário e rosto -->
+<script src="../trenzinho/js/base.js"></script>
+<script src="../trenzinho/js/arte.js"></script>
+<script src="../trenzinho/js/trem.js"></script>
+
+
+<script src="js/espaco.js"></script>
+<script src="js/clipe.js"></script>
+<script>
+  T.seek(0);
+  document.fonts.load('700 100px Fredoka').then(() => document.fonts.ready).then(() => { T.seek(0); window.PRONTO = true; });
+</script>
+</body>
+</html>
