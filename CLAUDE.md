@@ -88,4 +88,6 @@ Cada um tem sua pasta e, quando tem APK, seu workflow em `.github/workflows/`
   Mudou o desenho? Regrave o vídeo com `cd trenzinho && node gravar.js ../videos/trenzinho-das-cores.mp4`.
 - `circo/`: videoclipe "O Circo Chegou na Cidade" (mesmo esquema, usa peças do `trenzinho/`; também só vídeo).
   Regravar: `cd circo && CRF=29 node gravar.js ../videos/o-circo-chegou-na-cidade.mp4`.
+- `planeta/`: videoclipe "A Viagem ao Planeta dos Números" (mesmo esquema; também só vídeo).
+  Regravar: `cd planeta && CRF=26 node gravar.js ../videos/a-viagem-ao-planeta-dos-numeros.mp4`.
 A mesma regra vale: testar, PR, merge só quando o Anderson mandar.
