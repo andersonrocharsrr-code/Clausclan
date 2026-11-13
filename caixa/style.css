@@ -600,3 +600,7 @@ body{overflow-x:clip}
 /* Depósitos por tipo (cada um vai no seu campo da folha) */
 .dep-tipos{display:grid;gap:4px;margin:8px 0 4px;padding:10px 12px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}
 .dep-tipos div{display:flex;justify-content:space-between;gap:10px;font-size:.95rem}
+/* Natal: faixa de boas festas com as cores do app */
+.boas-festas{margin:0;padding:7px 14px;text-align:center;font-size:13px;font-weight:600;background:var(--accent-soft);color:var(--tab-ink);
+  border-bottom:1px solid var(--line)}
+.top__title img#iconeTopo{overflow:visible}

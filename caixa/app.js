@@ -24,6 +24,15 @@ const brl = (n) => (Number(n) || 0).toLocaleString('pt-BR', { minimumFractionDig
 const R$ = (n) => 'R$ ' + brl(n);
 const arred = (n) => Math.round((Number(n) || 0) * 100) / 100;
 // Data de hoje no horário do celular (no Acre, depois das 19h o UTC já é o dia seguinte).
+// Natal: de novembro até 6 de janeiro aparece a faixa de boas festas, a 🎄 no título e o gorro no ícone.
+// As cores do app não mudam. No dia 7 de janeiro some tudo sozinho.
+(() => {
+  const d = new Date();
+  if (!(d.getMonth() >= 10 || (d.getMonth() === 0 && d.getDate() <= 6))) return;
+  document.querySelectorAll('[data-natal]').forEach((el) => { el.hidden = false; });
+  const ic = document.getElementById('iconeTopo');
+  if (ic) ic.src = 'icon-natal.svg';
+})();
 const hoje = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
 const ls = {

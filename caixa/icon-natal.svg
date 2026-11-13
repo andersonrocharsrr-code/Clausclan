@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -70 560 582">
+  <rect width="512" height="512" rx="112" fill="#1d4ed8"/>
+  <rect x="136" y="96" width="240" height="320" rx="24" fill="#fff"/>
+  <rect x="172" y="146" width="168" height="22" rx="11" fill="#bcd0fb"/>
+  <rect x="172" y="196" width="120" height="22" rx="11" fill="#bcd0fb"/>
+  <rect x="172" y="246" width="150" height="22" rx="11" fill="#bcd0fb"/>
+  <text x="256" y="372" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="84" fill="#1d4ed8">R$</text>
+  <!-- gorro de Papai Noel em cima da notinha -->
+  <g transform="rotate(-8 256 96)">
+    <path d="M142 86 C168 4 236 -46 318 -46 C392 -46 438 -4 452 52 C424 30 396 36 376 86 Z" fill="#dc2626"/>
+    <path d="M250 -20 C300 -40 360 -38 410 -10" fill="none" stroke="#991b1b" stroke-width="12" stroke-linecap="round" opacity=".35"/>
+    <rect x="118" y="70" width="278" height="54" rx="27" fill="#fff" stroke="#e5e7eb" stroke-width="5"/>
+    <circle cx="456" cy="60" r="34" fill="#fff" stroke="#e5e7eb" stroke-width="5"/>
+  </g>
+</svg>
