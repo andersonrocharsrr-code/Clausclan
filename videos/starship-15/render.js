@@ -3,7 +3,7 @@ const { chromium } = require('playwright'); const { spawn } = require('child_pro
 (async () => {
   const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1920, height: 1080 } });
   p.on('pageerror', e => { console.error('ERRO', e.message); process.exit(1) });
-  await p.goto('file://' + path.join(__dirname, 'index.html') + '?render'); await p.evaluate(() => document.fonts.ready);
+  await p.goto('file://' + path.join(__dirname, 'index.html') + '?render'); await p.evaluate(() => PRONTO);
   const snap = (t, q) => p.evaluate(([t, q]) => { render(t); return cv.toDataURL('image/jpeg', q).slice(23) }, [t, q]);
   if (process.argv[2] === '--fotos') { const d = process.argv[3]; fs.mkdirSync(d, { recursive: true }); for (const t of process.argv.slice(4)) fs.writeFileSync(`${d}/t${(+t).toFixed(1).padStart(5, '0')}.jpg`, Buffer.from(await snap(+t, .85), 'base64')); await b.close(); return }
   const FPS = 30, DUR = await p.evaluate(() => DUR), t0 = +(process.argv[3] || 0), t1 = +(process.argv[4] || DUR);
