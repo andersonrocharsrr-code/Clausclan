@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=93">
+  <link rel="stylesheet" href="style.css?v=94">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -49,7 +49,6 @@
       <button class="icon-btn" id="btnConfig" title="Configurações" aria-label="Configurações">⚙</button>
     </div>
   </header>
-  <p class="boas-festas" data-natal hidden>🎅 Boas festas! Que o fechamento de dezembro seja o melhor do ano ⭐</p>
 
   <nav class="tabs" role="tablist">
     <button role="tab" data-tabbtn="receb" aria-selected="true">Recebimento</button>
@@ -62,15 +61,11 @@
   <main id="app">
   <button type="button" id="licAviso" class="lic-aviso" hidden></button>
   <div data-tab="receb">
-    <!-- Ler a folha inteira pela foto -->
-    <section class="card card--accent">
-      <h2>📄 Ler folha de fechamento</h2>
-      <p class="muted">Tire foto de uma folha de fechamento (em branco ou já preenchida à mão). O app identifica os campos e preenche aqui.</p>
-      <div class="row-actions">
-        <label class="btn btn--primary">📷 Câmera<input type="file" accept="image/*" capture="environment" hidden data-ler="folha"></label>
-        <label class="btn btn--sec">🖼 Galeria<input type="file" accept="image/*" hidden data-ler="folha"></label>
-      </div>
-    </section>
+    <!-- Começar a semana nova: guarda a atual em ☰ e zera os números -->
+    <div class="nova-semana">
+      <button type="button" class="btn btn--ghost" id="btnNovaSemana">🗓 Iniciar nova semana</button>
+      <span class="muted small">Salva a semana atual e zera os números</span>
+    </div>
 
     <!-- Cabeçalho -->
     <section class="card">
@@ -1065,6 +1060,6 @@
   <script src="vendor/nacl-fast.min.js?v=1"></script>
   <script src="licenca-config.js?v=2"></script>
   <script src="versao-app.js?v=1"></script>
-  <script type="module" src="app.js?v=118"></script>
+  <script type="module" src="app.js?v=119"></script>
 </body>
 </html>
