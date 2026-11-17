@@ -33,6 +33,10 @@ const arred = (n) => Math.round((Number(n) || 0) * 100) / 100;
   const ic = document.getElementById('iconeTopo');
   if (ic) ic.src = 'icon-natal.svg';
 })();
+// Dia em que entram os lançamentos novos: hoje, ou o dia escolhido à mão no Cabeçalho (vale só no dia em que
+// foi mudado). Ex.: hoje é 17, muda a Data para 16 e lança as notas que ficaram para trás: entram no relatório
+// do dia 16. Volta a Data para 17 e o que lançar depois entra no dia 17.
+const diaLanc = () => (st?.dataManualEm === hoje() && /^\d{4}-\d{2}-\d{2}$/.test(st.data || '') && st.data <= hoje() ? st.data : hoje());
 const hoje = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
 const ls = {
@@ -275,7 +279,17 @@ function pintarTotais() {
   pintarRelatorio();
 }
 
+// Aviso quando a Data do Cabeçalho foi mudada para um dia anterior: os lançamentos novos vão para aquele dia.
+function pintarDiaLanc() {
+  const el = $('#diaLancAviso');
+  if (!el) return;
+  const d = diaLanc();
+  el.hidden = d === hoje();
+  if (!el.hidden) el.innerHTML = `📅 Lançando no dia <b>${fmtDia(d)}</b>: as notas que você lançar agora entram no relatório do dia ${fmtDia(d)}. `
+    + `Para lançar as de hoje, volte a Data para ${fmtDia(hoje())}.`;
+}
 function pintarCampos() {
+  pintarDiaLanc();
   $$('[data-f]').forEach((el) => {
     const k = el.dataset.f;
     el.value = MONEY.includes(k) ? (st[k] ? brl(st[k]) : '') : (st[k] ?? '');
@@ -347,13 +361,13 @@ const rascunhos = {};
 // (o antigo não muda de dia). Ex.: antecipado de 100 ontem + 50 hoje na mesma nota → os 50 entram no recebido de hoje.
 const fmtDia = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : '');
 function aplicarEdicao(nome, item, novo) {
-  if (nome === 'feitas' && item.data && novo.data === item.data && item.data !== hoje()) {
+  if (nome === 'feitas' && item.data && novo.data === item.data && item.data !== diaLanc()) {
     const d = { ab: numero(novo.ab) - numero(item.ab), rp: numero(novo.rp) - numero(item.rp), valor: arred(numero(novo.valor) - numero(item.valor)) };
-    if (d.ab || d.rp || d.valor) (item.acrescimos ||= []).push({ data: hoje(), ...d });
+    if (d.ab || d.rp || d.valor) (item.acrescimos ||= []).push({ data: diaLanc(), ...d });
   }
-  if (nome === 'antecipadas' && item.dia && novo.dia === item.dia && item.dia !== hoje()) {
+  if (nome === 'antecipadas' && item.dia && novo.dia === item.dia && item.dia !== diaLanc()) {
     const valor = arred(numero(novo.valor) - numero(item.valor));
-    if (valor) (item.acrescimos ||= []).push({ data: hoje(), valor });
+    if (valor) (item.acrescimos ||= []).push({ data: diaLanc(), valor });
   }
   Object.assign(item, novo);
 }
@@ -390,8 +404,8 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
       <span class="mover-ops" hidden><button type="button" class="mover-op" data-para="notas25">25%</button><button type="button" class="mover-op" data-para="notas4050">40%</button></span></div>` : '') +
     (item.parcialPago ? `<p class="item__acr">Pago antes no parcial (${fmtDia(item.parcialDia)}): ${R$(item.parcialPago)}</p>` : '') +
     (acr.length ? `<p class="item__acr">Lançado em ${fmtDia(item.data || item.dia)} · ${acr.join(' · ')}</p>` : '') +
-    (edita && (nome === 'feitas' || nome === 'antecipadas') && modo === 'editando' && (item.data || item.dia) && (item.data || item.dia) !== hoje()
-      ? `<p class="item__dica">O valor que você acrescentar entra no relatório de hoje (${fmtDia(hoje())}).</p>` : '') +
+    (edita && (nome === 'feitas' || nome === 'antecipadas') && modo === 'editando' && (item.data || item.dia) && (item.data || item.dia) !== diaLanc()
+      ? `<p class="item__dica">O valor que você acrescentar entra no relatório do dia ${fmtDia(diaLanc())}.</p>` : '') +
     (item.nota ? `<p class="item__nota">⚠ ${esc(item.nota)}</p>` : '');
 
   // Antecipado: só aparece quando a bolinha "Antecipado" é marcada (ou se a nota já tem antecipado).
@@ -545,7 +559,7 @@ function moverParcial(item, para) {
   if (!(numero(item.valorNota) > 0)) { toast('Edite o parcial e coloque o valor da nota antes de mover.'); return; }
   const pos = st.parciais.indexOf(item);
   if (pos < 0) return;
-  const nota = { id: uid(), dia: hoje(), cliente: item.cliente || '', valor: arred(numero(item.devendo)),
+  const nota = { id: uid(), dia: diaLanc(), cliente: item.cliente || '', valor: arred(numero(item.devendo)),
     devolucao: numero(item.devolucao), parcialPago: arred(numero(item.valor)), parcialDia: item.dia,
     total: arred(numero(item.valorNota) - numero(item.devolucao)), deParcial: { ...item } };
   if (para === 'notas4050') nota.faixa = '40';
@@ -631,7 +645,7 @@ $$('[data-f]').forEach((el) => {
   el.addEventListener('input', () => {
     const k = el.dataset.f;
     st[k] = MONEY.includes(k) ? numero(el.value) : el.value;
-    if (k === 'data') { st.dataManualEm = hoje(); recalcularPepinos(); } // mudou à mão: vale só por hoje
+    if (k === 'data') { st.dataManualEm = hoje(); recalcularPepinos(); pintarDiaLanc(); } // mudou à mão: vale só por hoje
     if (k === 'pinos') travarValorPepinos();
     salvarAtual(); pintarTotais();
   });
@@ -641,7 +655,7 @@ $$('[data-f]').forEach((el) => {
 });
 
 $$('[data-pila]').forEach((b) => b.addEventListener('click', () => {
-  rascunhos.pila = { id: uid(), tipo: b.dataset.pila, data: hoje(), valor: 0 };
+  rascunhos.pila = { id: uid(), tipo: b.dataset.pila, data: diaLanc(), valor: 0 };
   abrirLista('pila');
   pintarLista('pila');
   const rows = $$('[data-lista="pila"] .item');
@@ -776,8 +790,8 @@ $$('[data-ir]').forEach((b) => b.addEventListener('click', () => {
 $$('[data-add]').forEach((b) => b.addEventListener('click', () => novaLinha(b.dataset.add)));
 function novaLinha(nome, extra = {}) {
   abrirLista(nome); // a linha nova aparece aberta para digitar
-  rascunhos[nome] = nome === 'feitas' ? { id: uid(), cliente: '', data: hoje(), tipo: '', ab: 0, rp: 0, valor: 0, ...extra }
-    : { id: uid(), dia: hoje(), valor: 0, cidade: nome.startsWith('notas') || nome === 'extras' ? st.cidade : undefined, ...extra };
+  rascunhos[nome] = nome === 'feitas' ? { id: uid(), cliente: '', data: diaLanc(), tipo: '', ab: 0, rp: 0, valor: 0, ...extra }
+    : { id: uid(), dia: diaLanc(), valor: 0, cidade: nome.startsWith('notas') || nome === 'extras' ? st.cidade : undefined, ...extra };
   pintarLista(nome);
   const rows = $$(`[data-lista="${nome}"] .item`);
   const ultima = rows[rows.length - 1];
@@ -1115,7 +1129,7 @@ async function lerFotosGratis(tipo, files) {
       if (n.faltou.length) duvidas++;
       st[destino].push({
         id: uid(), numero: n.numero, cliente: n.cliente, cidade: n.cidade || st.cidade, valor: n.valor,
-        total: n.total || 0, devolucao: n.devolucao || 0, dia: hoje(),
+        total: n.total || 0, devolucao: n.devolucao || 0, dia: diaLanc(),
         // Da nota só importam o valor recebido e a faixa: fica amarela só quando um dos dois está em dúvida.
         faixa: n.faixa, conferir: n.faltou.length > 0,
         nota: n.faltou.length ? 'Confira: ' + n.faltou.join(', ') : '',
@@ -1160,7 +1174,7 @@ function aplicar(tipo, r) {
       destino === 'notas25' ? n25++ : n4050++;
       st[destino].push({
         id: uid(), numero: n.numero, cliente: n.cliente, cidade: n.cidade || st.cidade, valor: arred(n.valor),
-        total: arred(n.valor_total || 0), devolucao: arred(n.devolucao || 0), dia: hoje(), faixa: n.faixa, conferir: true,
+        total: arred(n.valor_total || 0), devolucao: arred(n.devolucao || 0), dia: diaLanc(), faixa: n.faixa, conferir: true,
         nota: [n.faixa ? '' : 'não deu para ver se foi 25% ou 40/50% — confira', n.duvida,
           n.valor_total && n.valor_total !== n.valor ? `total da nota ${R$(n.valor_total)}` : '']
           .filter(Boolean).join(' · '),
@@ -1192,7 +1206,7 @@ function aplicarPepino(r) {
   let item = null, msg = '';
   if (r.fim && !r.topo) item = [...st.extras].reverse().find((x) => x.esperaFinal);
   if (!item) {
-    item = { id: uid(), dia: hoje(), numero: '', cidade: '', vendedora: '', valor: 0, conferir: true };
+    item = { id: uid(), dia: diaLanc(), numero: '', cidade: '', vendedora: '', valor: 0, conferir: true };
     st.extras.push(item);
   }
   if (r.topo) {
@@ -1236,7 +1250,7 @@ function aplicarPepino(r) {
 }
 
 const itemExtra = (n) => ({
-  id: uid(), dia: hoje(), numero: n.numero, cidade: n.cidade, valor: arred(n.valor), vendedora: n.vendedora,
+  id: uid(), dia: diaLanc(), numero: n.numero, cidade: n.cidade, valor: arred(n.valor), vendedora: n.vendedora,
   conferir: true, nota: n.duvida,
 });
 
@@ -2189,6 +2203,7 @@ pintarTudo();
 let ultimoHoje = hoje(), avisouSemanaNova = '';
 function dataDeHoje() {
   const h = hoje();
+  pintarDiaLanc();
   if ($('#relData').value === ultimoHoje && h !== ultimoHoje) { $('#relData').value = h; pintarCamposRel(); }
   ultimoHoje = h;
   if (!st.data || st.data === h || st.dataManualEm === h) { pintarRelatorio(); return; }
@@ -2760,8 +2775,8 @@ function micLancar() {
   if (abaAtual !== 'receb') abrirAba('receb');
   const lancados = itens.map((x) => {
     const nota = x.lista === 'feitas'
-      ? { id: uid(), cliente: x.cliente, data: hoje(), tipo: x.tipo, ab: x.tipo === 'ab' ? 1 : 0, rp: x.tipo === 'rp' ? 1 : 0, valor: x.valor }
-      : { id: uid(), dia: hoje(), cidade: st.cidade, cliente: x.cliente, valor: x.valor, devolucao: x.devolucao || 0,
+      ? { id: uid(), cliente: x.cliente, data: diaLanc(), tipo: x.tipo, ab: x.tipo === 'ab' ? 1 : 0, rp: x.tipo === 'rp' ? 1 : 0, valor: x.valor }
+      : { id: uid(), dia: diaLanc(), cidade: st.cidade, cliente: x.cliente, valor: x.valor, devolucao: x.devolucao || 0,
         ...(x.antecipado ? { antecipado: x.antecipado } : {}) };
     st[x.lista].push(nota);
     abrirLista(x.lista);

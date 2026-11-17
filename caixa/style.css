@@ -607,3 +607,5 @@ body{overflow-x:clip}
 /* Iniciar nova semana: discreto, no alto do Recebimento */
 .nova-semana{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 2px 12px}
 .nova-semana .btn{padding:8px 14px;font-size:14px}
+/* Lançando num dia anterior (Data do Cabeçalho mudada à mão) */
+.dia-lanc{grid-column:1/-1;margin:-2px 0 4px;padding:9px 12px;border-radius:12px;background:var(--warn-soft);color:var(--warn);font-size:13.5px;line-height:1.35}
