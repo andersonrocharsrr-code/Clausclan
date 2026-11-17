@@ -83,3 +83,18 @@ PWA estático (sem build) em `caixa/`, empacotado como APK Android com Capacitor
 Cada um tem sua pasta e, quando tem APK, seu workflow em `.github/workflows/`
 (ex.: `relatorios/` + `relatorios-android/`, `confirma/` + `confirma-android/`, `treino/`, `livros/`, `aviao/`).
 A mesma regra vale: testar, PR, merge só quando o Anderson mandar.
+
+## Vídeos documentários (ex.: Pearl Harbor)
+
+Animação 2D flat, narração em pt-BR (ElevenLabs, voz Rodrigo Custódio), capítulos com cartão "CAPÍTULO N".
+Braços para baixo ou segurando algo; rosto e mãos detalhados; sem chiado no som; usar as fotos reais que o Anderson mandar.
+
+### Estilo rápido (aprovado pelo Anderson em nov/2026) — usar em **algumas cenas**, não no vídeo todo
+
+Bom para aberturas, viradas de assunto e comparações "hoje × naquele dia". Exemplo pronto em `videos/estilo-rapido/`.
+- **Cortes curtos:** planos de 3 a 6 s.
+- **Zoom de entrada:** a câmera avança rápido para dentro de um prédio/navio e a cena se dissolve no interior.
+- **Texto em máquina de escrever:** letra por letra, com cursor e traço vermelho que cresce embaixo (`typeText()`).
+- **Volta ao passado em sépia:** mesmo enquadramento, primeiro "hoje" em cores e depois o passado em sépia
+  (filtro `feColorMatrix`, sépia parcial para o fogo continuar com um pouco de cor).
+- **Som:** batida de tímpano em cada corte e cordas em staccato por baixo.
