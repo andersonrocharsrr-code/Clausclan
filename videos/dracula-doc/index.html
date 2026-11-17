@@ -1,0 +1,14 @@
+<!doctype html><meta charset="utf-8"><title>Drácula: de Vlad III ao vampiro</title>
+<style>
+@font-face{font-family:"Fira Sans Extra Condensed";font-weight:600;src:url(fontes/fira-sans-extra-condensed-latin-600-normal.woff2)}
+@font-face{font-family:"Fira Sans Extra Condensed";font-weight:800;src:url(fontes/fira-sans-extra-condensed-latin-800-normal.woff2)}
+@font-face{font-family:"UnifrakturCook";font-weight:700;src:url(fontes/unifrakturcook-latin-700-normal.woff2)}
+@font-face{font-family:"Pirata One";font-weight:400;src:url(fontes/pirata-one-latin-400-normal.woff2)}
+html,body{margin:0;background:#000}canvas{display:block;width:100vw;height:auto}</style>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script src="tempos.js"></script><script src="motor.js"></script><script src="figuras.js"></script><script src="dracula.js"></script><script src="gotico.js"></script><script src="mundo.js"></script><script src="mundo2.js"></script><script src="cenas.js"></script>
+<script>
+// abre sozinho como prévia; o render.js chama render(t) quadro a quadro
+window.PRONTO = Promise.all([document.fonts.load('600 40px "Fira Sans Extra Condensed"'), document.fonts.load('800 40px "Fira Sans Extra Condensed"'), document.fonts.load('700 40px "UnifrakturCook"'), document.fonts.load('400 40px "Pirata One"')]);
+if (!location.search.includes('render')) PRONTO.then(() => { const t0 = performance.now(); (function f() { render(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(f) })() });
+</script>
