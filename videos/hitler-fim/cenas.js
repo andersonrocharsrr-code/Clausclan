@@ -235,7 +235,8 @@ shot(CUTS[13], CUTS[14], (tl, t) => {
   c.fillStyle = bands(0, 640, 0, 840, [[.2, '#8aa0a0'], [.6, '#6f8c90'], [1, '#5a7a80']]); c.fillRect(0, 640, W, 200); for (let i = 0; i < 30; i++) pill((i * 137 + t * 20) % W, 660 + (i * 53) % 170, 80, 4, 'rgba(240,236,214,.3)');
   c.fillStyle = '#2e2a26'; c.fillRect(200, 560, 640, 22); for (let k = 0; k < 6; k++) { line(220 + k * 100, 582, 270 + k * 100, 560, '#2e2a26', 6); line(270 + k * 100, 560, 320 + k * 100, 582, '#2e2a26', 6) } poly([[840, 560], [900, 600], [880, 640], [820, 582]], '#2e2a26'); c.fillRect(260, 582, 30, 80); c.fillRect(640, 582, 30, 80);
   c.fillStyle = '#7a7048'; c.fillRect(0, 820, W, H - 820); c.fillStyle = '#8a8056'; c.fillRect(0, 820, W, 30);
-  soldado(860, 1060, 420, 1, { coat: '#6a6a48', dark: '#4e4e34', legs: '#4a4a32', capacete: '#55573f', skin: '#d2a882' }); soldado(1060, 1060, 420, -1, { coat: '#7a7458', dark: '#5a5640', legs: '#3e3a2c', boina: '#5e5a42', skin: '#c99a74', hair: '#8a6a3a' });
+  [[300, 900, 230, AMERICANO], [420, 920, 250, AMERICANO], [1500, 905, 235, SOVIETICO2], [1640, 925, 255, SOVIETICO]].forEach(([x, y, h, f]) => fardado(x, y, h, f, t));
+  soldadoPerfil(850, 1070, 440, 1, AMERICANO, t); soldadoPerfil(1070, 1070, 440, -1, SOVIETICO, t);
   label(700, 700, 'EUA', { size: 54, col: '#9fc0d0', align: 'right', a: ramp(tl, .8, 1.1) }); label(1220, 700, 'URSS', { size: 54, col: '#e0705a', a: ramp(tl, .8, 1.1) });
   typeText(tl, TX, TY, 'TORGAU · RIO ELBA', .3, 5.9, { sub: '25 DE ABRIL · AMERICANOS E SOVIÉTICOS SE ENCONTRAM' });
 });
@@ -312,9 +313,23 @@ shot(CUTS[20], CUTS[21], (tl, t) => {
 });
 // --- 22: 30 de abril, 15h30 ---
 shot(CUTS[21], CUTS[22], (tl, t) => {
-  c.fillStyle = '#08080b'; c.fillRect(0, 0, W, H); const rv = ramp(tl, 1.0, 2.6); add(() => glow(960, 520, 640, '217,150,70', .14 * rv));
-  relogio(960, 520, 300, (15 * 3600 + 27 * 60 + 40) / 1 + Math.max(0, tl - 2.4) * 40, rv);
-  label(W / 2, 150, '30 DE ABRIL DE 1945', { size: 60, align: 'center', col: OURO, a: ramp(tl, 2.6, 3.0), w: 600 });
+  c.fillStyle = '#08080b'; c.fillRect(0, 0, W, H);
+  if (tl < 3.9) { // calendário de parede: abril de 1945 (dia 1 foi domingo)
+    const rv = ramp(tl, 0, .8), zz = 1 + .5 * ease(ramp(tl, 3.2, 3.9)), [cx30, cy30] = [960 - 330 + 47, 300 + 5 * 92 + 120];
+    add(() => glow(960, 520, 700, '217,150,70', .14 * rv)); c.save(); c.globalAlpha = rv; c.translate(cx30, cy30); c.scale(zz, zz); c.translate(-cx30, -cy30);
+    c.fillStyle = 'rgba(0,0,0,.4)'; c.fillRect(612, 92, 720, 950); c.fillStyle = bands(600, 0, 1320, 0, [[.8, '#efe5c8'], [1, '#d6c9a6']]); c.fillRect(600, 80, 720, 950);
+    c.fillStyle = '#7a2a20'; c.fillRect(600, 80, 720, 150); disc(760, 80, 12, '#2a2620'); disc(1160, 80, 12, '#2a2620');
+    txt('ABRIL', 960, 190, 104, '#efe5c8', { align: 'center', sh: 0 }); txt('1945', 1240, 190, 44, '#e6c9a0', { align: 'right', w: 600, sh: 0 });
+    ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB', 'DOM'].forEach((d, i) => txt(d, 680 + i * 94, 280, 30, i === 6 ? '#8a3a20' : '#6a5a40', { align: 'center', w: 600, sh: 0 }));
+    for (let d = 1; d <= 30; d++) { const k = d + 5, col = k % 7, row = Math.floor(k / 7), x = 680 + col * 94, y = 300 + row * 92 + 70; txt(String(d), x, y, 52, col === 6 ? '#8a3a20' : '#2a2620', { align: 'center', sh: 0 });
+      const xd = ramp(tl, .4 + (d - 1) * .075, .5 + (d - 1) * .075); if (d < 30 && xd > 0) { c.strokeStyle = `rgba(90,80,70,${.7 * xd})`; c.lineWidth = 4; c.beginPath(); c.moveTo(x - 26, y - 44); c.lineTo(x - 26 + 52 * xd, y + 4 - 48 * (1 - xd)); c.stroke() } }
+    const ci = ramp(tl, 2.8, 3.4); if (ci > 0) { c.strokeStyle = OURO; c.lineWidth = 7; c.beginPath(); c.arc(680, 300 + 5 * 92 + 52, 46, -PI / 2, -PI / 2 + ci * 2 * PI); c.stroke() }
+    c.restore();
+  } else {
+    const t2 = tl - 3.9, rv = ramp(t2, 0, .5); add(() => glow(960, 520, 640, '217,150,70', .14 * rv));
+    relogio(960, 520, 300, 15 * 3600 + 28 * 60 + 30 + Math.min(t2, 2.2) * 50 + Math.max(0, t2 - 2.2), rv);
+    label(W / 2, 150, 'SEGUNDA-FEIRA, 30 DE ABRIL DE 1945', { size: 50, align: 'center', col: PALHA, a: rv, w: 600 }); label(W / 2 + 420, 560, '15H30', { size: 96, col: OURO, a: ramp(t2, 1.6, 2.0) });
+  }
 });
 // --- 23: a porta fechada ---
 shot(CUTS[22], CUTS[23], (tl, t) => {
@@ -345,8 +360,8 @@ shot(CUTS[24], CUTS[25], (tl, t) => {
   c.strokeStyle = '#1e1b20'; c.lineWidth = 8; for (let k = 0; k <= 8; k++) { c.beginPath(); c.ellipse(960, Y - 330, 210 * Math.cos(k / 8 * PI - PI / 2), 190, 0, PI, 0); c.stroke() } c.beginPath(); c.moveTo(750, Y - 330); c.lineTo(1170, Y - 330); c.stroke(); c.beginPath(); c.ellipse(960, Y - 400, 180, 30, 0, PI, 0); c.stroke();
   for (let k = 0; k < 40; k++) { const x = X0 + q() * (X1 - X0), y = Y - 300 + q() * 260; if (q() < .3) c.fillStyle = `rgba(240,140,60,${.5 + .5 * sin(t * 8 + k)})`; else continue; c.fillRect(x, y, 14, 22) }
   const fx = X1 - 60, fy = Y - 440, up = eo(ramp(tl, 6.0, 7.0)); disc(fx - 30, fy - 30, 14, '#0c0b0e'); c.fillStyle = '#0c0b0e'; c.fillRect(fx - 40, fy - 20, 22, 20);
-  line(fx, fy, fx, fy - 140 * up, '#2a2420', 7); if (up > 0) { c.save(); c.translate(fx, fy - 140 * up); c.scale(1.7, 1.7); const wv = (y) => sin(t * 6 + y * .05) * 8; poly([[0, 0], [130, wv(0)], [130, 80 + wv(80)], [0, 80]], '#c8452f'); star4(26, 20, 12, '#f0c050'); c.restore() }
-  for (let k = 0; k < 3; k++) { c.save(); c.translate(fx - 90 + k * 26, fy); c.scale(.35, .35); person(0, 0, 120, { coat: '#3a3628', dark: '#2a2620', legs: '#1e1c18', hair: '#2a2018' }); c.restore() }
+  line(fx, fy, fx, fy - 140 * up, '#2a2420', 7); if (up > 0) { c.save(); c.translate(fx, fy - 140 * up); c.scale(1.05, 1.05); const wv = (y) => sin(t * 6 + y * .05) * 8; poly([[0, 0], [130, wv(0)], [130, 80 + wv(80)], [0, 80]], '#c8452f'); star4(26, 20, 12, '#f0c050'); c.restore() }
+  for (let k = 0; k < 3; k++) fardado(fx - 96 + k * 30, fy, 52, k === 1 ? SOVIETICO : SOVIETICO2, t);
   typeText(tl, TX, TY, 'REICHSTAG', .3, 10.4, { sub: 'NOITE DE 30 DE ABRIL' });
 });
 // --- 26: 1º de maio — seis velas ---
@@ -361,7 +376,8 @@ shot(CUTS[26], CUTS[27], (tl, t) => {
   facade(60, 960, 520, 800, 31, { holeCol: '#a89878' }); facade(1300, 960, 560, 760, 32, { col: '#5e5444', holeCol: '#a89878' });
   for (const [x, y, w] of [[180, 340, 110], [330, 520, 90], [1420, 420, 120], [1600, 600, 90]]) poly([[x, y], [x + w, y], [x + w + sin(t * 3 + x) * 10, y + w * 1.2], [x + sin(t * 3 + x) * 8, y + w * 1.1]], '#f2ecd6');
   c.fillStyle = '#3a3228'; c.fillRect(0, 940, W, H - 940); rubble(560, 960, 760, 110, 33, ['#4a3e30', '#5a4c3a']);
-  [[820, 1070, 280], [940, 1080, 300], [1060, 1068, 270]].forEach(([x, y, h], i) => person(x - tl * 20, y, h, { coat: ['#5a5446', '#4a4c3c', '#6a5a46'][i], dark: ['#3e3a30', '#34352a', '#4a3e30'][i] }));
+  fardado(560, 1090, 380, SOVIETICO, t); fardado(1500, 1095, 390, SOVIETICO2, t);
+  const wk = tl * 10; [[820, 1060, 330, ALEMAO], [1000, 1075, 345, ALEMAO2], [1170, 1062, 330, ALEMAO]].forEach(([x, y, h, f], i) => { fardado(x, y + wk * .4, h + wk, f, t + i, { anda: 1 }); if (i === 1) { const s = (h + wk) / 100, hx = x + 16.6 * s, hy = y + wk * .4 - 46 * s; line(hx, hy, hx + 8, hy - 120 * s * .9, '#3a3028', 4); poly([[hx + 8, hy - 108 * s], [hx + 8 + 60 * s, hy - 104 * s + sin(t * 5) * 6], [hx + 8 + 58 * s, hy - 70 * s + sin(t * 5) * 6], [hx + 8, hy - 76 * s]], '#f2ecd6') } });
   typeText(tl, TX, TY, '2 DE MAIO DE 1945', .2, 4.0, { sub: 'BERLIM SE RENDE' });
 });
 // --- 28: 7 de maio, Reims — rendição sem condições ---

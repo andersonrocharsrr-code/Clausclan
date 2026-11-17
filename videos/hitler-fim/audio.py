@@ -38,7 +38,7 @@ ps(103.5, 'typewriter', 0.25, dur=3, fin=0.1, fout=0.5); ps(107.4, 'stamp', 1.0,
 ps(109.4, 'radio', 0.55, dur=6, fin=0.1, fout=1.0); ps(117.0, 'generator', 0.35, dur=6.0, fin=0.4, fout=0.8, off=4)
 ps(123.0, 'generator', 0.3, dur=11.5, fin=0.4, fout=0.5); ps(126.3, 'dust', 0.7, dur=3.5, fin=0.05, fout=0.8); ps(130.8, 'dust', 0.5, dur=3.5, fin=0.05, fout=0.8)
 ps(134.5, 'typewriter', 0.55, dur=10, fin=0.1, fout=0.4); ps(144.5, 'typewriter', 0.4, dur=3.5, fin=0.1, fout=1.0, off=2)
-ps(149.0, 'clock', 0.7, dur=5.6, fin=0.2, fout=0.6)
+ps(151.9, 'clock', 0.7, dur=2.7, fin=0.05, fout=0.5); ps(148.4, 'typewriter', 0.12, dur=2.6, fin=0.4, fout=0.8, off=4)
 ps(154.6, 'generator', 0.4, dur=3.0, fin=0.2, fout=0.05, off=5)
 ps(158.6, 'fire', 0.7, dur=6.4, fin=0.6, fout=0.8); ps(158.6, 'ruins', 0.3, dur=6.4, fin=0.6, fout=0.8, off=4)
 ps(165.0, 'explosions', 0.45, dur=6, fin=0.3, fout=0.6); ps(170.0, 'artillery', 0.35, dur=6, fin=0.3, fout=1.5, off=5)
