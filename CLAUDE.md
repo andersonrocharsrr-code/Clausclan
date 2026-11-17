@@ -86,8 +86,19 @@ A mesma regra vale: testar, PR, merge só quando o Anderson mandar.
 
 ## Vídeos documentários (ex.: Pearl Harbor)
 
-Animação 2D flat, narração em pt-BR (ElevenLabs, voz Rodrigo Custódio), capítulos com cartão "CAPÍTULO N".
+Animação 2D flat no modelo **Recorte Dourado** (abaixo), narração em pt-BR (ElevenLabs, voz Rodrigo Custódio), capítulos com cartão "CAPÍTULO N".
 Braços para baixo ou segurando algo; rosto e mãos detalhados; sem chiado no som; usar as fotos reais que o Anderson mandar.
+
+### Recorte Dourado (modelo padrão, aprovado pelo Anderson em nov/2026) — usar no vídeo todo
+
+É o padrão das próximas produções. Quando ele disser "Recorte Dourado" ou "no padrão da Starship", é este.
+Guia completo em `videos/recorte-dourado/README.md`; exemplo pronto em `videos/starship-15/` (`videos/starship-15.mp4`).
+- **Desenho plano, tipo recorte de papel:** planos de luz e sombra com borda reta, sem esfumaçado.
+- **Paleta quente:** ocre, creme e dourado, com azul-ardósia; grão de papel por cima.
+- **Cena escura com o objeto surgindo** da sombra, em bronze, com brilho quente.
+- **Legenda no rodapé, palavra por palavra,** com uma palavra em dourado por frase (`legenda()` + `legendas.py`).
+- **Textos:** Fira Sans Extra Condensed em maiúsculas; placa no canto com traço dourado; cartão "CAPÍTULO N".
+- Para vídeo novo: copiar `videos/starship-15/`, trocar falas e cenas, manter as funções do estilo em `motor.js`.
 
 ### Estilo rápido (aprovado pelo Anderson em nov/2026) — usar em **algumas cenas**, não no vídeo todo
 
