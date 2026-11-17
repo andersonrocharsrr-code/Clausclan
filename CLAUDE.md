@@ -89,6 +89,21 @@ A mesma regra vale: testar, PR, merge só quando o Anderson mandar.
 Animação 2D flat, narração em pt-BR (ElevenLabs, voz Rodrigo Custódio), capítulos com cartão "CAPÍTULO N".
 Braços para baixo ou segurando algo; rosto e mãos detalhados; sem chiado no som; usar as fotos reais que o Anderson mandar.
 
+### Padrão de arte e legenda (aprovado pelo Anderson em nov/2026) — usar em **todos** os capítulos
+
+Código de referência em `videos/estilo-documentario/` (`style.js`, `art.js`, `narracao-por-cena.py`).
+- **Legenda palavra por palavra**, sincronizada com a voz (tempos tirados da transcrição da ElevenLabs),
+  letras grossas em maiúsculas, **toda em branco** (sem amarelo), centralizada embaixo, até 2 linhas.
+- **Textos sem caixa escura**: títulos, datas e nomes no alto à esquerda, com sombra e traço vermelho que cresce.
+  Cartão "CAPÍTULO N" só com texto.
+- **Luz de cinema** em todas as cenas: vinheta nas bordas, luz quente de cima, um pouco mais de contraste e cor.
+- **Personagens importantes em close dramático** (retrato de busto): rosto detalhado, luz lateral, contorno de luz,
+  respiram e piscam; fundo desfocado (cabine, ponte, porão, escritório) com poeira no ar e feixes de luz.
+- **Cenários pintados**: céu e mar com degradê de amanhecer/entardecer, sol, caminho de luz na água;
+  cenas noturnas com janelas acesas. Mapas, papéis e documentos ficam com fundo de mesa e luz de luminária.
+- **Narração**: gerar cada cena inteira de uma vez (com o texto de antes/depois) e cortar nas pausas, para o tom
+  não mudar entre frases; conferir com a transcrição que não há pausa no meio de nomes (ex.: "Nakajima Kate").
+
 ### Estilo rápido (aprovado pelo Anderson em nov/2026) — usar em **algumas cenas**, não no vídeo todo
 
 Bom para aberturas, viradas de assunto e comparações "hoje × naquele dia". Exemplo pronto em `videos/estilo-rapido/`.
