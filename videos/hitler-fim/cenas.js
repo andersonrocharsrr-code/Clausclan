@@ -86,6 +86,7 @@ function mesaMapa(t, o = {}) {
   c.fillStyle = '#26221b'; c.fillRect(0, 0, W, H); c.fillStyle = '#2e2920'; c.fillRect(0, 0, W, 520);
   add(() => glow(960, 560, 700, '255,210,140', .18)); c.strokeStyle = '#14120e'; c.lineWidth = 3; c.beginPath(); c.moveTo(960, 0); c.lineTo(960, 210); c.stroke(); poly([[900, 210], [1020, 210], [990, 180], [930, 180]], '#3a3428'); add(() => glow(960, 230, 120, '255,224,160', .5));
   c.globalAlpha = .9; poly([[960, 220], [1500, 820], [420, 820]], 'rgba(255,224,160,.06)'); c.globalAlpha = 1;
+  if (o.atras) o.atras();
   poly([[360, 620], [1560, 620], [1700, 900], [220, 900]], '#4a3a26'); poly([[440, 630], [1480, 630], [1590, 870], [330, 870]], '#c9b58a');
   c.strokeStyle = 'rgba(80,90,90,.5)'; c.lineWidth = 4; c.beginPath(); c.moveTo(1180, 630); c.quadraticCurveTo(1150, 760, 1220, 870); c.stroke(); disc(960, 740, 9, '#5a3020');
   const q = rng(12); for (let i = 0; i < 18; i++) { const x = 500 + q() * 950, y = 650 + q() * 200, k = q(), a = o.fade ? 1 - ramp(t, o.fade + i * .08, o.fade + .4 + i * .08) : 1; c.globalAlpha = .25 + .75 * a; c.fillStyle = k < .6 ? '#1c1c20' : VERM; c.fillRect(x, y, 26, 14); if (a < .5) { c.strokeStyle = '#1c1c20'; c.lineWidth = 2; c.strokeRect(x, y, 26, 14) } c.globalAlpha = 1 }
@@ -159,18 +160,18 @@ shot(CUTS[4], CUTS[5], (tl, t) => {
 });
 // --- 6: salas pequenas, luz dia e noite, geradores ---
 shot(CUTS[5], CUTS[6], (tl, t) => {
-  const z = 1 + .08 * ease(ramp(tl, 0, 7.3)); c.save(); c.translate(W / 2, 470); c.scale(z, z); c.translate(-W / 2, -470); corredor(t); c.restore();
+  const z = 1 + .08 * ease(ramp(tl, 0, 7.3)); c.save(); c.translate(W / 2, 470); c.scale(z, z); c.translate(-W / 2, -470); corredor(t); fardado(1290, 900, 430, SS_PRETO2, t); c.restore();
   typeText(tl, TX, TY, 'LUZ ELÉTRICA DIA E NOITE', .4, 7.0, { sub: 'E O BARULHO DOS GERADORES' });
 });
 // --- 7: exércitos que quase não existem ---
 shot(CUTS[6], CUTS[7], (tl, t) => {
-  mesaMapa(tl, { fade: 2.2 });
-  [[700, 1110, HITLER, 380], [1010, 1130, { coat: '#4a4c3c', dark: '#34352a' }, 400], [1300, 1110, { coat: '#3e4048', dark: '#2a2c32' }, 380]].forEach(([x, y, o, h]) => person(x, y, h, o));
+  mesaMapa(tl, { fade: 2.2, atras: () => { fardado(560, 930, 560, GENERAL, t); fardado(1370, 930, 560, SS_PRETO, t); fardado(1620, 950, 540, GENERAL2, t); fardado(960, 960, 600, HITLER_F, t, { curvado: 1 }) } });
+  person(300, 1180, 420, SS_COSTAS);
   typeText(tl, TX, TY, 'EXÉRCITOS NO PAPEL', .3, 4.4, { sub: 'QUE JÁ QUASE NÃO EXISTEM' });
 });
 // --- 8: 56 anos, curvado ---
 shot(CUTS[7], CUTS[8], (tl, t) => {
-  corredor(t); c.save(); c.translate(960, 900 - tl * 8); c.transform(1, 0, -.08, 1, 0, 0); person(0, 0, 420 - tl * 14, HITLER); c.restore();
+  corredor(t); const zz = 1 + .04 * tl; fardado(860, 1720 + tl * 6, 1250 * zz, HITLER_F, t, { curvado: 1, treme: 1 });
   label(1380, 520, '56', { size: 260, col: OURO, a: ramp(tl, .1, .4) }); label(1390, 580, 'ANOS', { size: 60, a: ramp(tl, .2, .5) });
 });
 // --- 9: a mão esquerda treme ---
@@ -211,10 +212,9 @@ shot(CUTS[10], CUTS[11], (tl, t) => {
 });
 // --- 12: 22 de abril, a guerra está perdida ---
 shot(CUTS[11], CUTS[12], (tl, t) => {
-  mesaMapa(tl);
-  front(700, 640, 230, { coat: '#4a4c3c', skin: '#c99a74', hair: '#8a7a6a' }); front(1220, 640, 240, { coat: '#3e4048', skin: '#c99a74', hair: '#3a2a1c' });
   const sh = ramp(tl, 3.4, 3.7) * (1 - ramp(tl, 6.2, 7)), dx = sin(t * 47) * 6 * sh;
-  person(960 + dx, 1120, 430, HITLER); person(560, 1130, 380, { coat: '#3e4048', dark: '#2a2c32', hair: '#5a4a3a' }); person(1380, 1130, 390, { coat: '#4a4c3c', dark: '#34352a' });
+  mesaMapa(tl, { atras: () => { fardado(560, 930, 560, GENERAL2, t); fardado(1360, 930, 560, GENERAL, t); fardado(960 + dx, 950, 620, HITLER_F, t, { treme: sh > 0 }) } });
+  person(420, 1180, 430, SS_COSTAS); person(1500, 1180, 430, SS_COSTAS);
   if (tl > 6.3) { c.fillStyle = `rgba(8,8,10,${.65 * ramp(tl, 6.3, 6.8)})`; c.fillRect(0, 0, W, H) }
   label(W / 2, 470, 'A GUERRA', { size: 150, align: 'center', a: ramp(tl, 6.5, 6.9) }); label(W / 2, 620, 'ESTÁ PERDIDA', { size: 150, align: 'center', col: OURO, a: ramp(tl, 6.7, 7.1) });
   label(W / 2, 720, 'ELE DECIDE FICAR EM BERLIM ATÉ O FIM', { size: 46, align: 'center', a: ramp(tl, 9.6, 10.0), w: 600 });
@@ -250,7 +250,7 @@ shot(CUTS[14], CUTS[15], (tl, t) => {
 shot(CUTS[15], CUTS[16], (tl, t) => {
   mesaMapa(tl); const sw = sin(t * 1.6) * .06; c.save(); c.translate(960, 0); c.rotate(sw); c.translate(-960, 0); c.restore();
   for (const [x, a] of [[520, 0], [780, 0], [1150, 0], [1420, -1.3]]) { c.save(); c.translate(x, 1000); c.rotate(a); poly([[-50, 0], [50, 0], [44, -40], [-44, -40]], '#3a2c1e'); c.fillStyle = '#2a2016'; c.fillRect(-46, -170, 14, 170); c.fillRect(32, -170, 14, 170); c.fillRect(-46, -170, 92, 30); c.fillRect(-44, 0, 10, 90); c.fillRect(34, 0, 10, 90); c.restore() }
-  person(1700 + tl * 60, 1110, 360, { coat: '#3e4048', dark: '#2a2c32' });
+  person(1700 + tl * 60, 1110, 380, SS_COSTAS);
   typeText(tl, TX, TY, 'CADEIRAS VAZIAS', 1.8, 4.8, { sub: 'OS HOMENS MAIS PRÓXIMOS SE AFASTAM' });
   chapter(tl, 3, 'AS TRAIÇÕES');
 });
@@ -279,7 +279,7 @@ shot(CUTS[17], CUTS[18], (tl, t) => {
 });
 // --- 19: a traição final ---
 shot(CUTS[18], CUTS[19], (tl, t) => {
-  const z = 1 + .1 * ease(ramp(tl, 0, 6)); c.save(); c.translate(W / 2, 470); c.scale(z, z); c.translate(-W / 2, -470); corredor(t); person(960, 760, 220, HITLER); c.restore();
+  const z = 1 + .1 * ease(ramp(tl, 0, 6)); c.save(); c.translate(W / 2, 470); c.scale(z, z); c.translate(-W / 2, -470); corredor(t); fardado(960, 900, 400 + tl * 12, HITLER_F, t, { curvado: 1 }); c.restore();
   label(W / 2, 300, 'A TRAIÇÃO FINAL', { size: 110, align: 'center', a: ramp(tl, 2.0, 2.4) * (1 - ramp(tl, 5.4, 5.9)) });
 });
 // --- 20: CAPÍTULO 4 — o casamento, de madrugada ---
@@ -289,12 +289,11 @@ shot(CUTS[19], CUTS[20], (tl, t) => {
   c.fillStyle = '#4e483a'; c.fillRect(0, 0, W, H); c.fillStyle = '#423c30'; c.fillRect(0, 0, W, 120); c.fillStyle = '#3a3428'; c.fillRect(0, 760, W, H - 760);
   c.fillStyle = '#2a2219'; c.fillRect(1380, 250, 260, 200); c.fillStyle = '#5a4a32'; c.fillRect(1395, 265, 230, 170); c.fillStyle = '#3a4a42'; c.fillRect(1410, 280, 200, 140);
   const sw = sin(t * 1.8) * .05 * (1 + sh); c.save(); c.translate(960, 0); c.rotate(sw); c.strokeStyle = '#14120e'; c.lineWidth = 3; c.beginPath(); c.moveTo(0, 0); c.lineTo(0, 180); c.stroke(); add(() => glow(0, 196, 500, '255,214,150', .25)); disc(0, 196, 14, '#fff1c8'); c.restore();
-  c.fillStyle = '#3a2c1e'; c.fillRect(260, 640, 520, 30); c.fillRect(280, 670, 20, 140); c.fillRect(740, 670, 20, 140); folha(520, 628, 200, 26, 0, '#efe5c8')(); front(420, 640, 260, { coat: '#3e3a32', skin: '#c99a74', hair: '#5a4a3a' });
-  person(820, 1060, 400, HITLER); person(1010, 1060, 370, { coat: '#1e1e2a', dark: '#14141c', legs: '#14141c', hair: '#a8865a', skin: '#e0b896' });
-  person(1300, 1080, 380, { coat: '#3e3f30', dark: '#2a2b20' }); person(560, 1090, 360, { coat: '#3e4048', dark: '#2a2c32' });
+  fardado(250, 900, 430, PARTIDO, t); c.fillStyle = '#3a2c1e'; c.fillRect(90, 680, 400, 30); c.fillRect(110, 710, 20, 160); c.fillRect(450, 710, 20, 160); folha(290, 668, 180, 24, 0, '#efe5c8')();
+  fardado(640, 1060, 480, PARTIDO, t); fardado(1500, 1060, 470, GOEBBELS, t); fardado(880, 1070, 500, HITLER_F, t, { curvado: 1 }); mulher(1110, 1070, 470, { vestido: '#16161c' }, t);
   if (sh) for (let i = 0; i < 30; i++) disc(q() * W, ((q() * 800) + (tl % 1) * 300) % 760, 2 + q() * 3, 'rgba(200,190,170,.7)');
   c.restore();
-  label(1010, 600, 'EVA BRAUN', { size: 58, align: 'center', a: ramp(tl, 6.9, 7.2) * (1 - ramp(tl, 10.6, 11)) });
+  label(1110, 540, 'EVA BRAUN', { size: 58, align: 'center', a: ramp(tl, 6.9, 7.2) * (1 - ramp(tl, 10.6, 11)) });
   typeText(tl, TX, TY, '29 DE ABRIL · MADRUGADA', 1.8, 11.2, { sub: 'OS SOVIÉTICOS A POUCOS QUARTEIRÕES' });
   chapter(tl, 4, 'O FIM');
 });
