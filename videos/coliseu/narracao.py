@@ -1,7 +1,7 @@
 # Gera a narração (ElevenLabs, voz Rodrigo Custódio). Uso: python3 narracao.py <pasta-de-saida> [falas...]
 # A chave fica no ambiente/proxy; nunca no código.
 import json, os, subprocess, sys, urllib.request
-VOZ = '2xzOKgdTB2i5ia63CcIn'
+VOZ = 'QVAas5gGwu8nTdZ3MUpQ'  # Matheus Moretti
 FALAS = {
  'a': 'Roma, ano oitenta depois de Cristo. No centro da maior cidade do mundo, cinquenta mil pessoas se espremem num edifício de pedra que acaba de ficar pronto. Lá dentro, homens armados vão lutar diante do imperador. Bem-vindo ao Coliseu.',
  'b': 'O imperador Vespasiano começou a obra por volta do ano setenta, no lugar de um lago do palácio de Nero. O filho dele, Tito, inaugurou o anfiteatro com cem dias de jogos. São cento e oitenta e nove metros de comprimento e quarenta e oito de altura, como um prédio de quinze andares. Por fora, três andares de arcos, oitenta em cada volta, com colunas de três estilos diferentes. Tudo em pedra travertino, presa com grampos de ferro.',
@@ -17,7 +17,7 @@ if __name__ == '__main__':
     out = sys.argv[1]; os.makedirs(out, exist_ok=True)
     for k in (sys.argv[2:] or list(FALAS)):
         body = json.dumps({'text': FALAS[k], 'model_id': 'eleven_multilingual_v2',
-            'voice_settings': {'stability': 0.6, 'similarity_boost': 0.8, 'style': 0.1, 'speed': SPEED.get(k, 1.04)}}).encode()
+            'voice_settings': {'stability': 0.55, 'similarity_boost': 0.8, 'style': 0.1, 'speed': SPEED.get(k, 0.92)}}).encode()
         req = urllib.request.Request(f'https://api.elevenlabs.io/v1/text-to-speech/{VOZ}?output_format=mp3_44100_128',
             data=body, headers={'Content-Type': 'application/json', 'xi-api-key': os.environ.get('ELEVENLABS_API_KEY', 'proxy')})
         open(f'{out}/{k}.mp3', 'wb').write(urllib.request.urlopen(req).read())

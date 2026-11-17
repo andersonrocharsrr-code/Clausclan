@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from narracao import FALAS
 PASTA = sys.argv[1] if len(sys.argv) > 1 else ''
 CPS = 233 / 18.065                                   # caracteres por segundo (medido na fala a)
-GAP = {'a': 2.5, 'b': 3, 'c': 3, 'd': 3, 'e': 3, 'f': 2.4, 'g': 3, 'h': 3}
+GAP = {'a': 3.0, 'b': 5, 'c': 5, 'd': 5, 'e': 5, 'f': 4, 'g': 5, 'h': 5}
 PAL = json.load(open('palavras.json')) if os.path.exists('palavras.json') else {}
 def dur(k):
     w = f'{PASTA}/nar/{k}.wav'
@@ -14,12 +14,14 @@ def dur(k):
     return round(len(FALAS[k]) / CPS, 2), False
 NARS, NARD, REAL = {}, {}, {}; t = 0
 for k in FALAS: t += GAP[k]; NARS[k] = round(t, 2); NARD[k], REAL[k] = dur(k); t += NARD[k]
-DUR = round(t + 6, 1)
+DUR = round(max(t + 5, 230.0), 1)
+norm = lambda w: re.sub(r'[^\wÀ-ÿ-]', '', w).lower()
 def frac(k, txt):  # posição de uma frase dentro da fala (pelas palavras reais, se houver)
     if k in PAL:
-        alvo = txt.split()[0].strip(',.:').lower()
-        for w, a, b in PAL[k]:
-            if w.strip(',.:').lower() == alvo: return a / NARD[k]
+        alvo = [norm(w) for w in txt.split()]; ws = PAL[k]
+        for i in range(len(ws) - len(alvo) + 1):
+            if all(norm(ws[i + j][0]) == alvo[j] for j in range(len(alvo))): return ws[i][1] / NARD[k]
+        print('frase não achada:', k, txt)
     return FALAS[k].index(txt) / len(FALAS[k])
 T = lambda k, txt: round(NARS[k] + frac(k, txt) * NARD[k], 2)
 CARD = lambda k: round(NARS[k] - 1.0, 2)

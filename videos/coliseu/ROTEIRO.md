@@ -1,7 +1,7 @@
 # O Coliseu — roteiro (3 min 50 s)
 
 **Modelo:** Recorte Dourado (ver `videos/recorte-dourado/README.md`).
-**Formato:** 1920×1080, 30 qps, ~230 s. Narração em pt-BR (ElevenLabs, voz Rodrigo Custódio), legenda palavra por palavra.
+**Formato:** 1920×1080, 30 qps, 230 s. Narração em pt-BR (ElevenLabs, voz **Matheus Moretti**, um pouco mais lenta que o normal), legenda palavra por palavra.
 **Vídeo pronto:** `videos/coliseu.mp4`.
 
 ## Cuidados
