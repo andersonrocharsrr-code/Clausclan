@@ -1375,6 +1375,17 @@ setInterval(autoSalvar, 60000);
 pintarAutoSalvo();
 document.addEventListener('visibilitychange', () => { if (!document.hidden) autoSalvar(); });
 
+// Iniciar nova semana: guarda a semana atual (fica em ☰) e começa outra com os números zerados.
+$('#btnNovaSemana').addEventListener('click', () => {
+  if (!confirm('Iniciar nova semana?\n\nA semana atual fica salva (☰ Fechamentos salvos) e os números voltam a zero.')) return;
+  sincronizar();
+  if (temLancamentos(st) || Number(st.foiCobrar) > 0) guardar(st);
+  st = novo();
+  salvarAtual(); pintarTudo(); pintarAutoSalvo();
+  scrollTo({ top: 0, behavior: 'smooth' });
+  toast('Semana anterior salva. Nova semana começou ✓');
+});
+
 $('#btnNovo').addEventListener('click', () => {
   if (!confirm('Começar um fechamento novo? Salve este antes se quiser guardar.')) return;
   st = novo();
@@ -2185,7 +2196,7 @@ function dataDeHoje() {
   if (h < ini || h > fim) {
     if (avisouSemanaNova !== h && temLancamentos(st)) {
       avisouSemanaNova = h;
-      toast('Começou uma semana nova: tire a foto da folha nova ou toque em ＋ Novo fechamento (aba Depósito).');
+      toast('Começou uma semana nova: toque em 🗓 Iniciar nova semana, no alto da aba Recebimento.');
     }
     return;
   }

@@ -604,3 +604,6 @@ body{overflow-x:clip}
 .boas-festas{margin:0;padding:7px 14px;text-align:center;font-size:13px;font-weight:600;background:var(--accent-soft);color:var(--tab-ink);
   border-bottom:1px solid var(--line)}
 .top__title img#iconeTopo{overflow:visible}
+/* Iniciar nova semana: discreto, no alto do Recebimento */
+.nova-semana{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 2px 12px}
+.nova-semana .btn{padding:8px 14px;font-size:14px}
