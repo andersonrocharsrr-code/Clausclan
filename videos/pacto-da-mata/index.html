@@ -1,0 +1,12 @@
+<!doctype html><meta charset="utf-8"><title>O Pacto da Mata</title>
+<style>
+@font-face{font-family:"Fira Sans Extra Condensed";font-weight:600;src:url(fontes/fira-sans-extra-condensed-latin-600-normal.woff2)}
+@font-face{font-family:"Fira Sans Extra Condensed";font-weight:800;src:url(fontes/fira-sans-extra-condensed-latin-800-normal.woff2)}
+html,body{margin:0;background:#000}canvas{display:block;width:100vw;height:auto}</style>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script src="tempos.js"></script><script src="motor.js"></script><script src="mata.js"></script><script src="gente.js"></script><script src="bichos.js"></script><script src="lugares.js"></script><script src="cenas.js"></script>
+<script>
+// abre sozinho como prévia; o render.js chama render(t) quadro a quadro
+window.PRONTO = Promise.all([document.fonts.load('600 40px "Fira Sans Extra Condensed"'), document.fonts.load('800 40px "Fira Sans Extra Condensed"')]);
+if (!location.search.includes('render')) PRONTO.then(() => { const t0 = performance.now(); (function f() { render(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(f) })() });
+</script>
