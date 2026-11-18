@@ -40,7 +40,8 @@ function maoLado(x, y, a, pel, s = 1) { at(x, y, s, () => { c.fillStyle = pel.so
 function cabecaFirmino(o = {}) {
   const pl = PELE_F, barba = o.barba ?? .4;
   // pescoço
-  c.fillStyle = pl.sombra; c.beginPath(); c.moveTo(-3.4, 2); c.lineTo(2.2, 2.6); c.lineTo(2.6, 9); c.lineTo(-4, 9); c.fill();
+  c.fillStyle = lg(-4, 0, 3, 0, [[0, '#7a4e32'], [1, pl.sombra]]); c.beginPath(); c.moveTo(-3.6, 1.5); c.quadraticCurveTo(-3.2, 5, -4.6, 8.6); c.lineTo(3.6, 8.6); c.quadraticCurveTo(2, 6, 2.4, 3.4); c.closePath(); c.fill();
+  c.fillStyle = 'rgba(40,20,10,.35)'; c.beginPath(); c.moveTo(-1.8, 3.6); c.quadraticCurveTo(1, 5.4, 2.6, 4.2); c.lineTo(2.4, 3.2); c.closePath(); c.fill();
   // crânio + rosto de perfil
   const perfil = () => { c.beginPath(); c.moveTo(-6, -4); c.bezierCurveTo(-6.6, -9.5, -1, -11.5, 3, -9.8); c.bezierCurveTo(5.4, -8.6, 5.8, -6, 5.9, -4.2); c.lineTo(6.3, -3.2); c.lineTo(5.9, -2.3); c.bezierCurveTo(6.8, -1.2, 7.8, .3, 7.2, .9); c.lineTo(5.9, 1.1); c.quadraticCurveTo(6.2, 1.9, 5.8, 2.4); c.quadraticCurveTo(6.1, 3, 5.6, 3.5); c.quadraticCurveTo(5.8, 4.8, 4.6, 5.6); c.quadraticCurveTo(2.6, 6.6, 1, 5.7); c.lineTo(-1.8, 3.6); c.bezierCurveTo(-4.6, 4.4, -6.4, 1.6, -6, -4); c.closePath() };
   c.fillStyle = lg(-6, 0, 7, 0, [[0, pl.sombra], [.55, pl.pele], [1, pl.luz]]); perfil(); c.fill();
@@ -146,6 +147,7 @@ function firmino(x, y, h, o = {}, flip = false) {
     if (G && pose === 'ombro') at(G[0], G[1], 1, () => espingarda({ brilho: o.brilho }), G[2]); // por cima do ombro e do braço
     if (segura2) maoLado(hf[0], hf[1], G[2], { pele: pl.sombra, sombra: '#6a422a', luz: pl.pele }, .9); maoLado(hn[0], hn[1], G ? G[2] : 0, pl, 1);
     at(nk[0] + 2.6, nk[1] - 7.4, 1, () => cabecaFirmino({ medo: o.medo, boca: o.boca, olhar: o.olhar, barba: .4 + idade * .7, sujo: idade, cabelo: idade > .5 ? '#4a4038' : '#2a2018' }), (o.cabeca || 0) + (pose === 'mira' ? .12 : 0));
+    c.fillStyle = camS; c.beginPath(); c.moveTo(nk[0] - 3.4, nk[1] - .4); c.quadraticCurveTo(nk[0] + .4, nk[1] + 2.4, nk[0] + 4.8, nk[1] + .6); c.lineTo(nk[0] + 3.2, nk[1] + 4); c.lineTo(nk[0] + .6, nk[1] + 2.6); c.lineTo(nk[0] - 2.2, nk[1] + 3.8); c.closePath(); c.fill();
   }, 0, flip);
 }
 // animal abatido carregado no ombro (deitado de lado sobre os ombros)
