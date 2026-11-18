@@ -103,7 +103,7 @@ function firmino(x, y, h, o = {}, flip = false) {
     if (pose === 'baixo') G = [hip[0] + 8, hip[1] - 4, -.42 - (o.levanta || 0) * .4];
     else if (pose === 'mira') G = [sh[0] + 25, sh[1] + 3.2, -.03 + (o.sobe || 0)];
     else if (pose === 'mao') G = [hip[0] + 6, hip[1] + 4, .12];
-    else if (pose === 'ombro') G = [sh[0] + 9, sh[1] + 11, -2.45];
+    else if (pose === 'ombro') { const a = -2.45, ox = sh[0] + 1, oy = sh[1] - 3; G = [ox - (cos(a) * 12 - sin(a) * -.6), oy - (sin(a) * 12 + cos(a) * -.6), a] } // cano apoiado no alto do ombro
     else if (pose === 'colo') G = [hip[0] + 12, hip[1] - 5, -.05];
     const gp = (lx, ly) => G ? [G[0] + cos(G[2]) * lx - sin(G[2]) * ly, G[1] + sin(G[2]) * lx + cos(G[2]) * ly] : null;
     const braco = (far) => {
@@ -125,7 +125,8 @@ function firmino(x, y, h, o = {}, flip = false) {
       return hand;
     };
     // ordem: braço de trás, perna de trás, (arma atrás), tronco, perna da frente, arma, braço da frente, cabeça
-    const hf = braco(true);
+    const hf = braco(true), segura2 = G && (pose === 'baixo' || pose === 'mira' || pose === 'colo');
+    if (!segura2) maoLado(hf[0], hf[1], 0, { pele: pl.sombra, sombra: '#6a422a', luz: pl.pele }, .9);
     perna(f + PI, true);
     
     // tronco: camisa bege com dobras
@@ -140,9 +141,10 @@ function firmino(x, y, h, o = {}, flip = false) {
     c.strokeStyle = '#4a2c14'; c.lineWidth = 2; c.beginPath(); c.moveTo(sh[0] + 4, sh[1] - 1); c.lineTo(hip[0] - 7, hip[1] + 4); c.stroke();
     c.fillStyle = lg(0, hip[1], 0, hip[1] + 12, [[0, '#7a4e28'], [1, '#4a2c14']]); c.beginPath(); c.roundRect(hip[0] - 12.6, hip[1] + 1, 9, 10, 1.6); c.fill(); c.fillStyle = '#5a3418'; c.fillRect(hip[0] - 12.6, hip[1] + 1, 9, 3.6);
     perna(f, false);
-    if (G) at(G[0], G[1], 1, () => espingarda({ brilho: o.brilho }), G[2]);
+    if (G && pose !== 'ombro') at(G[0], G[1], 1, () => espingarda({ brilho: o.brilho }), G[2]);
     const hn = braco(false);
-    maoLado(hf[0], hf[1], G ? G[2] : 0, { pele: pl.sombra, sombra: '#6a422a', luz: pl.pele }, .9); maoLado(hn[0], hn[1], G ? G[2] : 0, pl, 1);
+    if (G && pose === 'ombro') at(G[0], G[1], 1, () => espingarda({ brilho: o.brilho }), G[2]); // por cima do ombro e do braço
+    if (segura2) maoLado(hf[0], hf[1], G[2], { pele: pl.sombra, sombra: '#6a422a', luz: pl.pele }, .9); maoLado(hn[0], hn[1], G ? G[2] : 0, pl, 1);
     at(nk[0] + 2.6, nk[1] - 7.4, 1, () => cabecaFirmino({ medo: o.medo, boca: o.boca, olhar: o.olhar, barba: .4 + idade * .7, sujo: idade, cabelo: idade > .5 ? '#4a4038' : '#2a2018' }), (o.cabeca || 0) + (pose === 'mira' ? .12 : 0));
   }, 0, flip);
 }
