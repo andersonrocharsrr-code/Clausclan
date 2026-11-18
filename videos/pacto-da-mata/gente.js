@@ -35,7 +35,7 @@ function espingarda(o = {}) {
   if (o.brilho) add(() => glow(20, -2, 30, '255,60,40', o.brilho));
 }
 // ---------- mãos de lado (punho fechado segurando) ----------
-function maoLado(x, y, a, pel, s = 1) { at(x, y, s, () => { ell(0, 0, 2.6, 2.1, 0, pel.sombra); ell(-.2, -.4, 2.3, 1.8, 0, pel.pele); c.strokeStyle = pel.sombra; c.lineWidth = .3; for (let k = -1; k <= 1; k++) { c.beginPath(); c.moveTo(.8, k * .9); c.lineTo(2.2, k * .9); c.stroke() } ell(-.6, -1.2, 1.2, .7, -.3, pel.luz) }, a) }
+function maoLado(x, y, a, pel, s = 1) { at(x, y, s, () => { c.fillStyle = pel.sombra; c.beginPath(); c.roundRect(-2, -1.6, 4, 3.6, 1.2); c.fill(); c.fillStyle = pel.pele; c.beginPath(); c.roundRect(-1.8, -1.9, 3.6, 3.2, 1.1); c.fill(); c.strokeStyle = pel.sombra; c.lineWidth = .25; for (let k = 0; k < 3; k++) { c.beginPath(); c.moveTo(-1.4 + k * 1.1, -.2); c.lineTo(-1.4 + k * 1.1, 1.3); c.stroke() } ell(-1.6, -1.4, 1, .6, -.5, pel.luz) }, a) }
 // ---------- cabeça de perfil (olhando para +x). o: { idade, medo, boca, chapeu, olhar } ----------
 function cabecaFirmino(o = {}) {
   const pl = PELE_F, barba = o.barba ?? .4;
@@ -83,7 +83,7 @@ function firmino(x, y, h, o = {}, flip = false) {
     const perna = (ph, far) => {
       let foot;
       if (o.sentado) foot = far ? [19, 0] : [22, 0];
-      else { const s = sin(ph), cc = cos(ph); foot = [s * 13 * an, -Math.max(0, cc) * 6 * an]; }
+      else { const s = sin(ph), cc = cos(ph); foot = [s * 10.5 * an, -Math.max(0, cc) * 5 * an]; }
       const knee = ik(hip[0], hip[1], foot[0], foot[1] - 4, 22.8, 22.4, 1);
       const sc = far ? .72 : 1;
       seg(hip[0], hip[1], knee[0], knee[1], 11, 8.6, far ? shadeHex(calca, .7) : calca);
@@ -101,9 +101,9 @@ function firmino(x, y, h, o = {}, flip = false) {
     const pose = o.arma ?? 'baixo';
     let G = null;
     if (pose === 'baixo') G = [hip[0] + 8, hip[1] - 4, -.42 - (o.levanta || 0) * .4];
-    else if (pose === 'mira') G = [sh[0] + 14, sh[1] + 1.6, -.03 + (o.sobe || 0)];
+    else if (pose === 'mira') G = [sh[0] + 25, sh[1] + 3.2, -.03 + (o.sobe || 0)];
     else if (pose === 'mao') G = [hip[0] + 6, hip[1] + 4, .12];
-    else if (pose === 'ombro') G = [sh[0] + 7, sh[1] + 9, -2.55];
+    else if (pose === 'ombro') G = [sh[0] + 9, sh[1] + 11, -2.45];
     else if (pose === 'colo') G = [hip[0] + 12, hip[1] - 5, -.05];
     const gp = (lx, ly) => G ? [G[0] + cos(G[2]) * lx - sin(G[2]) * ly, G[1] + sin(G[2]) * lx + cos(G[2]) * ly] : null;
     const braco = (far) => {
@@ -113,12 +113,15 @@ function firmino(x, y, h, o = {}, flip = false) {
       else if (pose === 'mao') hand = far ? [s0[0] - sin(f) * 6 * an + 2, s0[1] + 30] : gp(0, 1);
       else if (pose === 'ombro') hand = far ? [s0[0] - sin(f) * 6 * an + 2, s0[1] + 30] : gp(-2, 1);
       else hand = far ? gp(15, 1.4) : gp(-.5, 1);
-      const el = ik(s0[0], s0[1], hand[0], hand[1], 16, 15.5, far ? 1 : (pose === 'mira' ? 1 : 1));
+      // cotovelo sempre para baixo (o lado mais natural)
+      const e1 = ik(s0[0], s0[1], hand[0], hand[1], 15.5, 15, 1), e2 = ik(s0[0], s0[1], hand[0], hand[1], 15.5, 15, -1), el = e1[1] > e2[1] ? e1 : e2;
       const cs = far ? shadeHex(camisa, .72) : camisa;
-      seg(s0[0], s0[1], el[0], el[1], 8.4, 7, cs);
-      const mid = [lerp(el[0], hand[0], .25), lerp(el[1], hand[1], .25)]; // manga dobrada até o cotovelo
-      seg(el[0], el[1], mid[0], mid[1], 7.4, 6.6, far ? shadeHex(camS, .8) : camS);
-      seg(mid[0], mid[1], hand[0], hand[1], 5.4, 4.6, far ? pl.sombra : pl.pele);
+      seg(s0[0], s0[1], el[0], el[1], 6.8, 5.8, cs);
+      c.strokeStyle = 'rgba(80,60,30,.35)'; c.lineWidth = .5; c.beginPath(); c.moveTo(lerp(s0[0], el[0], .4) - 1, lerp(s0[1], el[1], .4)); c.lineTo(lerp(s0[0], el[0], .7) + 1, lerp(s0[1], el[1], .7)); c.stroke();
+      const mid = [lerp(el[0], hand[0], .22), lerp(el[1], hand[1], .22)]; // manga dobrada até o cotovelo
+      seg(el[0], el[1], mid[0], mid[1], 6.2, 5.6, far ? shadeHex(camS, .8) : camS);
+      seg(mid[0], mid[1], hand[0], hand[1], 4.4, 3.6, far ? pl.sombra : pl.pele);
+      c.strokeStyle = far ? 'rgba(0,0,0,.15)' : 'rgba(255,220,180,.25)'; c.lineWidth = .8; c.beginPath(); c.moveTo(mid[0], mid[1] - 1.2); c.lineTo(lerp(mid[0], hand[0], .8), lerp(mid[1], hand[1], .8) - 1); c.stroke();
       return hand;
     };
     // ordem: braço de trás, perna de trás, (arma atrás), tronco, perna da frente, arma, braço da frente, cabeça
