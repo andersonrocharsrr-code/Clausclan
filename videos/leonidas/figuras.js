@@ -4,6 +4,8 @@ const BZ = ['#5a3a16', '#8a6128', '#b98a3e', '#e9c27a', '#fff0c8']; // bronze: s
 function el(x, y, rx, ry, col, rot = 0) { c.fillStyle = col; c.beginPath(); c.ellipse(x, y, Math.abs(rx), Math.abs(ry), rot, 0, 7); c.fill() }
 function bezPoly(pts, col) { c.fillStyle = col; c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) { const p = pts[i]; if (p.length === 4) c.quadraticCurveTo(p[0], p[1], p[2], p[3]); else c.lineTo(p[0], p[1]) } c.closePath(); c.fill() }
 
+// mão fechada segurando algo (dedos marcados)
+function punho(x, y, r, cor = P.pele, cor0 = P.pele0) { c.save(); c.translate(x, y); rr(-r, -r * 1.1, r * 2, r * 2.2, r * .7, cor); rr(0, -r * 1.1, r, r * 2.2, r * .6, cor0); c.strokeStyle = 'rgba(80,40,20,.55)'; c.lineWidth = Math.max(1, r * .14); for (let k = -1; k <= 1; k++) { c.beginPath(); c.moveTo(-r * .9, k * r * .55); c.lineTo(r * .6, k * r * .55); c.stroke() } el(-r * .9, -r * .2, r * .4, r * .7, cor0); c.restore() }
 // ---------- escudo (aspis): borda de bronze, face em faixas, lambda Λ de Esparta ----------
 function aspis(x, y, r, o = {}) {
   const rx = r * (o.esq ?? 1), sym = o.sym ?? 'L', face = o.face || P.carmim;
@@ -37,7 +39,7 @@ function dory(x0, y0, x1, y1, w = 7) {
 function corintioFrente(o = {}) {
   const cr = o.crista ?? 'long', cor = o.corCrista || P.carmim, cor0 = o.corCrista0 || P.carmim0;
   if (cr === 'trans') { c.fillStyle = cor0; c.beginPath(); c.moveTo(-62, -40); c.quadraticCurveTo(-70, -96, 0, -104); c.quadraticCurveTo(70, -96, 62, -40); c.lineTo(36, -44); c.quadraticCurveTo(0, -60, -36, -44); c.fill(); c.fillStyle = cor; c.beginPath(); c.moveTo(-62, -40); c.quadraticCurveTo(-70, -96, 0, -104); c.lineTo(0, -54); c.quadraticCurveTo(-30, -52, -36, -44); c.fill(); c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = 2; for (let k = -5; k <= 5; k++) { c.beginPath(); c.moveTo(k * 9, -52); c.lineTo(k * 12, -98 + Math.abs(k) * 3); c.stroke() } }
-  else if (cr === 'long') { c.fillStyle = cor0; c.beginPath(); c.moveTo(-12, -40); c.quadraticCurveTo(-16, -110, 0, -112); c.quadraticCurveTo(16, -110, 12, -40); c.fill(); c.fillStyle = cor; c.beginPath(); c.moveTo(-12, -40); c.quadraticCurveTo(-16, -110, 0, -112); c.lineTo(0, -40); c.fill(); rr(-8, -50, 16, 14, 3, BZ[1]) }
+  else if (cr === 'long') { c.fillStyle = cor0; c.beginPath(); c.moveTo(-12, -40); c.quadraticCurveTo(-16, -110, 0, -112); c.quadraticCurveTo(16, -110, 12, -40); c.fill(); c.fillStyle = cor; c.beginPath(); c.moveTo(-12, -40); c.quadraticCurveTo(-16, -110, 0, -112); c.lineTo(0, -40); c.fill(); c.strokeStyle = 'rgba(0,0,0,.3)'; c.lineWidth = 1.5; for (let k = -2; k <= 2; k++) { c.beginPath(); c.moveTo(k * 4, -44); c.quadraticCurveTo(k * 5, -80, k * 2, -108); c.stroke() } rr(-8, -50, 16, 14, 3, BZ[1]) }
   // calota
   bezPoly([[-36, 6], [-40, -30, -26, -46], [0, -52, 26, -46], [40, -30, 36, 6]], BZ[2]); bezPoly([[-36, 6], [-40, -30, -26, -46], [-6, -52, -4, -50], [-14, -20]], BZ[3]); c.fillStyle = 'rgba(255,240,200,.5)'; c.beginPath(); c.ellipse(-16, -34, 6, 10, -.5, 0, 7); c.fill();
   // bochechas: placas que descem até o queixo, com a abertura em T
@@ -48,7 +50,8 @@ function corintioFrente(o = {}) {
   poly([[-5, -10], [5, -10], [4, 26], [-4, 26]], BZ[2]); poly([[-5, -10], [0, -10], [0, 26], [-4, 26]], BZ[3]);
   c.strokeStyle = 'rgba(40,20,6,.55)'; c.lineWidth = 2; c.beginPath(); c.moveTo(-36, 2); c.quadraticCurveTo(0, -6, 36, 2); c.stroke(); c.strokeStyle = BZ[4]; c.lineWidth = 1.5; c.beginPath(); c.moveTo(-34, 6); c.quadraticCurveTo(-36, 30, -28, 48); c.stroke();
   // barba aparecendo pela abertura e por baixo
-  c.fillStyle = o.barba || '#2a1a10'; c.beginPath(); c.moveTo(-9, 30); c.lineTo(9, 30); c.lineTo(10, 58); c.quadraticCurveTo(0, 80, -10, 58); c.fill(); c.fillStyle = 'rgba(0,0,0,.4)'; c.fillRect(-2, 34, 4, 14);
+  c.fillStyle = o.barba || '#2a1a10'; c.beginPath(); c.moveTo(-9, 30); c.lineTo(9, 30); c.lineTo(10, 58); c.quadraticCurveTo(0, 80, -10, 58); c.fill(); c.fillStyle = 'rgba(0,0,0,.4)'; c.fillRect(-2, 34, 4, 14); c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 1.4; for (let k = -2; k <= 2; k++) { if (k) { c.beginPath(); c.moveTo(k * 3.5, 40); c.quadraticCurveTo(k * 4.5, 56, k * 3, 70); c.stroke() } }
+  for (let k = 0; k < 9; k++) { const a = PI * (.08 + k * .105); disc(-cos(a) * 33, -sin(a) * 40 + 2, 1.6, BZ[4]) } c.strokeStyle = BZ[0]; c.lineWidth = 1.5; c.beginPath(); c.moveTo(-30, -14); c.quadraticCurveTo(-16, -24, -3, -14); c.moveTo(30, -14); c.quadraticCurveTo(16, -24, 3, -14); c.stroke();
 }
 // ---------- capacete coríntio de perfil (virado para a direita; centro 0,0) ----------
 function corintioPerfil(o = {}) {
@@ -70,16 +73,19 @@ function hoplitaFrente(x, y, s, t, o = {}) {
   // capa atrás
   bezPoly([[-64, -332], [-98 + vento, -150], [-104 + vento, -40], [-40, -54], [0, -40], [40, -54], [104 + vento, -40], [98 + vento, -150], [64, -332]], capa0);
   bezPoly([[-64, -332], [-98 + vento, -150], [-104 + vento, -40], [-60, -50], [-40, -300]], capa); c.fillStyle = 'rgba(0,0,0,.2)'; for (const fx of [-50, 20, 70]) { c.beginPath(); c.moveTo(fx, -300); c.lineTo(fx + 12, -60); c.lineTo(fx + 26, -60); c.lineTo(fx + 8, -300); c.fill() }
+  c.strokeStyle = 'rgba(0,0,0,.22)'; c.lineWidth = 2; for (const fx of [-80, -30, 46, 86]) { c.beginPath(); c.moveTo(fx * .7, -320); c.quadraticCurveTo(fx, -190, fx + vento * .6, -50); c.stroke() } c.strokeStyle = 'rgba(30,0,0,.6)'; c.lineWidth = 6; c.beginPath(); c.moveTo(-104 + vento, -44); c.lineTo(-40, -58); c.lineTo(0, -44); c.lineTo(40, -58); c.lineTo(104 + vento, -44); c.stroke();
   // pernas: coxas, grevas de bronze, sandálias
   for (const sx of [-1, 1]) {
     const lx = sx * 26; poly([[lx - 18, -200], [lx + 18, -200], [lx + 15, -112], [lx - 15, -112]], sx < 0 ? P.pele : P.pele0);
     bezPoly([[lx - 17, -118], [lx - 20, -70, lx - 13, -18], [lx + 13, -18], [lx + 20, -70, lx + 17, -118], [lx, -126]], BZ[sx < 0 ? 2 : 1]); poly([[lx - 17, -118], [lx - 4, -124], [lx - 6, -20], [lx - 13, -18]], BZ[sx < 0 ? 3 : 2]);
     c.strokeStyle = 'rgba(40,20,6,.5)'; c.lineWidth = 2; c.beginPath(); c.arc(lx, -112, 10, PI * .1, PI * .9); c.stroke(); c.beginPath(); c.moveTo(lx, -80); c.quadraticCurveTo(lx + 8 * sx, -60, lx, -40); c.stroke();
-    poly([[lx - 13, -18], [lx + 13, -18], [lx + 16, -2], [lx - 16, -2]], P.pele0); rr(lx - 18, -4, 36, 8, 3, '#4a2a14'); line(lx - 12, -16, lx + 12, -8, '#4a2a14', 3);
+    poly([[lx - 13, -18], [lx + 13, -18], [lx + 16, -2], [lx - 16, -2]], P.pele0); rr(lx - 18, -4, 36, 8, 3, '#4a2a14'); line(lx - 12, -16, lx + 12, -8, '#4a2a14', 3); line(lx + 12, -16, lx - 12, -8, '#4a2a14', 3); line(lx - 13, -20, lx + 13, -20, '#4a2a14', 3); for (let k = -2; k <= 2; k++) disc(lx + k * 6, -4, 3, P.pele0);
+    c.fillStyle = 'rgba(0,0,0,.12)'; c.fillRect(lx + (sx < 0 ? 6 : -16), -196, 10, 80); el(lx, -114, 12, 9, sx < 0 ? '#d8a070' : '#a87048'); c.fillStyle = 'rgba(255,240,200,.45)'; c.fillRect(lx - 12, -112, 4, 86); for (let k = 0; k < 4; k++) disc(lx - 15, -110 + k * 26, 1.8, BZ[4]);
   }
   // quíton e ptéruges (tiras de linho)
   poly([[-56, -232], [56, -232], [62, -176], [-62, -176]], capa);
-  for (let i = 0; i < 9; i++) { const px = -54 + i * 12; rr(px, -222, 11, 44, 2, i % 2 ? '#d8ccb0' : '#efe6d4'); c.fillStyle = 'rgba(0,0,0,.12)'; c.fillRect(px + 7, -222, 4, 44) }
+  for (let i = 0; i < 9; i++) { const px = -54 + i * 12; rr(px, -222, 11, 44, 2, i % 2 ? '#d8ccb0' : '#efe6d4'); c.fillStyle = 'rgba(0,0,0,.12)'; c.fillRect(px + 7, -222, 4, 44); disc(px + 5.5, -216, 2, BZ[3]); for (let f = 0; f < 3; f++) line(px + 2 + f * 3.5, -178, px + 2 + f * 3.5, -172, '#cfc2a4', 1.4) }
+  rr(-8, -236, 16, 14, 3, BZ[4]); disc(0, -229, 3, BZ[0]);
   // couraça muscular de bronze
   bezPoly([[-58, -330], [-64, -280], [-52, -226], [0, -216], [52, -226], [64, -280], [58, -330], [0, -340]], BZ[2]);
   bezPoly([[-58, -330], [-64, -280], [-52, -226], [-6, -217], [-6, -338]], BZ[3]);
@@ -93,7 +99,8 @@ function hoplitaFrente(x, y, s, t, o = {}) {
   // pescoço e cabeça
   poly([[-12, -350], [12, -350], [10, -334], [-10, -334]], P.pele0);
   c.save(); c.translate(0, -390); c.scale(1.15, 1.15); corintioFrente({ crista: o.crista ?? 'long', olhoCor: o.olhoCor, barba: o.barba }); c.restore();
-  if (o.lanca !== false) dory(-80, 30, -80, -600, 7);
+  if (o.lanca !== false) { dory(-80, 30, -80, -600, 7); punho(-80, -206, 12) }
+  c.fillStyle = 'rgba(0,0,0,.15)'; c.fillRect(-82, -286, 8, 60); c.strokeStyle = 'rgba(80,40,20,.4)'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(-86, -270); c.quadraticCurveTo(-78, -256, -86, -240); c.stroke(); rr(-90, -236, 22, 8, 3, BZ[2]);
   if (o.escudo === 'frente') aspis(40, -250, 120, { sym: o.sym ?? 'L' }); else if (o.escudo === 'lado') aspis(120, -236, 104, { sym: o.sym ?? 'L', esq: .9 });
   c.restore();
 }
@@ -103,20 +110,20 @@ function hoplitaPerfil(x, y, s, t, o = {}) {
   c.save(); c.translate(x, y); c.scale(s * (o.esq ? -1 : 1), s); const capa = o.capa || P.carmim, capa0 = o.capa0 || P.carmim0, ph = (o.passo ?? 0) * 2 * PI, sw = o.parado ? 0 : sin(ph), bob = o.parado ? 0 : Math.abs(cos(ph)) * 4;
   c.translate(0, -bob);
   // capa esvoaçando para trás
-  bezPoly([[-6, -330], [-60, -250], [-96 - sw * 10, -90], [-70, -70], [-40, -120], [-14, -220]], capa0); bezPoly([[-6, -330], [-46, -250], [-70 - sw * 8, -100], [-40, -110], [-14, -220]], capa);
+  bezPoly([[-6, -330], [-60, -250], [-96 - sw * 10, -90], [-70, -70], [-40, -120], [-14, -220]], capa0); bezPoly([[-6, -330], [-46, -250], [-70 - sw * 8, -100], [-40, -110], [-14, -220]], capa); c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = 2; for (let k = 0; k < 3; k++) { c.beginPath(); c.moveTo(-14 - k * 10, -300); c.quadraticCurveTo(-40 - k * 14, -200, -60 - k * 12 - sw * 8, -96); c.stroke() }
   // pernas (a de trás mais escura)
-  const perna = (ang, cor, gr) => { c.save(); c.translate(0, -200); c.rotate(ang); poly([[-14, 0], [16, 0], [12, 92], [-12, 92]], cor); c.translate(0, 90); c.rotate(-ang * .6); bezPoly([[-12, -6], [-16, 40, -10, 84], [12, 84], [16, 30, 12, -6]], gr); poly([[-12, 84], [12, 84], [34, 92], [34, 100], [-12, 100]], '#4a2a14'); c.restore() };
+  const perna = (ang, cor, gr) => { c.save(); c.translate(0, -200); c.rotate(ang); poly([[-14, 0], [16, 0], [12, 92], [-12, 92]], cor); c.translate(0, 90); c.rotate(-ang * .6); bezPoly([[-12, -6], [-16, 40, -10, 84], [12, 84], [16, 30, 12, -6]], gr); poly([[-12, 84], [12, 84], [34, 92], [34, 100], [-12, 100]], '#4a2a14'); line(-10, 78, 12, 70, '#4a2a14', 3); line(-10, 70, 12, 78, '#4a2a14', 3); c.fillStyle = 'rgba(255,240,200,.4)'; c.fillRect(6, -2, 3, 76); el(2, -4, 12, 8, 'rgba(0,0,0,.15)'); for (let k = 0; k < 3; k++) disc(-11, 6 + k * 26, 1.6, BZ[4]); c.restore() };
   perna(-sw * .35, P.pele0, BZ[1]); perna(sw * .35, P.pele, BZ[2]);
-  poly([[-36, -236], [38, -236], [44, -180], [-40, -180]], capa); for (let i = 0; i < 6; i++) rr(-34 + i * 13, -226, 11, 42, 2, i % 2 ? '#d8ccb0' : '#efe6d4');
+  poly([[-36, -236], [38, -236], [44, -180], [-40, -180]], capa); for (let i = 0; i < 6; i++) { rr(-34 + i * 13, -226, 11, 42, 2, i % 2 ? '#d8ccb0' : '#efe6d4'); disc(-28.5 + i * 13, -220, 2, BZ[3]); c.fillStyle = 'rgba(0,0,0,.1)'; c.fillRect(-27 + i * 13, -226, 4, 42) }
   // couraça de lado
   bezPoly([[-30, -334], [-40, -280], [-34, -228], [38, -226], [42, -290], [34, -330], [0, -342]], BZ[2]); bezPoly([[0, -342], [34, -330], [42, -290], [38, -226], [14, -228], [16, -300]], BZ[3]);
   c.strokeStyle = BZ[0]; c.lineWidth = 2.5; c.beginPath(); c.moveTo(42, -290); c.quadraticCurveTo(26, -276, 32, -262); c.stroke(); rr(-36, -236, 78, 10, 3, BZ[1]);
   // braço da lança
   const lanca = o.lanca || 'marcha';
   c.save(); c.translate(-4, -322);
-  if (lanca === 'ataque') { const st = (o.estoca || 0) * 34; c.rotate(-.3); poly([[-10, 0], [12, 0], [10, -70], [-8, -70]], P.pele); c.restore(); dory(-180 + st, -390, 230 + st, -330, 7); disc(20 + st, -364, 11, P.pele); }
-  else if (lanca === 'baixa') { poly([[-10, 0], [12, 0], [34, 70], [16, 80]], P.pele); c.restore(); dory(-130, -230, 280, -260, 7); disc(26, -248, 11, P.pele) }
-  else { poly([[-12, 0], [12, 0], [16, 96], [-6, 100]], P.pele); c.restore(); dory(-20, 20, 30, -620, 7); disc(6, -224, 11, P.pele) }
+  if (lanca === 'ataque') { const st = (o.estoca || 0) * 34; c.rotate(-.3); poly([[-10, 0], [12, 0], [10, -70], [-8, -70]], P.pele); c.restore(); dory(-180 + st, -390, 230 + st, -330, 7); punho(20 + st, -364, 11); }
+  else if (lanca === 'baixa') { poly([[-10, 0], [12, 0], [34, 70], [16, 80]], P.pele); c.restore(); dory(-130, -230, 280, -260, 7); punho(26, -248, 11) }
+  else { poly([[-12, 0], [12, 0], [16, 96], [-6, 100]], P.pele); c.restore(); dory(-20, 20, 30, -620, 7); punho(6, -224, 11) }
   // cabeça
   poly([[0, -356], [18, -356], [16, -336], [0, -336]], P.pele0); c.save(); c.translate(6, -388); corintioPerfil({ crista: o.crista, corCrista: o.corCrista }); c.restore();
   // escudo no braço da frente (3/4, mostra o símbolo)
@@ -139,6 +146,11 @@ function leonidasRosto(t, o = {}) {
   c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 2; for (let k = -3; k <= 3; k++) { c.beginPath(); c.moveTo(k * 12, 50); c.quadraticCurveTo(k * 14, 90, k * 9, 130); c.stroke() }
   bezPoly([[-30, 40], [-10, 30], [0, 34], [10, 30], [30, 40], [10, 42], [0, 46], [-10, 42]], '#1a0e08'); poly([[-12, 52], [12, 52], [8, 58], [-8, 58]], '#6a2a1e');
   bezPoly([[-58, -50], [-50, -100, 0, -104], [50, -100, 58, -50], [30, -76], [0, -70], [-30, -76]], cab);
+  c.strokeStyle = 'rgba(90,60,30,.5)'; c.lineWidth = 2; for (const sx of [-1, 1]) for (let k = 0; k < 4; k++) { c.beginPath(); c.moveTo(sx * (60 + k * 6), -60 + k * 10); c.quadraticCurveTo(sx * (72 + k * 5), 40, sx * (64 + k * 8), 130); c.stroke() }
+  for (let k = 0; k < 5; k++) { c.beginPath(); c.moveTo(-40 + k * 20, -96); c.quadraticCurveTo(-30 + k * 18, -80, -46 + k * 22, -58); c.stroke() }
+  el(-58, -6, 8, 16, P.pele0); el(58, -6, 8, 16, '#8a5a38'); c.strokeStyle = 'rgba(80,40,20,.35)'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(-18, -50); c.lineTo(18, -50); c.moveTo(-14, -42); c.lineTo(14, -42); c.moveTo(-40, -4); c.quadraticCurveTo(-36, 10, -44, 20); c.moveTo(40, -4); c.quadraticCurveTo(36, 10, 44, 20); c.stroke();
+  for (const sx of [-1, 1]) { c.strokeStyle = 'rgba(40,20,10,.6)'; c.lineWidth = 2; c.beginPath(); c.moveTo(sx * 12, -24); c.quadraticCurveTo(sx * 24, -28, sx * 36, -22); c.stroke() }
+  c.fillStyle = 'rgba(255,255,255,.08)'; c.beginPath(); c.moveTo(-200, 170); c.lineTo(-120, 140); c.lineTo(-180, 380); c.lineTo(-240, 380); c.fill(); c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = 3; for (const fx of [-150, -110, 130, 170]) { c.beginPath(); c.moveTo(fx, 170); c.lineTo(fx * 1.2, 380); c.stroke() }
 }
 // ---------- Gorgo: retrato (cabelo preso, diadema, peplo) ----------
 function gorgoRosto(t) {
@@ -157,13 +169,14 @@ function gorgoRosto(t) {
 // ---------- menino da agogê (pés em 0,0; ~250 de altura): túnica curta, descalço, escudo de vime ----------
 function menino(x, y, s, t, o = {}) {
   c.save(); c.translate(x, y); c.scale(s * (o.esq ? -1 : 1), s); const ph = (o.passo ?? 0) * 2 * PI, sw = o.parado ? 0 : sin(ph);
-  const perna = (a, cor) => { c.save(); c.translate(0, -110); c.rotate(a); poly([[-9, 0], [9, 0], [8, 104], [-8, 104]], cor); poly([[-8, 100], [8, 100], [18, 108], [-8, 108]], cor); c.restore() };
-  perna(-sw * .4, P.pele0); perna(sw * .4, P.pele);
-  poly([[-30, -200], [30, -200], [36, -104], [-36, -104]], o.tunica || '#8a2a1e'); poly([[0, -200], [30, -200], [36, -104], [0, -104]], 'rgba(0,0,0,.2)');
+  const perna = (a, cor, dx) => { c.save(); c.translate(dx, -110); c.rotate(a); bezPoly([[-10, 0], [10, 0], [8, 50], [9, 70], [7, 104], [-7, 104], [-8, 70], [-9, 50]], cor); el(0, 50, 8, 6, 'rgba(0,0,0,.1)'); bezPoly([[-8, 100], [8, 100], [20, 104], [22, 110], [-8, 110]], cor); c.strokeStyle = 'rgba(80,40,20,.4)'; c.lineWidth = 1.2; for (let k = 0; k < 3; k++) { c.beginPath(); c.moveTo(12 + k * 3, 104); c.lineTo(14 + k * 3, 110); c.stroke() } c.restore() };
+  const dp = o.parado ? 9 : 0; perna(-sw * .4, P.pele0, dp); perna(sw * .4, P.pele, -dp);
+  bezPoly([[-26, -202], [26, -202], [32, -150], [38, -100], [10, -96], [-10, -102], [-38, -100], [-32, -150]], o.tunica || '#8a2a1e'); poly([[2, -202], [26, -202], [32, -150], [38, -100], [10, -96]], 'rgba(0,0,0,.2)'); c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = 2; for (const fx of [-22, -8, 14, 26]) { c.beginPath(); c.moveTo(fx * .8, -150); c.lineTo(fx * 1.15, -102); c.stroke() } line(-30, -152, 30, -152, '#6a4a26', 4); disc(-10, -152, 3, '#a8843e'); line(-10, -150, -14, -132, '#6a4a26', 2.5); poly([[-26, -202], [-6, -202], [-14, -186]], 'rgba(0,0,0,.15)');
+  poly([[30, -196], [40, -150], [34, -128], [24, -150]], P.pele0); disc(34, -124, 7, P.pele0);
   poly([[-30, -196], [-42, -130], [-30, -126], [-20, -186]], P.pele); disc(-36, -124, 8, P.pele);
   poly([[-8, -214], [8, -214], [7, -198], [-7, -198]], P.pele0);
   el(0, -236, 22, 26, P.pele); bezPoly([[0, -262], [22, -246], [22, -220], [0, -212]], P.pele0); bezPoly([[-23, -238], [-22, -262, 0, -264], [22, -262, 23, -238], [10, -252], [-10, -252]], '#2a1a10');
-  disc(9, -238, 2.6, '#120806'); disc(-7, -238, 2.6, '#120806');
+  el(-7, -238, 4.5, 3, '#efe4d4'); el(9, -238, 4.5, 3, '#efe4d4'); disc(9, -238, 2.2, '#2a1a10'); disc(-7, -238, 2.2, '#2a1a10'); line(-12, -246, -2, -247, '#2a1a10', 2.4); line(4, -247, 14, -246, '#2a1a10', 2.4); poly([[2, -236], [6, -226], [0, -225]], P.pele0); line(-4, -218, 6, -218, '#8a3a2a', 2); el(-22, -234, 4, 7, P.pele0); disc(-12, -228, 5, 'rgba(200,90,60,.2)'); disc(14, -228, 5, 'rgba(200,90,60,.2)'); 
   if (o.escudo !== false) { c.save(); c.translate(28, -160); el(0, 0, 34, 52, '#8a6a3a'); el(0, 0, 26, 42, '#b08a52'); c.strokeStyle = '#6a4a26'; c.lineWidth = 2; for (let k = -2; k <= 2; k++) { c.beginPath(); c.moveTo(k * 10, -40); c.lineTo(k * 10, 40); c.stroke() } c.restore() }
   if (o.vara) line(-36, -40, -36, -300, '#6e4a26', 6);
   c.restore();
@@ -172,12 +185,13 @@ function menino(x, y, s, t, o = {}) {
 // turbante de pano com faixa no queixo, túnica longa com bordados, calças, escudo de vime, lança com romã de ouro
 function persa(x, y, s, t, o = {}) {
   c.save(); c.translate(x, y); c.scale(s * (o.dir ? 1 : -1), s); const ph = (o.passo ?? 0) * 2 * PI, sw = o.parado ? 0 : sin(ph), rb = o.roupa || '#6a3a7a', rb0 = o.roupa0 || '#4a2456', fx = o.faixa || BZ[3];
-  const perna = (a, cor) => { c.save(); c.translate(0, -180); c.rotate(a); poly([[-14, 0], [14, 0], [12, 170], [-12, 170]], cor); bezPoly([[-12, 168], [12, 168], [32, 176], [30, 184], [-12, 184]], '#4a2a14'); c.restore() };
+  const perna = (a, cor) => { c.save(); c.translate(0, -180); c.rotate(a); poly([[-14, 0], [14, 0], [12, 170], [-12, 170]], cor); bezPoly([[-12, 168], [12, 168], [32, 174], [40, 166], [36, 184], [-12, 184]], '#5a3418'); c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = 2; for (let k = 0; k < 5; k++) { c.beginPath(); c.moveTo(-12, 20 + k * 30); c.quadraticCurveTo(0, 30 + k * 30, 12, 20 + k * 30); c.stroke() } c.restore() };
   perna(-sw * .35, '#3a2a40'); perna(sw * .35, '#56405e');
   // túnica longa com mangas largas
   bezPoly([[-32, -330], [-48, -200], [-58, -90], [56, -90], [46, -200], [34, -330], [0, -340]], rb); bezPoly([[0, -340], [34, -330], [46, -200], [56, -90], [10, -90], [12, -300]], rb0);
   c.fillStyle = fx; c.fillRect(-56, -104, 112, 12); for (let k = 0; k < 7; k++) disc(-46 + k * 15, -98, 3.4, '#fff0c8'); c.fillRect(-3, -330, 8, 230); for (let k = 0; k < 9; k++) { const q = (k * 37) % 5; disc(-26 + (k % 3) * 14, -300 + Math.floor(k / 3) * 60 + q, 4.5, 'rgba(255,240,200,.55)') }
-  rr(-36, -232, 74, 12, 4, BZ[1]);
+  rr(-36, -232, 74, 12, 4, BZ[1]); disc(0, -226, 5, BZ[4]); c.strokeStyle = 'rgba(0,0,0,.22)'; c.lineWidth = 2; for (const px of [-36, -20, 18, 34]) { c.beginPath(); c.moveTo(px * .8, -220); c.quadraticCurveTo(px, -160, px * 1.25, -94); c.stroke() } c.fillStyle = fx; for (let k = 0; k < 10; k++) c.fillRect(-56 + k * 11.5, -116, 6, 6);
+  bezPoly([[-28, -320], [-50, -250], [-58, -200], [-34, -196], [-26, -250]], rb0); rr(-60, -206, 30, 12, 4, fx); punho(-44, -186, 10);
   // aljava nas costas
   if (o.aljava !== false) { c.save(); c.translate(-34, -300); c.rotate(-.35); rr(-14, -20, 28, 140, 8, '#8a5a2a'); rr(-14, -20, 12, 140, 8, '#a8743a'); for (let k = 0; k < 4; k++) line(-8 + k * 5, -20, -10 + k * 6, -52, '#e9dfc8', 3); c.restore() }
   // braço com lança (em ataque ou em marcha)
