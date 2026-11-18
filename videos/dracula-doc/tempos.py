@@ -6,9 +6,15 @@ import soundfile as sf
 PASTA = sys.argv[1]
 GAP = {'a': 3.0, 'b': 3.4, 'c': 1.5, 'd': 3.4, 'e': 1.5, 'f': 1.5, 'g': 3.4, 'h': 1.5, 'i': 3.4, 'j': 1.5, 'k': 3.4, 'l': 2.0}
 PAL = json.load(open('palavras.json'))
+PAUSA = {'l': ('Enquanto', 5.0)}  # silêncio extra no meio da fala (os morcegos voam devagar)
+CORTE = {}
 NARS, NARD = {}, {}; t = 0
 for k in FALAS:
-    t += GAP[k]; NARS[k] = round(t, 2); d, sr = sf.read(f'{PASTA}/nar/{k}.wav'); NARD[k] = round(len(d) / sr, 2); t += NARD[k]
+    t += GAP[k]; NARS[k] = round(t, 2); d, sr = sf.read(f'{PASTA}/nar/{k}.wav'); NARD[k] = round(len(d) / sr, 2)
+    if k in PAUSA:
+        pal, extra = PAUSA[k]; i0 = next(i for i, w in enumerate(PAL[k]) if w[0].startswith(pal)); ts = round((PAL[k][i0 - 1][2] + PAL[k][i0][1]) / 2, 3)
+        PAL[k] = [[w, a + (extra if i >= i0 else 0), b + (extra if i >= i0 else 0)] for i, (w, a, b) in enumerate(PAL[k])]; NARD[k] += extra; CORTE[k] = [ts, extra]
+    t += NARD[k]
 DUR = round(max(t + 4.5, 300.0), 1)
 norm = lambda w: re.sub(r'[^\wÀ-ÿȘșȚțĂă-]', '', w).lower()
 def T(k, txt):
@@ -23,7 +29,7 @@ CUTS = [0, T('a', 'Foi aqui'), T('a', 'Mas, antes'),
   CARD('d'), T('d', 'e governou'), T('d', 'Para punir'), T('d', 'Por isso'),
   ANTES('e'), T('e', 'Vlad atacou'), T('e', 'Dias depois'), T('e', 'O sultão recuou'),
   ANTES('f'), T('f', 'Morreu lutando'), T('f', 'Onde foi'),
-  CARD('g'), T('g', 'À noite'), T('g', 'Em 1890'), T('g', 'Ali leu'),
+  CARD('g'), T('g', 'À noite'), T('g', 'Em mil'), T('g', 'Ali leu'),
   ANTES('h'), T('h', 'Passou anos'), T('h', 'Em 1897'),
   CARD('i'), T('i', 'O anfitrião'), T('i', 'não aparece'), T('i', 'e desce'), T('i', 'De dia'), T('i', 'À noite'),
   ANTES('j'), T('j', 'Para enfrentá-lo'), T('j', 'O conde só'),
@@ -45,5 +51,5 @@ for k in FALAS:
     fecha()
 for i in range(len(leg) - 1): leg[i]['t1'] = min(leg[i]['t1'], leg[i + 1]['t0'])
 open('tempos.js', 'w').write('// gerado por tempos.py\n' + f'const NARS = {json.dumps(NARS)};\nconst CUTS = {json.dumps(CUTS)};\nconst DUR = {DUR};\nconst LEG = {json.dumps(leg, ensure_ascii=False)};\n')
-json.dump({'NARS': NARS, 'NARD': NARD, 'CUTS': CUTS, 'DUR': DUR}, open('tempos.json', 'w'))
+json.dump({'NARS': NARS, 'NARD': NARD, 'CUTS': CUTS, 'DUR': DUR, 'CORTE': CORTE}, open('tempos.json', 'w'))
 print('duração', DUR, '| cenas', len(CUTS) - 1); print([round(CUTS[i + 1] - CUTS[i], 1) for i in range(len(CUTS) - 1)])

@@ -83,3 +83,26 @@ function celaPrisao(t) { c.fillStyle = '#0a0a0e'; c.fillRect(0, 0, W, H); for (l
 function snagov(t) { ceuNoite(t, { lx: 1500, ly: 260, lr: 90, seed: 21 }); c.fillStyle = lg(0, 640, 0, H, [[0, '#1a2234'], [1, '#05070c']]); c.fillRect(0, 640, W, H); c.fillStyle = '#0a0c12'; c.beginPath(); c.ellipse(960, 660, 360, 40, 0, 0, 7); c.fill();
   const x = 960, y = 640; c.fillStyle = '#16181e'; c.fillRect(x - 140, y - 160, 280, 160); poly([[x - 160, y - 160], [x + 160, y - 160], [x, y - 230]], '#0e1016'); for (const [dx, h] of [[0, 120], [-90, 70], [90, 70]]) { c.fillStyle = '#16181e'; c.fillRect(x + dx - 26, y - 160 - h, 52, h); c.beginPath(); c.arc(x + dx, y - 160 - h, 26, PI, 0); c.fill(); line(x + dx, y - 186 - h, x + dx, y - 216 - h, '#16181e', 4); line(x + dx - 10, y - 206 - h, x + dx + 10, y - 206 - h, '#16181e', 4) }
   c.fillStyle = '#e8a050'; c.fillRect(x - 12, y - 100, 24, 40); add(() => glow(x, y - 80, 70, '240,150,70', .3)); c.save(); c.globalAlpha = .35; c.translate(0, 2 * y); c.scale(1, -1); c.fillStyle = '#16181e'; c.fillRect(x - 140, y - 160, 280, 160); c.restore(); nevoa(600, 120, .25, t, 4) }
+// túmulo sem nome, coberto de neve: só um pedaço da lápide aparece, com uma cruz entalhada na pedra
+function arvoreSeca(x, y, h, cor, seed) { const q = rng(seed); const galho = (x0, y0, ang, L, w, n) => { const x1 = x0 + cos(ang) * L, y1 = y0 + sin(ang) * L; c.strokeStyle = cor; c.lineWidth = w; c.lineCap = 'round'; c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo((x0 + x1) / 2 + (q() - .5) * L * .3, (y0 + y1) / 2, x1, y1); c.stroke(); if (n > 0) for (let k = 0; k < 2 + (q() < .4); k++) galho(x1, y1, ang + (q() - .5) * 1.4, L * (.55 + q() * .2), w * .62, n - 1) }; galho(x, y, -PI / 2 + (q() - .5) * .2, h * .45, h * .05, 5) }
+function tumuloNeve(t, tl) {
+  ceuNoite(t, { lx: 1450, ly: 230, lr: 100, seed: 61 }); montanhas(t, 900, { camadas: [[600, '#1c2434', '#b8c4d4', 101], [690, '#121824', '#8e9aac', 102]] });
+  floresta(720, 103, 40, 50, 100, '#0e141c', 'rgba(200,210,226,.7)'); nevoa(700, 120, .2, t, 9);
+  arvoreSeca(260, 900, 520, '#07080c', 4); arvoreSeca(1700, 880, 460, '#07080c', 7); corvos(t, 9, 3, 300, 400, 120);
+  c.fillStyle = lg(0, 760, 0, H, [[0, '#9aa4b4'], [.4, '#c8d0dc'], [1, '#e2e8f0']]); c.beginPath(); c.moveTo(0, 820); c.quadraticCurveTo(500, 760, 960, 800); c.quadraticCurveTo(1400, 830, W, 780); c.lineTo(W, H); c.lineTo(0, H); c.fill();
+  // a lápide: pedra cinza, topo arredondado, levemente inclinada e meio enterrada na neve
+  const lx = 900, ly = 860; c.save(); c.translate(lx, ly); c.rotate(-.07);
+  c.fillStyle = '#3a404c'; c.beginPath(); c.moveTo(-110, 90); c.lineTo(-110, -150); c.quadraticCurveTo(-110, -250, 0, -258); c.quadraticCurveTo(110, -250, 110, -150); c.lineTo(110, 90); c.fill();
+  c.fillStyle = '#4e5664'; c.beginPath(); c.moveTo(-110, 90); c.lineTo(-110, -150); c.quadraticCurveTo(-110, -250, 0, -258); c.lineTo(0, 90); c.fill();
+  const q = rng(8); for (let i = 0; i < 60; i++) disc(-100 + q() * 200, -240 + q() * 320, 1 + q() * 3, `rgba(${q() < .5 ? '20,24,30' : '140,150,160'},.35)`); c.fillStyle = 'rgba(70,90,60,.35)'; c.beginPath(); c.ellipse(-70, 20, 30, 50, .2, 0, 7); c.fill();
+  c.strokeStyle = 'rgba(10,12,16,.6)'; c.lineWidth = 3; c.beginPath(); c.moveTo(70, -200); c.lineTo(48, -150); c.lineTo(60, -110); c.stroke();
+  // cruz entalhada (sulco escuro + borda iluminada pela lua)
+  const cruz = () => { c.beginPath(); c.rect(-14, -210, 28, 150); c.rect(-52, -176, 104, 26) };
+  c.fillStyle = '#1a1e26'; cruz(); c.fill(); c.save(); c.translate(-3, -3); c.fillStyle = '#0c0e14'; cruz(); c.fill(); c.restore(); c.strokeStyle = 'rgba(200,210,226,.55)'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(14, -210); c.lineTo(14, -176); c.lineTo(52, -176); c.lineTo(52, -150); c.lineTo(14, -150); c.lineTo(14, -60); c.stroke();
+  // neve por cima da pedra
+  c.fillStyle = '#e8eef6'; c.beginPath(); c.moveTo(-116, -160); c.quadraticCurveTo(-118, -262, 0, -270); c.quadraticCurveTo(118, -262, 116, -160); c.quadraticCurveTo(90, -200, 50, -226); c.quadraticCurveTo(10, -238, -30, -228); c.quadraticCurveTo(-90, -210, -116, -160); c.fill(); for (let k = 0; k < 6; k++) { c.beginPath(); c.ellipse(-90 + k * 36, -226 + Math.abs(k - 2.5) * 10, 18, 9, 0, 0, 7); c.fill() }
+  c.restore();
+  // monte de neve sobre o túmulo, cobrindo a base da lápide
+  c.fillStyle = lg(0, 820, 0, 1000, [[0, '#f2f6fa'], [1, '#b8c2d0']]); c.beginPath(); c.moveTo(560, 1000); c.quadraticCurveTo(620, 880, 820, 860); c.quadraticCurveTo(1000, 850, 1220, 900); c.quadraticCurveTo(1360, 940, 1400, 1000); c.closePath(); c.fill(); c.fillStyle = 'rgba(120,130,150,.25)'; c.beginPath(); c.ellipse(1060, 950, 260, 30, -.05, 0, 7); c.fill();
+  c.fillStyle = 'rgba(240,244,250,.9)'; c.beginPath(); c.ellipse(900, 862, 150, 26, -.07, 0, 7); c.fill();
+}

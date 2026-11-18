@@ -78,7 +78,10 @@ for d, g in ((.041, .5), (.067, .44), (.11, .38), (.19, .32), (.31, .24), (.47, 
 mus = filt(mus * .65 + rev * .65, 'high', 28, axis=0); mus *= env([(0, 0), (2, .9), (D - 3, .95), (D - .1, 0)])[:, None]; mus /= np.abs(mus).max()
 nar = np.zeros(n)
 for k, t0 in NAR.items():
-    d, _ = sf.read(f'{BASE}/nar/{k}.wav'); d = d if d.ndim == 1 else d.mean(1); d /= np.abs(d).max(); i = int(t0 * SR); j = min(n, i + len(d)); nar[i:j] += d[:j - i]
+    d, _ = sf.read(f'{BASE}/nar/{k}.wav'); d = d if d.ndim == 1 else d.mean(1); d /= np.abs(d).max()
+    partes = [(t0, d)]
+    if k in TP.get('CORTE', {}): ts, extra = TP['CORTE'][k]; cs = int(ts * SR); partes = [(t0, d[:cs]), (t0 + ts + extra, d[cs:])]
+    for st, dd in partes: i = int(st * SR); j = min(n, i + len(dd)); nar[i:j] += dd[:j - i]
 nar = nar / np.abs(nar).max() * .92
 a = np.abs(nar); k = int(.05 * SR); v = np.clip(np.convolve(a, np.ones(k) / k, 'same') / .05, 0, 1); v = uniform_filter1d(maximum_filter1d(v, int(.5 * SR)), int(.35 * SR))
 mix = mus * .26 * (1 - .5 * v)[:, None] + sfx * .36 * (1 - .58 * v)[:, None] + np.stack([nar, nar], 1)
