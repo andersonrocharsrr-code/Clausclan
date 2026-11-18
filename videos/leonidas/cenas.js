@@ -5,7 +5,7 @@ const zoomTela = (z, cx, cy, fn) => { c.save(); c.translate(cx, cy); c.scale(z, 
 function tw(k, str) { const a = CUTS[k]; for (const l of LEG) for (const [s, ti] of l.w) if (ti >= a - .05 && s.replace(/[^\wÀ-ÿ-]/g, '') === str) return ti - a; return 0 }
 function fundo(rgb = '185,138,62', base = P.noite0) { c.fillStyle = base; c.fillRect(0, 0, W, H); glow(W / 2, 860, 950, rgb, .4) }
 function rotulo(x, y, x2, y2, str, u, lado = 1) { if (u <= 0) return; c.save(); c.globalAlpha = u; c.strokeStyle = P.bronze2; c.lineWidth = 3; c.beginPath(); c.moveTo(x, y); c.lineTo(lerp(x, x2, eo(u)), lerp(y, y2, eo(u))); c.stroke(); disc(x, y, 7, P.bronze2); const w = largura(str, 40) + 30; rr(lado > 0 ? x2 : x2 - w, y2 - 34, w, 52, 8, 'rgba(20,10,8,.85)'); txt(str, lado > 0 ? x2 + 15 : x2 - 15, y2 + 6, 40, P.creme, { align: lado > 0 ? 'left' : 'right', sh: 0 }); c.restore() }
-function chao(y, c1, c2) { c.fillStyle = c1; c.fillRect(0, y, W, H - y); c.fillStyle = c2; c.fillRect(0, y, W, 14) }
+function chao(y, c1, c2) { chaoDet(y, c1, c2) }
 const cap = (k, n, key, tl) => capitulo(tl, n, CAPS[key]);
 const SIMB = ['L', 'clava', 'olho', 'estrela', 'tridente'];
 
@@ -29,7 +29,7 @@ shot(CUTS[3], CUTS[4], (tl, t) => {
 }, 'escuro');
 // 4 — luta, fome, frio e disciplina
 shot(CUTS[4], CUTS[5], (tl, t) => {
-  ceu(t, 'noite', { sx: 820, sy: 420, sr: 70 }); montes(1060, [[520, '#3a4250', '#2a303a', 41]], { neve: true }); chao(1040, '#d8d4cc', '#efece6');
+  ceu(t, 'noite', { sx: 820, sy: 420, sr: 70 }); montes(1060, [[340, '#3a4250', '#2a303a', 41]], { neve: true }); chao(1040, '#d8d4cc', '#efece6');
   for (let k = 0; k < 5; k++) menino(120 + k * 110, 1240, .8, t, { parado: true, vara: k % 2 === 0, escudo: false });
   const lu = sin(t * 4) * 16; menino(640 + lu, 1380, 1.3, t, { passo: tl, }); menino(880 - lu, 1380, 1.3, t, { esq: true, passo: tl + .5 });
   const q = rng(4); for (let i = 0; i < 90; i++) { const x = (q() * W + t * 30) % W, y = (q() * H + t * (60 + q() * 60)) % H; disc(x, y, 2 + q() * 3, 'rgba(250,250,255,.7)') }
@@ -235,7 +235,11 @@ shot(CUTS[36], CUTS[37], (tl, t) => {
 
 // chão das Termópilas visto de perto (montanha à esquerda, mar à direita)
 function termopilasChao(t, tipo = 'aurora', semMar) {
-  ceu(t, tipo, { sx: 820, sy: 760, hz: 1080 }); if (!semMar) mar(1060, t, {}); else { c.fillStyle = '#5a4630'; c.fillRect(0, 1060, W, H) }
-  c.fillStyle = '#c8a46a'; c.fillRect(0, 1100, W, H); c.fillStyle = '#b8945a'; c.fillRect(0, 1100, W, 18);
-  c.fillStyle = '#3e2e1c'; c.beginPath(); c.moveTo(0, 0); c.lineTo(160, 0); c.lineTo(260, 700); c.lineTo(200, 1120); c.lineTo(0, 1180); c.fill(); c.fillStyle = '#5a4630'; c.beginPath(); c.moveTo(160, 0); c.lineTo(260, 700); c.lineTo(200, 1120); c.lineTo(150, 1120); c.lineTo(110, 0); c.fill();
+  ceu(t, tipo, { sx: 820, sy: 760, hz: 1080 }); montes(1080, [[260, '#6a5440', '#4e3c2c', 151]], { pinheiros: false }); if (!semMar) mar(1060, t, {}); else { c.fillStyle = '#5a4630'; c.fillRect(0, 1060, W, 60) }
+  chaoDet(1100, '#c8a46a', '#b8945a', { seed: 77, mato: 'rgba(90,96,40,.6)' });
+  c.fillStyle = '#3e2e1c'; c.beginPath(); c.moveTo(0, 0); c.lineTo(160, 0); c.lineTo(230, 300); c.lineTo(200, 480); c.lineTo(262, 700); c.lineTo(236, 900); c.lineTo(200, 1120); c.lineTo(0, 1180); c.fill();
+  c.fillStyle = '#5a4630'; c.beginPath(); c.moveTo(160, 0); c.lineTo(230, 300); c.lineTo(200, 480); c.lineTo(262, 700); c.lineTo(236, 900); c.lineTo(200, 1120); c.lineTo(150, 1120); c.lineTo(170, 880); c.lineTo(140, 640); c.lineTo(160, 420); c.lineTo(110, 0); c.fill();
+  c.fillStyle = '#7a6040'; c.beginPath(); c.moveTo(160, 0); c.lineTo(230, 300); c.lineTo(200, 480); c.lineTo(186, 470); c.lineTo(206, 300); c.lineTo(146, 0); c.fill();
+  const q = rng(12); c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = 3; for (let k = 0; k < 14; k++) { const yy = 60 + k * 78 + q() * 20; c.beginPath(); c.moveTo(0, yy); c.lineTo(150 + q() * 60, yy + 14 + q() * 10); c.stroke() } c.strokeStyle = 'rgba(255,230,190,.12)'; for (let k = 0; k < 10; k++) { const yy = 90 + k * 100; c.beginPath(); c.moveTo(150, yy); c.lineTo(220, yy + 24); c.stroke() }
+  for (let k = 0; k < 6; k++) { const bx = 120 + k * 50 + q() * 30, by = 1110 + q() * 40, r = 18 + q() * 26; el(bx, by, r * 1.3, r, '#4e3c2c'); el(bx - r * .3, by - r * .3, r * .8, r * .55, '#6e5638') }
 }
