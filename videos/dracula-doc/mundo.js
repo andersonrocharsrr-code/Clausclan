@@ -50,7 +50,7 @@ function mapaRomenia(t, o = {}) {
   c.strokeStyle = '#3a5a6a'; c.lineWidth = 7; c.beginPath(); c.moveTo(0, 640); c.quadraticCurveTo(300, 600, 600, 690); c.quadraticCurveTo(900, 730, 1120, 730); c.quadraticCurveTo(1340, 720, 1440, 640); c.quadraticCurveTo(1560, 560, 1620, 600); c.stroke();
   c.strokeStyle = 'rgba(200,210,226,.18)'; c.lineWidth = 2; for (let k = 0; k < 30; k++) { const x = 720 + (k % 10) * 50, y = 150 + Math.floor(k / 10) * 40; poly([[x, y], [x + 22, y - 26], [x + 44, y]], 'rgba(200,210,226,.12)') }
   const L = (s, x, y, sz, col) => txtG(s, x, y, sz, col, { align: 'center' });
-  L('Hungria', 320, 260, 56, '#8a94a4'); L('Transilvânia', 1000, 250, 62, o.destaque ? '#c8d0dc' : '#e8e2d6'); L('Moldávia', 1700, 300, 56, '#8a94a4'); L('Valáquia', 960, 600, 66, o.destaque ? '#ff5a5a' : '#c8d0dc'); L('Império Otomano', 960, 900, 62, '#a88a5a');
+  L('Hungria', 320, 260, 56, '#8a94a4'); L('Transilvânia', 1000, 250, 62, o.destaque ? '#c8d0dc' : '#e8e2d6'); L('Moldávia', 1700, 300, 56, '#8a94a4'); L('Valáquia', 960, 600, 66, o.destaque ? '#ff5a5a' : '#c8d0dc'); L('Império Otomano', 960, 830, 62, '#a88a5a');
   txt('RIO DANÚBIO', 300, 690, 26, '#6a8a9a', { w: 600 }); if (o.cidades) for (const [n, x, y] of o.cidades) { disc(x, y, 9, '#c8141e'); txt(n, x + 16, y + 8, 30, '#e8e2d6', { w: 600 }) }
 }
 // figuras medievais (de frente) usando o boneco fardado de figuras.js
