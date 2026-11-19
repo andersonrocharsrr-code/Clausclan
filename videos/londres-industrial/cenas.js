@@ -14,7 +14,7 @@ shot(CUTS[0], CUTS[1], (tl, t) => { zoomTela(lerp(1.08, 1, ease(ramp(tl, 0, L(0)
 // 1 — a maior cidade do mundo
 shot(CUTS[1], CUTS[2], (tl, t) => { ruaPerspectiva(t); multidao(t, 960, 7, 230, 3); omnibus(lerp(-300, 1500, ramp(tl, 0, L(1))), 1040, .7, t) }, 'fumaca', [760, 1160]);
 // 2 — a máquina a vapor
-shot(CUTS[2], CUTS[3], (tl, t) => { zoomTela(lerp(1, 1.08, ramp(tl, 0, L(2))), 960, 560, () => maquinaVapor(t, 960, 680, .5)); const u = ramp(tl, tw(2, 'máquina') - .2, tw(2, 'máquina') + .3); if (u > 0) { tx('A MÁQUINA A VAPOR', W / 2, 150, 96, F.creme, { align: 'center', a: u }) } }, 'zoom', [960, 960]);
+shot(CUTS[2], CUTS[3], (tl, t) => { tijolos(0, 0, W, H, '#3a2620', 1.2); escuro(.45); rr(0, 860, W, 220, 0, '#1e1c18'); zoomTela(lerp(1, 1.05, ramp(tl, 0, L(2))), 900, 600, () => maquinaVapor(t, 890, 700, .44)); const u = ramp(tl, tw(2, 'máquina') - .2, tw(2, 'máquina') + .3); if (u > 0) { tx('A MÁQUINA A VAPOR', W / 2, 150, 96, F.creme, { align: 'center', a: u }) } }, 'zoom', [960, 960]);
 // 3 — capítulo 1: o vapor; a Grã-Bretanha por volta de 1760
 shot(CUTS[3], CUTS[4], (tl, t) => { c.fillStyle = '#121618'; c.fillRect(0, 0, W, H); tamisa(0, t, { c1: '#1e2a2a', c2: '#141c1c' }); mapaGB(t, 900, 500, 760); typeText(tl, 90, 150, 'GRÃ-BRETANHA', 2.0, L(3) + 1, { sub: 'POR VOLTA DE 1760' }); tx('CARVÃO · FERRO · VAPOR', W / 2, 1060, 44, '#a8a090', { align: 'center', a: ramp(tl, 3, 3.5) }); cap(3, 1, 'b', tl) }, 'escuro', [900, 900]);
 // 4 — James Watt aperfeiçoa a máquina
