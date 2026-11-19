@@ -1,7 +1,7 @@
 // Uso: node render.js <saida.mp4> [t0 t1]   |   node render.js --fotos <pasta> t1 t2 ...
 const { chromium } = require('playwright'); const { spawn } = require('child_process'); const path = require('path'); const fs = require('fs');
 (async () => {
-  const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1920, height: 1080 } });
+  const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1080, height: 1920 } });
   p.on('pageerror', e => { console.error('ERRO', e.message); process.exit(1) });
   await p.goto('file://' + path.join(__dirname, 'index.html') + '?render'); await p.evaluate(() => PRONTO);
   const snap = (t, q) => p.evaluate(([t, q]) => { render(t); return cv.toDataURL('image/jpeg', q).slice(23) }, [t, q]);

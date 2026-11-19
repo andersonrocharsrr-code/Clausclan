@@ -1,10 +1,10 @@
 # A Revolução Industrial em Londres — roteiro (3:50)
 
-**Formato:** 1920×1080, 30 qps, 229 s. **Modelo:** Recorte Dourado (planos de luz e sombra, grão de papel, placas que se
+**Formato:** vertical 1080×1920 (TikTok), 30 qps, 229 s. As cenas são desenhadas num mundo 1920×1080 e a câmera passeia por ele com zoom 1,5; embaixo fica a faixa escura da legenda. **Modelo:** Recorte Dourado (planos de luz e sombra, grão de papel, placas que se
 escrevem, cartões de capítulo, legenda palavra por palavra), com **paleta própria "Fuligem"**, escura e sombria, no clima de Londres:
 fuligem, carvão, ardósia, névoa cinza-esverdeada e amarela ("sopa de ervilha"), tijolo escurecido, Tâmisa barrento,
 verde-garrafa e a única luz quente, o **âmbar dos lampiões a gás**. Chuva fina, fumaça de chaminé e névoa passando.
-**Voz:** Rodrigo Custódio (ElevenLabs), velocidade 1,1. **Transições:** fumaça, escuro, flash, cortina, zoom, círculo e deslizar.
+**Voz:** Rodrigo Custódio (ElevenLabs), velocidade 1,1. **Transições suaves:** névoa que passa, escuro, luz âmbar, cortina de borda macia, zoom lento, círculo de borda macia e deslizar com fusão.
 **Trilha:** cordas e violoncelos graves, coro baixo, tique-taque de máquina, tímpanos e sinos; efeitos de cascos nos
 paralelepípedos, máquina a vapor, fábrica, docas, rio, chuva, trem, túnel, apito, sino, relógio, multidão, cachorro e pombos.
 **Vídeo pronto:** `videos/londres-industrial.mp4`.
@@ -19,6 +19,13 @@ operários, meninas dos fósforos, policial. Bichos: cavalos com coelheira, anto
 Cenários: casas de tijolo geminadas com chaminés, lojas, fábricas com telhado em serra, armazéns das docas, guindastes,
 veleiros e vapores, ônibus a cavalo de dois andares, cabriolé, carroça, locomotiva, máquina a vapor de balancim, São Paulo,
 Parlamento com a torre do relógio, Palácio de Cristal, túneis de tijolo, bomba d'água de Broad Street e Tower Bridge.
+
+## Lugares (cada cena num canto diferente da cidade)
+
+Rua em perspectiva até o domo de São Paulo · colina com bosque olhando a cidade · mar de telhados · ponte de pedra com tráfego ·
+mercado coberto com barracas · praça georgiana com jardim à noite · viaduto de trem com lojas nos arcos · cais do Tâmisa na névoa ·
+casas antigas de madeira no Soho · praça com igreja e taverna · casarões brancos · portão da fábrica de fósforos · parque com coreto e
+escola · beco de cortiço com varais · teatro iluminado · docas, cais com fardos (os estivadores carregam fardos de algodão nas costas).
 
 ## Fatos usados
 

@@ -103,12 +103,13 @@ function pessoaLado(x, y, h, t, o = {}) {
   if (!saia) { perna(-sw * .4, sh(cal, .7)); perna(sw * .4, cal) }
   else { bezPoly([[-40, -206], [-56, -100], [-70, 0], [72, 0], [58, -100], [40, -206]], cor); bezPoly([[0, -206], [40, -206], [58, -100], [72, 0], [16, 0]], cor0); c.strokeStyle = 'rgba(0,0,0,.2)'; c.lineWidth = 2; for (const fx of [-40, -10, 30]) { c.beginPath(); c.moveTo(fx * .5, -190); c.quadraticCurveTo(fx * .8 + sw * 8, -90, fx + sw * 12, -4); c.stroke() } if (o.avental) bezPoly([[16, -200], [40, -200], [60, -60], [26, -60]], o.avental) }
   const braco = (a, cc) => { c.save(); c.translate(0, -296); c.rotate(a); poly([[-12, 0], [14, 0], [12, 90], [-10, 90]], cc); c.translate(0, 88); c.rotate(-.2); poly([[-10, 0], [12, 0], [10, 70], [-8, 70]], cc); mao(1, 80, 10, pele, pele0); c.restore() };
-  const cb = o.roupa === 'colete' ? '#d8d0bc' : cor;
+  const cb = o.roupa === 'colete' ? '#d8d0bc' : cor, cb0 = () => sh(cb, .85);
   braco(sw * .35, sh(cb, .7));
   bezPoly([[-30, -310], [-36, -200], [-30, -196], [34, -196], [36, -250], [30, -310], [0, -318]], o.roupa === 'colete' ? '#d8d0bc' : cor);
   if (o.roupa === 'colete') bezPoly([[0, -306], [30, -306], [34, -200], [4, -200]], o.colete || '#4a3a2a');
   if (o.roupa === 'casaca' || !o.roupa) bezPoly([[-30, -220], [-40, -110], [-6, -116], [0, -200]], cor0);
   c.fillStyle = 'rgba(255,255,255,.07)'; c.fillRect(-26, -300, 8, 90);
+  if (o.segura === 'fardo') { c.save(); c.translate(-30, -330); c.rotate(-.12); rr(-70, -80, 130, 110, 10, '#b8a070'); rr(-10, -80, 70, 110, 10, '#9a8458'); c.strokeStyle = 'rgba(80,60,30,.5)'; c.lineWidth = 1.5; for (let k = 0; k < 9; k++) { c.beginPath(); c.moveTo(-66, -72 + k * 12); c.lineTo(56, -72 + k * 12); c.stroke() } for (const bx of [-40, 20]) line(bx, -82, bx, 32, '#4a3a20', 5); line(-72, -20, 62, -20, '#4a3a20', 5); c.restore(); c.save(); c.translate(0, -296); c.rotate(-2.2); poly([[-12, 0], [14, 0], [12, 80], [-10, 80]], cb0()); c.restore() }
   if (o.segura === 'saco') { bezPoly([[-40, -360], [40, -380], [56, -320], [-30, -300]], '#a88a5a'); bezPoly([[10, -376], [40, -380], [56, -320], [20, -312]], '#8a6e44') }
   braco(-sw * .35, cb);
   if (o.segura === 'cartaz') { line(20, -230, 30, -560, '#4a3a28', 7); rr(-80, -620, 220, 110, 4, o.cartazCor || '#d8ccb0'); txt(o.cartaz || '', 30, -552, 34, '#2a1a10', { align: 'center' }) }

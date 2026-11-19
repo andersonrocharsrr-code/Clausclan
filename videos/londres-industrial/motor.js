@@ -1,7 +1,8 @@
 // ================= Motor de desenho (canvas 2D, 1920x1080) — Starship voo 15 =================
 // Estilo: ilustração plana tipo recorte de papel — planos de luz e sombra com borda reta, paleta quente
 // (ocre, creme, dourado, azul-ardósia), grão de papel e legenda palavra por palavra no rodapé.
-const W = 1920, H = 1080;
+const W = 1920, H = 1080;                 // mundo (onde as cenas são desenhadas)
+const SW = 1080, SH = 1920, KZ = 1.5;   // tela vertical (TikTok) e zoom da câmera
 const cv = document.getElementById('c'); let c = cv.getContext('2d');
 const lerp = (a, b, u) => a + (b - a) * u, clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 const ramp = (t, a, b) => clamp((t - a) / (b - a)), ease = u => u * u * (3 - 2 * u), eo = u => 1 - Math.pow(1 - u, 3);
@@ -186,6 +187,8 @@ const COND = '"Fira Sans Extra Condensed", "Liberation Sans Narrow", Arial, sans
 function txt(str, x, y, size, col, o = {}) { c.save(); c.globalAlpha *= o.a ?? 1; c.font = `${o.w || 800} ${size}px ${COND}`; c.textAlign = o.align || 'left'; if ('letterSpacing' in c) c.letterSpacing = (o.ls ?? size * .02) + 'px'; c.shadowColor = 'rgba(8,9,13,.85)'; c.shadowBlur = size * .22; c.shadowOffsetY = size * .04; c.fillStyle = col; c.fillText(str, x, y); c.shadowBlur = size * .5; c.shadowOffsetY = 0; c.shadowColor = 'rgba(8,9,13,.55)'; c.fillText(str, x, y); c.restore() }
 // placa no canto: escreve letra por letra, com traço dourado crescendo embaixo e uma linha menor
 function typeText(tl, x, y, str, t0, t1, o = {}) {
+  c.save(); c.setTransform(1, 0, 0, 1, 0, 0); x = 60; y = 150 + y * .9; o = { ...o, size: (o.size || 70) * .82, subSize: (o.subSize || 40) * .8 }; typeTextT(tl, x, y, str, t0, t1, o); c.restore() }
+function typeTextT(tl, x, y, str, t0, t1, o = {}) {
   const { size = 70, col = '#ece4d0', cps = 24, sub = null, subSize = 40 } = o;
   const al = Math.min(ramp(tl, t0 - .2, t0), 1 - ramp(tl, t1 - .3, t1)); if (al <= 0) return;
   c.save(); c.globalAlpha = al; c.font = `800 ${size}px ${COND}`; if ('letterSpacing' in c) c.letterSpacing = size * .02 + 'px';
@@ -198,8 +201,8 @@ function typeText(tl, x, y, str, t0, t1, o = {}) {
 }
 // cartão de capítulo: tela escura com letras douradas
 function chapter(tl, n, title) {
-  const a = 1 - ramp(tl, 1.15, 1.6); if (a <= 0) return;
-  c.save(); c.globalAlpha = a; c.fillStyle = '#0b0c11'; c.fillRect(0, 0, W, H); add(() => glow(W / 2, 540, 620, '232,166,64', .1));
+  const a = 1 - ramp(tl, 1.15, 1.6); if (a <= 0) return; const W = SW, H = SH;
+  c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.translate(0, 420); c.globalAlpha = a; c.fillStyle = '#0b0c11'; c.fillRect(0, 0, W, H); add(() => glow(W / 2, 540, 620, '232,166,64', .1));
   const u = eo(ramp(tl, 0, .5));
   txt(`CAPÍTULO ${n}`, W / 2, 462, 46, '#e0a040', { align: 'center', w: 600, ls: 16 });
   c.fillStyle = '#e0a040'; c.fillRect(W / 2 - 260 * u, 492, 520 * u, 3);
@@ -217,21 +220,20 @@ function dim(x0, y0, x1, y1, col, a = 1, lw = 4) {
 // legenda no rodapé: a frase já tem o lugar marcado e cada palavra entra na hora em que é dita
 function legenda(t) {
   const L = LEG.find(l => t >= l.t0 && t < l.t1); if (!L) return;
-  const size = 58; c.save(); c.font = `800 ${size}px ${COND}`; if ('letterSpacing' in c) c.letterSpacing = '1px';
-  const sp = c.measureText(' ').width + 4, ws = L.w.map(([s]) => c.measureText(s).width), tot = ws.reduce((a, b) => a + b + sp, -sp);
-  let lines = [[]]; if (tot > 1280) { let acc = 0; L.w.forEach((w, i) => { if (acc > tot / 2 - ws[i] / 2 && lines.length === 1) lines.push([]); lines[lines.length - 1].push(i); acc += ws[i] + sp }) } else lines = [L.w.map((_, i) => i)];
-  const fo = 1 - ramp(t, L.t1 - .12, L.t1);
-  lines.forEach((ln, k) => {
-    const lw = ln.reduce((a, i) => a + ws[i] + sp, -sp); let x = W / 2 - lw / 2; const y = (lines.length === 1 ? 978 : 942) + k * 66;
-    ln.forEach(i => { const [s, tw, hl] = L.w[i], u = ramp(t, tw - .04, tw + .12); if (u > 0) { c.globalAlpha = fo * u; txt(s, x, y + (1 - eo(u)) * 10, size, hl ? '#e8a640' : '#f2ecdc') } x += ws[i] + sp });
-  });
+  const size = 64, maxW = 940; c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.font = `800 ${size}px ${COND}`; if ('letterSpacing' in c) c.letterSpacing = '1px';
+  const sp = c.measureText(' ').width + 6, ws = L.w.map(([s]) => c.measureText(s).width), lines = [[]]; let acc = 0;
+  L.w.forEach((_, i) => { if (acc + ws[i] > maxW && lines[lines.length - 1].length) { lines.push([]); acc = 0 } lines[lines.length - 1].push(i); acc += ws[i] + sp });
+  const fo = 1 - ramp(t, L.t1 - .12, L.t1), y0 = 1700 - (lines.length - 1) * 40;
+  lines.forEach((ln, k) => { const lw = ln.reduce((a, i) => a + ws[i] + sp, -sp); let x = SW / 2 - lw / 2; const y = y0 + k * 80;
+    ln.forEach(i => { const [s, tw, hl] = L.w[i], u = ramp(t, tw - .04, tw + .12); if (u > 0) { c.globalAlpha = fo * u; txt(s, x, y + (1 - eo(u)) * 10, size, hl ? '#e8a640' : '#f2ecdc') } x += ws[i] + sp }) });
   c.restore();
 }
 // acabamento: sombra do rodapé, vinheta quente e grão de papel
 const GRAIN = (() => { const g = document.createElement('canvas'); g.width = g.height = 512; const x = g.getContext('2d'), d = x.createImageData(512, 512), q = rng(123); for (let i = 0; i < d.data.length; i += 4) { const v = 90 + q() * 165 | 0; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255 } x.putImageData(d, 0, 0); return g })();
 function finish(t) {
-  c.fillStyle = lg(0, 760, 0, H, [[0, 'rgba(10,9,8,0)'], [1, 'rgba(10,9,8,.72)']]); c.fillRect(0, 760, W, H - 760);
-  c.fillStyle = rg(W / 2, H / 2, 520, 1200, [[0, 'rgba(6,8,10,0)'], [1, 'rgba(6,8,10,.66)']]); c.fillRect(0, 0, W, H);
+  c.setTransform(1, 0, 0, 1, 0, 0); const W = SW, H = SH;
+  c.fillStyle = lg(0, 1500, 0, 1860, [[0, "rgba(10,9,8,0)"], [.5, "rgba(10,9,8,.6)"], [1, "rgba(10,9,8,.3)"]]); c.fillRect(0, 1500, W, 420);
+  c.fillStyle = rg(W / 2, H / 2, 620, 1250, [[0, 'rgba(6,8,10,0)'], [1, 'rgba(6,8,10,.66)']]); c.fillRect(0, 0, W, H);
   c.save(); c.globalCompositeOperation = 'overlay'; c.globalAlpha = .16; const q = rng(Math.floor(t * 12) + 1), ox = q() * 512 | 0, oy = q() * 512 | 0; for (let x = -ox; x < W; x += 512)for (let y = -oy; y < H; y += 512)c.drawImage(GRAIN, x, y); c.restore();
 }
 function sepia(k = .8) { c.save(); c.filter = `sepia(${k}) contrast(1.05)`; c.drawImage(cv, 0, 0); c.restore() }
@@ -249,27 +251,33 @@ function render(t) {
 
 // ================= Transições entre cenas (substituem shot/render acima) =================
 // tipos: corte, escuro (passa pelo preto), flash, cortina (faixa dourada), zoom, iris (círculo), desliza (empurra para o lado), fumaca (vapor que cobre)
-function shot(t0, t1, fn, tr = 'corte') { SHOTS.push({ t0, t1, fn, tr }) }
-const BUF = [0, 1].map(() => { const k = document.createElement('canvas'); k.width = W; k.height = H; return k.getContext('2d') });
-function pinta(ctx, s, t) { const ant = c; c = ctx; c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; c.filter = 'none'; c.fillStyle = '#000'; c.fillRect(0, 0, W, H); c.save(); s.fn(t - s.t0, t); c.restore(); c = ant }
-const TD = { escuro: .8, flash: .5, cortina: .6, zoom: .55, iris: .65, desliza: .6, fumaca: .9, corte: 0 };
+function shot(t0, t1, fn, tr = 'corte', cam) { SHOTS.push({ t0, t1, fn, tr, cam: cam || [700, 1220] }) }
+// texto por cima da imagem (na tela, não no mundo): posição proporcional
+function tx(str, x, y, size, col, o = {}) { c.save(); c.setTransform(1, 0, 0, 1, 0, 0); txt(str, x * SW / W, 120 + y * 1.1, size * .8, col, o); c.restore() }
+// câmera: o mundo 1920x1080 aparece com zoom KZ, passeando na horizontal; embaixo, o chão continua escurecendo
+function camera(s, t) { const u = ease(ramp(t - s.t0, 0, s.t1 - s.t0)), cx = clamp(lerp(s.cam[0], s.cam[1], u), SW / KZ / 2, W - SW / KZ / 2); c.setTransform(KZ, 0, 0, KZ, SW / 2 - cx * KZ, 0) }
+function chaoExtra() { const y0 = H * KZ; c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(c.canvas, 0, y0 - 6, SW, 4, 0, y0 - 2, SW, SH - y0 + 2); c.fillStyle = lg(0, y0, 0, SH, [[0, 'rgba(8,8,8,.35)'], [.35, 'rgba(8,8,8,.75)'], [1, 'rgba(6,6,6,.95)']]); c.fillRect(0, y0 - 2, SW, SH - y0 + 2) }
+const BUF = [0, 1, 2].map(() => { const k = document.createElement('canvas'); k.width = SW; k.height = SH; return k.getContext('2d') });
+function pinta(ctx, s, t) { const ant = c; c = ctx; c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; c.filter = 'none'; c.fillStyle = '#000'; c.fillRect(0, 0, SW, SH); c.save(); camera(s, t); s.fn(t - s.t0, t); c.restore(); chaoExtra(); c = ant }
+const TD = { fumaca: 1.2, escuro: 1.0, flash: .9, cortina: 1.0, zoom: 1.0, iris: 1.1, desliza: .9, corte: 0 };
+function mascara(b, grad) { const M = BUF[2]; M.globalCompositeOperation = 'source-over'; M.globalAlpha = 1; M.clearRect(0, 0, SW, SH); M.drawImage(b, 0, 0); M.globalCompositeOperation = 'destination-in'; M.fillStyle = grad; M.fillRect(0, 0, SW, SH); M.globalCompositeOperation = 'source-over'; c.drawImage(M.canvas, 0, 0) }
 function transicao(tipo, u, a, b, t) {
-  const e = ease(u);
-  if (tipo === 'flash') { c.drawImage(u < .5 ? a : b, 0, 0); c.fillStyle = `rgba(255,246,220,${1 - Math.abs(u - .5) * 2})`; c.fillRect(0, 0, W, H) }
-  else if (tipo === 'escuro') { c.drawImage(u < .5 ? a : b, 0, 0); c.fillStyle = `rgba(6,5,4,${1 - Math.abs(u - .5) * 2})`; c.fillRect(0, 0, W, H) }
-  else if (tipo === 'cortina') { c.drawImage(a, 0, 0); const x = lerp(-400, W + 400, e), sk = 260; c.save(); c.beginPath(); c.moveTo(-600, 0); c.lineTo(x + sk, 0); c.lineTo(x - sk, H); c.lineTo(-600, H); c.clip(); c.drawImage(b, 0, 0); c.restore(); c.save(); c.translate(x, H / 2); c.transform(1, 0, -sk * 2 / H, 1, 0, 0); c.fillStyle = '#e0a040'; c.fillRect(-12, -H, 24, 2 * H); c.fillStyle = '#3a2a14'; c.fillRect(12, -H, 8, 2 * H); c.restore() }
-  else if (tipo === 'zoom') { c.save(); const sb = lerp(.8, 1, e); c.translate(W / 2, H / 2); c.scale(sb, sb); c.drawImage(b, -W / 2, -H / 2); c.restore(); c.save(); c.globalAlpha = 1 - e; const sa = 1 + e * 1.5; c.translate(W / 2, H / 2); c.scale(sa, sa); c.drawImage(a, -W / 2, -H / 2); c.restore() }
-  else if (tipo === 'iris') { c.drawImage(a, 0, 0); const r = e * 1200; c.save(); c.beginPath(); c.arc(W / 2, H / 2, r, 0, 7); c.clip(); c.drawImage(b, 0, 0); c.restore(); c.strokeStyle = '#e0a040'; c.lineWidth = 12; c.beginPath(); c.arc(W / 2, H / 2, r, 0, 7); c.stroke() }
-  else if (tipo === 'desliza') { c.drawImage(a, -e * W, 0); c.drawImage(b, W - e * W, 0); c.fillStyle = '#e0a040'; c.fillRect(W - e * W - 6, 0, 12, H) }
-  else if (tipo === 'fumaca') { c.drawImage(a, 0, 0); const q = rng(11), k = Math.min(1, u * 1.6); c.save(); for (let i = 0; i < 70; i++) { const x = q() * W, y = q() * H, r = (90 + q() * 260) * clamp(k * 1.8 - q() * .8); if (r > 0) { c.fillStyle = `rgba(${200 + q() * 30 | 0},${190 + q() * 30 | 0},${170 + q() * 30 | 0},.9)`; c.beginPath(); c.arc(x + u * 60, y - u * 40, r, 0, 7); c.fill() } } c.restore(); const v = ramp(u, .45, 1); if (v > 0) { c.globalAlpha = v; c.drawImage(b, 0, 0); c.globalAlpha = 1 } }
+  const W = SW, H = SH, e = ease(u), pico = Math.sin(u * PI);
+  if (tipo === 'fumaca') { c.drawImage(a, 0, 0); c.globalAlpha = e; c.drawImage(b, 0, 0); c.globalAlpha = 1; for (let k = 0; k < 5; k++) { const y = H * (.1 + k * .2) + Math.sin(t * .5 + k) * 30; c.fillStyle = lg(0, y - 300, 0, y + 300, [[0, 'rgba(150,154,140,0)'], [.5, `rgba(150,154,140,${.5 * pico})`], [1, 'rgba(150,154,140,0)']]); c.fillRect(0, y - 300, W, 600) } c.fillStyle = `rgba(140,144,132,${.35 * pico})`; c.fillRect(0, 0, W, H) }
+  else if (tipo === 'escuro') { c.drawImage(u < .5 ? a : b, 0, 0); c.fillStyle = `rgba(6,5,4,${pico})`; c.fillRect(0, 0, W, H) }
+  else if (tipo === 'flash') { c.drawImage(a, 0, 0); c.globalAlpha = e; c.drawImage(b, 0, 0); c.globalAlpha = 1; c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = rg(W / 2, H / 2, 0, 1300, [[0, `rgba(232,166,64,${.45 * pico})`], [1, `rgba(232,166,64,${.12 * pico})`]]); c.fillRect(0, 0, W, H); c.restore() }
+  else if (tipo === 'cortina') { c.drawImage(a, 0, 0); const x = lerp(-500, W + 500, e), g = c.createLinearGradient(x - 420, 0, x + 80, 0); g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)'); mascara(b, g) }
+  else if (tipo === 'zoom') { c.save(); c.translate(W / 2, H / 2); const sa = 1 + e * .18; c.scale(sa, sa); c.drawImage(a, -W / 2, -H / 2); c.restore(); c.save(); c.globalAlpha = e; c.translate(W / 2, H / 2); const sb = 1.12 - e * .12; c.scale(sb, sb); c.drawImage(b, -W / 2, -H / 2); c.restore() }
+  else if (tipo === 'iris') { c.drawImage(a, 0, 0); const r = e * 1500, g = c.createRadialGradient(W / 2, H / 2, Math.max(0, r - 420), W / 2, H / 2, r + 1); g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)'); mascara(b, g) }
+  else if (tipo === 'desliza') { c.drawImage(a, -e * W * .35, 0); c.globalAlpha = e; c.drawImage(b, (1 - e) * W * .35, 0); c.globalAlpha = 1 }
 }
 function render(t) {
   const i = SHOTS.findIndex(s => t >= s.t0 && t < s.t1), k = i < 0 ? SHOTS.length - 1 : i, s = SHOTS[k], d = TD[s.tr] || 0;
   c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; c.filter = 'none';
-  if (k > 0 && d && t - s.t0 < d) { pinta(BUF[0], SHOTS[k - 1], t); pinta(BUF[1], s, t); c.fillStyle = '#000'; c.fillRect(0, 0, W, H); transicao(s.tr, (t - s.t0) / d, BUF[0].canvas, BUF[1].canvas, t) }
-  else { c.fillStyle = '#000'; c.fillRect(0, 0, W, H); c.save(); s.fn(t - s.t0, t); c.restore() }
-  finish(t); legenda(t);
-  const fd = Math.max(1 - ramp(t, 0, .5), ramp(t, DUR - 1.1, DUR - .1)); if (fd > 0) { c.fillStyle = `rgba(0,0,0,${fd})`; c.fillRect(0, 0, W, H) }
+  if (k > 0 && d && t - s.t0 < d) { pinta(BUF[0], SHOTS[k - 1], t); pinta(BUF[1], s, t); c.fillStyle = '#000'; c.fillRect(0, 0, SW, SH); transicao(s.tr, (t - s.t0) / d, BUF[0].canvas, BUF[1].canvas, t) }
+  else { c.fillStyle = '#000'; c.fillRect(0, 0, SW, SH); c.save(); camera(s, t); s.fn(t - s.t0, t); c.restore(); chaoExtra() }
+  finish(t); legenda(t); c.setTransform(1, 0, 0, 1, 0, 0);
+  const fd = Math.max(1 - ramp(t, 0, .5), ramp(t, DUR - 1.1, DUR - .1)); if (fd > 0) { c.fillStyle = `rgba(0,0,0,${fd})`; c.fillRect(0, 0, SW, SH) }
 }
 // utilidades de desenho
 function el(x, y, rx, ry, col, rot = 0) { c.fillStyle = col; c.beginPath(); c.ellipse(x, y, Math.abs(rx), Math.abs(ry), rot, 0, 7); c.fill() }
