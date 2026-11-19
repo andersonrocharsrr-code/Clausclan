@@ -187,7 +187,7 @@ const COND = '"Fira Sans Extra Condensed", "Liberation Sans Narrow", Arial, sans
 function txt(str, x, y, size, col, o = {}) { c.save(); c.globalAlpha *= o.a ?? 1; c.font = `${o.w || 800} ${size}px ${COND}`; c.textAlign = o.align || 'left'; if ('letterSpacing' in c) c.letterSpacing = (o.ls ?? size * .02) + 'px'; c.shadowColor = 'rgba(8,9,13,.85)'; c.shadowBlur = size * .22; c.shadowOffsetY = size * .04; c.fillStyle = col; c.fillText(str, x, y); c.shadowBlur = size * .5; c.shadowOffsetY = 0; c.shadowColor = 'rgba(8,9,13,.55)'; c.fillText(str, x, y); c.restore() }
 // placa no canto: escreve letra por letra, com traço dourado crescendo embaixo e uma linha menor
 function typeText(tl, x, y, str, t0, t1, o = {}) {
-  c.save(); c.setTransform(1, 0, 0, 1, 0, 0); x = 60; y = 150 + y * .9; o = { ...o, size: (o.size || 70) * .82, subSize: (o.subSize || 40) * .8 }; typeTextT(tl, x, y, str, t0, t1, o); c.restore() }
+  c.save(); c.setTransform(1, 0, 0, 1, 0, 0); x = 60; y = 150 + y * .9; o = { ...o, size: (o.size || 70) * .82, subSize: (o.subSize || 40) * .8 }; c.font = `800 ${o.size}px ${COND}`; const wt = c.measureText(str).width * 1.03; if (wt > SW - 120) o.size *= (SW - 120) / wt; if (o.sub) { c.font = `600 ${o.subSize}px ${COND}`; const ws = c.measureText(o.sub).width + o.sub.length * o.subSize * .12; if (ws > SW - 120) o.subSize *= (SW - 120) / ws } typeTextT(tl, x, y, str, t0, t1, o); c.restore() }
 function typeTextT(tl, x, y, str, t0, t1, o = {}) {
   const { size = 70, col = '#ece4d0', cps = 24, sub = null, subSize = 40 } = o;
   const al = Math.min(ramp(tl, t0 - .2, t0), 1 - ramp(tl, t1 - .3, t1)); if (al <= 0) return;
@@ -253,7 +253,10 @@ function render(t) {
 // tipos: corte, escuro (passa pelo preto), flash, cortina (faixa dourada), zoom, iris (círculo), desliza (empurra para o lado), fumaca (vapor que cobre)
 function shot(t0, t1, fn, tr = 'corte', cam) { SHOTS.push({ t0, t1, fn, tr, cam: cam || [700, 1220] }) }
 // texto por cima da imagem (na tela, não no mundo): posição proporcional
-function tx(str, x, y, size, col, o = {}) { c.save(); c.setTransform(1, 0, 0, 1, 0, 0); txt(str, x * SW / W, 120 + y * 1.1, size * .8, col, o); c.restore() }
+function tx(str, x, y, size, col, o = {}) {
+  c.save(); c.setTransform(1, 0, 0, 1, 0, 0); let sz = size * .8, X = x * SW / W; const Y = 120 + y * 1.1, al = o.align || 'left';
+  const larg = () => { c.font = `${o.w || 800} ${sz}px ${COND}`; if ('letterSpacing' in c) c.letterSpacing = (o.ls ?? sz * .02) + 'px'; return c.measureText(str).width }; let w = larg(); if (w > SW - 100) { sz *= (SW - 100) / w; w = larg() }
+  let x0 = al === 'center' ? X - w / 2 : al === 'right' ? X - w : X; x0 = clamp(x0, 50, SW - 50 - w); txt(str, x0, Y, sz, col, { ...o, align: 'left' }); c.restore() }
 // câmera: o mundo 1920x1080 aparece com zoom KZ, passeando na horizontal; embaixo, o chão continua escurecendo
 function camera(s, t) { const u = ease(ramp(t - s.t0, 0, s.t1 - s.t0)), cx = clamp(lerp(s.cam[0], s.cam[1], u), SW / KZ / 2, W - SW / KZ / 2); c.setTransform(KZ, 0, 0, KZ, SW / 2 - cx * KZ, 0) }
 function chaoExtra() { const y0 = H * KZ; c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(c.canvas, 0, y0 - 6, SW, 4, 0, y0 - 2, SW, SH - y0 + 2); c.fillStyle = lg(0, y0, 0, SH, [[0, 'rgba(8,8,8,.35)'], [.35, 'rgba(8,8,8,.75)'], [1, 'rgba(6,6,6,.95)']]); c.fillRect(0, y0 - 2, SW, SH - y0 + 2) }
