@@ -632,9 +632,9 @@
     try { veio = (await nat.linkCompartilhado()).texto; } catch (e) {}
     if (veio) {
       const l = T.extrairLink(veio) || veio;
-      marcarColado(l);
       porLink(l);
-      buscar(l);
+      // Mesmo link de antes (ex.: app reaberto): só mostra na caixa, sem procurar de novo.
+      if (l !== ultimoColado) { marcarColado(l); buscar(l); }
     } else {
       colarAutomatico();
     }
