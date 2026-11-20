@@ -487,13 +487,13 @@ O APK é gerado pelo GitHub Actions (`.github/workflows/hangar-apk.yml`) a cada 
 https://github.com/andersonrocharsrr-code/Clausclan/releases/download/hangar/hangar-escola.apk
 Sem o segredo (ou fora do `main`) sai um APK de teste em "Artifacts" na execução.
 
-# Baixar TikTok — vídeo HD sem marca d'água e áudio MP3 (`baixar/` e `baixar-android/`)
+# Salva Vídeo — vídeo HD sem marca d'água e áudio MP3 (`baixar/` e `baixar-android/`)
 
-- Cole o link do TikTok (ou use **Compartilhar → Baixar TikTok** dentro do TikTok). Ao voltar para o app
+- Cole o link do TikTok (ou use **Compartilhar → Salva Vídeo** dentro do TikTok). Ao voltar para o app
   com um link copiado, ele cola e busca sozinho.
 - **⬇ Vídeo HD**: a melhor qualidade que o TikTok tiver (720p ou 1080p), sem marca d'água → galeria em
-  *Filmes › Baixar TikTok*.
-- **♪ Áudio MP3**: o som do próprio vídeo convertido em MP3 192 kbps no celular (lamejs) → *Música › Baixar TikTok*.
+  *Filmes › Salva Vídeo*.
+- **♪ Áudio MP3**: o som do próprio vídeo convertido em MP3 192 kbps no celular (lamejs) → *Música › Salva Vídeo*.
   Se a conversão falhar, baixa o som original do TikTok (já em MP3). Posts de fotos: só o MP3.
 - Como funciona: a parte nativa (`BaixadorPlugin.java`) abre a página do vídeo como um navegador de computador,
   guardando os cookies do TikTok (sem eles o arquivo é recusado). `baixar/tiktok.js` lê o JSON da página

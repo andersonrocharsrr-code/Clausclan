@@ -47,10 +47,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Parte nativa do Baixar TikTok:
+ * Parte nativa do Salva Vídeo:
  * - pegar: abre a página do vídeo (como um navegador de computador, guardando os cookies do TikTok);
  * - baixar: baixa o arquivo do vídeo (com os mesmos cookies, senão o TikTok recusa) para a pasta temporária;
- * - gravarCache / publicar: grava o MP3 feito no app e põe o arquivo na galeria (Filmes ou Música → "Baixar TikTok");
+ * - gravarCache / publicar: grava o MP3 feito no app e põe o arquivo na galeria (Filmes ou Música → "Salva Vídeo");
  * - abrir: abre o vídeo/áudio no player do celular;
  * - linkCompartilhado: link que chegou pelo "Compartilhar" do TikTok.
  */
@@ -62,7 +62,7 @@ public class BaixadorPlugin extends Plugin {
 
     private static final String UA =
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
-    private static final String PASTA = "Baixar TikTok";
+    private static final String PASTA = "Salva Vídeo";
 
     private final CookieManager cookies = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
     private final ExecutorService fila = Executors.newCachedThreadPool();
@@ -270,7 +270,7 @@ public class BaixadorPlugin extends Plugin {
 
     // ---------- Galeria ----------
 
-    /** Move o arquivo da pasta temporária para a galeria: vídeo em Filmes/Baixar TikTok, MP3 em Música/Baixar TikTok. */
+    /** Move o arquivo da pasta temporária para a galeria: vídeo em Filmes/Salva Vídeo, MP3 em Música/Salva Vídeo. */
     @PluginMethod
     public void publicar(PluginCall call) {
         if (Build.VERSION.SDK_INT < 29 && getPermissionState("armazenamento") != PermissionState.GRANTED) {

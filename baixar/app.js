@@ -1,4 +1,4 @@
-/* Baixar TikTok — tela do app. A parte de internet e de salvar na galeria é nativa (plugin "Baixador");
+/* Salva Vídeo — tela do app. A parte de internet e de salvar na galeria é nativa (plugin "Baixador");
    aqui ficam: ler o link, mostrar o vídeo, baixar o vídeo HD e fazer o MP3 (som do vídeo convertido no celular). */
 (function () {
   'use strict';
@@ -273,7 +273,7 @@
 
   function concluir(tipo, r, mime, tamanho) {
     ultimoPronto = { uri: r.uri, mime };
-    const pasta = tipo === 'mp4' ? 'Filmes › Baixar TikTok' : 'Música › Baixar TikTok';
+    const pasta = tipo === 'mp4' ? 'Filmes › Salva Vídeo' : 'Música › Salva Vídeo';
     $('prontoTexto').textContent = '✓ Salvo em ' + pasta;
     $('pronto').hidden = false;
     abaAtual = tipo;
@@ -286,7 +286,7 @@
 
   async function abrir(uri, mime) {
     try { await nat.abrir({ uri, mime }); }
-    catch (e) { estado('Não consegui abrir. Procure na galeria, pasta "Baixar TikTok".', 'erro'); }
+    catch (e) { estado('Não consegui abrir. Procure na galeria, pasta "Salva Vídeo".', 'erro'); }
   }
 
   // ---------- Histórico ----------

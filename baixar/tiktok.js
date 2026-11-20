@@ -1,4 +1,4 @@
-/* Baixar TikTok: lê o link e a página do vídeo e devolve os endereços do arquivo SEM marca d'água.
+/* Salva Vídeo: lê o link e a página do vídeo e devolve os endereços do arquivo SEM marca d'água.
    O TikTok guarda os dados do vídeo num JSON dentro da página (__UNIVERSAL_DATA_FOR_REHYDRATION__);
    a lista "bitrateInfo" traz as qualidades (540p, 720p, 1080p…) e o "playAddr" é o vídeo sem a marca.
    Se a página não vier (bloqueio, captcha), o app usa o serviço tikwm.com como reserva.

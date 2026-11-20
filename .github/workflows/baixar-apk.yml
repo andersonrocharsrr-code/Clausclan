@@ -1,8 +1,8 @@
-# Gera o APK do Baixar TikTok (vídeo HD sem marca d'água e áudio MP3; pasta baixar-android/, feito com Capacitor) a partir de baixar/.
+# Gera o APK do Salva Vídeo (vídeo HD sem marca d'água e áudio MP3; pasta baixar-android/, feito com Capacitor) a partir de baixar/.
 # No main, com o segredo NEXA_SIGNING_SEED configurado, publica o APK na Release "baixar" (link fixo):
 #   https://github.com/andersonrocharsrr-code/Clausclan/releases/download/baixar/baixar.apk
 # Sem o segredo, gera só um APK de teste (debug), disponível em "Artifacts" na execução.
-name: Gerar APK do Baixar TikTok
+name: Gerar APK do Salva Vídeo
 
 on:
   push:
@@ -46,7 +46,7 @@ jobs:
       - name: Copiar o app para dentro do projeto Android
         run: npm run www && npx cap sync android
 
-      # Mesma chave do Nexa Money (gerada pelo mesmo script e segredo); o Baixar TikTok tem seu próprio applicationId.
+      # Mesma chave do Nexa Money (gerada pelo mesmo script e segredo); o Salva Vídeo tem seu próprio applicationId.
       - name: Criar a chave de assinatura
         env:
           NEXA_SIGNING_SEED: ${{ secrets.NEXA_SIGNING_SEED }}
@@ -86,8 +86,8 @@ jobs:
         run: |
           if ! gh release view baixar --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release create baixar --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest=false \
-              --title "Baixar TikTok — vídeo HD e MP3" \
-              --notes "Baixe o arquivo baixar.apk no celular e toque nele para instalar. Os vídeos baixados ficam na galeria (Filmes › Baixar TikTok) e os MP3 em Música › Baixar TikTok."
+              --title "Salva Vídeo — vídeos do TikTok em HD e MP3" \
+              --notes "Baixe o arquivo baixar.apk no celular e toque nele para instalar. Os vídeos baixados ficam na galeria (Filmes › Salva Vídeo) e os MP3 em Música › Salva Vídeo."
           fi
           gh release upload baixar "$RUNNER_TEMP/baixar.apk" --repo "$GITHUB_REPOSITORY" --clobber
-          gh release edit baixar --repo "$GITHUB_REPOSITORY" --latest=false --title "Baixar TikTok — vídeo HD e MP3 (versão $BAIXAR_BUILD)"
+          gh release edit baixar --repo "$GITHUB_REPOSITORY" --latest=false --title "Salva Vídeo — vídeos do TikTok em HD e MP3 (versão $BAIXAR_BUILD)"

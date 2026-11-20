@@ -2,7 +2,7 @@
   "name": "baixar-android",
   "private": true,
   "version": "1.0.0",
-  "description": "Baixar TikTok (vídeo HD sem marca d'água e áudio MP3) como app Android nativo (Capacitor). O APK é gerado pelo GitHub Actions.",
+  "description": "Salva Vídeo (vídeo HD sem marca d'água e áudio MP3) como app Android nativo (Capacitor). O APK é gerado pelo GitHub Actions.",
   "scripts": {
     "www": "node scripts/prepare-www.mjs"
   },
