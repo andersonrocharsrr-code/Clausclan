@@ -200,7 +200,9 @@
         url: 'https://www.tiktok.com/@' + (v.authorUniqueId || autor) + '/video/' + v.id,
         tipo: 'video',
         capa: v.coverUrl || v.originCoverUrl || '',
-        views: v.playCount != null ? contagem(v.playCount) : ''
+        views: v.playCount != null ? contagem(v.playCount) : '',
+        desc: v.desc || '',
+        qualidade: v.ratio || ''
       }))
     };
   }
@@ -213,8 +215,8 @@
       if (!n || !n.id) continue;
       if (dono && n.url && !String(n.url).toLowerCase().includes('/@' + dono + '/')) continue;
       const v = porId.get(n.id);
-      if (v) { if (n.capa && !v.capa) v.capa = n.capa; if (n.views && !v.views) v.views = n.views; }
-      else { const novo = { id: n.id, url: n.url, tipo: n.tipo || 'video', capa: n.capa || '', views: n.views || '' }; porId.set(n.id, novo); lista.push(novo); }
+      if (v) { for (const k of ['capa', 'views', 'desc', 'qualidade']) if (n[k] && !v[k]) v[k] = n[k]; }
+      else { const novo = { id: n.id, url: n.url, tipo: n.tipo || 'video', capa: n.capa || '', views: n.views || '', desc: n.desc || '', qualidade: n.qualidade || '' }; porId.set(n.id, novo); lista.push(novo); }
     }
     return lista;
   }

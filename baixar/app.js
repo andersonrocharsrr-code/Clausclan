@@ -48,8 +48,9 @@
 
   function travar(sim) {
     ocupado = sim;
-    $('baixarVideo').disabled = sim || !info || info.versoes.length === 0;
-    $('baixarAudio').disabled = sim || !info || (info.versoes.length === 0 && !info.musica);
+    const espera = !info && !!escolhido;
+    $('baixarVideo').disabled = sim || (!info && !espera) || (!!info && info.versoes.length === 0);
+    $('baixarAudio').disabled = sim || (!info && !espera) || (!!info && info.versoes.length === 0 && !info.musica);
     $('colar').disabled = sim;
     if (!sim) $('progresso').hidden = true;
   }
@@ -65,6 +66,7 @@
     if (!link) { estado('Isso não parece um link do TikTok. Copie o link pelo botão Compartilhar do TikTok.', 'erro'); return; }
     if (!nat) { estado('Abra pelo app no celular Android para baixar.', 'erro'); return; }
     porLink(link);
+    escolhido = null;
     $('resultado').hidden = true;
     $('pronto').hidden = true;
     info = null;
@@ -84,7 +86,15 @@
   }
 
   // Abre a página do TikTok; se não vier o vídeo, tenta pelo número do vídeo e depois pelo tikwm.com.
-  async function lerVideo(link) {
+  // Nunca espera mais de 35 s pelo TikTok (antes podia ficar "Procurando…" para sempre).
+  function lerVideo(link) {
+    return Promise.race([
+      lerVideoSemLimite(link),
+      new Promise((_, falha) => setTimeout(() => falha(new Error('O TikTok demorou para responder. Tente de novo.')), 35000))
+    ]);
+  }
+
+  async function lerVideoSemLimite(link) {
     let final = link;
     let semRede = null;
     let achou = null;
@@ -163,10 +173,11 @@
   const eCancelado = (e) => e && (e.code === 'CANCELADO' || /cancelado/i.test(e.message || ''));
 
   async function baixarVideo() {
-    if (!info || ocupado) return;
+    if (ocupado || (!info && !escolhido)) return;
     travar(true);
     $('pronto').hidden = true;
     estado('');
+    if (!info && !(await esperarEscolhido())) { travar(false); return; }
     const nome = T.nomeArquivo(info, 'mp4');
     try {
       const tmp = await baixarTemp(T.enderecosVideo, nome, 'Baixando vídeo…', 100, 0);
@@ -182,10 +193,11 @@
   }
 
   async function baixarAudio() {
-    if (!info || ocupado) return;
+    if (ocupado || (!info && !escolhido)) return;
     travar(true);
     $('pronto').hidden = true;
     estado('');
+    if (!info && !(await esperarEscolhido())) { travar(false); return; }
     const nome = T.nomeArquivo(info, 'mp3');
     let caminho = null;
     try {
@@ -461,6 +473,7 @@
       }
       T.juntarVideosPerfil(perfilLista, e.videos, autor);
       desenharGrade();
+      prepararGrade(); // deixa os vídeos prontos para baixar na hora
     } catch (e) {}
   }
 
@@ -526,7 +539,7 @@
         bt.type = 'button';
         bt.className = 'grade__item';
         bt.setAttribute('aria-label', 'Vídeo ' + (itensGrade.size + 1));
-        bt.addEventListener('click', () => abrirFolha(v.url));
+        bt.addEventListener('click', () => abrirFolha(v));
         if (v.tipo === 'photo') {
           const f = document.createElement('span');
           f.className = 'foto';
@@ -564,14 +577,88 @@
   }
 
   // Folha que sobe de baixo com o vídeo escolhido e os botões Vídeo HD / Áudio MP3.
-  function abrirFolha(url) {
+  // ---------- Vídeo escolhido no perfil: janela na hora, dados preparados por trás ----------
+
+  const preparados = new Map(); // id → Promise<{ info, link }>
+  let escolhido = null;         // { v, promessa } do vídeo aberto na janela
+
+  function preparar(v) {
+    let p = preparados.get(v.id);
+    if (!p) {
+      p = lerVideo(v.url);
+      preparados.set(v.id, p);
+      p.catch(() => preparados.delete(v.id)); // se falhar, tenta de novo da próxima vez
+    }
+    return p;
+  }
+
+  // Prepara os vídeos da grade por trás (3 de cada vez), enquanto o perfil está aberto.
+  let filaPreparo = 0;
+  async function prepararGrade() {
+    const minha = ++filaPreparo;
+    const fila = perfilLista.slice(0, 15).filter((v) => v.tipo !== 'photo');
+    const trabalhador = async () => {
+      while (fila.length) {
+        if (minha !== filaPreparo || $('perfil').hidden) return;
+        try { await preparar(fila.shift()); } catch (e) {}
+      }
+    };
+    await Promise.all([trabalhador(), trabalhador(), trabalhador()]);
+  }
+
+  function abrirFolha(v) {
     $('folhaCorpo').append($('estado'), $('resultado'));
     $('folha').hidden = false;
-    buscar(url);
+    if (ocupado) return; // um download ainda está em andamento: mostra ele
+    estado('');
+    $('pronto').hidden = true;
+    info = null;
+    escolhido = { v, promessa: preparar(v) };
+    // Mostra na hora com o que a grade já sabe.
+    $('resultado').hidden = false;
+    $('capa').src = v.capa || 'icon.svg';
+    $('autor').textContent = '@' + perfilAtual;
+    $('desc').textContent = v.desc || '';
+    const q = v.qualidade ? v.qualidade.replace(/^(\d+)p$/, (m, n) => (+n >= 1080 ? n + 'p Full HD' : +n >= 720 ? n + 'p HD' : m)) : 'HD';
+    $('detalhes').textContent = q + (v.views ? ' · ▶ ' + v.views : '');
+    $('qualVideo').textContent = q + " · sem marca d'água";
+    $('baixarVideo').hidden = false;
+    travar(false);
+    const meu = escolhido;
+    meu.promessa.then((r) => {
+      if (escolhido !== meu || ocupado) return;
+      info = r.info;
+      linkAtual = r.link;
+      mostrarVideo();
+    }).catch(() => {});
+  }
+
+  // Chamado pelos botões quando o vídeo ainda está sendo preparado.
+  async function esperarEscolhido() {
+    const meu = escolhido;
+    if (!meu) return false;
+    mostrarProgresso('Preparando o vídeo…', null);
+    try {
+      const r = await new Promise((ok, falha) => {
+        cancelarAtual = () => falha(Object.assign(new Error('cancelado'), { code: 'CANCELADO' }));
+        meu.promessa.then(ok, falha);
+      }).finally(() => { cancelarAtual = null; });
+      if (escolhido !== meu) return false;
+      info = r.info;
+      linkAtual = r.link;
+      return true;
+    } catch (e) {
+      if (eCancelado(e)) { estado('Cancelado.'); return false; }
+      preparados.delete(meu.v.id);
+      meu.promessa = preparar(meu.v); // na próxima vez que apertar, tenta de novo
+      estado((e && e.message) || 'Não consegui abrir o vídeo. Tente de novo.', 'erro');
+      return false;
+    }
   }
 
   function fecharFolha() {
     if ($('folha').hidden) return;
+    if (!ocupado) escolhido = null;
     $('folha').hidden = true;
     $('lugarEstado').after($('estado'));
     $('lugarResultado').after($('resultado'));
