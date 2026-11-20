@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Baixar TikTok</title>
+  <meta name="description" content="Baixa vídeos do TikTok em HD sem marca d'água e o áudio em MP3.">
+  <meta name="theme-color" content="#0b0d14">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+  <header class="topo">
+    <img class="topo__logo" src="icon.svg" alt="">
+    <div>
+      <h1>Baixar TikTok</h1>
+      <p class="topo__sub">Vídeo HD sem marca d'água e áudio MP3</p>
+    </div>
+  </header>
+
+  <main>
+    <div id="soNoApp" class="aviso" hidden>
+      Este app funciona no celular Android.
+      <a href="https://github.com/andersonrocharsrr-code/Clausclan/releases/download/baixar/baixar.apk">Baixar o APK</a>
+    </div>
+
+    <section class="cartao">
+      <label class="rotulo" for="link">Link do vídeo</label>
+      <div class="linha-link">
+        <input id="link" type="url" inputmode="url" autocomplete="off" placeholder="Cole aqui o link do TikTok">
+        <button id="limpar" class="btn-x" type="button" aria-label="Apagar o link" hidden>✕</button>
+      </div>
+      <div class="botoes">
+        <button id="colar" class="btn btn--sec" type="button">📋 Colar</button>
+        <button id="buscar" class="btn btn--pri" type="button">Buscar vídeo</button>
+      </div>
+      <p class="dica">No TikTok: <b>Compartilhar → Baixar TikTok</b>, ou <b>Copiar link</b> e volte aqui.</p>
+    </section>
+
+    <p id="estado" class="estado" role="status" hidden></p>
+
+    <section id="resultado" class="cartao video" hidden>
+      <div class="video__topo">
+        <img id="capa" class="video__capa" alt="">
+        <div class="video__info">
+          <p id="autor" class="video__autor"></p>
+          <p id="desc" class="video__desc"></p>
+          <p id="detalhes" class="video__det"></p>
+        </div>
+      </div>
+      <div class="botoes botoes--col">
+        <button id="baixarVideo" class="btn btn--pri btn--grande" type="button">
+          <span class="btn__ic">⬇</span><span><b>Vídeo HD</b><small id="qualVideo">sem marca d'água</small></span>
+        </button>
+        <button id="baixarAudio" class="btn btn--ouro btn--grande" type="button">
+          <span class="btn__ic">♪</span><span><b>Áudio MP3</b><small>só o som do vídeo</small></span>
+        </button>
+      </div>
+      <div id="progresso" class="progresso" hidden>
+        <div class="progresso__barra"><i id="barra"></i></div>
+        <div class="progresso__linha">
+          <span id="progTexto">Baixando…</span>
+          <button id="cancelar" class="link-btn" type="button">Cancelar</button>
+        </div>
+      </div>
+      <div id="pronto" class="pronto" hidden>
+        <span id="prontoTexto"></span>
+        <button id="abrirPronto" class="btn btn--sec btn--peq" type="button">▶ Abrir</button>
+      </div>
+    </section>
+
+    <section class="historico">
+      <div class="historico__topo">
+        <h2>Baixados</h2>
+        <button id="limparHist" class="link-btn" type="button" hidden>Limpar lista</button>
+      </div>
+      <ul id="lista" class="lista"></ul>
+      <p id="vazio" class="vazio">Nada baixado ainda.</p>
+    </section>
+  </main>
+
+  <script src="tiktok.js?v=1"></script>
+  <script src="app.js?v=1"></script>
+</body>
+</html>
