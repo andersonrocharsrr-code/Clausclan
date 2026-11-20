@@ -500,3 +500,7 @@ Sem o segredo (ou fora do `main`) sai um APK de teste em "Artifacts" na execuç�
   (`__UNIVERSAL_DATA_FOR_REHYDRATION__` → `bitrateInfo`/`playAddr`). Reserva: tikwm.com, se a página não vier.
 - Só funciona no APK (no navegador o TikTok bloqueia). APK pelo `.github/workflows/baixar-apk.yml`:
   `https://github.com/andersonrocharsrr-code/Clausclan/releases/download/baixar/baixar.apk`.
+
+- **Instagram** (mesma caixa do TikTok; o app reconhece o link): Reels e vídeos de posts de **perfis públicos**,
+  em HD e MP3, lidos da página pública de incorporar do post (`baixar/instagram.js`). Sem login: perfil privado
+  e Stories não funcionam. Baixados separados nas abas **TikTok** e **Instagram**.

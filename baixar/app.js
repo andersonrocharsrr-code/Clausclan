@@ -11,6 +11,9 @@
   const clip = plugin('Clipboard');
   const appCap = plugin('App');
   const T = window.TikTok;
+  const IG = window.Instagram;
+  // Link do TikTok ou do Instagram (o app reconhece sozinho de onde é).
+  const linkDe = (t) => T.extrairLink(t) || (IG && IG.extrairLink(t)) || null;
 
   const HIST = 'baixar.historico';
   const CRIADORES = 'baixar.criadores'; // { autor: { nome, avatar } } — foto e nome de quem já teve vídeo baixado
@@ -26,7 +29,8 @@
     ultimoColado = link;
     try { localStorage.setItem(ULTIMO, link); } catch (e) {}
   }
-  let abaAtual = 'mp4';      // aba da lista: 'mp4' (vídeos) ou 'mp3' (áudios)
+  let abaAtual = 'tiktok';   // aba da lista de baixados: 'tiktok' ou 'instagram'
+  const redeDe = (it) => it.rede || 'tiktok';
 
   // ---------- Mensagens ----------
 
@@ -62,8 +66,8 @@
 
   async function buscar(texto) {
     if (ocupado) return;
-    const link = T.extrairLink(texto);
-    if (!link) { estado('Isso não parece um link do TikTok. Copie o link pelo botão Compartilhar do TikTok.', 'erro'); return; }
+    const link = linkDe(texto);
+    if (!link) { estado('Isso não parece um link do TikTok nem do Instagram. Copie o link pelo botão Compartilhar.', 'erro'); return; }
     if (!nat) { estado('Abra pelo app no celular Android para baixar.', 'erro'); return; }
     porLink(link);
     escolhido = null;
@@ -95,6 +99,7 @@
   }
 
   async function lerVideoSemLimite(link) {
+    if (IG && IG.ehLink(link)) return lerInstagram(link);
     let final = link;
     let semRede = null;
     let achou = null;
@@ -123,6 +128,31 @@
     return { info: achou, link: final };
   }
 
+  // Instagram: acha o código do post e lê a página pública de incorporar (sem login).
+  async function lerInstagram(link) {
+    let cod = IG.codigo(link);
+    if (!cod) {
+      // Link de compartilhar (instagram.com/share/…): abre para descobrir o post.
+      try { const r = await nat.pegar({ url: link }); cod = IG.codigo(r.url) || IG.codigo(r.texto); } catch (e) {}
+    }
+    if (!cod) throw new Error('Esse link do Instagram não é de um Reels ou post. Copie o link do vídeo.');
+    let achou = null;
+    let semRede = null;
+    for (const u of IG.paginas(cod)) {
+      try {
+        const r = await nat.pegar({ url: u });
+        const i = IG.lerPagina(r.texto, cod);
+        if (i && (!achou || (achou.foto && !i.foto))) achou = i;
+        if (achou && !achou.foto) break;
+      } catch (e) { semRede = e; }
+    }
+    if (!achou) {
+      if (semRede) throw new Error('Sem internet ou o Instagram não respondeu. Tente de novo.');
+      throw new Error('O Instagram não mostrou este vídeo. Ele pode ser de perfil privado ou pedir login.');
+    }
+    return { info: achou, link: 'https://www.instagram.com/p/' + cod + '/' };
+  }
+
   function mostrarVideo() {
     $('resultado').hidden = false;
     $('capa').src = info.capa || 'icon.svg';
@@ -136,7 +166,9 @@
     $('detalhes').textContent = partes.join(' · ');
     $('qualVideo').textContent = (q ? q + ' · ' : '') + "sem marca d'água";
     $('baixarVideo').hidden = info.versoes.length === 0;
-    if (info.foto && info.versoes.length === 0) estado('Este post é de fotos: dá para baixar só o áudio (MP3).');
+    if (info.foto && info.versoes.length === 0) {
+      estado(info.rede === 'instagram' ? 'Este post do Instagram é de foto: só vídeos podem ser baixados.' : 'Este post é de fotos: dá para baixar só o áudio (MP3).');
+    }
     travar(false);
     try { $('resultado').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
   }
@@ -295,10 +327,10 @@
     const pasta = tipo === 'mp4' ? 'Filmes › Salva Vídeo' : 'Música › Salva Vídeo';
     $('prontoTexto').textContent = '✓ Salvo em ' + pasta;
     $('pronto').hidden = false;
-    abaAtual = tipo;
-    if (info.autor) guardarCriador(info.autor, { nome: info.nome, avatar: info.avatar });
+    abaAtual = info.rede || 'tiktok';
+    if (info.autor && (info.rede || 'tiktok') === 'tiktok') guardarCriador(info.autor, { nome: info.nome, avatar: info.avatar });
     guardarHistorico({
-      tipo, uri: r.uri, mime,
+      tipo, uri: r.uri, mime, rede: info.rede || 'tiktok',
       id: info.id, autor: info.autor, nome: info.nome || '', desc: info.desc,
       quando: Date.now(), tamanho: tamanho || 0
     });
@@ -325,16 +357,16 @@
 
   function desenharHistorico() {
     const todos = lerHistorico();
-    const h = todos.filter((it) => (abaAtual === 'mp3' ? it.tipo === 'mp3' : it.tipo !== 'mp3'));
-    $('nVideos').textContent = todos.length - todos.filter((it) => it.tipo === 'mp3').length;
-    $('nAudios').textContent = todos.filter((it) => it.tipo === 'mp3').length;
-    $('abaVideos').classList.toggle('aba--on', abaAtual !== 'mp3');
-    $('abaAudios').classList.toggle('aba--on', abaAtual === 'mp3');
-    $('abaVideos').setAttribute('aria-selected', String(abaAtual !== 'mp3'));
-    $('abaAudios').setAttribute('aria-selected', String(abaAtual === 'mp3'));
+    const h = todos.filter((it) => redeDe(it) === abaAtual);
+    $('nTiktok').textContent = todos.filter((it) => redeDe(it) === 'tiktok').length;
+    $('nInstagram').textContent = todos.filter((it) => redeDe(it) === 'instagram').length;
+    $('abaTiktok').classList.toggle('aba--on', abaAtual === 'tiktok');
+    $('abaInstagram').classList.toggle('aba--on', abaAtual === 'instagram');
+    $('abaTiktok').setAttribute('aria-selected', String(abaAtual === 'tiktok'));
+    $('abaInstagram').setAttribute('aria-selected', String(abaAtual === 'instagram'));
     const ul = $('lista');
     ul.textContent = '';
-    $('vazio').textContent = abaAtual === 'mp3' ? 'Nenhum áudio baixado ainda.' : 'Nenhum vídeo baixado ainda.';
+    $('vazio').textContent = abaAtual === 'instagram' ? 'Nada baixado do Instagram ainda.' : 'Nada baixado do TikTok ainda.';
     $('vazio').hidden = h.length > 0;
     $('limparHist').hidden = todos.length === 0;
     h.forEach((it) => {
@@ -394,6 +426,7 @@
     const vistos = new Set();
     const autores = [];
     for (const it of lerHistorico()) {
+      if (redeDe(it) !== 'tiktok') continue;
       if (it.autor && !vistos.has(it.autor)) { vistos.add(it.autor); autores.push(it.autor); }
     }
     const box = $('listaCriadores');
@@ -674,6 +707,13 @@
     window.open('https://www.tiktok.com/', '_blank');
   }
 
+  async function abrirInstagram() {
+    try {
+      if (nat) { await nat.abrirInstagram(); return; }
+    } catch (e) {}
+    window.open('https://www.instagram.com/', '_blank');
+  }
+
   // ---------- Colar / compartilhar ----------
 
   async function lerAreaTransferencia() {
@@ -693,10 +733,10 @@
   async function colarAutomatico() {
     if (ocupado || !$('perfil').hidden) return;
     const t = await lerAreaTransferencia();
-    const link = T.extrairLink(t);
+    const link = linkDe(t);
     if (!link || link === ultimoColado) return;
     marcarColado(link);
-    if (T.extrairLink($('link').value) === link && info) return;
+    if (linkDe($('link').value) === link && info) return;
     porLink(link);
     buscar(link);
   }
@@ -710,8 +750,8 @@
     $('link').addEventListener('input', () => {
       $('limpar').hidden = !$('link').value;
       // Colou o link direto na caixa (teclado): já procura o vídeo.
-      const l = T.extrairLink($('link').value);
-      if (l && l !== ultimoColado && /tiktok\.com\/\S{3,}/.test(l)) { marcarColado(l); buscar(l); }
+      const l = linkDe($('link').value);
+      if (l && l !== ultimoColado && /(tiktok|instagram)\.com\/\S{3,}/.test(l)) { marcarColado(l); buscar(l); }
     });
     $('link').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); buscar($('link').value); } });
     $('limpar').addEventListener('click', () => { porLink(''); $('link').focus(); });
@@ -723,11 +763,12 @@
     });
     $('fecharFolha').addEventListener('click', fecharFolha);
     $('folhaFundo').addEventListener('click', fecharFolha);
-    $('abaVideos').addEventListener('click', () => { abaAtual = 'mp4'; desenharHistorico(); });
-    $('abaAudios').addEventListener('click', () => { abaAtual = 'mp3'; desenharHistorico(); });
+    $('abaTiktok').addEventListener('click', () => { abaAtual = 'tiktok'; desenharHistorico(); });
+    $('abaInstagram').addEventListener('click', () => { abaAtual = 'instagram'; desenharHistorico(); });
+    $('abrirInstagram').addEventListener('click', abrirInstagram);
     // Botão "Baixar": pega o link copiado (ou o que já está na caixa) e procura o vídeo.
     $('colar').addEventListener('click', async () => {
-      const t = T.extrairLink(await lerAreaTransferencia()) || T.extrairLink($('link').value);
+      const t = linkDe(await lerAreaTransferencia()) || linkDe($('link').value);
       if (!t) { estado('Nenhum link copiado. No TikTok, toque em Compartilhar → Copiar link.', 'erro'); return; }
       const link = t;
       marcarColado(link);
@@ -753,11 +794,11 @@
     if (appCap && appCap.getInfo) appCap.getInfo().then((i) => { $('versao').textContent = 'Salva Vídeo · versão ' + (i.build || i.version); }).catch(() => {});
     try { nat.limparCache(); } catch (e) {}
     // Link que veio pelo "Compartilhar" do TikTok.
-    nat.addListener('link', (r) => { if (r && r.texto) { const l = T.extrairLink(r.texto) || r.texto; marcarColado(l); porLink(l); buscar(l); } });
+    nat.addListener('link', (r) => { if (r && r.texto) { const l = linkDe(r.texto) || r.texto; marcarColado(l); porLink(l); buscar(l); } });
     let veio = null;
     try { veio = (await nat.linkCompartilhado()).texto; } catch (e) {}
     if (veio) {
-      const l = T.extrairLink(veio) || veio;
+      const l = linkDe(veio) || veio;
       porLink(l);
       // Mesmo link de antes (ex.: app reaberto): só mostra na caixa, sem procurar de novo.
       if (l !== ultimoColado) { marcarColado(l); buscar(l); }

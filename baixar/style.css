@@ -197,3 +197,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 body.travado { overflow: hidden; }
 
 .versao { text-align: center; color: var(--fraco); font-size: 12px; margin: 18px 0 0; opacity: .7; }
+
+/* ---------- Instagram ---------- */
+.btn--ig { background: linear-gradient(90deg, #f58529, #dd2a7b 55%, #8134af); color: #fff; }
+.btn--ig:active { filter: brightness(.9); }
+.marca { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.m-tt { background: #8b5cf6; }
+.m-ig { background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af); }
+.aba--ig.aba--on { background: rgba(221,42,123,.16); border-color: #dd2a7b; }

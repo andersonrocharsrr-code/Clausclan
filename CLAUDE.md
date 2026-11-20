@@ -84,6 +84,9 @@ Cada um tem sua pasta e, quando tem APK, seu workflow em `.github/workflows/`
 (ex.: `relatorios/` + `relatorios-android/`, `confirma/` + `confirma-android/`, `baixar/` + `baixar-android/`, `treino/`, `livros/`, `aviao/`).
 - **Salva Vídeo** (`baixar/`): vídeo HD sem marca e MP3. APK: https://github.com/andersonrocharsrr-code/Clausclan/releases/download/baixar/baixar.apk
   Se parar de baixar, o TikTok mudou a página: ajuste `baixar/tiktok.js` (`lerPagina`).
+  Instagram (mesma caixa, o app detecta o link): `baixar/instagram.js` lê a página pública de incorporar
+  (`/p/CODIGO/embed/captioned/`), sem login — só perfis públicos. O servidor do Claude recebe tela de login do
+  Instagram, então o Instagram só dá para testar de verdade no celular.
 A mesma regra vale: testar, PR, merge só quando o Anderson mandar.
 
 ## Vídeos documentários (ex.: Pearl Harbor)

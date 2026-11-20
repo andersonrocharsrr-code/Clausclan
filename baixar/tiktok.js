@@ -150,7 +150,7 @@
   // Nome de arquivo seguro: "tiktok_autor_7312….mp4".
   function nomeArquivo(info, ext) {
     const autor = String(info.autor || 'video').replace(/[^\w.-]+/g, '').slice(0, 30) || 'video';
-    return 'tiktok_' + autor + '_' + (info.id || Date.now()) + '.' + ext;
+    return (info.rede || 'tiktok') + '_' + autor + '_' + (info.id || Date.now()) + '.' + ext;
   }
 
   // Dados do perfil (página https://www.tiktok.com/@usuario): nome, foto e quantos vídeos tem.

@@ -129,7 +129,9 @@ public class BaixadorPlugin extends Plugin {
             c.setRequestProperty("User-Agent", UA);
             c.setRequestProperty("Accept-Language", "pt-BR,pt;q=0.9,en;q=0.8");
             c.setRequestProperty("Accept", "*/*");
-            if (!url.getHost().endsWith("tikwm.com")) c.setRequestProperty("Referer", "https://www.tiktok.com/");
+            String host = url.getHost();
+            if (host.endsWith("instagram.com") || host.endsWith("cdninstagram.com") || host.endsWith("fbcdn.net")) c.setRequestProperty("Referer", "https://www.instagram.com/");
+            else if (!host.endsWith("tikwm.com")) c.setRequestProperty("Referer", "https://www.tiktok.com/");
             URI uri = URI.create(url.toString().replace(" ", "%20"));
             for (Map.Entry<String, List<String>> e : cookies.get(uri, new HashMap<>()).entrySet()) {
                 if (!e.getValue().isEmpty()) c.setRequestProperty(e.getKey(), join(e.getValue()));
@@ -365,6 +367,20 @@ public class BaixadorPlugin extends Plugin {
             call.resolve();
         } catch (Exception e) {
             call.reject("Nenhum app para abrir este arquivo");
+        }
+    }
+
+    /** Abre o app do Instagram; sem ele, abre o site no navegador. */
+    @PluginMethod
+    public void abrirInstagram(PluginCall call) {
+        try {
+            Intent i = getContext().getPackageManager().getLaunchIntentForPackage("com.instagram.android");
+            if (i == null) i = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.instagram.com/"));
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getActivity().startActivity(i);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("Não consegui abrir o Instagram");
         }
     }
 
