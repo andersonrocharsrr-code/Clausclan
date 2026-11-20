@@ -81,7 +81,9 @@ PWA estático (sem build) em `caixa/`, empacotado como APK Android com Capacitor
 ## Outros apps neste repositório
 
 Cada um tem sua pasta e, quando tem APK, seu workflow em `.github/workflows/`
-(ex.: `relatorios/` + `relatorios-android/`, `confirma/` + `confirma-android/`, `treino/`, `livros/`, `aviao/`).
+(ex.: `relatorios/` + `relatorios-android/`, `confirma/` + `confirma-android/`, `baixar/` + `baixar-android/`, `treino/`, `livros/`, `aviao/`).
+- **Salva Vídeo** (`baixar/`): vídeo HD sem marca e MP3. APK: https://github.com/andersonrocharsrr-code/Clausclan/releases/download/baixar/baixar.apk
+  Se parar de baixar, o TikTok mudou a página: ajuste `baixar/tiktok.js` (`lerPagina`).
 A mesma regra vale: testar, PR, merge só quando o Anderson mandar.
 
 ## Vídeos documentários (ex.: Pearl Harbor)
