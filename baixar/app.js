@@ -19,7 +19,13 @@
   let ocupado = false;      // baixando/convertendo
   let tarefaId = '';        // para cancelar
   let ultimoPronto = null;  // { uri, mime } para o botão "Abrir"
-  let ultimoColado = '';
+  // Último link já usado (fica guardado): ao entrar no app com o mesmo link copiado, não carrega de novo.
+  const ULTIMO = 'baixar.ultimoLink';
+  let ultimoColado = (() => { try { return localStorage.getItem(ULTIMO) || ''; } catch (e) { return ''; } })();
+  function marcarColado(link) {
+    ultimoColado = link;
+    try { localStorage.setItem(ULTIMO, link); } catch (e) {}
+  }
   let abaAtual = 'mp4';      // aba da lista: 'mp4' (vídeos) ou 'mp3' (áudios)
 
   // ---------- Mensagens ----------
@@ -565,7 +571,7 @@
     const t = await lerAreaTransferencia();
     const link = T.extrairLink(t);
     if (!link || link === ultimoColado) return;
-    ultimoColado = link;
+    marcarColado(link);
     if (T.extrairLink($('link').value) === link && info) return;
     porLink(link);
     buscar(link);
@@ -581,7 +587,7 @@
       $('limpar').hidden = !$('link').value;
       // Colou o link direto na caixa (teclado): já procura o vídeo.
       const l = T.extrairLink($('link').value);
-      if (l && l !== ultimoColado && /tiktok\.com\/\S{3,}/.test(l)) { ultimoColado = l; buscar(l); }
+      if (l && l !== ultimoColado && /tiktok\.com\/\S{3,}/.test(l)) { marcarColado(l); buscar(l); }
     });
     $('link').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); buscar($('link').value); } });
     $('limpar').addEventListener('click', () => { porLink(''); $('link').focus(); });
@@ -600,7 +606,7 @@
       const t = T.extrairLink(await lerAreaTransferencia()) || T.extrairLink($('link').value);
       if (!t) { estado('Nenhum link copiado. No TikTok, toque em Compartilhar → Copiar link.', 'erro'); return; }
       const link = t;
-      ultimoColado = link;
+      marcarColado(link);
       porLink(link);
       buscar(link);
     });
@@ -621,12 +627,12 @@
     if (!nat) return;
     try { nat.limparCache(); } catch (e) {}
     // Link que veio pelo "Compartilhar" do TikTok.
-    nat.addListener('link', (r) => { if (r && r.texto) { const l = T.extrairLink(r.texto) || r.texto; ultimoColado = l; porLink(l); buscar(l); } });
+    nat.addListener('link', (r) => { if (r && r.texto) { const l = T.extrairLink(r.texto) || r.texto; marcarColado(l); porLink(l); buscar(l); } });
     let veio = null;
     try { veio = (await nat.linkCompartilhado()).texto; } catch (e) {}
     if (veio) {
       const l = T.extrairLink(veio) || veio;
-      ultimoColado = l;
+      marcarColado(l);
       porLink(l);
       buscar(l);
     } else {
