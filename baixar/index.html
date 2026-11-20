@@ -7,14 +7,14 @@
   <meta name="description" content="Baixa vídeos do TikTok em HD sem marca d'água e o áudio em MP3.">
   <meta name="theme-color" content="#0b0d14">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
   <header class="topo">
     <img class="topo__logo" src="icon.svg" alt="">
     <div>
       <h1>Salva Vídeo</h1>
-      <p class="topo__sub">TikTok em HD sem marca d'água e MP3</p>
+      <p class="topo__sub">TikTok e Instagram em HD, sem marca</p>
     </div>
   </header>
 
@@ -27,14 +27,17 @@
     <section class="cartao">
       <label class="rotulo" for="link">Link do vídeo</label>
       <div class="linha-link">
-        <input id="link" type="url" inputmode="url" autocomplete="off" placeholder="Cole aqui o link do TikTok">
+        <input id="link" type="url" inputmode="url" autocomplete="off" placeholder="Cole o link do TikTok ou do Instagram">
         <button id="limpar" class="btn-x" type="button" aria-label="Apagar o link" hidden>✕</button>
       </div>
       <div class="botoes">
         <button id="colar" class="btn btn--verm" type="button">Baixar</button>
-        <button id="abrirTikTok" class="btn btn--pri" type="button">Abrir TikTok</button>
       </div>
-      <p class="dica">No TikTok: <b>Compartilhar → Salva Vídeo</b>, ou <b>Copiar link</b> e toque em <b>Baixar</b>.</p>
+      <div class="botoes">
+        <button id="abrirTikTok" class="btn btn--pri" type="button">Abrir TikTok</button>
+        <button id="abrirInstagram" class="btn btn--ig" type="button">Abrir Instagram</button>
+      </div>
+      <p class="dica">Copie o link no TikTok ou no Instagram e toque em <b>Baixar</b> — o app reconhece sozinho de onde é. Também dá para usar <b>Compartilhar → Salva Vídeo</b>.</p>
     </section>
 
     <section id="criadores" class="cartao criadores" hidden>
@@ -82,8 +85,8 @@
         <button id="limparHist" class="link-btn" type="button" hidden>Limpar lista</button>
       </div>
       <div class="abas" role="tablist">
-        <button id="abaVideos" class="aba aba--on" type="button" role="tab" aria-selected="true">▶ Vídeos <span id="nVideos" class="aba__n">0</span></button>
-        <button id="abaAudios" class="aba" type="button" role="tab" aria-selected="false">♪ Áudios <span id="nAudios" class="aba__n">0</span></button>
+        <button id="abaTiktok" class="aba aba--on" type="button" role="tab" aria-selected="true"><span class="marca m-tt"></span>TikTok <span id="nTiktok" class="aba__n">0</span></button>
+        <button id="abaInstagram" class="aba aba--ig" type="button" role="tab" aria-selected="false"><span class="marca m-ig"></span>Instagram <span id="nInstagram" class="aba__n">0</span></button>
       </div>
       <ul id="lista" class="lista"></ul>
       <p id="vazio" class="vazio">Nada baixado ainda.</p>
@@ -117,7 +120,8 @@
     </div>
   </div>
 
-  <script src="tiktok.js?v=4"></script>
-  <script src="app.js?v=10"></script>
+  <script src="tiktok.js?v=5"></script>
+  <script src="instagram.js?v=1"></script>
+  <script src="app.js?v=11"></script>
 </body>
 </html>
