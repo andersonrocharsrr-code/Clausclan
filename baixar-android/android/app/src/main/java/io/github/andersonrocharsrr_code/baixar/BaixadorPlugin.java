@@ -507,6 +507,92 @@ public class BaixadorPlugin extends Plugin {
         });
     }
 
+    // ---------- Página aberta num navegador de verdade (Instagram) ----------
+
+    private static final String UA_CELULAR =
+        "Mozilla/5.0 (Linux; Android 14; SM-A546B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36";
+    private WebView navPagina = null;
+
+    /**
+     * Abre a página num navegador escondido (atrás da tela do app), como uma pessoa abrindo o link, e devolve o
+     * HTML depois de carregar. O Instagram só entrega o post pronto para um navegador de verdade.
+     * Termina em no máximo "limite" ms (padrão 25 s).
+     */
+    @PluginMethod
+    public void paginaNavegador(PluginCall call) {
+        String url = call.getString("url");
+        int espera = call.getInt("espera", 2500);
+        int limite = call.getInt("limite", 25000);
+        if (url == null || !url.startsWith("https://")) { call.reject("Endereço inválido"); return; }
+        getActivity().runOnUiThread(() -> {
+            fecharNavPagina();
+            WebView w = new WebView(getContext());
+            navPagina = w;
+            WebSettings s = w.getSettings();
+            s.setJavaScriptEnabled(true);
+            s.setDomStorageEnabled(true);
+            s.setUserAgentString(UA_CELULAR);
+            s.setMediaPlaybackRequiresUserGesture(true);
+            Handler h = new Handler(Looper.getMainLooper());
+            boolean[] feito = { false };
+            Runnable ler = () -> {
+                if (feito[0] || navPagina != w) return;
+                w.evaluateJavascript("document.documentElement.outerHTML", valor -> {
+                    if (feito[0]) return;
+                    feito[0] = true;
+                    String html = "";
+                    try {
+                        Object t = new JSONTokener(valor).nextValue();
+                        if (t instanceof String) html = (String) t;
+                    } catch (Exception ignored) {}
+                    JSObject r = new JSObject();
+                    r.put("url", w.getUrl());
+                    r.put("texto", html);
+                    fecharNavPagina();
+                    call.resolve(r);
+                });
+            };
+            w.setWebViewClient(new WebViewClient() {
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest r) {
+                    String sc = r.getUrl().getScheme();
+                    return sc == null || !(sc.equals("https") || sc.equals("http"));
+                }
+
+                @Override
+                public void onPageFinished(WebView v, String u) {
+                    h.postDelayed(ler, espera);
+                }
+            });
+            ViewGroup raiz = getActivity().findViewById(android.R.id.content);
+            raiz.addView(w, 0, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            h.postDelayed(() -> {
+                if (feito[0]) return;
+                ler.run();
+                // Se nem a leitura responder, desiste.
+                h.postDelayed(() -> {
+                    if (feito[0]) return;
+                    feito[0] = true;
+                    fecharNavPagina();
+                    call.reject("A página demorou demais");
+                }, 3000);
+            }, limite);
+            w.loadUrl(url);
+        });
+    }
+
+    private void fecharNavPagina() {
+        WebView w = navPagina;
+        navPagina = null;
+        if (w == null) return;
+        try {
+            ViewGroup pai = (ViewGroup) w.getParent();
+            if (pai != null) pai.removeView(w);
+            w.stopLoading();
+            w.destroy();
+        } catch (Exception ignored) {}
+    }
+
     @PluginMethod
     public void pararPerfil(PluginCall call) {
         getActivity().runOnUiThread(() -> { fecharNavPerfil(); call.resolve(); });
