@@ -356,6 +356,29 @@ public class BaixadorPlugin extends Plugin {
         }
     }
 
+    /** Abre o app do TikTok (versões do Brasil e internacional); sem ele, abre o site no navegador. */
+    @PluginMethod
+    public void abrirTikTok(PluginCall call) {
+        String[] pacotes = { "com.zhiliaoapp.musically", "com.ss.android.ugc.trill", "com.zhiliaoapp.musically.go" };
+        try {
+            for (String p : pacotes) {
+                Intent i = getContext().getPackageManager().getLaunchIntentForPackage(p);
+                if (i != null) {
+                    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    getActivity().startActivity(i);
+                    call.resolve();
+                    return;
+                }
+            }
+            Intent web = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.tiktok.com/"));
+            web.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getActivity().startActivity(web);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("Não consegui abrir o TikTok");
+        }
+    }
+
     /** Apaga o que sobrou na pasta temporária (downloads interrompidos). */
     @PluginMethod
     public void limparCache(PluginCall call) {

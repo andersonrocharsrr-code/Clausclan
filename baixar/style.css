@@ -60,6 +60,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .btn--pri { background: var(--pri); color: #fff; }
 .btn--pri:active { background: var(--pri-esc); }
 .btn--sec { background: #232842; }
+.btn--verm { background: #dc2626; color: #fff; }
+.btn--verm:active { background: #b91c1c; }
 .btn--ouro { background: var(--ouro); color: #1b1203; }
 .btn--grande { justify-content: flex-start; padding: 14px 16px; text-align: left; }
 .btn--grande small { display: block; font-weight: 500; font-size: 13px; opacity: .85; }
@@ -124,3 +126,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .lista .txt b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lista .txt span { font-size: 13px; color: var(--fraco); }
 .vazio { color: var(--fraco); font-size: 14px; margin: 4px 2px; }
+
+.abas { display: flex; gap: 8px; margin: 0 0 10px; }
+.aba {
+  flex: 1; border: 1px solid var(--borda); background: var(--cartao); color: var(--fraco);
+  border-radius: 12px; padding: 10px; font-weight: 700; font-size: 15px;
+}
+.aba--on { background: rgba(139,92,246,.18); border-color: var(--pri); color: #fff; }
+#abaAudios.aba--on { background: rgba(245,158,11,.16); border-color: var(--ouro); }
+.aba__n { display: inline-block; min-width: 22px; padding: 0 6px; margin-left: 4px; border-radius: 99px; background: rgba(255,255,255,.12); font-size: 13px; }

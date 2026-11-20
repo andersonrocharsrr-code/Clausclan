@@ -19,6 +19,7 @@
   let tarefaId = '';        // para cancelar
   let ultimoPronto = null;  // { uri, mime } para o botão "Abrir"
   let ultimoColado = '';
+  let abaAtual = 'mp4';      // aba da lista: 'mp4' (vídeos) ou 'mp3' (áudios)
 
   // ---------- Mensagens ----------
 
@@ -42,7 +43,7 @@
     ocupado = sim;
     $('baixarVideo').disabled = sim || !info || info.versoes.length === 0;
     $('baixarAudio').disabled = sim || !info || (info.versoes.length === 0 && !info.musica);
-    $('buscar').disabled = sim;
+    $('colar').disabled = sim;
     if (!sim) $('progresso').hidden = true;
   }
 
@@ -275,6 +276,7 @@
     const pasta = tipo === 'mp4' ? 'Filmes › Baixar TikTok' : 'Música › Baixar TikTok';
     $('prontoTexto').textContent = '✓ Salvo em ' + pasta;
     $('pronto').hidden = false;
+    abaAtual = tipo;
     guardarHistorico({
       tipo, uri: r.uri, mime,
       id: info.id, autor: info.autor, desc: info.desc,
@@ -301,11 +303,19 @@
   }
 
   function desenharHistorico() {
-    const h = lerHistorico();
+    const todos = lerHistorico();
+    const h = todos.filter((it) => (abaAtual === 'mp3' ? it.tipo === 'mp3' : it.tipo !== 'mp3'));
+    $('nVideos').textContent = todos.length - todos.filter((it) => it.tipo === 'mp3').length;
+    $('nAudios').textContent = todos.filter((it) => it.tipo === 'mp3').length;
+    $('abaVideos').classList.toggle('aba--on', abaAtual !== 'mp3');
+    $('abaAudios').classList.toggle('aba--on', abaAtual === 'mp3');
+    $('abaVideos').setAttribute('aria-selected', String(abaAtual !== 'mp3'));
+    $('abaAudios').setAttribute('aria-selected', String(abaAtual === 'mp3'));
     const ul = $('lista');
     ul.textContent = '';
+    $('vazio').textContent = abaAtual === 'mp3' ? 'Nenhum áudio baixado ainda.' : 'Nenhum vídeo baixado ainda.';
     $('vazio').hidden = h.length > 0;
-    $('limparHist').hidden = h.length === 0;
+    $('limparHist').hidden = todos.length === 0;
     h.forEach((it) => {
       const li = document.createElement('li');
       const tipo = document.createElement('span');
@@ -329,6 +339,16 @@
       li.append(tipo, txt, bt);
       ul.append(li);
     });
+  }
+
+  // ---------- Abrir o TikTok ----------
+
+  // Abre o app do TikTok (para escolher o vídeo e copiar o link); sem o app, abre o site.
+  async function abrirTikTok() {
+    try {
+      if (nat) { await nat.abrirTikTok(); return; }
+    } catch (e) {}
+    window.open('https://www.tiktok.com/', '_blank');
   }
 
   // ---------- Colar / compartilhar ----------
@@ -363,10 +383,17 @@
     desenharHistorico();
     travar(false);
 
-    $('link').addEventListener('input', () => { $('limpar').hidden = !$('link').value; });
+    $('link').addEventListener('input', () => {
+      $('limpar').hidden = !$('link').value;
+      // Colou o link direto na caixa (teclado): já procura o vídeo.
+      const l = T.extrairLink($('link').value);
+      if (l && l !== ultimoColado && /tiktok\.com\/\S{3,}/.test(l)) { ultimoColado = l; buscar(l); }
+    });
     $('link').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); buscar($('link').value); } });
     $('limpar').addEventListener('click', () => { porLink(''); $('link').focus(); });
-    $('buscar').addEventListener('click', () => buscar($('link').value));
+    $('abrirTikTok').addEventListener('click', abrirTikTok);
+    $('abaVideos').addEventListener('click', () => { abaAtual = 'mp4'; desenharHistorico(); });
+    $('abaAudios').addEventListener('click', () => { abaAtual = 'mp3'; desenharHistorico(); });
     $('colar').addEventListener('click', async () => {
       const t = await lerAreaTransferencia();
       if (!t) { estado('Nada copiado. No TikTok, toque em Compartilhar → Copiar link.', 'erro'); return; }

@@ -7,7 +7,7 @@
   <meta name="description" content="Baixa vídeos do TikTok em HD sem marca d'água e o áudio em MP3.">
   <meta name="theme-color" content="#0b0d14">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
   <header class="topo">
@@ -31,10 +31,10 @@
         <button id="limpar" class="btn-x" type="button" aria-label="Apagar o link" hidden>✕</button>
       </div>
       <div class="botoes">
-        <button id="colar" class="btn btn--sec" type="button">📋 Colar</button>
-        <button id="buscar" class="btn btn--pri" type="button">Buscar vídeo</button>
+        <button id="colar" class="btn btn--verm" type="button">📋 Colar</button>
+        <button id="abrirTikTok" class="btn btn--pri" type="button">♪ Abrir TikTok</button>
       </div>
-      <p class="dica">No TikTok: <b>Compartilhar → Baixar TikTok</b>, ou <b>Copiar link</b> e volte aqui.</p>
+      <p class="dica">No TikTok: <b>Compartilhar → Baixar TikTok</b>, ou <b>Copiar link</b> e toque em <b>Colar</b>.</p>
     </section>
 
     <p id="estado" class="estado" role="status" hidden></p>
@@ -74,12 +74,16 @@
         <h2>Baixados</h2>
         <button id="limparHist" class="link-btn" type="button" hidden>Limpar lista</button>
       </div>
+      <div class="abas" role="tablist">
+        <button id="abaVideos" class="aba aba--on" type="button" role="tab" aria-selected="true">▶ Vídeos <span id="nVideos" class="aba__n">0</span></button>
+        <button id="abaAudios" class="aba" type="button" role="tab" aria-selected="false">♪ Áudios <span id="nAudios" class="aba__n">0</span></button>
+      </div>
       <ul id="lista" class="lista"></ul>
       <p id="vazio" class="vazio">Nada baixado ainda.</p>
     </section>
   </main>
 
   <script src="tiktok.js?v=1"></script>
-  <script src="app.js?v=1"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>
