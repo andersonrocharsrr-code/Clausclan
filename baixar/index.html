@@ -7,7 +7,7 @@
   <meta name="description" content="Baixa vídeos do TikTok em HD sem marca d'água e o áudio em MP3.">
   <meta name="theme-color" content="#0b0d14">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <header class="topo">
@@ -37,8 +37,15 @@
       <p class="dica">No TikTok: <b>Compartilhar → Salva Vídeo</b>, ou <b>Copiar link</b> e toque em <b>Baixar</b>.</p>
     </section>
 
+    <section id="criadores" class="cartao criadores" hidden>
+      <h2 class="criadores__titulo">Criadores recentes</h2>
+      <div id="listaCriadores" class="criadores__lista"></div>
+    </section>
+
+    <span id="lugarEstado" hidden></span>
     <p id="estado" class="estado" role="status" hidden></p>
 
+    <span id="lugarResultado" hidden></span>
     <section id="resultado" class="cartao video" hidden>
       <div class="video__topo">
         <img id="capa" class="video__capa" alt="">
@@ -83,7 +90,33 @@
     </section>
   </main>
 
-  <script src="tiktok.js?v=1"></script>
-  <script src="app.js?v=4"></script>
+  <!-- Página do perfil: todos os vídeos do criador; tocar num vídeo abre a folha de baixar. -->
+  <section id="perfil" class="perfil" hidden aria-label="Perfil">
+    <header class="perfil__topo">
+      <button id="voltarPerfil" class="perfil__voltar" type="button" aria-label="Voltar">‹</button>
+      <span id="perfilFoto" class="perfil__foto"></span>
+      <div class="perfil__nomes">
+        <b id="perfilUsuario"></b>
+        <span id="perfilNome"></span>
+      </div>
+    </header>
+    <p id="perfilEstado" class="perfil__estado"></p>
+    <div id="grade" class="grade"></div>
+    <button id="maisVideos" class="btn btn--sec perfil__mais" type="button" hidden>Carregar mais vídeos</button>
+  </section>
+
+  <div id="folha" class="folha" hidden>
+    <div class="folha__fundo" id="folhaFundo"></div>
+    <div class="folha__caixa" role="dialog" aria-label="Baixar vídeo">
+      <div class="folha__topo">
+        <span class="folha__alca"></span>
+        <button id="fecharFolha" class="folha__x" type="button" aria-label="Fechar">✕</button>
+      </div>
+      <div id="folhaCorpo"></div>
+    </div>
+  </div>
+
+  <script src="tiktok.js?v=2"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>
