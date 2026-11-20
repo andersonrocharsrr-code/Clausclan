@@ -302,9 +302,9 @@ public class BaixadorPlugin extends Plugin {
 
     private void publicarAgora(PluginCall call) {
         String caminho = call.getString("caminho");
-        String pasta = call.getString("pasta", "video");
-        boolean foto = "foto".equals(pasta);
-        boolean video = !foto && !"audio".equals(pasta);
+        String tipoPasta = call.getString("pasta", "video");
+        boolean foto = "foto".equals(tipoPasta);
+        boolean video = !foto && !"audio".equals(tipoPasta);
         String nome = nomeSeguro(call.getString("nome", foto ? "foto.jpg" : video ? "video.mp4" : "audio.mp3"));
         String mime = call.getString("mime", foto ? "image/jpeg" : video ? "video/mp4" : "audio/mpeg");
         File origem = caminho == null ? null : new File(caminho);
