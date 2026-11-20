@@ -13,6 +13,7 @@
   const T = window.TikTok;
 
   const HIST = 'baixar.historico';
+  const CRIADORES = 'baixar.criadores'; // { autor: { nome, avatar } } — foto e nome de quem já teve vídeo baixado
   let info = null;          // vídeo mostrado agora
   let linkAtual = '';       // link (final) do vídeo mostrado
   let ocupado = false;      // baixando/convertendo
@@ -277,9 +278,10 @@
     $('prontoTexto').textContent = '✓ Salvo em ' + pasta;
     $('pronto').hidden = false;
     abaAtual = tipo;
+    if (info.autor) guardarCriador(info.autor, { nome: info.nome, avatar: info.avatar });
     guardarHistorico({
       tipo, uri: r.uri, mime,
-      id: info.id, autor: info.autor, desc: info.desc,
+      id: info.id, autor: info.autor, nome: info.nome || '', desc: info.desc,
       quando: Date.now(), tamanho: tamanho || 0
     });
   }
@@ -300,6 +302,7 @@
     h.unshift(item);
     try { localStorage.setItem(HIST, JSON.stringify(h.slice(0, 60))); } catch (e) {}
     desenharHistorico();
+    desenharCriadores();
   }
 
   function desenharHistorico() {
@@ -341,6 +344,196 @@
     });
   }
 
+  // ---------- Criadores recentes ----------
+
+  function lerCriadores() {
+    try { return JSON.parse(localStorage.getItem(CRIADORES)) || {}; } catch (e) { return {}; }
+  }
+
+  function guardarCriador(autor, dados) {
+    const c = lerCriadores();
+    const atual = c[autor] || {};
+    c[autor] = { nome: dados.nome || atual.nome || '', avatar: dados.avatar || atual.avatar || '' };
+    try { localStorage.setItem(CRIADORES, JSON.stringify(c)); } catch (e) {}
+  }
+
+  // Foto redonda do criador; sem foto (ou se a foto venceu), mostra a primeira letra.
+  function fotoCriador(el, autor, avatar) {
+    el.textContent = '';
+    const letra = () => { el.textContent = (autor || '?').replace(/^[^a-z0-9]+/i, '').charAt(0).toUpperCase() || '?'; };
+    if (!avatar) { letra(); return; }
+    const img = document.createElement('img');
+    img.alt = '';
+    img.referrerPolicy = 'no-referrer';
+    img.style.cssText = 'width:100%;height:100%;border-radius:50%;object-fit:cover';
+    img.onerror = () => { img.remove(); letra(); };
+    img.src = avatar;
+    el.append(img);
+  }
+
+  function desenharCriadores() {
+    const c = lerCriadores();
+    const vistos = new Set();
+    const autores = [];
+    for (const it of lerHistorico()) {
+      if (it.autor && !vistos.has(it.autor)) { vistos.add(it.autor); autores.push(it.autor); }
+    }
+    const box = $('listaCriadores');
+    box.textContent = '';
+    $('criadores').hidden = autores.length === 0;
+    autores.slice(0, 20).forEach((autor) => {
+      const d = c[autor] || {};
+      const bt = document.createElement('button');
+      bt.type = 'button';
+      bt.className = 'criador';
+      const foto = document.createElement('span');
+      foto.className = 'criador__foto';
+      fotoCriador(foto, autor, d.avatar);
+      const nome = document.createElement('span');
+      nome.className = 'criador__nome';
+      nome.textContent = d.nome || '@' + autor;
+      bt.append(foto, nome);
+      bt.addEventListener('click', () => abrirPerfil(autor));
+      box.append(bt);
+    });
+  }
+
+  // ---------- Perfil: todos os vídeos do criador ----------
+
+  let perfilAtual = '';
+  let perfilLista = [];
+  let perfilMax = 60;
+  let perfilPedido = '';
+  let ouvintePerfil = null;
+  const itensGrade = new Map();
+
+  function estadoPerfil(txt, carregando) {
+    $('perfilEstado').textContent = txt || '';
+    $('perfilEstado').className = 'perfil__estado' + (carregando ? ' carregando' : '');
+  }
+
+  async function abrirPerfil(autor) {
+    if (!nat) return;
+    perfilAtual = autor;
+    perfilLista = [];
+    perfilMax = 60;
+    itensGrade.clear();
+    $('grade').textContent = '';
+    const d = lerCriadores()[autor] || {};
+    $('perfilUsuario').textContent = '@' + autor;
+    $('perfilNome').textContent = d.nome || '';
+    fotoCriador($('perfilFoto'), autor, d.avatar);
+    $('perfil').hidden = false;
+    $('perfil').scrollTop = 0;
+    document.body.classList.add('travado');
+    // Nome, foto e quantidade de vídeos atualizados (a foto do TikTok vence depois de uns dias).
+    nat.pegar({ url: 'https://www.tiktok.com/@' + autor }).then((r) => {
+      const p = T.lerPerfil(r.texto);
+      if (!p || perfilAtual !== autor) return;
+      guardarCriador(autor, p);
+      $('perfilNome').textContent = p.nome + (p.videos ? ' · ' + p.videos + ' vídeos' : '');
+      fotoCriador($('perfilFoto'), autor, p.avatar);
+      desenharCriadores();
+      if (p.privado) estadoPerfil('Este perfil é privado: o TikTok não mostra os vídeos.');
+    }).catch(() => {});
+    carregarVideosPerfil();
+  }
+
+  async function carregarVideosPerfil() {
+    const autor = perfilAtual;
+    const pedido = 'p' + Date.now();
+    perfilPedido = pedido;
+    $('maisVideos').hidden = true;
+    estadoPerfil(perfilLista.length ? 'Carregando mais vídeos…' : 'Carregando os vídeos…', true);
+    if (ouvintePerfil) { try { await ouvintePerfil.remove(); } catch (e) {} }
+    ouvintePerfil = await nat.addListener('perfilItens', (p) => {
+      if (p.id !== pedido || perfilPedido !== pedido) return;
+      T.juntarVideosPerfil(perfilLista, p.itens, autor);
+      desenharGrade();
+      if (perfilLista.length) estadoPerfil(perfilLista.length + ' vídeos — carregando…', true);
+    });
+    try {
+      const r = await nat.perfilVideos({ usuario: autor, max: perfilMax, id: pedido });
+      if (perfilPedido !== pedido) return;
+      T.juntarVideosPerfil(perfilLista, r.itens, autor);
+      desenharGrade();
+      if (perfilLista.length) {
+        estadoPerfil(perfilLista.length + ' vídeos. Toque num vídeo para baixar.');
+        $('maisVideos').textContent = 'Carregar mais vídeos';
+        $('maisVideos').hidden = perfilLista.length < perfilMax;
+      } else {
+        estadoPerfil('O TikTok não mostrou os vídeos agora. Tente de novo daqui a pouco.');
+        $('maisVideos').textContent = 'Tentar de novo';
+        $('maisVideos').hidden = false;
+      }
+    } catch (e) {
+      if (perfilPedido !== pedido || eCancelado(e)) return;
+      estadoPerfil('Não consegui abrir o perfil. Confira a internet e tente de novo.');
+      $('maisVideos').textContent = 'Tentar de novo';
+      $('maisVideos').hidden = false;
+    }
+  }
+
+  function desenharGrade() {
+    const grade = $('grade');
+    perfilLista.forEach((v) => {
+      let bt = itensGrade.get(v.id);
+      if (!bt) {
+        bt = document.createElement('button');
+        bt.type = 'button';
+        bt.className = 'grade__item';
+        bt.setAttribute('aria-label', 'Vídeo ' + (itensGrade.size + 1));
+        bt.addEventListener('click', () => abrirFolha(v.url));
+        if (v.tipo === 'photo') {
+          const f = document.createElement('span');
+          f.className = 'foto';
+          f.textContent = 'Fotos';
+          bt.append(f);
+        }
+        itensGrade.set(v.id, bt);
+        grade.append(bt);
+      }
+      if (v.capa && !bt.querySelector('img')) {
+        const img = document.createElement('img');
+        img.alt = '';
+        img.loading = 'lazy';
+        img.referrerPolicy = 'no-referrer';
+        img.onerror = () => img.remove();
+        img.src = v.capa;
+        bt.prepend(img);
+      }
+      if (v.views && !bt.querySelector('.views')) {
+        const s = document.createElement('span');
+        s.className = 'views';
+        s.textContent = '▶ ' + v.views;
+        bt.append(s);
+      }
+    });
+  }
+
+  function fecharPerfil() {
+    fecharFolha();
+    $('perfil').hidden = true;
+    document.body.classList.remove('travado');
+    perfilPedido = '';
+    perfilAtual = '';
+    try { nat && nat.pararPerfil(); } catch (e) {}
+  }
+
+  // Folha que sobe de baixo com o vídeo escolhido e os botões Vídeo HD / Áudio MP3.
+  function abrirFolha(url) {
+    $('folhaCorpo').append($('estado'), $('resultado'));
+    $('folha').hidden = false;
+    buscar(url);
+  }
+
+  function fecharFolha() {
+    if ($('folha').hidden) return;
+    $('folha').hidden = true;
+    $('lugarEstado').after($('estado'));
+    $('lugarResultado').after($('resultado'));
+  }
+
   // ---------- Abrir o TikTok ----------
 
   // Abre o app do TikTok (para escolher o vídeo e copiar o link); sem o app, abre o site.
@@ -368,7 +561,7 @@
 
   // Ao voltar para o app com um link do TikTok copiado, cola e busca sozinho.
   async function colarAutomatico() {
-    if (ocupado) return;
+    if (ocupado || !$('perfil').hidden) return;
     const t = await lerAreaTransferencia();
     const link = T.extrairLink(t);
     if (!link || link === ultimoColado) return;
@@ -381,6 +574,7 @@
   async function iniciar() {
     $('soNoApp').hidden = NATIVO;
     desenharHistorico();
+    desenharCriadores();
     travar(false);
 
     $('link').addEventListener('input', () => {
@@ -392,6 +586,13 @@
     $('link').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); buscar($('link').value); } });
     $('limpar').addEventListener('click', () => { porLink(''); $('link').focus(); });
     $('abrirTikTok').addEventListener('click', abrirTikTok);
+    $('voltarPerfil').addEventListener('click', fecharPerfil);
+    $('maisVideos').addEventListener('click', () => {
+      if (perfilLista.length >= perfilMax) perfilMax += 60;
+      carregarVideosPerfil();
+    });
+    $('fecharFolha').addEventListener('click', fecharFolha);
+    $('folhaFundo').addEventListener('click', fecharFolha);
     $('abaVideos').addEventListener('click', () => { abaAtual = 'mp4'; desenharHistorico(); });
     $('abaAudios').addEventListener('click', () => { abaAtual = 'mp3'; desenharHistorico(); });
     // Botão "Baixar": pega o link copiado (ou o que já está na caixa) e procura o vídeo.
@@ -414,6 +615,7 @@
       if (!confirm('Limpar a lista? Os arquivos continuam na galeria.')) return;
       try { localStorage.removeItem(HIST); } catch (e) {}
       desenharHistorico();
+      desenharCriadores();
     });
 
     if (!nat) return;
@@ -430,7 +632,15 @@
     } else {
       colarAutomatico();
     }
-    if (appCap) appCap.addListener('resume', () => setTimeout(colarAutomatico, 300));
+    if (appCap) {
+      appCap.addListener('resume', () => setTimeout(colarAutomatico, 300));
+      // Botão voltar do Android: fecha a folha, depois o perfil; na tela principal, sai do app.
+      appCap.addListener('backButton', () => {
+        if (!$('folha').hidden) fecharFolha();
+        else if (!$('perfil').hidden) fecharPerfil();
+        else appCap.exitApp();
+      });
+    }
   }
 
   iniciar();

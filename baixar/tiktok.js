@@ -82,6 +82,7 @@
       id: String(it.id),
       autor: autor.uniqueId || '',
       nome: autor.nickname || '',
+      avatar: autor.avatarThumb || autor.avatarMedium || autor.avatarLarger || '',
       desc: it.desc || '',
       capa: v.cover || v.originCover || v.dynamicCover || '',
       duracao: +v.duration || 0,
@@ -107,6 +108,7 @@
       id: String(d.id || ''),
       autor: a.unique_id || '',
       nome: a.nickname || '',
+      avatar: abs(a.avatar),
       desc: d.title || '',
       capa: abs(d.origin_cover || d.cover),
       duracao: +d.duration || 0,
@@ -151,7 +153,38 @@
     return 'tiktok_' + autor + '_' + (info.id || Date.now()) + '.' + ext;
   }
 
-  const API = { extrairLink, idDoLink, ehFoto, lerPagina, lerTikwm, qualidade, enderecosVideo, enderecosAudio, nomeArquivo };
+  // Dados do perfil (página https://www.tiktok.com/@usuario): nome, foto e quantos vídeos tem.
+  function lerPerfil(html) {
+    const d = lerJsonDaPagina(html);
+    const esc = d && d.__DEFAULT_SCOPE__;
+    const ui = esc && esc['webapp.user-detail'] && esc['webapp.user-detail'].userInfo;
+    const u = ui && ui.user;
+    if (!u || !u.uniqueId) return null;
+    const st = ui.stats || ui.statsV2 || {};
+    return {
+      autor: u.uniqueId,
+      nome: u.nickname || '',
+      avatar: u.avatarMedium || u.avatarThumb || u.avatarLarger || '',
+      videos: +st.videoCount || 0,
+      privado: !!u.privateAccount
+    };
+  }
+
+  // Junta a lista de vídeos lida da página do perfil (sem repetir; guarda a capa quando ela aparece).
+  function juntarVideosPerfil(lista, novos, usuario) {
+    const porId = new Map(lista.map((v) => [v.id, v]));
+    const dono = String(usuario || '').toLowerCase();
+    for (const n of novos || []) {
+      if (!n || !n.id) continue;
+      if (dono && n.url && !String(n.url).toLowerCase().includes('/@' + dono + '/')) continue;
+      const v = porId.get(n.id);
+      if (v) { if (n.capa && !v.capa) v.capa = n.capa; if (n.views && !v.views) v.views = n.views; }
+      else { const novo = { id: n.id, url: n.url, tipo: n.tipo || 'video', capa: n.capa || '', views: n.views || '' }; porId.set(n.id, novo); lista.push(novo); }
+    }
+    return lista;
+  }
+
+  const API = { lerPerfil, juntarVideosPerfil, extrairLink, idDoLink, ehFoto, lerPagina, lerTikwm, qualidade, enderecosVideo, enderecosAudio, nomeArquivo };
   if (typeof module === 'object' && module.exports) module.exports = API;
   raiz.TikTok = API;
 })(typeof window !== 'undefined' ? window : globalThis);

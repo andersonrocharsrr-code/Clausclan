@@ -9,7 +9,14 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Base64;
+import android.view.ViewGroup;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import androidx.core.content.FileProvider;
 
@@ -22,6 +29,9 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
+
+import org.json.JSONArray;
+import org.json.JSONTokener;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -377,6 +387,108 @@ public class BaixadorPlugin extends Plugin {
         } catch (Exception e) {
             call.reject("Não consegui abrir o TikTok");
         }
+    }
+
+    // ---------- Vídeos de um perfil ----------
+
+    /** Lê os vídeos que aparecem na página do perfil (links, capas e visualizações) e rola para carregar mais. */
+    private static final String SCRIPT_PERFIL =
+        "(function(){var out=[],vistos={};" +
+        "document.querySelectorAll('a[href*=\"/video/\"],a[href*=\"/photo/\"]').forEach(function(a){" +
+        "var m=a.href.match(/\\/(video|photo)\\/(\\d+)/);if(!m||vistos[m[2]])return;vistos[m[2]]=1;" +
+        "var img=a.querySelector('img');var v=a.querySelector('[data-e2e=\"video-views\"]');" +
+        "out.push({id:m[2],url:a.href.split('?')[0],tipo:m[1],capa:img?(img.currentSrc||img.src||''):'',views:v?v.textContent:''});});" +
+        "window.scrollBy(0,2500);return JSON.stringify(out);})()";
+
+    private WebView navPerfil = null;
+
+    /**
+     * Abre a página pública do perfil num navegador escondido (atrás da tela do app), como uma pessoa abrindo
+     * o perfil, e vai juntando os vídeos que aparecem. Manda "perfilItens" a cada passo e termina quando
+     * chega em "max" vídeos, quando a lista para de crescer ou depois de 50 s.
+     */
+    @PluginMethod
+    public void perfilVideos(PluginCall call) {
+        String usuario = call.getString("usuario", "").replaceAll("[^\\w.\\-]", "");
+        int max = call.getInt("max", 60);
+        String id = call.getString("id", "");
+        if (usuario.isEmpty()) { call.reject("Sem perfil"); return; }
+        getActivity().runOnUiThread(() -> {
+            fecharNavPerfil();
+            WebView w = new WebView(getContext());
+            navPerfil = w;
+            WebSettings s = w.getSettings();
+            s.setJavaScriptEnabled(true);
+            s.setDomStorageEnabled(true);
+            s.setUserAgentString(UA);
+            s.setMediaPlaybackRequiresUserGesture(true);
+            s.setUseWideViewPort(true);
+            s.setLoadWithOverviewMode(true);
+            w.setWebViewClient(new WebViewClient() {
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest r) {
+                    // Não deixa a página abrir o app do TikTok nem outra coisa fora do navegador escondido.
+                    String sc = r.getUrl().getScheme();
+                    return sc == null || !(sc.equals("https") || sc.equals("http"));
+                }
+            });
+            ViewGroup raiz = getActivity().findViewById(android.R.id.content);
+            raiz.addView(w, 0, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+            Handler h = new Handler(Looper.getMainLooper());
+            long inicio = System.currentTimeMillis();
+            int[] ultimo = { -1 };
+            int[] parado = { 0 };
+            Runnable passo = new Runnable() {
+                @Override
+                public void run() {
+                    if (navPerfil != w) { call.reject("cancelado", "CANCELADO"); return; }
+                    w.evaluateJavascript(SCRIPT_PERFIL, valor -> {
+                        JSArray itens = new JSArray();
+                        try {
+                            Object t = new JSONTokener(valor).nextValue();
+                            if (t instanceof String) itens = new JSArray(new JSONArray((String) t).toString());
+                        } catch (Exception ignored) {}
+                        int n = itens.length();
+                        if (n == ultimo[0]) parado[0]++; else parado[0] = 0;
+                        ultimo[0] = n;
+                        JSObject p = new JSObject();
+                        p.put("id", id);
+                        p.put("itens", itens);
+                        notifyListeners("perfilItens", p);
+                        long passou = System.currentTimeMillis() - inicio;
+                        boolean fim = n >= max || (n > 0 && parado[0] >= 4) || (n == 0 && parado[0] >= 14) || passou > 50000;
+                        if (fim) {
+                            fecharNavPerfil();
+                            JSObject r = new JSObject();
+                            r.put("itens", itens);
+                            call.resolve(r);
+                        } else {
+                            h.postDelayed(this, 1500);
+                        }
+                    });
+                }
+            };
+            w.loadUrl("https://www.tiktok.com/@" + usuario);
+            h.postDelayed(passo, 4000);
+        });
+    }
+
+    @PluginMethod
+    public void pararPerfil(PluginCall call) {
+        getActivity().runOnUiThread(() -> { fecharNavPerfil(); call.resolve(); });
+    }
+
+    private void fecharNavPerfil() {
+        WebView w = navPerfil;
+        navPerfil = null;
+        if (w == null) return;
+        try {
+            ViewGroup pai = (ViewGroup) w.getParent();
+            if (pai != null) pai.removeView(w);
+            w.stopLoading();
+            w.destroy();
+        } catch (Exception ignored) {}
     }
 
     /** Apaga o que sobrou na pasta temporária (downloads interrompidos). */
