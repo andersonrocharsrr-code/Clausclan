@@ -170,6 +170,41 @@
     };
   }
 
+  // Visualizações no jeito do TikTok: 624, 16,3 mil, 1,2 mi.
+  function contagem(n) {
+    n = +n || 0;
+    const f = (v) => v.toFixed(v < 10 ? 1 : 0).replace('.', ',').replace(/,0$/, '');
+    if (n >= 1e6) return f(n / 1e6) + ' mi';
+    if (n >= 1e3) return f(n / 1e3) + ' mil';
+    return String(n);
+  }
+
+  // Página de perfil incorporado (https://www.tiktok.com/embed/@usuario): é pública, vem pronta do servidor
+  // e traz os vídeos mais recentes do perfil (uns 10), com capa e visualizações.
+  function lerEmbedPerfil(html) {
+    const m = String(html || '').match(/<script[^>]+id="__FRONTITY_CONNECT_STATE__"[^>]*>([\s\S]*?)<\/script>/);
+    if (!m) return null;
+    let d;
+    try { d = JSON.parse(m[1]); } catch (e) { return null; }
+    const dados = d && d.source && d.source.data;
+    if (!dados) return null;
+    const chave = Object.keys(dados).find((k) => /^\/embed\/@/.test(k) && dados[k] && dados[k].videoList);
+    if (!chave) return null;
+    const pg = dados[chave];
+    const u = pg.userInfo || {};
+    const autor = u.uniqueId || chave.replace(/^\/embed\/@/, '');
+    return {
+      perfil: { autor, nome: u.nickname || '', avatar: u.avatarThumbUrl || '' },
+      videos: (pg.videoList || []).filter((v) => v && v.id).map((v) => ({
+        id: String(v.id),
+        url: 'https://www.tiktok.com/@' + (v.authorUniqueId || autor) + '/video/' + v.id,
+        tipo: 'video',
+        capa: v.coverUrl || v.originCoverUrl || '',
+        views: v.playCount != null ? contagem(v.playCount) : ''
+      }))
+    };
+  }
+
   // Junta a lista de vídeos lida da página do perfil (sem repetir; guarda a capa quando ela aparece).
   function juntarVideosPerfil(lista, novos, usuario) {
     const porId = new Map(lista.map((v) => [v.id, v]));
@@ -184,7 +219,7 @@
     return lista;
   }
 
-  const API = { lerPerfil, juntarVideosPerfil, extrairLink, idDoLink, ehFoto, lerPagina, lerTikwm, qualidade, enderecosVideo, enderecosAudio, nomeArquivo };
+  const API = { lerEmbedPerfil, contagem, lerPerfil, juntarVideosPerfil, extrairLink, idDoLink, ehFoto, lerPagina, lerTikwm, qualidade, enderecosVideo, enderecosAudio, nomeArquivo };
   if (typeof module === 'object' && module.exports) module.exports = API;
   raiz.TikTok = API;
 })(typeof window !== 'undefined' ? window : globalThis);

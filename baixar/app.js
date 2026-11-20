@@ -442,7 +442,26 @@
       desenharCriadores();
       if (p.privado) estadoPerfil('Este perfil é privado: o TikTok não mostra os vídeos.');
     }).catch(() => {});
-    carregarVideosPerfil();
+    await carregarRecentes(autor);
+    if (perfilAtual === autor) carregarVideosPerfil();
+  }
+
+  // Vídeos mais recentes pela página de perfil incorporado (rápida e sem depender do navegador escondido).
+  async function carregarRecentes(autor) {
+    estadoPerfil('Carregando os vídeos…', true);
+    try {
+      const r = await nat.pegar({ url: 'https://www.tiktok.com/embed/@' + autor });
+      const e = T.lerEmbedPerfil(r.texto);
+      if (!e || perfilAtual !== autor) return;
+      if (e.perfil.nome && !$('perfilNome').textContent) $('perfilNome').textContent = e.perfil.nome;
+      if (e.perfil.avatar && !lerCriadores()[autor]?.avatar) {
+        guardarCriador(autor, e.perfil);
+        fotoCriador($('perfilFoto'), autor, e.perfil.avatar);
+        desenharCriadores();
+      }
+      T.juntarVideosPerfil(perfilLista, e.videos, autor);
+      desenharGrade();
+    } catch (e) {}
   }
 
   async function carregarVideosPerfil() {
@@ -450,20 +469,32 @@
     const pedido = 'p' + Date.now();
     perfilPedido = pedido;
     $('maisVideos').hidden = true;
-    estadoPerfil(perfilLista.length ? 'Carregando mais vídeos…' : 'Carregando os vídeos…', true);
+    if (!perfilLista.length) await carregarRecentes(autor);
+    if (perfilPedido !== pedido) return;
+    const antes = perfilLista.length;
+    estadoPerfil(antes ? antes + ' vídeos — procurando mais…' : 'Carregando os vídeos…', true);
     if (ouvintePerfil) { try { await ouvintePerfil.remove(); } catch (e) {} }
     ouvintePerfil = await nat.addListener('perfilItens', (p) => {
       if (p.id !== pedido || perfilPedido !== pedido) return;
       T.juntarVideosPerfil(perfilLista, p.itens, autor);
       desenharGrade();
-      if (perfilLista.length) estadoPerfil(perfilLista.length + ' vídeos — carregando…', true);
+      if (perfilLista.length) estadoPerfil(perfilLista.length + ' vídeos — procurando mais…', true);
     });
     try {
-      const r = await nat.perfilVideos({ usuario: autor, max: perfilMax, id: pedido });
+      // Limite de 65 s: se o navegador escondido travar, a tela não fica carregando para sempre.
+      const r = await Promise.race([
+        nat.perfilVideos({ usuario: autor, max: perfilMax, id: pedido }),
+        new Promise((ok) => setTimeout(() => ok({ itens: [] }), 65000))
+      ]);
       if (perfilPedido !== pedido) return;
       T.juntarVideosPerfil(perfilLista, r.itens, autor);
       desenharGrade();
-      if (perfilLista.length) {
+      if (perfilLista.length && perfilLista.length === antes) {
+        // Só vieram os recentes: mostra e deixa procurar os mais antigos de novo.
+        estadoPerfil('Os ' + perfilLista.length + ' vídeos mais recentes. Toque num vídeo para baixar.');
+        $('maisVideos').textContent = 'Procurar vídeos mais antigos';
+        $('maisVideos').hidden = false;
+      } else if (perfilLista.length) {
         estadoPerfil(perfilLista.length + ' vídeos. Toque num vídeo para baixar.');
         $('maisVideos').textContent = 'Carregar mais vídeos';
         $('maisVideos').hidden = perfilLista.length < perfilMax;
@@ -474,6 +505,12 @@
       }
     } catch (e) {
       if (perfilPedido !== pedido || eCancelado(e)) return;
+      if (perfilLista.length) {
+        estadoPerfil('Os ' + perfilLista.length + ' vídeos mais recentes. Toque num vídeo para baixar.');
+        $('maisVideos').textContent = 'Procurar vídeos mais antigos';
+        $('maisVideos').hidden = false;
+        return;
+      }
       estadoPerfil('Não consegui abrir o perfil. Confira a internet e tente de novo.');
       $('maisVideos').textContent = 'Tentar de novo';
       $('maisVideos').hidden = false;

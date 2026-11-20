@@ -441,17 +441,31 @@ public class BaixadorPlugin extends Plugin {
             long inicio = System.currentTimeMillis();
             int[] ultimo = { -1 };
             int[] parado = { 0 };
+            boolean[] feito = { false };
+            JSArray[] ultimos = { new JSArray() };
+            // Garantia: em 55 s termina de qualquer jeito (se a página travar, não fica carregando para sempre).
+            h.postDelayed(() -> {
+                if (feito[0]) return;
+                feito[0] = true;
+                if (navPerfil == w) fecharNavPerfil();
+                JSObject r = new JSObject();
+                r.put("itens", ultimos[0]);
+                call.resolve(r);
+            }, 55000);
             Runnable passo = new Runnable() {
                 @Override
                 public void run() {
-                    if (navPerfil != w) { call.reject("cancelado", "CANCELADO"); return; }
+                    if (feito[0]) return;
+                    if (navPerfil != w) { feito[0] = true; call.reject("cancelado", "CANCELADO"); return; }
                     w.evaluateJavascript(SCRIPT_PERFIL, valor -> {
+                        if (feito[0]) return;
                         JSArray itens = new JSArray();
                         try {
                             Object t = new JSONTokener(valor).nextValue();
                             if (t instanceof String) itens = new JSArray(new JSONArray((String) t).toString());
                         } catch (Exception ignored) {}
                         int n = itens.length();
+                        ultimos[0] = itens;
                         if (n == ultimo[0]) parado[0]++; else parado[0] = 0;
                         ultimo[0] = n;
                         JSObject p = new JSObject();
@@ -461,6 +475,7 @@ public class BaixadorPlugin extends Plugin {
                         long passou = System.currentTimeMillis() - inicio;
                         boolean fim = n >= max || (n > 0 && parado[0] >= 4) || (n == 0 && parado[0] >= 14) || passou > 50000;
                         if (fim) {
+                            feito[0] = true;
                             fecharNavPerfil();
                             JSObject r = new JSObject();
                             r.put("itens", itens);
