@@ -625,6 +625,8 @@
     });
 
     if (!nat) return;
+    // Número da versão no rodapé (para saber se o APK novo já foi instalado).
+    if (appCap && appCap.getInfo) appCap.getInfo().then((i) => { $('versao').textContent = 'Salva Vídeo · versão ' + (i.build || i.version); }).catch(() => {});
     try { nat.limparCache(); } catch (e) {}
     // Link que veio pelo "Compartilhar" do TikTok.
     nat.addListener('link', (r) => { if (r && r.texto) { const l = T.extrairLink(r.texto) || r.texto; marcarColado(l); porLink(l); buscar(l); } });
