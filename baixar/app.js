@@ -394,10 +394,11 @@
     $('abrirTikTok').addEventListener('click', abrirTikTok);
     $('abaVideos').addEventListener('click', () => { abaAtual = 'mp4'; desenharHistorico(); });
     $('abaAudios').addEventListener('click', () => { abaAtual = 'mp3'; desenharHistorico(); });
+    // Botão "Baixar": pega o link copiado (ou o que já está na caixa) e procura o vídeo.
     $('colar').addEventListener('click', async () => {
-      const t = await lerAreaTransferencia();
-      if (!t) { estado('Nada copiado. No TikTok, toque em Compartilhar → Copiar link.', 'erro'); return; }
-      const link = T.extrairLink(t) || t.trim();
+      const t = T.extrairLink(await lerAreaTransferencia()) || T.extrairLink($('link').value);
+      if (!t) { estado('Nenhum link copiado. No TikTok, toque em Compartilhar → Copiar link.', 'erro'); return; }
+      const link = t;
       ultimoColado = link;
       porLink(link);
       buscar(link);
