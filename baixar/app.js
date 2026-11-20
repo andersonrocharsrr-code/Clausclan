@@ -94,7 +94,7 @@
   function lerVideo(link) {
     return Promise.race([
       lerVideoSemLimite(link),
-      new Promise((_, falha) => setTimeout(() => falha(new Error('O TikTok demorou para responder. Tente de novo.')), 35000))
+      new Promise((_, falha) => setTimeout(() => falha(new Error((IG && IG.ehLink(link) ? 'O Instagram' : 'O TikTok') + ' demorou para responder. Tente de novo.')), IG && IG.ehLink(link) ? 55000 : 35000))
     ]);
   }
 
@@ -134,13 +134,17 @@
     if (!cod) {
       // Link de compartilhar (instagram.com/share/…): abre para descobrir o post.
       try { const r = await nat.pegar({ url: link }); cod = IG.codigo(r.url) || IG.codigo(r.texto); } catch (e) {}
+      if (!cod && nat.paginaNavegador) {
+        try { const r = await nat.paginaNavegador({ url: link, limite: 15000 }); cod = IG.codigo(r.url) || IG.codigo(r.texto); } catch (e) {}
+      }
     }
     if (!cod) throw new Error('Esse link do Instagram não é de um Reels ou post. Copie o link do vídeo.');
     let achou = null;
     let semRede = null;
     for (const u of IG.paginas(cod)) {
       try {
-        const r = await nat.pegar({ url: u });
+        // Navegador escondido: o Instagram só entrega o post pronto para um navegador de verdade.
+        const r = nat.paginaNavegador ? await nat.paginaNavegador({ url: u, limite: 15000 }) : await nat.pegar({ url: u });
         const i = IG.lerPagina(r.texto, cod);
         if (i && (!achou || (achou.foto && !i.foto))) achou = i;
         if (achou && !achou.foto) break;
@@ -155,6 +159,7 @@
 
   function mostrarVideo() {
     $('resultado').hidden = false;
+    $('capa').onerror = () => { $('capa').onerror = null; $('capa').src = 'icon.svg'; };
     $('capa').src = info.capa || 'icon.svg';
     $('autor').textContent = info.autor ? '@' + info.autor : (info.nome || 'TikTok');
     $('desc').textContent = info.desc || '';
