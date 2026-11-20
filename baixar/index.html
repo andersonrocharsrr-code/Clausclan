@@ -7,7 +7,7 @@
   <meta name="description" content="Baixa vídeos do TikTok em HD sem marca d'água e o áudio em MP3.">
   <meta name="theme-color" content="#0b0d14">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
   <header class="topo">
@@ -63,7 +63,10 @@
           <span class="btn__ic">⬇</span><span><b>Vídeo HD</b><small id="qualVideo">sem marca d'água</small></span>
         </button>
         <button id="baixarAudio" class="btn btn--ouro btn--grande" type="button">
-          <span class="btn__ic">♪</span><span><b>Áudio MP3</b><small>só o som do vídeo</small></span>
+          <span class="btn__ic">♪</span><span><b>Áudio MP3</b><small id="subAudio">só o som do vídeo</small></span>
+        </button>
+        <button id="baixarFotos" class="btn btn--foto btn--grande" type="button" hidden>
+          <span class="btn__ic">▦</span><span><b id="rotFotos">Fotos</b><small>todas, em alta qualidade</small></span>
         </button>
       </div>
       <div id="progresso" class="progresso" hidden>
@@ -120,8 +123,8 @@
     </div>
   </div>
 
-  <script src="tiktok.js?v=5"></script>
+  <script src="tiktok.js?v=6"></script>
   <script src="instagram.js?v=1"></script>
-  <script src="app.js?v=12"></script>
+  <script src="app.js?v=13"></script>
 </body>
 </html>

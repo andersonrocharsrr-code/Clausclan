@@ -55,6 +55,7 @@
     const espera = !info && !!escolhido;
     $('baixarVideo').disabled = sim || (!info && !espera) || (!!info && info.versoes.length === 0);
     $('baixarAudio').disabled = sim || (!info && !espera) || (!!info && info.versoes.length === 0 && !info.musica);
+    $('baixarFotos').disabled = sim;
     $('colar').disabled = sim;
     if (!sim) $('progresso').hidden = true;
   }
@@ -109,7 +110,7 @@
       achou = T.lerPagina(r.texto);
       if (!achou) {
         const id = T.idDoLink(final) || T.idDoLink(link);
-        if (id && !T.ehFoto(final)) {
+        if (id) { // também para post de fotos: a página /photo/ não traz as fotos nem a música
           const r2 = await nat.pegar({ url: 'https://www.tiktok.com/@i/video/' + id });
           achou = T.lerPagina(r2.texto);
         }
@@ -171,8 +172,12 @@
     $('detalhes').textContent = partes.join(' · ');
     $('qualVideo').textContent = (q ? q + ' · ' : '') + "sem marca d'água";
     $('baixarVideo').hidden = info.versoes.length === 0;
+    const nFotos = (info.fotos || []).length;
+    $('baixarFotos').hidden = nFotos === 0;
+    $('rotFotos').textContent = nFotos === 1 ? '1 foto' : nFotos + ' fotos';
+    $('subAudio').textContent = info.versoes.length ? 'só o som do vídeo' : 'a música do post';
     if (info.foto && info.versoes.length === 0) {
-      estado(info.rede === 'instagram' ? 'Este post do Instagram é de foto: só vídeos podem ser baixados.' : 'Este post é de fotos: dá para baixar só o áudio (MP3).');
+      estado(info.rede === 'instagram' ? 'Este post do Instagram é de foto: só vídeos podem ser baixados.' : 'Post de fotos: baixe as fotos ou a música (MP3).');
     }
     travar(false);
     try { $('resultado').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
@@ -266,6 +271,41 @@
     }
   }
 
+  // Post de fotos: baixa todas as fotos para a galeria (Imagens › Salva Vídeo).
+  async function baixarFotos() {
+    if (ocupado || !info || !(info.fotos || []).length) return;
+    travar(true);
+    $('pronto').hidden = true;
+    estado('');
+    const fotos = info.fotos;
+    let primeira = null;
+    let ok = 0;
+    try {
+      for (let n = 0; n < fotos.length; n++) {
+        const rotulo = 'Baixando foto ' + (n + 1) + ' de ' + fotos.length + '…';
+        mostrarProgresso(rotulo, (n / fotos.length) * 100);
+        tarefaId = 'f' + Date.now() + n;
+        const nome = T.nomeArquivo(info, 'jpg').replace(/\.jpg$/, '_' + String(n + 1).padStart(2, '0') + '.jpg');
+        try {
+          const tmp = await nat.baixar({ urls: fotos[n].urls, nome, id: tarefaId });
+          const r = await nat.publicar({ caminho: tmp.caminho, pasta: 'foto', nome, mime: 'image/jpeg' });
+          if (!primeira) primeira = r;
+          ok++;
+        } catch (e) {
+          if (eCancelado(e)) throw e;
+        }
+      }
+      if (!ok) throw new Error('o TikTok não liberou as fotos');
+      concluir('foto', primeira, 'image/jpeg', 0, ok);
+      if (ok < fotos.length) estado('Salvei ' + ok + ' de ' + fotos.length + ' fotos; as outras o TikTok não liberou.');
+    } catch (e) {
+      if (eCancelado(e)) estado('Download cancelado.');
+      else estado('Não consegui baixar as fotos: ' + (e.message || e), 'erro');
+    } finally {
+      travar(false);
+    }
+  }
+
   // Baixa o vídeo menor (o som é o mesmo), tira o som e converte em MP3 192 kbps aqui no celular.
   async function mp3DoVideo(nome) {
     const tmp = await baixarTemp(T.enderecosAudio, 'som_' + (info.id || 'video') + '.mp4', 'Baixando…', 50, 0);
@@ -327,9 +367,9 @@
     return btoa(s);
   }
 
-  function concluir(tipo, r, mime, tamanho) {
+  function concluir(tipo, r, mime, tamanho, qtd) {
     ultimoPronto = { uri: r.uri, mime };
-    const pasta = tipo === 'mp4' ? 'Filmes › Salva Vídeo' : 'Música › Salva Vídeo';
+    const pasta = tipo === 'mp4' ? 'Filmes › Salva Vídeo' : tipo === 'foto' ? 'Imagens › Salva Vídeo' : 'Música › Salva Vídeo';
     $('prontoTexto').textContent = '✓ Salvo em ' + pasta;
     $('pronto').hidden = false;
     abaAtual = info.rede || 'tiktok';
@@ -337,7 +377,7 @@
     guardarHistorico({
       tipo, uri: r.uri, mime, rede: info.rede || 'tiktok',
       id: info.id, autor: info.autor, nome: info.nome || '', desc: info.desc,
-      quando: Date.now(), tamanho: tamanho || 0
+      quando: Date.now(), tamanho: tamanho || 0, qtd: qtd || 0
     });
   }
 
@@ -378,14 +418,14 @@
       const li = document.createElement('li');
       const tipo = document.createElement('span');
       tipo.className = 'tipo ' + it.tipo;
-      tipo.textContent = it.tipo === 'mp3' ? '♪' : '▶';
+      tipo.textContent = it.tipo === 'mp3' ? '♪' : it.tipo === 'foto' ? '▦' : '▶';
       const txt = document.createElement('div');
       txt.className = 'txt';
       const b = document.createElement('b');
       b.textContent = (it.autor ? '@' + it.autor : 'TikTok') + (it.desc ? ' — ' + it.desc : '');
       const s = document.createElement('span');
       const d = new Date(it.quando);
-      s.textContent = (it.tipo === 'mp3' ? 'MP3' : 'Vídeo') + ' · ' +
+      s.textContent = (it.tipo === 'mp3' ? 'MP3' : it.tipo === 'foto' ? (it.qtd > 1 ? it.qtd + ' fotos' : 'Foto') : 'Vídeo') + ' · ' +
         d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) +
         (it.tamanho ? ' · ' + mb(it.tamanho) : '');
       txt.append(b, s);
@@ -660,7 +700,8 @@
     const q = v.qualidade ? v.qualidade.replace(/^(\d+)p$/, (m, n) => (+n >= 1080 ? n + 'p Full HD' : +n >= 720 ? n + 'p HD' : m)) : 'HD';
     $('detalhes').textContent = q + (v.views ? ' · ▶ ' + v.views : '');
     $('qualVideo').textContent = q + " · sem marca d'água";
-    $('baixarVideo').hidden = false;
+    $('baixarVideo').hidden = v.tipo === 'photo';
+    $('baixarFotos').hidden = true;
     travar(false);
     const meu = escolhido;
     meu.promessa.then((r) => {
@@ -782,6 +823,7 @@
     });
     $('baixarVideo').addEventListener('click', baixarVideo);
     $('baixarAudio').addEventListener('click', baixarAudio);
+    $('baixarFotos').addEventListener('click', baixarFotos);
     $('cancelar').addEventListener('click', () => {
       if (cancelarAtual) cancelarAtual();
       if (nat && tarefaId) nat.cancelar({ id: tarefaId });

@@ -87,6 +87,12 @@
       capa: v.cover || v.originCover || v.dynamicCover || '',
       duracao: +v.duration || 0,
       foto: fotos.length > 0,
+      // Fotos do post de fotos (carrossel), na resolução original.
+      fotos: fotos.map((im) => ({
+        urls: ((im.imageURL && im.imageURL.urlList) || []).filter(Boolean),
+        largura: +im.imageWidth || 0,
+        altura: +im.imageHeight || 0
+      })).filter((f) => f.urls.length),
       versoes: ordenar(versoes),
       musica: mus.playUrl ? { url: mus.playUrl, titulo: mus.title || '', autor: mus.authorName || '' } : null
     };
@@ -113,6 +119,7 @@
       capa: abs(d.origin_cover || d.cover),
       duracao: +d.duration || 0,
       foto: Array.isArray(d.images) && d.images.length > 0,
+      fotos: (Array.isArray(d.images) ? d.images : []).filter(Boolean).map((u) => ({ urls: [abs(u)], largura: 0, altura: 0 })),
       versoes: ordenar(versoes),
       musica: d.music ? { url: abs(d.music), titulo: mi.title || '', autor: mi.author || '' } : null
     };
