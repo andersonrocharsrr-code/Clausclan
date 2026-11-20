@@ -4,15 +4,18 @@
       <stop offset="0" stop-color="#000000"/>
       <stop offset="1" stop-color="#1c1c1f"/>
     </linearGradient>
+    <!-- seta, bandeja e nota; a cor vem de quem usa (efeito ciano/vermelho por trás do branco) -->
+    <g id="glifo" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M256 92v188" stroke-width="44"/>
+      <path d="M168 210l88 88 88-88" stroke-width="44"/>
+      <path d="M120 318v54a34 34 0 0 0 34 34h204a34 34 0 0 0 34-34v-54" stroke-width="40"/>
+      <circle cx="352" cy="148" r="22" stroke="none" fill="currentColor"/>
+      <path d="M372 148V84l44-12v54" stroke-width="14"/>
+      <circle cx="398" cy="128" r="18" stroke="none" fill="currentColor"/>
+    </g>
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#g)"/>
-  <!-- seta para baixo -->
-  <path d="M256 92v188" stroke="#fff" stroke-width="44" stroke-linecap="round"/>
-  <path d="M168 210l88 88 88-88" fill="none" stroke="#fff" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- bandeja -->
-  <path d="M120 318v54a34 34 0 0 0 34 34h204a34 34 0 0 0 34-34v-54" fill="none" stroke="#fff" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- nota musical -->
-  <circle cx="352" cy="148" r="22" fill="#fbbf24"/>
-  <path d="M372 148V84l44-12v54" fill="none" stroke="#fbbf24" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="398" cy="128" r="18" fill="#fbbf24"/>
+  <use href="#glifo" stroke="#25f4ee" color="#25f4ee" transform="translate(-9 -9)"/>
+  <use href="#glifo" stroke="#fe2c55" color="#fe2c55" transform="translate(9 9)"/>
+  <use href="#glifo" stroke="#ffffff" color="#ffffff"/>
 </svg>
