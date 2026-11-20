@@ -195,3 +195,5 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .folha__x { position: absolute; right: -6px; top: 0; background: none; border: 0; color: var(--fraco); font-size: 20px; width: 40px; height: 34px; }
 .folha .cartao { margin-bottom: 0; }
 body.travado { overflow: hidden; }
+
+.versao { text-align: center; color: var(--fraco); font-size: 12px; margin: 18px 0 0; opacity: .7; }

@@ -100,6 +100,8 @@ public class BaixadorPlugin extends Plugin {
 
     private static String textoDoIntent(Intent intent) {
         if (intent == null || !Intent.ACTION_SEND.equals(intent.getAction())) return null;
+        // Aberto pela tela de apps recentes: o Android entrega de novo o link antigo do Compartilhar. Ignora.
+        if ((intent.getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0) return null;
         CharSequence t = intent.getCharSequenceExtra(Intent.EXTRA_TEXT);
         intent.setAction(Intent.ACTION_MAIN); // não ler de novo se a tela for recriada
         return t == null ? null : t.toString();
