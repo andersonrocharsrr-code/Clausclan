@@ -302,12 +302,15 @@ public class BaixadorPlugin extends Plugin {
 
     private void publicarAgora(PluginCall call) {
         String caminho = call.getString("caminho");
-        boolean video = !"audio".equals(call.getString("pasta", "video"));
-        String nome = nomeSeguro(call.getString("nome", video ? "video.mp4" : "audio.mp3"));
-        String mime = call.getString("mime", video ? "video/mp4" : "audio/mpeg");
+        String tipoPasta = call.getString("pasta", "video");
+        boolean foto = "foto".equals(tipoPasta);
+        boolean video = !foto && !"audio".equals(tipoPasta);
+        String nome = nomeSeguro(call.getString("nome", foto ? "foto.jpg" : video ? "video.mp4" : "audio.mp3"));
+        String mime = call.getString("mime", foto ? "image/jpeg" : video ? "video/mp4" : "audio/mpeg");
         File origem = caminho == null ? null : new File(caminho);
         if (origem == null || !origem.exists()) { call.reject("Arquivo temporário sumiu"); return; }
-        String raiz = video ? Environment.DIRECTORY_MOVIES : Environment.DIRECTORY_MUSIC;
+        // Vídeo em Filmes, MP3 em Música e fotos em Imagens (todos na pasta "Salva Vídeo").
+        String raiz = foto ? Environment.DIRECTORY_PICTURES : video ? Environment.DIRECTORY_MOVIES : Environment.DIRECTORY_MUSIC;
         try {
             Uri uri;
             if (Build.VERSION.SDK_INT >= 29) {
@@ -317,7 +320,9 @@ public class BaixadorPlugin extends Plugin {
                 cv.put(MediaStore.MediaColumns.MIME_TYPE, mime);
                 cv.put(MediaStore.MediaColumns.RELATIVE_PATH, raiz + "/" + PASTA);
                 cv.put(MediaStore.MediaColumns.IS_PENDING, 1);
-                Uri colecao = video
+                Uri colecao = foto
+                    ? MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                    : video
                     ? MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
                     : MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
                 uri = cr.insert(colecao, cv);
