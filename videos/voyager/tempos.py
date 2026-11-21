@@ -4,13 +4,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from narracao import FALAS
 import soundfile as sf
 PASTA = sys.argv[1]
-GAP = {'a': 3.0, 'b': 2.6, 'c': 1.3, 'd': 1.3, 'e': 1.3, 'f': 1.3, 'g': 1.3, 'h': 2.6, 'i': 1.3, 'j': 1.3, 'k': 1.3, 'l': 2.6, 'm': 1.3, 'n': 1.5}
+GAP = {'a': 1.4, 'b': 2.1, 'c': 1.15, 'd': 1.15, 'e': 1.15, 'f': 1.15, 'g': 1.15, 'h': 2.1, 'i': 1.15, 'j': 1.15, 'k': 1.15, 'l': 2.1, 'm': 1.15, 'n': 1.3}
 CAPS = {'b': 'A MISSÃO', 'h': 'O DIA-LUZ', 'l': 'O FUTURO'}
 PAL = json.load(open('palavras.json'))
 NARS, NARD = {}, {}; t = 0
 for k in FALAS:
     t += GAP[k]; NARS[k] = round(t, 2); d, sr = sf.read(f'{PASTA}/nar/{k}.wav'); NARD[k] = round(len(d) / sr, 2); t += NARD[k]
-DUR = round(t + 6.5, 1)
+DUR = round(t + 6.0, 1)
 norm = lambda w: re.sub(r'[^\wÀ-ÿ-]', '', w).lower()
 def T(k, txt):
     alvo = [norm(w) for w in txt.split()]; ws = PAL[k]

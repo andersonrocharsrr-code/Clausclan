@@ -8,7 +8,7 @@ FALAS = {
  'c': 'Elas aproveitaram um alinhamento raro dos planetas, que só se repete a cada cento e setenta e cinco anos. A gravidade de cada planeta funcionava como um estilingue: dava impulso e mudava a direção da nave, quase sem gastar combustível.',
  'd': 'Em mil novecentos e setenta e nove, as duas passaram por Júpiter e descobriram vulcões ativos na lua Io. Depois veio Saturno, com seus anéis e a lua Titã. A Voyager 2 seguiu adiante, e é até hoje a única nave que visitou Urano e Netuno.',
  'e': 'A bordo, cada uma leva um disco de ouro, com sons e imagens da Terra: música, o barulho do vento e da chuva, e saudações em cinquenta e cinco línguas. Uma mensagem para quem, um dia, encontrar a nave.',
- 'f': 'Em mil novecentos e noventa, a seis bilhões de quilômetros, a Voyager 1 virou a câmera para trás e fotografou a Terra: um pontinho azul-claro, menor que um pixel.',
+ 'f': 'Em mil novecentos e noventa, a seis bilhões de quilômetros, a Voyager 1 virou a câmera para trás e fotografou a Terra: um pontinho azul-claro, menor que um pixel. A ideia foi do astrônomo Carl Sagan, e a foto ficou conhecida como o Pálido Ponto Azul.',
  'g': 'Em dois mil e doze, ela atravessou a heliopausa, a fronteira onde termina o vento do Sol, e entrou no espaço interestelar.',
  'h': 'Mas, afinal, o que é um dia-luz? A luz é a coisa mais rápida do universo: quase trezentos mil quilômetros por segundo. Em um único segundo, ela daria sete voltas e meia ao redor da Terra. Um dia-luz é a distância que a luz percorre em vinte e quatro horas: cerca de vinte e seis bilhões de quilômetros.',
  'i': 'Para comparar: a luz da Lua chega até nós em pouco mais de um segundo. A do Sol, em oito minutos. A de Netuno, em umas quatro horas. E a da Voyager 1, em um dia inteiro.',
