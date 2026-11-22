@@ -1,0 +1,14 @@
+<!doctype html><meta charset="utf-8"><title>Companhia do Frio · 35 s</title>
+<style>
+@font-face{font-family:"Mont";font-weight:600;src:url(fontes/montserrat-latin-600-normal.woff2)}
+@font-face{font-family:"Mont";font-weight:800;src:url(fontes/montserrat-latin-800-normal.woff2)}
+@font-face{font-family:"Mont";font-weight:900;src:url(fontes/montserrat-latin-900-normal.woff2)}
+@font-face{font-family:"Mont";font-weight:800;font-style:italic;src:url(fontes/montserrat-latin-800-italic.woff2)}
+html,body{margin:0;background:#000}canvas{display:block;height:100vh;width:auto;margin:auto}</style>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="video.js"></script>
+<script>
+// abre sozinho como prévia; o render.js chama render(t) quadro a quadro
+window.PRONTO = Promise.all([...['600', '800', '900'].map(w => document.fonts.load(w + ' 40px "Mont"')), document.fonts.load('italic 800 40px "Mont"'), ...Object.values(IMG).map(i => i.decode())]);
+if (!location.search.includes('render')) PRONTO.then(() => { const t0 = performance.now(); (function f() { render(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(f) })() });
+</script>
