@@ -78,3 +78,47 @@ function mapa(x, y, w, h, lon0, lon1, lat1, lat0, cores = ['#24448e', '#2a54a8',
 function moldura(cor = P.our) { R(0, 0, PW, 2, cor); R(0, PH - 2, PW, 2, cor); R(0, 0, 2, PH, cor); R(PW - 2, 0, 2, PH, cor) }
 function chuvaMoedas(t, n = 30, seed = 3, cor = null) { const q = rng(seed); for (let i = 0; i < n; i++) { const x = q() * PW, v = 30 + q() * 40, y = ((t * v + q() * 400) % 380) - 40, g = cos(t * 4 + i); moeda(x, y, 4 + floor(q() * 3), Object.assign({ giro: g }, cor || {})) } }
 function brilhos(t, x, y, r, n = 6, cor = '#fff8c0') { for (let i = 0; i < n; i++) { const a = i * 2.4 + t, d = r * (.5 + .5 * sin(t * 2 + i)), b = sin(t * 5 + i * 1.7); if (b > .3) { const bx = x + cos(a) * d, by = y + sin(a) * d; px(bx, by, cor); px(bx - 1, by, cor); px(bx + 1, by, cor); px(bx, by - 1, cor); px(bx, by + 1, cor) } } }
+
+// ================= VERSÕES DETALHADAS (resolução dupla): pessoas e moedas =================
+// clareia/escurece uma cor #rrggbb
+function tom(h, k) { const v = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); return '#' + v.map(c => clamp(Math.round(k > 0 ? c + (255 - c) * k : c * (1 + k)), 0, 255).toString(16).padStart(2, '0')).join('') }
+function pessoa(x, y, o = {}) { if (o.e) { p.save(); p.translate(f2(x), f2(y)); p.scale(o.e, o.e); pessoa(0, 0, Object.assign({}, o, { e: 0 })); p.restore(); return } const X = f2(x), Y = f2(y), t = o.t || 0, an = o.anda ? floor(t * 6) % 2 : 0, f = o.flip ? -1 : 1;
+  const pele = o.pele || P.pel, pele2 = o.pele2 || tom(pele, -.22), cab = o.cab || '#3a2414', roupa = o.roupa || '#a04030', calca = o.calca || '#4a3a2a';
+  // N: retângulo em pixels finos, espelhado conforme o lado para onde a pessoa olha
+  const N = (nx, ny, nw, nh, col) => { const ax = f > 0 ? nx : -nx - nw; R(X + ax / 2, Y + ny / 2, nw / 2, nh / 2, col) };
+  elipse(X, Y + .5, 6, 1, 'rgba(0,0,0,.25)');
+  // pernas e sapatos
+  const l1 = an ? -2 : 0, l2 = an ? 0 : -2; N(-6, -16 - l1, 5, 16 + l1, calca); N(1, -16 - l2, 5, 16 + l2, tom(calca, -.15)); N(-6, -16 - l1, 1, 16 + l1, tom(calca, .15));
+  N(-7, -3 - l1, 7, 3, '#2a1a10'); N(1, -3 - l2, 7, 3, '#22150c'); N(-6, -3 - l1, 3, 1, '#5a3a24');
+  // tronco
+  const lg = o.longo ? 8 : 0, cor2 = tom(roupa, -.22), cor3 = tom(roupa, .2);
+  N(-8, -34, 16, 18 + lg, roupa); N(-8, -34, 3, 18 + lg, cor3); N(4, -34, 4, 18 + lg, cor2); N(-2, -34, 4, 3, pele); N(-1, -31, 2, 2, pele2); for (let k = 0; k < 3; k++) N(-1, -28 + k * 4, 1, 1, cor2);
+  if (o.cinto) { N(-8, -20, 16, 2, o.cinto); N(-1, -20, 3, 2, P.ama) } if (lg) N(-8, -17 + lg, 16, 1, cor2);
+  // braços (manga + mão)
+  const braco = (lado, pose) => { const bx = lado > 0 ? 8 : -11; if (pose === 'cima') { N(bx, -46, 3, 13, lado > 0 ? cor2 : cor3); N(bx, -49, 3, 3, pele) } else if (pose === 'frente') { N(lado > 0 ? 6 : -9, -31, 10, 3, lado > 0 ? cor2 : cor3); N(lado > 0 ? 15 : -12, -32, 3, 4, pele) } else { const d = an ? (lado > 0 ? 1 : -1) : 0; N(bx, -33 + d, 3, 13, lado > 0 ? cor2 : cor3); N(bx, -20 + d, 3, 3, pele) } };
+  const b1 = o.braco === 'ambos' ? 'cima' : o.braco, b2 = o.braco === 'ambos' ? 'cima' : null; braco(-1, b2); braco(1, b1);
+  // cabeça: rosto com sombra, olho, sobrancelha, nariz, boca e orelha
+  N(-2, -37, 4, 3, pele2); N(-6, -49, 12, 13, pele); N(3, -49, 3, 13, pele2); N(-6, -38, 12, 2, pele2);
+  N(1, -45, 2, 2, '#1a1018'); N(1, -46, 1, 1, '#ffffff'); N(0, -47, 3, 1, tom(cab, -.1)); N(5, -43, 2, 2, pele2); N(1, -40, 3, 1, tom(pele, -.35)); N(-4, -44, 2, 3, pele2);
+  // cabelo
+  N(-7, -52, 13, 4, cab); N(-7, -48, 3, 6, cab); N(-5, -52, 6, 1, tom(cab, .25)); if (o.barba) { N(-6, -40, 12, 4, cab); N(-2, -40, 6, 1, pele2); N(0, -39, 3, 1, tom(pele, -.35)) }
+  const ch = o.chapeu, cc = o.chapCor;
+  if (ch === 'coroa') { N(-6, -55, 12, 4, P.our); N(-6, -55, 12, 1, P.ama); [-6, -1, 4].forEach(a => N(a, -58, 2, 3, P.our)); N(-1, -54, 2, 2, P.ver); N(3, -54, 2, 2, '#3a78d8') }
+  if (ch === 'turbante') { const c0 = cc || '#e8e0c8'; N(-8, -55, 16, 6, c0); for (let k = 0; k < 3; k++) N(-8, -54 + k * 2, 16, 1, tom(c0, -.12)); N(-2, -57, 5, 2, c0) }
+  if (ch === 'gorro') { const c0 = cc || '#8a2a2a'; N(-8, -54, 16, 4, c0); N(-6, -58, 11, 4, tom(c0, .1)); N(-8, -51, 16, 1, tom(c0, -.25)) }
+  if (ch === 'capacete') { N(-8, -55, 16, 6, '#c8a050'); N(-8, -55, 16, 1, '#f0d080'); N(-8, -50, 3, 6, '#a88038'); N(-2, -61, 4, 6, P.ver); N(-1, -61, 2, 6, '#ff6060') }
+  if (ch === 'boina') { const c0 = cc || '#2a2a50'; N(-8, -53, 18, 4, c0); N(-6, -55, 12, 2, tom(c0, .15)) }
+  if (ch === 'cartola') { N(-9, -52, 18, 2, '#1a1a22'); N(-6, -64, 12, 12, '#1a1a22'); N(-6, -55, 12, 2, '#8a2a2a') } }
+
+// moeda detalhada: borda serrilhada, relevo fino, brilho e giro
+function moeda(x, y, r, o = {}) { x = f2(x); y = f2(y); const giro = o.giro ?? 1, g = abs(giro), rx = max(.5, f2(r * g)), c1 = o.c1 || P.our, c2 = o.c2 || P.our2, c3 = o.c3 || P.our3;
+  elipse(x + .5, y + .5, rx, r, 'rgba(0,0,0,.3)'); elipse(x, y, rx, r, c3); elipse(x, y, max(.5, rx - .5), r - .5, c2); elipse(x - (rx > 2 ? .5 : 0), y - .5, max(.5, rx - 1.5), r - 1.5, c1);
+  if (r >= 5 && g > .4) { const n = floor(r * 3); for (let i = 0; i < n; i++) { const a = i / n * 2 * PI; pf(x + cos(a) * (rx - .8), y + sin(a) * (r - .8), i % 2 ? c2 : tom(c1, .25)) } elipse(x, y, max(.5, rx - 2.5), r - 2.5, tom(c1, -.06)) }
+  if (g > .5 && o.relevo && r >= 5) { const m = RELEVO[o.relevo], e = max(.5, f2((r * 1.3) / 9)); const ox = x - 4.5 * e * g, oy = y - 4.5 * e;
+    m.forEach((s, j) => [...s].forEach((ch, i) => { if (ch === '#') { R(ox + i * e * g, oy + j * e + .5, max(.5, e * g), e, c3); R(ox + i * e * g, oy + j * e, max(.5, e * g), e, o.rel || tom(c1, .3)) } }));
+    if (o.relevo === 'furo') R(x - f2(r * .32 * g), y - f2(r * .32), f2(r * .64 * g) + .5, f2(r * .64) + .5, o.fundo || '#1c1830') }
+  if (g > .3) { const hx = x - rx * .5, hy = y - r * .55; pf(hx, hy, '#fffbe0'); pf(hx + .5, hy, '#fffbe0'); pf(hx, hy + .5, '#fffbe0'); pf(hx - .5, hy + 1, tom(c1, .5)); pf(hx + 1, hy - .5, tom(c1, .5)) } }
+// chão com textura fina
+function chao(y0, c1, c2, seed = 1) { R(0, y0, PW, PH - y0, c1); const q = rng(seed); for (let i = 0; i < 360; i++) R(q() * PW, y0 + .5 + q() * (PH - y0), .5 + q() * 2.5, .5, i % 3 ? c2 : tom(c1, .12)) }
+function montanhas(y, cor, seed, amp = 30) { const q = rng(seed); let h = amp * .5; for (let x = 0; x < PW; x += .5) { h = clamp(h + (q() - .5) * 2.4, amp * .2, amp); R(x, y - h, .5, h + 1, cor); pf(x, y - h, tom(cor, .18)) } }
+function nuvem(x, y, e = 1) { x = f2(x); [[0, 2, 14, 4], [3, 0, 8, 3], [10, 1, 6, 3]].forEach(([a, b, w, h]) => R(x + a * e, y + b * e, w * e, h * e, '#f4f8ff')); R(x + 3 * e, y, 6 * e, .5, '#ffffff'); R(x, y + 5 * e, 16 * e, 1 * e, '#c8d8f0'); R(x + 1 * e, y + 5.5 * e, 14 * e, .5, '#a8bce0') }

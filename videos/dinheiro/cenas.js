@@ -16,7 +16,7 @@ S(0, (tl, t) => { R(0, 0, PW, PH, '#2a1e1a'); for (let y = 0; y < 150; y += 6) R
 // 1 — milhares de anos atrás: sem dinheiro nenhum
 S(1, (tl, t) => { faixas(0, 190, ['#e8905a', '#f0a868', '#f8c080', '#fcd8a0']); sol(130, 150, 14); montanhas(190, '#9a6a5a', 4, 40); montanhas(200, '#7a5048', 9, 26); chao(200, '#8a6a3a', '#7a5a30', 2);
   casinha(20, 228, 22, 14, '#b08050', '#7a5a30'); casinha(140, 232, 24, 16, '#a87848', '#6a4a28'); for (let i = 0; i < 5; i++) { const fx = 90 + sin(t * 8 + i) * 2, fy = 236 - i * 3 - (t * 10 % 3); px(fx, fy, i < 2 ? P.ama : '#ff8a30') } R(86, 238, 9, 2, '#5a3a20');
-  pessoa(70, 248, { t, roupa: '#a8784a', calca: '#8a5a30', cab: '#2a1a10' }); pessoa(112, 250, { t, roupa: '#b88a5a', calca: '#7a4a28', flip: true, cab: '#1a1008', barba: true }); sp('ovelha', 30, 250, 1); sp('ovelha', 130, 255, 1, true);
+  pessoa(66, 252, { e: 2, t, roupa: '#a8784a', calca: '#8a5a30', cab: '#2a1a10' }); pessoa(116, 254, { e: 2, t, roupa: '#b88a5a', calca: '#7a4a28', flip: true, cab: '#1a1008', barba: true }); sp('ovelha', 30, 250, 1); sp('ovelha', 130, 255, 1, true);
   placa(tl, 'HÁ MILHARES DE ANOS', 'SEM DINHEIRO NENHUM', { t0: .2 }) });
 // 2 — título
 S(2, (tl, t) => { R(0, 0, PW, PH, '#140f22'); estrelas(t); chuvaMoedas(t, 26, 4); R(20, 120, 140, 70, 'rgba(20,15,34,.85)'); moldura(P.our2);
@@ -26,8 +26,8 @@ S(2, (tl, t) => { R(0, 0, PW, PH, '#140f22'); estrelas(t); chuvaMoedas(t, 26, 4)
 cartao(3);
 // 4 — escambo: peixe por trigo, ovelha por ferramentas
 S(4, (tl, t) => { ceuDia(); nuvem(20 + t * 3 % 200, 30, 2); nuvem(120 - t * 2 % 200, 60); montanhas(170, '#6a9a6a', 3, 30); chao(170, '#7ab050', '#6a9a44', 5); R(0, 190, PW, 30, '#c8a868'); for (let i = 0; i < 30; i++) px((i * 37) % 180, 192 + (i * 13) % 26, '#b09058');
-  const u = ease(ramp(tl, .8, 2.2)); pessoa(50, 240, { t, roupa: '#4a7ab0', calca: '#3a4a6a', braco: 'frente' }); pessoa(130, 240, { t, roupa: '#b07a3a', calca: '#6a4a28', braco: 'frente', flip: true, barba: true });
-  sp('peixe', lerp(58, 108, u), 222 - sin(u * PI) * 14, 2); sp('saco', lerp(114, 64, u), 214 - sin(u * PI) * 14, 2, true);
+  const u = ease(ramp(tl, .8, 2.2)); pessoa(46, 252, { e: 2, t, roupa: '#4a7ab0', calca: '#3a4a6a', braco: 'frente' }); pessoa(134, 252, { e: 2, t, roupa: '#b07a3a', calca: '#6a4a28', braco: 'frente', flip: true, barba: true });
+  sp('peixe', lerp(60, 104, u), 212 - sin(u * PI) * 16, 2); sp('saco', lerp(108, 62, u), 204 - sin(u * PI) * 16, 2, true);
   const v = ramp(tl, 2.6, 3); if (v > 0) { sp('ovelha', 20, 262, 2); sp('saco', 136, 258, 1); R(130, 266, 14, 2, '#8a8a9a'); R(128, 262, 3, 7, '#6a4a28'); txt('⇄', 540, 1530, 0, P.bra) }
   placa(tl, 'PEIXE POR TRIGO', null, { t0: .4, size: 48 }); txt('OVELHA POR FERRAMENTAS', 540, 330, 30, P.bra, { a: v }) });
 // 5 — ESCAMBO
@@ -36,12 +36,12 @@ S(5, (tl, t) => { faixas(0, PH, ['#2a1e40', '#3a2a58', '#4a3a6a']); estrelas(t, 
   grande(tl, 'ESCAMBO', 300, 100, P.ama, .2); txt('TROCAR UMA COISA POR OUTRA', 540, 400, 28, P.bra, { a: ramp(tl, .6, .9) }) });
 // 6 — o problema: o agricultor não quer peixe
 S(6, (tl, t) => { ceuDia(['#5a6a9a', '#6a7aaa', '#8a9ac0', '#a8b8d0']); montanhas(170, '#5a7a6a', 6, 26); chao(170, '#6a9a4a', '#5a8a40', 7);
-  pessoa(50, 240, { t, roupa: '#4a7ab0', calca: '#3a4a6a', braco: 'frente' }); sp('peixe', 58, 222, 2); pessoa(130, 240, { t, roupa: '#b07a3a', calca: '#6a4a28', flip: true, barba: true, braco: tl > 2 ? 'cima' : null });
+  pessoa(46, 256, { e: 2, t, roupa: '#4a7ab0', calca: '#3a4a6a', braco: 'frente' }); sp('peixe', 60, 216, 2); pessoa(134, 256, { e: 2, t, roupa: '#b07a3a', calca: '#6a4a28', flip: true, barba: true, braco: tl > 2 ? 'cima' : null });
   // balões de pensamento
-  const v1 = ramp(tl, .3, .6); if (v1 > 0) { elipse(50, 160, 20, 14, '#f4f4f8'); disco(52, 182, 3, '#f4f4f8'); disco(50, 190, 2, '#f4f4f8'); sp('saco', 42, 150, 2) }
-  const v2 = ramp(tl, 1.3, 1.6); if (v2 > 0) { elipse(132, 160, 20, 14, '#f4f4f8'); disco(130, 182, 3, '#f4f4f8'); disco(132, 190, 2, '#f4f4f8'); sp('vaca', 118, 152, 2) }
+  const v1 = ramp(tl, .3, .6); if (v1 > 0) { elipse(46, 140, 20, 14, '#f4f4f8'); disco(48, 162, 3, '#f4f4f8'); disco(46, 170, 2, '#f4f4f8'); sp('saco', 38, 130, 2) }
+  const v2 = ramp(tl, 1.3, 1.6); if (v2 > 0) { elipse(134, 140, 20, 14, '#f4f4f8'); disco(132, 162, 3, '#f4f4f8'); disco(134, 170, 2, '#f4f4f8'); sp('vaca', 120, 132, 2) }
   if (tl > 2.4) { const b = floor(tl * 4) % 2 ? P.ver : '#ff6070'; linha(74, 200, 106, 232, b, 3); linha(106, 200, 74, 232, b, 3) }
-  placa(tl, 'O PROBLEMA', 'CADA UM QUER UMA COISA DIFERENTE', { t0: .2, size2: 24 }); grande(tl, 'SEM TROCA!', 1320, 64, P.ver, 2.5) });
+  placa(tl, 'O PROBLEMA', 'CADA UM QUER UMA COISA DIFERENTE', { t0: .2, size2: 24 }); grande(tl, 'SEM TROCA!', 1060, 64, P.ver, 2.5) });
 // 7 — coisas que todo mundo aceitava
 S(7, (tl, t) => { R(0, 0, PW, PH, '#2a2034'); for (let y = 0; y < PH; y += 8) R(0, y, PW, 4, '#30263c');
   [['vaca', 'GADO', 30, 100], ['saco', 'GRÃOS', 120, 100], ['concha', 'CONCHAS', 30, 190], ['sal', 'SAL', 120, 190]].forEach(([n, nome, x, y], i) => { const v = ease(ramp(tl, .2 + i * .45, .5 + i * .45)); if (v <= 0) return; R(x - 4, y - 4, 44, 52, '#3a2e4a'); R(x - 4, y - 4, 44, 1, P.our2); R(x - 4, y + 47, 44, 1, P.our2); const e = n === 'vaca' ? 2 : n === 'concha' ? 5 : 3; sp(n, x + 18 - larg(SP[n][0]) * e / 2, y + 8 - (1 - v) * 10, e); txt(nome, (x + 18) * K, (y + 60) * K, 26, P.ama, { a: v }) });
@@ -52,21 +52,21 @@ S(8, (tl, t) => { faixas(0, 180, ['#c86a3a', '#d88a4a', '#e8a868']); chao(180, '
   const v = ramp(tl, 1.6, 2); if (v > 0) { R(30, 92, 120, 1, P.our); txt('PECUNIÁRIO', 540, 640, 60, P.cre, { a: v }); txt('RELATIVO A DINHEIRO', 540, 700, 26, P.bra, { a: v }) } });
 // 9 — sal → salário
 S(9, (tl, t) => { faixas(0, 200, ['#6a8ac8', '#8aa8d8', '#a8c4e8']); R(0, 200, PW, 120, '#c8b088'); templo(10, 200, 70, 40, '#e8e0d0'); for (let i = 0; i < 3; i++) R(100 + i * 25, 160, 16, 40, '#d8c8a8');
-  pessoa(110, 268, { t, roupa: '#b02a2a', calca: '#8a6a40', chapeu: 'capacete', braco: 'frente', cinto: '#c8a050' }); sp('sal', 118, 250, 2); pessoa(60, 268, { t, roupa: '#e8e0d0', calca: '#d8d0c0', longo: 1, flip: false, cab: '#6a6a6a' });
-  txt(maquina('SAL → SALÁRIO', tl, .4, 14), 540, 330, 64, P.ama); txt('SEGUNDO A TRADIÇÃO', 540, 400, 28, P.bra, { a: ramp(tl, 1, 1.3) }); txt('(É UMA HISTÓRIA ANTIGA, DISCUTIDA PELOS HISTORIADORES)', 540, 1450, 18, P.cre, { a: ramp(tl, 2, 2.3), max: 1000 }) });
+  pessoa(110, 272, { e: 2, t, roupa: '#b02a2a', calca: '#8a6a40', chapeu: 'capacete', braco: 'frente', cinto: '#c8a050' }); sp('sal', 122, 226, 2); pessoa(56, 272, { e: 2, t, roupa: '#e8e0d0', calca: '#d8d0c0', longo: 1, flip: false, cab: '#6a6a6a' });
+  txt(maquina('SAL → SALÁRIO', tl, .4, 14), 540, 330, 64, P.ama); txt('SEGUNDO A TRADIÇÃO', 540, 400, 28, P.bra, { a: ramp(tl, 1, 1.3) }); txt('(UMA HISTÓRIA ANTIGA, AINDA DISCUTIDA)', 540, 470, 22, P.cre, { a: ramp(tl, 2, 2.3), max: 1000 }) });
 
 // --- capítulo 2: as primeiras contas ---
 cartao(10);
 // 11 — Mesopotâmia: templo guardando cevada e prata
 S(11, (tl, t) => { faixas(0, 210, ['#e8a050', '#f0b868', '#f8d090', '#fce4b0']); sol(40, 60, 10); chao(210, '#d8b070', '#c8a060', 11); zigurate(90, 210, 1.4); palmeira(16, 214); palmeira(166, 218);
   for (let i = 0; i < 5; i++) sp('saco', 20 + i * 12, 238, 1); for (let i = 0; i < 4; i++) sp('barra', 110 + (i % 2) * 11, 240 - floor(i / 2) * 4, 1);
-  pessoa(70, 262, { t, roupa: '#e8dcc0', calca: '#c8b890', longo: 1, cab: '#1a1008', barba: true, chapeu: 'turbante' });
+  pessoa(70, 268, { e: 2, t, roupa: '#e8dcc0', calca: '#c8b890', longo: 1, cab: '#1a1008', barba: true, chapeu: 'turbante' });
   placa(tl, 'MESOPOTÂMIA', 'CERCA DE 5.000 ANOS ATRÁS', { t0: .2 }); txt('CEVADA', 300, 1500, 26, P.cre, { a: ramp(tl, 1, 1.3) }); txt('PRATA', 780, 1500, 26, P.cre, { a: ramp(tl, 1.2, 1.5) }) });
 // 12 — dívidas anotadas em tabuletas de barro
 S(12, (tl, t) => { R(0, 0, PW, PH, '#4a3020'); for (let y = 0; y < PH; y += 10) R(0, y, PW, 5, '#523424'); R(0, 220, PW, 100, '#6a4428');
   const tb = ['bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb']; R(40, 70, 100, 140, '#8a5a30'); R(43, 73, 94, 134, '#c08a50'); R(43, 73, 94, 2, '#d8a468');
   const n = floor(clamp((tl - .3) * 14, 0, 60)); for (let k = 0; k < n; k++) { const lx = 50 + (k % 10) * 8, ly = 82 + floor(k / 10) * 20; R(lx, ly, 4, 1, '#6a4020'); R(lx + 1, ly + 1, 1, 4, '#6a4020'); if (k % 3 === 0) R(lx + 2, ly + 2, 3, 1, '#6a4020') }
-  const k = n % 10, lx = 50 + k * 8, ly = 82 + floor(n / 10) * 20; linha(lx + 3, ly, lx + 26, ly - 30, '#c8a878', 2); pessoa(150, 300, { t, roupa: '#e8dcc0', calca: '#c8b890', longo: 1, flip: true, braco: 'frente', cab: '#1a1008', barba: true });
+  const k = n % 10, lx = 50 + k * 8, ly = 82 + floor(n / 10) * 20; linha(lx + 3, ly, lx + 26, ly - 30, '#c8a878', 2); pessoa(158, 262, { e: 2, t, roupa: '#e8dcc0', calca: '#c8b890', longo: 1, flip: true, braco: 'frente', cab: '#1a1008', barba: true });
   placa(tl, 'TABULETAS DE BARRO', 'QUEM DEVIA O QUÊ', { t0: .2, y: 1400 }) });
 // 13 — o siclo: peso de prata
 S(13, (tl, t) => { R(0, 0, PW, PH, '#2a2030'); for (let y = 0; y < PH; y += 8) R(0, y, PW, 4, '#2e2436'); const a = .25 * cos(min(tl * 1.5, PI)) * (1 - ramp(tl, 2, 3));
@@ -96,8 +96,8 @@ S(19, (tl, t) => { faixas(0, PH, ['#1c2a4a', '#24345a', '#2c3e6a']); const u = e
   txt('DRACMA', 300, 1180, 48, P.ama, { a: u }); txt('GRÉCIA', 300, 1240, 26, P.bra, { a: u }); txt('DENÁRIO', 780, 1360, 48, P.ama, { a: v }); txt('ROMA', 780, 1420, 26, P.bra, { a: v }); placa(tl, 'A IDEIA SE ESPALHOU', null, { t0: .1, size: 46 }) });
 // 20 — Juno Moneta: a casa da moeda de Roma
 S(20, (tl, t) => { faixas(0, 200, ['#c8784a', '#d89058', '#e8a870']); R(0, 200, PW, 120, '#b8a888'); for (let x = 0; x < PW; x += 8) R(x, 200, 1, 120, '#a89878'); templo(20, 200, 140, 64, '#ece4d4', '#b0a898');
-  const bate = (floor(t * 3) % 2); pessoa(60, 270, { t, roupa: '#8a6a4a', calca: '#5a4a3a', braco: bate ? 'cima' : 'frente', barba: true }); R(66, bate ? 240 : 252, 6, 3, '#5a5a6a'); R(68, 258, 10, 4, '#3a3a44'); if (!bate) { brilhos(t, 72, 256, 5, 4) }
-  for (let i = 0; i < 6; i++) moeda(110 + (i % 3) * 10, 268 - floor(i / 3) * 5, 4, PRATA);
+  const bate = (floor(t * 3) % 2); pessoa(50, 262, { e: 2, t, roupa: '#8a6a4a', calca: '#5a4a3a', braco: bate ? 'cima' : 'frente', barba: true }); R(56, bate ? 204 : 226, 4, 10, '#6a4a2a'); R(54, bate ? 202 : 224, 9, 5, '#5a5a6a'); R(64, 236, 18, 26, '#3a3a44'); R(66, 232, 14, 4, '#4a4a58'); if (!bate) { brilhos(t, 72, 232, 6, 5) }
+  for (let i = 0; i < 6; i++) moeda(110 + (i % 3) * 10, 256 - floor(i / 3) * 5, 4, PRATA);
   txt(maquina('JUNO MONETA', tl, .3, 14), 540, 300, 60, P.ama); txt('MONETA → MOEDA', 540, 380, 34, P.bra, { a: ramp(tl, 1.2, 1.5) }) });
 // 21 — China: moedas redondas com furo quadrado, num cordão
 S(21, (tl, t) => { R(0, 0, PW, PH, '#3a1418'); for (let y = 0; y < PH; y += 6) R(0, y, PW, 3, '#421a1e'); R(0, 0, PW, 14, '#8a1a1a'); R(0, 14, PW, 2, P.our);
@@ -108,17 +108,17 @@ S(21, (tl, t) => { R(0, 0, PW, PH, '#3a1418'); for (let y = 0; y < PH; y += 6) R
 cartao(22);
 // 23 — carregar moedas era pesado
 S(23, (tl, t) => { faixas(0, 190, ['#d8a060', '#e8b878', '#f0d098']); montanhas(190, '#a87858', 12, 30); chao(190, '#c89868', '#b88858', 13); casinha(130, 220, 30, 20, '#c8a070', '#8a3a2a');
-  const x = lerp(-10, 90, tl / L(23)); pessoa(x, 262, { t, anda: true, roupa: '#3a5a8a', calca: '#2a3a5a', braco: 'ambos', chapeu: 'gorro', chapCor: '#1a1a3a' }); for (let i = 0; i < 3; i++) { R(x - 10 + i * 7, 226 - (i % 2) * 4, 8, 9, '#8a6a40'); moeda(x - 6 + i * 7, 226 - (i % 2) * 4, 2, BRONZE) }
-  if (floor(t * 2) % 2) { px(x + 6, 238, '#8ac8f0'); px(x + 7, 240, '#8ac8f0') } grande(tl, 'PESADO!', 300, 70, P.ama, .6) });
+  const x = lerp(-10, 90, tl / L(23)); pessoa(x, 262, { e: 2, t, anda: true, roupa: '#3a5a8a', calca: '#2a3a5a', braco: 'ambos', chapeu: 'gorro', chapCor: '#1a1a3a' }); for (let i = 0; i < 3; i++) { R(x - 16 + i * 10, 198 - (i % 2) * 6, 12, 14, '#8a6a40'); R(x - 16 + i * 10, 198 - (i % 2) * 6, 12, 2, '#a8885a'); moeda(x - 10 + i * 10, 198 - (i % 2) * 6, 3, BRONZE) }
+  if (floor(t * 2) % 2) { px(x + 10, 172, '#8ac8f0'); px(x + 11, 175, '#8ac8f0') } grande(tl, 'PESADO!', 300, 70, P.ama, .6) });
 // 24 — a China cria o papel-moeda
 S(24, (tl, t) => { R(0, 0, PW, PH, '#2a1414'); for (let y = 0; y < PH; y += 6) R(0, y, PW, 3, '#321a1a'); const u = ease(ramp(tl, .3, 1.4)), h = floor(150 * u);
   R(50, 70, 80, h, '#e8d8b0'); R(52, 72, 76, max(0, h - 4), '#f4e8c8'); if (h > 40) { R(60, 80, 60, 2, '#8a1a1a'); for (let k = 0; k < 6; k++) R(66 + k * 9, 92, 5, 18, '#3a2a1a'); } if (h > 100) { for (let k = 0; k < 3; k++) moeda(70 + k * 20, 130, 5, Object.assign({ relevo: 'furo', fundo: '#f4e8c8' }, BRONZE)); R(80, 160, 20, 20, '#c02020'); R(83, 163, 14, 14, '#e84040') }
   R(46, 66, 88, 5, '#6a3a1a'); R(46, 70 + h, 88, 5, '#6a3a1a'); placa(tl, 'PAPEL-MOEDA', 'CHINA · HÁ QUASE MIL ANOS', { t0: .3, y: 1370 }) });
 // 25 — Marco Polo espantado
 S(25, (tl, t) => { R(0, 0, PW, PH, '#5a2020'); R(0, 200, PW, 120, '#7a5030'); for (let i = 0; i < 6; i++) R(i * 34, 40, 8, 160, '#8a2a20'); R(0, 40, PW, 8, '#c8a040');
-  pessoa(120, 270, { t, roupa: '#c8a040', calca: '#8a2a20', chapeu: 'coroa', flip: true, braco: 'frente', barba: true, longo: 1 }); cedula(78, 230, 26, 14, { c1: '#c8b080', c2: '#f4e8c8', c3: '#8a1a1a' });
-  pessoa(50, 270, { t, roupa: '#3a5a2a', calca: '#5a3a20', chapeu: 'boina', chapCor: '#6a1a1a', barba: true, braco: tl > 1 ? 'ambos' : null });
-  if (tl > 1) { const b = floor(tl * 4) % 2; R(48, 226 - b, 3, 8, P.ama); R(48, 236 - b, 3, 3, P.ama) } txt('MARCO POLO', 300, 1110, 30, P.bra, { a: ramp(tl, .3, .6) }); txt('KUBLAI KHAN', 720, 1110, 26, P.cre, { a: ramp(tl, .5, .8) });
+  pessoa(128, 262, { e: 2, t, roupa: '#c8a040', calca: '#8a2a20', chapeu: 'coroa', flip: true, braco: 'frente', barba: true, longo: 1 }); cedula(84, 222, 26, 14, { c1: '#c8b080', c2: '#f4e8c8', c3: '#8a1a1a' });
+  pessoa(46, 262, { e: 2, t, roupa: '#3a5a2a', calca: '#5a3a20', chapeu: 'boina', chapCor: '#6a1a1a', barba: true, braco: tl > 1 ? 'ambos' : null });
+  if (tl > 1) { const b = floor(tl * 4) % 2; R(44, 144 - b, 4, 12, P.ama); R(44, 159 - b, 4, 4, P.ama) } txt('MARCO POLO', 280, 800, 30, P.bra, { a: ramp(tl, .3, .6) }); txt('KUBLAI KHAN', 780, 800, 26, P.cre, { a: ramp(tl, .5, .8) });
   grande(tl, 'PAPEL VALENDO OURO?!', 330, 48, P.ama, 1.2) });
 // 26 — imprimir demais: inflação
 S(26, (tl, t) => { R(0, 0, PW, PH, '#1c1a24'); R(10, 150, 60, 70, '#5a5a6a'); R(14, 154, 52, 30, '#3a3a48'); R(20, 190, 40, 30, '#6a6a7a'); const sobe = floor(t * 6) % 2; R(20, 140 - sobe * 4, 40, 10, '#4a4a58');
@@ -137,9 +137,9 @@ S(28, (tl, t) => { faixas(0, 150, ['#6ab0e8', '#8ac4f0', '#acd8f8']); for (let i
 // 29 — os Médici emprestam a reis e papas
 S(29, (tl, t) => { R(0, 0, PW, PH, '#3a1e1e'); for (let x = 0; x < PW; x += 20) R(x, 0, 10, 220, '#42241f'); R(0, 220, PW, 100, '#5a3a28'); for (let x = 0; x < PW; x += 12) R(x, 220, 6, 100, '#64422e');
   disco(90, 140, 26, P.our); disco(90, 140, 24, '#e8c040'); [[0, -12], [-10, -4], [10, -4], [-8, 8], [8, 8], [0, 14]].forEach(([dx, dy], i) => disco(90 + dx, 140 + dy, 4, i ? P.ver : '#3a5ad8'));
-  pessoa(50, 280, { t, roupa: '#6a1a2a', calca: '#2a1a2a', chapeu: 'boina', chapCor: '#3a0a1a', braco: 'frente', longo: 1 }); const u = ease(ramp(tl, 1, 2.2)); for (let i = 0; i < 3; i++) moeda(lerp(64, 116, u) + i * 4, 258 - sin(u * PI) * 20, 4);
-  pessoa(130, 280, { t, roupa: '#8a2a8a', calca: '#3a1a3a', chapeu: 'coroa', flip: true, braco: 'frente', barba: true, longo: 1 }); txt('OS MÉDICI', 540, 260, 54, P.ama, { a: ramp(tl, .2, .5) }); txt('FLORENÇA', 540, 330, 28, P.bra, { a: ramp(tl, .4, .7) });
-  txt('EMPRÉSTIMOS A REIS E PAPAS', 540, 1460, 28, P.cre, { a: ramp(tl, 1.4, 1.7) }) });
+  pessoa(46, 262, { e: 2, t, roupa: '#6a1a2a', calca: '#2a1a2a', chapeu: 'boina', chapCor: '#3a0a1a', braco: 'frente', longo: 1 }); const u = ease(ramp(tl, 1, 2.2)); for (let i = 0; i < 3; i++) moeda(lerp(66, 112, u) + i * 4, 202 - sin(u * PI) * 20, 4);
+  pessoa(134, 262, { e: 2, t, roupa: '#8a2a8a', calca: '#3a1a3a', chapeu: 'coroa', flip: true, braco: 'frente', barba: true, longo: 1 }); txt('OS MÉDICI', 540, 260, 54, P.ama, { a: ramp(tl, .2, .5) }); txt('FLORENÇA', 540, 330, 28, P.bra, { a: ramp(tl, .4, .7) });
+  txt('EMPRÉSTIMOS A REIS E PAPAS', 540, 1000, 28, P.cre, { a: ramp(tl, 1.4, 1.7) }) });
 // 30 — cartas de crédito: Florença → Londres
 S(30, (tl, t) => { const map = mapa(0, 50, 180, 200, -12, 18, 56, 40, ['#24448e', '#2a54a8', '#8ab060', '#6a9a50']); const [fx, fy] = map(11.25, 43.77), [lx, ly] = map(-0.12, 51.5);
   disco(fx, fy, 3, P.ama); disco(lx, ly, 3, P.ama); txt('FLORENÇA', fx * K, (fy + 14) * K, 28, P.bra); txt('LONDRES', lx * K, (ly - 8) * K, 28, P.bra);
@@ -161,7 +161,7 @@ S(33, (tl, t) => { const map = mapa(0, 70, 180, 150, -120, 150, 65, -45); const 
 // 34 — o custo: trabalho forçado nas minas
 S(34, (tl, t) => { R(0, 0, PW, PH, '#120c0c'); for (let y = 40; y < 300; y += 3) R(0, y, PW, 1, y % 6 ? '#1a1212' : '#140e0e'); for (let i = 0; i < 8; i++) R(i * 24 + 6, 40, 4, 260, '#2a1c14');
   const luz = .5 + .5 * sin(t * 7) * .2; disco(90, 150, 40, `rgba(255,170,60,${.1 * luz + .05})`); disco(90, 150, 20, `rgba(255,190,80,${.1 + .05 * luz})`); R(88, 140, 4, 6, '#ffb040');
-  for (let i = 0; i < 3; i++) { const bate = floor(t * 2.5 + i) % 2; pessoa(50 + i * 40, 250, { t, roupa: '#6a4a3a', calca: '#3a2a20', pele: '#a8704a', pele2: '#7a4a2a', cab: '#0a0808', braco: bate ? 'cima' : 'frente', flip: i === 2 }) }
+  for (let i = 0; i < 3; i++) { const bate = floor(t * 2.5 + i) % 2; pessoa(46 + i * 44, 262, { e: 2, t, roupa: '#6a4a3a', calca: '#3a2a20', pele: '#a8704a', pele2: '#7a4a2a', cab: '#0a0808', braco: bate ? 'cima' : 'frente', flip: i === 2 }) }
   placa(tl, 'A UM CUSTO TERRÍVEL', 'INDÍGENAS FORÇADOS A TRABALHAR', { t0: .3, size: 46, size2: 26 }) });
 
 // --- capítulo 7: a confiança ---
@@ -179,7 +179,7 @@ S(38, (tl, t) => { R(0, 0, PW, PH, '#1a1420'); cedula(20, 100, 60, 30, { c1: '#2
   txt(maquina('1971', tl, .2, 8), 540, 300, 96, P.ama); txt('FIM DA TROCA POR OURO', 540, 380, 30, P.bra, { a: ramp(tl, 1.3, 1.6) }) });
 // 39 — desde então: vale porque confiamos
 S(39, (tl, t) => { R(0, 0, PW, PH, '#24182a'); const b = 1 + .08 * sin(t * 4); for (let j = -14; j <= 14; j++) for (let i = -16; i <= 16; i++) { const x = i / 14 / b, y = -j / 14 / b; if ((x * x + y * y - 1) ** 3 - x * x * y * y * y < 0) px(90 + i, 120 + j, (i + j) % 5 ? '#e84060' : '#ff6080') }
-  pessoa(60, 250, { t, roupa: '#3a6ab0', calca: '#2a3a5a', braco: 'frente' }); pessoa(120, 250, { t, roupa: '#b05a3a', calca: '#5a3a2a', braco: 'frente', flip: true }); cedula(76, 226, 28, 14, {});
+  pessoa(56, 262, { e: 2, t, roupa: '#3a6ab0', calca: '#2a3a5a', braco: 'frente' }); pessoa(124, 262, { e: 2, t, roupa: '#b05a3a', calca: '#5a3a2a', braco: 'frente', flip: true }); cedula(76, 222, 28, 14, {});
   grande(tl, 'CONFIANÇA', 1300, 80, P.ama, .5) });
 // 40 — quando a confiança acaba, o dinheiro derrete
 S(40, (tl, t) => { R(0, 0, PW, PH, '#2a1414'); const m = ramp(tl, .4, L(40)); cedula(40, 100 + m * 20, 100, floor(50 * (1 - m * .6)), { c1: '#2a6a3a', c2: '#8ac89a', c3: '#123a20' });
@@ -191,7 +191,7 @@ S(41, (tl, t) => { faixas(0, PH, ['#0e3a24', '#124428', '#164e2e']); R(0, 0, PW,
   txt('O BRASIL TEVE 9 MOEDAS', 540, 300, 50, P.ama) });
 // 42 — março de 1990: mais de 80% num mês
 S(42, (tl, t) => { R(0, 0, PW, PH, '#e8e4dc'); for (let k = 0; k < 3; k++) { R(10, 90 + k * 55, 160, 4, '#8a8a9a'); for (let i = 0; i < 7; i++) R(16 + i * 22, 66 + k * 55, 16, 24, ['#e84040', '#3a78d8', '#f0c020', '#3caa50'][(i + k) % 4]) }
-  const preco = floor(100 * 1.8 ** min(6, tl * 1.4)); R(46, 214, 88, 32, '#f4f060'); R(46, 214, 88, 2, '#c8c040'); txt('R$ ' + preco.toLocaleString('pt-BR'), 540, 1410, 44, '#1a1a1a', { max: 500 }); pessoa(150, 300, { t, roupa: '#e84040', calca: '#3a3a5a', flip: true, braco: floor(t * 4) % 2 ? 'frente' : null });
+  const preco = floor(100 * 1.8 ** min(6, tl * 1.4)); R(46, 214, 88, 32, '#f4f060'); R(46, 214, 88, 2, '#c8c040'); txt('R$ ' + preco.toLocaleString('pt-BR'), 540, 1410, 44, '#1a1a1a', { max: 500 }); pessoa(160, 266, { e: 2, t, roupa: '#e84040', calca: '#3a3a5a', flip: true, braco: floor(t * 4) % 2 ? 'frente' : null });
   txt('MARÇO DE 1990', 540, 190, 40, '#1a1a2a'); grande(tl, '+80% EM 1 MÊS', 330, 56, P.ver, .6) });
 // 43 — Plano Real, 1994
 S(43, (tl, t) => { faixas(0, PH, ['#123a6a', '#16447a', '#1a4e8a']); const u = ease(ramp(tl, .2, 1)); cedula(30, lerp(300, 100, u), 120, 60, { c1: '#3a7ab0', c2: '#a8d0f0', c3: '#1a3a6a' });
@@ -217,6 +217,6 @@ S(47, (tl, t) => { faixas(0, PH, ['#2a1e40', '#33264c', '#3c2e58']); const fases
   placa(tl, 'MUDOU DE FORMA', 'MAS É A MESMA COISA', { t0: 2.9, y: 1380 }) });
 // 48 — final: um acordo
 S(48, (tl, t) => { R(0, 0, PW, PH, '#120e1e'); estrelas(t); chuvaMoedas(t * .6, 14, 8); const b = 1 + .05 * sin(t * 3);
-  pessoa(56, 230, { t, roupa: '#3a6ab0', calca: '#2a3a5a', braco: 'frente' }); pessoa(124, 230, { t, roupa: '#b05a3a', calca: '#5a3a2a', braco: 'frente', flip: true }); sp('cel', 84, 202, 2); brilhos(t, 90, 210, 16, 6);
+  pessoa(52, 262, { e: 2, t, roupa: '#3a6ab0', calca: '#2a3a5a', braco: 'frente' }); pessoa(128, 262, { e: 2, t, roupa: '#b05a3a', calca: '#5a3a2a', braco: 'frente', flip: true }); sp('cel', 83, 216, 2); brilhos(t, 90, 224, 16, 6);
   txt('UM ACORDO', 540, 420, 80 * b, P.ama); txt('SÓ VALE PORQUE', 540, 520, 34, P.bra, { a: ramp(tl, 2.2, 2.5) }); txt('ACREDITAMOS NELE', 540, 580, 34, P.bra, { a: ramp(tl, 2.6, 2.9) });
   txt('A HISTÓRIA DO DINHEIRO', 540, 1460, 30, P.cre, { a: ramp(tl, L(48) - 2.5, L(48) - 2) }) });
