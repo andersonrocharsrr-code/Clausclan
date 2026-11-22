@@ -46,7 +46,7 @@ const shot = (a, b, fn) => SH.push({ a, b, fn });
 const L = i => CUTS[i + 1] - CUTS[i];
 function legenda(t) { const g = LEG.find(g => t >= g.t0 && t < g.t1); if (!g) return; CC.font = '82px "Jersey 10"'; const parts = g.w.map(w => w[0]);
   const linhas = [[]]; parts.forEach((w, i) => { const l = linhas[linhas.length - 1]; const cand = [...l.map(i2 => parts[i2]), w].join(' '); if (l.length && CC.measureText(cand).width > W - 140) linhas.push([i]); else l.push(i) });
-  linhas.forEach((l, li) => { let x = (W - CC.measureText(l.map(i => parts[i]).join(' ')).width) / 2; const y = 1650 + li * 72; l.forEach(i => { const [w, a] = g.w[i], dito = t >= a; const col = !dito ? 'rgba(255,255,255,.4)' : g.dest === i ? P.ama : '#ffffff'; FILA.push([w, x, y, 40, col, { align: 'left' }]); CC.font = '82px "Jersey 10"'; x += CC.measureText(w + ' ').width }) }) }
+  linhas.forEach((l, li) => { let x = (W - CC.measureText(l.map(i => parts[i]).join(' ')).width) / 2; const y = 1650 + li * 72; l.forEach(i => { const [w, a] = g.w[i], dito = t >= a; const col = !dito ? '#9a96b0' : g.dest === i ? P.ama : '#ffffff'; FILA.push([w, x, y, 40, col, { align: 'left' }]); CC.font = '82px "Jersey 10"'; x += CC.measureText(w + ' ').width }) }) }
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5], TR = .45;
 function render(t) {
   const i = max(0, SH.findIndex(s => t >= s.a && t < s.b)), s = SH[i]; p = bufA.getContext('2d'); p.setTransform(1, 0, 0, 1, 0, 0); p.clearRect(0, 0, NW, NH); p.setTransform(2, 0, 0, 2, 0, 0); s.fn(t - s.a, t); const tA = FILA; FILA = [];
@@ -56,6 +56,6 @@ function render(t) {
   CC.imageSmoothingEnabled = false; CC.fillStyle = '#000'; CC.fillRect(0, 0, W, H); CC.drawImage(bufA, 0, 0, W, H);
   CC.fillStyle = 'rgba(0,0,0,.07)'; for (let y = 0; y < H; y += 3) CC.fillRect(0, y + 2, W, 1); // linhas de TV
   // faixa escura atrás da legenda
-  const g = CC.createLinearGradient(0, 1540, 0, 1800); g.addColorStop(0, 'rgba(8,6,16,0)'); g.addColorStop(.4, 'rgba(8,6,16,.55)'); g.addColorStop(1, 'rgba(8,6,16,.55)'); CC.fillStyle = g; CC.fillRect(0, 1540, W, 380);
+  const g = CC.createLinearGradient(0, 1540, 0, 1800); g.addColorStop(0, 'rgba(8,6,16,0)'); g.addColorStop(.35, 'rgba(8,6,16,.78)'); g.addColorStop(1, 'rgba(8,6,16,.82)'); CC.fillStyle = g; CC.fillRect(0, 1540, W, 380);
   legenda(t); desenhaTextos();
   const f = min(ramp(t, 0, .3), 1 - ramp(t, DUR - .5, DUR)); if (f < 1) { CC.fillStyle = `rgba(0,0,0,${1 - f})`; CC.fillRect(0, 0, W, H) } }

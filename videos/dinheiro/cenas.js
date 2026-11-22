@@ -190,9 +190,9 @@ S(41, (tl, t) => { faixas(0, PH, ['#0e3a24', '#124428', '#164e2e']); R(0, 0, PW,
   const nomes = ['RÉIS', 'CRUZEIRO', 'CRUZEIRO NOVO', 'CRUZEIRO', 'CRUZADO', 'CRUZADO NOVO', 'CRUZEIRO', 'CRUZEIRO REAL', 'REAL']; nomes.forEach((n, i) => { const v = ramp(tl, .2 + i * .3, .4 + i * .3); txt(`${i + 1}. ${n}`, 540, 420 + i * 92, i === 8 ? 52 : 40, i === 8 ? P.ama : P.bra, { a: v }); if (v > 0 && i < 8 && tl > .5 + (i + 1) * .3) txt('—', 540, 420 + i * 92 - 12, 0, P.ver) });
   txt('O BRASIL TEVE 9 MOEDAS', 540, 300, 50, P.ama) });
 // 42 — março de 1990: mais de 80% num mês
-S(42, (tl, t) => { R(0, 0, PW, PH, '#e8e4dc'); for (let k = 0; k < 3; k++) { R(10, 90 + k * 55, 160, 4, '#8a8a9a'); for (let i = 0; i < 7; i++) R(16 + i * 22, 66 + k * 55, 16, 24, ['#e84040', '#3a78d8', '#f0c020', '#3caa50'][(i + k) % 4]) }
-  const preco = floor(100 * 1.8 ** min(6, tl * 1.4)); R(46, 214, 88, 32, '#f4f060'); R(46, 214, 88, 2, '#c8c040'); txt('R$ ' + preco.toLocaleString('pt-BR'), 540, 1410, 44, '#1a1a1a', { max: 500 }); pessoa(160, 266, { e: 2, t, roupa: '#e84040', calca: '#3a3a5a', flip: true, braco: floor(t * 4) % 2 ? 'frente' : null });
-  txt('MARÇO DE 1990', 540, 190, 40, '#1a1a2a'); grande(tl, '+80% EM 1 MÊS', 330, 56, P.ver, .6) });
+S(42, (tl, t) => { R(0, 0, PW, PH, '#e8e4dc'); for (let k = 0; k < 3; k++) { R(10, 100 + k * 50, 160, 4, '#8a8a9a'); for (let i = 0; i < 7; i++) R(16 + i * 22, 78 + k * 50, 16, 22, ['#e84040', '#3a78d8', '#f0c020', '#3caa50'][(i + k) % 4]) }
+  const preco = floor(100 * 1.8 ** min(6, tl * 1.4)); R(34, 206, 112, 40, '#3a3a48'); R(37, 209, 106, 34, '#0e1014'); for (let y2 = 209; y2 < 243; y2 += 1) R(37, y2, 106, .5, 'rgba(255,255,255,.03)'); txt('PREÇO', 540, 1265, 26, P.bra); txt('R$ ' + preco.toLocaleString('pt-BR'), 540, 1420, 62, P.ama, { max: 600 }); pessoa(160, 266, { e: 2, t, roupa: '#e84040', calca: '#3a3a5a', flip: true, braco: floor(t * 4) % 2 ? 'frente' : null });
+  R(0, 0, PW, 62, '#1c1a28'); R(0, 62, PW, 2, P.our2); txt('MARÇO DE 1990', 540, 170, 48, P.bra); grande(tl, '+80% EM 1 MÊS', 320, 66, P.ama, .6) });
 // 43 — Plano Real, 1994
 S(43, (tl, t) => { faixas(0, PH, ['#123a6a', '#16447a', '#1a4e8a']); const u = ease(ramp(tl, .2, 1)); cedula(30, lerp(300, 100, u), 120, 60, { c1: '#3a7ab0', c2: '#a8d0f0', c3: '#1a3a6a' });
   // beija-flor da nota de 1 real
