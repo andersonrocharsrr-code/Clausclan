@@ -1,0 +1,8 @@
+{
+  "appId": "io.github.andersonrocharsrr_code.baixar",
+  "appName": "Salva Vídeo",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#0b0d14"
+  }
+}
