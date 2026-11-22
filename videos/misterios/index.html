@@ -1,0 +1,11 @@
+<!doctype html><meta charset="utf-8"><title>Mistérios do universo</title>
+<style>
+@font-face{font-family:"Fira Sans Extra Condensed";font-weight:600;src:url(fontes/fira-sans-extra-condensed-latin-600-normal.woff2)}
+@font-face{font-family:"Fira Sans Extra Condensed";font-weight:800;src:url(fontes/fira-sans-extra-condensed-latin-800-normal.woff2)}
+html,body{margin:0;background:#000}canvas{display:block;height:100vh;width:auto;margin:auto}</style>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="tempos.js"></script><script src="motor.js"></script><script src="espaco.js"></script><script src="cosmos.js"></script><script src="detalhes.js"></script><script src="cenas.js"></script>
+<script>
+window.PRONTO = Promise.all([foto('pilares').decode(), foto('sombreiro').decode(), document.fonts.load('600 40px "Fira Sans Extra Condensed"'), document.fonts.load('800 40px "Fira Sans Extra Condensed"')]);
+if (!location.search.includes('render')) PRONTO.then(() => { const t0 = performance.now(); (function f() { render(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(f) })() });
+</script>
