@@ -2084,11 +2084,8 @@ function dadosCaixa() {
   return {
     nome: st.nome, cidade: st.cidade, data: d, semana: st.semana, foiCobrar: vazioOu(st.foiCobrar),
     qtNotas: st.qtNotas, vPep5: vazioOu(c.vPep5),
-    antecipados: vazioOu(st.antecipados), qtNotasDeixadas: st.qtNotasDeixadas,
-    // Pinos e valor dos pepinos podem ser ajustados só na folha (✏️ na tela da folha); o app não muda.
-    pinos: st.folhaAjuste?.pinos != null ? String(st.folhaAjuste.pinos) : (pep.pinos ? String(pep.pinos) : ''),
-    valorPepinos: st.folhaAjuste?.valorPepinos != null ? vazioOu(st.folhaAjuste.valorPepinos) : vazioOu(pep.valor),
-    pepinoParcial: vazioOu(st.pepinoParcial),
+    antecipados: vazioOu(st.antecipados), qtNotasDeixadas: st.qtNotasDeixadas, pinos: pep.pinos ? String(pep.pinos) : '',
+    valorPepinos: vazioOu(pep.valor), pepinoParcial: vazioOu(st.pepinoParcial),
     notas25: vazioOu(c.notas25), notas4050: vazioOu(c.notas4050), pepinoExtra: vazioOu(c.extras),
     recebimento: vazioOu(c.recebimento), depEspecie: vazioOu(dep.empresa), depPix: vazioOu(dep.pix),
     depBanco: vazioOu(dep.banco), vale: [st.vale, st.vale2].filter((v) => Number(v)).map(brl).join(' / '), ajuda: vazioOu(st.ajuda), mecanica: vazioOu(st.mecanica),
@@ -2115,51 +2112,16 @@ function pendencias() {
 const nomeArquivo = () => `caixa-${(st.nome || 'vendedor').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-semana-${soDigitos(st.semana) || 'x'}.png`;
 let imagemCaixa = null;
 
-async function desenharFolha() {
-  imagemCaixa = await desenharCaixa(dadosCaixa());
-  const url = URL.createObjectURL(imagemCaixa);
-  const img = $('#caixaImg');
-  if (img.src) URL.revokeObjectURL(img.src);
-  img.src = url;
-}
-// ✏️ Ajustar pinos só na folha: preenche com o que vai na folha e mostra o valor do app ao lado.
-function pintarAjusteFolha() {
-  const pep = pepinosDaSemana();
-  const aj = st.folhaAjuste || {};
-  $('#ajPinos').value = aj.pinos ?? (pep.pinos || '');
-  $('#ajValorPep').value = brl(aj.valorPepinos ?? pep.valor ?? 0);
-  const mudou = aj.pinos != null || aj.valorPepinos != null;
-  $('#ajApp').textContent = mudou ? `Ajustado na folha. No app: ${pep.pinos || 0} pino(s) · ${R$(pep.valor || 0)}.` : '';
-  $('#ajVoltar').hidden = !mudou;
-}
-$('#ajAplicar').addEventListener('click', async () => {
-  const pep = pepinosDaSemana();
-  const pinos = Math.max(0, Math.round(numero($('#ajPinos').value)));
-  const valor = arred(numero($('#ajValorPep').value));
-  // Igual ao do app = sem ajuste.
-  const aj = {};
-  if (pinos !== Number(pep.pinos || 0)) aj.pinos = pinos;
-  if (valor !== arred(pep.valor || 0)) aj.valorPepinos = valor;
-  if (Object.keys(aj).length) st.folhaAjuste = aj; else delete st.folhaAjuste;
-  salvarAtual();
-  await desenharFolha(); pintarAjusteFolha();
-  toast(Object.keys(aj).length ? 'Folha atualizada. No app nada mudou.' : 'Folha com os valores do app.');
-});
-$('#ajVoltar').addEventListener('click', async () => {
-  delete st.folhaAjuste; salvarAtual();
-  await desenharFolha(); pintarAjusteFolha();
-  toast('Folha com os valores do app.');
-});
-$('#ajValorPep').addEventListener('blur', (e) => { e.target.value = brl(numero(e.target.value)); });
-
 $('#btnGerar').addEventListener('click', async () => {
   if (!exigirLicenca()) return;
   carregando(true);
   progressoSimulado('Gerando a folha do caixa…');
   try {
-    await desenharFolha();
-    pintarAjusteFolha();
-    $('#folhaAjuste').open = !!st.folhaAjuste;
+    imagemCaixa = await desenharCaixa(dadosCaixa());
+    const url = URL.createObjectURL(imagemCaixa);
+    const img = $('#caixaImg');
+    if (img.src) URL.revokeObjectURL(img.src);
+    img.src = url;
     const pend = pendencias();
     $('#caixaAvisos').hidden = !pend.length;
     $('#caixaAvisos').innerHTML = pend.length ? '<b>Antes de entregar, confira:</b><ul>' + pend.map((t) => `<li>${esc(t)}</li>`).join('') + '</ul>' : '';

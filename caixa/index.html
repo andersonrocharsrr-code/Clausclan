@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=96">
+  <link rel="stylesheet" href="style.css?v=95">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -874,20 +874,6 @@
       <h2>Folha do caixa</h2>
       <div id="caixaAvisos" class="avisos" hidden></div>
       <img id="caixaImg" class="caixa-img" alt="Folha CAIXA preenchida">
-      <!-- Ajuste só na folha: muda o que sai escrito na folha, sem mexer nos lançamentos do app -->
-      <details class="folha-ajuste" id="folhaAjuste">
-        <summary>✏️ Ajustar pinos só na folha</summary>
-        <p class="muted small">Muda só o que sai escrito na folha do caixa. No app continua o valor calculado.</p>
-        <div class="grid">
-          <label>Nº de pinos<input id="ajPinos" inputmode="numeric" enterkeyhint="done" autocomplete="off"></label>
-          <label>Valor dos pepinos (R$)<input id="ajValorPep" inputmode="decimal" enterkeyhint="done" autocomplete="off"></label>
-        </div>
-        <p class="muted small" id="ajApp"></p>
-        <div class="row-actions">
-          <button type="button" class="btn btn--primary" id="ajAplicar">Atualizar folha</button>
-          <button type="button" class="btn btn--ghost" id="ajVoltar">Voltar ao valor do app</button>
-        </div>
-      </details>
       <div class="row-actions">
         <button type="button" class="btn btn--primary" id="btnCaixaGaleria">💾 Salvar na galeria</button>
         <button type="button" class="btn" id="btnCaixaEnviar">📤 Mandar</button>
@@ -1075,6 +1061,6 @@
   <script src="vendor/nacl-fast.min.js?v=1"></script>
   <script src="licenca-config.js?v=2"></script>
   <script src="versao-app.js?v=1"></script>
-  <script type="module" src="app.js?v=121"></script>
+  <script type="module" src="app.js?v=120"></script>
 </body>
 </html>
