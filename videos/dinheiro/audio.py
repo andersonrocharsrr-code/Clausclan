@@ -59,6 +59,7 @@ for k, t0 in TP['NARS'].items():
     d, _ = sf.read(f'{P}/nar/{k}.wav'); d = d if d.ndim == 1 else d.mean(1); d /= np.abs(d).max(); add(nar, d * .92, t0)
 sos = butter(2, 5000, 'low', fs=SR, output='sos'); mus = sosfilt(sos, mus); mus /= np.abs(mus).max(); sfx /= max(1e-9, np.abs(sfx).max())
 a = np.abs(nar); k = int(.05 * SR); v = np.clip(np.convolve(a, np.ones(k) / k, 'same') / .05, 0, 1); v = uniform_filter1d(maximum_filter1d(v, int(.4 * SR)), int(.3 * SR))
-mix = mus * .17 * (1 - .45 * v) + sfx * .3 * (1 - .35 * v) + nar
+nar = np.tanh(nar * 2.2) / np.tanh(2.2)  # voz comprimida: fica mais alta e uniforme
+mix = mus * .09 * (1 - .6 * v) + sfx * .18 * (1 - .5 * v) + nar
 fade = np.ones(n); fade[:int(.3 * SR)] = np.linspace(0, 1, int(.3 * SR)); fade[-int(1.2 * SR):] = np.linspace(1, 0, int(1.2 * SR)); mix *= fade; mix = np.tanh(mix * 1.05) / np.tanh(1.05); mix /= np.abs(mix).max() / .95
 sf.write(OUT, np.stack([mix, mix], 1).astype(np.float32), SR); print('ok')
