@@ -24,7 +24,7 @@ def cena(k, nome, g, ini=0, fim=0):  # cobre a cena k com o som (repetindo se pr
     st, L = C[k] + ini, C[k + 1] - C[k] - ini - fim + .6; tot = len(smp(nome)) / SR - .6; o = 0.0
     while L > .05: d = min(L, tot); ps(st + o, nome, g, dur=d, fin=.5 if o == 0 else .8, fout=.8, off=0 if o == 0 else .4); o += max(.5, d - .8); L -= max(.5, d - .8)
 for k in range(len(C) - 1): cena(k, 'espaco', .35)
-for k, nome, g in [(0, 'noite', .5), (21, 'noite', .45), (37, 'noite', .45), (7, 'sol', .5), (16, 'buraco', .7), (13, 'galaxia', .35), (14, 'galaxia', .3), (19, 'galaxia', .35), (23, 'colisao', .6), (25, 'galaxia', .3), (26, 'galaxia', .3), (31, 'mar', .5), (34, 'pulso', .5), (35, 'pulso', .3)]:
+for k, nome, g in [(7, 'sol', .5), (16, 'buraco', .7), (13, 'galaxia', .35), (14, 'galaxia', .3), (19, 'galaxia', .35), (23, 'colisao', .6), (25, 'galaxia', .3), (26, 'galaxia', .3), (31, 'mar', .5), (34, 'pulso', .5), (35, 'pulso', .3)]:
     cena(k, nome, g)
 TRS = {1: 'whoosh', 2: 'whoosh', 3: 'whoosh', 5: 'whoosh', 6: 'whoosh', 7: 'impacto', 8: 'whoosh', 9: 'whoosh', 11: 'whoosh', 12: 'whoosh', 14: 'whoosh', 15: 'whoosh', 16: 'impacto', 17: 'whoosh', 18: 'whoosh', 20: 'brilho',
        21: 'whoosh', 22: 'whoosh', 23: 'whoosh', 24: 'whoosh', 25: 'whoosh', 27: 'whoosh', 28: 'brilho', 30: 'whoosh', 31: 'whoosh', 32: 'impacto', 33: 'whoosh', 34: 'whoosh', 35: 'whoosh', 36: 'whoosh', 37: 'whoosh'}

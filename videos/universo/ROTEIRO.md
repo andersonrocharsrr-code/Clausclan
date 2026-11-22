@@ -1,6 +1,6 @@
 # A vastidão do universo observável — roteiro (4:30, vertical)
 
-**Formato:** 1080×1920 (TikTok), 30 qps, 269,5 s. **Modelo:** Recorte Dourado (padrão da Starship): paleta ocre, creme,
+**Formato:** 1080×1920 (TikTok), 30 qps, 271,8 s. **Modelo:** Recorte Dourado (padrão da Starship): paleta ocre, creme,
 dourado e azul-ardósia sobre o espaço, grão de papel, placas que se escrevem, 4 capítulos, legenda palavra por palavra.
 **Voz:** Rodrigo Custódio (ElevenLabs), velocidade 1,0 (ritmo de documentário). **Transições suaves.**
 **Trilha:** pads, cordas, coro e sininhos; efeitos de espaço profundo, noite, Sol, buraco negro, coro cósmico, colisão, mar, luz.

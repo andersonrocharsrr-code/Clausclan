@@ -191,3 +191,86 @@ function buracoNegro(x, y, r, t) {
   anel(0, PI);
   c.restore();
 }
+
+// ================= cache de desenho estático (desenha uma vez numa tela própria) =================
+function cache(nome, w, h, fn) { const C2 = (cache.m = cache.m || {}); if (!C2[nome]) { const k = document.createElement('canvas'); k.width = w; k.height = h; const ant = c; c = k.getContext('2d'); fn(); c = ant; C2[nome] = k } return C2[nome] }
+// ================= universo observável realista (escala logarítmica, como nas ilustrações científicas) =================
+function universoObservavel(cx, cy, R, t, o = {}) {
+  const img = cache('uo', 1200, 1200, () => { const X = 600, Y = 600, RR = 580, q = rng(2024); c.fillStyle = '#000'; c.beginPath(); c.arc(X, Y, RR, 0, 7); c.fill();
+    // borda: plasma primordial e radiação cósmica de fundo (manchas)
+    let g = c.createRadialGradient(X, Y, RR * .8, X, Y, RR); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(.55, 'rgba(120,30,20,.6)'); g.addColorStop(.8, 'rgba(230,110,40,.85)'); g.addColorStop(.95, 'rgba(255,190,110,.95)'); g.addColorStop(1, 'rgba(255,230,180,.6)'); c.fillStyle = g; c.beginPath(); c.arc(X, Y, RR, 0, 7); c.fill();
+    c.save(); c.beginPath(); c.arc(X, Y, RR * .985, 0, 7); c.arc(X, Y, RR * .87, 0, 7, true); c.clip(); for (let i = 0; i < 2600; i++) { const a = q() * 7, d = RR * (.87 + q() * .12), s = 4 + q() * 14; c.fillStyle = q() < .45 ? `rgba(255,${(120 + q() * 80) | 0},50,${.25 + q() * .3})` : q() < .7 ? `rgba(140,30,20,${.3 + q() * .3})` : `rgba(90,110,190,${.15 + q() * .2})`; c.beginPath(); c.ellipse(X + cos(a) * d, Y + sin(a) * d, s, s * .6, a, 0, 7); c.fill() } c.restore();
+    // teia cósmica: nós e filamentos com milhares de galáxias (mais densa para fora)
+    c.save(); c.beginPath(); c.arc(X, Y, RR * .87, 0, 7); c.clip(); c.globalCompositeOperation = 'lighter'; const nos = []; for (let i = 0; i < 230; i++) { const a = q() * 7, d = RR * (.3 + Math.pow(q(), .6) * .57); nos.push([X + cos(a) * d, Y + sin(a) * d, d]) }
+    nos.forEach((A, i) => nos.forEach((B, j) => { if (j <= i) return; const L2 = Math.hypot(A[0] - B[0], A[1] - B[1]); if (L2 > 95) return; const n = (L2 / 2) | 0; for (let k = 0; k < n; k++) { const u = q(), w = (q() - .5) * 6; const px = lerp(A[0], B[0], u) + w, py = lerp(A[1], B[1], u) + (q() - .5) * 6; const k2 = q(); c.fillStyle = k2 < .7 ? 'rgba(150,130,255,.28)' : k2 < .9 ? 'rgba(220,200,255,.45)' : 'rgba(255,220,180,.6)'; c.fillRect(px, py, 1.4, 1.4) } c.strokeStyle = 'rgba(110,90,220,.07)'; c.lineWidth = 5; c.beginPath(); c.moveTo(A[0], A[1]); c.lineTo(B[0], B[1]); c.stroke() }));
+    nos.forEach(([x, y, d]) => { glow(x, y, 6 + q() * 10, '255,210,190', .55); glow(x, y, 18, '160,120,255', .2) });
+    for (let i = 0; i < 9000; i++) { const a = q() * 7, d = RR * (.32 + Math.pow(q(), .5) * .55); c.fillStyle = `rgba(170,160,255,${.05 + q() * .12})`; c.fillRect(X + cos(a) * d, Y + sin(a) * d, 1.2, 1.2) } c.restore();
+    // galáxias próximas (Grupo Local e vizinhas)
+    c.save(); c.globalCompositeOperation = 'lighter'; for (let i = 0; i < 46; i++) { const a = q() * 7, d = RR * (.14 + q() * .17), r2 = 4 + q() * 9; c.save(); c.translate(X + cos(a) * d, Y + sin(a) * d); c.rotate(q() * 3); c.scale(1, .4 + q() * .6); glow(0, 0, r2 * 1.8, q() < .5 ? '200,210,255' : '255,220,180', .7); c.strokeStyle = 'rgba(200,210,255,.6)'; c.lineWidth = 1.2; c.beginPath(); c.arc(0, 0, r2, 0, 4); c.stroke(); c.restore() } c.restore();
+    // Via Láctea e Andrômeda em destaque, e o Sistema Solar no centro
+    c.save(); c.globalCompositeOperation = 'lighter'; glow(X, Y, RR * .12, '200,180,255', .35); for (let k = 0; k < 4; k++) { c.strokeStyle = 'rgba(210,200,255,.5)'; c.lineWidth = 2; c.beginPath(); for (let j = 0; j < 30; j++) { const r3 = 6 + j * 1.8, aa = k * PI / 2 + j * .25; j ? c.lineTo(X + cos(aa) * r3, Y + sin(aa) * r3) : c.moveTo(X + cos(aa) * r3, Y + sin(aa) * r3) } c.stroke() } c.restore(); solDisco(X, Y, 5);
+    c.save(); c.translate(X + RR * .2, Y - RR * .07); c.rotate(-.6); c.scale(1, .35); glow(0, 0, 22, '230,220,255', .9); c.restore();
+    // brilho de esfera
+    g = c.createRadialGradient(X - RR * .3, Y - RR * .35, 0, X, Y, RR); g.addColorStop(0, 'rgba(255,255,255,.05)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(X, Y, RR, 0, 7); c.fill() });
+  c.save(); c.translate(cx, cy); c.rotate(t * (o.giro ?? .01)); const s = R / 580; c.scale(s, s); glow(0, 0, 680, '255,150,80', .18); c.drawImage(img, -600, -600); c.restore();
+  if (o.rotulos) { const u = o.rotulos; [['SISTEMA SOLAR', 0, 0], ['GALÁXIAS VIZINHAS', .24, -.5], ['TEIA CÓSMICA', .62, .5], ['A LUZ MAIS ANTIGA', .93, -1.2]].forEach(([s2, d, a], i) => { const px = cx + cos(a) * d * R, py = cy + sin(a) * d * R; txt(s2, px, py + (i ? 0 : 40), 30, '#fff6e0', { align: 'center', a: ramp(u, i * .8, i * .8 + .4) }) }) }
+}
+// ================= Laniakea realista: galáxias em filamentos, linhas de fluxo e contorno =================
+function laniakea(t, tl, z) {
+  espaco(t, { via: false });
+  const img = cache('lani', 1200, 1200, () => { const X = 600, Y = 600, q = rng(77); c.globalCompositeOperation = 'lighter';
+    const nos = []; for (let i = 0; i < 120; i++) { const a = q() * 7, d = Math.pow(q(), .7) * 560; nos.push([X + cos(a) * d, Y + sin(a) * d * .8]) }
+    nos.forEach((A, i) => nos.forEach((B, j) => { if (j <= i) return; const L2 = Math.hypot(A[0] - B[0], A[1] - B[1]); if (L2 > 120) return; for (let k = 0; k < L2 * .9; k++) { const u = q(); c.fillStyle = q() < .2 ? 'rgba(255,200,150,.6)' : 'rgba(150,180,255,.4)'; const s = .8 + q() * 1.8; c.fillRect(lerp(A[0], B[0], u) + (q() - .5) * 8, lerp(A[1], B[1], u) + (q() - .5) * 8, s, s) } }));
+    nos.forEach(([x, y]) => glow(x, y, 8 + q() * 14, '255,220,190', .5));
+    // linhas de fluxo convergindo para o Grande Atrator
+    const GA = [X + 40, Y + 20]; for (let f = 0; f < 70; f++) { const a = q() * 7, d = 300 + q() * 300; let px = GA[0] + cos(a) * d, py = GA[1] + sin(a) * d * .8; c.strokeStyle = `rgba(255,255,255,${.18 + q() * .15})`; c.lineWidth = 1.3; c.beginPath(); c.moveTo(px, py); for (let k = 0; k < 80; k++) { const ang = Math.atan2(GA[1] - py, GA[0] - px) + .35, dd = Math.hypot(GA[0] - px, GA[1] - py); if (dd < 20) break; px += cos(ang) * 6; py += sin(ang) * 6; c.lineTo(px, py) } c.stroke() }
+    glow(GA[0], GA[1], 90, '255,220,170', .6);
+    // contorno da bacia de Laniakea
+    c.globalCompositeOperation = 'source-over'; c.strokeStyle = 'rgba(240,160,80,.8)'; c.lineWidth = 4; c.beginPath(); for (let k = 0; k <= 60; k++) { const a = k / 60 * 2 * PI, r = 470 + 50 * sin(a * 3 + 1) + 30 * sin(a * 5); k ? c.lineTo(X + cos(a) * r, Y + sin(a) * r * .8) : c.moveTo(X + cos(a) * r, Y + sin(a) * r * .8) } c.closePath(); c.stroke(); c.fillStyle = 'rgba(240,160,80,.05)'; c.fill() });
+  c.save(); c.translate(540, 820); c.scale(z * .9, z * .9); c.drawImage(img, -600, -600);
+  // pontinhos andando pelas linhas de fluxo
+  const q = rng(5); c.globalCompositeOperation = 'lighter'; for (let i = 0; i < 40; i++) { const a = q() * 7 - t * .2, d = (420 - ((t * 25 + q() * 400) % 400)); disc(40 + cos(a) * d, 20 + sin(a) * d * .8, 3, 'rgba(255,255,255,.8)') } c.restore();
+}
+// ================= pessoa realista de costas, olhando o céu (com luz de contorno) =================
+function observador(x, y, s) { c.save(); c.translate(x, y); c.scale(s, s); const k = '#0a0c14', k2 = '#121624', rim = 'rgba(170,190,240,.55)';
+  bezPoly([[-30, 0], [-34, -60, -30, -150], [-6, -150], [-8, -60, -10, 0]], k); bezPoly([[30, 0], [34, -60, 30, -150], [6, -150], [8, -60, 10, 0]], k2); // pernas (calça)
+  bezPoly([[-40, 0], [-44, -12], [-12, -14], [-8, 0]], '#1a1c22'); bezPoly([[40, 0], [44, -12], [12, -14], [8, 0]], '#1a1c22'); // tênis
+  bezPoly([[-46, -150], [-52, -230, -44, -290], [-24, -318, 0, -322], [24, -318, 44, -290], [52, -230, 46, -150]], k2); // jaqueta
+  bezPoly([[-46, -150], [-52, -230, -44, -290], [-24, -318, -4, -320], [-6, -150]], k); line(0, -310, 0, -152, 'rgba(60,70,100,.6)', 2);
+  bezPoly([[-44, -286], [-60, -240, -58, -160], [-46, -150], [-40, -230]], k); bezPoly([[44, -286], [60, -240, 58, -160], [46, -150], [40, -230]], k2); el(-52, -150, 9, 12, '#1a1418'); el(52, -150, 9, 12, '#1a1418'); // braços e mãos
+  bezPoly([[-12, -322], [-10, -336], [10, -336], [12, -322]], '#14100e'); // pescoço
+  el(0, -362, 26, 30, '#0c0a0c'); bezPoly([[-27, -360], [-30, -396, 0, -398], [30, -396, 27, -360], [24, -340], [-24, -340]], '#0e0c10'); // cabeça e cabelo
+  c.strokeStyle = rim; c.lineWidth = 2.5; c.beginPath(); c.moveTo(27, -362); c.quadraticCurveTo(30, -396, 0, -398); c.stroke(); c.beginPath(); c.moveTo(44, -290); c.quadraticCurveTo(52, -230, 46, -150); c.stroke(); c.beginPath(); c.moveTo(24, -318); c.quadraticCurveTo(40, -308, 44, -290); c.stroke(); c.beginPath(); c.moveTo(34, -150); c.quadraticCurveTo(34, -60, 30, 0); c.stroke();
+  c.restore() }
+// ================= praia à noite, com a Via Láctea, ondas, areia e uma lupa nos grãos =================
+function praia(t) {
+  c.fillStyle = lg(0, 0, 0, 900, [[0, '#04060c'], [.6, '#0c1630'], [1, '#1c2c48']]); c.fillRect(0, 0, W, 920);
+  c.save(); c.translate(540, 450); c.rotate(-.5); for (let k = 0; k < 4; k++) { c.fillStyle = lg(0, -200 + k * 40, 0, 200 - k * 40, [[0, 'rgba(160,150,200,0)'], [.5, `rgba(${k > 1 ? '230,200,170' : '150,150,210'},${.09 + k * .04})`], [1, 'rgba(160,150,200,0)']]); c.fillRect(-1400, -200 + k * 40, 2800, 400 - k * 80) } c.restore();
+  const q = rng(8); for (let i = 0; i < 700; i++) { c.fillStyle = `rgba(255,250,235,${.25 + q() * .7})`; const s2 = .8 + q() * 2; c.fillRect(q() * W, q() * 880, s2, s2) }
+  disc(860, 260, 34, '#f2eee0'); glow(860, 260, 140, '240,240,220', .25);
+  c.fillStyle = lg(0, 880, 0, 1110, [[0, '#0e2236'], [1, '#1c3a52']]); c.fillRect(0, 880, W, 230); for (let k = 0; k < 18; k++) { const y = 900 + k * 12; pill(860 + sin(t + k) * 20, y, 40 + k * 6, 3, `rgba(240,240,220,${.35 - k * .015})`) }
+  for (let k = 0; k < 4; k++) { const y = 1000 + k * 34, ph = t * 1.2 + k; c.fillStyle = `rgba(230,240,250,${.55 - k * .08})`; c.beginPath(); c.moveTo(0, y); for (let x = 0; x <= W; x += 18) c.lineTo(x, y + sin(x * .015 + ph) * 8 + sin(x * .04 - ph) * 3); c.lineTo(W, y + 8); for (let x = W; x >= 0; x -= 18) c.lineTo(x, y + 8 + sin(x * .015 + ph) * 8); c.fill() }
+  c.fillStyle = lg(0, 1110, 0, 1180, [[0, '#4a4234'], [1, '#6a5c44']]); c.fillRect(0, 1110, W, 70); c.fillStyle = 'rgba(200,210,230,.12)'; c.fillRect(0, 1112, W, 10);
+  c.fillStyle = lg(0, 1180, 0, H, [[0, '#a8926a'], [1, '#6e5a3e']]); c.fillRect(0, 1180, W, H - 1180); for (let i = 0; i < 5000; i++) { const y = 1180 + Math.pow(q(), .8) * (H - 1180), s2 = .8 + (y - 1180) / 300; c.fillStyle = q() < .5 ? 'rgba(70,56,36,.5)' : 'rgba(230,214,180,.45)'; c.fillRect(q() * W, y, s2, s2) } for (let k = 0; k < 5; k++) { c.strokeStyle = 'rgba(60,48,30,.25)'; c.lineWidth = 3; c.beginPath(); c.moveTo(0, 1240 + k * 60); c.quadraticCurveTo(540, 1220 + k * 60, W, 1250 + k * 60); c.stroke() }
+  // lupa sobre a areia mostrando os grãos (formas e cores diferentes)
+  const lx = 760, ly = 1270, lr = 150; c.save(); c.beginPath(); c.arc(lx, ly, lr, 0, 7); c.clip(); c.fillStyle = '#8a7656'; c.fillRect(lx - lr, ly - lr, 2 * lr, 2 * lr); const g2 = rng(31); for (let i = 0; i < 160; i++) { const gx = lx - lr + g2() * 2 * lr, gy = ly - lr + g2() * 2 * lr, r2 = 6 + g2() * 12, cor = ['#e8d8b0', '#d8b888', '#c8a070', '#f0e6d0', '#a8886a', '#e0c8a0', '#9a8a7a'][(g2() * 7) | 0]; c.save(); c.translate(gx, gy); c.rotate(g2() * 3); el(0, 0, r2, r2 * (.6 + g2() * .4), cor); el(-r2 * .3, -r2 * .25, r2 * .4, r2 * .25, 'rgba(255,255,255,.35)'); el(r2 * .2, r2 * .25, r2 * .5, r2 * .3, 'rgba(0,0,0,.15)'); c.restore() } c.restore();
+  c.strokeStyle = '#2a2a30'; c.lineWidth = 16; c.beginPath(); c.arc(lx, ly, lr, 0, 7); c.stroke(); c.strokeStyle = '#8a8a94'; c.lineWidth = 4; c.beginPath(); c.arc(lx, ly, lr - 6, 0, 7); c.stroke(); line(lx - lr * .72, ly + lr * .72, lx - lr * 1.5, ly + lr * 1.5, '#3a2a20', 26); c.fillStyle = 'rgba(255,255,255,.08)'; c.beginPath(); c.arc(lx - 40, ly - 50, 60, 0, 7); c.fill();
+}
+// ================= pessoa realista de costas (versão final) =================
+function observador(x, y, s) { c.save(); c.translate(x, y); c.scale(s, s); const k0 = '#07080e', k1 = '#0f1220', k2 = '#161a2c', rim = 'rgba(180,200,245,.6)';
+  // pernas: coxas largas afinando até o tornozelo, joelho marcado
+  bezPoly([[-34, -158], [-38, -110, -30, -78], [-28, -40, -24, -8], [-8, -8], [-6, -50, -8, -84], [-4, -120, -2, -158]], k0); bezPoly([[34, -158], [38, -110, 30, -78], [28, -40, 24, -8], [8, -8], [6, -50, 8, -84], [4, -120, 2, -158]], k1);
+  c.strokeStyle = 'rgba(80,90,130,.35)'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(-26, -80); c.quadraticCurveTo(-18, -74, -10, -80); c.moveTo(26, -80); c.quadraticCurveTo(18, -74, 10, -80); c.stroke();
+  bezPoly([[-30, -10], [-36, 0], [-2, 2], [-4, -10]], '#1c1e26'); bezPoly([[30, -10], [36, 0], [2, 2], [4, -10]], '#22242e'); // tênis
+  // jaqueta com ombros arredondados, barra e costura
+  bezPoly([[-44, -150], [-50, -200, -50, -248], [-50, -292, -26, -312], [0, -318], [26, -312, 50, -292], [50, -248, 50, -200], [44, -150], [0, -144]], k1);
+  bezPoly([[-44, -150], [-50, -200, -50, -248], [-50, -292, -26, -312], [-2, -318], [-4, -144]], k0); rr(-46, -158, 92, 14, 6, '#0b0d16'); line(0, -300, 0, -150, 'rgba(70,80,120,.5)', 2);
+  // capuz caído nas costas
+  bezPoly([[-30, -318], [-36, -296, -20, -276], [0, -268], [20, -276, 36, -296], [30, -318]], '#121626'); c.strokeStyle = 'rgba(70,80,120,.5)'; c.lineWidth = 2; c.beginPath(); c.moveTo(-26, -310); c.quadraticCurveTo(0, -282, 26, -310); c.stroke();
+  // braços relaxados ao lado do corpo, mãos
+  bezPoly([[-46, -296], [-62, -260, -60, -200], [-56, -160], [-44, -158], [-46, -210, -40, -270]], k0); bezPoly([[46, -296], [62, -260, 60, -200], [56, -160], [44, -158], [46, -210, 40, -270]], k2); el(-50, -150, 8, 12, '#1e1618'); el(50, -150, 8, 12, '#241a1c');
+  // pescoço, cabeça levemente inclinada para cima, cabelo com mechas
+  bezPoly([[-11, -318], [-10, -334], [10, -334], [11, -318]], '#140e0c'); c.save(); c.translate(0, -362); c.rotate(-.12); el(0, 0, 25, 30, '#0c0a0c'); el(-24, 2, 5, 9, '#140e0e'); el(24, 2, 5, 9, '#140e0e'); bezPoly([[-26, 4], [-30, -34, 0, -38], [30, -34, 26, 4], [22, -6], [12, -16], [-12, -16], [-22, -6]], '#0e0b0c'); c.strokeStyle = 'rgba(90,80,90,.4)'; c.lineWidth = 1.2; for (let k = -3; k <= 3; k++) { c.beginPath(); c.moveTo(k * 6, -34); c.quadraticCurveTo(k * 8, -20, k * 9, -8); c.stroke() } c.strokeStyle = rim; c.lineWidth = 2.5; c.beginPath(); c.arc(0, -4, 29, -1.4, .3); c.stroke(); c.restore();
+  // luz de contorno (o céu ilumina a borda direita)
+  c.strokeStyle = rim; c.lineWidth = 2.5; c.beginPath(); c.moveTo(26, -312); c.quadraticCurveTo(50, -292, 50, -248); c.quadraticCurveTo(50, -200, 44, -152); c.stroke(); c.beginPath(); c.moveTo(56, -260); c.quadraticCurveTo(60, -210, 56, -162); c.stroke(); c.beginPath(); c.moveTo(34, -156); c.quadraticCurveTo(38, -110, 30, -78); c.quadraticCurveTo(28, -40, 24, -10); c.stroke();
+  c.restore() }

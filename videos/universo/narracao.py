@@ -8,7 +8,7 @@ FALAS = {
  'c': 'O Sol é tão grande que caberia dentro dele mais de um milhão de Terras. E a luz dele leva oito minutos para chegar até nós.',
  'd': 'Netuno, o último planeta, fica a quatro bilhões e meio de quilômetros do Sol. E, muito além dele, a Nuvem de Oort, uma esfera de gelo e cometas, pode se estender por mais de um ano-luz.',
  'e': 'Para entender a escala: se o Sol fosse uma laranja, a Terra seria um grão de areia a dez metros de distância. E a estrela mais próxima seria outra laranja, a quase três mil quilômetros.',
- 'f': 'O Sol é só uma entre centenas de bilhões de estrelas da Via Láctea, a nossa galáxia. Ela tem cerca de cem mil anos-luz de diâmetro: a luz leva cem mil anos para atravessá-la.',
+ 'f': 'O Sol é só uma entre centenas de bilhões de estrelas da Via Láctea, a nossa galáxia. Ela tem cerca de cem mil anos-luz de diâmetro: a luz leva cem mil anos para cruzar a galáxia de uma ponta à outra.',
  'g': 'Estamos num dos braços da espiral, a uns vinte e seis mil anos-luz do centro, onde fica um buraco negro com quatro milhões de vezes a massa do Sol. E o Sol leva duzentos e trinta milhões de anos para dar uma volta na galáxia.',
  'h': 'Se a Via Láctea fosse do tamanho do Brasil, o sistema solar inteiro, até Netuno, caberia na palma da mão.',
  'i': 'A grande vizinha é Andrômeda, a dois milhões e meio de anos-luz. Ela tem cerca de um trilhão de estrelas, e dá para vê-la a olho nu, longe das luzes da cidade. A luz que chega hoje dela partiu antes de existirem seres humanos como nós. E, daqui a alguns bilhões de anos, ela e a Via Láctea podem se encontrar e virar uma só galáxia.',
