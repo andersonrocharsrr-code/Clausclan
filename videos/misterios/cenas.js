@@ -74,7 +74,7 @@ shot(CUTS[31], CUTS[32], (tl, t) => { espaco(t); sombreiro(540, 760, 430, t); co
 // 32 — no infravermelho, o James Webb mostrou um alvo
 shot(CUTS[32], CUTS[33], (tl, t) => { espaco(t, { via: false }); sombreiro(540, 820, 470, t, { ir: true }); grande(tl, 'INFRAVERMELHO', 1300, 70, AM, .1) }, 'iris');
 // 33 — capítulo 5: tudo o que vemos é só 5%
-shot(CUTS[33], CUTS[34], (tl, t) => { espaco(t); pizzaCosmica(540, 820, 330, ease(ramp(tl, 2.2, 5))); grande(tl, 'SÓ 5% É VISÍVEL', 1330, 70, AM, tw(33, 'cinco') - .3); capitulo(tl, 5, CAPS.o) }, 'escuro');
+shot(CUTS[33], CUTS[34], (tl, t) => { espaco(t, { via: false }); ceuCheio(t); galaxia(170, 300, 120, t, { seed: 3, inc: .45, ang: .5, brilho: .8 }); galaxia(950, 1240, 95, t, { seed: 12, inc: .35, ang: -.3, brilho: .75 }); galaxia(130, 1230, 70, t, { seed: 5, inc: .7, ang: 1.1, brilho: .7 }); eliptica(940, 250, 34, '255,220,170', .4, .6); eliptica(80, 700, 22, '255,225,190', -.3, .5); eliptica(1010, 720, 26, '230,230,255', .8, .55); eliptica(560, 1290, 18, '255,220,180', .2, .5); pizzaCosmica(540, 820, 320, ease(ramp(tl, 2.2, 5)), t); grande(tl, 'SÓ 5% É VISÍVEL', 1330, 70, AM, tw(33, 'cinco') - .3); capitulo(tl, 5, CAPS.o) }, 'escuro');
 // 34 — o resto é matéria escura e energia escura
 shot(CUTS[34], CUTS[35], (tl, t) => { espaco(t, { via: false }); c.save(); c.globalAlpha = .7; c.beginPath(); c.arc(540, 820, 500, 0, 7); c.clip(); teia(t, 540, 820, 1200); c.fillStyle = 'rgba(90,60,180,.25)'; c.fillRect(0, 0, W, H); c.restore(); grande(tl, 'MATÉRIA ESCURA', 1280, 70, '#a88ae8', .1); grande(tl, 'ENERGIA ESCURA', 1360, 60, '#7a9ae8', .5) }, 'nevoa');
 // 35 — final: ninguém sabe ainda o que elas são
