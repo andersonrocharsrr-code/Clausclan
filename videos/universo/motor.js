@@ -129,5 +129,5 @@ function capitulo(tl, n, titulo) {
   const a = 1 - ramp(tl, 1.4, 1.9); if (a <= 0) return; const u = eo(ramp(tl, 0, .5));
   c.save(); c.globalAlpha = a; c.fillStyle = '#07090f'; c.fillRect(0, 0, W, H); add(() => glow(W / 2, 880, 700, AMB, .12));
   txt(`CAPÍTULO ${n}`, W / 2, 800, 48, P.ouro, { align: 'center', w: 600, ls: 16 }); c.fillStyle = P.ouro; c.fillRect(W / 2 - 240 * u, 830, 480 * u, 3);
-  c.globalAlpha = a * u; txt(titulo, W / 2, 990 + (1 - u) * 20, 120, P.creme, { align: 'center', ls: 4 }); c.restore();
+  c.globalAlpha = a * u; let tam = 120; while (largura(titulo, tam) + titulo.length * 4 > W - 110 && tam > 50) tam -= 4; txt(titulo, W / 2, 990 + (1 - u) * 20, tam, P.creme, { align: 'center', ls: 4 }); c.restore();
 }
