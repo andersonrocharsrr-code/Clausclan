@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=95">
+  <link rel="stylesheet" href="style.css?v=96">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -319,11 +319,11 @@
     </section>
 
     <!-- Corrigir o valor das notas em branco quando não bate com o sistema -->
-    <section class="card" id="cardBranco">
-      <div class="card__head">
-        <h2>Notas em branco</h2>
+    <details class="card card--recolhe" id="cardBranco">
+      <summary class="card__head">
+        <h2><span class="seta">▸</span> Notas em branco</h2>
         <strong class="total" id="brancoApp"></strong>
-      </div>
+      </summary>
       <p class="muted small">Se o valor das notas em branco não bate com o sistema, digite aqui o valor do sistema.
         O app corrige a diferença no relatório (do dia escolhido em diante) e no Valor dos pepinos do caixa, já tirando os 25%.</p>
       <div class="grid">
@@ -334,7 +334,7 @@
         <button type="button" class="btn btn--primary" id="btnBrancoCorrigir">✓ Corrigir</button>
         <button type="button" class="btn btn--ghost" id="btnBrancoDesfazer" hidden>Desfazer correção</button>
       </div>
-    </section>
+    </details>
 
     <section class="card" id="cardParcial">
       <div class="card__head">
