@@ -1793,7 +1793,7 @@ function pepinoNoDia(x, dia) {
 
 // Notas em branco (até o dia): o que foi cobrar menos as notas pagas (valor de face) e as notas com pepino parcial.
 // Nota com pepino parcial sai das notas em branco e fica no parcial: o que pagou + devolução + o que ficou devendo.
-function notasEmBranco(ate = () => true) {
+function notasEmBranco(ate = () => true, semAjuste = false) {
   const pagas25 = st.notas25.filter((n) => ate(n.dia));
   const pagas4050 = st.notas4050.filter((n) => ate(n.dia));
   const parc = st.parciais.filter((x) => ate(x.dia));
@@ -1801,6 +1801,9 @@ function notasEmBranco(ate = () => true) {
   const valor = Math.max(0, arred(st.foiCobrar - (pagas25.reduce((t, n) => t + valorDeFace(n, 'notas25'), 0)
     + pagas4050.reduce((t, n) => t + valorDeFace(n, 'notas4050'), 0))
     - parc.reduce((t, x) => t + valorDaParcial(x), 0)));
+  // Correção feita no Relatório (o valor do sistema não batia): a diferença vale do dia da correção em diante.
+  const aj = st.brancoAjuste;
+  if (!semAjuste && aj && Number(aj.dif) && ate(aj.dia)) return { qt, valor: Math.max(0, arred(valor + Number(aj.dif))) };
   return { qt, valor };
 }
 // Pepinos da folha: o digitado + os pepinos parciais (quantidade e o que ficou devendo) + as notas em branco
@@ -1940,7 +1943,40 @@ function relatorio(dia) {
 }
 
 const relDia = () => $('#relData').value || hoje();
+// Card "Notas em branco" do Relatório: mostra o valor do app no dia escolhido e a correção, se tiver.
+function ateDia(dia) { return (d) => !d || d <= dia; }
+function pintarBranco() {
+  if (!$('#brancoApp')) return;
+  const dia = relDia();
+  const b = notasEmBranco(ateDia(dia));
+  $('#brancoApp').textContent = licencaOk() ? R$(b.valor) : '—';
+  const aj = st.brancoAjuste;
+  const tem = aj && Number(aj.dif);
+  $('#btnBrancoDesfazer').hidden = !tem;
+  $('#brancoInfo').textContent = tem
+    ? `Corrigido a partir de ${fmtDia(aj.dia)}: ${aj.dif > 0 ? '+' : '−'} ${R$(Math.abs(aj.dif))} nas notas em branco `
+      + `(${aj.dif > 0 ? '+' : '−'} ${R$(Math.abs(arred(aj.dif * 0.75)))} no Valor dos pepinos).`
+    : `${b.qt} nota(s) em branco no app até ${fmtDia(dia)}.`;
+}
+$('#btnBrancoCorrigir').addEventListener('click', () => {
+  const v = numero($('#brancoSistema').value);
+  if (!$('#brancoSistema').value.trim()) { toast('Digite o valor das notas em branco do sistema.'); return; }
+  const dia = relDia();
+  const base = notasEmBranco(ateDia(dia), true).valor;
+  const dif = arred(v - base);
+  if (dif) st.brancoAjuste = { dif, dia }; else delete st.brancoAjuste;
+  $('#brancoSistema').value = '';
+  salvarAtual(); pintarTotais(); pintarRelatorio();
+  toast(dif ? `Notas em branco corrigidas para ${R$(v)}.` : 'O valor já batia: nada mudou.');
+});
+$('#btnBrancoDesfazer').addEventListener('click', () => {
+  delete st.brancoAjuste;
+  salvarAtual(); pintarTotais(); pintarRelatorio();
+  toast('Correção desfeita: notas em branco voltaram ao valor do app.');
+});
+$('#brancoSistema').addEventListener('blur', (e) => { if (e.target.value.trim()) e.target.value = brl(numero(e.target.value)); });
 function pintarRelatorio() {
+  pintarBranco();
   const pre = $('#relTexto');
   if (pre) pre.textContent = licencaOk() ? relatorio(relDia()) : '🔒 Licença vencida: o relatório fica travado até a licença ser renovada.';
 }

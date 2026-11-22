@@ -609,3 +609,10 @@ body{overflow-x:clip}
 .nova-semana .btn{padding:8px 14px;font-size:14px}
 /* Lançando num dia anterior (Data do Cabeçalho mudada à mão) */
 .dia-lanc{grid-column:1/-1;margin:-2px 0 4px;padding:9px 12px;border-radius:12px;background:var(--warn-soft);color:var(--warn);font-size:13.5px;line-height:1.35}
+/* Card que abre e fecha pela setinha (fica fechado até usar) */
+.card--recolhe>summary{list-style:none;cursor:pointer;margin:0}
+.card--recolhe>summary::-webkit-details-marker{display:none}
+.card--recolhe>summary h2{margin:0;display:flex;align-items:center;gap:8px}
+.card--recolhe .seta{display:inline-block;transition:transform .2s;color:var(--accent)}
+.card--recolhe[open] .seta{transform:rotate(90deg)}
+.card--recolhe[open]>summary{margin-bottom:10px}

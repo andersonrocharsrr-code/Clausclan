@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Caixa">
-  <link rel="stylesheet" href="style.css?v=95">
+  <link rel="stylesheet" href="style.css?v=96">
 </head>
 <body>
   <!-- Introdução ao abrir: a maquininha imprime a nota do fechamento, o carimbo "FECHADO" bate e aparece o nome. Um toque pula. -->
@@ -317,6 +317,24 @@
         <button class="btn" id="btnRelCopiar">📋 Copiar</button>
       </div>
     </section>
+
+    <!-- Corrigir o valor das notas em branco quando não bate com o sistema -->
+    <details class="card card--recolhe" id="cardBranco">
+      <summary class="card__head">
+        <h2><span class="seta">▸</span> Notas em branco</h2>
+        <strong class="total" id="brancoApp"></strong>
+      </summary>
+      <p class="muted small">Se o valor das notas em branco não bate com o sistema, digite aqui o valor do sistema.
+        O app corrige a diferença no relatório (do dia escolhido em diante) e no Valor dos pepinos do caixa, já tirando os 25%.</p>
+      <div class="grid">
+        <label>Valor no sistema (R$)<input id="brancoSistema" enterkeyhint="done" inputmode="decimal" placeholder="0,00" autocomplete="off"></label>
+      </div>
+      <p class="muted small" id="brancoInfo"></p>
+      <div class="row-actions">
+        <button type="button" class="btn btn--primary" id="btnBrancoCorrigir">✓ Corrigir</button>
+        <button type="button" class="btn btn--ghost" id="btnBrancoDesfazer" hidden>Desfazer correção</button>
+      </div>
+    </details>
 
     <section class="card" id="cardParcial">
       <div class="card__head">
@@ -1061,6 +1079,6 @@
   <script src="vendor/nacl-fast.min.js?v=1"></script>
   <script src="licenca-config.js?v=2"></script>
   <script src="versao-app.js?v=1"></script>
-  <script type="module" src="app.js?v=120"></script>
+  <script type="module" src="app.js?v=121"></script>
 </body>
 </html>
