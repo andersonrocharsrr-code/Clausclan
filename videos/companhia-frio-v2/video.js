@@ -199,13 +199,29 @@ function chip(t, t0, txt, x, y) { const q = pr(t, t0, t0 + .4); if (q <= 0) retu
   sombraSuave(30, 12, .12); X.fillStyle = '#fff'; rr(0, 0, 420, 96, 28); X.fill(); semSombra();
   X.fillStyle = COR.verde; X.beginPath(); X.arc(52, 48, 26, 0, 7); X.fill(); X.strokeStyle = '#fff'; X.lineWidth = 7; X.lineCap = 'round'; X.lineJoin = 'round'; X.beginPath(); X.moveTo(40, 48); X.lineTo(49, 58); X.lineTo(65, 38); X.stroke();
   X.fillStyle = COR.ink; X.font = F(800, 36); X.textBaseline = 'middle'; X.fillText(txt, 96, 50); X.restore() }
+function zap(x, y, r) { // ícone do WhatsApp desenhado
+  X.save(); X.translate(x, y); X.fillStyle = '#25d366'; X.beginPath(); X.arc(0, 0, r, 0, 7); X.fill();
+  X.strokeStyle = '#fff'; X.fillStyle = '#fff'; X.lineWidth = r * .1; X.beginPath(); X.arc(0, -r * .03, r * .6, .72 * Math.PI, 2.62 * Math.PI); X.stroke();
+  X.beginPath(); X.moveTo(-r * .48, r * .3); X.lineTo(-r * .66, r * .68); X.lineTo(-r * .24, r * .54); X.closePath(); X.fill();
+  X.lineCap = 'round'; X.lineWidth = r * .16; X.beginPath(); X.arc(0, -r * .03, r * .3, .65 * Math.PI, 1.3 * Math.PI); X.stroke();
+  X.beginPath(); X.arc(-r * .24, -r * .2, r * .1, 0, 7); X.fill(); X.beginPath(); X.arc(r * .2, r * .2, r * .1, 0, 7); X.fill(); X.restore();
+}
+function pino(x, y, r) { X.save(); X.translate(x, y); X.fillStyle = COR.azul; X.beginPath(); X.arc(0, -r * .4, r * .6, Math.PI * .85, Math.PI * 2.15); X.lineTo(0, r); X.closePath(); X.fill();
+  X.fillStyle = '#fff'; X.beginPath(); X.arc(0, -r * .4, r * .24, 0, 7); X.fill(); X.restore() }
 function cena6(t) {
   fundoClaro(t);
   const l = IMG['logo-escura'], lq = pr(t, 29.4, 29.9), lw = 900, lh = lw * l.height / l.width;
-  X.save(); X.globalAlpha = lq; const b = (1 - eOut(lq)) * 14; if (b > .3) X.filter = `blur(${b}px)`; X.drawImage(l, 90, 170 + (1 - eOut(lq)) * 30, lw, lh); X.restore();
-  const f = IMG['logo-frase-escura'], fq = pr(t, 31.0, 31.5), fw = 900, fh = fw * f.height / f.width; X.save(); X.globalAlpha = fq; X.drawImage(f, 90, 520 + (1 - eOut(fq)) * 20, fw, fh); X.restore();
-  chip(t, 31.6, 'LED', 70, 720); chip(t, 31.8, 'Limpeza', 70, 836); chip(t, 32.0, 'Gás', 70, 952); chip(t, 32.2, 'Compressor', 70, 1068);
-  mascote(810, 1880, 940, t, 29.6);
+  X.save(); X.globalAlpha = lq; const b = (1 - eOut(lq)) * 14; if (b > .3) X.filter = `blur(${b}px)`; X.drawImage(l, 90, 140 + (1 - eOut(lq)) * 30, lw, lh); X.restore();
+  const f = IMG['logo-frase-escura'], fq = pr(t, 30.2, 30.7), fw = 900, fh = fw * f.height / f.width; X.save(); X.globalAlpha = fq; X.drawImage(f, 90, 470 + (1 - eOut(fq)) * 20, fw, fh); X.restore();
+  chip(t, 30.7, 'LED', 70, 650); chip(t, 30.9, 'Limpeza', 570, 650); chip(t, 31.1, 'Gás', 70, 762); chip(t, 31.3, 'Compressor', 570, 762);
+  // WhatsApp
+  const q = pr(t, 31.6, 32.0); if (q > 0) { const pulso = 1 + .025 * Math.max(0, Math.sin((t - 32) * 6)) * (t > 32);
+    X.save(); X.globalAlpha = cl(q * 2); X.translate(540, 975); const s = (.7 + .3 * eBack(q)) * pulso; X.scale(s, s);
+    sombraSuave(50, 20, .2); X.fillStyle = '#fff'; rr(-470, -85, 940, 170, 85); X.fill(); semSombra(); X.strokeStyle = '#25d366'; X.lineWidth = 6; rr(-467, -82, 934, 164, 82); X.stroke();
+    zap(-370, 0, 58); X.fillStyle = COR.muted; X.font = F(800, 50); X.textBaseline = 'middle'; X.fillText('(62)', -285, 4);
+    X.fillStyle = COR.ink; X.font = F(800, 84); X.fillText('99524-4268', -160, 4); X.restore() }
+  const k = pr(t, 32.0, 32.4); if (k > 0) { X.save(); X.globalAlpha = k; X.translate(0, (1 - eOut(k)) * 20); pino(115, 1135, 34); X.fillStyle = COR.ink; X.font = F(600, 42); X.textBaseline = 'middle'; X.fillText('Atendimento em Anápolis e região.', 160, 1128); X.restore() }
+  mascote(540, 1895, 680, t, 29.6);
 }
 
 const CENAS = [cena1a, cena1b, cena2, cena3, cena4, cena5, cena6];

@@ -13,6 +13,7 @@ cartõezinhos de aplicativo (chave liga/desliga, porcentagem, temperatura roland
 | 11,5–18,6 | Limpeza do condensador: antes e depois, "Sujeira removida 100 %" |
 | 18,6–23,5 | Tela azul: "Recuperação de gás.", manômetros, "Medição na hora" |
 | 23,5–29,2 | Troca de compressor: velho sai, novo entra, temperatura desce até −18 °C |
-| 29,2–35 | Logo, frase da empresa, 4 serviços ✓, mascote |
+| 29,2–35 | Logo, frase da empresa, 4 serviços ✓, WhatsApp (62) 99524-4268, "Atendimento em Anápolis e região.", mascote |
 
-Gerar: `node render.js /tmp/v.mp4` e juntar com o áudio da versão 1 (comando no ROTEIRO da versão 1).
+Áudio: `python3 audio.py /tmp/voz /tmp/mix.wav` (música da ElevenLabs em `musica.mp3`, voz ~18 dB acima da música).
+Gerar: `node render.js /tmp/v.mp4` e juntar com `ffmpeg -i /tmp/v.mp4 -i /tmp/mix.wav -c:v libx264 -crf 23 -pix_fmt yuv420p -c:a aac -b:a 192k -af loudnorm=I=-14:TP=-1.5 -shortest -movflags +faststart ../companhia-frio-v2.mp4`.
