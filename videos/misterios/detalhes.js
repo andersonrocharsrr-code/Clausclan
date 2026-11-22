@@ -187,3 +187,23 @@ function sombreiroIR(x, y, R, t) { const img = cache('somIR', 1200, 560, () => {
     c.globalCompositeOperation = 'source-over'; for (let i = 0; i < 140; i++) { const a = q() * 7, rad = .7 + q() * .2; c.fillStyle = `rgba(4,8,24,${.25 + q() * .3})`; c.beginPath(); c.ellipse(cos(a) * A * rad, sin(a) * B * rad, 4 + q() * 12, 3 + q() * 5, a + PI / 2, 0, 7); c.fill() } // buracos escuros nos grumos
     c.globalCompositeOperation = 'lighter'; const g2 = c.createRadialGradient(0, 0, 0, 0, 0, 60); g2.addColorStop(0, 'rgba(220,235,255,.9)'); g2.addColorStop(.2, 'rgba(120,160,255,.35)'); g2.addColorStop(1, 'rgba(40,60,160,0)'); c.fillStyle = g2; c.beginPath(); c.arc(0, 0, 60, 0, 7); c.fill(); c.restore() });
   const w = 2.3 * R, h = w * 560 / 1200; c.save(); c.translate(x, y); c.rotate(-.06); c.scale(1, 1 + .01 * sin(t)); c.globalCompositeOperation = 'lighter'; c.drawImage(img, -w / 2, -h / 2, w, h); glow(0, 0, R * .06, '200,220,255', .4 + .2 * sin(t * 2)); c.restore() }
+// ================= Nebulosa do Caranguejo: foto real (Hubble) mandada pelo Anderson, com o pulsar no centro =================
+function caranguejoImg() { return cache('carF', 1000, 1000, () => { c.filter = 'contrast(1.06) saturate(1.12)'; c.drawImage(foto('caranguejo'), 0, 0, 1000, 1000); c.filter = 'none';
+  c.globalCompositeOperation = 'destination-in'; const g = c.createRadialGradient(500, 500, 330, 500, 500, 500); g.addColorStop(0, '#000'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, 1000, 1000); c.globalCompositeOperation = 'source-over' }) }
+function caranguejo(x, y, R, t) { const img = caranguejoImg(), w = 2.3 * R, z = 1 + .03 * ((t * .05) % 1); // a nuvem continua se expandindo
+  c.save(); c.translate(x, y); c.scale(z, z); c.globalCompositeOperation = 'screen'; c.drawImage(img, -w / 2, -w / 2, w, w);
+  c.globalCompositeOperation = 'lighter'; const px = w * .01, py = 0, b = .5 + .5 * Math.max(0, sin(t * 2 * PI * 2.5)) ** 6;
+  glow(px, py, R * .4, '150,190,255', .07 + .08 * b); // brilho azul do vento do pulsar
+  c.save(); c.translate(px, py); c.rotate(t * 1.4); for (const sd of [-1, 1]) { const g = c.createLinearGradient(0, 0, sd * R * .9, 0); g.addColorStop(0, `rgba(210,230,255,${.3 * b})`); g.addColorStop(1, 'rgba(150,190,255,0)'); c.fillStyle = g; c.beginPath(); c.moveTo(0, 0); c.lineTo(sd * R * .9, -R * .07); c.lineTo(sd * R * .9, R * .07); c.closePath(); c.fill() } c.restore();
+  glow(px, py, R * .06, '230,240,255', .45 + .35 * b); c.fillStyle = '#fff'; c.beginPath(); c.arc(px, py, Math.max(2, R * .012), 0, 7); c.fill();
+  // anéis de choque que saem do pulsar a cada pulso
+  for (let k = 0; k < 3; k++) { const f = (t * .35 + k / 3) % 1; c.strokeStyle = `rgba(170,210,255,${.18 * (1 - f)})`; c.lineWidth = 3; c.beginPath(); c.ellipse(px, py, R * .55 * f, R * .4 * f, -.3, 0, 7); c.stroke() }
+  c.restore() }
+// ================= 3C 273: foto real do Hubble mandada pelo Anderson (quasar com as 4 pontas e o jato embaixo) =================
+function quasar3c273(t, tl) { const img = cache('q3c', W, H, () => { c.fillStyle = '#020306'; c.fillRect(0, 0, W, H); c.filter = 'contrast(1.12) brightness(1.05)'; c.drawImage(foto('3c273'), -480, -572, 1920, 2302); c.filter = 'none';
+    c.globalCompositeOperation = 'multiply'; c.fillStyle = '#c8d4ff'; c.fillRect(0, 0, W, H); c.globalCompositeOperation = 'source-over'; // leve tom azulado
+    const g = c.createLinearGradient(0, 1300, 0, 1760); g.addColorStop(0, 'rgba(2,3,6,0)'); g.addColorStop(1, 'rgba(2,3,6,1)'); c.fillStyle = g; c.fillRect(0, 1300, W, 620) });
+  const z = 1 + .05 * ease(clamp(tl / 8, 0, 1)); c.save(); c.translate(540, 560); c.scale(z, z); c.translate(-540, -560); c.drawImage(img, 0, 0);
+  c.globalCompositeOperation = 'lighter'; const b = .5 + .5 * sin(t * 2); glow(540, 560, 150, '210,225,255', .25 + .15 * b); glow(540, 560, 40, '255,255,255', .5 + .3 * b);
+  const u = ramp(tl, 1.2, 2.2); c.strokeStyle = `rgba(240,212,138,${.8 * u})`; c.lineWidth = 3; c.setLineDash([10, 8]); c.beginPath(); c.ellipse(830, 1210, 95, 210, -.35, 0, 7); c.stroke(); c.setLineDash([]); c.restore();
+  txt('JATO ≈ 200 MIL ANOS-LUZ', 1000, 960, 34, AM, { align: 'right', a: u }) }
