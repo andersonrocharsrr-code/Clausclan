@@ -1,0 +1,149 @@
+<!doctype html><meta charset="utf-8"><title>Ponto Nemo (pixel art)</title>
+<style>
+@font-face{font-family:"Pixelify Sans";font-weight:700;src:url(fontes/pixelify-sans-latin-700-normal.woff2)}
+html,body{margin:0;background:#000}canvas{display:block;height:100vh;width:auto;margin:auto;image-rendering:pixelated}</style>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="tempos.js"></script>
+<script>
+// ===== Ponto Nemo em pixel art: tudo é desenhado numa tela pequena (180×320) e ampliado 6× sem suavizar =====
+const W = 1080, H = 1920, PW = 180, PH = 320, K = 6, PI = Math.PI, { sin, cos, floor, abs, min, max } = Math;
+const cv = document.getElementById('c'), C = cv.getContext('2d');
+const mk = () => { const k = document.createElement('canvas'); k.width = PW; k.height = PH; return k };
+const bufA = mk(), bufB = mk(); let p = bufA.getContext('2d');
+const lerp = (a, b, u) => a + (b - a) * u, clamp = (x, a, b) => min(b, max(a, x)), ramp = (t, a, b) => clamp((t - a) / (b - a), 0, 1), ease = u => u * u * (3 - 2 * u);
+function rng(s) { return () => (s = (s * 16807) % 2147483647, (s - 1) / 2147483646) }
+const R = (x, y, w, h, col) => { p.fillStyle = col; p.fillRect(floor(x), floor(y), floor(w), floor(h)) };
+const px = (x, y, col) => R(x, y, 1, 1, col);
+function disco(x, y, r, col) { for (let j = -r; j <= r; j++) { const w = floor(Math.sqrt(r * r - j * j)); R(x - w, y + j, 2 * w + 1, 1, col) } }
+// sprites: cada letra é uma cor da paleta; '.' é transparente
+function sprite(rows, pal, x, y, flip, e = 1) { rows.forEach((s, j) => [...s].forEach((ch, i) => { if (ch !== '.') R(x + (flip ? s.length - 1 - i : i) * e, y + j * e, e, e, pal[ch]) })) }
+const PAL = { esp: '#0b0f2a', esp2: '#151a40', mar0: '#0c2d58', mar1: '#134a86', mar2: '#1f6cb4', mar3: '#3d95dc', esp3: '#cfe8ff', ver: '#ff3048', ama: '#ffd23a', lar: '#ff8a20', bra: '#ffffff', cin: '#8a94b0', ter0: '#2a6a30', ter1: '#3c8a3c', ter2: '#5cae4a', are: '#d8c070', gel: '#e8f0f8' };
+
+// estrelas de fundo (piscam em pixel)
+const EST = (() => { const q = rng(7), a = []; for (let i = 0; i < 160; i++) a.push([floor(q() * PW), floor(q() * PH), q()]); return a })();
+function ceu(t, ate = PH, cor = PAL.esp) { R(0, 0, PW, ate, cor); for (let y = 0; y < ate; y += 2) if (y > ate * .55) R(0, y, PW, 2, y % 4 ? PAL.esp2 : cor); EST.forEach(([x, y, f]) => { if (y >= ate) return; const b = sin(t * (2 + f * 3) + f * 40); px(x, y, b > .7 ? '#ffffff' : b > -.2 ? '#8a9ad0' : '#3a4270'); if (f > .93 && b > .5) { px(x - 1, y, '#8a9ad0'); px(x + 1, y, '#8a9ad0'); px(x, y - 1, '#8a9ad0'); px(x, y + 1, '#8a9ad0') } }) }
+
+// ---------- mapa-múndi em baixa resolução (para o globo) ----------
+const CONTINENTES = [
+  [[-168, 66], [-162, 70], [-140, 70], [-125, 72], [-95, 72], [-80, 73], [-62, 66], [-55, 52], [-66, 45], [-75, 38], [-81, 31], [-80, 25], [-90, 29], [-97, 26], [-97, 21], [-90, 21], [-87, 16], [-83, 10], [-79, 8], [-85, 12], [-92, 15], [-105, 20], [-112, 28], [-117, 32], [-124, 40], [-124, 48], [-133, 56], [-150, 60], [-165, 62]],
+  [[-50, 60], [-42, 60], [-22, 70], [-20, 80], [-40, 83], [-60, 80], [-56, 72]],
+  [[-80, 8], [-72, 12], [-62, 10], [-50, 0], [-35, -6], [-38, -15], [-48, -26], [-58, -38], [-65, -42], [-68, -52], [-74, -50], [-72, -35], [-71, -18], [-81, -6]],
+  [[-10, 36], [-9, 43], [-2, 44], [-5, 48], [3, 51], [8, 54], [10, 58], [5, 62], [15, 69], [28, 71], [40, 67], [30, 60], [28, 46], [22, 40], [20, 37], [12, 44], [15, 40], [8, 44], [3, 43]],
+  [[-17, 15], [-17, 21], [-10, 30], [-6, 36], [10, 37], [20, 32], [32, 31], [35, 25], [43, 12], [51, 12], [42, -2], [40, -15], [35, -25], [20, -35], [17, -29], [12, -17], [13, -5], [9, 4], [-5, 5], [-12, 7]],
+  [[44, -13], [50, -15], [48, -25], [44, -24]],
+  [[28, 46], [40, 42], [48, 30], [56, 25], [60, 23], [68, 24], [72, 20], [77, 8], [80, 14], [88, 22], [92, 22], [98, 16], [104, 1], [104, 10], [109, 12], [108, 21], [118, 24], [122, 30], [121, 38], [128, 40], [130, 43], [140, 47], [142, 53], [140, 60], [160, 62], [170, 65], [180, 68], [180, 72], [140, 74], [110, 78], [90, 76], [70, 73], [60, 70], [40, 67], [30, 60]],
+  [[130, 31], [136, 34], [141, 38], [142, 44], [139, 40], [133, 34]],
+  [[95, 5], [105, -6], [115, -8], [120, -9], [110, -3], [100, 2]], [[110, 0], [118, 6], [119, -3], [114, -4]], [[131, -1], [141, -3], [150, -6], [145, -8], [137, -6]],
+  [[114, -22], [122, -18], [130, -12], [137, -12], [142, -11], [146, -19], [153, -26], [150, -37], [141, -38], [131, -31], [115, -34]],
+  [[166, -46], [172, -41], [178, -38], [174, -42], [168, -47]],
+  Array.from({ length: 13 }, (_, k) => [-180 + k * 30, -70 - (k % 2) * 3]).concat([[180, -90], [-180, -90]]),
+];
+const MAPA = (() => { const k = document.createElement('canvas'); k.width = 360; k.height = 180; const g = k.getContext('2d'); g.fillStyle = '#000'; g.fillRect(0, 0, 360, 180);
+  CONTINENTES.forEach((pts, i) => { g.fillStyle = i === CONTINENTES.length - 1 ? '#00f' : '#0f0'; g.beginPath(); pts.forEach(([lo, la], j) => j ? g.lineTo(lo + 180, 90 - la) : g.moveTo(lo + 180, 90 - la)); g.closePath(); g.fill() });
+  const d = g.getImageData(0, 0, 360, 180).data; return (lo, la) => { const x = ((floor(lo + 180) % 360) + 360) % 360, y = clamp(floor(90 - la), 0, 179), i = (y * 360 + x) * 4; return d[i + 2] > 128 ? 2 : d[i + 1] > 128 ? 1 : 0 } })();
+const NEMO = [-123.4, -48.9];
+// globo em pixel: projeção ortográfica inversa, luz em 3 níveis
+function globo(cx, cy, r, l0, f0, t) { const F = f0 * PI / 180;
+  for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) { const d2 = i * i + j * j; if (d2 > r * r) continue; const xx = i / r, yy = -j / r, zz = Math.sqrt(1 - xx * xx - yy * yy);
+    const la = Math.asin(yy * cos(F) + zz * sin(F)) * 180 / PI, lo = l0 + Math.atan2(xx, zz * cos(F) - yy * sin(F)) * 180 / PI;
+    const luz = -.55 * xx + .55 * yy + .62 * zz, n = luz > .6 ? 2 : luz > .2 ? 1 : 0, tipo = MAPA(lo, la);
+    let col = tipo === 1 ? [PAL.ter0, PAL.ter1, PAL.ter2][n] : tipo === 2 ? ['#9aaac0', '#cfd8e8', PAL.gel][n] : [PAL.mar0, PAL.mar1, PAL.mar2][n];
+    if (tipo === 0 && luz > .88) col = PAL.mar3; // brilho do sol no mar
+    if (d2 > (r - 1.5) ** 2) col = '#6ab0ff'; // atmosfera
+    px(cx + i, cy + j, col) }
+  return (lo, la) => { const L = la * PI / 180, D = (lo - l0) * PI / 180; const x = cos(L) * sin(D), y = cos(F) * sin(L) - sin(F) * cos(L) * cos(D), z = sin(F) * sin(L) + cos(F) * cos(L) * cos(D); return [cx + x * r, cy - y * r, z] } }
+
+// ---------- sprites ----------
+const ISS = ['..aaaa.aaaa.......aaaa.aaaa..', '..abba.abba.......abba.abba..', '..abba.abba.......abba.abba..', '..abba.abba.......abba.abba..', '...c....c....ddd....c....c...', 'ccccccccccccceeeedccccccccccc', '...c....c....ddd....c....c...', '..abba.abba...f...abba.abba..', '..abba.abba.......abba.abba..', '..abba.abba.......abba.abba..', '..aaaa.aaaa.......aaaa.aaaa..'];
+const ISSP = { a: '#c8a050', b: '#2a4aa0', c: '#c8ccd4', d: '#e8ecf2', e: '#8a94b0', f: '#ff3048' };
+const ASTRO = ['...wwww...', '..wwwwww..', '.wwggggww.', '.wgsssgww.', '.wgsesgww.', '.wggggggw.', '..wwwwww..', '.wwwwwwww.', 'wwwwrwwwww', 'ww.wwww.ww', 'w..wwww..w'];
+const ASTP = { w: '#f0f2f6', g: '#ffb040', s: '#f4c8a0', e: '#2a2a40', r: '#ff3048' };
+const NAVE = ['....cc....', '...cddc...', '..cddddc..', 'bbcdeedcbb', 'abcdeedcba', 'bbcdddccbb', '..cddddc..', '..cdddc...', '...ccc....', '..aa.aa...'];
+const NAVP = { a: '#c8a050', b: '#2a4aa0', c: '#8a94b0', d: '#c8ccd4', e: '#2a2a40' };
+const BOIA = ['..v..', '.vvv.', '..b..', '..b..', '.ooo.', 'ooooo'];
+const BOIP = { v: '#ff3048', b: '#f0f2f6', o: '#ffd23a' };
+const PEIXE = ['..o..', 'ooooo.o', '.oooooo', 'ooooo.o', '..o..'];
+
+// ---------- mar ----------
+function mar(t, y0, y1, vista) { // vista lateral: superfície com ondas em pixel
+  for (let y = y0; y < y1; y++) { const f = (y - y0) / (y1 - y0); R(0, y, PW, 1, f < .08 ? PAL.mar3 : f < .3 ? PAL.mar2 : f < .6 ? PAL.mar1 : PAL.mar0) }
+  for (let x = 0; x < PW; x++) { const h = floor(1.5 + 1.5 * sin(x * .25 + t * 4) + sin(x * .11 - t * 2.3)); R(x, y0 - h, 1, h, PAL.mar3); if (h >= 3 && (x + floor(t * 8)) % 5 === 0) px(x, y0 - h, PAL.esp3) }
+}
+function marCima(t) { // vista de cima: ondinhas que andam
+  R(0, 0, PW, PH, PAL.mar1); const q = rng(3);
+  for (let i = 0; i < 140; i++) { const x = floor((q() * PW + t * 6) % PW), y = floor(q() * PH), w = 2 + floor(q() * 4); if ((floor(t * 3) + i) % 3) R(x, y, w, 1, i % 4 ? PAL.mar2 : PAL.mar3) }
+  for (let i = 0; i < 40; i++) { const x = floor(q() * PW), y = floor(q() * PH); R(x, y, 3, 2, PAL.mar0) }
+}
+function ilha(x, y, s) { disco(x, y, s + 1, PAL.esp3); disco(x, y, s, PAL.are); disco(x, y - 1, max(1, s - 1), PAL.ter1); if (s > 2) { R(x, y - s - 3, 1, 3, '#6a4a2a'); R(x - 2, y - s - 4, 5, 1, PAL.ter2) } }
+
+// ---------- texto em resolução cheia (fonte pixel) ----------
+let FILA = [];
+function txt(s, x, y, size, col, o = {}) { FILA.push([s, x, y, size, col, o]) }
+function desenhaTextos() { FILA.forEach(([s, x, y, size, col, o]) => { if ((o.a ?? 1) <= 0) return; C.save(); C.globalAlpha = o.a ?? 1; C.font = `700 ${floor(size * 1.4)}px "Pixelify Sans"`; C.textAlign = o.align || 'center'; C.textBaseline = 'alphabetic'; const e = max(3, floor(size / 8));
+  C.fillStyle = '#05060f'; for (const [dx, dy] of [[-e, 0], [e, 0], [0, -e], [0, e], [-e, -e], [e, e], [-e, e], [e, -e], [0, e * 2], [e, e * 2]]) C.fillText(s, x + dx, y + dy); C.fillStyle = col; C.fillText(s, x, y); C.restore() }); FILA = [] }
+function maquina(s, tl, t0, cps = 18) { const n = floor(clamp((tl - t0) * cps, 0, s.length)); return s.slice(0, n) + (n < s.length && floor(tl * 6) % 2 ? '_' : '') }
+
+// ---------- cenas ----------
+const SH = [];
+const shot = (a, b, fn) => SH.push({ a, b, fn });
+// 1) o globo gira até o Pacífico Sul e marca o Ponto Nemo
+shot(CUTS[0], CUTS[1], (tl, t) => { ceu(t); const u = ease(ramp(tl, 0, 2.6)), z = ease(ramp(tl, 3.5, CUTS[1] + .4));
+  const r = floor(lerp(64, 170, z)), cy = floor(lerp(150, 120, z)); const P = globo(90, cy, r, lerp(-40, NEMO[0], u), lerp(5, -38, u), t);
+  const [nx, ny, nz] = P(...NEMO); if (tl > 1.7 && nz > 0) { const b = floor(tl * 4) % 2; R(nx - 3, ny, 7, 1, PAL.ver); R(nx, ny - 3, 1, 7, PAL.ver); if (b) { R(nx - 5, ny - 5, 11, 1, PAL.ama); R(nx - 5, ny + 5, 11, 1, PAL.ama); R(nx - 5, ny - 5, 1, 11, PAL.ama); R(nx + 5, ny - 5, 1, 11, PAL.ama) } }
+  txt(maquina('PONTO NEMO', tl, 1.6, 10), 540, 300, 72, PAL.ama); txt(maquina("48°52'S  123°23'O", tl, 2.4, 16), 540, 380, 30, PAL.bra);
+  txt(maquina('OCEANO PACÍFICO', tl, .4, 14), 540, 1340, 36, '#9ad0ff', { a: 1 - z }) });
+// 2) mapa visto de cima: as terras mais próximas ficam a 2.688 km
+shot(CUTS[1], CUTS[2], (tl, t) => { marCima(t); const cx = 90, cy = 140, rr = 68, u = ease(ramp(tl, .2, 1.4));
+  for (let a = 0; a < 2 * PI * u; a += .045) if (floor(a / .045) % 3 !== 0) px(cx + cos(a - PI / 2) * rr, cy + sin(a - PI / 2) * rr, PAL.ama);
+  const ILH = [[-95, 'ILHA DUCIE', 3], [-52, 'MOTU NUI', 2], [72, 'ILHA MAHER', 3]];
+  ILH.forEach(([g, nome, s], i) => { const a = g * PI / 180, x = floor(cx + cos(a) * rr), y = floor(cy + sin(a) * rr), v = ramp(tl, .8 + i * .3, 1.1 + i * .3); if (v > 0) { ilha(x, y, s); txt(nome, x * K + (i === 1 ? 0 : 0), y * K + (g > 0 ? 70 : -40), 22, PAL.bra, { a: v }) }
+    const w = ramp(tl, 1.4 + i * .2, 2.2 + i * .2); for (let k = 0; k < 60 * w; k += 2) px(cx + cos(a) * k * rr / 60, cy + sin(a) * k * rr / 60, PAL.bra) });
+  const b = floor(tl * 3) % 2; sprite(BOIA, BOIP, cx - 2, cy - 5); if (b) disco(cx, cy + 1, 7, 'rgba(255,48,72,.35)');
+  txt('O LUGAR MAIS', 540, 230, 44, PAL.bra); txt('ISOLADO DA TERRA', 540, 300, 44, PAL.ama);
+  txt(maquina('2.688 KM', tl, 1.6, 12), 540, 1380, 64, PAL.ama); txt('ATÉ A TERRA MAIS PRÓXIMA', 540, 1440, 24, PAL.bra, { a: ramp(tl, 2.2, 2.4) }) });
+// 3) os humanos mais perto: astronautas da Estação Espacial, a ~400 km
+shot(CUTS[2], CUTS[3], (tl, t) => { ceu(t, 250); for (let y = 160; y < 250; y++) { const f = (y - 160) / 90; if ((y + floor(f * 4)) % (f < .5 ? 3 : 2) === 0 || f > .7) R(0, y, PW, 1, f > .85 ? '#3a6ab0' : f > .6 ? '#24447e' : '#18265a') }
+  mar(t, 250, PH); const bx = 60; sprite(BOIA, BOIP, bx - 2, 244); ilha(176, 250, 2);
+  const ix = floor(lerp(-50, 100, tl / (CUTS[3] - CUTS[2]))), iy = 56; sprite(ISS, ISSP, ix, iy, false, 2);
+  if (floor(t * 4) % 2) R(ix + 28, iy + 14, 2, 2, PAL.ver);
+  const ex = ix + 29, ey = iy + 24; for (let k = 0; k < 1; k += .02) px(lerp(bx, ex, k), lerp(242, ey, k), PAL.ama); // linha até a estação
+  const v = ramp(tl, 1.2, 1.6); if (v > 0) { const ax = 136, ay = 130; disco(ax, ay, 25, PAL.bra); disco(ax, ay, 23, '#1a2050'); sprite(ASTRO, ASTP, ax - 10, ay - 12, false, 2); const m = floor(tl * 5) % 2; R(ax + 10, ay + 2 - 2 * m, 2, 2, ASTP.w); R(ax + 12, ay - 2 * m, 2, 2, ASTP.w) }
+  txt('~400 KM', 330, 1060, 44, PAL.ama, { align: 'left', a: ramp(tl, .6, .9) }); txt('LÁ EM CIMA', 330, 1110, 24, PAL.bra, { align: 'left', a: ramp(tl, .8, 1.1) });
+  txt('ASTRONAUTAS', 816, 1000, 24, PAL.bra, { a: v }); txt('ESTAÇÃO ESPACIAL', 540, 300, 36, '#9ad0ff', { a: ramp(tl, .2, .5) }) });
+// 4) o cemitério de naves espaciais
+shot(CUTS[3], CUTS[4], (tl, t) => { const S0 = 150; ceu(t, S0, '#120a2a'); R(0, S0 - 30, PW, 30, '#2a1438');
+  mar(t, S0, PH); for (let y = S0 + 40; y < PH; y++) if (y % 2) R(0, y, PW, 1, PAL.mar0);
+  // fundo do mar com destroços
+  for (let x = 0; x < PW; x++) R(x, 292 + floor(2 * sin(x * .2)), 1, 30, '#1a1a2a');
+  const q = rng(11); for (let i = 0; i < 26; i++) { const x = 30 + floor(q() * 120), w = 3 + floor(q() * 8), h = 2 + floor(q() * 5); R(x, 290 - h + floor(q() * 3), w, h, ['#5a6478', '#8a94b0', '#c8a050', '#2a4aa0'][i % 4]) }
+  sprite(NAVE, NAVP, 60, 278); sprite(NAVE, NAVP, 112, 280, true);
+  for (let i = 0; i < 4; i++) { const fx = floor((t * (8 + i * 3) + i * 50) % 220) - 20; sprite(PEIXE, { o: i % 2 ? '#ffb040' : '#9ad0ff' }, fx, 200 + i * 18) }
+  for (let i = 0; i < 10; i++) { const by = 290 - ((t * 20 + i * 31) % 120); px(40 + i * 12 + floor(sin(t * 3 + i) * 2), by, PAL.esp3) }
+  // nave caindo, pegando fogo
+  const T1 = 1.75, u = ramp(tl, 0, T1), nx = floor(lerp(0, 82, u)), ny = floor(lerp(-20, S0 - 14, u * u));
+  if (tl < T1) { const q2 = rng(floor(t * 20)); for (let i = 0; i < 60; i++) { const k = q2() * 40, x = nx + 10 - k * .9 + (q2() - .5) * 7, y = ny + 8 - k * 1.3 + (q2() - .5) * 7; R(x, y, 2, 2, k < 6 ? PAL.bra : k < 12 ? PAL.ama : k < 18 ? PAL.lar : '#8a2a2a') } sprite(NAVE, NAVP, nx, ny, false, 2); }
+  else { const s = tl - T1; if (s < .25) { R(0, 0, PW, PH, `rgba(255,255,255,${.8 - s * 3})`) } const q3 = rng(5); for (let i = 0; i < 30; i++) { const a = -PI * q3(), v = 20 + q3() * 40, x = 97 + cos(a) * v * s, y = S0 + sin(a) * v * s + 60 * s * s; if (s < 1) px(x, y, i % 2 ? PAL.esp3 : PAL.bra) }
+    const ky = floor(lerp(S0 - 4, 262, ease(clamp(s / 1.2, 0, 1)))); sprite(NAVE, NAVP, 82, ky, false, 2) }
+  txt(maquina('CEMITÉRIO', tl, 1.9, 14), 540, 300, 60, PAL.ama); txt(maquina('DE NAVES ESPACIAIS', tl, 2.4, 20), 540, 370, 32, PAL.bra);
+  txt('MAIS DE 260 NAVES', 540, 1440, 32, '#9ad0ff', { a: ramp(tl, 2.6, 2.8) }) });
+
+// ---------- legenda: palavra por palavra, em pixel ----------
+function legenda(t) { const g = LEG.find(g => t >= g.t0 && t < g.t1); if (!g) return; const parts = g.w.map(w => w[0]); C.font = '700 60px "Pixelify Sans"';
+  const linhas = [[]]; parts.forEach((w, i) => { const l = linhas[linhas.length - 1]; const cand = [...l.map(i2 => parts[i2]), w].join(' '); if (l.length && C.measureText(cand).width > W - 120) linhas.push([i]); else l.push(i) });
+  linhas.forEach((l, li) => { let x = (W - C.measureText(l.map(i => parts[i]).join(' ')).width) / 2; const y = 1640 + li * 76; l.forEach(i => { const [w, a] = g.w[i], dito = t >= a; const col = !dito ? 'rgba(255,255,255,.35)' : g.dest === i ? PAL.ama : '#ffffff'; FILA.push([w, x, y, 60 / 1.4, col, { align: 'left' }]); x += C.measureText(w + ' ').width }) }) }
+
+// ---------- transição em pixels (pontilhado de Bayer) ----------
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+const TR = .4;
+function render(t) {
+  const i = max(0, SH.findIndex(s => t >= s.a && t < s.b)), s = SH[i]; p = bufA.getContext('2d'); p.clearRect(0, 0, PW, PH); s.fn(t - s.a, t); const textosA = FILA; FILA = [];
+  let dither = null; if (i > 0 && t - s.a < TR) { const ant = SH[i - 1]; p = bufB.getContext('2d'); p.clearRect(0, 0, PW, PH); ant.fn(t - ant.a, t); const textosB = FILA; FILA = []; dither = (t - s.a) / TR; if (dither < .5) FILA.push(...textosB); else FILA.push(...textosA) } else FILA.push(...textosA);
+  if (dither !== null) { const ga = bufA.getContext('2d'), da = ga.getImageData(0, 0, PW, PH), db = bufB.getContext('2d').getImageData(0, 0, PW, PH); const lim = dither * 16;
+    for (let y = 0; y < PH; y++) for (let x = 0; x < PW; x++) { const bx = floor(x / 2), by = floor(y / 2); if (BAYER[(by % 4) * 4 + (bx % 4)] >= lim) { const k = (y * PW + x) * 4; da.data[k] = db.data[k]; da.data[k + 1] = db.data[k + 1]; da.data[k + 2] = db.data[k + 2]; da.data[k + 3] = db.data[k + 3] } } ga.putImageData(da, 0, 0) }
+  C.imageSmoothingEnabled = false; C.fillStyle = '#000'; C.fillRect(0, 0, W, H); C.drawImage(bufA, 0, 0, W, H);
+  C.fillStyle = 'rgba(0,0,0,.12)'; for (let y = 0; y < H; y += K) C.fillRect(0, y + K - 1, W, 1); // linhas de tela de TV
+  legenda(t); desenhaTextos();
+  const f = min(ramp(t, 0, .25), 1 - ramp(t, DUR - .3, DUR)); if (f < 1) { C.fillStyle = `rgba(0,0,0,${1 - f})`; C.fillRect(0, 0, W, H) } }
+window.PRONTO = document.fonts.load('700 40px "Pixelify Sans"');
+if (!location.search.includes('render')) PRONTO.then(() => { const t0 = performance.now(); (function f() { render(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(f) })() });
+</script>
