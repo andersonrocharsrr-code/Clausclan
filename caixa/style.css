@@ -616,3 +616,6 @@ body{overflow-x:clip}
 .card--recolhe .seta{display:inline-block;transition:transform .2s;color:var(--accent)}
 .card--recolhe[open] .seta{transform:rotate(90deg)}
 .card--recolhe[open]>summary{margin-bottom:10px}
+/* Tocar na setinha (abrir/fechar) não pinta nada de azul */
+summary{-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+summary:focus,summary:focus-visible,summary:active{outline:none;box-shadow:none}
