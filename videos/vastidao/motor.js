@@ -86,7 +86,7 @@ function legenda(t) {
   const fo = 1 - ramp(t, L.t1 - .12, L.t1), y0 = 1520 - (lines.length - 1) * 40;
   lines.forEach((ln, k) => {
     const lw = ln.reduce((a, i) => a + ws[i] + sp, -sp); let x = W / 2 - lw / 2; const y = y0 + k * 82;
-    ln.forEach(i => { const [s, tw, hl] = L.w[i], u = ramp(t, tw - .04, tw + .1); if (u > 0) { c.globalAlpha = fo * u; const sc = 1 + (1 - eo(u)) * .25; c.save(); c.translate(x + ws[i] / 2, y); c.scale(sc, sc); txt(s, -ws[i] / 2, 0, size, hl ? '#ffc861' : '#fffaf0', { ls: 1 }); c.restore() } x += ws[i] + sp });
+    ln.forEach(i => { const [s, tw, hl] = L.w[i], u = ramp(t, tw - .04, tw + .1); if (u > 0) { c.globalAlpha = fo * u; const sc = 1 + (1 - eo(u)) * .25; c.save(); c.translate(x + ws[i] / 2, y); c.scale(sc, sc); txt(s, -ws[i] / 2, 0, size, hl ? P.dourado : '#fffaf0', { ls: 1 }); c.restore() } x += ws[i] + sp });
   });
   c.restore();
 }
