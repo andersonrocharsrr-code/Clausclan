@@ -2096,13 +2096,15 @@ function dadosCaixa() {
   const c = calcular();
   const d = st.data ? new Date(st.data + 'T12:00').toLocaleDateString('pt-BR') : '';
   const comValor = (desc, v) => `${desc} (${brl(v)})`.trim();
-  const ehSemanal = (o) => /^(semanal|sal[aá]rio)$/i.test((o.tipo || '').trim());
+  // Semanal do pila, com ou sem o nome junto (ex.: "Semanal", "Semanal Francisco", "Salário João").
+  const ehSemanal = (o) => /^(semanal|sal[aá]rio)\b/i.test((o.tipo || '').trim());
   const semanal = st.pila.filter(ehSemanal);
   const pilaResto = st.pila.filter((o) => !ehSemanal(o));
   const outros = [
     ...(st.salario ? [comValor('Salário', st.salario)] : []),
     // Pila (almoço, hotel…) vai somada numa linha só; o semanal fica separado. Escritos como no OBS: "410,00 (Despesa pila)".
-    ...(soma(semanal) ? [`${brl(soma(semanal))} (Semanal)`] : []),
+    // Cada semanal na sua linha, com o nome que foi escrito: "350,00 (Semanal Francisco)".
+    ...semanal.filter((o) => Number(o.valor)).map((o) => `${brl(o.valor)} (${(o.tipo || 'Semanal').trim()})`),
     ...(soma(pilaResto) ? [`${brl(soma(pilaResto))} (Despesa pila)`] : []),
     ...st.outros.filter((o) => o.valor).map((o) => comValor(o.desc || 'Outros', o.valor)),
   ];
