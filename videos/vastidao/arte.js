@@ -1,6 +1,6 @@
 // ================= Desenhos novos deste vídeo: recorte de papel plano, paleta "Nebulosa" =================
 // Planos de luz e sombra com borda reta (sem esfumaçado nos objetos), violeta profundo, ciano, rosa e creme.
-const NEB = { v0: '#090619', v1: '#120c2c', v2: '#1e1646', v3: '#2e2464', v4: '#4a3a96', v5: '#6a54c8', lav: '#b8a8f0', cia: '#4fd8e8', cia2: '#a8f2fa', ros: '#ff5fa2', ros2: '#ffb0d4', cre: '#f3eefc', lar: '#ff9a5a', ama: '#ffd27a' };
+const NEB = { v0: '#03050c', v1: '#060b18', v2: '#0b1426', v3: '#13233e', v4: '#1c3a5e', v5: '#2a6a8e', lav: '#9fd4f0', cia: '#38e0e8', cia2: '#b8f8ff', ros: '#ff3d8e', ros2: '#ff9cc8', cre: '#fff6ea', lar: '#ff8a4a', ama: '#ffc861', mag: '#a0287a', tea: '#0f6a72' };
 function cache(nome, w, h, fn) { const M = (cache.m = cache.m || {}); if (!M[nome]) { const k = document.createElement('canvas'); k.width = w; k.height = h; const ant = c; c = k.getContext('2d'); fn(); c = ant; M[nome] = k } return M[nome] }
 function el(x, y, rx, ry, col, rot = 0) { c.fillStyle = col; c.beginPath(); c.ellipse(x, y, Math.max(.1, rx), Math.max(.1, ry), rot, 0, 7); c.fill() }
 const zoomTela = (z, cx, cy, fn) => { c.save(); c.translate(cx, cy); c.scale(z, z); c.translate(-cx, -cy); fn(); c.restore() };
@@ -9,21 +9,21 @@ function brilho4(x, y, s, col, a = 1) { if (a <= 0) return; c.save(); c.globalAl
 // fundo: degradê em faixas retas + nebulosas recortadas (planos) + estrelas
 function fundo(t, o = {}) { const k = o.seed || 1;
   c.drawImage(cache('fundo' + k + (o.cor || ''), W, H, () => {
-    const cs = o.cor === 'quente' ? ['#0e0618', '#1e0a24', '#33102e', '#4a1836'] : [NEB.v0, NEB.v1, NEB.v2, '#241a52'];
+    const cs = o.cor === 'quente' ? ['#08040a', '#160810', '#2a0e16', '#40141c'] : [NEB.v0, NEB.v1, NEB.v2, '#0e1e36'];
     c.fillStyle = bands(0, 0, 0, H, [[.3, cs[0]], [.55, cs[1]], [.78, cs[2]], [1, cs[3]]]); c.fillRect(0, 0, W, H);
     const q = rng(k * 31);
     // nebulosas: grandes recortes translúcidos com borda reta
-    for (let n = 0; n < 7; n++) { const cx = q() * W, cy = q() * H, R = 260 + q() * 420, m = 7 + (q() * 5 | 0), cor = [NEB.v4, NEB.v5, '#7a3a9a', NEB.v3][n % 4]; c.globalAlpha = .14 + q() * .12; const pts = []; for (let i = 0; i < m; i++) { const a = i / m * 7 + q() * .5, r = R * (.55 + q() * .5); pts.push([cx + cos(a) * r, cy + sin(a) * r * .6]) } poly(pts, cor); c.globalAlpha = 1 }
-    c.save(); c.translate(W / 2, H * .4); c.rotate(-.55); for (let b = 0; b < 4; b++) { c.globalAlpha = .07 + b * .02; c.fillStyle = [NEB.lav, NEB.v5, NEB.ros2, NEB.cia2][b]; c.fillRect(-1600, -120 + b * 34, 3200, 240 - b * 68) } c.restore(); c.globalAlpha = 1;
+    for (let n = 0; n < 7; n++) { const cx = q() * W, cy = q() * H, R = 260 + q() * 420, m = 7 + (q() * 5 | 0), cor = [NEB.tea, NEB.mag, '#1a4a8a', '#5a1a5a'][n % 4]; c.globalAlpha = .12 + q() * .1; const pts = []; for (let i = 0; i < m; i++) { const a = i / m * 7 + q() * .5, r = R * (.55 + q() * .5); pts.push([cx + cos(a) * r, cy + sin(a) * r * .6]) } poly(pts, cor); c.globalAlpha = 1 }
+    c.save(); c.translate(W / 2, H * .4); c.rotate(-.55); for (let b = 0; b < 4; b++) { c.globalAlpha = .035 + b * .012; c.fillStyle = ['#9fd4f0', '#ffc861', '#ff9cc8', '#b8f8ff'][b]; c.fillRect(-1600, -120 + b * 34, 3200, 240 - b * 68) } c.restore(); c.globalAlpha = 1;
     for (let i = 0; i < 900; i++) { const x = q() * W, y = q() * H, s = q() < .9 ? 1 + q() * 1.6 : 2.5 + q() * 2; c.fillStyle = q() < .15 ? NEB.ros2 : q() < .3 ? NEB.cia2 : NEB.cre; c.globalAlpha = .35 + q() * .65; c.fillRect(x, y, s, s) } c.globalAlpha = 1 }), 0, 0);
   const q = rng(k * 7); for (let i = 0; i < 26; i++) { const x = q() * W, y = q() * H, s = 8 + q() * 16, b = .5 + .5 * sin(t * (1 + q() * 2) + i); brilho4(x, y, s * (.6 + .4 * b), i % 5 ? NEB.cre : NEB.cia2, .5 + .5 * b) } }
 // colinas em camadas (chão da cena noturna)
-function colinas(y0 = 1250) { const cs = ['#1a1338', '#140e2c', '#0d0920']; cs.forEach((col, i) => { const y = y0 + i * 70, q = rng(40 + i); const pts = [[0, H], [0, y + q() * 60]]; for (let x = 0; x <= W; x += 120) pts.push([x, y + (q() - .5) * 90]); pts.push([W, H]); poly(pts, col) }) }
+function colinas(y0 = 1250) { const cs = ['#0e1a2c', '#08111e', '#040810']; cs.forEach((col, i) => { const y = y0 + i * 70, q = rng(40 + i); const pts = [[0, H], [0, y + q() * 60]]; for (let x = 0; x <= W; x += 120) pts.push([x, y + (q() - .5) * 90]); pts.push([W, H]); poly(pts, col) }) }
 // pessoa de costas, olhando para cima, com luz de borda ciano
-function pessoaCostas(x, y, s = 1, o = {}) { c.save(); c.translate(x, y); c.scale(s, s); const corpo = o.cor || '#0a0716', borda = o.borda || NEB.cia;
+function pessoaCostas(x, y, s = 1, o = {}) { c.save(); c.translate(x, y); c.scale(s, s); const corpo = o.cor || '#03060c', borda = o.borda || NEB.cia;
   poly([[-40, 0], [-34, -150], [34, -150], [40, 0]], corpo); poly([[-62, -140], [-50, -230], [50, -230], [62, -140], [40, -130], [-40, -130]], corpo); // pernas, tronco
   poly([[-66, -150], [-56, -232], [-42, -232], [-50, -150]], corpo); poly([[66, -150], [56, -232], [42, -232], [50, -150]], corpo); // braços
-  poly([[-16, -228], [16, -228], [14, -244], [-14, -244]], corpo); c.save(); c.translate(0, -278); c.rotate(-.12); el(0, 0, 32, 38, corpo); el(4, -8, 30, 34, o.cabelo || '#160f2a'); c.restore(); // cabeça erguida
+  poly([[-16, -228], [16, -228], [14, -244], [-14, -244]], corpo); c.save(); c.translate(0, -278); c.rotate(-.12); el(0, 0, 32, 38, corpo); el(4, -8, 30, 34, o.cabelo || '#0a1220'); c.restore(); // cabeça erguida
   // luz de borda (plano reto)
   c.globalAlpha = .9; poly([[48, -228], [56, -232], [66, -150], [60, -150]], borda); poly([[36, -150], [40, 0], [34, 0], [30, -150]], borda); c.save(); c.translate(0, -278); c.rotate(-.12); c.beginPath(); c.ellipse(0, 0, 32, 38, 0, -1.2, .9); c.lineWidth = 5; c.strokeStyle = borda; c.stroke(); c.restore(); c.restore() }
 // planeta recortado: disco base, sombra de borda reta (outro círculo), faixas e brilho de borda
@@ -45,12 +45,12 @@ function sol(x, y, r, t, o = {}) { const cores = o.cores || ['#ff6a3a', '#ff8a4a
   c.save(); c.translate(x, y); c.rotate(t * .05); for (let k = 0; k < 2; k++) { c.fillStyle = k ? 'rgba(255,190,110,.35)' : 'rgba(255,120,80,.25)'; c.beginPath(); for (let i = 0; i < 16; i++) { const a = i / 16 * PI * 2 + k * .2, a2 = a + PI / 16; c.moveTo(cos(a - .08) * r, sin(a - .08) * r); c.lineTo(cos(a2) * r * (1.5 + k * .3), sin(a2) * r * (1.5 + k * .3)); c.lineTo(cos(a + .08 + PI / 8) * r, sin(a + .08 + PI / 8) * r) } c.fill() } c.restore();
   cores.forEach((col, i) => disc(x - i * r * .05, y - i * r * .05, r * (1 - i * .17), col)); add(() => glow(x, y, r * 2.2, '255,160,90', .25)) }
 // galáxia recortada: braços feitos de pedaços de papel ao longo da espiral (em cache), núcleo em discos
-function galaxia(x, y, R, t, o = {}) { const sd = o.seed || 1, inc = o.inc ?? .55, ang = o.ang ?? -.3, cores = o.cores || [NEB.lav, NEB.v5, NEB.cia2, NEB.ros2];
+function galaxia(x, y, R, t, o = {}) { const sd = o.seed || 1, inc = o.inc ?? .55, ang = o.ang ?? -.3, cores = o.cores || ['#b8f8ff', '#38e0e8', '#ffffff', '#ff7ab8', '#6ab0ff'];
   const img = cache('gal' + sd + cores.join(), 800, 800, () => { const X = 400, q = rng(sd * 13); c.translate(X, X);
     for (let br = 0; br < 2; br++) for (let i = 0; i < 260; i++) { const u = i / 260, a = br * PI + u * 3.4 * PI * .55 + (q() - .5) * .25, d = 40 + u * 330 + (q() - .5) * 30, s = (1 - u) * 26 + 6; c.globalAlpha = .25 + (1 - u) * .45; c.fillStyle = cores[(i + br) % cores.length]; c.save(); c.translate(cos(a) * d, sin(a) * d); c.rotate(a + 1.2); c.fillRect(-s, -s * .4, s * 2, s * .8); c.restore() }
     c.globalAlpha = 1; for (let i = 0; i < 300; i++) { const a = q() * 7, d = q() ** 1.5 * 360; c.fillStyle = q() < .3 ? NEB.ros2 : NEB.cre; c.globalAlpha = .4 + q() * .6; c.fillRect(cos(a) * d, sin(a) * d, 2.5, 2.5) } c.globalAlpha = 1;
-    [[110, NEB.v5], [80, NEB.lav], [52, '#e8dcff'], [30, NEB.cre], [14, '#ffffff']].forEach(([r, col]) => { c.fillStyle = col; c.globalAlpha = .55 + (110 - r) / 220; c.beginPath(); c.arc(0, 0, r, 0, 7); c.fill() }); c.globalAlpha = 1 });
-  c.save(); c.translate(x, y); c.rotate(ang); c.scale(1, inc); c.rotate(t * (o.vel ?? .04)); c.globalAlpha *= o.a ?? 1; c.drawImage(img, -R, -R, 2 * R, 2 * R); c.restore(); add(() => glow(x, y, R * .45, '230,210,255', .25 * (o.a ?? 1))) }
+    [[110, '#c8782a'], [80, '#ffa848'], [52, '#ffd27a'], [30, '#fff0c8'], [14, '#ffffff']].forEach(([r, col]) => { c.fillStyle = col; c.globalAlpha = .55 + (110 - r) / 220; c.beginPath(); c.arc(0, 0, r, 0, 7); c.fill() }); c.globalAlpha = 1 });
+  c.save(); c.translate(x, y); c.rotate(ang); c.scale(1, inc); c.rotate(t * (o.vel ?? .04)); c.globalAlpha *= o.a ?? 1; c.drawImage(img, -R, -R, 2 * R, 2 * R); c.restore(); add(() => glow(x, y, R * .45, '255,210,150', .28 * (o.a ?? 1))) }
 // buraco negro recortado: disco de acreção em faixas, sombra negra, anel de fótons e o arco do disco de trás
 function buracoNegro(x, y, r, t) { const fx = ['#ff5fa2', '#ff8a6a', '#ffb07a', '#ffd8a0', '#fff2d8'];
   c.save(); c.translate(x, y); // arco de trás (dobrado pela gravidade)
@@ -90,7 +90,7 @@ function pasta(x, y, s, t) { c.save(); c.translate(x, y); c.scale(s, s); c.rotat
 function simulacao(t, a = 1) { c.save(); c.globalAlpha = a; const q = rng(12); c.font = `700 30px ${COND}`; for (let col = 0; col < 24; col++) { const x = col * 46 + 10, v = 120 + q() * 200, o0 = q() * 2000; for (let k = 0; k < 18; k++) { const y = ((t * v + o0 + k * 36) % 2100) - 100; c.fillStyle = k === 17 ? NEB.cre : `rgba(79,216,232,${k / 18 * .7})`; c.fillText(((col * 7 + k + Math.floor(t * 4)) % 3) ? '1' : '0', x, y) } } c.restore();
   c.save(); c.translate(540, 860); c.strokeStyle = NEB.cia2; c.lineWidth = 3; c.globalAlpha = a; for (let i = 0; i < 9; i++) { const la = -PI / 2 + i * PI / 8; c.beginPath(); c.ellipse(0, Math.sin(la) * 300, Math.cos(la) * 300, Math.cos(la) * 60, 0, 0, 7); c.stroke() } for (let i = 0; i < 8; i++) { const lo = i * PI / 8 + t * .4; c.beginPath(); c.ellipse(0, 0, Math.abs(Math.cos(lo)) * 300, 300, 0, 0, 7); c.stroke() } c.restore() }
 // bolhas do multiverso
-function bolhas(t) { const q = rng(77); for (let i = 0; i < 9; i++) { const x = 140 + q() * 800, y = 380 + q() * 900 + sin(t * .7 + i) * 20, r = 70 + q() * 120; c.save(); c.beginPath(); c.arc(x, y, r, 0, 7); c.clip(); c.fillStyle = [NEB.v3, '#3a1a52', '#1a2a5a'][i % 3]; c.fillRect(x - r, y - r, 2 * r, 2 * r); galaxia(x, y, r * .8, t, { seed: i + 3, inc: .4 + q() * .4, ang: q() * 3, cores: i % 2 ? [NEB.ros2, NEB.lav, NEB.cre] : [NEB.cia2, NEB.lav, NEB.cre] }); c.restore(); c.strokeStyle = 'rgba(200,240,255,.8)'; c.lineWidth = 5; c.beginPath(); c.arc(x, y, r, 0, 7); c.stroke(); c.fillStyle = 'rgba(255,255,255,.35)'; c.beginPath(); c.ellipse(x - r * .4, y - r * .45, r * .3, r * .12, -.6, 0, 7); c.fill() } }
+function bolhas(t) { const q = rng(77); for (let i = 0; i < 9; i++) { const x = 140 + q() * 800, y = 380 + q() * 900 + sin(t * .7 + i) * 20, r = 70 + q() * 120; c.save(); c.beginPath(); c.arc(x, y, r, 0, 7); c.clip(); c.fillStyle = [NEB.v3, '#2a0e30', '#0e2a3a'][i % 3]; c.fillRect(x - r, y - r, 2 * r, 2 * r); galaxia(x, y, r * .8, t, { seed: i + 3, inc: .4 + q() * .4, ang: q() * 3, cores: i % 2 ? [NEB.ros2, NEB.lav, NEB.cre] : [NEB.cia2, NEB.lav, NEB.cre] }); c.restore(); c.strokeStyle = 'rgba(200,240,255,.8)'; c.lineWidth = 5; c.beginPath(); c.arc(x, y, r, 0, 7); c.stroke(); c.fillStyle = 'rgba(255,255,255,.35)'; c.beginPath(); c.ellipse(x - r * .4, y - r * .45, r * .3, r * .12, -.6, 0, 7); c.fill() } }
 // ciclo eterno: anel de setas e o universo nascendo e encolhendo
 function ciclo(x, y, R, t) { c.save(); c.translate(x, y); c.rotate(t * .5); c.lineWidth = 22; for (let k = 0; k < 3; k++) { c.strokeStyle = [NEB.cia, NEB.ros, NEB.lav][k]; c.beginPath(); c.arc(0, 0, R, k * 2.1 + .2, k * 2.1 + 1.8); c.stroke(); const a = k * 2.1 + 1.8; poly([[cos(a) * (R - 40), sin(a) * (R - 40)], [cos(a) * (R + 40), sin(a) * (R + 40)], [cos(a + .3) * R, sin(a + .3) * R]], c.strokeStyle) } c.restore();
   const f = (sin(t * 1.2) + 1) / 2; galaxia(x, y, 40 + f * (R - 90), t, { seed: 21, inc: .7 }); }

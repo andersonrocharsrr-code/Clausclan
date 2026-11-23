@@ -2,7 +2,7 @@
 
 **Formato:** 1080×1920 (TikTok), 30 qps, 228,8 s. **Estilo:** padrão Starship (recorte de papel plano, planos de luz e sombra com
 borda reta, grão de papel, placas que se escrevem, legenda palavra por palavra, 5 capítulos), com **paleta própria "Nebulosa"**:
-violeta profundo, ciano, rosa e creme-lavanda. **Todos os desenhos são novos** (`arte.js`), feitos do zero para este vídeo.
+azul-noite quase preto, nebulosas verde-azuladas e magenta, ciano, rosa e dourado quente nos núcleos. **Todos os desenhos são novos** (`arte.js`), feitos do zero para este vídeo.
 **Voz:** Rodrigo Custódio (velocidade 1,15). **Som:** trilha nova em Lá menor (pads, cordas, coro, sininhos) e efeitos novos.
 **Vídeo pronto:** `videos/vastidao.mp4`.
 

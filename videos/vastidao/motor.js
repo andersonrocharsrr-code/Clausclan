@@ -21,8 +21,8 @@ const fmt = n => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
 // ---------- paleta ----------
 // paleta própria deste vídeo ("Nebulosa"): violeta profundo, ciano, rosa e creme-lavanda
-const P = { noite0: '#090619', noite1: '#120c2c', noite2: '#1e1646', aco: '#2e2464', aco2: '#5a48a8', ambar: '#4fd8e8', luz: '#c8f4fa', creme: '#f3eefc', ciano: '#4fd8e8', verm: '#ff4f7a', verde: '#7ae0a8', tinta: '#0e0a20', ouro: '#4fd8e8', ouro2: '#a8f2fa', ocre: '#ff5fa2', ardosia: '#5a48a8', rosa: '#ff5fa2', rosa2: '#ffb0d4', vio: '#3a2c7a', vio2: '#6a54c8', lav: '#b8a8f0' };
-const AMB = '79,216,232', CIA = '184,168,240', VER = '255,79,122', ROS = '255,95,162';
+const P = { noite0: '#03050c', noite1: '#060b18', noite2: '#0b1426', aco: '#13233e', aco2: '#2a6a8e', ambar: '#38e0e8', luz: '#c8f8ff', creme: '#fff6ea', ciano: '#38e0e8', verm: '#ff3d6a', verde: '#7ae0a8', tinta: '#03060c', ouro: '#38e0e8', ouro2: '#b8f8ff', ocre: '#ff3d8e', ardosia: '#2a6a8e', rosa: '#ff3d8e', rosa2: '#ff9cc8', vio: '#13233e', vio2: '#2a6a8e', lav: '#9fd4f0', dourado: '#ffc861' };
+const AMB = '56,224,232', CIA = '184,168,240', VER = '255,79,122', ROS = '255,61,142';
 
 // ---------- textos ----------
 const COND = '"Fira Sans Extra Condensed", Arial, sans-serif';
@@ -86,7 +86,7 @@ function legenda(t) {
   const fo = 1 - ramp(t, L.t1 - .12, L.t1), y0 = 1520 - (lines.length - 1) * 40;
   lines.forEach((ln, k) => {
     const lw = ln.reduce((a, i) => a + ws[i] + sp, -sp); let x = W / 2 - lw / 2; const y = y0 + k * 82;
-    ln.forEach(i => { const [s, tw, hl] = L.w[i], u = ramp(t, tw - .04, tw + .1); if (u > 0) { c.globalAlpha = fo * u; const sc = 1 + (1 - eo(u)) * .25; c.save(); c.translate(x + ws[i] / 2, y); c.scale(sc, sc); txt(s, -ws[i] / 2, 0, size, hl ? '#ff6fb5' : '#fffaf0', { ls: 1 }); c.restore() } x += ws[i] + sp });
+    ln.forEach(i => { const [s, tw, hl] = L.w[i], u = ramp(t, tw - .04, tw + .1); if (u > 0) { c.globalAlpha = fo * u; const sc = 1 + (1 - eo(u)) * .25; c.save(); c.translate(x + ws[i] / 2, y); c.scale(sc, sc); txt(s, -ws[i] / 2, 0, size, hl ? '#ffc861' : '#fffaf0', { ls: 1 }); c.restore() } x += ws[i] + sp });
   });
   c.restore();
 }
@@ -94,7 +94,7 @@ function legenda(t) {
 const GRAIN = (() => { const g = document.createElement('canvas'); g.width = g.height = 512; const x = g.getContext('2d'), d = x.createImageData(512, 512), q = rng(123); for (let i = 0; i < d.data.length; i += 4) { const v = 90 + q() * 165 | 0; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255 } x.putImageData(d, 0, 0); return g })();
 function finish(t) {
   c.fillStyle = lg(0, 1250, 0, 1620, [[0, 'rgba(4,6,12,0)'], [.45, 'rgba(4,6,12,.55)'], [1, 'rgba(4,6,12,0)']]); c.fillRect(0, 1250, W, 370);
-  c.fillStyle = rg(W / 2, H / 2, 600, 1250, [[0, 'rgba(10,4,26,0)'], [1, 'rgba(10,4,26,.6)']]); c.fillRect(0, 0, W, H);
+  c.fillStyle = rg(W / 2, H / 2, 600, 1250, [[0, 'rgba(2,4,10,0)'], [1, 'rgba(2,4,10,.6)']]); c.fillRect(0, 0, W, H);
   c.save(); c.globalCompositeOperation = 'overlay'; c.globalAlpha = .15; const q = rng(Math.floor(t * 12) + 1), ox = q() * 512 | 0, oy = q() * 512 | 0; for (let x = -ox; x < W; x += 512)for (let y = -oy; y < H; y += 512)c.drawImage(GRAIN, x, y); c.restore();
 }
 
