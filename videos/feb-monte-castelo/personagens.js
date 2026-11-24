@@ -188,19 +188,21 @@ function cobra(x, y, s, t, fumaca = 1) { c.save(); c.translate(x, y); c.scale(s 
   c.restore();
   c.font = '800 120px Arial, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#FFFFFF'; c.fillText('BRASIL', 790, 254);
   // corpo da cobra em S com laço embaixo
-  const corpo = () => { c.beginPath(); c.moveTo(612, 890); c.bezierCurveTo(760, 876, 1000, 890, 1000, 770); c.bezierCurveTo(1000, 640, 850, 592, 700, 592); c.bezierCurveTo(520, 592, 470, 720, 560, 792); c.bezierCurveTo(650, 860, 810, 808, 830, 690); c.bezierCurveTo(852, 570, 722, 470, 722, 392); c.bezierCurveTo(722, 312, 822, 300, 880, 372) };
+  const corpo = () => { c.beginPath(); c.moveTo(612, 890); c.bezierCurveTo(760, 876, 1000, 890, 1000, 770); c.bezierCurveTo(1000, 640, 850, 592, 700, 592); c.bezierCurveTo(520, 592, 470, 720, 560, 792); c.bezierCurveTo(650, 860, 810, 808, 830, 690); c.bezierCurveTo(852, 570, 722, 470, 722, 392); c.bezierCurveTo(722, 312, 790, 300, 840, 352) };
   corpo(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 50; c.stroke(); corpo(); c.strokeStyle = '#2FA83A'; c.lineWidth = 40; c.stroke(); corpo(); c.strokeStyle = 'rgba(150,230,120,.3)'; c.lineWidth = 6; c.stroke();
   c.beginPath(); c.moveTo(612, 890); c.lineTo(598, 896); c.strokeStyle = '#1D5E1E'; c.lineWidth = 14; c.stroke(); // ponta do rabo
   // cabeça alongada apontando para baixo à direita, boca aberta segurando o cachimbo
   const cab = (f, cor) => { c.beginPath(); f(); c.closePath(); c.fillStyle = cor; c.fill(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 5; c.stroke() };
-  cab(() => { c.moveTo(852, 346); c.bezierCurveTo(900, 332, 952, 392, 968, 456); c.quadraticCurveTo(972, 478, 954, 476); c.quadraticCurveTo(906, 456, 874, 418); c.quadraticCurveTo(852, 388, 852, 346) }, '#2FA83A'); // cabeça fechada, focinho para baixo
-  c.strokeStyle = '#1D5E1E'; c.lineWidth = 3; c.beginPath(); c.moveTo(912, 438); c.quadraticCurveTo(936, 458, 958, 466); c.stroke(); // boca
-  disc(962, 448, 3.5, '#1D5E1E'); c.beginPath(); c.ellipse(904, 390, 14, 11, .5, 0, 7); c.fillStyle = '#fff'; c.fill(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 3; c.stroke(); disc(907, 391, 5.5, '#111');
-  // cachimbo por cima da boca: piteira vermelha saindo da boca e descendo até o fornilho
-  const pit = () => { c.beginPath(); c.moveTo(928, 448); c.quadraticCurveTo(946, 470, 962, 492); c.quadraticCurveTo(974, 514, 992, 526) };
-  pit(); c.strokeStyle = '#7A2C0E'; c.lineWidth = 24; c.stroke(); pit(); c.strokeStyle = '#E0472A'; c.lineWidth = 17; c.stroke(); disc(928, 448, 9, '#E0472A');
-  c.beginPath(); c.moveTo(980, 500); c.quadraticCurveTo(1016, 482, 1050, 494); c.bezierCurveTo(1052, 540, 1036, 568, 1006, 566); c.bezierCurveTo(984, 564, 974, 540, 980, 500); c.closePath(); c.fillStyle = '#E2602A'; c.fill(); c.strokeStyle = '#7A2C0E'; c.lineWidth = 4; c.stroke();
-  c.beginPath(); c.ellipse(1015, 493, 34, 10, -.12, 0, 7); c.fillStyle = '#5A2208'; c.fill(); c.stroke(); poly([[990, 508], [1000, 506], [1000, 548], [992, 540]], 'rgba(255,220,160,.35)');
+  // cabeça e cachimbo desenhados no recorte ampliado da foto (x3, origem 820,330)
+  c.save(); c.translate(820, 330); c.scale(1 / 3, 1 / 3); c.lineJoin = 'round';
+  c.beginPath(); c.moveTo(100, 22); c.quadraticCurveTo(230, 92, 305, 140); c.quadraticCurveTo(350, 168, 358, 205); c.lineTo(432, 395); c.quadraticCurveTo(438, 428, 410, 422); c.lineTo(336, 362); c.quadraticCurveTo(250, 310, 190, 260); c.quadraticCurveTo(128, 215, 122, 175); c.quadraticCurveTo(100, 180, 16, 110); c.fillStyle = '#2FA83A'; c.fill(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 12; c.stroke();
+  c.save(); c.translate(272, 205); c.rotate(.45); c.beginPath(); c.ellipse(0, 0, 40, 28, 0, 0, 7); c.fillStyle = '#fff'; c.fill(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 6; c.stroke(); c.beginPath(); c.ellipse(-4, 0, 10, 16, -.45, 0, 7); c.fillStyle = '#222'; c.fill(); c.restore();
+  // cachimbo: piteira saindo da boca, descendo por cima do queixo e virando o fornilho
+  c.beginPath(); c.moveTo(318, 360); c.quadraticCurveTo(326, 340, 350, 362); c.quadraticCurveTo(425, 410, 438, 470); c.lineTo(446, 560); c.quadraticCurveTo(450, 585, 470, 580); c.lineTo(515, 482);
+  c.quadraticCurveTo(600, 470, 664, 545); c.quadraticCurveTo(650, 625, 560, 680); c.quadraticCurveTo(480, 700, 420, 680); c.quadraticCurveTo(392, 665, 394, 630); c.lineTo(390, 470); c.quadraticCurveTo(380, 420, 318, 360); c.closePath();
+  c.fillStyle = '#E2602A'; c.fill(); c.strokeStyle = '#7A2C0E'; c.lineWidth = 9; c.stroke();
+  c.beginPath(); c.ellipse(590, 513, 76, 28, .44, 0, 7); c.fillStyle = '#8A3A12'; c.fill(); c.stroke();
+  poly([[405, 480], [418, 480], [420, 640], [408, 630]], 'rgba(255,220,160,.3)'); c.restore();
   // fumaça em fitas cinzas ondulando
-  if (fumaca > 0) { c.lineWidth = 16; for (let k = 0; k < 3; k++) { c.globalAlpha = fumaca * (.85 - k * .2); c.strokeStyle = k ? '#C9CDD2' : '#E2E5E8'; c.beginPath(); for (let i = 0; i <= 20; i++) { const u = i / 20, yy = 482 - u * (170 + k * 20), xx = 1020 + k * 14 + sin(u * 7 - t * 4 + k) * 18 * u + u * 20; i ? c.lineTo(xx, yy) : c.moveTo(xx, yy) } c.stroke() } c.globalAlpha = 1 }
+  if (fumaca > 0) { c.lineWidth = 16; for (let k = 0; k < 3; k++) { c.globalAlpha = fumaca * (.85 - k * .2); c.strokeStyle = k ? '#C9CDD2' : '#E2E5E8'; c.beginPath(); for (let i = 0; i <= 20; i++) { const u = i / 20, yy = 492 - u * (170 + k * 20), xx = 1020 + k * 14 + sin(u * 7 - t * 4 + k) * 18 * u + u * 20; i ? c.lineTo(xx, yy) : c.moveTo(xx, yy) } c.stroke() } c.globalAlpha = 1 }
   c.restore() }
