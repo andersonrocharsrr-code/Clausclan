@@ -195,17 +195,22 @@ function cobra(x, y, s, t, fumaca = 1) { c.save(); c.translate(x, y); c.scale(s 
   
   // cabeça alongada apontando para baixo à direita, boca aberta segurando o cachimbo
   const cab = (f, cor) => { c.beginPath(); f(); c.closePath(); c.fillStyle = cor; c.fill(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 5; c.stroke() };
-  // cabeça e cachimbo desenhados no recorte ampliado da foto (x3, origem 820,330)
-  c.save(); c.translate(820, 330); c.scale(1 / 3, 1 / 3); c.lineJoin = 'round';
-  c.beginPath(); c.moveTo(100, 22); c.quadraticCurveTo(230, 92, 305, 140); c.quadraticCurveTo(350, 168, 358, 205); c.lineTo(432, 395); c.quadraticCurveTo(438, 428, 410, 422); c.lineTo(336, 362); c.quadraticCurveTo(250, 310, 190, 260); c.quadraticCurveTo(128, 215, 122, 175); c.quadraticCurveTo(100, 180, 16, 110); c.fillStyle = '#3CB43C'; c.fill(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 12; c.stroke();
-  c.strokeStyle = '#1D5E1E'; c.lineWidth = 8; c.beginPath(); c.moveTo(240, 284); c.quadraticCurveTo(275, 312, 306, 330); c.stroke();
-  c.save(); c.translate(272, 205); c.rotate(.45); c.beginPath(); c.ellipse(0, 0, 46, 32, 0, 0, 7); c.fillStyle = '#fff'; c.fill(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 6; c.stroke(); c.beginPath(); c.ellipse(-4, 0, 11, 18, -.45, 0, 7); c.fillStyle = '#222'; c.fill(); c.restore();
-  // cachimbo: piteira saindo da boca, descendo por cima do queixo e virando o fornilho
-  c.beginPath(); c.moveTo(300, 336); c.quadraticCurveTo(312, 312, 338, 336); c.quadraticCurveTo(425, 400, 438, 470); c.lineTo(446, 560); c.quadraticCurveTo(450, 585, 470, 580); c.lineTo(515, 482);
-  c.quadraticCurveTo(600, 470, 664, 545); c.quadraticCurveTo(650, 625, 560, 680); c.quadraticCurveTo(480, 700, 420, 680); c.quadraticCurveTo(392, 665, 394, 630); c.lineTo(390, 470); c.quadraticCurveTo(375, 405, 300, 336); c.closePath();
+  // cabeça e cachimbo decalcados da foto (recorte ampliado x3, origem 820,330); a piteira fica no meio da boca:
+  // na frente da papada e por trás da ponta do focinho
+  c.save(); c.translate(820, 330); c.scale(1 / 3, 1 / 3); c.lineJoin = 'round'; c.lineCap = 'round'; const VD = '#3CB43C', CT = '#1D5E1E';
+  c.beginPath(); c.moveTo(96, -9); c.quadraticCurveTo(190, 88, 285, 150); c.quadraticCurveTo(330, 175, 345, 215); c.lineTo(398, 338); c.lineTo(428, 398); c.quadraticCurveTo(434, 424, 410, 422); c.lineTo(362, 394); c.lineTo(322, 357); c.quadraticCurveTo(220, 305, 175, 278); c.quadraticCurveTo(140, 250, 135, 210); c.quadraticCurveTo(44, 164, -18, 99);
+  c.fillStyle = VD; c.fill(); c.strokeStyle = CT; c.lineWidth = 12; c.stroke();
+  c.save(); c.translate(272, 210); c.rotate(.45); c.beginPath(); c.ellipse(0, 0, 44, 30, 0, 0, 7); c.fillStyle = '#fff'; c.fill(); c.strokeStyle = CT; c.lineWidth = 6; c.stroke(); c.beginPath(); c.ellipse(-4, 0, 11, 17, -.45, 0, 7); c.fillStyle = '#222'; c.fill(); c.restore();
+  // cachimbo
+  c.beginPath(); c.moveTo(318, 372); c.quadraticCurveTo(326, 336, 362, 350); c.quadraticCurveTo(420, 420, 438, 500); c.lineTo(445, 565); c.quadraticCurveTo(452, 586, 472, 576); c.lineTo(518, 474);
+  c.quadraticCurveTo(612, 468, 664, 548); c.quadraticCurveTo(642, 636, 525, 668); c.quadraticCurveTo(440, 674, 405, 645); c.quadraticCurveTo(388, 618, 392, 570); c.lineTo(385, 480); c.quadraticCurveTo(372, 418, 318, 372); c.closePath();
   c.fillStyle = '#E2602A'; c.fill(); c.strokeStyle = '#7A2C0E'; c.lineWidth = 9; c.stroke();
-  c.beginPath(); c.ellipse(590, 513, 76, 28, .44, 0, 7); c.fillStyle = '#8A3A12'; c.fill(); c.stroke();
-  poly([[405, 480], [418, 480], [420, 640], [408, 630]], 'rgba(255,220,160,.3)'); c.restore();
+  c.beginPath(); c.ellipse(591, 511, 78, 28, .5, 0, 7); c.fillStyle = '#8A3A12'; c.fill(); c.stroke();
+  poly([[405, 490], [416, 490], [418, 630], [408, 622]], 'rgba(255,220,160,.3)');
+  // ponta do focinho por cima da piteira
+  c.beginPath(); c.moveTo(352, 300); c.lineTo(398, 338); c.lineTo(428, 398); c.quadraticCurveTo(434, 424, 410, 422); c.lineTo(372, 398); c.quadraticCurveTo(360, 350, 352, 300); c.fillStyle = VD; c.fill();
+  c.beginPath(); c.moveTo(398, 338); c.lineTo(428, 398); c.quadraticCurveTo(434, 424, 410, 422); c.lineTo(374, 400); c.strokeStyle = CT; c.lineWidth = 12; c.stroke();
+  c.restore();
   // fumaça em fitas cinzas ondulando
   if (fumaca > 0) { c.lineWidth = 16; for (let k = 0; k < 3; k++) { c.globalAlpha = fumaca * (.85 - k * .2); c.strokeStyle = k ? '#C9CDD2' : '#E2E5E8'; c.beginPath(); for (let i = 0; i <= 20; i++) { const u = i / 20, yy = 492 - u * (170 + k * 20), xx = 1020 + k * 14 + sin(u * 7 - t * 4 + k) * 18 * u + u * 20; i ? c.lineTo(xx, yy) : c.moveTo(xx, yy) } c.stroke() } c.globalAlpha = 1 }
   c.restore() }
