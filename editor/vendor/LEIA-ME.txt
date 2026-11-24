@@ -1,0 +1,9 @@
+Bibliotecas usadas pelo Editor de Vídeo (copiadas do npm, sem alteração):
+
+- mediabunny 1.65.2 (mediabunny.min.mjs) — ler, decodificar, codificar e montar MP4/MP3 no aparelho
+  (usa o WebCodecs do Android, com aceleração de hardware). Licença MPL-2.0: https://github.com/Vanilagy/mediabunny
+- @mediabunny/mp3-encoder 1.65.2 (mediabunny-mp3-encoder.min.mjs) — codificador MP3 (LAME em WebAssembly)
+  para o "Extrair áudio". Licença MPL-2.0 (LAME: LGPL).
+
+Para atualizar: npm pack mediabunny@X @mediabunny/mp3-encoder@X e copie dist/bundles/*.min.mjs para cá.
+O index.html liga o nome "mediabunny" a ./vendor/mediabunny.min.mjs (importmap).

@@ -87,6 +87,10 @@ Cada um tem sua pasta e, quando tem APK, seu workflow em `.github/workflows/`
   Instagram (mesma caixa, o app detecta o link): `baixar/instagram.js` lê a página pública de incorporar
   (`/p/CODIGO/embed/captioned/`), sem login — só perfis públicos. O servidor do Claude recebe tela de login do
   Instagram, então o Instagram só dá para testar de verdade no celular.
+- **Editor de Vídeo** (`editor/` + `editor-android/`): linha do tempo, colagem, textos, filtros, música, extrair áudio,
+  salvar em até 4K. APK: https://github.com/andersonrocharsrr-code/Clausclan/releases/download/editor/editor.apk
+  Tudo roda no celular (WebCodecs via `editor/vendor/mediabunny.min.mjs`); `editor/motor.js` desenha e grava, `app.js` é a tela.
+  Para testar: `cd editor && python3 -m http.server 8766`; o Chromium do Playwright grava H.264 (som sai em Opus, no Android sai AAC).
 A mesma regra vale: testar, PR, merge só quando o Anderson mandar.
 
 ## Vídeos documentários (ex.: Pearl Harbor)
