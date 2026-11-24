@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Editor de Vídeo</title>
+  <meta name="description" content="Edita vídeos no celular: cortes, colagem, textos, filtros, música, extrair áudio e salvar em até 4K.">
+  <meta name="theme-color" content="#101114">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css?v=4">
+  <script type="importmap">{ "imports": { "mediabunny": "./vendor/mediabunny.min.mjs" } }</script>
+</head>
+<body>
+  <div class="app">
+    <header class="topo">
+      <button id="novo" class="ic-btn" type="button" aria-label="Projeto novo" title="Projeto novo"></button>
+      <button id="ajuda" class="ic-btn" type="button" aria-label="Ajuda" title="Ajuda"></button>
+      <span class="topo__meio"></span>
+      <button id="qualidade" class="qual" type="button" aria-label="Resolução do vídeo">4K <span>▾</span></button>
+      <button id="salvarVideo" class="salvar-btn" type="button" disabled>Salvar</button>
+    </header>
+
+    <div id="semWebCodecs" class="aviso-caixa" hidden>
+      Este navegador não consegue gravar vídeo. Use o app no Android (Chrome atualizado).
+    </div>
+
+    <div id="palco" class="palco">
+      <canvas id="tela" width="540" height="960"></canvas>
+      <div id="vazio" class="vazio">
+        <button id="comecar" class="comecar" type="button"><span>＋</span>Escolher vídeos e fotos</button>
+        <button id="comecarColagem" class="comecar comecar--2" type="button"><span>▦</span>Fazer uma colagem</button>
+      </div>
+    </div>
+
+    <div class="controles">
+      <button id="telaCheia" class="ic-btn ic-btn--p" type="button" aria-label="Tela cheia"></button>
+      <span id="tempo" class="tempo">00:00 / 00:00</span>
+      <button id="play" class="play" type="button" aria-label="Tocar"></button>
+      <span class="controles__esp"></span>
+      <button id="desfazer" class="ic-btn ic-btn--p" type="button" aria-label="Desfazer" disabled></button>
+      <button id="refazer" class="ic-btn ic-btn--p" type="button" aria-label="Refazer" disabled></button>
+    </div>
+
+    <div id="linha" class="linha">
+      <div id="rolo" class="rolo">
+        <div id="conteudo" class="conteudo">
+          <div id="regua" class="regua"></div>
+          <div id="trilha" class="trilha"></div>
+          <div id="trilhaMusica" class="trilha-musica"></div>
+        </div>
+      </div>
+      <span class="agulha" aria-hidden="true"></span>
+      <button id="maisFim" class="mais-fim" type="button" aria-label="Adicionar vídeo ou foto">＋</button>
+    </div>
+
+    <nav id="barra" class="barra"></nav>
+
+    <section id="painel" class="painel" hidden>
+      <div class="painel__topo">
+        <h2 id="painelTitulo"></h2>
+        <button id="painelOk" class="ok-btn" type="button" aria-label="Pronto">✓</button>
+      </div>
+      <div id="painelCorpo" class="painel__corpo"></div>
+    </section>
+  </div>
+
+  <section id="pgFerramentas" class="pagina" hidden>
+    <header class="topo">
+      <button id="ferrFechar" class="ic-btn" type="button" aria-label="Voltar"></button>
+      <h1 class="pagina__titulo">Áudio e conversão</h1>
+    </header>
+    <div class="pagina__corpo">
+      <section class="cartao">
+        <h3>Escolher vídeo</h3>
+        <button id="ferrEscolher" class="btn btn--pri" type="button">📂 Escolher da galeria</button>
+      </section>
+      <div id="ferrConteudo"></div>
+    </div>
+  </section>
+
+  <div id="folha" class="folha" hidden>
+    <div class="folha__caixa" role="dialog" aria-modal="true" aria-labelledby="folhaTitulo">
+      <div class="folha__topo">
+        <h2 id="folhaTitulo"></h2>
+        <button id="folhaFechar" class="ic-btn" type="button" aria-label="Fechar">✕</button>
+      </div>
+      <div id="folhaCorpo"></div>
+    </div>
+  </div>
+
+  <div id="progresso" class="progresso" hidden>
+    <div class="progresso__caixa">
+      <p id="progTexto">…</p>
+      <div class="barra-prog"><span id="progBarra"></span></div>
+      <button id="cancelar" class="btn btn--sec" type="button" hidden>Cancelar</button>
+    </div>
+  </div>
+
+  <p id="aviso" class="toast" role="status" hidden></p>
+
+  <script type="module" src="app.js?v=3"></script>
+</body>
+</html>

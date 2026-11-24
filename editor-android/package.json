@@ -1,0 +1,18 @@
+{
+  "name": "editor-android",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Editor de Vídeo (colagem, cortes, textos, música, extrair áudio, salvar em até 4K) como app Android nativo (Capacitor). O APK é gerado pelo GitHub Actions.",
+  "scripts": {
+    "www": "node scripts/prepare-www.mjs"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.5.2"
+  }
+}
