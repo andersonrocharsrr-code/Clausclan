@@ -319,14 +319,24 @@ textarea {
   position: absolute; left: -12px; top: 0; bottom: 0; border-radius: 5px;
   background: var(--pri);
 }
-.vel-pontos { position: absolute; left: 0; right: 0; top: 0; height: 70px; z-index: 1; }
+.vel-pontos { position: absolute; left: 0; right: 0; top: 0; height: 70px; z-index: 3; pointer-events: none; }
 .vel-ponto {
   position: absolute; top: 0; width: 40px; margin-left: -20px; height: 70px; border: 0; background: none; padding: 0;
-  display: flex; flex-direction: column; align-items: center; color: #c9ccd6;
+  display: flex; flex-direction: column; align-items: center; color: #c9ccd6; pointer-events: none;
 }
+.vel-ponto small { pointer-events: auto; }
+.vel-ponto i { pointer-events: none; }
 .vel-ponto i {
   display: block; width: 14px; height: 14px; border-radius: 50%; margin-top: 11px;
-  background: #fff; border: 3px solid #101114; box-shadow: 0 0 0 1px rgba(255,255,255,.35);
+  background: rgba(255,255,255,.35); border: 2px solid #fff; box-shadow: 0 0 10px rgba(167,139,250,.9);
+  opacity: 0; /* escondida: só aparece de leve quando a barra chega no ponto */
+}
+.vel-ponto i.pisca { animation: pisca-ponto .8s ease-out; }
+/* Aparece por cima da bolinha de arrastar como um brilho que cresce de leve e some. */
+@keyframes pisca-ponto {
+  0% { opacity: 0; transform: scale(.8); }
+  20% { opacity: .85; transform: scale(1.4); }
+  100% { opacity: 0; transform: scale(2.6); }
 }
 .vel-ponto small { margin-top: 14px; font-size: 13px; font-weight: 600; white-space: nowrap; }
 .vel-ponto.on { color: #fff; }

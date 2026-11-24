@@ -955,8 +955,15 @@ function pVel(c, el) {
     encher();
     val.textContent = textoVel(v);
     pontos.querySelectorAll('.vel-ponto').forEach((b) => b.classList.toggle('on', Number(b.dataset.v) === v));
+    // Chegou num ponto: a bolinha dele acende de leve e apaga (só na chegada, não a cada movimento).
+    if (PONTOS_VEL.includes(v) && v !== ultimoPonto) {
+      const bol = pontos.querySelector(`.vel-ponto[data-v="${v}"] i`);
+      if (bol) { bol.classList.remove('pisca'); void bol.offsetWidth; bol.classList.add('pisca'); }
+    }
+    ultimoPonto = PONTOS_VEL.includes(v) ? v : null;
     mudar(() => { c.vel = v; }, 'vel', { semPainel: true });
   };
+  let ultimoPonto = c.vel || 1;
   inp.addEventListener('input', () => {
     const p = Number(inp.value) / 1000;
     let v = Math.round(posParaVel(p) * 100) / 100;
