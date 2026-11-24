@@ -981,8 +981,8 @@ function desenharTopo() {
   $('desfazer').disabled = !desfazer.length;
   $('refazer').disabled = !refazer.length;
   $('salvarVideo').disabled = !projeto.clipes.length;
-  const lado = Number(localStorage.getItem('editor.lado')) || 1080;
-  $('qualidade').firstChild.textContent = ({ 720: '720p', 1080: '1080p', 1440: '2K', 2160: '4K' }[lado] || '1080p') + ' ';
+  const lado = Number(localStorage.getItem('editor.lado')) || 2160;
+  $('qualidade').firstChild.textContent = ({ 720: '720p', 1080: '1080p', 1440: '2K', 2160: '4K' }[lado] || '4K') + ' ';
 }
 
 function atualizarTudo() {
@@ -997,30 +997,14 @@ function atualizarTudo() {
 
 let maxLado = null;
 
-/** Botão Salvar: grava direto com a resolução escolhida (se o celular não aguenta, usa a maior possível). */
-async function salvarDireto() {
-  if (tocando) pausar();
-  if (!linha().itens.length || ocupado) return;
-  let lado = Number(localStorage.getItem('editor.lado')) || 1080;
-  const fps = Number(localStorage.getItem('editor.fps')) || 30;
-  const qual = localStorage.getItem('editor.qual') || 'normal';
-  if (maxLado == null) {
-    progresso('Preparando…', null);
-    maxLado = await maiorResolucao(projeto.formato).catch(() => 1080);
-    fimProgresso();
-  }
-  if (lado > maxLado) { aviso(`Este celular grava até ${RESOLUCOES[maxLado]}. Salvando assim.`); lado = maxLado; }
-  salvarVideo(lado, fps, qual);
-}
-
 async function abrirSalvar() {
   if (tocando) pausar();
   const l = linha();
   if (!l.itens.length) return;
-  let lado = Number(localStorage.getItem('editor.lado')) || 1080;
+  let lado = Number(localStorage.getItem('editor.lado')) || 2160;
   let fps = Number(localStorage.getItem('editor.fps')) || 30;
   let qual = localStorage.getItem('editor.qual') || 'normal';
-  abrirFolha('Salvar vídeo', (corpo) => {
+  abrirFolha('Salvar vídeo (até 4K)', (corpo) => {
     const info = h('p', { class: 'dica' });
     const resol = h('div');
     const montar = () => {
@@ -1042,7 +1026,7 @@ async function abrirSalvar() {
     montar();
     if (maxLado == null) maiorResolucao(projeto.formato).then((v) => { maxLado = v; if (lado > v) lado = v; montar(); }).catch(() => {});
     corpo.append(resol,
-      h('button', { type: 'button', class: 'btn btn--pri', onclick: () => {
+      h('button', { type: 'button', class: 'btn btn--preto', onclick: () => {
         localStorage.setItem('editor.lado', lado); localStorage.setItem('editor.fps', fps); localStorage.setItem('editor.qual', qual);
         fecharFolha(); desenharTopo(); salvarVideo(lado, fps, qual);
       } }, NATIVO ? '⬇ Salvar na galeria' : '⬇ Baixar o vídeo'),
@@ -1238,7 +1222,7 @@ $('novo').addEventListener('click', () => {
   pausar();
   mudar(() => { projeto = novoProjeto(); sel = null; painelAberto = false; tempo = 0; });
 });
-$('salvarVideo').addEventListener('click', salvarDireto);
+$('salvarVideo').addEventListener('click', abrirSalvar);
 $('qualidade').addEventListener('click', abrirSalvar);
 $('painelOk').addEventListener('click', () => { painelAberto = false; atualizarTudo(); });
 $('folhaFechar').addEventListener('click', fecharFolha);
