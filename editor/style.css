@@ -250,3 +250,12 @@ textarea {
   max-width: calc(100% - 32px); width: max-content; box-shadow: 0 8px 24px rgba(0,0,0,.5); margin: 0; font-size: 14px;
 }
 .toast.erro { background: #3a1418; border-color: #7f1d1d; color: #fecaca; }
+
+/* Legendas automáticas */
+.legendas { display: flex; flex-direction: column; gap: 6px; }
+.legenda-linha { display: flex; align-items: center; gap: 6px; }
+.legenda-linha input {
+  flex: 1; min-width: 0; font: inherit; font-size: 14px; color: var(--texto); background: #0e0f12;
+  border: 1px solid var(--borda); border-radius: 10px; padding: 8px 10px;
+}
+.legenda-tempo { flex: none; border: 0; background: var(--sup2); color: var(--fraco); border-radius: 8px; padding: 8px 6px; font-size: 12px; font-variant-numeric: tabular-nums; }

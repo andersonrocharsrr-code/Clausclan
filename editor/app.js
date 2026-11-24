@@ -4,7 +4,8 @@
 import {
   FORMATOS, RESOLUCOES, FILTROS, COLAGENS, TRANSICOES, CORES_TEXTO,
   analisarMidia, tiras, linhaDoTempo, ativosEm, tempoOrigem, fontesDoClipe, desenharQuadro,
-  tamanhoSaida, taxaVideo, exportarVideo, maiorResolucao, converter, fotoDoQuadro, duracaoClipe
+  tamanhoSaida, taxaVideo, exportarVideo, maiorResolucao, converter, fotoDoQuadro, duracaoClipe,
+  audioDaFala, agruparLegendas, trocarTextoLegenda, ESTILO_LEGENDA
 } from './motor.js';
 import { guardarMidia, lerMidias, apagarMidia, guardarProjeto, lerProjeto } from './armazem.js';
 
@@ -23,6 +24,7 @@ const midias = new Map(); // id → { id, blob, nome, tipo, dur, w, h, temAudio,
 let sel = null;           // id do clipe escolhido
 let aba = 'cortar';       // ferramenta aberta no painel do clipe
 let painelAberto = false;
+let painelGeral = null;   // painel que não é de um clipe (ex.: 'legendas')
 let tempo = 0;            // posição da prévia (s)
 let tocando = false;
 let ocupado = false;
@@ -128,6 +130,7 @@ const IC = {
   duplicar: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
   apagar: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
   duracao: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M10 2h4"/>',
+  legenda: '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M7 11h3M12.5 11H17M7 15h10"/>',
   mais: '<circle cx="5" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="19" cy="12" r="1.4" fill="currentColor"/>'
 };
 
@@ -519,6 +522,7 @@ function desenharLinha() {
 
 function escolherClipe(c, it) {
   if (tocando) pausar();
+  painelGeral = null;
   if (sel === c.id) { sel = null; painelAberto = false; }
   else {
     sel = c.id;
@@ -591,6 +595,7 @@ function abrirFerramenta(c, qual) {
   sel = c.id;
   aba = qual;
   painelAberto = true;
+  painelGeral = null;
   const it = linha().itens.find((x) => x.c.id === c.id);
   if (it && (tempo < it.ini || tempo >= it.ini + it.dur)) tempo = it.ini + 0.01;
   atualizarTudo();
@@ -603,13 +608,14 @@ function botao(ic, nome, acao, classe) {
 function desenharBarra() {
   const b = $('barra');
   const c = clipeSel();
-  b.hidden = painelAberto && !!c;
+  b.hidden = painelAberto && (!!c || !!painelGeral);
   const itens = [];
   if (!c) {
     itens.push(
       botao('cortar', 'Editar', () => abrirFerramenta(clipeNoTempo(), 'cortar')),
       botao('musica', 'Música', abrirMusica),
       botao('texto', 'Texto', () => abrirFerramenta(clipeNoTempo(), 'texto')),
+      botao('legenda', 'Legendas', abrirLegendas),
       botao('colagem', 'Colagem', criarColagem),
       botao('filtro', 'Filtros', () => abrirFerramenta(clipeNoTempo(), 'filtro')),
       botao('formato', 'Formato', abrirFormato),
@@ -639,6 +645,16 @@ function desenharBarra() {
 function desenharPainel() {
   const p = $('painel');
   const c = clipeSel();
+  if (painelAberto && !c && painelGeral) {
+    p.hidden = false;
+    $('painelTitulo').textContent = 'Legendas automáticas';
+    const corpo = $('painelCorpo');
+    const y = corpo.scrollTop;
+    corpo.textContent = '';
+    pLegendas(corpo);
+    corpo.scrollTop = y;
+    return;
+  }
   p.hidden = !(painelAberto && c);
   if (p.hidden) return;
   const lista = abas(c);
@@ -943,6 +959,122 @@ function abrirFolha(titulo, montar) {
 }
 function fecharFolha() { $('folha').hidden = true; }
 
+// ---------- Legendas automáticas (fala → texto, palavra por palavra) ----------
+
+function abrirLegendas() {
+  if (!projeto.clipes.length) { aviso('Coloque um vídeo primeiro.'); return; }
+  if (tocando) pausar();
+  sel = null;
+  painelGeral = 'legendas';
+  painelAberto = true;
+  atualizarTudo();
+}
+
+let trabalhador = null;
+function transcrever(audio) {
+  return new Promise((ok, falha) => {
+    if (!trabalhador) trabalhador = new Worker(new URL('./legenda-worker.js', import.meta.url), { type: 'module' });
+    const t0 = Date.now();
+    let ouvindo = false;
+    const vigia = setInterval(() => {
+      if (cancelar) {
+        clearInterval(vigia);
+        trabalhador.terminate(); trabalhador = null;
+        const e = new Error('Cancelado'); e.cancelado = true; falha(e);
+      } else if (ouvindo) progresso('Ouvindo a fala… ' + mmss((Date.now() - t0) / 1000), null);
+    }, 500);
+    trabalhador.onmessage = ({ data }) => {
+      if (data.tipo === 'baixando') {
+        const mb = (n) => Math.round(n / 1048576);
+        progresso(`Baixando o reconhecedor de voz (só na 1ª vez)… ${mb(data.feito)} de ${mb(data.total) || '~80'} MB`, data.total ? data.feito / data.total : null);
+      } else if (data.tipo === 'ouvindo') { ouvindo = true; progresso('Ouvindo a fala…', null); }
+      else if (data.tipo === 'pronto') { clearInterval(vigia); ok(data.palavras); }
+      else if (data.tipo === 'erro') {
+        clearInterval(vigia);
+        falha(new Error(/fetch|network|internet/i.test(data.msg)
+          ? 'Sem internet para baixar o reconhecedor de voz. Ele só precisa de internet na primeira vez.'
+          : data.msg));
+      }
+    };
+    trabalhador.onerror = (e) => { clearInterval(vigia); falha(new Error(e.message || 'O reconhecedor de voz parou.')); };
+    trabalhador.postMessage({ tipo: 'transcrever', audio, idioma: 'portuguese' }, [audio.buffer]);
+  });
+}
+
+async function gerarLegendas() {
+  if (ocupado) return;
+  if (tocando) pausar();
+  ocupado = true; cancelar = false;
+  $('cancelar').hidden = false;
+  if (galeria) galeria.telaAcesa({ ligar: true }).catch(() => {});
+  progresso('Separando a fala dos vídeos…', null);
+  try {
+    const som = await audioDaFala(projeto, midias);
+    if (!som) throw new Error('Os vídeos estão sem som (ou com o volume zerado).');
+    const palavras = await transcrever(new Float32Array(som));
+    if (!palavras.length) throw new Error('Não ouvi nenhuma fala nos vídeos.');
+    const itens = agruparLegendas(palavras);
+    mudar(() => {
+      projeto.legendas = { itens, estilo: { ...ESTILO_LEGENDA, ...((projeto.legendas && projeto.legendas.estilo) || {}) } };
+    });
+    fimProgresso();
+    aviso(`Pronto: ${itens.length} legendas. Toque numa frase para corrigir.`);
+  } catch (e) {
+    fimProgresso();
+    if (e.cancelado) aviso('Cancelado.');
+    else { console.error(e); aviso(e.message || String(e), 'erro'); }
+  } finally {
+    ocupado = false;
+    $('cancelar').hidden = true;
+    if (galeria) galeria.telaAcesa({ ligar: false }).catch(() => {});
+  }
+}
+
+function pLegendas(el) {
+  const leg = projeto.legendas;
+  if (!leg || !leg.itens || !leg.itens.length) {
+    el.append(
+      h('p', { class: 'dica' }, 'O app ouve a fala dos vídeos e escreve a legenda sozinho, com a palavra falada em destaque.'),
+      h('button', { type: 'button', class: 'btn btn--preto', onclick: gerarLegendas }, '🎙 Gerar legendas da fala'),
+      h('p', { class: 'dica' }, 'Na primeira vez baixa o reconhecedor de voz (cerca de 80 MB, precisa de internet). Depois funciona sem internet. A música de fundo não entra.')
+    );
+    return;
+  }
+  const e = { ...ESTILO_LEGENDA, ...(leg.estilo || {}) };
+  const est = (mud) => mudar(() => { leg.estilo = { ...e, ...mud }; });
+  el.append(
+    chips([['baixo', 'Embaixo'], ['meio', 'No meio'], ['topo', 'Em cima']], e.pos, (v) => est({ pos: v })),
+    h('p', { class: 'rot' }, 'Cor da palavra falada'),
+    h('div', { class: 'cores' }, ['#ffd400', '#34c759', '#ff2d92', '#0a84ff', '#ff3b30', '#ffffff'].map((cor) => h('button', {
+      type: 'button', class: 'cor' + (e.destaque === cor ? ' on' : ''), style: `background:${cor}`, 'aria-label': 'Cor de destaque',
+      onclick: () => est({ destaque: cor })
+    }))),
+    chips([[true, 'MAIÚSCULAS'], [false, 'Normal']], e.maiusculas, (v) => est({ maiusculas: v === true || v === 'true' })),
+    chips([[false, 'Contorno'], [true, 'Com fundo']], e.fundo, (v) => est({ fundo: v === true || v === 'true' })),
+    deslizador('Tamanho', 3, 12, 0.5, e.tam, (v) => String(v).replace('.', ','), (v) => { leg.estilo = { ...e, tam: v }; }, 'tamLeg'),
+    h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: !!leg.oculta, onchange: (ev) => mudar(() => { leg.oculta = ev.target.checked; }) }), ' Esconder as legendas'),
+    h('p', { class: 'rot' }, 'Frases (toque para corrigir o texto)')
+  );
+  const lista = h('div', { class: 'legendas' });
+  leg.itens.forEach((it, i) => {
+    const ini = it.palavras[0].t0;
+    const campo = h('input', {
+      type: 'text', value: it.palavras.map((w) => w.p).join(' '),
+      onfocus: () => { tempo = ini + 0.01; pedirDesenho(); },
+      onchange: () => mudar(() => { if (!trocarTextoLegenda(it, campo.value)) leg.itens.splice(i, 1); })
+    });
+    lista.append(h('div', { class: 'legenda-linha' },
+      h('button', { type: 'button', class: 'legenda-tempo', onclick: () => { tempo = ini + 0.01; pedirDesenho(); } }, mmss(ini)),
+      campo,
+      h('button', { type: 'button', class: 'mini', 'aria-label': 'Apagar frase', onclick: () => mudar(() => { leg.itens.splice(i, 1); }) }, '✕')));
+  });
+  el.append(lista,
+    h('div', { class: 'linha-btn' },
+      h('button', { type: 'button', class: 'btn btn--sec', onclick: gerarLegendas }, '↻ Gerar de novo'),
+      h('button', { type: 'button', class: 'btn btn--perigo', onclick: () => mudar(() => { projeto.legendas = null; }) }, 'Apagar legendas')),
+    h('p', { class: 'dica' }, 'Se mudar os cortes dos vídeos depois, toque em Gerar de novo para acertar o tempo.'));
+}
+
 // ---------- Projeto ----------
 
 function abrirFormato() {
@@ -1224,7 +1356,7 @@ $('novo').addEventListener('click', () => {
 });
 $('salvarVideo').addEventListener('click', abrirSalvar);
 $('qualidade').addEventListener('click', abrirSalvar);
-$('painelOk').addEventListener('click', () => { painelAberto = false; atualizarTudo(); });
+$('painelOk').addEventListener('click', () => { painelAberto = false; painelGeral = null; atualizarTudo(); });
 $('folhaFechar').addEventListener('click', fecharFolha);
 $('folha').addEventListener('click', (e) => { if (e.target === $('folha')) fecharFolha(); });
 $('cancelar').addEventListener('click', () => { cancelar = true; progresso('Cancelando…', null); });
@@ -1236,7 +1368,7 @@ if (appCap) {
     if (!$('folha').hidden) fecharFolha();
     else if (!$('pgFerramentas').hidden) mostrarPagina('editor');
     else if (document.querySelector('.app.tela-cheia')) alternarTelaCheia();
-    else if (painelAberto) { painelAberto = false; atualizarTudo(); }
+    else if (painelAberto) { painelAberto = false; painelGeral = null; atualizarTudo(); }
     else if (sel) { sel = null; atualizarTudo(); }
     else appCap.minimizeApp();
   });

@@ -400,6 +400,7 @@ export function desenharQuadro(ctx, W, H, projeto, linha, midias, t, imagem) {
     ctx.restore();
     desenharTexto(ctx, W, H, c.texto, Math.max(0, Math.min(1, alfa)));
   }
+  desenharLegenda(ctx, W, H, projeto.legendas, t);
   if (projeto.marca && projeto.marca.trim()) {
     ctx.save();
     const tam = Math.round(Math.min(W, H) * 0.032);
@@ -417,6 +418,104 @@ export function desenharQuadro(ctx, W, H, projeto, linha, midias, t, imagem) {
 }
 
 const easing = (p) => 1 - Math.pow(1 - p, 3);
+
+// ---------- Legenda automática ----------
+
+/** Som falado do projeto (sem a música), em 16 kHz mono — o formato que o reconhecedor de voz usa. */
+export async function audioDaFala(projeto, midias) {
+  const linha = linhaDoTempo(projeto, midias);
+  const buf = await mixarAudio(projeto, linha, midias, null, { taxa: 16000, canais: 1, semMusica: true });
+  return buf ? buf.getChannelData(0) : null;
+}
+
+/** Junta as palavras em frases curtas para a tela (até ~5 palavras, quebra em pausa ou ponto). */
+export function agruparLegendas(palavras) {
+  const itens = [];
+  let atual = null;
+  for (const w of palavras) {
+    const pausa = atual && w.t0 - atual.palavras[atual.palavras.length - 1].t1 > 0.7;
+    // Frase cheia: 5 palavras ou ~30 letras — mas não deixa "de", "50"… sozinho no fim da frase.
+    const ult = atual && atual.palavras[atual.palavras.length - 1].p;
+    const presa = ult && (ult.length <= 3 || /^\d/.test(ult)) && !/[,;:]$/.test(ult);
+    const cheio = atual && !(presa && atual.palavras.length < 7) &&
+      (atual.palavras.length >= 5 || (atual.palavras.map((x) => x.p).join(' ') + ' ' + w.p).length > 30 || /[,;:]$/.test(ult) && atual.palavras.length >= 3);
+    if (!atual || pausa || cheio) { atual = { id: Math.random().toString(36).slice(2, 9), palavras: [] }; itens.push(atual); }
+    atual.palavras.push({ p: w.p, t0: w.t0, t1: Math.max(w.t1, w.t0 + 0.08) });
+    if (/[.!?…]$/.test(w.p)) atual = null;
+  }
+  return itens;
+}
+
+/** Troca o texto de uma frase mantendo o tempo: as palavras novas dividem o tempo da frase. */
+export function trocarTextoLegenda(item, texto) {
+  const ps = String(texto).trim().split(/\s+/).filter(Boolean);
+  if (!ps.length) return false;
+  const t0 = item.palavras[0].t0, t1 = item.palavras[item.palavras.length - 1].t1;
+  if (ps.length === item.palavras.length) { ps.forEach((p, i) => { item.palavras[i].p = p; }); return true; }
+  const pesos = ps.map((p) => p.length + 2);
+  const soma = pesos.reduce((a, b) => a + b, 0);
+  let t = t0;
+  item.palavras = ps.map((p, i) => { const d = (t1 - t0) * pesos[i] / soma; const w = { p, t0: t, t1: t + d }; t += d; return w; });
+  return true;
+}
+
+export const ESTILO_LEGENDA = { pos: 'baixo', cor: '#ffffff', destaque: '#ffd400', tam: 6.5, maiusculas: true, fundo: false };
+
+function desenharLegenda(ctx, W, H, leg, t) {
+  if (!leg || !leg.itens || !leg.itens.length || leg.oculta) return;
+  const item = leg.itens.find((it) => t >= it.palavras[0].t0 - 0.05 && t < it.palavras[it.palavras.length - 1].t1 + 0.25);
+  if (!item) return;
+  const e = { ...ESTILO_LEGENDA, ...(leg.estilo || {}) };
+  const base = Math.min(W, H);
+  const tam = Math.round(base * e.tam / 100);
+  const txt = (p) => (e.maiusculas ? p.toLocaleUpperCase('pt-BR') : p);
+  ctx.save();
+  ctx.font = `900 ${tam}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+  const esp = ctx.measureText(' ').width * 1.25;
+  // Quebra em linhas que cabem na tela.
+  const linhas = [[]];
+  let larg = 0;
+  for (const w of item.palavras) {
+    const lw = ctx.measureText(txt(w.p)).width;
+    if (linhas[linhas.length - 1].length && larg + esp + lw > W * 0.86) { linhas.push([]); larg = 0; }
+    linhas[linhas.length - 1].push({ w, lw });
+    larg += (larg ? esp : 0) + lw;
+  }
+  const alt = tam * 1.25;
+  const bloco = alt * linhas.length;
+  const y0 = e.pos === 'topo' ? H * 0.12 : e.pos === 'meio' ? (H - bloco) / 2 : H * 0.8 - bloco;
+  linhas.forEach((ln, k) => {
+    const total = ln.reduce((a, x) => a + x.lw, 0) + esp * (ln.length - 1);
+    let x = (W - total) / 2;
+    const y = y0 + alt * k + alt / 2;
+    if (e.fundo) {
+      ctx.fillStyle = 'rgba(0,0,0,.6)';
+      ctx.beginPath();
+      const pad = tam * 0.3;
+      if (ctx.roundRect) ctx.roundRect(x - pad, y - alt / 2, total + pad * 2, alt, tam * 0.2); else ctx.rect(x - pad, y - alt / 2, total + pad * 2, alt);
+      ctx.fill();
+    }
+    for (const { w, lw } of ln) {
+      const falando = t >= w.t0 && t < w.t1 + 0.05;
+      const dita = t >= w.t0;
+      ctx.save();
+      if (!e.fundo) {
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = Math.max(3, tam * 0.18);
+        ctx.strokeStyle = 'rgba(0,0,0,.9)';
+        ctx.strokeText(txt(w.p), x, y);
+      }
+      ctx.fillStyle = falando ? e.destaque : e.cor;
+      ctx.globalAlpha = dita || falando ? 1 : 0.88;
+      ctx.fillText(txt(w.p), x, y);
+      ctx.restore();
+      x += lw + esp;
+    }
+  });
+  ctx.restore();
+}
 
 // ---------- Som ----------
 
@@ -451,10 +550,10 @@ async function lerAudio(blob, ini, fim, ctxAudio) {
 }
 
 /** Mistura todo o som do projeto (som dos vídeos + música) num AudioBuffer. */
-export async function mixarAudio(projeto, linha, midias, aoProgresso) {
-  const taxa = 48000;
+export async function mixarAudio(projeto, linha, midias, aoProgresso, op = {}) {
+  const taxa = op.taxa || 48000;
   const total = Math.max(0.1, linha.total);
-  const ctx = new OfflineAudioContext(2, Math.ceil(total * taxa), taxa);
+  const ctx = new OfflineAudioContext(op.canais || 2, Math.ceil(total * taxa), taxa);
   let algum = false;
   const fontes = [];
   for (const it of linha.itens) {
@@ -507,7 +606,7 @@ export async function mixarAudio(projeto, linha, midias, aoProgresso) {
     }
   }
   // Música de fundo
-  const mus = projeto.musica && midias.get(projeto.musica.midia);
+  const mus = !op.semMusica && projeto.musica && midias.get(projeto.musica.midia);
   if (mus && projeto.musica.volume > 0) {
     aoProgresso && aoProgresso(fontes.length / (fontes.length + 1));
     const a = await lerAudio(mus.blob, projeto.musica.ini || 0, Infinity, ctx);

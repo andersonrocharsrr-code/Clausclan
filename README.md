@@ -518,6 +518,10 @@ Sem o segredo (ou fora do `main`) sai um APK de teste em "Artifacts" na execuç�
 - **Salvar vídeo**: 720p, 1080p, 2K ou **4K** (vertical 2160×3840), 30 ou 60 quadros/s, MP4 H.264 → galeria em
   *Filmes › Editor de Vídeo*. Se o celular só grava 4K "deitado", grava deitado com a marca de girar
   (continua vertical na galeria). **📷 Foto** salva o quadro atual em JPG (ex.: colagem de fotos).
+- **Legendas automáticas**: o app ouve a fala dos vídeos (Whisper, no próprio celular) e escreve a legenda
+  palavra por palavra, com a palavra falada em destaque. Dá para corrigir cada frase, mudar posição, cor,
+  tamanho, maiúsculas e fundo. Na primeira vez baixa o reconhecedor (~76 MB, do huggingface.co); depois
+  funciona sem internet. A música de fundo não entra no reconhecimento.
 - **🎵 Áudio e conversão**: extrair o áudio (MP3 128/192/320 ou M4A original, com trecho), tirar o som do vídeo
   (sem perder qualidade) e mudar a resolução (480p até 4K).
 - Como funciona: tudo é feito no celular, sem internet. `editor/motor.js` usa o WebCodecs do Android
