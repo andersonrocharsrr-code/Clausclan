@@ -63,7 +63,15 @@ export const COLAGENS = {
   'pip': { nome: 'Tela cheia + janelinha', cel: [[0, 0, 1, 1], [.56, .04, .4, .3]] }
 };
 
-export const TRANSICOES = { corte: 'Corte seco', dissolver: 'Dissolver', preto: 'Escurecer', deslizar: 'Deslizar', zoom: 'Zoom' };
+// Passagem de um clipe para o próximo. Todas, menos corte/escurecer/clarão, sobrepõem o fim de um ao começo do outro.
+export const TRANSICOES = {
+  corte: 'Corte seco',
+  dissolver: 'Dissolver', preto: 'Escurecer', branco: 'Clarão branco',
+  deslizar: 'Deslizar ←', deslizarDir: 'Deslizar →', subir: 'Subir', empurrar: 'Empurrar',
+  zoom: 'Zoom', zoomFora: 'Zoom para fora', cortina: 'Cortina', cortinaCima: 'Cortina para cima',
+  circulo: 'Círculo', persiana: 'Persiana', desfoque: 'Desfoque', girar: 'Girar'
+};
+const SEM_SOBREPOR = new Set(['corte', 'preto', 'branco']);
 export const DUR_TRANSICAO = 0.6;
 
 // ---------- Mídias (arquivos escolhidos) ----------
@@ -196,7 +204,7 @@ export function linhaDoTempo(projeto, midias) {
   return { itens, total: Math.max(0, t) };
 }
 
-const sobrepoe = (tr) => tr === 'dissolver' || tr === 'deslizar' || tr === 'zoom';
+const sobrepoe = (tr) => !!tr && !!TRANSICOES[tr] && !SEM_SOBREPOR.has(tr);
 
 /** Tempo dentro do arquivo de origem (em segundos) para um tempo local do clipe. */
 export function tempoOrigem(c, cel, local, midias) {
@@ -347,27 +355,26 @@ export function desenharQuadro(ctx, W, H, projeto, linha, midias, t, imagem) {
   ctx.fillRect(0, 0, W, H);
   ctx.restore();
   const ativos = ativosEm(linha, t);
+  let clarao = null;
   for (const a of ativos) {
     const c = a.c;
-    let alfa = 1, desloc = 0, zoom = 1;
-    // Entrada: transição do clipe anterior.
-    if (a.sobreEntrada && a.local < a.sobreEntrada) {
-      const p = a.local / a.sobreEntrada;
-      const tr = linha.itens[a.i - 1].c.transicao;
-      if (tr === 'dissolver') alfa = p;
-      else if (tr === 'deslizar') desloc = 1 - easing(p);
-      else if (tr === 'zoom') { alfa = p; zoom = 1.25 - 0.25 * easing(p); }
-    }
-    const ant = linha.itens[a.i - 1];
-    if (ant && ant.c.transicao === 'preto' && a.local < DUR_TRANSICAO / 2) alfa *= a.local / (DUR_TRANSICAO / 2);
-    if (c.transicao === 'preto' && a.i < linha.itens.length - 1 && a.dur - a.local < DUR_TRANSICAO / 2) {
-      alfa *= Math.max(0, (a.dur - a.local) / (DUR_TRANSICAO / 2));
-    }
+    const ef = efeitoTransicao(a, linha, W, H);
+    let alfa = ef.alfa;
+    const desloc = 0, zoom = 1; // movimento e zoom da transição vão no ctx (abaixo)
     if (projeto.fadeIn && a.i === 0 && a.local < 0.8) alfa *= a.local / 0.8;
     if (projeto.fadeOut && a.i === linha.itens.length - 1 && a.dur - a.local < 0.8) alfa *= Math.max(0, (a.dur - a.local) / 0.8);
+    if (ef.clarao) clarao = ef.clarao;
     ctx.save();
+    if (ef.recorte) { ctx.beginPath(); ef.recorte(ctx); ctx.clip(); }
+    if (ef.dx || ef.dy || ef.zoom !== 1 || ef.rot) {
+      ctx.translate(W / 2 + ef.dx * W, H / 2 + ef.dy * H);
+      if (ef.rot) ctx.rotate(ef.rot);
+      if (ef.zoom !== 1) ctx.scale(ef.zoom, ef.zoom);
+      ctx.translate(-W / 2, -H / 2);
+    }
     ctx.globalAlpha = Math.max(0, Math.min(1, alfa));
-    const filtro = cssFiltro(c);
+    let filtro = cssFiltro(c);
+    if (ef.blur > 0.3) filtro = (filtro === 'none' ? '' : filtro + ' ') + `blur(${ef.blur.toFixed(1)}px)`;
     if (c.tipo === 'colagem') {
       const lay = COLAGENS[c.layout] || COLAGENS['2h'];
       const g = (c.borda || 0) * Math.min(W, H) / 200;
@@ -402,8 +409,16 @@ export function desenharQuadro(ctx, W, H, projeto, linha, midias, t, imagem) {
         filtro, ajuste: c.ajuste, fundo: projeto.fundo, girar: c.girar, espelhar: c.espelhar, zoom: zf
       });
     }
-    ctx.restore();
     desenharTexto(ctx, W, H, c.texto, Math.max(0, Math.min(1, alfa)));
+    ctx.restore();
+  }
+  // Escurecer / clarão branco: a tela passa pela cor entre um clipe e outro.
+  if (clarao && clarao.a > 0) {
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, clarao.a);
+    ctx.fillStyle = clarao.cor;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
   }
   desenharLegenda(ctx, W, H, projeto.legendas, t);
   if (projeto.marca && projeto.marca.trim()) {
@@ -423,6 +438,62 @@ export function desenharQuadro(ctx, W, H, projeto, linha, midias, t, imagem) {
 }
 
 const easing = (p) => 1 - Math.pow(1 - p, 3);
+const suave = (p) => p * p * (3 - 2 * p);
+
+/**
+ * Como um clipe aparece durante a transição (entrando ou saindo):
+ * { alfa, dx, dy (fração da tela), zoom, rot (rad), blur (px), recorte(ctx), clarao: { cor, a } }
+ */
+export function efeitoTransicao(a, linha, W, H) {
+  const ef = { alfa: 1, dx: 0, dy: 0, zoom: 1, rot: 0, blur: 0, recorte: null, clarao: null };
+  const base = Math.min(W, H);
+  // Entrando (transição do clipe anterior)
+  const ant = linha.itens[a.i - 1];
+  if (ant && a.sobreEntrada && a.local < a.sobreEntrada) {
+    const p = Math.max(0, Math.min(1, a.local / a.sobreEntrada));
+    const e = easing(p);
+    switch (ant.c.transicao) {
+      case 'dissolver': ef.alfa = p; break;
+      case 'deslizar': ef.dx = 1 - e; break;
+      case 'deslizarDir': ef.dx = -(1 - e); break;
+      case 'subir': ef.dy = 1 - e; break;
+      case 'empurrar': ef.dx = 1 - e; break;
+      case 'zoom': ef.alfa = p; ef.zoom = 1.25 - 0.25 * e; break;
+      case 'zoomFora': ef.alfa = suave(p); ef.zoom = 0.55 + 0.45 * e; break;
+      case 'cortina': ef.recorte = (ctx) => ctx.rect(0, 0, W * suave(p), H); break;
+      case 'cortinaCima': ef.recorte = (ctx) => ctx.rect(0, H * (1 - suave(p)), W, H * suave(p)); break;
+      case 'circulo': ef.recorte = (ctx) => ctx.arc(W / 2, H / 2, Math.max(0.5, suave(p) * Math.hypot(W, H) / 2), 0, Math.PI * 2); break;
+      case 'persiana': {
+        const n = 8, larg = W / n, f = suave(p);
+        ef.recorte = (ctx) => { for (let k = 0; k < n; k++) ctx.rect(k * larg, 0, larg * f, H); };
+        break;
+      }
+      case 'desfoque': ef.alfa = p; ef.blur = (1 - p) * base * 0.03; ef.zoom = 1 + 0.08 * (1 - p); break;
+      case 'girar': ef.alfa = Math.min(1, p * 1.6); ef.rot = (1 - e) * -Math.PI * 0.6; ef.zoom = 0.4 + 0.6 * e; break;
+    }
+  }
+  // Saindo (transição deste clipe para o próximo)
+  if (a.sobreSaida && a.dur - a.local < a.sobreSaida) {
+    const q = Math.max(0, Math.min(1, 1 - (a.dur - a.local) / a.sobreSaida));
+    const e = easing(q);
+    switch (a.c.transicao) {
+      case 'empurrar': ef.dx = -e; break;
+      case 'zoomFora': ef.zoom = 1 + 0.35 * e; break;
+      case 'desfoque': ef.blur = q * base * 0.03; ef.zoom = 1 + 0.08 * q; break; // aproxima para não mostrar a borda borrada
+      case 'girar': ef.zoom = 1 + 0.15 * e; break;
+    }
+  }
+  // Escurecer / clarão: sem sobrepor; metade do tempo indo para a cor e metade voltando.
+  const meia = DUR_TRANSICAO / 2;
+  if (ant && (ant.c.transicao === 'preto' || ant.c.transicao === 'branco') && a.local < meia) {
+    ef.clarao = { cor: ant.c.transicao === 'branco' ? '#fff' : '#000', a: 1 - a.local / meia };
+  }
+  const prox = linha.itens[a.i + 1];
+  if (prox && (a.c.transicao === 'preto' || a.c.transicao === 'branco') && a.dur - a.local < meia) {
+    ef.clarao = { cor: a.c.transicao === 'branco' ? '#fff' : '#000', a: 1 - (a.dur - a.local) / meia };
+  }
+  return ef;
+}
 
 // ---------- Legenda automática ----------
 

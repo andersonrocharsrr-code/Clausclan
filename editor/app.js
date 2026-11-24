@@ -355,6 +355,7 @@ function desenhar() {
 
 // Tocar: os <video> andam sozinhos e a tela desenha o que eles mostram.
 let t0 = 0, base = 0;
+let pararEm = null; // para sozinho neste tempo (ver a transição)
 function tocar() {
   const l = linha();
   if (!l.itens.length) return;
@@ -368,6 +369,7 @@ function tocar() {
 
 function pausar() {
   tocando = false;
+  pararEm = null;
   for (const el of players.values()) el.pause();
   for (const el of audiosEl.values()) el.pause();
   porIcone('play', 'tocar');
@@ -379,7 +381,8 @@ function passo() {
   if (!tocando) return;
   const l = linha();
   tempo = base + (performance.now() - t0) / 1000;
-  if (tempo >= l.total) { tempo = l.total; pausar(); return; }
+  if (tempo >= l.total) { tempo = l.total; pararEm = null; pausar(); return; }
+  if (pararEm != null && tempo >= pararEm) { pararEm = null; pausar(); return; }
   const ativos = new Set();
   for (const a of ativosEm(l, tempo)) {
     for (const f of fontesDoClipe(a.c)) {
@@ -534,7 +537,7 @@ function desenharLinha() {
         type: 'button', class: 'junta' + (tr !== 'corte' ? ' on' : ''), title: TRANSICOES[tr],
         style: `left:${m0 + (it.ini + it.dur - it.sobreSaida / 2) * PX}px`,
         onclick: () => abrirFerramenta(c, 'trans')
-      }, tr !== 'corte' ? '⋈' : '|'));
+      }, SIMBOLO_TRANS[tr] || '⋈'));
     }
   });
   // Música: cada trecho na faixa verde (toque para escolher, alças para cortar)
@@ -960,12 +963,60 @@ function pGirar(c, el) {
   );
 }
 
+const SIMBOLO_TRANS = {
+  corte: '|', dissolver: '◐', preto: '●', branco: '○', deslizar: '⇠', deslizarDir: '⇢', subir: '⇡', empurrar: '⇇',
+  zoom: '⊕', zoomFora: '⊖', cortina: '▌', cortinaCima: '▄', circulo: '◯', persiana: '▥', desfoque: '◌', girar: '↻'
+};
+
+/** Miniatura de cada transição: desenhada pelo próprio motor (quadro azul passando para laranja). */
+const miniTrans = new Map();
+function miniTransicao(k) {
+  if (miniTrans.has(k)) return miniTrans.get(k);
+  const W = 64, H = 40;
+  const cria = (cor) => { const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); x.fillStyle = cor; x.fillRect(0, 0, W, H); return c; };
+  const A = cria('#3b82f6'), B = cria('#f59e0b');
+  const ms = new Map([['a', { tipo: 'foto', w: W, h: H }], ['b', { tipo: 'foto', w: W, h: H }]]);
+  const pr = { formato: '16:10', fundo: 'preto', clipes: [
+    { id: 'x1', tipo: 'foto', midia: 'a', dur: 3, ajuste: 'preencher', kenBurns: false, filtro: 'nenhum', transicao: k },
+    { id: 'x2', tipo: 'foto', midia: 'b', dur: 3, ajuste: 'preencher', kenBurns: false, filtro: 'nenhum', transicao: 'corte' }] };
+  const l = linhaDoTempo(pr, ms);
+  const so = l.itens[0].sobreSaida;
+  const t = k === 'corte' ? 3 : so ? 3 - so * 0.45 : 3 - 0.12;
+  const tela = document.createElement('canvas'); tela.width = W; tela.height = H;
+  desenharQuadro(tela.getContext('2d'), W, H, pr, l, ms, t, (ch) => ({ img: ch.startsWith('x1') ? A : B, w: W, h: H }));
+  if (k === 'corte') { const x = tela.getContext('2d'); x.drawImage(A, 0, 0, W / 2, H, 0, 0, W / 2, H); x.fillStyle = '#fff'; x.fillRect(W / 2 - 1, 0, 2, H); }
+  const url = tela.toDataURL();
+  miniTrans.set(k, url);
+  return url;
+}
+
+/** Toca só o pedaço da passagem para ver a transição. */
+function verTransicao(c) {
+  const it = linha().itens.find((x) => x.c.id === c.id);
+  if (!it) return;
+  if (tocando) pausar();
+  tempo = Math.max(it.ini, it.ini + it.dur - (it.sobreSaida || 0) - 0.8);
+  pararEm = it.ini + it.dur + 0.9;
+  tocar();
+}
+
 function pTrans(c, el) {
   const l = linha();
   const it = l.itens.find((x) => x.c.id === c.id);
   if (!it || it.i === l.itens.length - 1) { el.append(h('p', { class: 'dica' }, 'A transição é a passagem deste clipe para o próximo. Este é o último clipe.')); return; }
-  el.append(chips(Object.entries(TRANSICOES), c.transicao || 'corte', (v) => mudar(() => { c.transicao = v; tempo = Math.max(0, it.ini + it.dur - 1); })));
-  el.append(h('button', { type: 'button', class: 'btn btn--sec', onclick: () => mudar(() => projeto.clipes.forEach((x) => { x.transicao = c.transicao; })) }, 'Usar em todos'));
+  const atual = c.transicao || 'corte';
+  el.append(h('div', { class: 'trans-grade' }, Object.entries(TRANSICOES).map(([k, nome]) => h('button', {
+    type: 'button', class: 'trans-op' + (k === atual ? ' on' : ''),
+    onclick: () => { mudar(() => { c.transicao = k; }); if (k !== 'corte') verTransicao(c); }
+  }, h('img', { class: 'trans-op__mini', src: miniTransicao(k), alt: '' }), h('small', {}, nome)))));
+  el.append(h('div', { class: 'linha-btn' },
+    h('button', { type: 'button', class: 'btn btn--sec', onclick: () => verTransicao(c) }, '▶ Ver de novo'),
+    h('button', { type: 'button', class: 'btn btn--sec', onclick: () => mudar(() => projeto.clipes.forEach((x) => { x.transicao = c.transicao; })) }, 'Usar em todos')));
+  el.append(h('button', { type: 'button', class: 'btn btn--sec', onclick: () => {
+    const lista = Object.keys(TRANSICOES).filter((k) => k !== 'corte');
+    mudar(() => projeto.clipes.forEach((x) => { x.transicao = lista[Math.floor(Math.random() * lista.length)]; }));
+    aviso('Uma transição diferente em cada passagem.');
+  } }, '🎲 Sortear em todos'));
 }
 
 function pMais(c, el) {
