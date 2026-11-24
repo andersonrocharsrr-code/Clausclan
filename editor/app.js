@@ -50,7 +50,7 @@ const mmss = (s) => {
 };
 
 /** Toda mudança passa por aqui: guarda para o "Desfazer", salva e redesenha. */
-function mudar(fn, grupo) {
+function mudar(fn, grupo, op) {
   const agora = Date.now();
   if (!grupo || grupo !== ultimoGrupo || agora - ultimoGrupoT > 1500) {
     desfazer.push(JSON.stringify(projeto));
@@ -60,7 +60,7 @@ function mudar(fn, grupo) {
   ultimoGrupo = grupo || ''; ultimoGrupoT = agora;
   fn();
   salvar();
-  atualizarTudo();
+  atualizarTudo(op);
 }
 
 function voltar() {
@@ -460,6 +460,8 @@ $('rolo').addEventListener('scroll', () => {
   pedirDesenho();
 }, { passive: true });
 $('rolo').addEventListener('pointerdown', () => { if (tocando) pausar(); });
+// Segurar o dedo parado na linha do tempo não abre o menu do toque longo do Android.
+$('linha').addEventListener('contextmenu', (e) => e.preventDefault());
 
 function tiraMaisPerto(m, s) {
   if (!m || !m.tiras || !m.tiras.length) return m && m.thumb;
@@ -472,6 +474,18 @@ function desenharLinha() {
   const l = linha();
   const m0 = meio();
   $('conteudo').style.width = (l.total * PX + m0 * 2) + 'px';
+  // Durante o arraste da alça, só estica/encolhe o pedaço puxado: refazer a faixa trocaria a alça
+  // que está embaixo do dedo e o celular perderia o toque.
+  if (arrasto && arrasto.el && arrasto.el.isConnected) {
+    const cx = arrasto.alvo.caixa();
+    if (cx) {
+      arrasto.el.style.left = (m0 + cx.left) + 'px';
+      arrasto.el.style.width = cx.width + 'px';
+      const rot = arrasto.el.querySelector('.clipe__rot');
+      if (rot && cx.dur != null) rot.textContent = cx.dur.toFixed(1).replace('.', ',') + 's';
+    }
+    return;
+  }
   // Régua
   const regua = $('regua');
   regua.textContent = '';
@@ -609,7 +623,8 @@ function alvoClipe(c, lado) {
       c.dur = Math.round(Math.max(0.5, Math.min(120, d)) * 10) / 10;
       return c.dur <= 0.5 || c.dur >= 120;
     },
-    tempo() { const x = it(); return x ? (lado === 'dir' ? x.ini + x.dur - 0.03 : x.ini + 0.01) : tempo; }
+    tempo() { const x = it(); return x ? (lado === 'dir' ? x.ini + x.dur - 0.03 : x.ini + 0.01) : tempo; },
+    caixa() { const x = it(); return x ? { left: x.ini * PX + 1, width: Math.max(10, x.dur * PX - 2), dur: x.dur } : null; }
   };
 }
 
@@ -631,7 +646,8 @@ function alvoAudio(a, lado) {
       a.pos = orig.pos + d;
       return ds < 0 ? d <= Math.max(-orig.ini, -orig.pos) + 1e-6 : d >= orig.fim - 0.3 - orig.ini - 1e-6;
     },
-    tempo() { return lado === 'dir' ? a.pos + durTrecho(a) - 0.03 : a.pos + 0.01; }
+    tempo() { return lado === 'dir' ? a.pos + durTrecho(a) - 0.03 : a.pos + 0.01; },
+    caixa() { return { left: a.pos * PX, width: Math.max(12, durTrecho(a) * PX - 2) }; }
   };
 }
 
@@ -639,24 +655,41 @@ function arrastar(e, alvo) {
   e.preventDefault();
   e.stopPropagation();
   if (tocando) pausar();
+  if (arrasto) return;
   const rolo = $('rolo');
-  try { $('linha').setPointerCapture(e.pointerId); } catch (x) {}
+  const alca = e.currentTarget;
+  const toque = e.pointerType === 'touch';
+  try { alca.setPointerCapture(e.pointerId); } catch (x) {}
   const xConteudo = (cx) => rolo.scrollLeft + cx - rolo.getBoundingClientRect().left;
-  arrasto = { alvo, id: e.pointerId, x: e.clientX, x0: xConteudo(e.clientX), t: performance.now(), xConteudo };
-  const mover = (ev) => { if (arrasto && ev.pointerId === arrasto.id) { arrasto.x = ev.clientX; arrasto.travado = 0; aplicarArrasto(); } };
+  arrasto = { alvo, id: e.pointerId, x: e.clientX, x0: xConteudo(e.clientX), t: performance.now(), xConteudo, el: alca.parentElement };
+  const pegar = (x) => { if (!arrasto) return; arrasto.x = x; arrasto.travado = 0; aplicarArrasto(); };
+  // No celular segue o próprio toque do dedo (não é cancelado pelo Android); no mouse, o ponteiro.
+  const moverP = (ev) => { if (!toque && arrasto && ev.pointerId === arrasto.id) pegar(ev.clientX); };
+  const moverT = (ev) => { if (ev.cancelable) ev.preventDefault(); const t = ev.touches[0]; if (t) pegar(t.clientX); };
   const soltar = (ev) => {
-    if (!arrasto || (ev && ev.pointerId !== arrasto.id)) return;
-    try { $('linha').releasePointerCapture(arrasto.id); } catch (x) {}
+    if (!arrasto) return;
+    if (ev && ev.type.startsWith('pointer') && (toque || ev.pointerId !== arrasto.id)) return;
+    if (ev && ev.type === 'touchend' && ev.touches.length) return;
+    try { alca.releasePointerCapture(arrasto.id); } catch (x) {}
     arrasto = null;
-    window.removeEventListener('pointermove', mover);
+    window.removeEventListener('pointermove', moverP);
     window.removeEventListener('pointerup', soltar);
     window.removeEventListener('pointercancel', soltar);
+    alca.removeEventListener('touchmove', moverT);
+    alca.removeEventListener('touchend', soltar);
+    alca.removeEventListener('touchcancel', soltar);
     tempo = Math.max(0, alvo.tempo());
     atualizarTudo();
   };
-  window.addEventListener('pointermove', mover);
+  window.addEventListener('pointermove', moverP);
   window.addEventListener('pointerup', soltar);
   window.addEventListener('pointercancel', soltar);
+  if (toque) {
+    // O toque fica preso na alça: por isso a alça NÃO é refeita durante o arraste (ver desenharLinha).
+    alca.addEventListener('touchmove', moverT, { passive: false });
+    alca.addEventListener('touchend', soltar);
+    alca.addEventListener('touchcancel', soltar);
+  }
   requestAnimationFrame(correrNaBeira);
 }
 
@@ -834,7 +867,7 @@ function deslizador(rotulo, min, max, passo, valor, mostrar, aoMudar, grupo) {
   const val = h('b', {}, mostrar(valor));
   const inp = h('input', {
     type: 'range', min, max, step: passo, value: valor,
-    oninput: () => { const v = Number(inp.value); val.textContent = mostrar(v); mudar(() => aoMudar(v), grupo || rotulo); }
+    oninput: () => { const v = Number(inp.value); val.textContent = mostrar(v); mudar(() => aoMudar(v), grupo || rotulo, { semPainel: true }); }
   });
   return h('label', { class: 'desl' }, h('span', {}, rotulo, ' ', val), inp);
 }
@@ -903,10 +936,52 @@ function pDuracao(c, el) {
   }
 }
 
+// Velocidade: barra de arrastar com os pontos marcados; 1× no meio.
+const VELOC_MIN = 0.25, VELOC_MAX = 2; // no máximo 2× (pedido do Anderson)
+const PONTOS_VEL = [0.25, 0.5, 0.75, 1, 1.5, 2];
+// 1× fica bem no meio: metade esquerda de 0,25× a 1×, metade direita de 1× a 2× (cada lado linear).
+const velParaPos = (v) => (v <= 1 ? (v - VELOC_MIN) / (1 - VELOC_MIN) * 0.5 : 0.5 + (v - 1) / (VELOC_MAX - 1) * 0.5); // 0…1
+const posParaVel = (p) => (p <= 0.5 ? VELOC_MIN + (p / 0.5) * (1 - VELOC_MIN) : 1 + ((p - 0.5) / 0.5) * (VELOC_MAX - 1));
+const textoVel = (v) => (v === 1 ? 'Normal (1×)' : String(Math.round(v * 100) / 100).replace('.', ',') + '×');
+
 function pVel(c, el) {
-  el.append(chips([[0.25, '0,25×'], [0.5, '0,5×'], [0.75, '0,75×'], [1, 'Normal'], [1.5, '1,5×'], [2, '2×'], [3, '3×'], [4, '4×']],
-    c.vel || 1, (v) => mudar(() => { c.vel = v; })));
-  el.append(h('p', { class: 'dica' }, 'Câmera lenta: 0,5× ou menos. Acelerado: 2× ou mais. O som acompanha a velocidade.'));
+  const val = h('b', { class: 'vel-valor' }, textoVel(c.vel || 1));
+  const inp = h('input', { type: 'range', class: 'vel-barra', min: 0, max: 1000, step: 1, value: Math.round(velParaPos(c.vel || 1) * 1000), 'aria-label': 'Velocidade' });
+  const trilho = h('div', { class: 'vel-trilho' }, h('span', { class: 'vel-cheio' }));
+  // 100% = largura do trilho (já sem as pontas da bolinha)
+  const encher = () => { trilho.firstChild.style.width = `calc(12px + 100% * ${Number(inp.value) / 1000})`; };
+  const aplicar = (v) => {
+    inp.value = Math.round(velParaPos(v) * 1000);
+    encher();
+    val.textContent = textoVel(v);
+    pontos.querySelectorAll('.vel-ponto').forEach((b) => b.classList.toggle('on', Number(b.dataset.v) === v));
+    // Chegou num ponto: a bolinha dele acende de leve e apaga (só na chegada, não a cada movimento).
+    if (PONTOS_VEL.includes(v) && v !== ultimoPonto) {
+      const bol = pontos.querySelector(`.vel-ponto[data-v="${v}"] i`);
+      if (bol) { bol.classList.remove('pisca'); void bol.offsetWidth; bol.classList.add('pisca'); }
+    }
+    ultimoPonto = PONTOS_VEL.includes(v) ? v : null;
+    mudar(() => { c.vel = v; }, 'vel', { semPainel: true });
+  };
+  let ultimoPonto = c.vel || 1;
+  inp.addEventListener('input', () => {
+    const p = Number(inp.value) / 1000;
+    let v = Math.round(posParaVel(p) * 100) / 100;
+    // Perto de um ponto, gruda nele.
+    for (const pt of PONTOS_VEL) if (Math.abs(velParaPos(pt) - p) < 0.025) v = pt;
+    aplicar(v);
+  });
+  const pontos = h('div', { class: 'vel-pontos' }, PONTOS_VEL.map((pt) => h('button', {
+    type: 'button', class: 'vel-ponto' + (pt === (c.vel || 1) ? ' on' : ''), 'data-v': pt,
+    style: `left: calc(12px + (100% - 24px) * ${velParaPos(pt).toFixed(4)})`,
+    onclick: () => aplicar(pt)
+  }, h('i'), h('small', {}, String(pt).replace('.', ',') + '×'))));
+  el.append(
+    h('div', { class: 'vel-topo' }, h('span', {}, 'Lento'), val, h('span', {}, 'Rápido')),
+    h('div', { class: 'vel-caixa' }, trilho, pontos, inp),
+    h('p', { class: 'dica' }, 'Arraste a barra ou toque num ponto. O som acompanha a velocidade.')
+  );
+  encher();
 }
 
 function pSom(c, el) {
@@ -939,7 +1014,7 @@ function pTexto(c, el) {
   const tx = c.texto || { txt: '', pos: 'baixo', cor: '#ffffff', tam: 7, estilo: 'contorno' };
   const area = h('textarea', {
     rows: 2, placeholder: 'Escreva o texto que aparece neste clipe', value: tx.txt,
-    oninput: () => mudar(() => { c.texto = { ...tx, txt: area.value }; tx.txt = area.value; }, 'texto')
+    oninput: () => mudar(() => { c.texto = { ...tx, txt: area.value }; tx.txt = area.value; }, 'texto', { semPainel: true })
   });
   el.append(area,
     chips([['topo', 'Em cima'], ['meio', 'No meio'], ['baixo', 'Embaixo']], tx.pos, (v) => mudar(() => { c.texto = { ...tx, pos: v }; })),
@@ -1457,11 +1532,12 @@ function desenharTopo() {
   $('qualidade').firstChild.textContent = ({ 720: '720p', 1080: '1080p', 1440: '2K', 2160: '4K' }[lado] || '4K') + ' ';
 }
 
-function atualizarTudo() {
+/** op.semPainel: não refaz o painel (o controle que o dedo está mexendo continua o mesmo). */
+function atualizarTudo(op) {
   desenharTopo();
   desenharLinha();
   desenharBarra();
-  desenharPainel();
+  if (!(op && op.semPainel)) desenharPainel();
   pedirDesenho();
 }
 
@@ -1732,6 +1808,7 @@ async function iniciar() {
   projeto.clipes = projeto.clipes.filter((c) => c.tipo === 'colagem' || midias.has(c.midia));
   projeto.clipes.forEach((c) => { if (c.tipo === 'colagem') c.celulas = c.celulas.map((x) => (x && midias.has(x.midia) ? x : null)); });
   migrarMusica();
+  projeto.clipes.forEach((c) => { if ((c.vel || 1) > 2) c.vel = 2; }); // velocidade máxima agora é 2×
   atualizarTudo();
 }
 
