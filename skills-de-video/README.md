@@ -5,7 +5,7 @@
 As skills de verdade ficam em `.claude/skills/<nome>/`, porque é só ali que o Claude as reconhece. Esta pasta é só o
 guia; nada aqui precisa ser movido. As ferramentas de apoio (motores, exemplos, sons) ficam em `ferramentas/`.
 
-Total: **33 skills**: 32 de vídeo, instaladas entre nov/2026 e esta data, mais a `anatomy`, que já existia.
+Total: **32 skills**: 31 de vídeo, instaladas entre nov/2026 e esta data, mais a `anatomy`, que já existia.
 
 ---
 
