@@ -355,6 +355,7 @@ function desenhar() {
 
 // Tocar: os <video> andam sozinhos e a tela desenha o que eles mostram.
 let t0 = 0, base = 0;
+let pararEm = null; // para sozinho neste tempo (ver a transição)
 function tocar() {
   const l = linha();
   if (!l.itens.length) return;
@@ -368,6 +369,7 @@ function tocar() {
 
 function pausar() {
   tocando = false;
+  pararEm = null;
   for (const el of players.values()) el.pause();
   for (const el of audiosEl.values()) el.pause();
   porIcone('play', 'tocar');
@@ -379,7 +381,8 @@ function passo() {
   if (!tocando) return;
   const l = linha();
   tempo = base + (performance.now() - t0) / 1000;
-  if (tempo >= l.total) { tempo = l.total; pausar(); return; }
+  if (tempo >= l.total) { tempo = l.total; pararEm = null; pausar(); return; }
+  if (pararEm != null && tempo >= pararEm) { pararEm = null; pausar(); return; }
   const ativos = new Set();
   for (const a of ativosEm(l, tempo)) {
     for (const f of fontesDoClipe(a.c)) {
@@ -534,7 +537,7 @@ function desenharLinha() {
         type: 'button', class: 'junta' + (tr !== 'corte' ? ' on' : ''), title: TRANSICOES[tr],
         style: `left:${m0 + (it.ini + it.dur - it.sobreSaida / 2) * PX}px`,
         onclick: () => abrirFerramenta(c, 'trans')
-      }, tr !== 'corte' ? '⋈' : '|'));
+      }, SIMBOLO_TRANS[tr] || '⋈'));
     }
   });
   // Música: cada trecho na faixa verde (toque para escolher, alças para cortar)
@@ -815,7 +818,7 @@ function desenharPainel() {
     return;
   }
   p.hidden = !(painelAberto && c);
-  if (p.hidden) return;
+  if (p.hidden) { $('painelCorpo').textContent = ''; return; } // limpa (e para as animações das telinhas)
   const lista = abas(c);
   if (!lista.includes(aba)) aba = lista[0];
   $('painelTitulo').textContent = NOMES[aba][1];
@@ -960,12 +963,108 @@ function pGirar(c, el) {
   );
 }
 
+const SIMBOLO_TRANS = {
+  corte: '|', dissolver: '◐', preto: '●', branco: '○', deslizar: '⇠', deslizarDir: '⇢', subir: '⇡', empurrar: '⇇',
+  zoom: '⊕', zoomFora: '⊖', cortina: '▌', cortinaCima: '▄', circulo: '◯', persiana: '▥', desfoque: '◌', girar: '↻'
+};
+
+/**
+ * Telinhas quadradas do painel de transições: cada uma toca a animação da sua transição sem parar
+ * (quadro "A" passando para "B"), desenhada pelo próprio motor — igual ao que sai no vídeo.
+ */
+const TELINHA = 56;            // tamanho na tela (px)
+const CICLO = 2.2;             // segundos de cada volta: 0,5 s de "A", 1,2 s de passagem (em câmera lenta) e 0,5 s de "B"
+const telinhas = new Set();    // { canvas, k }
+let telinhasRodando = false;
+let quadrosAB = null;
+
+// Foto de amostra das telinhas (enviada pelo Anderson): o pôr do sol passando para a asa do avião.
+const fotosAmostra = ['amostra-a.jpg', 'amostra-b.jpg'].map((src) => {
+  const im = new Image();
+  im.onload = () => { quadrosAB = null; }; // refaz os quadros quando a foto chegar
+  im.src = src;
+  return im;
+});
+
+function quadrosDeAmostra(n) {
+  if (quadrosAB && quadrosAB.n === n) return quadrosAB;
+  const cria = (im, cor) => {
+    const c = document.createElement('canvas'); c.width = n; c.height = n;
+    const x = c.getContext('2d');
+    if (im.complete && im.naturalWidth) x.drawImage(im, 0, 0, n, n);
+    else { x.fillStyle = cor; x.fillRect(0, 0, n, n); }
+    return c;
+  };
+  quadrosAB = { n, A: cria(fotosAmostra[0], '#f59e0b'), B: cria(fotosAmostra[1], '#1e3a8a') };
+  return quadrosAB;
+}
+
+function cenaTelinha(k) {
+  const ms = new Map([['a', { tipo: 'foto', w: 1, h: 1 }], ['b', { tipo: 'foto', w: 1, h: 1 }]]);
+  const pr = { formato: '1:1', fundo: 'preto', clipes: [
+    { id: 'x1', tipo: 'foto', midia: 'a', dur: 3, ajuste: 'preencher', kenBurns: false, filtro: 'nenhum', transicao: k },
+    { id: 'x2', tipo: 'foto', midia: 'b', dur: 3, ajuste: 'preencher', kenBurns: false, filtro: 'nenhum', transicao: 'corte' }] };
+  return { pr, ms, l: linhaDoTempo(pr, ms) };
+}
+
+function telinhaTransicao(k) {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const n = Math.round(TELINHA * dpr);
+  const canvas = h('canvas', { class: 'trans-op__tela', width: n, height: n, 'aria-hidden': 'true' });
+  canvas.style.width = canvas.style.height = TELINHA + 'px';
+  telinhas.add({ canvas, k, n, cena: cenaTelinha(k) });
+  if (!telinhasRodando) { telinhasRodando = true; requestAnimationFrame(rodarTelinhas); }
+  return canvas;
+}
+
+function rodarTelinhas(agora) {
+  for (const tl of telinhas) if (!tl.canvas.isConnected) telinhas.delete(tl);
+  if (!telinhas.size) { telinhasRodando = false; return; }
+  const fase = (agora / 1000) % CICLO;
+  for (const tl of telinhas) {
+    const { pr, ms, l } = tl.cena;
+    const ab = quadrosDeAmostra(tl.n);
+    // Trecho da passagem no tempo do vídeo de amostra (o clipe "A" acaba em 3 s).
+    const so = l.itens[0].sobreSaida;
+    const ta = so ? 3 - so : 3 - 0.3, tb = so ? 3 : 3 + 0.3;
+    const t = fase < 0.5 ? ta - 0.01 : fase < 1.7 ? ta + (fase - 0.5) / 1.2 * (tb - ta) : tb + 0.01;
+    const ctx = tl.canvas.getContext('2d');
+    if (tl.k === 'corte') {
+      ctx.drawImage(fase < 1.1 ? ab.A : ab.B, 0, 0);
+      continue;
+    }
+    desenharQuadro(ctx, tl.n, tl.n, pr, l, ms, t, (ch) => ({ img: ch.startsWith('x1') ? ab.A : ab.B, w: tl.n, h: tl.n }));
+  }
+  requestAnimationFrame(rodarTelinhas);
+}
+
+/** Toca só o pedaço da passagem para ver a transição. */
+function verTransicao(c) {
+  const it = linha().itens.find((x) => x.c.id === c.id);
+  if (!it) return;
+  if (tocando) pausar();
+  tempo = Math.max(it.ini, it.ini + it.dur - (it.sobreSaida || 0) - 0.8);
+  pararEm = it.ini + it.dur + 0.9;
+  tocar();
+}
+
 function pTrans(c, el) {
   const l = linha();
   const it = l.itens.find((x) => x.c.id === c.id);
   if (!it || it.i === l.itens.length - 1) { el.append(h('p', { class: 'dica' }, 'A transição é a passagem deste clipe para o próximo. Este é o último clipe.')); return; }
-  el.append(chips(Object.entries(TRANSICOES), c.transicao || 'corte', (v) => mudar(() => { c.transicao = v; tempo = Math.max(0, it.ini + it.dur - 1); })));
-  el.append(h('button', { type: 'button', class: 'btn btn--sec', onclick: () => mudar(() => projeto.clipes.forEach((x) => { x.transicao = c.transicao; })) }, 'Usar em todos'));
+  const atual = c.transicao || 'corte';
+  el.append(h('div', { class: 'trans-grade' }, Object.entries(TRANSICOES).map(([k, nome]) => h('button', {
+    type: 'button', class: 'trans-op' + (k === atual ? ' on' : ''),
+    onclick: () => { mudar(() => { c.transicao = k; }); if (k !== 'corte') verTransicao(c); }
+  }, telinhaTransicao(k), h('small', {}, nome)))));
+  el.append(h('div', { class: 'linha-btn' },
+    h('button', { type: 'button', class: 'btn btn--sec', onclick: () => verTransicao(c) }, '▶ Ver de novo'),
+    h('button', { type: 'button', class: 'btn btn--sec', onclick: () => mudar(() => projeto.clipes.forEach((x) => { x.transicao = c.transicao; })) }, 'Usar em todos')));
+  el.append(h('button', { type: 'button', class: 'btn btn--sec', onclick: () => {
+    const lista = Object.keys(TRANSICOES).filter((k) => k !== 'corte');
+    mudar(() => projeto.clipes.forEach((x) => { x.transicao = lista[Math.floor(Math.random() * lista.length)]; }));
+    aviso('Uma transição diferente em cada passagem.');
+  } }, '🎲 Sortear em todos'));
 }
 
 function pMais(c, el) {
