@@ -152,6 +152,15 @@ Ferramenta HyperFrames testada aqui: renderizou o exemplo inicial (8 s) em 15 s.
 |---|---|
 | `anatomy` | Figuras isométricas em SVG, interativas, para explicar ideias técnicas. Foi usada no Hangar Escola (tubo de Pitot do AF447). |
 
+
+---
+
+## Avaliadas e não instaladas
+
+| Projeto | Por quê | O que faz |
+|---|---|---|
+| [xiaotianfotos/HyperFrames-RenderKit](https://github.com/xiaotianfotos/HyperFrames-RenderKit) | **Ainda sem licença** (o autor avisa que não concede licença por enquanto), então o código não foi copiado. E só roda com um Chromium/Electron compilado à parte: 80 GB de disco, 32 GB de RAM e placa Intel com VAAPI, o que não é possível nesta nuvem. | Render acelerado e determinístico de projetos HyperFrames em 4K/60 fps, com checagem de riscos antes de renderizar (`hf-render check/plan/run`) e a skill `hyperframes-render-optimization`. Reavaliar quando tiver licença; serve para um computador Linux com placa Intel. Para renderizar aqui, o HyperFrames normal do Herk Edit Kit já funciona. |
+
 ---
 
 ## Observações deste ambiente
