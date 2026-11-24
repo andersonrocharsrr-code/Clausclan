@@ -5,7 +5,7 @@
 As skills de verdade ficam em `.claude/skills/<nome>/`, porque é só ali que o Claude as reconhece. Esta pasta é só o
 guia; nada aqui precisa ser movido. As ferramentas de apoio (motores, exemplos, sons) ficam em `ferramentas/`.
 
-Total: **47 skills**: 46 de vídeo, instaladas entre nov/2026 e esta data, mais a `anatomy`, que já existia.
+Total: **48 skills**: 47 de vídeo, instaladas entre nov/2026 e esta data, mais a `anatomy`, que já existia.
 
 ---
 
@@ -146,7 +146,15 @@ Ferramenta HyperFrames testada aqui: renderizou o exemplo inicial (8 s) em 15 s.
 | `gsap` | Referência da biblioteca de animação GSAP usada pelo HyperFrames. |
 | `short-form-video` | Só para manter os Shorts antigos de aula do kit (não vieram); para Shorts novos use `short-form-edit`. |
 
-## 10. Já existia antes
+## 10. LottieFiles — princípios de motion design
+
+Origem: [LottieFiles/motion-design-skill](https://github.com/LottieFiles/motion-design-skill) · MIT.
+
+| Skill | Para que serve |
+|---|---|
+| `motion-design-lottie` | Pensar como diretor de animação antes de programar: tempo e curvas certos para cada caso, coreografia de vários elementos, emoção e personalidade da marca, os 12 princípios da Disney adaptados, entradas e saídas, estados (carregando, sucesso, erro) e uma lista de conferência de qualidade. Serve para qualquer motor. Renomeada de `motion-design` (conflito com o claude-motion). O Creator MCP, serviço pago da LottieFiles para exportar Lottie, não foi conectado. |
+
+## 11. Já existia antes
 
 | Skill | Para que serve |
 |---|---|
