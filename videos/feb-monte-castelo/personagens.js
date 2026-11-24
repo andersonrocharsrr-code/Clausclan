@@ -176,3 +176,29 @@ function caca(x, y, s, o = {}) { const t = o.t || 0; c.save(); c.translate(x, y)
   // contorno dourado de luz no dorso
   c.strokeStyle = 'rgba(240,212,138,.55)'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(-150, -18); c.lineTo(-40, -30); c.lineTo(20, -35); c.stroke(); c.beginPath(); c.moveTo(96, -36); c.lineTo(140, -34); c.lineTo(178, -30); c.stroke();
   c.restore() }
+
+// ===== Distintivo da FEB: a cobra fumando (desenhado nas coordenadas da foto de referência, 685×840, centro 782,535) =====
+function cobra(x, y, s, t, fumaca = 1) { c.save(); c.translate(x, y); c.scale(s * .407, s * .407); c.translate(-782, -535); c.lineJoin = 'round'; c.lineCap = 'round';
+  const esc = [[480, 116], [1092, 116], [1128, 160], [1128, 800], [1000, 958], [560, 958], [436, 820], [436, 160]];
+  c.save(); c.shadowColor = 'rgba(0,0,0,.5)'; c.shadowBlur = 40; c.shadowOffsetY = 14; poly(esc, '#C8202E'); c.restore();
+  const dent = [[496, 142], [1076, 142], [1100, 172], [1100, 790], [988, 930], [572, 930], [464, 808], [464, 172]]; poly(dent, '#F2C417');
+  c.save(); c.beginPath(); dent.forEach(([a, b], i) => i ? c.lineTo(a, b) : c.moveTo(a, b)); c.closePath(); c.clip();
+  poly([[440, 120], [1120, 120], [1120, 282], [440, 282]], '#2A63D6'); rr(440, 282, 700, 16, 0, '#C8202E');
+  poly([[440, 300], [1120, 300], [1120, 380], [440, 520]], 'rgba(255,255,255,.08)'); // brilho do esmalte
+  c.restore();
+  c.font = '800 120px Arial, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#FFFFFF'; c.fillText('BRASIL', 790, 254);
+  // corpo da cobra em S com laço embaixo
+  const corpo = () => { c.beginPath(); c.moveTo(612, 890); c.bezierCurveTo(760, 876, 1000, 890, 1000, 770); c.bezierCurveTo(1000, 640, 850, 592, 700, 592); c.bezierCurveTo(520, 592, 470, 720, 560, 792); c.bezierCurveTo(650, 860, 810, 808, 830, 690); c.bezierCurveTo(852, 570, 722, 470, 722, 392); c.bezierCurveTo(722, 312, 822, 300, 880, 372) };
+  corpo(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 50; c.stroke(); corpo(); c.strokeStyle = '#2FA83A'; c.lineWidth = 40; c.stroke(); corpo(); c.strokeStyle = 'rgba(150,230,120,.55)'; c.lineWidth = 10; c.stroke();
+  c.beginPath(); c.moveTo(612, 890); c.lineTo(598, 896); c.strokeStyle = '#1D5E1E'; c.lineWidth = 14; c.stroke(); // ponta do rabo
+  // cabeça apontando para baixo à direita, língua vermelha e olho
+  c.save(); c.translate(912, 412); c.rotate(.85); c.beginPath(); c.ellipse(0, 0, 50, 28, 0, 0, 7); c.fillStyle = '#2FA83A'; c.fill(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 5; c.stroke(); c.restore();
+  c.beginPath(); c.ellipse(906, 397, 11, 9, 0, 0, 7); c.fillStyle = '#fff'; c.fill(); c.lineWidth = 3; c.stroke(); disc(908, 398, 4.5, '#111');
+  c.strokeStyle = '#D23A2A'; c.lineWidth = 8; c.beginPath(); c.moveTo(938, 452); c.quadraticCurveTo(950, 470, 966, 476); c.stroke();
+  // cachimbo
+  c.strokeStyle = '#8A3412'; c.lineWidth = 14; c.beginPath(); c.moveTo(944, 456); c.quadraticCurveTo(968, 498, 992, 512); c.stroke();
+  c.beginPath(); c.moveTo(990, 488); c.quadraticCurveTo(988, 560, 1020, 556); c.quadraticCurveTo(1050, 548, 1046, 492); c.closePath(); c.fillStyle = '#D9662A'; c.fill(); c.strokeStyle = '#7A2C0E'; c.lineWidth = 4; c.stroke();
+  c.beginPath(); c.ellipse(1018, 491, 28, 8, 0, 0, 7); c.fillStyle = '#4A1C08'; c.fill(); poly([[1000, 500], [1012, 500], [1010, 540], [1002, 534]], 'rgba(255,220,160,.35)');
+  // fumaça em fitas cinzas ondulando
+  if (fumaca > 0) { c.lineWidth = 16; for (let k = 0; k < 3; k++) { c.globalAlpha = fumaca * (.85 - k * .2); c.strokeStyle = k ? '#C9CDD2' : '#E2E5E8'; c.beginPath(); for (let i = 0; i <= 20; i++) { const u = i / 20, yy = 478 - u * (170 + k * 20), xx = 1020 + k * 14 + sin(u * 7 - t * 4 + k) * 18 * u + u * 20; i ? c.lineTo(xx, yy) : c.moveTo(xx, yy) } c.stroke() } c.globalAlpha = 1 }
+  c.restore() }

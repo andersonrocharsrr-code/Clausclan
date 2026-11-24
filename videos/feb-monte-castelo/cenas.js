@@ -25,9 +25,9 @@ S(5, (tl, t) => { papel(t); cartao(150, 420, 780, 940, stepR(tl, 18, .9)); txt('
   const u = clamp((tl - .5) / 1.0), [ax, ay] = caminho(tl, [[0, 950, 1500], [.2, 330, 1240]]); c.strokeStyle = K.azul; c.lineWidth = 6; c.lineCap = 'round'; c.beginPath(); for (let k = 0; k <= 40 * u; k++) { const x = 330 + k * 9, y = 1240 + sin(k * .7) * 18 - k * .8; k ? c.lineTo(x, y) : c.moveTo(x, y) } c.stroke();
   const [sx, sy] = u > 0 && u < 1 ? [330 + 40 * u * 9, 1240 + sin(40 * u * .7) * 18 - 40 * u * .8] : [ax, ay]; cursor(sx, sy, tl, [.5], {t0: .05}); carimbo(tl, 1.7, 'GUERRA', 690, 1240, 70, K.vermelho, -.18) });
 // 6 — "mais fácil uma cobra fumar"
-S(6, (tl, t) => { papel(t); rot(tl, .1, 'O QUE DIZIAM NA ÉPOCA', 540, 420, K.tinta2); cobra(470, 980, 2.0, t, 0); sobe(tl, .5, '"Mais fácil uma', 540, 1340, 70, K.tinta, {serif: 1}); sobe(tl, .75, 'cobra fumar..."', 540, 1430, 70, K.tinta, {serif: 1}) });
+S(6, (tl, t) => { papel(t); rot(tl, .1, 'O QUE DIZIAM NA ÉPOCA', 540, 420, K.tinta2); cobra(540, 880, 1.9, t, 0); sobe(tl, .5, '"Mais fácil uma', 540, 1340, 70, K.tinta, {serif: 1}); sobe(tl, .75, 'cobra fumar..."', 540, 1430, 70, K.tinta, {serif: 1}) });
 // 7 — a cobra fumou (o cursor acende o cachimbo)
-S(7, (tl, t) => { papel(t); const [ax, ay] = caminho(tl, [[0, 950, 1400], [.1, 790, 770]]); cursor(ax, ay, tl, [.45]); cobra(470, 980, 2.0, t, clamp((tl - .45) / .3)); if (tl > .45) disc(788, 762, 18 * stepR(tl - .45, 30, .6), '#FF8A2A'); carimbo(tl, .9, 'A COBRA FUMOU', 540, 1380, 74, K.verde, -.08) });
+S(7, (tl, t) => { papel(t); const [ax, ay] = caminho(tl, [[0, 950, 1400], [.1, 720, 862]]); cursor(ax, ay, tl, [.45]); cobra(540, 880, 1.9, t, clamp((tl - .45) / .3)); if (tl > .45) disc(716, 852, 18 * stepR(tl - .45, 30, .6), '#FF8A2A'); carimbo(tl, .9, 'A COBRA FUMOU', 540, 1380, 74, K.verde, -.08) });
 // 8 — mais de 25 mil brasileiros da FEB
 S(8, (tl, t) => { papel(t); const n = 25834 * out(tl / 2.2); txt(fmt(n), 540, 560, 210, K.verde, {serif: 1}); rot(tl, .2, 'PRACINHAS DA FORÇA EXPEDICIONÁRIA', 540, 650, K.tinta2, 30);
   for (let i = 0; i < 150; i++) { const r = Math.floor(i / 15), col = i % 15, u = stepR(tl - .2 - (r * 15 + col) * .012, 24, .8); if (u > 0) { c.save(); c.globalAlpha = u; iconeSoldado(120 + col * 60, 840 + r * 66 + (1 - u) * 20, .32, i < 150 * min(1, tl / 2.2) ? K.tinta : K.cinza, false); c.restore() } } rot(tl, 1.3, 'CADA FIGURA ≈ 170 SOLDADOS', 540, 1560 - 120, K.tinta2, 26) });
@@ -100,7 +100,7 @@ S(32, (tl, t) => { papel(t); for (let i = 0; i < 450; i++) { const col = i % 25,
 // 33 — o Brasil saiu da guerra com uma vitória
 S(33, (tl, t) => { papel(t); bandeira(320, 520, 440, t * 3); sobe(tl, .3, 'Uma vitória', 540, 1080, 120, K.tinta, {serif: 1}); sobe(tl, .55, 'que ninguém esperava', 540, 1190, 74, K.verde, {serif: 1}) });
 // 34 — final: A cobra fumou (o cursor entrega a medalha)
-S(34, (tl, t) => { papel(t); cobra(480, 860, 2.1, t, 1); const u = stepR(tl - .6, 18, .7); if (u > 0) { c.save(); c.translate(810, 1120); c.scale(u, u); disc(0, 0, 70, K.amarelo); disc(0, 0, 52, '#E2A90E'); txt('FEB', 0, 16, 46, K.tinta); c.restore(); linha(810, 1050, 810, 980, K.verde, 18) }
+S(34, (tl, t) => { papel(t); cobra(460, 840, 1.7, t, 1); const u = stepR(tl - .6, 18, .7); if (u > 0) { c.save(); c.translate(810, 1120); c.scale(u, u); disc(0, 0, 70, K.amarelo); disc(0, 0, 52, '#E2A90E'); txt('FEB', 0, 16, 46, K.tinta); c.restore(); linha(810, 1050, 810, 980, K.verde, 18) }
   cursor(...caminho(tl, [[0, 1000, 1600], [.3, 830, 1150]]), tl, [.6]); sobe(tl, .9, 'A cobra fumou.', 540, 1400, 110, K.tinta, {serif: 1}); txt('BRASIL NA 2ª GUERRA · 1942 — 1945', 540, 1480, 26, K.tinta2, {w: 700, ls: 5, a: clamp((tl - 1.4) / .3)}) });
 
 // ---------- cartões de capítulo (por cima do início da cena) ----------
