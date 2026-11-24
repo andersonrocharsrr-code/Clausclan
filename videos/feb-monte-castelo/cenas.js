@@ -116,5 +116,5 @@ window.seek = async (t) => { const i = max(0, CUTS.findIndex((a, k) => t >= a &&
   const e = 1 - out(tl / .18); c.translate(e * 40 * (i % 2 ? -1 : 1), 0); (SH[i] || (() => papel(t)))(tl, t); c.restore(); const vg = c.createRadialGradient(540, 860, 500, 540, 900, 1250); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.5)'); c.fillStyle = vg; c.fillRect(0, 0, W, H); capitulo(i, tl); legenda(t); const q = rng(Math.floor(t * 12) + 1), ox = q() * 512 | 0, oy = q() * 512 | 0; for (let x = -ox; x < W; x += 512) for (let y = -oy; y < H; y += 512) c.drawImage(GRAO, x, y);
   const f = max(1 - clamp(t / .25), clamp((t - (DUR - .5)) / .5)); if (f > 0) { c.fillStyle = `rgba(0,0,0,${f})`; c.fillRect(0, 0, W, H) } };
 window.DUR = DUR;
-(async () => { await document.fonts.load('800 40px Fira'); await document.fonts.load('600 40px Fira'); await document.fonts.ready; window.READY = true;
+(async () => { await DISTINTIVO.decode(); await document.fonts.load('800 40px Fira'); await document.fonts.load('600 40px Fira'); await document.fonts.ready; window.READY = true;
   if (location.search.includes('render')) return; const cv = document.getElementById('c'); cv.style.height = '100vh'; let t0 = performance.now(); (function loop(now) { seek(((now - t0) / 1000) % DUR); requestAnimationFrame(loop) })(t0) })();

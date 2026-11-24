@@ -218,3 +218,11 @@ function cobra(x, y, s, t, fumaca = 1) { c.save(); c.translate(x, y); c.scale(s 
   // fumaça em fitas cinzas ondulando
   if (fumaca > 0) { c.lineWidth = 16; for (let k = 0; k < 3; k++) { c.globalAlpha = fumaca * (.85 - k * .2); c.strokeStyle = k ? '#C9CDD2' : '#E2E5E8'; c.beginPath(); for (let i = 0; i <= 20; i++) { const u = i / 20, yy = 492 - u * (170 + k * 20), xx = 1020 + k * 14 + sin(u * 7 - t * 4 + k) * 18 * u + u * 20; i ? c.lineTo(xx, yy) : c.moveTo(xx, yy) } c.stroke() } c.globalAlpha = 1 }
   c.restore() }
+
+// ===== Distintivo da FEB usando a foto real que o Anderson mandou (sem fundo e sem a fumaça parada);
+// a fumaça é animada por cima, saindo do cachimbo. Coordenadas da foto original (recorte começa em 430,110). =====
+const DISTINTIVO = new Image(); DISTINTIVO.src = 'distintivo.png';
+function cobra(x, y, s, t, fumaca = 1) { c.save(); c.translate(x, y); c.scale(s * .407, s * .407); c.translate(-782, -535);
+  c.save(); c.shadowColor = 'rgba(0,0,0,.5)'; c.shadowBlur = 40; c.shadowOffsetY = 14; c.drawImage(DISTINTIVO, 430, 110); c.restore();
+  if (fumaca > 0) { c.lineCap = 'round'; c.lineWidth = 16; for (let k = 0; k < 3; k++) { c.globalAlpha = fumaca * (.85 - k * .2); c.strokeStyle = k ? '#C9CDD2' : '#E2E5E8'; c.beginPath(); for (let i = 0; i <= 20; i++) { const u = i / 20, yy = 480 - u * (170 + k * 20), xx = 1022 + k * 12 + sin(u * 7 - t * 4 + k) * 18 * u + u * 20; i ? c.lineTo(xx, yy) : c.moveTo(xx, yy) } c.stroke() } c.globalAlpha = 1 }
+  c.restore() }
