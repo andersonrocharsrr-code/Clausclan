@@ -5,9 +5,9 @@ import {
   FORMATOS, RESOLUCOES, FILTROS, COLAGENS, TRANSICOES, CORES_TEXTO,
   analisarMidia, tiras, linhaDoTempo, ativosEm, tempoOrigem, fontesDoClipe, desenharQuadro,
   tamanhoSaida, taxaVideo, exportarVideo, maiorResolucao, converter, fotoDoQuadro, duracaoClipe,
-  audioDaFala, agruparLegendas, trocarTextoLegenda, ESTILO_LEGENDA
+  audioDaFala, agruparLegendas, trocarTextoLegenda, ESTILO_LEGENDA, miniatura
 } from './motor.js';
-import { guardarMidia, lerMidias, apagarMidia, guardarProjeto, lerProjeto } from './armazem.js';
+import { guardarMidia, lerMidias, apagarMidia, listarProjetos, lerProjetoId, guardarProjetoId, apagarProjetoId, todosOsProjetos } from './armazem.js';
 
 const $ = (id) => document.getElementById(id);
 const Cap = window.Capacitor;
@@ -15,17 +15,20 @@ const NATIVO = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
 const plugin = (n) => (NATIVO ? (Cap.Plugins && Cap.Plugins[n]) || (Cap.registerPlugin && Cap.registerPlugin(n)) || null : null);
 const galeria = plugin('Galeria');
 const appCap = plugin('App');
+const haptics = plugin('Haptics');
 
 // ---------- Estado ----------
 
 const novoProjeto = () => ({ formato: '9:16', fundo: 'desfocado', clipes: [], audios: [], sumirMusica: true, marca: '', fadeIn: false, fadeOut: true });
-let projeto = lerProjeto() || novoProjeto();
+let projeto = novoProjeto();
+let projetoId = null;      // projeto aberto (null = tela inicial)
 const midias = new Map(); // id → { id, blob, nome, tipo, dur, w, h, temAudio, url, thumb, tiras }
 let sel = null;           // id do clipe escolhido
 let selAudio = null;      // id do trecho de música escolhido (faixa verde)
 let aba = 'cortar';       // ferramenta aberta no painel do clipe
 let painelAberto = false;
 let painelGeral = null;   // painel que não é de um clipe (ex.: 'legendas')
+let abaBarra = 'editar';  // aba de baixo: editar, audio, texto, efeitos, formato
 let tempo = 0;            // posição da prévia (s)
 let tocando = false;
 let ocupado = false;
@@ -88,22 +91,33 @@ function depoisDeTrocar() {
 let salvarT = 0;
 function salvar() {
   clearTimeout(salvarT);
-  salvarT = setTimeout(() => {
-    guardarProjeto(projeto);
-    // Arquivos que não são mais usados saem do aparelho.
-    const usados = new Set();
-    projeto.clipes.forEach((c) => fontesDoClipe(c).forEach((f) => usados.add(f.midia)));
-    (projeto.audios || []).forEach((a) => usados.add(a.midia));
-    for (const id of [...midias.keys()]) {
-      if (!usados.has(id) && !desfazer.some((d) => d.includes(id)) && !refazer.some((d) => d.includes(id))) {
-        const m = midias.get(id);
-        if (m.url) URL.revokeObjectURL(m.url);
-        midias.delete(id);
-        apagarMidia(id).catch(() => {});
-        soltarPlayer(id);
-      }
+  salvarT = setTimeout(salvarAgora, 400);
+}
+
+/** Guarda o projeto aberto (e a ficha dele na tela inicial) e apaga arquivos que nenhum projeto usa mais. */
+function salvarAgora() {
+  clearTimeout(salvarT);
+  if (!projetoId) return;
+  const c0 = projeto.clipes[0];
+  const f0 = c0 && fontesDoClipe(c0)[0];
+  guardarProjetoId(projetoId, projeto, { dur: linha().total, formato: projeto.formato, capa: f0 ? f0.midia : null });
+  const usados = new Set();
+  const marcar = (p) => {
+    (p.clipes || []).forEach((c) => fontesDoClipe(c).forEach((f) => usados.add(f.midia)));
+    (p.audios || []).forEach((a) => usados.add(a.midia));
+    if (p.musica) usados.add(p.musica.midia);
+  };
+  marcar(projeto);
+  todosOsProjetos().forEach(marcar);
+  for (const id of [...midias.keys()]) {
+    if (!usados.has(id) && !desfazer.some((d) => d.includes(id)) && !refazer.some((d) => d.includes(id))) {
+      const m = midias.get(id);
+      if (m.url) URL.revokeObjectURL(m.url);
+      midias.delete(id);
+      apagarMidia(id).catch(() => {});
+      soltarPlayer(id);
     }
-  }, 400);
+  }
 }
 
 // ---------- Ícones (desenhos próprios do app) ----------
@@ -136,6 +150,10 @@ const IC = {
   duracao: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M10 2h4"/>',
   mudo: '<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="m17 9 5 6M22 9l-5 6"/>',
   legenda: '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M7 11h3M12.5 11H17M7 15h10"/>',
+  menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+  filme: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.5v5l4-2.5z"/>',
+  adicionar: '<path d="M12 5v14M5 12h14"/>',
+  ordem: '<path d="M7 4v16M4 7l3-3 3 3M17 20V4M14 17l3 3 3-3"/>',
   mais: '<circle cx="5" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="19" cy="12" r="1.4" fill="currentColor"/>'
 };
 
@@ -554,6 +572,33 @@ function desenharLinha() {
       }, SIMBOLO_TRANS[tr] || '⋈'));
     }
   });
+  // Textos (roxo) e legendas (azul): toque para editar.
+  const tt = $('trilhaTexto');
+  tt.textContent = '';
+  let temTexto = false;
+  l.itens.forEach((it) => {
+    const c = it.c;
+    if (!c.texto || !c.texto.txt || !c.texto.txt.trim()) return;
+    temTexto = true;
+    tt.append(h('button', {
+      type: 'button', class: 'txt-chip', style: `left:${m0 + it.ini * PX + 1}px;width:${Math.max(16, it.dur * PX - 2)}px`,
+      onclick: () => { abaBarra = 'texto'; abrirFerramenta(c, 'texto'); }
+    }, 'T  ' + c.texto.txt));
+  });
+  const leg = projeto.legendas;
+  if (leg && leg.itens && !leg.oculta) {
+    for (const lg of leg.itens) {
+      const t0 = lg.palavras[0].t0, t1 = lg.palavras[lg.palavras.length - 1].t1;
+      temTexto = true;
+      tt.append(h('button', {
+        type: 'button', class: 'leg-chip', style: `left:${m0 + t0 * PX}px;width:${Math.max(12, (t1 - t0) * PX - 2)}px`,
+        onclick: () => { abaBarra = 'texto'; abrirLegendas(); }
+      }, lg.palavras.map((w) => w.p).join(' ')));
+    }
+  }
+  if (!temTexto && l.itens.length) {
+    tt.append(h('button', { type: 'button', class: 'musica-add txt-add', style: `left:${m0}px`, onclick: () => { abaBarra = 'texto'; atualizarTudo(); } }, 'T + Texto ou legenda'));
+  }
   // Música: cada trecho na faixa verde (toque para escolher, alças para cortar)
   const tm = $('trilhaMusica');
   tm.textContent = '';
@@ -564,7 +609,9 @@ function desenharLinha() {
     const el = h('div', {
       class: 'musica' + (eSel ? ' sel' : ''), role: 'button', tabindex: 0,
       style: `left:${m0 + a.pos * PX}px;width:${Math.max(12, durTrecho(a) * PX - 2)}px`,
-      onclick: () => escolherAudio(a)
+      onclick: () => escolherAudio(a),
+      // Escolhida: segurar no meio e arrastar move a música inteira.
+      onpointerdown: eSel ? (e) => { if (!e.target.closest('.alca')) arrastar(e, alvoMoverAudio(a), e.currentTarget); } : null
     }, h('span', { class: 'musica__nome' }, '♪ ' + mu.nome));
     if (eSel) {
       el.append(h('span', { class: 'alca alca--esq', onpointerdown: (e) => arrastar(e, alvoAudio(a, 'esq')), 'aria-label': 'Puxar o começo da música' }));
@@ -581,7 +628,9 @@ function desenharLinha() {
 }
 
 function escolherClipe(c, it) {
+  if (performance.now() - arrastoSoltoEm < 350) return; // acabou de arrastar
   if (tocando) pausar();
+  if (abaBarra === 'audio') abaBarra = 'editar';
   painelGeral = null;
   selAudio = null;
   if (sel === c.id) { sel = null; painelAberto = false; }
@@ -602,26 +651,89 @@ const BEIRA = 72;      // largura da faixa da beirada que faz correr (px)
 const VEL_MAX = 900;   // velocidade máxima da corrida (px/s)
 
 /** O que a alça corta: um clipe de vídeo/foto. */
+// ---------- Ímã: pontos invisíveis onde a música e os cortes grudam ----------
+
+const IMA_PX = 12;       // a esta distância (na tela) gruda
+const IMA_SAIR_PX = 20;  // grudado, só solta depois de passar disto (a "travadinha")
+let arrastoSoltoEm = 0;  // para o toque de soltar não virar um clique
+
+function vibrar() {
+  try {
+    if (haptics && haptics.impact) haptics.impact({ style: 'MEDIUM' });
+    else if (navigator.vibrate) navigator.vibrate(15);
+  } catch (e) {}
+}
+
+/** Pontos de encaixe: começo e fim de cada vídeo/foto, de cada trecho de música e a linha branca. */
+function pontosIma(semAudio, semClipesDepoisDe) {
+  const l = linha();
+  const p = new Set([0]);
+  for (const it of l.itens) {
+    if (semClipesDepoisDe != null && it.ini >= semClipesDepoisDe - 1e-6) continue;
+    p.add(it.ini); p.add(it.ini + it.dur);
+  }
+  if (semClipesDepoisDe == null) p.add(l.total);
+  for (const a of projeto.audios || []) if (a.id !== semAudio) { p.add(a.pos); p.add(a.pos + durTrecho(a)); }
+  if (arrasto && arrasto.tempo0 != null) p.add(arrasto.tempo0);
+  return [...p];
+}
+
+/**
+ * Procura o encaixe mais perto para uma ou mais bordas ({ t, desloc }).
+ * Devolve { p (ponto), desloc } ou null. Se já estava grudado, só solta depois de IMA_SAIR_PX.
+ */
+function encaixe(bordas, pontos) {
+  const a = arrasto;
+  if (a && a.ponto != null) {
+    for (const b of bordas) if (Math.abs(b.t - a.ponto) < IMA_SAIR_PX / PX) return { p: a.ponto, desloc: b.desloc };
+  }
+  let melhor = null;
+  for (const b of bordas) {
+    for (const p of pontos) {
+      const d = Math.abs(b.t - p);
+      if (d < IMA_PX / PX && (!melhor || d < melhor.d)) melhor = { p, desloc: b.desloc, d };
+    }
+  }
+  return melhor;
+}
+
+/** Linha amarela fina no ponto onde grudou (aparece só enquanto está grudado). */
+function mostrarGuia(ponto) {
+  let g = $('guiaIma');
+  if (!g) { g = h('span', { id: 'guiaIma', class: 'guia-ima' }); $('conteudo').append(g); }
+  g.hidden = ponto == null;
+  if (ponto != null) g.style.left = (meio() + ponto * PX) + 'px';
+}
+
 function alvoClipe(c, lado) {
   const orig = { ini: c.ini, fim: c.fim, dur: duracaoClipe(c, midias) };
+  const it0 = linha().itens.find((x) => x.c.id === c.id);
+  const iniTl = it0 ? it0.ini : 0; // onde o clipe começa na linha do tempo (não muda ao puxar o fim)
   const m = midias.get(c.midia);
   const lim = (v, x, y) => Math.max(x, Math.min(y, v));
   const it = () => linha().itens.find((x) => x.c.id === c.id);
   return {
     aplicar(ds) {
+      // Fim do clipe gruda na música e na linha branca.
+      let ponto = null;
+      if (lado === 'dir') {
+        const fimTl = iniTl + orig.dur + ds;
+        const enc = encaixe([{ t: fimTl, desloc: 0 }], pontosIma(null, iniTl + 0.001).filter((p) => p > iniTl + 0.2));
+        if (enc) { ds = enc.p - iniTl - orig.dur; ponto = enc.p; }
+      }
       if (c.tipo === 'video') {
         const v = c.vel || 1;
         if (lado === 'dir') {
           const max = m ? m.dur : orig.fim;
           c.fim = lim(orig.fim + ds * v, c.ini + 0.2, max);
-          return ds < 0 ? c.fim <= c.ini + 0.2 + 1e-6 : c.fim >= max - 1e-6;
+          return { noLimite: ds < 0 ? c.fim <= c.ini + 0.2 + 1e-6 : c.fim >= max - 1e-6, ponto };
         }
         c.ini = lim(orig.ini + ds * v, 0, c.fim - 0.2);
         return ds < 0 ? c.ini <= 1e-6 : c.ini >= c.fim - 0.2 - 1e-6;
       }
       const d = lado === 'dir' ? orig.dur + ds : orig.dur - ds;
-      c.dur = Math.round(Math.max(0.5, Math.min(120, d)) * 10) / 10;
-      return c.dur <= 0.5 || c.dur >= 120;
+      c.dur = ponto != null ? Math.max(0.5, d) : Math.round(Math.max(0.5, Math.min(120, d)) * 10) / 10;
+      return { noLimite: c.dur <= 0.5 || c.dur >= 120, ponto };
     },
     tempo() { const x = it(); return x ? (lado === 'dir' ? x.ini + x.dur - 0.03 : x.ini + 0.01) : tempo; },
     caixa() { const x = it(); return x ? { left: x.ini * PX + 1, width: Math.max(10, x.dur * PX - 2), dur: x.dur } : null; }
@@ -636,22 +748,47 @@ function alvoAudio(a, lado) {
   const lim = (v, x, y) => Math.max(x, Math.min(y, v));
   return {
     aplicar(ds) {
+      // As pontas da música grudam no começo/fim dos vídeos e na linha branca.
+      const borda = lado === 'dir' ? orig.pos + (orig.fim - orig.ini) + ds : orig.pos + ds;
+      const enc = encaixe([{ t: borda, desloc: 0 }], pontosIma(a.id));
+      const ponto = enc ? enc.p : null;
+      if (enc) ds += enc.p - borda;
       if (lado === 'dir') {
         a.fim = lim(orig.fim + ds, a.ini + 0.3, max);
-        return ds < 0 ? a.fim <= a.ini + 0.3 + 1e-6 : a.fim >= max - 1e-6;
+        return { noLimite: ds < 0 ? a.fim <= a.ini + 0.3 + 1e-6 : a.fim >= max - 1e-6, ponto };
       }
       // Começo: o trecho continua no mesmo lugar da música, só começa mais tarde (ou mais cedo).
       const d = lim(ds, Math.max(-orig.ini, -orig.pos), orig.fim - 0.3 - orig.ini);
       a.ini = orig.ini + d;
       a.pos = orig.pos + d;
-      return ds < 0 ? d <= Math.max(-orig.ini, -orig.pos) + 1e-6 : d >= orig.fim - 0.3 - orig.ini - 1e-6;
+      return { noLimite: ds < 0 ? d <= Math.max(-orig.ini, -orig.pos) + 1e-6 : d >= orig.fim - 0.3 - orig.ini - 1e-6, ponto };
     },
     tempo() { return lado === 'dir' ? a.pos + durTrecho(a) - 0.03 : a.pos + 0.01; },
     caixa() { return { left: a.pos * PX, width: Math.max(12, durTrecho(a) * PX - 2) }; }
   };
 }
 
-function arrastar(e, alvo) {
+/** Mover o trecho de música inteiro (segurar e arrastar a faixa verde escolhida). */
+function alvoMoverAudio(a) {
+  const orig = { pos: a.pos };
+  const tam = durTrecho(a);
+  const total = linha().total;
+  const maxPos = Math.max(0, total - 0.3); // a música não começa depois do fim do vídeo
+  return {
+    aplicar(ds) {
+      let pos = Math.min(maxPos, Math.max(0, orig.pos + ds));
+      // O começo ou o fim da música gruda no começo/fim de um vídeo ou na linha branca.
+      const enc = encaixe([{ t: pos, desloc: 0 }, { t: pos + tam, desloc: tam }], pontosIma(a.id));
+      if (enc) pos = Math.min(maxPos, Math.max(0, enc.p - enc.desloc));
+      a.pos = pos;
+      return { noLimite: (pos <= 0 && ds < 0) || (pos >= maxPos && ds > 0), ponto: enc ? enc.p : null };
+    },
+    tempo() { return Math.min(total - 0.01, a.pos + 0.01); },
+    caixa() { return { left: a.pos * PX, width: Math.max(12, tam * PX - 2) }; }
+  };
+}
+
+function arrastar(e, alvo, elArrastado) {
   e.preventDefault();
   e.stopPropagation();
   if (tocando) pausar();
@@ -661,8 +798,11 @@ function arrastar(e, alvo) {
   const toque = e.pointerType === 'touch';
   try { alca.setPointerCapture(e.pointerId); } catch (x) {}
   const xConteudo = (cx) => rolo.scrollLeft + cx - rolo.getBoundingClientRect().left;
-  arrasto = { alvo, id: e.pointerId, x: e.clientX, x0: xConteudo(e.clientX), t: performance.now(), xConteudo, el: alca.parentElement };
-  const pegar = (x) => { if (!arrasto) return; arrasto.x = x; arrasto.travado = 0; aplicarArrasto(); };
+  arrasto = {
+    alvo, id: e.pointerId, x: e.clientX, xTela0: e.clientX, x0: xConteudo(e.clientX), t: performance.now(), xConteudo,
+    el: elArrastado || alca.parentElement, tempo0: tempo, ponto: null
+  };
+  const pegar = (x) => { if (!arrasto) return; arrasto.x = x; arrasto.travado = 0; if (Math.abs(x - arrasto.xTela0) > 4) arrasto.moveu = true; aplicarArrasto(); };
   // No celular segue o próprio toque do dedo (não é cancelado pelo Android); no mouse, o ponteiro.
   const moverP = (ev) => { if (!toque && arrasto && ev.pointerId === arrasto.id) pegar(ev.clientX); };
   const moverT = (ev) => { if (ev.cancelable) ev.preventDefault(); const t = ev.touches[0]; if (t) pegar(t.clientX); };
@@ -671,7 +811,9 @@ function arrastar(e, alvo) {
     if (ev && ev.type.startsWith('pointer') && (toque || ev.pointerId !== arrasto.id)) return;
     if (ev && ev.type === 'touchend' && ev.touches.length) return;
     try { alca.releasePointerCapture(arrasto.id); } catch (x) {}
+    if (arrasto.moveu) arrastoSoltoEm = performance.now();
     arrasto = null;
+    mostrarGuia(null);
     window.removeEventListener('pointermove', moverP);
     window.removeEventListener('pointerup', soltar);
     window.removeEventListener('pointercancel', soltar);
@@ -698,8 +840,14 @@ function aplicarArrasto() {
   const a = arrasto;
   if (!a) return true;
   const ds = (a.xConteudo(a.x) - a.x0) / PX;
-  let noLimite = false;
-  mudar(() => { noLimite = a.alvo.aplicar(ds); }, 'arrasto');
+  let r = null;
+  mudar(() => { r = a.alvo.aplicar(ds); }, 'arrasto');
+  const noLimite = typeof r === 'object' && r ? r.noLimite : !!r;
+  const ponto = typeof r === 'object' && r ? r.ponto : null;
+  // Encostou certinho num ponto (começo/fim de um vídeo, da música ou a linha branca): vibra e mostra a guia.
+  if (ponto != null && ponto !== a.ponto) vibrar();
+  a.ponto = ponto;
+  mostrarGuia(ponto);
   // A prévia mostra o ponto exato onde está cortando.
   tempo = Math.max(0, a.alvo.tempo());
   pedirDesenho();
@@ -771,52 +919,86 @@ function botao(ic, nome, acao, classe) {
   return h('button', { type: 'button', class: 'ferr' + (classe ? ' ' + classe : ''), onclick: acao }, icone(ic), nome);
 }
 
+const ABAS_BAIXO = [
+  ['editar', 'cortar', 'Editar'], ['audio', 'musica', 'Áudio'], ['texto', 'texto', 'Texto'],
+  ['efeitos', 'filtro', 'Efeitos'], ['formato', 'formato', 'Formato']
+];
+
+/** Clipe que as ferramentas usam: o escolhido ou o que está embaixo da linha branca. */
+const clipeAlvo = () => clipeSel() || clipeNoTempo();
+function comClipe(fn) {
+  return () => {
+    const c = clipeAlvo();
+    if (!c) { aviso('Coloque um vídeo ou foto primeiro.'); return; }
+    fn(c);
+  };
+}
+
 function desenharBarra() {
   const b = $('barra');
   const c = clipeSel();
   const au = audioSel();
-  b.hidden = painelAberto && (!!c || !!painelGeral || !!au);
+  $('baixo').hidden = painelAberto && (!!c || !!painelGeral || !!au);
+  // Abas
+  $('abas').replaceChildren(...ABAS_BAIXO.map(([k, ic, nome]) => h('button', {
+    type: 'button', class: 'aba-b' + (k === abaBarra ? ' on' : ''),
+    onclick: () => { abaBarra = k; if (k !== 'audio') selAudio = null; atualizarTudo(); }
+  }, icone(ic), nome)));
+  // Ferramentas da aba
+  const x = clipeAlvo();
+  const ok = (k) => x && abas(x).includes(k);
   const itens = [];
-  if (au) {
-    itens.push(botao('volta', '', () => { selAudio = null; painelAberto = false; atualizarTudo(); }, 'ferr--volta'));
-    itens.push(botao('dividir', 'Dividir', dividirAudio));
-    itens.push(botao('som', 'Volume', () => { painelAberto = true; atualizarTudo(); }));
-    itens.push(botao('musica', 'Trocar', () => trocarMusica(au)));
-    itens.push(botao('duplicar', 'Duplicar', () => mudar(() => {
-      const n = { ...au, id: uid(), pos: au.pos + durTrecho(au) };
-      projeto.audios.push(n); selAudio = n.id;
-    })));
-    itens.push(botao('apagar', 'Apagar', () => mudar(() => {
-      projeto.audios = projeto.audios.filter((x) => x.id !== au.id); selAudio = null; painelAberto = false;
-    }), 'ferr--perigo'));
-  } else if (!c) {
-    itens.push(
-      botao('cortar', 'Editar', () => abrirFerramenta(clipeNoTempo(), 'cortar')),
-      botao('musica', 'Música', escolherMusica),
-      botao('texto', 'Texto', () => abrirFerramenta(clipeNoTempo(), 'texto')),
-      botao('legenda', 'Legendas', abrirLegendas),
-      botao('colagem', 'Colagem', criarColagem),
-      botao('filtro', 'Filtros', () => abrirFerramenta(clipeNoTempo(), 'filtro')),
-      botao('formato', 'Formato', abrirFormato),
-      botao('foto', 'Foto', salvarFoto),
-      botao('conversor', 'Áudio', () => mostrarPagina('ferramentas'))
-    );
-  } else {
-    itens.push(botao('volta', '', () => { sel = null; painelAberto = false; atualizarTudo(); }, 'ferr--volta'));
-    itens.push(botao('dividir', 'Dividir', dividir));
-    for (const k of abas(c)) itens.push(botao(NOMES[k][0], NOMES[k][1], () => abrirFerramenta(c, k)));
-    itens.push(botao('duplicar', 'Duplicar', () => mudar(() => {
-      const i = projeto.clipes.indexOf(c);
-      const n = JSON.parse(JSON.stringify(c)); n.id = uid();
-      projeto.clipes.splice(i + 1, 0, n); sel = n.id;
-    })));
-    itens.push(botao('apagar', 'Apagar', () => mudar(() => {
-      projeto.clipes.splice(projeto.clipes.indexOf(c), 1); sel = null; painelAberto = false;
-    }), 'ferr--perigo'));
+  if (abaBarra === 'editar') {
+    itens.push(botao('adicionar', 'Adicionar', adicionar));
+    if (x) {
+      itens.push(botao('dividir', 'Dividir', comClipe((cc) => { sel = cc.id; dividir(); })));
+      itens.push(ok('cortar') ? botao('cortar', 'Cortar', comClipe((cc) => abrirFerramenta(cc, 'cortar')))
+        : botao('duracao', 'Duração', comClipe((cc) => abrirFerramenta(cc, 'duracao'))));
+      if (ok('vel')) itens.push(botao('vel', 'Velocidade', comClipe((cc) => abrirFerramenta(cc, 'vel'))));
+      if (ok('girar')) itens.push(botao('girar', 'Girar', comClipe((cc) => abrirFerramenta(cc, 'girar'))));
+      itens.push(botao('ordem', 'Mover', comClipe((cc) => abrirFerramenta(cc, 'mais'))));
+      itens.push(botao('duplicar', 'Duplicar', comClipe((cc) => mudar(() => {
+        const i = projeto.clipes.indexOf(cc);
+        const n = JSON.parse(JSON.stringify(cc)); n.id = uid();
+        projeto.clipes.splice(i + 1, 0, n); sel = n.id;
+      }))));
+      itens.push(botao('apagar', 'Apagar', comClipe((cc) => mudar(() => {
+        projeto.clipes.splice(projeto.clipes.indexOf(cc), 1); sel = null; painelAberto = false;
+      })), 'ferr--perigo'));
+    }
+  } else if (abaBarra === 'audio') {
+    if (au) {
+      itens.push(botao('dividir', 'Dividir', dividirAudio));
+      itens.push(botao('som', 'Volume', () => { painelAberto = true; atualizarTudo(); }));
+      itens.push(botao('musica', 'Trocar', () => trocarMusica(au)));
+      itens.push(botao('duplicar', 'Duplicar', () => mudar(() => {
+        const n = { ...au, id: uid(), pos: au.pos + durTrecho(au) };
+        projeto.audios.push(n); selAudio = n.id;
+      })));
+      itens.push(botao('apagar', 'Apagar', () => mudar(() => {
+        projeto.audios = projeto.audios.filter((y) => y.id !== au.id); selAudio = null; painelAberto = false;
+      }), 'ferr--perigo'));
+    }
+    itens.push(botao('adicionar', au ? 'Mais música' : 'Música', escolherMusica));
+    if (!au && x && ok('som')) itens.push(botao('som', 'Volume do vídeo', comClipe((cc) => abrirFerramenta(cc, 'som'))));
+    if (!au) itens.push(botao('conversor', 'Extrair áudio', () => mostrarPagina('ferramentas')));
+  } else if (abaBarra === 'texto') {
+    itens.push(botao('texto', 'Texto', comClipe((cc) => abrirFerramenta(cc, 'texto'))));
+    itens.push(botao('legenda', 'Legendas', abrirLegendas));
+  } else if (abaBarra === 'efeitos') {
+    itens.push(botao('filtro', 'Filtros', comClipe((cc) => abrirFerramenta(cc, 'filtro'))));
+    itens.push(botao('trans', 'Transições', comClipe((cc) => abrirFerramenta(cc, 'trans'))));
+    itens.push(botao('colagem', 'Colagem', criarColagem));
+    if (x && x.tipo === 'colagem') itens.push(botao('colagem', 'Quadros', comClipe((cc) => abrirFerramenta(cc, 'quadros'))));
+  } else if (abaBarra === 'formato') {
+    itens.push(botao('formato', 'Formato', abrirFormato));
+    itens.push(botao('foto', 'Foto', salvarFoto));
+    itens.push(botao('cheia', 'Tela cheia', alternarTelaCheia));
+    itens.push(botao('ajuda', 'Ajuda', abrirAjuda));
   }
-  const x = b.scrollLeft;
+  const xs = b.scrollLeft;
   b.replaceChildren(...itens);
-  b.scrollLeft = x;
+  b.scrollLeft = xs;
 }
 
 // ---------- Painel de uma ferramenta ----------
@@ -1292,7 +1474,9 @@ async function trocarMusica(au) {
 }
 
 function escolherAudio(a) {
+  if (performance.now() - arrastoSoltoEm < 350) return; // acabou de arrastar
   if (tocando) pausar();
+  abaBarra = 'audio';
   if (selAudio === a.id) { selAudio = null; painelAberto = false; }
   else {
     selAudio = a.id; sel = null; painelGeral = null; painelAberto = false;
@@ -1525,6 +1709,8 @@ function abrirAjuda() {
 }
 
 function desenharTopo() {
+  $('tituloNome').textContent = projeto.nome || 'Novo projeto';
+  $('tituloInfo').textContent = mmss(linha().total) + ' · ' + (projeto.formatoNome === 'original' ? 'Original' : projeto.formato);
   $('desfazer').disabled = !desfazer.length;
   $('refazer').disabled = !refazer.length;
   $('salvarVideo').disabled = !projeto.clipes.length;
@@ -1695,7 +1881,7 @@ function desenharFerramentas() {
       h('button', { type: 'button', class: 'btn btn--sec', onclick: () => rodarFerramenta({ modo: 'resolucao', lado }, 'video/mp4', 'Vídeo convertido') }, 'Converter'));
     el.append(cRes);
     el.append(h('section', { class: 'cartao' }, h('h3', {}, '✂ Editar este vídeo'),
-      h('button', { type: 'button', class: 'btn btn--sec', onclick: () => { mostrarPagina('editor'); importar([ferrArq.file]); } }, 'Abrir no editor')));
+      h('button', { type: 'button', class: 'btn btn--sec', onclick: () => { mostrarPagina('editor'); if (!projetoId) criarProjeto(); importar([ferrArq.file]); } }, 'Abrir no editor')));
   }
 }
 
@@ -1747,8 +1933,11 @@ function alternarTelaCheia() {
 
 // ---------- Ligações ----------
 
-porIcone('novo', 'novo');
-porIcone('ajuda', 'ajuda');
+porIcone('menu', 'menu');
+porIcone('cabVideo', 'filme');
+porIcone('cabTexto', 'texto');
+porIcone('cabMusica', 'musica');
+[['rapAudio', 'conversor'], ['rapLegenda', 'legenda'], ['rapConverter', 'formato']].forEach(([id, ic]) => $(id).querySelector('.rapida__ic').append(icone(ic)));
 porIcone('play', 'tocar');
 porIcone('telaCheia', 'cheia');
 porIcone('desfazer', 'desfazer');
@@ -1764,11 +1953,17 @@ $('maisFim').addEventListener('click', adicionar);
 $('desfazer').addEventListener('click', voltar);
 $('refazer').addEventListener('click', avancar);
 $('telaCheia').addEventListener('click', alternarTelaCheia);
-$('ajuda').addEventListener('click', abrirAjuda);
-$('novo').addEventListener('click', () => {
-  if (projeto.clipes.length && !confirm('Começar um projeto novo? O atual será apagado.')) return;
-  pausar();
-  mudar(() => { projeto = novoProjeto(); sel = null; painelAberto = false; tempo = 0; });
+$('menu').addEventListener('click', mostrarInicio);
+$('titulo').addEventListener('click', renomearProjeto);
+$('novoProjeto').addEventListener('click', () => criarProjeto());
+$('rapAudio').addEventListener('click', () => mostrarPagina('ferramentas'));
+$('rapConverter').addEventListener('click', () => mostrarPagina('ferramentas'));
+$('rapLegenda').addEventListener('click', async () => {
+  const arqs = await escolherArquivos('video/*', false);
+  if (!arqs.length) return;
+  criarProjeto('Legendas ' + new Date().toLocaleDateString('pt-BR').slice(0, 5));
+  await importar(arqs);
+  if (projeto.clipes.length) { abaBarra = 'texto'; abrirLegendas(); }
 });
 $('salvarVideo').addEventListener('click', abrirSalvar);
 $('qualidade').addEventListener('click', abrirSalvar);
@@ -1786,6 +1981,7 @@ if (appCap) {
     else if (document.querySelector('.app.tela-cheia')) alternarTelaCheia();
     else if (painelAberto) { painelAberto = false; painelGeral = null; atualizarTudo(); }
     else if (sel || selAudio) { sel = null; selAudio = null; atualizarTudo(); }
+    else if ($('pgInicio').hidden) mostrarInicio();
     else appCap.minimizeApp();
   });
   appCap.addListener('pause', () => { if (tocando) pausar(); });
@@ -1801,19 +1997,152 @@ async function iniciar() {
     for (const g of guardadas) {
       const m = { ...g, url: URL.createObjectURL(g.blob) };
       midias.set(m.id, m);
-      carregarTiras(m);
     }
   } catch (e) { console.warn('sem IndexedDB', e); }
-  // Clipes cujo arquivo sumiu saem do projeto.
+  atualizarTudo();
+  mostrarInicio(); // o app abre na tela inicial (meus projetos)
+}
+
+// ---------- Tela inicial: vários projetos ----------
+
+const capas = new Map(); // "projeto:mídia" → imagem da capa
+
+function quando(ts) {
+  const d = new Date(ts), hoje = new Date();
+  const dia = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const dif = Math.round((dia(hoje) - dia(d)) / 86400000);
+  return dif === 0 ? 'hoje' : dif === 1 ? 'ontem' : d.toLocaleDateString('pt-BR').slice(0, 5);
+}
+
+async function capaDe(f) {
+  const k = f.id + ':' + f.capa;
+  if (capas.has(k)) return capas.get(k);
+  const m = f.capa && midias.get(f.capa);
+  if (!m) return null;
+  const u = await miniatura(m.blob, m.tipo, Math.min(1, (m.dur || 0) / 3)).catch(() => null);
+  capas.set(k, u);
+  return u;
+}
+
+function mostrarInicio() {
+  if (tocando) pausar();
+  fecharFolha();
+  if (projetoId) {
+    salvarAgora();
+    // Projeto criado e deixado vazio não fica na lista.
+    if (!projeto.clipes.length && !(projeto.audios || []).length) apagarProjetoId(projetoId);
+  }
+  projetoId = null;
+  $('pgInicio').hidden = false;
+  desenharInicio();
+}
+
+function desenharInicio() {
+  const l = listarProjetos();
+  $('qtProjetos').textContent = l.length ? l.length + (l.length > 1 ? ' vídeos' : ' vídeo') : '';
+  const cont = $('cartoes');
+  cont.textContent = '';
+  if (!l.length) cont.append(h('p', { class: 'dica cartoes__vazio' }, 'Nenhum projeto ainda. Toque em Novo projeto para começar.'));
+  for (const f of l) {
+    const capa = h('div', { class: 'cartao-p__capa' });
+    capaDe(f).then((u) => { if (u) capa.style.backgroundImage = `url(${u})`; });
+    cont.append(h('div', { class: 'cartao-p', role: 'button', tabindex: 0, onclick: () => abrirProjeto(f.id) },
+      capa,
+      h('div', { class: 'cartao-p__info' },
+        h('b', {}, f.nome || 'Sem nome'),
+        h('small', {}, mmss(f.dur || 0) + ' · ' + quando(f.alterado))),
+      h('button', { type: 'button', class: 'cartao-p__mais', 'aria-label': 'Opções do projeto', onclick: (e) => { e.stopPropagation(); opcoesProjeto(f); } }, '⋯')));
+  }
+}
+
+function limparEstado() {
+  sel = null; selAudio = null; painelAberto = false; painelGeral = null; abaBarra = 'editar';
+  tempo = 0; desfazer.length = 0; refazer.length = 0; ultimoGrupo = '';
+  for (const el of players.values()) el.pause();
+}
+
+function abrirProjeto(id) {
+  const p = lerProjetoId(id);
+  if (!p) { aviso('Não achei esse projeto.', 'erro'); desenharInicio(); return; }
+  limparEstado();
+  projeto = { ...novoProjeto(), ...p };
+  projetoId = id;
+  // Arquivos que sumiram saem do projeto; projetos antigos são atualizados.
   projeto.clipes = projeto.clipes.filter((c) => c.tipo === 'colagem' || midias.has(c.midia));
   projeto.clipes.forEach((c) => { if (c.tipo === 'colagem') c.celulas = c.celulas.map((x) => (x && midias.has(x.midia) ? x : null)); });
   migrarMusica();
-  projeto.clipes.forEach((c) => { if ((c.vel || 1) > 2) c.vel = 2; }); // velocidade máxima agora é 2×
+  projeto.clipes.forEach((c) => { if ((c.vel || 1) > 2) c.vel = 2; });
+  // Miniaturas só dos arquivos deste projeto.
+  const usa = new Set();
+  projeto.clipes.forEach((c) => fontesDoClipe(c).forEach((f) => usa.add(f.midia)));
+  for (const mid of usa) { const m = midias.get(mid); if (m && !m.tiras) carregarTiras(m); }
+  $('pgInicio').hidden = true;
   atualizarTudo();
+}
+
+function criarProjeto(nome) {
+  limparEstado();
+  projeto = novoProjeto();
+  projeto.nome = nome || 'Vídeo ' + (listarProjetos().length + 1);
+  projetoId = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  salvarAgora();
+  $('pgInicio').hidden = true;
+  atualizarTudo();
+}
+
+function renomearProjeto() {
+  const n = prompt('Nome do projeto:', projeto.nome || '');
+  if (n == null || !n.trim()) return;
+  mudar(() => { projeto.nome = n.trim().slice(0, 40); });
+}
+
+function opcoesProjeto(f) {
+  abrirFolha(f.nome || 'Projeto', (corpo) => {
+    corpo.append(
+      h('button', { type: 'button', class: 'btn btn--preto', onclick: () => { fecharFolha(); abrirProjeto(f.id); } }, '▶ Abrir'),
+      h('button', { type: 'button', class: 'btn btn--sec', onclick: () => {
+        const n = prompt('Nome do projeto:', f.nome || '');
+        if (n == null || !n.trim()) return;
+        const p = lerProjetoId(f.id);
+        if (p) { p.nome = n.trim().slice(0, 40); guardarProjetoId(f.id, p, {}); }
+        fecharFolha(); desenharInicio();
+      } }, '✎ Mudar o nome'),
+      h('button', { type: 'button', class: 'btn btn--sec', onclick: () => {
+        const p = lerProjetoId(f.id);
+        if (!p) return;
+        p.nome = (p.nome || 'Projeto') + ' (cópia)';
+        guardarProjetoId('p' + Date.now().toString(36), p, { dur: f.dur, formato: f.formato, capa: f.capa });
+        fecharFolha(); desenharInicio();
+      } }, '⧉ Duplicar'),
+      h('button', { type: 'button', class: 'btn btn--perigo', onclick: () => {
+        if (!confirm('Apagar o projeto "' + (f.nome || '') + '"? O vídeo já salvo na galeria continua lá.')) return;
+        apagarProjetoId(f.id);
+        fecharFolha(); desenharInicio();
+        salvarAgoraSemProjeto();
+      } }, '🗑 Apagar projeto')
+    );
+  });
+}
+
+/** Depois de apagar um projeto na tela inicial: tira do aparelho os arquivos que ninguém usa. */
+function salvarAgoraSemProjeto() {
+  const usados = new Set();
+  todosOsProjetos().forEach((p) => {
+    (p.clipes || []).forEach((c) => fontesDoClipe(c).forEach((f) => usados.add(f.midia)));
+    (p.audios || []).forEach((a) => usados.add(a.midia));
+    if (p.musica) usados.add(p.musica.midia);
+  });
+  for (const id of [...midias.keys()]) {
+    if (usados.has(id)) continue;
+    const m = midias.get(id);
+    if (m.url) URL.revokeObjectURL(m.url);
+    midias.delete(id);
+    apagarMidia(id).catch(() => {});
+  }
 }
 
 window.addEventListener('resize', () => { desenharLinha(); pedirDesenho(); });
 iniciar();
 
 // Para testes automáticos.
-window.__editor = { get projeto() { return projeto; }, midias, importar, exportarVideo, converter, linha, get tempo() { return tempo; }, set tempo(v) { tempo = v; pedirDesenho(); } };
+window.__editor = { criarProjeto, abrirProjeto, mostrarInicio, get projetoId() { return projetoId; }, get projeto() { return projeto; }, midias, importar, exportarVideo, converter, linha, get tempo() { return tempo; }, set tempo(v) { tempo = v; pedirDesenho(); } };
