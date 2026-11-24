@@ -120,6 +120,37 @@ export async function miniatura(blob, tipo, tempo) {
   return URL.createObjectURL(b);
 }
 
+async function canvasParaUrl(canvas) {
+  const b = canvas.convertToBlob ? await canvas.convertToBlob({ type: 'image/jpeg', quality: .65 })
+    : await new Promise((ok) => canvas.toBlob(ok, 'image/jpeg', .65));
+  return URL.createObjectURL(b);
+}
+
+/** Tira de miniaturas para a linha do tempo: [{ t, url }] ao longo do vídeo (até ~30). */
+export async function tiras(blob, tipo, dur) {
+  if (tipo === 'foto') {
+    const u = await miniatura(blob, 'foto');
+    return u ? [{ t: 0, url: u }] : [];
+  }
+  const input = new Input({ source: new BlobSource(blob), formats: ALL_FORMATS });
+  try {
+    const vt = await input.getPrimaryVideoTrack();
+    if (!vt || !(await vt.canDecode())) return [];
+    const ini = await vt.getFirstTimestamp();
+    const passo = Math.max(0.5, (dur || 1) / 30);
+    const ts = [];
+    for (let t = ini; t < (dur || 1) - 0.05 || ts.length === 0; t += passo) ts.push(t);
+    const sink = new CanvasSink(vt, { width: 72, height: 100, fit: 'cover' });
+    const r = [];
+    for await (const wc of sink.canvasesAtTimestamps(ts)) {
+      if (wc) r.push({ t: wc.timestamp, url: await canvasParaUrl(wc.canvas) });
+    }
+    return r;
+  } finally {
+    input.dispose && input.dispose();
+  }
+}
+
 // ---------- Linha do tempo ----------
 
 /** Duração própria de um clipe (sem contar transições). */

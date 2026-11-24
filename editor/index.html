@@ -5,87 +5,84 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Editor de Vídeo</title>
   <meta name="description" content="Edita vídeos no celular: cortes, colagem, textos, filtros, música, extrair áudio e salvar em até 4K.">
-  <meta name="theme-color" content="#0b0d14">
+  <meta name="theme-color" content="#101114">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="stylesheet" href="style.css?v=2">
   <script type="importmap">{ "imports": { "mediabunny": "./vendor/mediabunny.min.mjs" } }</script>
 </head>
 <body>
-  <header class="topo">
-    <img class="topo__logo" src="icon.svg" alt="">
-    <h1>Editor de Vídeo</h1>
-    <button id="desfazer" class="topo__btn" type="button" aria-label="Desfazer" disabled>↶</button>
-    <button id="novo" class="topo__btn" type="button" aria-label="Projeto novo">＋</button>
-  </header>
+  <div class="app">
+    <header class="topo">
+      <button id="novo" class="ic-btn" type="button" aria-label="Projeto novo" title="Projeto novo"></button>
+      <button id="ajuda" class="ic-btn" type="button" aria-label="Ajuda" title="Ajuda"></button>
+      <span class="topo__meio"></span>
+      <button id="qualidade" class="qual" type="button" aria-label="Resolução do vídeo">1080p <span>▾</span></button>
+      <button id="salvarVideo" class="salvar-btn" type="button" disabled>Salvar</button>
+    </header>
 
-  <nav class="abas">
-    <button class="aba on" type="button" data-pg="editor">🎬 Editor</button>
-    <button class="aba" type="button" data-pg="ferramentas">🎵 Áudio e conversão</button>
-  </nav>
+    <div id="semWebCodecs" class="aviso-caixa" hidden>
+      Este navegador não consegue gravar vídeo. Use o app no Android (Chrome atualizado).
+    </div>
 
-  <div id="semWebCodecs" class="aviso-caixa" hidden>
-    Este navegador não consegue gravar vídeo. Use o app no Android (Chrome atualizado).
-  </div>
-
-  <main id="pgEditor">
     <div id="palco" class="palco">
       <canvas id="tela" width="540" height="960"></canvas>
       <div id="vazio" class="vazio">
-        <p>Toque em <b>+ Vídeo ou foto</b> ou em <b>▦ Colagem</b> para começar.</p>
+        <button id="comecar" class="comecar" type="button"><span>＋</span>Escolher vídeos e fotos</button>
+        <button id="comecarColagem" class="comecar comecar--2" type="button"><span>▦</span>Fazer uma colagem</button>
       </div>
     </div>
 
     <div class="controles">
-      <button id="play" class="play" type="button" aria-label="Tocar">▶</button>
-      <input id="rolar" type="range" min="0" max="1" step="0.01" value="0" aria-label="Posição">
-      <span id="tempo" class="tempo">0:00,0 / 0:00,0</span>
+      <button id="telaCheia" class="ic-btn ic-btn--p" type="button" aria-label="Tela cheia"></button>
+      <span id="tempo" class="tempo">00:00 / 00:00</span>
+      <button id="play" class="play" type="button" aria-label="Tocar"></button>
+      <span class="controles__esp"></span>
+      <button id="desfazer" class="ic-btn ic-btn--p" type="button" aria-label="Desfazer" disabled></button>
+      <button id="refazer" class="ic-btn ic-btn--p" type="button" aria-label="Refazer" disabled></button>
     </div>
 
-    <div class="linha-tempo">
-      <div id="clipes" class="clipes"></div>
-      <span id="agulha" class="agulha" hidden></span>
+    <div id="linha" class="linha">
+      <div id="rolo" class="rolo">
+        <div id="conteudo" class="conteudo">
+          <div id="regua" class="regua"></div>
+          <div id="trilha" class="trilha"></div>
+          <div id="trilhaMusica" class="trilha-musica"></div>
+        </div>
+      </div>
+      <span class="agulha" aria-hidden="true"></span>
+      <button id="maisFim" class="mais-fim" type="button" aria-label="Adicionar vídeo ou foto">＋</button>
     </div>
-    <button id="faixaMusica" class="faixa-musica" type="button" hidden></button>
 
-    <div class="acoes">
-      <button id="addMidia" class="acao" type="button"><span>＋</span>Vídeo ou foto</button>
-      <button id="addColagem" class="acao" type="button"><span>▦</span>Colagem</button>
-      <button id="addMusica" class="acao" type="button"><span>♪</span>Música</button>
-    </div>
+    <nav id="barra" class="barra"></nav>
 
-    <section id="painel" class="cartao painel" hidden></section>
-
-    <details class="cartao projeto">
-      <summary>⚙ Formato, fundo e assinatura</summary>
-      <p class="rot">Formato da tela</p>
-      <div id="formatos" class="chips"></div>
-      <p class="rot">Sobras da tela (quando o vídeo não preenche)</p>
-      <div id="fundos" class="chips"></div>
-      <label class="check"><input id="fadeIn" type="checkbox"> Começar clareando (do preto)</label>
-      <label class="check"><input id="fadeOut" type="checkbox"> Terminar escurecendo</label>
-      <label class="desl"><span>Assinatura no canto (opcional)</span>
-        <input id="marca" type="text" maxlength="40" placeholder="Ex.: @seuperfil"></label>
-    </details>
-
-    <div class="salvar">
-      <button id="salvarFoto" class="btn btn--sec" type="button" disabled>📷 Foto</button>
-      <button id="salvarVideo" class="btn btn--pri" type="button" disabled>⬇ Salvar vídeo (até 4K)</button>
-    </div>
-  </main>
-
-  <main id="pgFerramentas" hidden>
-    <section class="cartao">
-      <h3>Escolher vídeo</h3>
-      <button id="ferrEscolher" class="btn btn--pri" type="button">📂 Escolher da galeria</button>
+    <section id="painel" class="painel" hidden>
+      <div class="painel__topo">
+        <h2 id="painelTitulo"></h2>
+        <button id="painelOk" class="ok-btn" type="button" aria-label="Pronto">✓</button>
+      </div>
+      <div id="painelCorpo" class="painel__corpo"></div>
     </section>
-    <div id="ferrConteudo"></div>
-  </main>
+  </div>
+
+  <section id="pgFerramentas" class="pagina" hidden>
+    <header class="topo">
+      <button id="ferrFechar" class="ic-btn" type="button" aria-label="Voltar"></button>
+      <h1 class="pagina__titulo">Áudio e conversão</h1>
+    </header>
+    <div class="pagina__corpo">
+      <section class="cartao">
+        <h3>Escolher vídeo</h3>
+        <button id="ferrEscolher" class="btn btn--pri" type="button">📂 Escolher da galeria</button>
+      </section>
+      <div id="ferrConteudo"></div>
+    </div>
+  </section>
 
   <div id="folha" class="folha" hidden>
     <div class="folha__caixa" role="dialog" aria-modal="true" aria-labelledby="folhaTitulo">
       <div class="folha__topo">
         <h2 id="folhaTitulo"></h2>
-        <button id="folhaFechar" class="topo__btn" type="button" aria-label="Fechar">✕</button>
+        <button id="folhaFechar" class="ic-btn" type="button" aria-label="Fechar">✕</button>
       </div>
       <div id="folhaCorpo"></div>
     </div>
@@ -94,13 +91,13 @@
   <div id="progresso" class="progresso" hidden>
     <div class="progresso__caixa">
       <p id="progTexto">…</p>
-      <div class="barra"><span id="progBarra"></span></div>
+      <div class="barra-prog"><span id="progBarra"></span></div>
       <button id="cancelar" class="btn btn--sec" type="button" hidden>Cancelar</button>
     </div>
   </div>
 
   <p id="aviso" class="toast" role="status" hidden></p>
 
-  <script type="module" src="app.js?v=1"></script>
+  <script type="module" src="app.js?v=2"></script>
 </body>
 </html>
