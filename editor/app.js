@@ -18,10 +18,11 @@ const appCap = plugin('App');
 
 // ---------- Estado ----------
 
-const novoProjeto = () => ({ formato: '9:16', fundo: 'desfocado', clipes: [], musica: null, marca: '', fadeIn: false, fadeOut: true });
+const novoProjeto = () => ({ formato: '9:16', fundo: 'desfocado', clipes: [], audios: [], sumirMusica: true, marca: '', fadeIn: false, fadeOut: true });
 let projeto = lerProjeto() || novoProjeto();
 const midias = new Map(); // id → { id, blob, nome, tipo, dur, w, h, temAudio, url, thumb, tiras }
 let sel = null;           // id do clipe escolhido
+let selAudio = null;      // id do trecho de música escolhido (faixa verde)
 let aba = 'cortar';       // ferramenta aberta no painel do clipe
 let painelAberto = false;
 let painelGeral = null;   // painel que não é de um clipe (ex.: 'legendas')
@@ -36,6 +37,8 @@ let ultimoGrupo = '', ultimoGrupoT = 0;
 const uid = () => Math.random().toString(36).slice(2, 10);
 const linha = () => linhaDoTempo(projeto, midias);
 const clipeSel = () => projeto.clipes.find((c) => c.id === sel) || null;
+const audioSel = () => (projeto.audios || []).find((a) => a.id === selAudio) || null;
+const durTrecho = (a) => Math.max(0, a.fim - a.ini);
 const fmt = (s) => {
   s = Math.max(0, s || 0);
   const m = Math.floor(s / 60), r = s - m * 60;
@@ -77,6 +80,7 @@ function avancar() {
 function depoisDeTrocar() {
   ultimoGrupo = '';
   if (sel && !clipeSel()) { sel = null; painelAberto = false; }
+  if (selAudio && !audioSel()) { selAudio = null; painelAberto = false; }
   salvar();
   atualizarTudo();
 }
@@ -89,7 +93,7 @@ function salvar() {
     // Arquivos que não são mais usados saem do aparelho.
     const usados = new Set();
     projeto.clipes.forEach((c) => fontesDoClipe(c).forEach((f) => usados.add(f.midia)));
-    if (projeto.musica) usados.add(projeto.musica.midia);
+    (projeto.audios || []).forEach((a) => usados.add(a.midia));
     for (const id of [...midias.keys()]) {
       if (!usados.has(id) && !desfazer.some((d) => d.includes(id)) && !refazer.some((d) => d.includes(id))) {
         const m = midias.get(id);
@@ -130,6 +134,7 @@ const IC = {
   duplicar: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
   apagar: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
   duracao: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M10 2h4"/>',
+  mudo: '<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="m17 9 5 6M22 9l-5 6"/>',
   legenda: '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M7 11h3M12.5 11H17M7 15h10"/>',
   mais: '<circle cx="5" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="19" cy="12" r="1.4" fill="currentColor"/>'
 };
@@ -259,7 +264,7 @@ const tela = $('tela');
 const ctxTela = tela.getContext('2d', { alpha: false });
 const players = new Map(); // chave → <video>
 const fotosPrevia = new Map(); // midia → ImageBitmap
-let musicaEl = null;
+const audiosEl = new Map(); // id do trecho → <audio>
 
 function player(chave, m) {
   let el = players.get(chave);
@@ -364,7 +369,7 @@ function tocar() {
 function pausar() {
   tocando = false;
   for (const el of players.values()) el.pause();
-  if (musicaEl) musicaEl.pause();
+  for (const el of audiosEl.values()) el.pause();
   porIcone('play', 'tocar');
   $('play').setAttribute('aria-label', 'Tocar');
   pedirDesenho();
@@ -399,22 +404,31 @@ function passo() {
 }
 
 function tocarMusica() {
-  const mu = projeto.musica && midias.get(projeto.musica.midia);
-  if (!mu) { if (musicaEl) musicaEl.pause(); return; }
-  if (!musicaEl || musicaEl.dataset.midia !== mu.id) {
-    if (musicaEl) soltarEl(musicaEl);
-    musicaEl = document.createElement('audio');
-    musicaEl.dataset.midia = mu.id;
-    musicaEl.src = mu.url;
+  const ativos = new Set();
+  for (const a of projeto.audios || []) {
+    const mu = midias.get(a.midia);
+    if (!mu || tempo < a.pos || tempo >= a.pos + durTrecho(a)) continue;
+    let el = audiosEl.get(a.id);
+    if (!el || el.dataset.midia !== mu.id) {
+      if (el) soltarEl(el);
+      el = document.createElement('audio');
+      el.dataset.midia = mu.id;
+      el.src = mu.url;
+      audiosEl.set(a.id, el);
+    }
+    ativos.add(a.id);
+    const s = a.ini + (tempo - a.pos);
+    let vol = a.volume;
+    const l = linha();
+    if (projeto.sumirMusica !== false && l.total > 3 && tempo > l.total - 2) vol *= Math.max(0, (l.total - tempo) / 2);
+    el.volume = Math.max(0, Math.min(1, vol));
+    if (el.paused) { el.currentTime = s; el.play().catch(() => {}); }
+    else if (Math.abs(el.currentTime - s) > 0.35) el.currentTime = s;
   }
-  const dur = mu.dur || 1;
-  const ini = projeto.musica.ini || 0;
-  const tam = Math.max(0.5, dur - ini);
-  if (projeto.musica.repetir === false && tempo > tam) { musicaEl.pause(); return; }
-  const s = ini + (tempo % tam);
-  musicaEl.volume = Math.min(1, projeto.musica.volume);
-  if (musicaEl.paused) { musicaEl.currentTime = s; musicaEl.play().catch(() => {}); }
-  else if (Math.abs(musicaEl.currentTime - s) > 0.35) musicaEl.currentTime = s;
+  for (const [id, el] of audiosEl) {
+    if (!ativos.has(id) && !el.paused) el.pause();
+    if (!(projeto.audios || []).some((a) => a.id === id)) { soltarEl(el); audiosEl.delete(id); }
+  }
 }
 
 // ---------- Linha do tempo (agulha parada no meio) ----------
@@ -427,14 +441,16 @@ function rolarPara(t) {
   if (arrasto) return; // durante o arraste da alça quem manda na rolagem é o dedo
   const r = $('rolo');
   const x = Math.round(t * PX);
-  if (Math.abs(r.scrollLeft - x) >= 1) r.scrollLeft = x;
+  if (Math.abs(r.scrollLeft - x) >= 1) { ultimaRolagem = x; r.scrollLeft = x; }
 }
+let ultimaRolagem = -1; // última rolagem feita pelo app (não pelo dedo)
 
 // O dedo arrasta a linha do tempo: o tempo segue o que está embaixo da agulha.
 $('rolo').addEventListener('scroll', () => {
   if (arrasto) return; // no arraste da alça a prévia mostra o ponto do corte
-  const t = $('rolo').scrollLeft / PX;
-  if (Math.abs(t - tempo) < 1.5 / PX) return; // fomos nós que rolamos
+  const x = $('rolo').scrollLeft;
+  const t = x / PX;
+  if (Math.abs(t - tempo) < 1.5 / PX || Math.abs(x - ultimaRolagem) < 1.5) return; // fomos nós que rolamos
   const l = linha();
   if (tocando) pausar();
   tempo = Math.max(0, Math.min(l.total, t));
@@ -492,9 +508,22 @@ function desenharLinha() {
     el.append(h('span', { class: 'clipe__rot' }, it.dur.toFixed(1).replace('.', ',') + 's'));
     const extras = [(c.vel || 1) !== 1 ? c.vel + '×' : '', c.texto && c.texto.txt ? 'T' : '', c.tipo === 'colagem' ? '▦' : ''].filter(Boolean).join(' ');
     if (extras) el.append(h('span', { class: 'clipe__rot clipe__rot--dir' }, extras));
+    // Som ligado/desligado, discreto no começo do vídeo.
+    const mv = c.tipo === 'video' && midias.get(c.midia);
+    if (mv && mv.temAudio) {
+      el.append(h('button', {
+        type: 'button', class: 'som-clipe' + (c.volume ? '' : ' mudo'), 'aria-label': c.volume ? 'Tirar o som deste vídeo' : 'Pôr o som deste vídeo',
+        onpointerdown: (e) => e.stopPropagation(),
+        onclick: (e) => {
+          e.stopPropagation();
+          mudar(() => { if (c.volume) { c.volAntes = c.volume; c.volume = 0; } else c.volume = c.volAntes || 1; });
+          aviso(c.volume ? 'Som do vídeo ligado.' : 'Som do vídeo desligado.');
+        }
+      }, icone(c.volume ? 'som' : 'mudo')));
+    }
     if (c.id === sel) {
-      el.append(h('span', { class: 'alca alca--esq', onpointerdown: (e) => arrastar(e, c, 'esq'), 'aria-label': 'Puxar o começo' }));
-      el.append(h('span', { class: 'alca alca--dir', onpointerdown: (e) => arrastar(e, c, 'dir'), 'aria-label': 'Puxar o fim' }));
+      el.append(h('span', { class: 'alca alca--esq', onpointerdown: (e) => arrastar(e, alvoClipe(c, 'esq')), 'aria-label': 'Puxar o começo' }));
+      el.append(h('span', { class: 'alca alca--dir', onpointerdown: (e) => arrastar(e, alvoClipe(c, 'dir')), 'aria-label': 'Puxar o fim' }));
     }
     trilha.append(el);
     // Junção com o próximo: toque para escolher a transição.
@@ -508,15 +537,26 @@ function desenharLinha() {
       }, tr !== 'corte' ? '⋈' : '|'));
     }
   });
-  // Música
+  // Música: cada trecho na faixa verde (toque para escolher, alças para cortar)
   const tm = $('trilhaMusica');
   tm.textContent = '';
-  const mu = projeto.musica && midias.get(projeto.musica.midia);
-  if (mu) {
-    const dur = projeto.musica.repetir === false ? Math.min(l.total, mu.dur - (projeto.musica.ini || 0)) : l.total;
-    tm.append(h('button', { type: 'button', class: 'musica', style: `left:${m0}px;width:${Math.max(40, dur * PX)}px`, onclick: abrirMusica }, '♪ ' + mu.nome));
-  } else if (l.itens.length) {
-    tm.append(h('button', { type: 'button', class: 'musica-add', style: `left:${m0}px`, onclick: abrirMusica }, '♪ + Adicionar música'));
+  for (const a of projeto.audios || []) {
+    const mu = midias.get(a.midia);
+    if (!mu) continue;
+    const eSel = a.id === selAudio;
+    const el = h('div', {
+      class: 'musica' + (eSel ? ' sel' : ''), role: 'button', tabindex: 0,
+      style: `left:${m0 + a.pos * PX}px;width:${Math.max(12, durTrecho(a) * PX - 2)}px`,
+      onclick: () => escolherAudio(a)
+    }, h('span', { class: 'musica__nome' }, '♪ ' + mu.nome));
+    if (eSel) {
+      el.append(h('span', { class: 'alca alca--esq', onpointerdown: (e) => arrastar(e, alvoAudio(a, 'esq')), 'aria-label': 'Puxar o começo da música' }));
+      el.append(h('span', { class: 'alca alca--dir', onpointerdown: (e) => arrastar(e, alvoAudio(a, 'dir')), 'aria-label': 'Puxar o fim da música' }));
+    }
+    tm.append(el);
+  }
+  if (!(projeto.audios || []).length && l.itens.length) {
+    tm.append(h('button', { type: 'button', class: 'musica-add', style: `left:${m0}px`, onclick: escolherMusica }, '♪ + Adicionar música'));
   }
   $('maisFim').hidden = !l.itens.length;
   document.querySelector('.agulha').hidden = !l.itens.length;
@@ -526,6 +566,7 @@ function desenharLinha() {
 function escolherClipe(c, it) {
   if (tocando) pausar();
   painelGeral = null;
+  selAudio = null;
   if (sel === c.id) { sel = null; painelAberto = false; }
   else {
     sel = c.id;
@@ -543,17 +584,62 @@ let arrasto = null;
 const BEIRA = 72;      // largura da faixa da beirada que faz correr (px)
 const VEL_MAX = 900;   // velocidade máxima da corrida (px/s)
 
-function arrastar(e, c, lado) {
+/** O que a alça corta: um clipe de vídeo/foto. */
+function alvoClipe(c, lado) {
+  const orig = { ini: c.ini, fim: c.fim, dur: duracaoClipe(c, midias) };
+  const m = midias.get(c.midia);
+  const lim = (v, x, y) => Math.max(x, Math.min(y, v));
+  const it = () => linha().itens.find((x) => x.c.id === c.id);
+  return {
+    aplicar(ds) {
+      if (c.tipo === 'video') {
+        const v = c.vel || 1;
+        if (lado === 'dir') {
+          const max = m ? m.dur : orig.fim;
+          c.fim = lim(orig.fim + ds * v, c.ini + 0.2, max);
+          return ds < 0 ? c.fim <= c.ini + 0.2 + 1e-6 : c.fim >= max - 1e-6;
+        }
+        c.ini = lim(orig.ini + ds * v, 0, c.fim - 0.2);
+        return ds < 0 ? c.ini <= 1e-6 : c.ini >= c.fim - 0.2 - 1e-6;
+      }
+      const d = lado === 'dir' ? orig.dur + ds : orig.dur - ds;
+      c.dur = Math.round(Math.max(0.5, Math.min(120, d)) * 10) / 10;
+      return c.dur <= 0.5 || c.dur >= 120;
+    },
+    tempo() { const x = it(); return x ? (lado === 'dir' ? x.ini + x.dur - 0.03 : x.ini + 0.01) : tempo; }
+  };
+}
+
+/** O que a alça corta: um trecho de música da faixa verde. */
+function alvoAudio(a, lado) {
+  const orig = { pos: a.pos, ini: a.ini, fim: a.fim };
+  const m = midias.get(a.midia);
+  const max = m ? m.dur : orig.fim;
+  const lim = (v, x, y) => Math.max(x, Math.min(y, v));
+  return {
+    aplicar(ds) {
+      if (lado === 'dir') {
+        a.fim = lim(orig.fim + ds, a.ini + 0.3, max);
+        return ds < 0 ? a.fim <= a.ini + 0.3 + 1e-6 : a.fim >= max - 1e-6;
+      }
+      // Começo: o trecho continua no mesmo lugar da música, só começa mais tarde (ou mais cedo).
+      const d = lim(ds, Math.max(-orig.ini, -orig.pos), orig.fim - 0.3 - orig.ini);
+      a.ini = orig.ini + d;
+      a.pos = orig.pos + d;
+      return ds < 0 ? d <= Math.max(-orig.ini, -orig.pos) + 1e-6 : d >= orig.fim - 0.3 - orig.ini - 1e-6;
+    },
+    tempo() { return lado === 'dir' ? a.pos + durTrecho(a) - 0.03 : a.pos + 0.01; }
+  };
+}
+
+function arrastar(e, alvo) {
   e.preventDefault();
   e.stopPropagation();
   if (tocando) pausar();
   const rolo = $('rolo');
   try { $('linha').setPointerCapture(e.pointerId); } catch (x) {}
   const xConteudo = (cx) => rolo.scrollLeft + cx - rolo.getBoundingClientRect().left;
-  arrasto = {
-    c, lado, id: e.pointerId, x: e.clientX, x0: xConteudo(e.clientX), t: performance.now(),
-    orig: { ini: c.ini, fim: c.fim, dur: duracaoClipe(c, midias) }, xConteudo
-  };
+  arrasto = { alvo, id: e.pointerId, x: e.clientX, x0: xConteudo(e.clientX), t: performance.now(), xConteudo };
   const mover = (ev) => { if (arrasto && ev.pointerId === arrasto.id) { arrasto.x = ev.clientX; arrasto.travado = 0; aplicarArrasto(); } };
   const soltar = (ev) => {
     if (!arrasto || (ev && ev.pointerId !== arrasto.id)) return;
@@ -562,8 +648,8 @@ function arrastar(e, c, lado) {
     window.removeEventListener('pointermove', mover);
     window.removeEventListener('pointerup', soltar);
     window.removeEventListener('pointercancel', soltar);
-    const it = linha().itens.find((x) => x.c.id === c.id);
-    if (it) { tempo = lado === 'dir' ? it.ini + it.dur - 0.05 : it.ini + 0.01; atualizarTudo(); }
+    tempo = Math.max(0, alvo.tempo());
+    atualizarTudo();
   };
   window.addEventListener('pointermove', mover);
   window.addEventListener('pointerup', soltar);
@@ -575,31 +661,12 @@ function arrastar(e, c, lado) {
 function aplicarArrasto() {
   const a = arrasto;
   if (!a) return true;
-  const { c, lado, orig } = a;
   const ds = (a.xConteudo(a.x) - a.x0) / PX;
-  const m = midias.get(c.midia);
-  const lim = (v, x, y) => Math.max(x, Math.min(y, v));
   let noLimite = false;
-  mudar(() => {
-    if (c.tipo === 'video') {
-      const v = c.vel || 1;
-      if (lado === 'dir') {
-        const max = m ? m.dur : orig.fim;
-        c.fim = lim(orig.fim + ds * v, c.ini + 0.2, max);
-        noLimite = ds < 0 ? c.fim <= c.ini + 0.2 + 1e-6 : c.fim >= max - 1e-6;
-      } else {
-        c.ini = lim(orig.ini + ds * v, 0, c.fim - 0.2);
-        noLimite = ds < 0 ? c.ini <= 1e-6 : c.ini >= c.fim - 0.2 - 1e-6;
-      }
-    } else {
-      const d = lado === 'dir' ? orig.dur + ds : orig.dur - ds;
-      c.dur = Math.round(Math.max(0.5, Math.min(120, d)) * 10) / 10;
-      noLimite = c.dur <= 0.5 || c.dur >= 120;
-    }
-  }, 'arrasto');
-  // A prévia mostra o quadro exato onde está cortando.
-  const it = linha().itens.find((x) => x.c.id === c.id);
-  if (it) { tempo = lado === 'dir' ? it.ini + it.dur - 0.03 : it.ini + 0.01; pedirDesenho(); }
+  mudar(() => { noLimite = a.alvo.aplicar(ds); }, 'arrasto');
+  // A prévia mostra o ponto exato onde está cortando.
+  tempo = Math.max(0, a.alvo.tempo());
+  pedirDesenho();
   return noLimite;
 }
 
@@ -658,6 +725,7 @@ function abrirFerramenta(c, qual) {
   aba = qual;
   painelAberto = true;
   painelGeral = null;
+  selAudio = null;
   const it = linha().itens.find((x) => x.c.id === c.id);
   if (it && (tempo < it.ini || tempo >= it.ini + it.dur)) tempo = it.ini + 0.01;
   atualizarTudo();
@@ -670,12 +738,25 @@ function botao(ic, nome, acao, classe) {
 function desenharBarra() {
   const b = $('barra');
   const c = clipeSel();
-  b.hidden = painelAberto && (!!c || !!painelGeral);
+  const au = audioSel();
+  b.hidden = painelAberto && (!!c || !!painelGeral || !!au);
   const itens = [];
-  if (!c) {
+  if (au) {
+    itens.push(botao('volta', '', () => { selAudio = null; painelAberto = false; atualizarTudo(); }, 'ferr--volta'));
+    itens.push(botao('dividir', 'Dividir', dividirAudio));
+    itens.push(botao('som', 'Volume', () => { painelAberto = true; atualizarTudo(); }));
+    itens.push(botao('musica', 'Trocar', () => trocarMusica(au)));
+    itens.push(botao('duplicar', 'Duplicar', () => mudar(() => {
+      const n = { ...au, id: uid(), pos: au.pos + durTrecho(au) };
+      projeto.audios.push(n); selAudio = n.id;
+    })));
+    itens.push(botao('apagar', 'Apagar', () => mudar(() => {
+      projeto.audios = projeto.audios.filter((x) => x.id !== au.id); selAudio = null; painelAberto = false;
+    }), 'ferr--perigo'));
+  } else if (!c) {
     itens.push(
       botao('cortar', 'Editar', () => abrirFerramenta(clipeNoTempo(), 'cortar')),
-      botao('musica', 'Música', abrirMusica),
+      botao('musica', 'Música', escolherMusica),
       botao('texto', 'Texto', () => abrirFerramenta(clipeNoTempo(), 'texto')),
       botao('legenda', 'Legendas', abrirLegendas),
       botao('colagem', 'Colagem', criarColagem),
@@ -715,6 +796,22 @@ function desenharPainel() {
     corpo.textContent = '';
     pLegendas(corpo);
     corpo.scrollTop = y;
+    return;
+  }
+  const au = audioSel();
+  if (painelAberto && au) {
+    p.hidden = false;
+    $('painelTitulo').textContent = 'Volume da música';
+    const corpo = $('painelCorpo');
+    corpo.textContent = '';
+    const mu = midias.get(au.midia);
+    corpo.append(
+      h('p', { class: 'nome-arq' }, '♪ ' + (mu ? mu.nome : '') + ' · ' + fmt(durTrecho(au))),
+      deslizador('Volume deste trecho', 0, 1.5, 0.05, au.volume, (v) => Math.round(v * 100) + '%', (v) => { au.volume = v; }),
+      h('button', { type: 'button', class: 'btn btn--sec', onclick: () => mudar(() => projeto.audios.forEach((x) => { x.volume = au.volume; })) }, 'Usar este volume em toda a música'),
+      h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: projeto.sumirMusica !== false, onchange: (e) => mudar(() => { projeto.sumirMusica = e.target.checked; }) }), ' Abaixar a música devagar no final do vídeo'),
+      h('p', { class: 'dica' }, 'Para abaixar o som dos vídeos, toque no 🔊 no começo de cada vídeo, ou escolha o vídeo e use Volume.')
+    );
     return;
   }
   p.hidden = !(painelAberto && c);
@@ -978,6 +1075,19 @@ function pQuadros(c, el) {
 
 // ---------- Música ----------
 
+/** Trechos que cobrem o vídeo a partir de "pos", repetindo a música se ela for mais curta. */
+function trechosCobrindo(m, pos, iniMus, volume, repetir) {
+  const total = Math.max(linha().total, 1);
+  const r = [];
+  let p = pos;
+  do {
+    const fim = Math.min(m.dur, iniMus + Math.max(0.3, total - p));
+    r.push({ id: uid(), midia: m.id, pos: p, ini: iniMus, fim, volume });
+    p += fim - iniMus;
+  } while (repetir && p < total - 0.3 && m.dur - iniMus > 1);
+  return r;
+}
+
 async function escolherMusica() {
   const [f] = await escolherArquivos('audio/*,video/*', false);
   if (!f) return;
@@ -985,28 +1095,64 @@ async function escolherMusica() {
   try {
     const m = await adicionarMidia(f);
     if (!m.temAudio) throw new Error('Esse arquivo não tem som.');
-    mudar(() => { projeto.musica = { midia: m.id, volume: 0.8, ini: 0, repetir: true, sumir: true }; });
-    abrirMusica();
+    const l = linha();
+    const pos = (projeto.audios || []).length && tempo < l.total - 0.5 ? tempo : 0;
+    const novos = trechosCobrindo(m, pos, 0, 0.8, true);
+    mudar(() => {
+      projeto.audios = (projeto.audios || []).concat(novos);
+      sel = null; selAudio = novos[0].id; painelAberto = false; painelGeral = null;
+    });
+    aviso('Música colocada. Toque na faixa verde para cortar, dividir ou mudar o volume.');
   } catch (e) { aviso(e.message, 'erro'); } finally { fimProgresso(); }
 }
 
-function abrirMusica() {
-  const mu = projeto.musica && midias.get(projeto.musica.midia);
-  if (!mu) { escolherMusica(); return; }
-  abrirFolha('♪ Música de fundo', (corpo) => {
-    const ms = projeto.musica;
-    corpo.append(
-      h('p', { class: 'nome-arq' }, mu.nome + ' · ' + fmt(mu.dur)),
-      deslizador('Volume da música', 0, 1.5, 0.05, ms.volume, (v) => Math.round(v * 100) + '%', (v) => { ms.volume = v; }),
-      deslizador('Começar a música em', 0, Math.max(0.1, mu.dur - 1), 0.5, ms.ini || 0, fmt, (v) => { ms.ini = v; }),
-      h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: ms.repetir !== false, onchange: (e) => mudar(() => { ms.repetir = e.target.checked; }) }), ' Repetir se a música acabar antes'),
-      h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: ms.sumir !== false, onchange: (e) => mudar(() => { ms.sumir = e.target.checked; }) }), ' Abaixar devagar no final'),
-      h('div', { class: 'linha-btn' },
-        h('button', { type: 'button', class: 'btn btn--sec', onclick: () => { fecharFolha(); escolherMusica(); } }, 'Trocar música'),
-        h('button', { type: 'button', class: 'btn btn--perigo', onclick: () => { mudar(() => { projeto.musica = null; }); fecharFolha(); } }, 'Tirar música')),
-      h('p', { class: 'dica' }, 'Para abaixar o som dos vídeos, escolha o clipe e use 🔊 Som.')
-    );
+async function trocarMusica(au) {
+  const [f] = await escolherArquivos('audio/*,video/*', false);
+  if (!f) return;
+  progresso('Abrindo a música…', null);
+  try {
+    const m = await adicionarMidia(f);
+    if (!m.temAudio) throw new Error('Esse arquivo não tem som.');
+    mudar(() => { au.midia = m.id; au.ini = 0; au.fim = Math.min(m.dur, durTrecho(au)); });
+  } catch (e) { aviso(e.message, 'erro'); } finally { fimProgresso(); }
+}
+
+function escolherAudio(a) {
+  if (tocando) pausar();
+  if (selAudio === a.id) { selAudio = null; painelAberto = false; }
+  else {
+    selAudio = a.id; sel = null; painelGeral = null; painelAberto = false;
+    if (tempo < a.pos || tempo >= a.pos + durTrecho(a)) tempo = a.pos + 0.01;
+  }
+  atualizarTudo();
+}
+
+function dividirAudio() {
+  const a = audioSel();
+  if (!a) return;
+  const local = tempo - a.pos;
+  if (local < 0.2 || local > durTrecho(a) - 0.2) { aviso('Leve a linha branca para o meio da música antes de dividir.'); return; }
+  mudar(() => {
+    const corte = a.ini + local;
+    const novo = { ...a, id: uid(), ini: corte, pos: a.pos + local };
+    a.fim = corte;
+    projeto.audios.splice(projeto.audios.indexOf(a) + 1, 0, novo);
+    selAudio = novo.id;
   });
+  aviso('Música dividida em duas.');
+}
+
+/** Projetos antigos tinham uma música só ("musica"): vira trechos na faixa verde. */
+function migrarMusica() {
+  if (!projeto.audios) projeto.audios = [];
+  const mu = projeto.musica;
+  if (mu) {
+    const m = midias.get(mu.midia);
+    if (m) projeto.audios = projeto.audios.concat(trechosCobrindo(m, 0, mu.ini || 0, mu.volume == null ? 0.8 : mu.volume, mu.repetir !== false));
+    if (mu.sumir === false) projeto.sumirMusica = false;
+    delete projeto.musica;
+  }
+  projeto.audios = projeto.audios.filter((a) => midias.has(a.midia));
 }
 
 // ---------- Folha (janela de baixo) ----------
@@ -1139,13 +1285,46 @@ function pLegendas(el) {
 
 // ---------- Projeto ----------
 
+const LISTA_FORMATOS = [
+  ['original', 'Original', 'do 1º vídeo'], ['9:16', '9:16', 'TikTok · Reels'], ['16:9', '16:9', 'YouTube'],
+  ['1:1', '1:1', 'Quadrado'], ['4:5', '4:5', 'Feed Instagram'], ['3:4', '3:4', 'Retrato'], ['4:3', '4:3', 'TV antiga'],
+  ['2:3', '2:3', 'Pinterest'], ['21:9', '21:9', 'Cinema'], ['2:1', '2:1', 'Panorâmico'], ['5:4', '5:4', 'Foto']
+];
+
+/** Tamanho do 1º vídeo/foto, para o formato "Original". */
+function formatoOriginal() {
+  const c = projeto.clipes[0];
+  const f = c && fontesDoClipe(c)[0];
+  const m = f && midias.get(f.midia);
+  if (!m || !m.w || !m.h) return null;
+  const mdc = (x, y) => (y ? mdc(y, x % y) : x);
+  const d = mdc(Math.round(m.w), Math.round(m.h));
+  return Math.round(m.w) / d + ':' + Math.round(m.h) / d;
+}
+
+function listaFormatos(depois) {
+  const orig = formatoOriginal();
+  return h('div', { class: 'formatos-rolo' }, LISTA_FORMATOS.map(([k, nome, uso]) => {
+    const proporcao = k === 'original' ? orig : k;
+    if (!proporcao) return null;
+    const [a, b] = proporcao.split(':').map(Number);
+    const s = 40 / Math.max(a, b);
+    const on = k === 'original' ? projeto.formatoNome === 'original' : projeto.formatoNome !== 'original' && projeto.formato === k;
+    return h('button', {
+      type: 'button', class: 'fmt' + (on ? ' on' : ''),
+      onclick: () => { mudar(() => { projeto.formato = proporcao; projeto.formatoNome = k === 'original' ? 'original' : ''; maxLado = null; }); depois(); }
+    },
+    h('span', { class: 'fmt__caixa' }, h('span', { class: 'fmt__ret', style: `width:${Math.round(a * s)}px;height:${Math.round(b * s)}px` })),
+    h('b', {}, nome), h('small', {}, uso));
+  }));
+}
+
 function abrirFormato() {
   abrirFolha('Formato e fundo', (corpo) => {
     const montar = () => {
       corpo.replaceChildren(
-        h('p', { class: 'rot' }, 'Formato da tela'),
-        chips(Object.keys(FORMATOS).map((k) => [k, k + ({ '9:16': ' Stories/Reels', '16:9': ' YouTube', '1:1': ' Quadrado', '4:5': ' Feed' }[k] || '')]),
-          projeto.formato, (v) => { mudar(() => { projeto.formato = v; maxLado = null; }); montar(); }),
+        h('p', { class: 'rot' }, 'Formato da tela (arraste para o lado para ver todos)'),
+        listaFormatos(() => montar()),
         h('p', { class: 'rot' }, 'Sobras da tela (quando o vídeo não preenche)'),
         chips([['desfocado', 'Desfocado'], ['preto', 'Preto'], ['branco', 'Branco']], projeto.fundo, (v) => { mudar(() => { projeto.fundo = v; }); montar(); }),
         h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: !!projeto.fadeIn, onchange: (e) => mudar(() => { projeto.fadeIn = e.target.checked; }) }), ' Começar clareando (do preto)'),
@@ -1431,7 +1610,7 @@ if (appCap) {
     else if (!$('pgFerramentas').hidden) mostrarPagina('editor');
     else if (document.querySelector('.app.tela-cheia')) alternarTelaCheia();
     else if (painelAberto) { painelAberto = false; painelGeral = null; atualizarTudo(); }
-    else if (sel) { sel = null; atualizarTudo(); }
+    else if (sel || selAudio) { sel = null; selAudio = null; atualizarTudo(); }
     else appCap.minimizeApp();
   });
   appCap.addListener('pause', () => { if (tocando) pausar(); });
@@ -1453,7 +1632,7 @@ async function iniciar() {
   // Clipes cujo arquivo sumiu saem do projeto.
   projeto.clipes = projeto.clipes.filter((c) => c.tipo === 'colagem' || midias.has(c.midia));
   projeto.clipes.forEach((c) => { if (c.tipo === 'colagem') c.celulas = c.celulas.map((x) => (x && midias.has(x.midia) ? x : null)); });
-  if (projeto.musica && !midias.has(projeto.musica.midia)) projeto.musica = null;
+  migrarMusica();
   atualizarTudo();
 }
 

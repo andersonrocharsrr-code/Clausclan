@@ -16,9 +16,14 @@ export const RESOLUCOES = { 720: '720p', 1080: '1080p (Full HD)', 1440: '2K', 21
 
 /** Tamanho do vídeo final: o lado menor é a resolução escolhida (4K vertical = 2160 × 3840). */
 export function tamanhoSaida(formato, lado) {
-  const [a, b] = FORMATOS[formato] || FORMATOS['9:16'];
+  // Formato "a:b" qualquer (ex.: "9:16", "2.35:1", ou o tamanho do vídeo original "1080:1350").
+  let [a, b] = String(formato || '9:16').split(':').map(Number);
+  if (!(a > 0 && b > 0)) [a, b] = [9, 16];
   const par = (n) => Math.max(2, Math.round(n / 2) * 2);
-  return a <= b ? { w: par(lado), h: par(lado * b / a) } : { w: par(lado * a / b), h: par(lado) };
+  let w = a <= b ? lado : lado * a / b, h = a <= b ? lado * b / a : lado;
+  // Lado maior no máximo 3840 (formatos bem compridos, como cinema 21:9).
+  const s = Math.min(1, 3840 / Math.max(w, h));
+  return { w: par(w * s), h: par(h * s) };
 }
 
 export const FILTROS = {
@@ -605,29 +610,32 @@ export async function mixarAudio(projeto, linha, midias, aoProgresso, op = {}) {
       for (let q = ini + tam; tam > 0.3 && q < fimIt; q += tam) tocar(q, comeco);
     }
   }
-  // Música de fundo
-  const mus = !op.semMusica && projeto.musica && midias.get(projeto.musica.midia);
-  if (mus && projeto.musica.volume > 0) {
-    aoProgresso && aoProgresso(fontes.length / (fontes.length + 1));
-    const a = await lerAudio(mus.blob, projeto.musica.ini || 0, Infinity, ctx);
-    if (a) {
+  // Música (trechos na faixa verde: cada um com posição no vídeo, começo e fim dentro da música)
+  const trechos = op.semMusica ? [] : (projeto.audios || []);
+  if (trechos.length) {
+    const mestre = ctx.createGain(); // abaixa tudo no final, se pedido
+    mestre.gain.setValueAtTime(1, 0);
+    if (projeto.sumirMusica !== false && total > 3) {
+      mestre.gain.setValueAtTime(1, total - 2);
+      mestre.gain.linearRampToValueAtTime(0, total);
+    }
+    mestre.connect(ctx.destination);
+    for (const tr of trechos) {
+      const mus = midias.get(tr.midia);
+      if (!mus || !(tr.volume > 0) || tr.pos >= total) continue;
+      aoProgresso && aoProgresso(fontes.length / (fontes.length + 1));
+      const a = await lerAudio(mus.blob, tr.ini, tr.fim, ctx);
+      if (!a) continue;
       algum = true;
       const g = ctx.createGain();
-      const vol = projeto.musica.volume;
-      g.gain.setValueAtTime(vol, 0);
-      if (projeto.musica.sumir !== false && total > 3) {
-        g.gain.setValueAtTime(vol, total - 2);
-        g.gain.linearRampToValueAtTime(0, total);
-      }
-      g.connect(ctx.destination);
-      const tam = a.buffer.duration;
-      for (let q = 0; q < total; q += tam) {
-        const s = ctx.createBufferSource();
-        s.buffer = a.buffer;
-        s.connect(g);
-        s.start(q);
-        if (projeto.musica.repetir === false) break;
-      }
+      g.gain.value = tr.volume;
+      g.connect(mestre);
+      const src = ctx.createBufferSource();
+      src.buffer = a.buffer;
+      src.connect(g);
+      const atraso = Math.max(0, a.inicio - tr.ini);
+      src.start(tr.pos + atraso, Math.max(0, tr.ini - a.inicio));
+      src.stop(Math.min(total, tr.pos + (tr.fim - tr.ini)));
     }
   }
   if (!algum) return null;
