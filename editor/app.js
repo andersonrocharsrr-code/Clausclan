@@ -273,7 +273,7 @@ function player(chave, m) {
     el.preservesPitch = false; // igual ao vídeo salvo: mais rápido = som mais fino
     el.src = m.url;
     el.addEventListener('seeked', pedirDesenho);
-    el.addEventListener('loadeddata', pedirDesenho);
+    el.addEventListener('loadeddata', () => { el.dataset.teveQuadro = '1'; pedirDesenho(); });
     players.set(chave, el);
   }
   return el;
@@ -315,7 +315,8 @@ function imagemPrevia(chave, s) {
   }
   const el = player(chave, m);
   if (!tocando && !el.seeking && Math.abs(el.currentTime - s) > 0.03) el.currentTime = s;
-  return el.readyState >= 2 && el.videoWidth ? { img: el, w: el.videoWidth, h: el.videoHeight } : null;
+  // Enquanto procura o quadro novo, o <video> continua mostrando o anterior (não fica preto).
+  return el.videoWidth && (el.readyState >= 2 || el.dataset.teveQuadro) ? { img: el, w: el.videoWidth, h: el.videoHeight } : null;
 }
 
 function ajustarTela() {
@@ -423,6 +424,7 @@ const TILE = 46; // largura de cada miniatura
 const meio = () => Math.round($('rolo').clientWidth / 2);
 
 function rolarPara(t) {
+  if (arrasto) return; // durante o arraste da alça quem manda na rolagem é o dedo
   const r = $('rolo');
   const x = Math.round(t * PX);
   if (Math.abs(r.scrollLeft - x) >= 1) r.scrollLeft = x;
@@ -430,6 +432,7 @@ function rolarPara(t) {
 
 // O dedo arrasta a linha do tempo: o tempo segue o que está embaixo da agulha.
 $('rolo').addEventListener('scroll', () => {
+  if (arrasto) return; // no arraste da alça a prévia mostra o ponto do corte
   const t = $('rolo').scrollLeft / PX;
   if (Math.abs(t - tempo) < 1.5 / PX) return; // fomos nós que rolamos
   const l = linha();
@@ -531,28 +534,31 @@ function escolherClipe(c, it) {
   atualizarTudo();
 }
 
-/** Puxar a alça do clipe escolhido: corta o começo ou o fim arrastando. */
+/**
+ * Puxar a alça do clipe escolhido: segura e arrasta para cortar o começo ou o fim.
+ * Com o dedo perto da beirada, a linha do tempo corre sozinha (mais rápido quanto mais no canto)
+ * e continua cortando enquanto o dedo estiver na tela, até chegar no limite do vídeo.
+ */
+let arrasto = null;
+const BEIRA = 72;      // largura da faixa da beirada que faz correr (px)
+const VEL_MAX = 900;   // velocidade máxima da corrida (px/s)
+
 function arrastar(e, c, lado) {
   e.preventDefault();
   e.stopPropagation();
   if (tocando) pausar();
-  const x0 = e.clientX;
-  const orig = { ini: c.ini, fim: c.fim, dur: duracaoClipe(c, midias) };
-  const m = midias.get(c.midia);
-  const lim = (v, a, b) => Math.max(a, Math.min(b, v));
-  const mover = (ev) => {
-    const ds = (ev.clientX - x0) / PX;
-    mudar(() => {
-      if (c.tipo === 'video') {
-        const v = c.vel || 1;
-        if (lado === 'dir') c.fim = lim(orig.fim + ds * v, c.ini + 0.2, m ? m.dur : orig.fim);
-        else c.ini = lim(orig.ini + ds * v, 0, c.fim - 0.2);
-      } else {
-        c.dur = Math.round(Math.max(0.5, lado === 'dir' ? orig.dur + ds : orig.dur - ds) * 10) / 10;
-      }
-    }, 'arrasto');
+  const rolo = $('rolo');
+  try { $('linha').setPointerCapture(e.pointerId); } catch (x) {}
+  const xConteudo = (cx) => rolo.scrollLeft + cx - rolo.getBoundingClientRect().left;
+  arrasto = {
+    c, lado, id: e.pointerId, x: e.clientX, x0: xConteudo(e.clientX), t: performance.now(),
+    orig: { ini: c.ini, fim: c.fim, dur: duracaoClipe(c, midias) }, xConteudo
   };
-  const soltar = () => {
+  const mover = (ev) => { if (arrasto && ev.pointerId === arrasto.id) { arrasto.x = ev.clientX; arrasto.travado = 0; aplicarArrasto(); } };
+  const soltar = (ev) => {
+    if (!arrasto || (ev && ev.pointerId !== arrasto.id)) return;
+    try { $('linha').releasePointerCapture(arrasto.id); } catch (x) {}
+    arrasto = null;
     window.removeEventListener('pointermove', mover);
     window.removeEventListener('pointerup', soltar);
     window.removeEventListener('pointercancel', soltar);
@@ -562,6 +568,62 @@ function arrastar(e, c, lado) {
   window.addEventListener('pointermove', mover);
   window.addEventListener('pointerup', soltar);
   window.addEventListener('pointercancel', soltar);
+  requestAnimationFrame(correrNaBeira);
+}
+
+/** Corta conforme a posição do dedo dentro da linha do tempo. Devolve true se chegou no limite. */
+function aplicarArrasto() {
+  const a = arrasto;
+  if (!a) return true;
+  const { c, lado, orig } = a;
+  const ds = (a.xConteudo(a.x) - a.x0) / PX;
+  const m = midias.get(c.midia);
+  const lim = (v, x, y) => Math.max(x, Math.min(y, v));
+  let noLimite = false;
+  mudar(() => {
+    if (c.tipo === 'video') {
+      const v = c.vel || 1;
+      if (lado === 'dir') {
+        const max = m ? m.dur : orig.fim;
+        c.fim = lim(orig.fim + ds * v, c.ini + 0.2, max);
+        noLimite = ds < 0 ? c.fim <= c.ini + 0.2 + 1e-6 : c.fim >= max - 1e-6;
+      } else {
+        c.ini = lim(orig.ini + ds * v, 0, c.fim - 0.2);
+        noLimite = ds < 0 ? c.ini <= 1e-6 : c.ini >= c.fim - 0.2 - 1e-6;
+      }
+    } else {
+      const d = lado === 'dir' ? orig.dur + ds : orig.dur - ds;
+      c.dur = Math.round(Math.max(0.5, Math.min(120, d)) * 10) / 10;
+      noLimite = c.dur <= 0.5 || c.dur >= 120;
+    }
+  }, 'arrasto');
+  // A prévia mostra o quadro exato onde está cortando.
+  const it = linha().itens.find((x) => x.c.id === c.id);
+  if (it) { tempo = lado === 'dir' ? it.ini + it.dur - 0.03 : it.ini + 0.01; pedirDesenho(); }
+  return noLimite;
+}
+
+function correrNaBeira(agora) {
+  const a = arrasto;
+  if (!a) return;
+  const dt = Math.min(0.05, (agora - a.t) / 1000);
+  a.t = agora;
+  const rolo = $('rolo');
+  const r = rolo.getBoundingClientRect();
+  let v = 0;
+  const dEsq = a.x - r.left, dDir = r.right - a.x;
+  if (dEsq < BEIRA) v = -VEL_MAX * Math.pow(Math.min(1, (BEIRA - dEsq) / BEIRA), 1.6);
+  else if (dDir < BEIRA) v = VEL_MAX * Math.pow(Math.min(1, (BEIRA - dDir) / BEIRA), 1.6);
+  if (v && Math.sign(v) !== a.travado) {
+    const antes = rolo.scrollLeft;
+    rolo.scrollLeft = antes + v * dt;
+    if (rolo.scrollLeft !== antes) {
+      // Chegou no limite do vídeo: fica no limite e a linha do tempo para de correr para esse lado.
+      if (aplicarArrasto()) a.travado = Math.sign(v);
+      pedirDesenho();
+    }
+  }
+  requestAnimationFrame(correrNaBeira);
 }
 
 // ---------- Barra de ferramentas ----------
