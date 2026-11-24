@@ -188,29 +188,33 @@ function cobra(x, y, s, t, fumaca = 1) { c.save(); c.translate(x, y); c.scale(s 
   c.restore();
   c.font = '800 120px Arial, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#FFFFFF'; c.fillText('BRASIL', 790, 254);
   // corpo da cobra em S com laço embaixo
-  const corpo = () => { c.beginPath(); c.moveTo(761, 881); c.bezierCurveTo(882, 872, 1000, 854, 1000, 770); c.bezierCurveTo(1000, 640, 850, 592, 700, 592); c.bezierCurveTo(520, 592, 470, 720, 560, 792); c.bezierCurveTo(650, 860, 810, 808, 830, 690); c.bezierCurveTo(852, 570, 722, 470, 722, 392); c.bezierCurveTo(722, 312, 790, 300, 840, 352) };
+  const corpo = () => { c.beginPath(); c.moveTo(761, 881); c.bezierCurveTo(882, 872, 1000, 854, 1000, 770); c.bezierCurveTo(1000, 640, 850, 592, 700, 592); c.bezierCurveTo(520, 592, 470, 720, 560, 792); c.bezierCurveTo(650, 860, 810, 808, 830, 690); c.bezierCurveTo(826, 590, 740, 525, 725, 440) };
   const rabo = (u) => { const v = 1 - u; return [v * v * v * 612 + 3 * v * v * u * 760 + 3 * v * u * u * 1000 + u * u * u * 1000, v * v * v * 890 + 3 * v * v * u * 876 + 3 * v * u * u * 890 + u * u * u * 770] };
   for (let k = 0; k < 2; k++) { for (let i = 0; i <= 40; i++) { const u = i / 40 * .32, [px, py] = rabo(u), rr2 = 4 + 19 * Math.min(1, u / .3); disc(px, py, k ? rr2 : rr2 + 3, k ? '#3CB43C' : '#1D5E1E') }
     corpo(); c.strokeStyle = k ? '#3CB43C' : '#1D5E1E'; c.lineWidth = k ? 46 : 52; c.stroke() } 
   
   // cabeça alongada apontando para baixo à direita, boca aberta segurando o cachimbo
   const cab = (f, cor) => { c.beginPath(); f(); c.closePath(); c.fillStyle = cor; c.fill(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 5; c.stroke() };
-  // cabeça e cachimbo decalcados da foto (recorte ampliado x3, origem 820,330); a piteira fica no meio da boca:
-  // na frente da papada e por trás da ponta do focinho
-  c.save(); c.translate(820, 330); c.scale(1 / 3, 1 / 3); c.lineJoin = 'round'; c.lineCap = 'round'; const VD = '#3CB43C', CT = '#1D5E1E';
-  c.beginPath(); c.moveTo(96, -9); c.quadraticCurveTo(190, 88, 285, 150); c.quadraticCurveTo(330, 175, 345, 215); c.lineTo(398, 338); c.lineTo(428, 398); c.quadraticCurveTo(434, 424, 410, 422); c.lineTo(362, 394); c.lineTo(322, 357); c.quadraticCurveTo(220, 305, 175, 278); c.quadraticCurveTo(140, 250, 135, 210); c.quadraticCurveTo(44, 164, -18, 99);
-  c.fillStyle = VD; c.fill(); c.strokeStyle = CT; c.lineWidth = 12; c.stroke();
-  c.save(); c.translate(272, 210); c.rotate(.45); c.beginPath(); c.ellipse(0, 0, 44, 30, 0, 0, 7); c.fillStyle = '#fff'; c.fill(); c.strokeStyle = CT; c.lineWidth = 6; c.stroke(); c.beginPath(); c.ellipse(-4, 0, 11, 17, -.45, 0, 7); c.fillStyle = '#222'; c.fill(); c.restore();
-  // cachimbo
+  // pescoço e cabeça decalcados da foto (recorte x3, origem 700,300): arco largo do pescoço, papada, focinho fino
+  c.save(); c.translate(700, 300); c.scale(1 / 3, 1 / 3); c.lineJoin = 'round'; c.lineCap = 'round'; const VD = '#3CB43C', CT = '#1D5E1E';
+  const P = [[0, 420], [2, 250], [30, 120], [100, 45], [200, 20], [330, 30], [450, 80], [560, 160], [650, 215], [712, 252], [740, 320], [755, 400], [780, 470], [792, 505], [776, 527], [750, 516], [700, 472], [688, 452], [620, 430], [545, 392], [498, 332], [480, 272], [440, 232], [360, 192], [270, 166], [205, 175], [166, 230], [156, 320], [152, 420]];
+  const tracar = () => { c.beginPath(); c.moveTo(...P[0]); for (let i = 1; i < P.length - 1; i++) { const [x0, y0] = P[i], [x1, y1] = P[i + 1]; c.quadraticCurveTo(x0, y0, (x0 + x1) / 2, (y0 + y1) / 2) } c.lineTo(...P[P.length - 1]) };
+  tracar(); c.fillStyle = VD; c.fill(); tracar(); c.strokeStyle = CT; c.lineWidth = 12; c.stroke();
+  // olho amendoado com o cantinho puxado para trás
+  c.beginPath(); c.moveTo(590, 258); c.quadraticCurveTo(640, 258, 668, 284); c.quadraticCurveTo(684, 312, 656, 330); c.quadraticCurveTo(624, 338, 606, 302); c.quadraticCurveTo(598, 276, 590, 258); c.closePath(); c.fillStyle = '#fff'; c.fill(); c.strokeStyle = CT; c.lineWidth = 5; c.stroke();
+  c.save(); c.translate(633, 293); c.rotate(-.35); c.beginPath(); c.ellipse(0, 0, 9, 15, 0, 0, 7); c.fillStyle = '#1A1A1A'; c.fill(); c.restore(); c.restore();
+  // cachimbo (recorte x3, origem 820,330)
+  c.save(); c.translate(820, 330); c.scale(1 / 3, 1 / 3); c.lineJoin = 'round';
   c.beginPath(); c.moveTo(318, 372); c.quadraticCurveTo(326, 336, 362, 350); c.quadraticCurveTo(420, 420, 438, 500); c.lineTo(445, 565); c.quadraticCurveTo(452, 586, 472, 576); c.lineTo(518, 474);
   c.quadraticCurveTo(612, 468, 664, 548); c.quadraticCurveTo(642, 636, 525, 668); c.quadraticCurveTo(440, 674, 405, 645); c.quadraticCurveTo(388, 618, 392, 570); c.lineTo(385, 480); c.quadraticCurveTo(372, 418, 318, 372); c.closePath();
   c.fillStyle = '#E2602A'; c.fill(); c.strokeStyle = '#7A2C0E'; c.lineWidth = 9; c.stroke();
   c.beginPath(); c.ellipse(591, 511, 78, 28, .5, 0, 7); c.fillStyle = '#8A3A12'; c.fill(); c.stroke();
   poly([[405, 490], [416, 490], [418, 630], [408, 622]], 'rgba(255,220,160,.3)');
-  // ponta do focinho por cima da piteira
-  c.beginPath(); c.moveTo(352, 300); c.lineTo(398, 338); c.lineTo(428, 398); c.quadraticCurveTo(434, 424, 410, 422); c.lineTo(372, 398); c.quadraticCurveTo(360, 350, 352, 300); c.fillStyle = VD; c.fill();
-  c.beginPath(); c.moveTo(398, 338); c.lineTo(428, 398); c.quadraticCurveTo(434, 424, 410, 422); c.lineTo(374, 400); c.strokeStyle = CT; c.lineWidth = 12; c.stroke();
   c.restore();
+  // ponta do focinho por cima da piteira, deixando o cachimbo no meio da boca
+  c.save(); c.translate(700, 300); c.scale(1 / 3, 1 / 3); c.lineJoin = 'round';
+  c.beginPath(); c.moveTo(728, 330); c.lineTo(742, 330); c.quadraticCurveTo(755, 400, 768, 440); c.quadraticCurveTo(792, 500, 784, 516); c.quadraticCurveTo(776, 527, 763, 521); c.lineTo(740, 505); c.quadraticCurveTo(728, 420, 728, 330); c.fillStyle = '#3CB43C'; c.fill();
+  c.beginPath(); c.moveTo(748, 380); c.quadraticCurveTo(762, 440, 780, 480); c.quadraticCurveTo(796, 512, 776, 526); c.quadraticCurveTo(762, 522, 742, 508); c.strokeStyle = '#1D5E1E'; c.lineWidth = 12; c.stroke(); c.restore();
   // fumaça em fitas cinzas ondulando
   if (fumaca > 0) { c.lineWidth = 16; for (let k = 0; k < 3; k++) { c.globalAlpha = fumaca * (.85 - k * .2); c.strokeStyle = k ? '#C9CDD2' : '#E2E5E8'; c.beginPath(); for (let i = 0; i <= 20; i++) { const u = i / 20, yy = 492 - u * (170 + k * 20), xx = 1020 + k * 14 + sin(u * 7 - t * 4 + k) * 18 * u + u * 20; i ? c.lineTo(xx, yy) : c.moveTo(xx, yy) } c.stroke() } c.globalAlpha = 1 }
   c.restore() }
