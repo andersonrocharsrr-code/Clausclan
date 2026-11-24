@@ -946,8 +946,11 @@ const textoVel = (v) => (v === 1 ? 'Normal (1×)' : String(Math.round(v * 100) /
 function pVel(c, el) {
   const val = h('b', { class: 'vel-valor' }, textoVel(c.vel || 1));
   const inp = h('input', { type: 'range', class: 'vel-barra', min: 0, max: 1000, step: 1, value: Math.round(velParaPos(c.vel || 1) * 1000), 'aria-label': 'Velocidade' });
+  const trilho = h('div', { class: 'vel-trilho' }, h('span', { class: 'vel-cheio' }));
+  const encher = () => { trilho.firstChild.style.width = `calc(12px + (100% - 24px) * ${Number(inp.value) / 1000})`; };
   const aplicar = (v) => {
     inp.value = Math.round(velParaPos(v) * 1000);
+    encher();
     val.textContent = textoVel(v);
     pontos.querySelectorAll('.vel-ponto').forEach((b) => b.classList.toggle('on', Number(b.dataset.v) === v));
     mudar(() => { c.vel = v; }, 'vel', { semPainel: true });
@@ -966,9 +969,10 @@ function pVel(c, el) {
   }, h('i'), h('small', {}, String(pt).replace('.', ',') + '×'))));
   el.append(
     h('div', { class: 'vel-topo' }, h('span', {}, '🐢 Lento'), val, h('span', {}, 'Rápido 🐇')),
-    h('div', { class: 'vel-caixa' }, inp, pontos),
+    h('div', { class: 'vel-caixa' }, trilho, pontos, inp),
     h('p', { class: 'dica' }, 'Arraste a barra ou toque num ponto. O som acompanha a velocidade.')
   );
+  encher();
 }
 
 function pSom(c, el) {
