@@ -1,0 +1,100 @@
+<!doctype html><meta charset="utf-8"><title>Intro Fã da História</title>
+<style>
+@font-face{font-family:Fira;font-weight:800;src:url(fontes/fira-sans-extra-condensed-latin-800-normal.woff2)}
+@font-face{font-family:Serif;src:url(fontes/instrument-serif-latin-400-normal.woff2)}
+html,body{margin:0;background:#000;overflow:hidden}
+#film{position:relative;width:1080px;height:1920px;overflow:hidden;background:#1a1009;font-family:Fira}
+.abs{position:absolute;left:0;top:0}
+#win{position:absolute;overflow:hidden;box-sizing:border-box}
+#art{position:absolute;left:0;top:0;width:1024px;height:1024px;transform-origin:0 0}
+.c{position:absolute;left:50%;transform:translate(-50%,-50%);white-space:nowrap;text-align:center}
+#grain{position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;opacity:.09}
+</style>
+<div id="film">
+  <div id="bg" class="abs" style="width:1080px;height:1920px"></div>
+  <svg id="rosa" class="abs" width="1080" height="1920" style="opacity:.16"><g id="rosaG" fill="none" stroke="#E9D3A0" stroke-width="3"><circle r="300"/><circle r="270"/><path d="M0 -330 L22 -22 L330 0 L22 22 L0 330 L-22 22 L-330 0 L-22 -22 Z" fill="rgba(233,211,160,.25)"/></g></svg>
+  <div id="eraTop" class="c" style="top:250px;font-size:40px;letter-spacing:12px;color:#D4A44A">UMA VIAGEM NO TEMPO</div>
+  <div id="era" class="c" style="top:330px;font-size:84px;letter-spacing:4px;color:#E9D3A0"></div>
+  <div id="win"><img id="art" src="logo.jpg"><div id="sheen" class="abs" style="width:100%;height:100%"></div></div>
+  <div id="ano" class="c" style="top:1360px;font-family:Serif;font-size:150px;color:#E9D3A0"></div>
+  <svg id="linha" class="abs" width="1080" height="1920"></svg>
+  <div id="tag" class="c" style="top:1330px;font-size:38px;letter-spacing:5px;color:#E9D3A0"></div>
+  <div id="btn" class="abs" style="box-sizing:border-box;overflow:hidden;border-radius:60px"><div id="btnT" class="c" style="top:50%;font-size:48px;letter-spacing:6px"></div></div>
+  <svg class="abs" width="1080" height="1920"><circle id="rip" fill="none" stroke="#E9D3A0" stroke-width="4"/></svg>
+  <div id="cur" class="abs" style="transform-origin:0 0">
+    <svg width="64" height="80" viewBox="0 0 40 50" style="position:absolute"><path d="M3 3 L3 38 L12 30 L18 44 L24 41.5 L18 28 L30 28 Z" fill="#E9D3A0" stroke="#22160C" stroke-width="2.4" stroke-linejoin="round"/></svg>
+    <div id="pill" style="position:absolute;left:58px;top:66px;background:#8E1B12;color:#E9D3A0;font:800 30px Fira;letter-spacing:2px;padding:6px 18px;border-radius:22px">VOCÊ</div>
+  </div>
+  <svg id="grain" width="1080" height="1920"><filter id="gf"><feTurbulence id="turb" type="fractalNoise" baseFrequency=".8" numOctaves="2" seed="1"/><feColorMatrix type="saturate" values="0"/></filter><rect width="1080" height="1920" filter="url(#gf)"/></svg>
+</div>
+<script>
+// ===== Intro "Fã da História": tudo calculado a partir do tempo em seek(t) =====
+const BEAT = .5, DUR = 10, $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, u) => a + (b - a) * u;
+function stepR(tau, {w, z}) { if (tau <= 0) return 0; if (z >= 1) { const x = w * tau; return 1 - Math.exp(-x) * (1 + x) } const wd = w * Math.sqrt(1 - z * z); return 1 - Math.exp(-z * w * tau) * (Math.cos(wd * tau) + (z * w / wd) * Math.sin(wd * tau)) }
+class Track { constructor(v0) { this.v0 = v0; this.cur = v0; this.ev = [] } to(t, v, sp) { if (v !== this.cur) { this.ev.push([t, v - this.cur, sp]); this.cur = v } return this } at(t) { let v = this.v0; for (const [ti, d, sp] of this.ev) v += d * stepR(t - ti, sp); return v } }
+function vis(t, tin, tout, dOut = .12) { const e = stepR(t - tin, {w: 26, z: 1}), x = tout == null ? 0 : clamp((t - tout) / dOut), xo = x * x; return {o: e * (1 - xo), b: (1 - e) * 10 + xo * 10, dy: (1 - e) * 16 - xo * 10} }
+const apply = (el, v, extra = '') => { el.style.opacity = v.o; el.style.filter = v.b > .05 ? `blur(${v.b}px)` : 'none'; el.style.transform = `translate(-50%,calc(-50% + ${v.dy}px))${extra}` };
+const CAM = {w: 9, z: 1}, WHIP = {w: 13, z: .95}, MORPH = {w: 18, z: .86}, SOFT = {w: 12, z: .9};
+// ---------- eras (pontos da arte de 1024 px, zoom) — datas reais ----------
+const ERAS = [
+  {t: 1.5, nome: 'EGITO ANTIGO', ano: -2560, x: 490, y: 230, z: 2.3},
+  {t: 2.3, nome: 'ROMA', ano: 80, x: 160, y: 455, z: 2.3},
+  {t: 3.1, nome: 'CRUZADAS', ano: 1119, x: 700, y: 290, z: 2.1},
+  {t: 3.9, nome: 'GRANDES NAVEGAÇÕES', ano: 1492, x: 905, y: 330, z: 2.6},
+  {t: 4.7, nome: 'RENASCIMENTO', ano: 1504, x: 255, y: 285, z: 2.3},
+];
+const M = {grab: 1.0, release: 5.4, drop: 6.0, tag: 7.0, toBtn: 8.2, click: 8.8};
+// câmera dentro da arte: começa na rosa dos ventos, voa de era em era, recua no drop
+const CX = new Track(170), CY = new Track(170), LZ = new Track(Math.log(3.0));
+ERAS.forEach(e => { CX.to(e.t - .32, e.x, WHIP); CY.to(e.t - .32, e.y, WHIP); LZ.to(e.t - .32, Math.log(e.z), WHIP) });
+CX.to(M.release, 512, CAM); CY.to(M.release, 512, CAM); LZ.to(M.release, Math.log(1.25), CAM); LZ.to(M.drop - .12, 0, {w: 16, z: .82});
+// janela: círculo de 900 px que, no drop, vira o quadro do logo (960 px, cantos de 36 px)
+const WW = new Track(900).to(M.drop - .1, 960, MORPH), WR = new Track(450).to(M.drop - .1, 36, MORPH), WY = new Track(860).to(M.drop - .1, 820, MORPH);
+// linha do tempo: o botão (knob) segue o arraste do cursor de era em era
+const TL0 = 160, TL1 = 920, TLY = 1520, mark = i => lerp(TL0, TL1, i / 4);
+const KX = new Track(TL0); ERAS.forEach((e, i) => KX.to(e.t - .3, mark(i), {w: 15, z: .85}));
+function anoNoTempo(t) { const x = KX.at(t); for (let i = 0; i < 5; i++) if (Math.abs(x - mark(i)) < 14) return ERAS[i].ano; { const u = clamp((x - TL0) / (TL1 - TL0)) * 4, i = Math.min(3, Math.floor(u)), f = u - i; return Math.round(lerp(ERAS[i].ano, ERAS[i + 1].ano, f)) } }
+const fmtAno = a => a < 0 ? `${-a} a.C.` : a < 1000 ? `${a} d.C.` : `${a}`;
+// cursor
+const AX = new Track(1200).to(.1, 400, SOFT).to(M.grab - .35, TL0, {w: 14, z: .9}), AY = new Track(1700).to(.1, 1640, SOFT).to(M.grab - .35, TLY, {w: 14, z: .9});
+AX.to(M.release + .1, 900, SOFT).to(M.toBtn - .1, 560, {w: 12, z: .9}); AY.to(M.release + .1, 1700, SOFT).to(M.toBtn - .1, 1515, {w: 12, z: .9});
+function cursorAt(t) { if (t >= M.grab && t <= M.release) return [KX.at(t) + 6, TLY + 8]; return [AX.at(t), AY.at(t)] }
+const clicks = [M.grab, M.click];
+window.seek = async (t) => {
+  // fundo: pergaminho escuro com mapa, rosa dos ventos girando devagar
+  const a = .5 + .5 * Math.sin(t * .5); $('bg').style.background = `radial-gradient(800px 900px at 540px ${820 + a * 30}px, rgba(212,164,74,.22), transparent 70%), radial-gradient(1200px 1400px at 540px 900px, #3a230f, #140b05 80%)`;
+  $('rosaG').setAttribute('transform', `translate(540 860) rotate(${t * 8})`);
+  // janela e câmera
+  const ww = WW.at(t), wr = WR.at(t), wy = WY.at(t), punch = t > M.drop ? .03 * Math.exp(-((t - M.drop) % BEAT) * 9) * (t < 8 ? 1 : 0) : 0;
+  const win = $('win'); win.style.left = 540 - ww / 2 + 'px'; win.style.top = wy - ww / 2 + 'px'; win.style.width = ww + 'px'; win.style.height = ww + 'px'; win.style.borderRadius = wr + 'px';
+  win.style.border = `${t < M.drop ? 10 : 8}px solid #D4A44A`; win.style.boxShadow = '0 30px 80px rgba(0,0,0,.6)';
+  const z = Math.exp(LZ.at(t)) * (ww / 1024) * (1 + punch), cx = CX.at(t), cy = CY.at(t);
+  $('art').style.transform = `translate(${ww / 2 - cx * z}px,${ww / 2 - cy * z}px) scale(${z})`;
+  // brilho que atravessa o letreiro no drop
+  const sh = clamp((t - M.drop - .2) / .9); $('sheen').style.background = sh > 0 && sh < 1 ? `linear-gradient(105deg, transparent ${sh * 140 - 30}%, rgba(255,240,200,.45) ${sh * 140 - 15}%, transparent ${sh * 140}%)` : 'none';
+  // textos: título de abertura, era atual, ano rolando
+  apply($('eraTop'), vis(t, .15, M.drop - .1)); const ei = ERAS.reduce((k, e, i) => t >= e.t - .1 ? i : k, -1);
+  if (ei >= 0 && t < M.drop - .1) { $('era').textContent = ERAS[ei].nome; apply($('era'), vis(t, ERAS[ei].t - .1, ei < 4 ? ERAS[ei + 1].t - .18 : M.release, .1)) } else $('era').style.opacity = 0;
+  const vano = vis(t, ERAS[0].t - .25, M.release + .2); $('ano').textContent = fmtAno(anoNoTempo(t)); apply($('ano'), vano);
+  // linha do tempo com marcadores que acendem quando o botão passa
+  const vl = vis(t, .5, M.release + .25), kx = KX.at(t); let svg = `<g opacity="${vl.o}"><line x1="${TL0}" y1="${TLY}" x2="${TL1}" y2="${TLY}" stroke="rgba(233,211,160,.35)" stroke-width="6" stroke-linecap="round"/><line x1="${TL0}" y1="${TLY}" x2="${kx}" y2="${TLY}" stroke="#D4A44A" stroke-width="6" stroke-linecap="round"/>`;
+  ERAS.forEach((e, i) => { const on = kx >= mark(i) - 2; svg += `<circle cx="${mark(i)}" cy="${TLY}" r="${on ? 13 : 9}" fill="${on ? '#D4A44A' : '#5a4122'}"/><text x="${mark(i)}" y="${TLY + 62}" fill="${on ? '#E9D3A0' : 'rgba(233,211,160,.45)'}" font-family="Fira" font-size="34" text-anchor="middle">${fmtAno(e.ano).replace(' ', ' ')}</text>` });
+  const grab = t >= M.grab && t <= M.release; svg += `<circle cx="${kx}" cy="${TLY}" r="${grab ? 30 : 26}" fill="#8E1B12" stroke="#E9D3A0" stroke-width="5"/></g>`; $('linha').innerHTML = svg;
+  // depois do drop: frase e botão de inscrição
+  const tags = ['HISTÓRIA', 'CURIOSIDADES', 'GRANDES FEITOS']; $('tag').innerHTML = tags.map((s, i) => `<span style="opacity:${stepR(t - M.tag - i * .25, {w: 26, z: 1})}">${s}</span>`).join(' <span style="color:#8E1B12">◆</span> '); apply($('tag'), vis(t, M.tag, null));
+  const bw = new Track(0).to(M.toBtn - .1, 560, MORPH).at(t), bh = new Track(0).to(M.toBtn - .1, 120, MORPH).at(t), done = t >= M.click, pr = 1 - .1 * Math.exp(-(((t - M.click) / .05) ** 2));
+  const b = $('btn'); b.style.left = 540 - bw * pr / 2 + 'px'; b.style.top = 1515 - bh * pr / 2 + 'px'; b.style.width = bw * pr + 'px'; b.style.height = bh * pr + 'px'; b.style.background = done ? '#22160C' : '#8E1B12'; b.style.border = done ? '4px solid #D4A44A' : 'none';
+  $('btnT').textContent = done ? 'INSCRITO ✓' : 'INSCREVA-SE'; $('btnT').style.color = done ? '#D4A44A' : '#E9D3A0'; apply($('btnT'), vis(t, done ? M.click : M.toBtn + .1, null));
+  // cursor: inclinação pela velocidade, clique e onda
+  const [ax, ay] = cursorAt(t), [bx] = cursorAt(t - 1 / 60), vx = (ax - bx) * 60, lean = clamp(-vx * .0045, -14, 14);
+  let pz = 1; for (const tc of clicks) pz -= .16 * Math.exp(-(((t - tc) / .045) ** 2)); if (t > M.grab && t < M.release) pz = .88;
+  $('cur').style.transform = `translate(${ax}px,${ay}px) rotate(${lean}deg) scale(${pz * stepR(t - .05, {w: 16, z: .9})})`; $('cur').style.opacity = 1 - clamp((t - 9.3) / .3); $('pill').style.transform = `translateX(${clamp(-vx * .012, -40, 40)}px)`;
+  const lc = clicks.filter(c => t >= c).pop(), rr = lc == null ? 1 : (t - lc) / .4, rip = $('rip'); rip.setAttribute('cx', ax); rip.setAttribute('cy', ay); rip.setAttribute('r', 10 + rr * 70); rip.style.opacity = rr < 1 ? (1 - rr) * .8 : 0;
+  $('turb').setAttribute('seed', Math.floor(t * 30) % 97); $('film').style.filter = t > DUR - .4 ? `brightness(${1 - clamp((t - DUR + .4) / .4)})` : 'none';
+};
+window.DUR = DUR;
+(async () => { await document.fonts.load('800 40px Fira'); await document.fonts.load('100px Serif'); await document.fonts.ready; await new Promise(r => { const i = $('art'); i.complete ? r() : i.onload = r }); window.READY = true;
+  if (location.search.includes('render')) return; const film = $('film'); film.style.transformOrigin = '0 0'; film.style.transform = `scale(${innerHeight / 1920})`;
+  let t0 = performance.now(); (function loop(now) { seek(((now - t0) / 1000) % DUR); requestAnimationFrame(loop) })(t0) })();
+</script>
