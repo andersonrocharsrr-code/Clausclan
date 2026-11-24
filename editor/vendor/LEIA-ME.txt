@@ -7,3 +7,11 @@ Bibliotecas usadas pelo Editor de Vídeo (copiadas do npm, sem alteração):
 
 Para atualizar: npm pack mediabunny@X @mediabunny/mp3-encoder@X e copie dist/bundles/*.min.mjs para cá.
 O index.html liga o nome "mediabunny" a ./vendor/mediabunny.min.mjs (importmap).
+
+Legenda automática (editor/legenda-worker.js):
+- @huggingface/transformers 4.3.2 (transformers.min.js) — roda o Whisper no aparelho. Licença Apache-2.0.
+- onnxruntime-web 1.31.0-dev.20260914-8d85527a0 (ort/ort-wasm-simd-threaded.asyncify.mjs e .wasm) — a versão
+  que o transformers 4.3.2 pede. Licença MIT. Se atualizar o transformers, copie o ort da versão que ele usa
+  (o nome do arquivo que ele procura aparece no erro "Failed to fetch dynamically imported module").
+- O modelo (onnx-community/whisper-base_timestamped, q8, ~76 MB) NÃO fica aqui: o celular baixa do
+  huggingface.co na primeira vez e guarda no cache do app.
