@@ -978,18 +978,24 @@ const telinhas = new Set();    // { canvas, k }
 let telinhasRodando = false;
 let quadrosAB = null;
 
+// Foto de amostra das telinhas (enviada pelo Anderson): o pôr do sol passando para a asa do avião.
+const fotosAmostra = ['amostra-a.jpg', 'amostra-b.jpg'].map((src) => {
+  const im = new Image();
+  im.onload = () => { quadrosAB = null; }; // refaz os quadros quando a foto chegar
+  im.src = src;
+  return im;
+});
+
 function quadrosDeAmostra(n) {
-  if (quadrosAB) return quadrosAB;
-  const cria = (c1, c2, letra) => {
+  if (quadrosAB && quadrosAB.n === n) return quadrosAB;
+  const cria = (im, cor) => {
     const c = document.createElement('canvas'); c.width = n; c.height = n;
     const x = c.getContext('2d');
-    const g = x.createLinearGradient(0, 0, n, n); g.addColorStop(0, c1); g.addColorStop(1, c2);
-    x.fillStyle = g; x.fillRect(0, 0, n, n);
-    x.fillStyle = 'rgba(255,255,255,.95)'; x.font = `900 ${Math.round(n * 0.55)}px system-ui, sans-serif`;
-    x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(letra, n / 2, n * 0.54);
+    if (im.complete && im.naturalWidth) x.drawImage(im, 0, 0, n, n);
+    else { x.fillStyle = cor; x.fillRect(0, 0, n, n); }
     return c;
   };
-  quadrosAB = { A: cria('#2563eb', '#60a5fa', 'A'), B: cria('#f97316', '#facc15', 'B') };
+  quadrosAB = { n, A: cria(fotosAmostra[0], '#f59e0b'), B: cria(fotosAmostra[1], '#1e3a8a') };
   return quadrosAB;
 }
 
