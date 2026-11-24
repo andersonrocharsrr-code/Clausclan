@@ -193,16 +193,14 @@ function cobra(x, y, s, t, fumaca = 1) { c.save(); c.translate(x, y); c.scale(s 
   c.beginPath(); c.moveTo(612, 890); c.lineTo(598, 896); c.strokeStyle = '#1D5E1E'; c.lineWidth = 14; c.stroke(); // ponta do rabo
   // cabeça alongada apontando para baixo à direita, boca aberta segurando o cachimbo
   const cab = (f, cor) => { c.beginPath(); f(); c.closePath(); c.fillStyle = cor; c.fill(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 5; c.stroke() };
-  cab(() => { c.moveTo(924, 456); c.lineTo(984, 462); c.lineTo(966, 504) }, '#C62828'); // boca aberta
-  cab(() => { c.moveTo(924, 456); c.quadraticCurveTo(950, 470, 966, 504); c.quadraticCurveTo(950, 510, 936, 492); c.quadraticCurveTo(910, 470, 884, 440) }, '#2FA83A'); // mandíbula
-  cab(() => { c.moveTo(852, 346); c.bezierCurveTo(900, 332, 950, 380, 986, 450); c.quadraticCurveTo(990, 464, 976, 462); c.lineTo(924, 456); c.quadraticCurveTo(890, 440, 866, 408); c.quadraticCurveTo(852, 380, 852, 346) }, '#2FA83A'); // cabeça
-  c.strokeStyle = '#1D5E1E'; c.lineWidth = 3; c.beginPath(); c.moveTo(906, 440); c.quadraticCurveTo(930, 452, 950, 452); c.stroke(); // linha da boca
-  disc(968, 438, 3.5, '#1D5E1E'); // narina
-  c.beginPath(); c.ellipse(902, 384, 14, 11, .5, 0, 7); c.fillStyle = '#fff'; c.fill(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 3; c.stroke(); disc(905, 385, 5.5, '#111');
-  // cachimbo: piteira entrando na boca e fornilho arredondado
-  c.strokeStyle = '#5A1E08'; c.lineWidth = 16; c.beginPath(); c.moveTo(948, 478); c.quadraticCurveTo(962, 526, 990, 540); c.stroke(); c.strokeStyle = '#9A3A14'; c.lineWidth = 10; c.stroke();
-  c.beginPath(); c.moveTo(982, 494); c.lineTo(1048, 494); c.bezierCurveTo(1050, 540, 1036, 566, 1010, 566); c.bezierCurveTo(986, 566, 978, 540, 982, 494); c.closePath(); c.fillStyle = '#D9662A'; c.fill(); c.strokeStyle = '#7A2C0E'; c.lineWidth = 4; c.stroke();
-  c.beginPath(); c.ellipse(1015, 494, 33, 9, 0, 0, 7); c.fillStyle = '#3A1606'; c.fill(); c.stroke(); poly([[990, 504], [1000, 504], [1000, 548], [992, 540]], 'rgba(255,220,160,.35)');
+  cab(() => { c.moveTo(852, 346); c.bezierCurveTo(900, 332, 952, 392, 968, 456); c.quadraticCurveTo(972, 478, 954, 476); c.quadraticCurveTo(906, 456, 874, 418); c.quadraticCurveTo(852, 388, 852, 346) }, '#2FA83A'); // cabeça fechada, focinho para baixo
+  c.strokeStyle = '#1D5E1E'; c.lineWidth = 3; c.beginPath(); c.moveTo(912, 438); c.quadraticCurveTo(936, 458, 958, 466); c.stroke(); // boca
+  disc(962, 448, 3.5, '#1D5E1E'); c.beginPath(); c.ellipse(904, 390, 14, 11, .5, 0, 7); c.fillStyle = '#fff'; c.fill(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 3; c.stroke(); disc(907, 391, 5.5, '#111');
+  // cachimbo por cima da boca: piteira vermelha saindo da boca e descendo até o fornilho
+  const pit = () => { c.beginPath(); c.moveTo(928, 448); c.quadraticCurveTo(946, 470, 962, 492); c.quadraticCurveTo(974, 514, 992, 526) };
+  pit(); c.strokeStyle = '#7A2C0E'; c.lineWidth = 24; c.stroke(); pit(); c.strokeStyle = '#E0472A'; c.lineWidth = 17; c.stroke(); disc(928, 448, 9, '#E0472A');
+  c.beginPath(); c.moveTo(980, 500); c.quadraticCurveTo(1016, 482, 1050, 494); c.bezierCurveTo(1052, 540, 1036, 568, 1006, 566); c.bezierCurveTo(984, 564, 974, 540, 980, 500); c.closePath(); c.fillStyle = '#E2602A'; c.fill(); c.strokeStyle = '#7A2C0E'; c.lineWidth = 4; c.stroke();
+  c.beginPath(); c.ellipse(1015, 493, 34, 10, -.12, 0, 7); c.fillStyle = '#5A2208'; c.fill(); c.stroke(); poly([[990, 508], [1000, 506], [1000, 548], [992, 540]], 'rgba(255,220,160,.35)');
   // fumaça em fitas cinzas ondulando
   if (fumaca > 0) { c.lineWidth = 16; for (let k = 0; k < 3; k++) { c.globalAlpha = fumaca * (.85 - k * .2); c.strokeStyle = k ? '#C9CDD2' : '#E2E5E8'; c.beginPath(); for (let i = 0; i <= 20; i++) { const u = i / 20, yy = 482 - u * (170 + k * 20), xx = 1020 + k * 14 + sin(u * 7 - t * 4 + k) * 18 * u + u * 20; i ? c.lineTo(xx, yy) : c.moveTo(xx, yy) } c.stroke() } c.globalAlpha = 1 }
   c.restore() }
