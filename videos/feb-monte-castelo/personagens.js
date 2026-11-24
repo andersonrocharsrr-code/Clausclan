@@ -61,3 +61,118 @@ function general(x, y, s = 1) { c.save(); c.translate(x, y); c.scale(s, s); cons
   c.save(); c.translate(0, -70); c.scale(2.2, 2.2); rosto({barba: false, bigode: false, cab: '#8A8A8A'}); c.restore();
   // quepe
   el(10, -138, 92, 30, '#4A4830'); poly([[-70, -150], [80, -150], [90, -118], [-80, -118]], '#5A5838'); rr(-80, -126, 172, 14, 4, PR.ouro); poly([[-60, -112], [92, -112], [120, -92], [-40, -96]], '#1E1A12'); disc(6, -142, 14, PR.ouro); c.restore() }
+
+// ===== Navio mercante detalhado (substitui o anterior): casco em planos de luz e sombra, linha d'água, vigias, convés,
+// superestrutura com janelas, chaminé com faixa, mastros com cordame e paus de carga, botes salva-vidas e fumaça =====
+function navio(x, y, s, inc = 0, col, o = {}) { const t = o.t || 0; c.save(); c.translate(x, y); c.rotate(inc); c.scale(s, s);
+  const casco = '#2B3442', casco2 = '#1E2531', luz = '#E8DCC0', luz2 = '#C9B998', ferrugem = '#7A3B26', madeira = '#8A6A44';
+  // fumaça saindo da chaminé (para trás)
+  for (let i = 0; i < 7; i++) { const f = ((t * .5 + i / 7) % 1); c.globalAlpha = (1 - f) * .55; el(-10 - f * 160, -150 - f * 70, 16 + f * 30, 12 + f * 20, i % 2 ? '#6B6B6B' : '#8A8A86'); } c.globalAlpha = 1;
+  // casco: proa alta à direita, popa à esquerda; plano iluminado em cima, sombra embaixo, faixa de ferrugem na linha d'água
+  poly([[-200, -24], [196, -34], [224, -52], [206, 6], [180, 40], [-176, 40], [-206, 14]], casco);
+  poly([[-206, 14], [206, 6], [180, 40], [-176, 40]], casco2); poly([[-198, 30], [190, 26], [180, 40], [-176, 40]], ferrugem);
+  linha(-200, -22, 214, -40, '#3E4858', 4); for (let k = 0; k < 11; k++) disc(-150 + k * 30, -4 - k * .6, 3.4, '#E8C97A'); // vigias acesas
+  for (let k = -180; k < 190; k += 34) linha(k, -26, k + 2, 34, 'rgba(0,0,0,.18)', 2); // chapas do casco
+  // convés: escotilhas de carga
+  for (const hx of [-150, -96, 70, 124]) { rr(hx, -40, 40, 12, 2, '#4A3A28'); rr(hx, -42, 40, 4, 2, madeira) }
+  // mastros com paus de carga e cordame
+  for (const [mx, mh] of [[-128, 120], [98, 130]]) { rr(mx - 3, -34 - mh, 6, mh, 2, '#3A3A3A'); linha(mx, -34 - mh * .7, mx + 46, -40, '#3A3A3A', 3); linha(mx, -34 - mh * .7, mx - 44, -40, '#3A3A3A', 3); c.strokeStyle = 'rgba(232,220,192,.35)'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(mx, -34 - mh); c.lineTo(mx > 0 ? 214 : -200, mx > 0 ? -44 : -26); c.moveTo(mx, -34 - mh); c.lineTo(mx > 0 ? -10 : -40, -40); c.stroke() }
+  // superestrutura em três andares com janelas e passadiço
+  poly([[-46, -40], [44, -40], [40, -86], [-42, -86]], luz); poly([[18, -40], [44, -40], [40, -86], [16, -86]], luz2);
+  poly([[-34, -86], [34, -86], [30, -118], [-30, -118]], luz); poly([[12, -86], [34, -86], [30, -118], [10, -118]], luz2); rr(-40, -124, 78, 8, 2, '#3E4858');
+  for (let k = 0; k < 6; k++) rr(-38 + k * 13, -74, 8, 9, 1, '#1E2531'); for (let k = 0; k < 4; k++) rr(-24 + k * 13, -110, 8, 9, 1, '#E8C97A');
+  // botes salva-vidas e turcos
+  for (const bx of [-38, 22]) { el(bx, -92, 14, 5, '#D8D0BE'); linha(bx - 10, -96, bx - 10, -104, '#3A3A3A', 2); linha(bx + 10, -96, bx + 10, -104, '#3A3A3A', 2) }
+  // chaminé com faixa
+  poly([[-10, -124], [14, -124], [10, -168], [-8, -168]], '#2A2A2A'); rr(-9, -152, 21, 10, 1, '#B4874A'); poly([[4, -124], [14, -124], [10, -168], [4, -168]], 'rgba(0,0,0,.3)');
+  // bandeira do Brasil na popa e luz de borda dourada no topo do casco
+  linha(-196, -24, -196, -64, '#3A3A3A', 3); rr(-194, -64, 26, 18, 1, '#3F6B46'); poly([[-188, -55], [-181, -61], [-174, -55], [-181, -49]], '#D9B35A');
+  c.globalAlpha = .8; poly([[-200, -24], [196, -34], [196, -30], [-200, -20]], '#E0B25E'); c.globalAlpha = 1; c.restore() }
+// U-boat detalhado: casco charuto, torre com periscópios, canhão de convés, lemes e plano de sombra
+function submarino(x, y, s, col) { c.save(); c.translate(x, y); c.scale(s, s); const a = '#4E565E', b = '#3A4148', l = '#6A737B';
+  c.beginPath(); c.moveTo(-190, 0); c.quadraticCurveTo(-120, -30, 0, -28); c.quadraticCurveTo(150, -26, 196, -4); c.quadraticCurveTo(150, 22, 0, 24); c.quadraticCurveTo(-130, 22, -190, 0); c.fillStyle = a; c.fill();
+  c.beginPath(); c.moveTo(-190, 0); c.quadraticCurveTo(-120, 22, 0, 24); c.quadraticCurveTo(150, 22, 196, -4); c.lineTo(196, 4); c.quadraticCurveTo(150, 30, 0, 30); c.quadraticCurveTo(-130, 28, -190, 0); c.fillStyle = b; c.fill();
+  poly([[-40, -28], [34, -28], [26, -70], [-30, -70]], a); poly([[6, -28], [34, -28], [26, -70], [8, -70]], b); rr(-34, -74, 64, 6, 2, l);
+  rr(-6, -110, 5, 40, 1, '#2A2E33'); rr(8, -100, 4, 30, 1, '#2A2E33'); rr(-6, -112, 12, 4, 1, '#2A2E33');
+  rr(70, -40, 8, 14, 2, b); rr(60, -46, 40, 6, 2, '#2A2E33'); poly([[-196, -2], [-214, -16], [-210, 12]], b); linha(-120, -26, 140, -24, 'rgba(255,255,255,.12)', 3);
+  for (let k = 0; k < 6; k++) disc(-90 + k * 30, -10, 2.4, 'rgba(0,0,0,.35)'); txt('U-507', -2, -40, 18, '#C8C2B4', {w: 700}); c.restore() }
+
+// ===== Montanha detalhada (substitui a anterior): crista recortada, várias faces de luz e sombra, camadas de rocha,
+// fendas, neve escorrendo em línguas, cascalho e pinheiros na base =====
+function pinheiro(x, y, h, cor = '#1B2420', cor2 = '#141B18') { poly([[x, y - h], [x + h * .28, y - h * .45], [x + h * .16, y - h * .45], [x + h * .36, y], [x - h * .36, y], [x - h * .16, y - h * .45], [x - h * .28, y - h * .45]], cor); poly([[x, y - h], [x + h * .28, y - h * .45], [x + h * .16, y - h * .45], [x + h * .36, y], [x, y]], cor2); rr(x - h * .04, y - 2, h * .08, h * .1, 1, '#2A1E14') }
+function montanha(cx, base, larg2, alt, cor = '#B4874A', neve = 0) { const q = rng(Math.round(cx * 7 + alt)), topo = [cx + larg2 * .02, base - alt];
+  const escuro = '#5E4426', medio = '#8C6538', claro = cor, brilho = '#D6A866';
+  // crista: pontos irregulares subindo da esquerda até o pico e descendo à direita
+  const esq = [], dir = []; for (let i = 0; i <= 7; i++) { const u = i / 7; esq.push([cx - larg2 / 2 + u * (topo[0] - cx + larg2 / 2), base - alt * (u ** 1.15) + (i && i < 7 ? (q() - .5) * alt * .07 : 0)]) }
+  for (let i = 1; i <= 7; i++) { const u = i / 7; dir.push([topo[0] + u * (cx + larg2 / 2 - topo[0]), base - alt * ((1 - u) ** 1.05) + (i < 7 ? (q() - .5) * alt * .08 : 0)]) }
+  const silh = [...esq, ...dir]; poly(silh, medio);
+  // faces: alternância de planos claros (lado da luz, à esquerda) e escuros (à direita), cada um ligando a crista à base
+  for (let i = 0; i < esq.length - 1; i++) { const [x0, y0] = esq[i], [x1, y1] = esq[i + 1], bx = lerp(cx - larg2 * .45, cx - larg2 * .05, i / 7); poly([[x0, y0], [x1, y1], [bx + larg2 * .06, base], [bx - larg2 * .04, base]], i % 2 ? claro : brilho) }
+  for (let i = 0; i < dir.length - 1; i++) { const [x0, y0] = dir[i], [x1, y1] = dir[i + 1], bx = lerp(cx + larg2 * .05, cx + larg2 * .45, i / 6); poly([[x0, y0], [x1, y1], [bx + larg2 * .05, base], [bx - larg2 * .03, base]], i % 2 ? escuro : '#6E4F2C') }
+  poly([topo, [topo[0] + larg2 * .02, base], [topo[0] - larg2 * .06, base]], 'rgba(30,20,10,.25)'); // aresta principal
+  // camadas de rocha e fendas
+  c.save(); c.beginPath(); silh.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.lineTo(cx + larg2 / 2, base); c.lineTo(cx - larg2 / 2, base); c.closePath(); c.clip();
+  c.strokeStyle = 'rgba(40,26,12,.35)'; c.lineWidth = 3; for (let k = 0; k < 9; k++) { const yy = base - alt * (.12 + k * .09); c.beginPath(); c.moveTo(cx - larg2 / 2, yy + 20); for (let xx = cx - larg2 / 2; xx < cx + larg2 / 2; xx += 40) c.lineTo(xx, yy + (q() - .5) * 18 + (xx - cx) * .08); c.stroke() }
+  for (let k = 0; k < 7; k++) { const fx = cx + (q() - .5) * larg2 * .6, fy = base - alt * (.2 + q() * .55); poly([[fx, fy], [fx + 8, fy + 50 + q() * 60], [fx - 4, fy + 40]], 'rgba(30,20,10,.45)') }
+  // neve: capa no pico com línguas escorrendo pelas canaletas
+  if (neve) { const nv = `rgba(239,232,218,${neve})`, nv2 = `rgba(196,190,178,${neve})`, lim = base - alt * .72; const capa = silh.filter(([, y]) => y < lim);
+    if (capa.length > 1) { const pts = [...capa]; for (let k = capa.length - 1; k >= 0; k--) { const [x, y] = capa[k]; pts.push([x + (q() - .5) * 20, Math.max(y, lim) + 20 + q() * alt * .12]) } poly(pts, nv); poly([topo, ...capa.filter(([x]) => x > topo[0]), [topo[0] + 10, lim + 40]], nv2) }
+    for (let k = 0; k < 9; k++) { const lx = topo[0] + (q() - .5) * larg2 * .4, ly = lim + 10 + q() * 30, lh = 40 + q() * alt * .22; poly([[lx - 12, ly], [lx + 12, ly], [lx + 3, ly + lh]], k % 3 ? nv : nv2) } }
+  c.restore();
+  // cascalho e pinheiros na base
+  for (let k = 0; k < 40; k++) { const px = cx + (q() - .5) * larg2 * .9, py = base - q() * alt * .12; disc(px, py, 2 + q() * 4, q() < .5 ? '#4A3620' : '#9C7646') }
+  for (let k = 0; k < 14; k++) { const px = cx - larg2 / 2 + q() * larg2, ph = 40 + q() * 50; pinheiro(px, base + 6, ph) }
+  return silh }
+// Apeninos de fundo mais detalhados: cristas recortadas, faces de luz/sombra, neve nas pontas e mata de pinheiros na frente
+function apeninos(t, base = 1350, neve = 1) { const camadas = [[base - 380, '#2A3344', '#222A38', .5], [base - 200, '#36404F', '#2B3340', .7], [base, '#4B5566', '#3A4352', 1]];
+  camadas.forEach(([y, cor, cor2, f], k) => { const q = rng(20 + k); let x = -60; const pts = [[-60, H]]; while (x < W + 120) { pts.push([x, y - q() * 240 * f]); x += 70 + q() * 90 } pts.push([W + 120, H]); poly(pts, cor);
+    for (let i = 1; i < pts.length - 2; i++) { const [x0, y0] = pts[i], [x1, y1] = pts[i + 1]; if (y0 < y1) poly([[x0, y0], [x1, y1], [x1 + 20, H], [x0 + (x1 - x0) * .3, H]], cor2); else poly([[x0, y0], [x1, y1], [x1, y1 + 60], [x0 + 10, y0 + 90]], 'rgba(255,255,255,.04)');
+      if (neve && y0 < y - 140 * f) { poly([[x0 - 26, y0 + 30], [x0, y0], [x0 + 30, y0 + 26], [x0 + 10, y0 + 46], [x0 + 2, y0 + 28], [x0 - 8, y0 + 50]], `rgba(239,232,218,${.85 * neve})`) } }
+    if (k === 2) for (let i = 0; i < 26; i++) pinheiro(-20 + i * 44 + q() * 20, y + 40 + q() * 40, 50 + q() * 50, '#232C34', '#1A2129') }) }
+
+// ===== Caça P-47 Thunderbolt do 1º Grupo de Aviação de Caça (vista lateral, nariz para a direita) =====
+function caca(x, y, s, o = {}) { const t = o.t || 0; c.save(); c.translate(x, y); c.rotate(o.ang || 0); c.scale(s, s);
+  const od = '#5B5A3A', od2 = '#46452C', od3 = '#76744C', cz = '#9AA0A3', cz2 = '#7D8487', ln = 'rgba(20,18,10,.55)';
+  // escapamento: rastro de calor
+  for (let i = 0; i < 5; i++) { const f = ((t * 3 + i / 5) % 1); c.globalAlpha = (1 - f) * .25; disc(60 - f * 140, 30 + f * 6, 6 + f * 14, '#3A3A3A') } c.globalAlpha = 1;
+  // asa de longe (sombra atrás da fuselagem)
+  poly([[-10, 18], [70, 14], [40, 4], [-30, 8]], od2);
+  // estabilizador horizontal de longe
+  poly([[-170, -4], [-130, -6], [-140, -12], [-180, -10]], od2);
+  // fuselagem: barriga cinza, dorso oliva
+  const fus = [[175, -6], [178, 18], [150, 40], [60, 44], [-60, 30], [-160, 8], [-196, 2], [-196, -10], [-150, -18], [-40, -30], [40, -36], [140, -34]];
+  poly(fus, cz); c.save(); c.beginPath(); fus.forEach(([a, b], i) => i ? c.lineTo(a, b) : c.moveTo(a, b)); c.closePath(); c.clip();
+  poly([[200, -60], [200, 6], [100, 12], [-60, 6], [-220, -2], [-220, -60]], od); // pintura oliva por cima
+  poly([[200, -60], [200, -24], [40, -26], [-220, -12], [-220, -60]], od3); // luz no dorso
+  poly([[200, 30], [200, 60], [-220, 60], [-220, 18], [-60, 30], [60, 40]], cz2); // sombra na barriga
+  c.strokeStyle = ln; c.lineWidth = 1.6; [100, 30, -40, -110].forEach(px => { c.beginPath(); c.moveTo(px, -50); c.lineTo(px - 4, 60); c.stroke() }); // juntas de painéis
+  for (let px = -150; px < 150; px += 12) disc(px, 2 + (px > 60 ? 4 : 0), .9, 'rgba(20,18,10,.35)'); // rebites
+  c.restore();
+  // capô do motor: grande e redondo, com faixa amarela e entrada de ar
+  poly([[140, -34], [178, -30], [186, -6], [184, 22], [176, 40], [140, 42]], od2); rr(150, -32, 10, 72, 3, '#E2B22A'); poly([[160, 30], [186, 26], [182, 46], [158, 46]], '#2A2A22');
+  c.strokeStyle = ln; c.lineWidth = 2; c.beginPath(); c.moveTo(168, -30); c.lineTo(168, 40); c.stroke();
+  // escapamentos turbo
+  for (let i = 0; i < 3; i++) rr(118 - i * 12, 18, 8, 5, 2, '#2A2620');
+  // hélice de 4 pás girando: disco borrado + cubo + pá visível
+  c.save(); c.translate(192, 8); c.beginPath(); c.ellipse(0, 0, 8, 74, 0, 0, 7); c.fillStyle = 'rgba(200,190,160,.18)'; c.fill();
+  for (let k = 0; k < 2; k++) { const a = t * 47 + k * PI / 2, h = 72 * Math.cos(a); poly([[-2, 0], [4, 0], [3, h], [-3, h]], 'rgba(30,28,22,.75)'); disc(1, h, 3, '#E2B22A') }
+  c.beginPath(); c.ellipse(4, 0, 14, 16, 0, -PI / 2, PI / 2); c.fillStyle = '#E2B22A'; c.fill(); c.restore();
+  // cabine em bolha com moldura e piloto
+  c.beginPath(); c.moveTo(20, -36); c.bezierCurveTo(24, -70, 80, -72, 96, -36); c.closePath(); c.fillStyle = 'rgba(120,150,170,.55)'; c.fill();
+  c.save(); c.clip(); disc(58, -46, 11, '#3A2A1E'); rr(46, -60, 24, 12, 6, '#4A3A28'); disc(64, -48, 4, '#20262A'); poly([[30, -66], [70, -70], [60, -40], [26, -40]], 'rgba(255,255,255,.28)'); c.restore();
+  c.strokeStyle = '#2E2D1E'; c.lineWidth = 3; c.beginPath(); c.moveTo(20, -36); c.bezierCurveTo(24, -70, 80, -72, 96, -36); c.stroke(); c.beginPath(); c.moveTo(70, -66); c.lineTo(66, -36); c.stroke();
+  // asa de perto com flape, ailerão, metralhadoras e luz de borda
+  poly([[110, 14], [-10, 20], [-40, 34], [100, 34]], od); poly([[-10, 20], [-40, 34], [10, 34], [20, 24]], od2); c.strokeStyle = ln; c.lineWidth = 1.5; c.beginPath(); c.moveTo(30, 22); c.lineTo(10, 34); c.stroke();
+  for (let i = 0; i < 4; i++) rr(108, 18 + i * 3.4, 22, 2.2, 1, '#26241C'); // 4 de 8 metralhadoras .50
+  linha(110, 14, -10, 20, 'rgba(240,212,138,.7)', 2);
+  // trem de pouso recolhido (porta) e bombas sob a asa
+  rr(30, 34, 46, 8, 4, cz2); if (o.bombas) { c.beginPath(); c.ellipse(50, 52, 30, 8, 0, 0, 7); c.fillStyle = '#3E3E30'; c.fill(); poly([[16, 52], [8, 44], [8, 60]], '#3E3E30') }
+  // cauda: deriva com leme e o verde-amarelo do Brasil
+  poly([[-150, -18], [-176, -78], [-196, -80], [-200, -10]], od); poly([[-186, -79], [-196, -80], [-200, -10], [-190, -10]], od2);
+  rr(-200, -46, 12, 34, 2, '#00843D'); rr(-200, -46, 12, 11, 2, '#F5C518'); poly([[-150, 2], [-112, 0], [-120, 8], [-160, 10]], od3);
+  // insígnia da FAB (estrela verde-amarela com círculo azul) e número do avião
+  c.save(); c.translate(-60, 2); disc(0, 0, 18, '#1F3F8F'); c.beginPath(); for (let k = 0; k < 10; k++) { const r = k % 2 ? 7 : 17, a = -PI / 2 + k * PI / 5; c.lineTo(Math.cos(a) * r, Math.sin(a) * r) } c.closePath(); c.fillStyle = '#F5C518'; c.fill(); disc(0, 0, 5, '#00843D'); c.restore();
+  c.font = '800 18px Fira'; c.fillStyle = '#EFE8DA'; c.textAlign = 'center'; c.fillText(o.num || 'A1', -110, 6);
+  // contorno dourado de luz no dorso
+  c.strokeStyle = 'rgba(240,212,138,.55)'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(-150, -18); c.lineTo(-40, -30); c.lineTo(20, -35); c.stroke(); c.beginPath(); c.moveTo(96, -36); c.lineTo(140, -34); c.lineTo(178, -30); c.stroke();
+  c.restore() }
