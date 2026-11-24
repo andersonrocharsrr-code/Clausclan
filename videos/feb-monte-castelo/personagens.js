@@ -188,16 +188,18 @@ function cobra(x, y, s, t, fumaca = 1) { c.save(); c.translate(x, y); c.scale(s 
   c.restore();
   c.font = '800 120px Arial, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#FFFFFF'; c.fillText('BRASIL', 790, 254);
   // corpo da cobra em S com laço embaixo
-  const corpo = () => { c.beginPath(); c.moveTo(612, 890); c.bezierCurveTo(760, 876, 1000, 890, 1000, 770); c.bezierCurveTo(1000, 640, 850, 592, 700, 592); c.bezierCurveTo(520, 592, 470, 720, 560, 792); c.bezierCurveTo(650, 860, 810, 808, 830, 690); c.bezierCurveTo(852, 570, 722, 470, 722, 392); c.bezierCurveTo(722, 312, 790, 300, 840, 352) };
-  corpo(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 50; c.stroke(); corpo(); c.strokeStyle = '#2FA83A'; c.lineWidth = 40; c.stroke(); corpo(); c.strokeStyle = 'rgba(150,230,120,.3)'; c.lineWidth = 6; c.stroke();
-  c.beginPath(); c.moveTo(612, 890); c.lineTo(598, 896); c.strokeStyle = '#1D5E1E'; c.lineWidth = 14; c.stroke(); // ponta do rabo
+  const corpo = () => { c.beginPath(); c.moveTo(761, 881); c.bezierCurveTo(882, 872, 1000, 854, 1000, 770); c.bezierCurveTo(1000, 640, 850, 592, 700, 592); c.bezierCurveTo(520, 592, 470, 720, 560, 792); c.bezierCurveTo(650, 860, 810, 808, 830, 690); c.bezierCurveTo(852, 570, 722, 470, 722, 392); c.bezierCurveTo(722, 312, 790, 300, 840, 352) };
+  const rabo = (u) => { const v = 1 - u; return [v * v * v * 612 + 3 * v * v * u * 760 + 3 * v * u * u * 1000 + u * u * u * 1000, v * v * v * 890 + 3 * v * v * u * 876 + 3 * v * u * u * 890 + u * u * u * 770] };
+  for (let k = 0; k < 2; k++) { for (let i = 0; i <= 40; i++) { const u = i / 40 * .32, [px, py] = rabo(u), rr2 = 4 + 19 * Math.min(1, u / .3); disc(px, py, k ? rr2 : rr2 + 3, k ? '#3CB43C' : '#1D5E1E') }
+    corpo(); c.strokeStyle = k ? '#3CB43C' : '#1D5E1E'; c.lineWidth = k ? 46 : 52; c.stroke() } 
+  
   // cabeça alongada apontando para baixo à direita, boca aberta segurando o cachimbo
   const cab = (f, cor) => { c.beginPath(); f(); c.closePath(); c.fillStyle = cor; c.fill(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 5; c.stroke() };
   // cabeça e cachimbo desenhados no recorte ampliado da foto (x3, origem 820,330)
   c.save(); c.translate(820, 330); c.scale(1 / 3, 1 / 3); c.lineJoin = 'round';
-  c.beginPath(); c.moveTo(100, 22); c.quadraticCurveTo(230, 92, 305, 140); c.quadraticCurveTo(350, 168, 358, 205); c.lineTo(432, 395); c.quadraticCurveTo(438, 428, 410, 422); c.lineTo(336, 362); c.quadraticCurveTo(250, 310, 190, 260); c.quadraticCurveTo(128, 215, 122, 175); c.quadraticCurveTo(100, 180, 16, 110); c.fillStyle = '#2FA83A'; c.fill(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 12; c.stroke();
+  c.beginPath(); c.moveTo(100, 22); c.quadraticCurveTo(230, 92, 305, 140); c.quadraticCurveTo(350, 168, 358, 205); c.lineTo(432, 395); c.quadraticCurveTo(438, 428, 410, 422); c.lineTo(336, 362); c.quadraticCurveTo(250, 310, 190, 260); c.quadraticCurveTo(128, 215, 122, 175); c.quadraticCurveTo(100, 180, 16, 110); c.fillStyle = '#3CB43C'; c.fill(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 12; c.stroke();
   c.strokeStyle = '#1D5E1E'; c.lineWidth = 8; c.beginPath(); c.moveTo(240, 284); c.quadraticCurveTo(275, 312, 306, 330); c.stroke();
-  c.save(); c.translate(272, 205); c.rotate(.45); c.beginPath(); c.ellipse(0, 0, 40, 28, 0, 0, 7); c.fillStyle = '#fff'; c.fill(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 6; c.stroke(); c.beginPath(); c.ellipse(-4, 0, 10, 16, -.45, 0, 7); c.fillStyle = '#222'; c.fill(); c.restore();
+  c.save(); c.translate(272, 205); c.rotate(.45); c.beginPath(); c.ellipse(0, 0, 46, 32, 0, 0, 7); c.fillStyle = '#fff'; c.fill(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 6; c.stroke(); c.beginPath(); c.ellipse(-4, 0, 11, 18, -.45, 0, 7); c.fillStyle = '#222'; c.fill(); c.restore();
   // cachimbo: piteira saindo da boca, descendo por cima do queixo e virando o fornilho
   c.beginPath(); c.moveTo(300, 336); c.quadraticCurveTo(312, 312, 338, 336); c.quadraticCurveTo(425, 400, 438, 470); c.lineTo(446, 560); c.quadraticCurveTo(450, 585, 470, 580); c.lineTo(515, 482);
   c.quadraticCurveTo(600, 470, 664, 545); c.quadraticCurveTo(650, 625, 560, 680); c.quadraticCurveTo(480, 700, 420, 680); c.quadraticCurveTo(392, 665, 394, 630); c.lineTo(390, 470); c.quadraticCurveTo(375, 405, 300, 336); c.closePath();
