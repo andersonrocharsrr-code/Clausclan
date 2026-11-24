@@ -7,15 +7,16 @@
   <meta name="description" content="Edita vídeos no celular: cortes, colagem, textos, filtros, música, extrair áudio e salvar em até 4K.">
   <meta name="theme-color" content="#101114">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=16">
+  <link rel="stylesheet" href="style.css?v=17">
   <script type="importmap">{ "imports": { "mediabunny": "./vendor/mediabunny.min.mjs" } }</script>
 </head>
 <body>
   <div class="app">
     <header class="topo">
-      <button id="novo" class="ic-btn" type="button" aria-label="Projeto novo" title="Projeto novo"></button>
-      <button id="ajuda" class="ic-btn" type="button" aria-label="Ajuda" title="Ajuda"></button>
-      <span class="topo__meio"></span>
+      <button id="menu" class="ic-btn ic-btn--caixa" type="button" aria-label="Meus projetos" title="Meus projetos"></button>
+      <button id="titulo" class="titulo" type="button" aria-label="Mudar o nome do projeto">
+        <b id="tituloNome">Novo projeto</b><small id="tituloInfo">0:00</small>
+      </button>
       <button id="qualidade" class="qual" type="button" aria-label="Resolução do vídeo">4K <span>▾</span></button>
       <button id="salvarVideo" class="salvar-btn" type="button" disabled>Salvar</button>
     </header>
@@ -46,14 +47,24 @@
         <div id="conteudo" class="conteudo">
           <div id="regua" class="regua"></div>
           <div id="trilha" class="trilha"></div>
+          <div id="trilhaTexto" class="trilha-texto"></div>
           <div id="trilhaMusica" class="trilha-musica"></div>
         </div>
+      </div>
+      <!-- Ícone de cada faixa, fixo na esquerda -->
+      <div class="cabecas" aria-hidden="true">
+        <span id="cabVideo" class="cab cab--video"></span>
+        <span id="cabTexto" class="cab cab--texto"></span>
+        <span id="cabMusica" class="cab cab--musica"></span>
       </div>
       <span class="agulha" aria-hidden="true"></span>
       <button id="maisFim" class="mais-fim" type="button" aria-label="Adicionar vídeo ou foto">＋</button>
     </div>
 
-    <nav id="barra" class="barra"></nav>
+    <div id="baixo" class="baixo">
+      <nav id="barra" class="barra"></nav>
+      <nav id="abas" class="abas"></nav>
+    </div>
 
     <section id="painel" class="painel" hidden>
       <div class="painel__topo">
@@ -63,6 +74,26 @@
       <div id="painelCorpo" class="painel__corpo"></div>
     </section>
   </div>
+
+  <!-- Tela inicial: novo projeto, meus projetos e ferramentas rápidas -->
+  <section id="pgInicio" class="inicio" hidden>
+    <div class="inicio__corpo">
+      <h1>Editor de Vídeo</h1>
+      <p class="inicio__sub">Seus vídeos ficam guardados aqui.</p>
+      <button id="novoProjeto" class="novo" type="button">
+        <span class="novo__mais">＋</span>
+        <span><b>Novo projeto</b><small>Vídeos, fotos ou colagem</small></span>
+      </button>
+      <div class="secao"><b>Meus projetos</b><small id="qtProjetos"></small></div>
+      <div id="cartoes" class="cartoes"></div>
+      <div class="secao"><b>Ferramentas rápidas</b></div>
+      <div class="rapidas">
+        <button id="rapAudio" class="rapida" type="button"><span class="rapida__ic" style="background:#16a34a"></span>Extrair áudio</button>
+        <button id="rapLegenda" class="rapida" type="button"><span class="rapida__ic" style="background:#2563eb"></span>Legendas</button>
+        <button id="rapConverter" class="rapida" type="button"><span class="rapida__ic" style="background:#7c3aed"></span>Converter 4K</button>
+      </div>
+    </div>
+  </section>
 
   <section id="pgFerramentas" class="pagina" hidden>
     <header class="topo">
@@ -98,6 +129,6 @@
 
   <p id="aviso" class="toast" role="status" hidden></p>
 
-  <script type="module" src="app.js?v=14"></script>
+  <script type="module" src="app.js?v=15"></script>
 </body>
 </html>

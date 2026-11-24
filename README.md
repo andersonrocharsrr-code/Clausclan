@@ -522,6 +522,9 @@ Sem o segredo (ou fora do `main`) sai um APK de teste em "Artifacts" na execuç�
   palavra por palavra, com a palavra falada em destaque. Dá para corrigir cada frase, mudar posição, cor,
   tamanho, maiúsculas e fundo. Na primeira vez baixa o reconhecedor (~76 MB, do huggingface.co); depois
   funciona sem internet. A música de fundo não entra no reconhecimento.
+- **Tela inicial**: vários projetos guardados (capa, duração, data), "Novo projeto" e atalhos (Extrair áudio, Legendas, Converter 4K).
+  No editor, as ferramentas ficam em abas (Editar, Áudio, Texto, Efeitos, Formato) e a linha do tempo tem faixas de vídeo, texto/legenda e música.
+- **Ímã**: ao mover a música (segurar a faixa verde escolhida) ou puxar as alças, as pontas grudam no começo/fim dos vídeos, da música e na linha branca — o celular vibra e dá uma travadinha.
 - **🎵 Áudio e conversão**: extrair o áudio (MP3 128/192/320 ou M4A original, com trecho), tirar o som do vídeo
   (sem perder qualidade) e mudar a resolução (480p até 4K).
 - Como funciona: tudo é feito no celular, sem internet. `editor/motor.js` usa o WebCodecs do Android
