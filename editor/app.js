@@ -937,8 +937,8 @@ function pDuracao(c, el) {
 }
 
 // Velocidade: barra de arrastar (escala que dá o mesmo espaço para lento e rápido) com os pontos marcados.
-const VELOC_MIN = 0.25, VELOC_MAX = 4;
-const PONTOS_VEL = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4];
+const VELOC_MIN = 0.25, VELOC_MAX = 2; // no máximo 2× (pedido do Anderson)
+const PONTOS_VEL = [0.25, 0.5, 0.75, 1, 1.5, 2];
 const velParaPos = (v) => Math.log(v / VELOC_MIN) / Math.log(VELOC_MAX / VELOC_MIN);  // 0…1
 const posParaVel = (p) => VELOC_MIN * Math.pow(VELOC_MAX / VELOC_MIN, p);
 const textoVel = (v) => (v === 1 ? 'Normal (1×)' : String(Math.round(v * 100) / 100).replace('.', ',') + '×');
@@ -947,7 +947,8 @@ function pVel(c, el) {
   const val = h('b', { class: 'vel-valor' }, textoVel(c.vel || 1));
   const inp = h('input', { type: 'range', class: 'vel-barra', min: 0, max: 1000, step: 1, value: Math.round(velParaPos(c.vel || 1) * 1000), 'aria-label': 'Velocidade' });
   const trilho = h('div', { class: 'vel-trilho' }, h('span', { class: 'vel-cheio' }));
-  const encher = () => { trilho.firstChild.style.width = `calc(12px + (100% - 24px) * ${Number(inp.value) / 1000})`; };
+  // 100% = largura do trilho (já sem as pontas da bolinha)
+  const encher = () => { trilho.firstChild.style.width = `calc(12px + 100% * ${Number(inp.value) / 1000})`; };
   const aplicar = (v) => {
     inp.value = Math.round(velParaPos(v) * 1000);
     encher();
@@ -968,7 +969,7 @@ function pVel(c, el) {
     onclick: () => aplicar(pt)
   }, h('i'), h('small', {}, String(pt).replace('.', ',') + '×'))));
   el.append(
-    h('div', { class: 'vel-topo' }, h('span', {}, '🐢 Lento'), val, h('span', {}, 'Rápido 🐇')),
+    h('div', { class: 'vel-topo' }, h('span', {}, 'Lento'), val, h('span', {}, 'Rápido')),
     h('div', { class: 'vel-caixa' }, trilho, pontos, inp),
     h('p', { class: 'dica' }, 'Arraste a barra ou toque num ponto. O som acompanha a velocidade.')
   );
@@ -1799,6 +1800,7 @@ async function iniciar() {
   projeto.clipes = projeto.clipes.filter((c) => c.tipo === 'colagem' || midias.has(c.midia));
   projeto.clipes.forEach((c) => { if (c.tipo === 'colagem') c.celulas = c.celulas.map((x) => (x && midias.has(x.midia) ? x : null)); });
   migrarMusica();
+  projeto.clipes.forEach((c) => { if ((c.vel || 1) > 2) c.vel = 2; }); // velocidade máxima agora é 2×
   atualizarTudo();
 }
 
