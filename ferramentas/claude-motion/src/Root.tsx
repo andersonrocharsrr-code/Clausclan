@@ -3,6 +3,7 @@ import {Composition, Still} from 'remotion';
 import {ArticleCover} from './ArticleCover';
 import {EffortVideo} from './EffortVideo';
 import {FPS, H, TL, W} from './lib';
+import {FPSV, HV, TLV, Vinheta, WV} from './vinheta/Vinheta';
 
 export const Root: React.FC = () => (
   <>
@@ -13,6 +14,14 @@ export const Root: React.FC = () => (
       fps={FPS}
       width={W}
       height={H}
+    />
+    <Composition
+      id="Vinheta"
+      component={Vinheta}
+      durationInFrames={Math.round(TLV.duration * FPSV)}
+      fps={FPSV}
+      width={WV}
+      height={HV}
     />
     <Still id="ArticleCover" component={ArticleCover} width={2000} height={800} />
   </>
