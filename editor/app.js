@@ -936,11 +936,12 @@ function pDuracao(c, el) {
   }
 }
 
-// Velocidade: barra de arrastar (escala que dá o mesmo espaço para lento e rápido) com os pontos marcados.
+// Velocidade: barra de arrastar com os pontos marcados; 1× no meio.
 const VELOC_MIN = 0.25, VELOC_MAX = 2; // no máximo 2× (pedido do Anderson)
 const PONTOS_VEL = [0.25, 0.5, 0.75, 1, 1.5, 2];
-const velParaPos = (v) => Math.log(v / VELOC_MIN) / Math.log(VELOC_MAX / VELOC_MIN);  // 0…1
-const posParaVel = (p) => VELOC_MIN * Math.pow(VELOC_MAX / VELOC_MIN, p);
+// 1× fica bem no meio: metade esquerda de 0,25× a 1×, metade direita de 1× a 2× (cada lado linear).
+const velParaPos = (v) => (v <= 1 ? (v - VELOC_MIN) / (1 - VELOC_MIN) * 0.5 : 0.5 + (v - 1) / (VELOC_MAX - 1) * 0.5); // 0…1
+const posParaVel = (p) => (p <= 0.5 ? VELOC_MIN + (p / 0.5) * (1 - VELOC_MIN) : 1 + ((p - 0.5) / 0.5) * (VELOC_MAX - 1));
 const textoVel = (v) => (v === 1 ? 'Normal (1×)' : String(Math.round(v * 100) / 100).replace('.', ',') + '×');
 
 function pVel(c, el) {
