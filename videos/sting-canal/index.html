@@ -1,0 +1,129 @@
+<!doctype html><meta charset="utf-8"><title>Sting Mistérios do Universo</title>
+<style>
+@font-face{font-family:Inter;font-weight:100 900;src:url(fontes/inter-latin-wght-normal.woff2)}
+@font-face{font-family:Serif;src:url(fontes/instrument-serif-latin-400-normal.woff2)}
+@font-face{font-family:Serif;font-style:italic;src:url(fontes/instrument-serif-latin-400-italic.woff2)}
+html,body{margin:0;background:#000;overflow:hidden}
+#film{position:relative;width:1080px;height:1920px;overflow:hidden;background:#070B18;font-family:Inter}
+#bg,#world,#hud{position:absolute;inset:0}
+#world{transform-origin:0 0}
+.abs{position:absolute;left:0;top:0}
+#shape{position:absolute;box-sizing:border-box;overflow:hidden}
+.c{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);white-space:nowrap}
+.slot{display:inline-block;overflow:hidden;height:200px;vertical-align:top}
+.slot>div{display:flex;flex-direction:column}
+.slot span{height:200px;line-height:200px;display:block;text-align:center}
+#grain{position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;opacity:.07}
+</style>
+<div id="film">
+  <div id="bg"></div>
+  <div id="world">
+    <svg id="orb" class="abs" width="1080" height="1920" style="overflow:visible"><ellipse id="ringBack" fill="none" stroke="#EFC46E" stroke-width="8"/></svg>
+    <div id="shape">
+      <div id="q" class="c" style="font-size:46px;font-weight:500;color:#0B1020;left:60px;transform:translate(0,-50%)"></div>
+      <div id="enter" class="c" style="left:auto;right:18px;transform:translate(0,-50%);width:94px;height:94px;border-radius:47px;background:#0B1020;color:#F2EEE4;font-size:46px;text-align:center;line-height:94px">→</div>
+      <div id="odo" class="c" style="top:42%;font-weight:700;font-size:200px;color:#F2EEE4;letter-spacing:-6px"></div>
+      <div id="odoL1" class="c" style="top:60%;font-size:56px;font-weight:700;letter-spacing:10px;color:#EFC46E">BILHÕES</div>
+      <div id="odoL2" class="c" style="top:68%;font-size:34px;font-weight:500;letter-spacing:3px;color:rgba(242,238,228,.7)">DE ANOS-LUZ DE UNIVERSO VISÍVEL</div>
+      <div id="odoTop" class="c" style="top:16%;font-size:30px;font-weight:600;letter-spacing:8px;color:rgba(242,238,228,.55)">O UNIVERSO OBSERVÁVEL</div>
+      <div id="shade" class="abs" style="border-radius:50%"></div>
+      <div id="wm1" class="c" style="top:30%;font-family:Serif;font-size:190px;color:#F2EEE4;letter-spacing:-3px">Mistérios</div>
+      <div id="wm2" class="c" style="top:52%;font-size:40px;font-weight:600;letter-spacing:16px;color:rgba(242,238,228,.75)">DO</div>
+      <div id="wm3" class="c" style="top:73%;font-family:Serif;font-style:italic;font-size:184px;color:#EFC46E;letter-spacing:-3px">Universo</div>
+    </div>
+    <svg class="abs" width="1080" height="1920" style="overflow:visible"><path id="ringFront" fill="none" stroke="#EFC46E" stroke-width="8"/></svg>
+    <div id="chip" class="abs" style="box-sizing:border-box;overflow:hidden"><div id="chipT" class="c" style="font-weight:700;font-size:40px;letter-spacing:8px"></div></div>
+  </div>
+  <div id="hud">
+    <svg id="ripple" class="abs" width="1080" height="1920"><circle id="rip" fill="none" stroke="#F2EEE4" stroke-width="4"/></svg>
+    <div id="cur" class="abs" style="transform-origin:0 0">
+      <svg width="64" height="80" viewBox="0 0 40 50" style="position:absolute;left:0;top:0"><path d="M3 3 L3 38 L12 30 L18 44 L24 41.5 L18 28 L30 28 Z" fill="#F2EEE4" stroke="#0B1020" stroke-width="2.4" stroke-linejoin="round"/></svg>
+      <div id="pill" style="position:absolute;left:58px;top:66px;background:#EFC46E;color:#0B1020;font:700 30px Inter;padding:8px 20px;border-radius:24px">Você</div>
+    </div>
+  </div>
+  <svg id="grain" width="1080" height="1920"><filter id="gf"><feTurbulence id="turb" type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="1"/><feColorMatrix type="saturate" values="0"/></filter><rect width="1080" height="1920" filter="url(#gf)"/></svg>
+</div>
+<script>
+// ===== Sting do canal: tudo calculado a partir do tempo em seek(t) — sem transições CSS, sem timers, sem estado entre quadros =====
+const BEAT = 0.5, DUR = 10, $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, u) => a + (b - a) * u;
+function stepR(tau, {w, z}) { if (tau <= 0) return 0; if (z >= 1) { const x = w * tau; return 1 - Math.exp(-x) * (1 + x) } const wd = w * Math.sqrt(1 - z * z); return 1 - Math.exp(-z * w * tau) * (Math.cos(wd * tau) + (z * w / wd) * Math.sin(wd * tau)) }
+class Track { constructor(v0) { this.v0 = v0; this.cur = v0; this.ev = [] } to(t, v, sp) { if (v !== this.cur) { this.ev.push([t, v - this.cur, sp]); this.cur = v } return this } at(t) { let v = this.v0; for (const [ti, d, sp] of this.ev) v += d * stepR(t - ti, sp); return v } }
+function vis(t, tin, tout, dOut = .12) { const e = stepR(t - tin, {w: 26, z: 1}), x = tout == null ? 0 : clamp((t - tout) / dOut), xo = x * x; return {o: e * (1 - xo), b: (1 - e) * 10 + xo * 10, dy: (1 - e) * 16 - xo * 10, e} }
+const apply = (el, v, extra = '') => { el.style.opacity = v.o; el.style.filter = v.b > .05 ? `blur(${v.b}px)` : 'none'; el.style.transform = `translate(-50%,calc(-50% + ${v.dy}px))${extra}` };
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const MORPH = {w: 19, z: .86}, SOFT = {w: 12, z: .9}, STIFF = {w: 30, z: .82}, CAM = {w: 7, z: 1};
+// ---------- momentos (todos na grade de 120 BPM) ----------
+const M = { clickDot: 1.0, typeStart: 1.5, clickEnter: 3.0, odoStart: 3.25, odoEnd: 4.6, toPlanet: 5.0, dragStart: 5.2, dragEnd: 5.9, drop: 6.0, wm: [6.0, 6.25, 6.5], chips: [7.0, 7.5, 8.0], toButton: 8.3, clickFollow: 8.8 };
+const PERG = 'O que existe além?';
+// ---------- a forma (posição, tamanho, raio, cor) ----------
+const T = {
+  x: new Track(540), y: new Track(860).to(M.clickEnter - .1, 900, MORPH).to(M.toPlanet - .1, 820, MORPH).to(M.drop - .05, 760, STIFF),
+  w: new Track(60).to(M.clickDot - .08, 840, MORPH).to(M.clickEnter - .05, 880, MORPH).to(M.toPlanet - .05, 420, MORPH).to(M.drop - .05, 980, STIFF),
+  h: new Track(60).to(M.clickDot - .08, 132, MORPH).to(M.clickEnter - .05, 980, MORPH).to(M.toPlanet - .05, 420, MORPH).to(M.drop - .05, 620, STIFF),
+  r: new Track(30).to(M.clickDot - .08, 66, MORPH).to(M.clickEnter - .05, 56, MORPH).to(M.toPlanet - .05, 210, STIFF).to(M.drop - .05, 52, {w: 40, z: .9}),
+  logz: new Track(Math.log(1.5)).to(M.clickDot - .2, Math.log(1.18), CAM).to(M.clickEnter - .25, 0, CAM).to(M.toPlanet - .3, Math.log(1.08), CAM).to(M.drop - .2, 0, CAM),
+  ringTilt: new Track(-.12).to(M.dragStart, -.12, SOFT),
+};
+const COR = [[0, '#EFC46E'], [M.clickDot - .08, '#F2EEE4'], [M.clickEnter - .05, '#0F1730'], [M.toPlanet - .05, '#C99A45'], [M.drop - .05, '#0F1730']];
+const corTracks = [0, 1, 2].map(i => { const tr = new Track(hex(COR[0][1])[i]); COR.slice(1).forEach(([t, h]) => tr.to(t, hex(h)[i], {w: 38, z: 1})); return tr });
+// ---------- cursor "Você" ----------
+const pDrag = (u) => { const a = lerp(-.12, -.55, u); return a }; // inclinação do anel durante o arraste
+const ringEnd = (tilt, s = 1) => [540 + Math.cos(tilt) * 330 * s, 820 + Math.sin(tilt) * 330 * s];
+const AX = new Track(1180).to(.2, 640, SOFT).to(M.clickDot - .45, 548, {w: 14, z: .9}).to(M.clickDot + .3, 820, SOFT).to(M.clickEnter - .5, 880, {w: 14, z: .9}).to(M.clickEnter + .3, 840, SOFT).to(M.toPlanet - .1, 880, {w: 12, z: .9}).to(M.drop - .02, 840, STIFF).to(M.toButton - .2, 560, {w: 12, z: .9});
+const AY = new Track(1450).to(.2, 960, SOFT).to(M.clickDot - .45, 868, {w: 14, z: .9}).to(M.clickDot + .3, 1060, SOFT).to(M.clickEnter - .5, 866, {w: 14, z: .9}).to(M.clickEnter + .3, 1520, SOFT).to(M.toPlanet - .1, 800, {w: 12, z: .9}).to(M.drop - .02, 1500, STIFF).to(M.toButton - .2, 1262, {w: 12, z: .9});
+const clicks = [M.clickDot, M.clickEnter, M.dragStart, M.clickFollow];
+function cursorAt(t) { if (t >= M.dragStart && t <= M.dragEnd + .05) { const u = (t - M.dragStart) / (M.dragEnd - M.dragStart), tilt = pDrag(Math.min(1, u * u * (3 - 2 * u))); const [x, y] = ringEnd(tilt); return [x + 8, y + 6] } return [AX.at(t), AY.at(t)] }
+function ringTiltAt(t) { if (t < M.dragStart) return -.12; if (t <= M.dragEnd) { const u = (t - M.dragStart) / (M.dragEnd - M.dragStart); return pDrag(u * u * (3 - 2 * u)) } return pDrag(1) + (-.32 - pDrag(1)) * stepR(t - M.dragEnd, {w: 14, z: .75}) }
+// ---------- odômetro (dígitos que só giram quando o de baixo vira) ----------
+function odometro(v) { const n = 2, el = $('odo'); if (!el.dataset.ok) { el.innerHTML = Array.from({length: n}, () => `<span class="slot"><div>${[...'01234567890'].map(d => `<span>${d}</span>`).join('')}</div></span>`).join(''); el.dataset.ok = 1 }
+  [...el.children].forEach((s, k) => { const p = n - 1 - k, P = 10 ** p, d = Math.floor(v / P) % 10 + Math.max(0, (v % P) - (P - 1)); s.firstChild.style.transform = `translateY(${-d * 200}px)`; s.style.opacity = p === 1 ? clamp(Math.log10(Math.max(v, 1)) - .6) * 1 : 1 }) }
+// ---------- fundo: poças de luz frias e quentes, que respiram ----------
+function fundo(t) { const a = .5 + .5 * Math.sin(t * .6); $('bg').style.background = `radial-gradient(900px 700px at ${300 + a * 60}px 500px, rgba(134,182,255,.10), transparent 70%), radial-gradient(900px 800px at ${780 - a * 50}px 1400px, rgba(239,196,110,.08), transparent 70%), #070B18` }
+window.seek = async (t) => {
+  fundo(t);
+  // câmera: zoom em escala logarítmica + "soco" nas batidas do drop
+  const punch = t > M.drop ? .02 * Math.exp(-((t - M.drop) % BEAT) * 9) * (t < 8.5 ? 1 : .4) : 0, z = Math.exp(T.logz.at(t)) + punch, cx = 540, cy = 860;
+  $('world').style.transform = `translate(${540}px,${960}px) scale(${z}) translate(${-cx}px,${-cy - 100}px)`;
+  // forma
+  const x = T.x.at(t), y = T.y.at(t), w = Math.max(2, T.w.at(t)), h = Math.max(2, T.h.at(t)), r = Math.max(0, T.r.at(t));
+  const pulse = t < M.clickDot ? 1 + .18 * Math.exp(-((t % BEAT)) * 7) : 1, rgb = corTracks.map(tr => Math.round(clamp(tr.at(t), 0, 255)));
+  const S = $('shape'); S.style.left = x - w * pulse / 2 + 'px'; S.style.top = y - h * pulse / 2 + 'px'; S.style.width = w * pulse + 'px'; S.style.height = h * pulse + 'px'; S.style.borderRadius = r * pulse + 'px'; S.style.background = `rgb(${rgb})`;
+  S.style.border = t > M.clickEnter && t < M.toPlanet - .05 || t > M.drop ? '2px solid rgba(242,238,228,.12)' : 'none';
+  // pergunta digitada (fusas) + cursor de texto
+  const n = clamp(Math.floor((t - M.typeStart) / .0625) + 1, 0, PERG.length); const vq = vis(t, M.clickDot + .2, M.clickEnter - .08);
+  $('q').textContent = PERG.slice(0, n) + (t > M.typeStart - .3 && t < M.clickEnter && (n < PERG.length || Math.floor(t * 4.8) % 2) ? '|' : ''); $('q').style.opacity = vq.o; $('q').style.filter = vq.b > .05 ? `blur(${vq.b}px)` : 'none';
+  const ve = vis(t, M.clickDot + .35, M.clickEnter + .05); const press = 1 - .14 * Math.exp(-(((t - M.clickEnter) / .05) ** 2)); $('enter').style.opacity = ve.o; $('enter').style.transform = `translate(0,-50%) scale(${press})`;
+  // odômetro
+  const vo = vis(t, M.clickEnter + .2, M.toPlanet - .08), u = clamp((t - M.odoStart) / (M.odoEnd - M.odoStart)), ov = Math.round(93 * (1 - (1 - u) ** 4)); odometro(ov);
+  apply($('odo'), vo); apply($('odoTop'), vis(t, M.clickEnter + .3, M.toPlanet - .1)); apply($('odoL1'), vis(t, M.odoEnd - .1, M.toPlanet - .1)); apply($('odoL2'), vis(t, M.odoEnd + .1, M.toPlanet - .1));
+  // planeta: plano de sombra reto + anel (atrás e na frente) que o cursor arrasta
+  const vp = vis(t, M.toPlanet + .05, M.drop - .06), sh = $('shade'); sh.style.opacity = vp.o * .55; sh.style.left = w * .35 + 'px'; sh.style.top = -h * .1 + 'px'; sh.style.width = w * 1.1 + 'px'; sh.style.height = h * 1.2 + 'px'; sh.style.background = '#070B18';
+  const ringK = clamp((t - M.toPlanet - .1) / .5) * (1 - clamp((t - M.drop + .06) / .08)), tilt = ringTiltAt(t);
+  const rx = 330 * (.6 + .4 * ringK), rot = `rotate(${tilt * 57.3} 540 820)`, rb = $('ringBack'); rb.setAttribute('cx', 540); rb.setAttribute('cy', 820); rb.setAttribute('rx', rx); rb.setAttribute('ry', 74); rb.setAttribute('transform', rot); rb.style.opacity = ringK;
+  const rf = $('ringFront'); rf.setAttribute('d', `M ${540 - rx} 820 A ${rx} 74 0 0 0 ${540 + rx} 820`); rf.setAttribute('transform', rot); rf.style.opacity = ringK;
+  // marca: três batidas em colcheias, "Universo" no destaque
+  ['wm1', 'wm2', 'wm3'].forEach((id, i) => { const v = vis(t, M.wm[i], null); const slam = 1 + .35 * (1 - stepR(t - M.wm[i], {w: 30, z: .8})); apply($(id), v, ` scale(${t >= M.wm[i] ? slam : 1})`) });
+  // etiqueta única que muda de tamanho a cada batida e vira o botão Seguir
+  const labels = ['CIÊNCIA', 'ESPAÇO', 'CURIOSIDADES'], k = t < M.chips[0] ? -1 : t < M.chips[1] ? 0 : t < M.chips[2] ? 1 : 2; const chip = $('chip'), ct = $('chipT');
+  const cwT = new Track(0).to(M.chips[0] - .05, 300, STIFF).to(M.chips[1] - .05, 290, STIFF).to(M.chips[2] - .05, 470, STIFF).to(M.toButton, 420, MORPH);
+  const chT = new Track(0).to(M.chips[0] - .05, 90, STIFF).to(M.toButton, 120, MORPH), cw = Math.max(0, cwT.at(t)), chh = Math.max(0, chT.at(t));
+  const followed = t >= M.clickFollow, btn = t >= M.toButton, pr = 1 - .1 * Math.exp(-(((t - M.clickFollow) / .05) ** 2));
+  chip.style.left = 540 - cw * pr / 2 + 'px'; chip.style.top = 1262 - chh * pr / 2 + 'px'; chip.style.width = cw * pr + 'px'; chip.style.height = chh * pr + 'px'; chip.style.borderRadius = chh / 2 + 'px';
+  chip.style.background = btn ? (followed ? '#0F1730' : '#EFC46E') : 'transparent'; chip.style.border = btn && !followed ? 'none' : '3px solid rgba(239,196,110,.9)';
+  ct.textContent = btn ? (followed ? 'SEGUINDO ✓' : 'SEGUIR') : (k >= 0 ? labels[k] : ''); ct.style.color = btn && !followed ? '#0B1020' : '#EFC46E';
+  const tin = btn ? (followed ? M.clickFollow : M.toButton) : (k >= 0 ? M.chips[k] : 99); apply(ct, vis(t, tin, null));
+  // cursor com inclinação pela velocidade, clique (encolhe) e onda
+  const [ax, ay] = cursorAt(t), [bx] = cursorAt(t - 1 / 60), vx = (ax - bx) * 60, lean = clamp(-vx * .0045, -14, 14);
+  let pz = 1; for (const tc of clicks) pz -= .16 * Math.exp(-(((t - tc) / .045) ** 2)); if (t >= M.dragStart && t <= M.dragEnd) pz = .86;
+  const cin = stepR(t - .1, {w: 16, z: .9}), cout = 1 - clamp((t - 9.4) / .3);
+  const sx = 540 + (ax - cx) * z, sy = 960 + (ay - cy - 100) * z; $('cur').style.transform = `translate(${sx}px,${sy}px) rotate(${lean}deg) scale(${pz * cin})`; $('cur').style.opacity = cout; $('pill').style.transform = `translateX(${clamp(-vx * .012, -40, 40)}px)`;
+  const lc = clicks.filter(c => t >= c).pop(), rr = lc == null ? 0 : (t - lc) / .4; const rip = $('rip'); rip.setAttribute('cx', sx); rip.setAttribute('cy', sy); rip.setAttribute('r', 10 + rr * 70); rip.style.opacity = rr < 1 ? (1 - rr) * .8 : 0;
+  // grão (sementes em "dois") e fade final
+  $('turb').setAttribute('seed', Math.floor(t * 30) % 97); $('film').style.filter = t > DUR - .35 ? `brightness(${1 - clamp((t - DUR + .35) / .35)})` : 'none';
+};
+window.M = M; window.DUR = DUR;
+(async () => { await document.fonts.load('600 40px Inter'); await document.fonts.load('100px Serif'); await document.fonts.load('italic 100px Serif'); await document.fonts.ready; window.READY = true;
+  if (location.search.includes('render')) return; const film = $('film'); film.style.transformOrigin = '0 0'; film.style.transform = `scale(${innerHeight / 1920})`;
+  let t0 = performance.now(); (function loop(now) { seek(((now - t0) / 1000) % DUR); requestAnimationFrame(loop) })(t0) })();
+</script>
