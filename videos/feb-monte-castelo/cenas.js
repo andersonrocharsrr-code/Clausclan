@@ -27,7 +27,7 @@ S(5, (tl, t) => { papel(t); cartao(150, 420, 780, 940, stepR(tl, 18, .9)); txt('
 // 6 — "mais fácil uma cobra fumar"
 S(6, (tl, t) => { papel(t); rot(tl, .1, 'O QUE DIZIAM NA ÉPOCA', 540, 420, K.tinta2); cobra(540, 880, 1.9, t, 0); sobe(tl, .5, '"Mais fácil uma', 540, 1340, 70, K.tinta, {serif: 1}); sobe(tl, .75, 'cobra fumar..."', 540, 1430, 70, K.tinta, {serif: 1}) });
 // 7 — a cobra fumou (o cursor acende o cachimbo)
-S(7, (tl, t) => { papel(t); const [ax, ay] = caminho(tl, [[0, 950, 1400], [.1, 720, 862]]); cursor(ax, ay, tl, [.45]); cobra(540, 880, 1.9, t, clamp((tl - .45) / .3)); if (tl > .45) disc(716, 852, 18 * stepR(tl - .45, 30, .6), '#FF8A2A'); carimbo(tl, .9, 'A COBRA FUMOU', 540, 1380, 74, K.verde, -.08) });
+S(7, (tl, t) => { papel(t); const [ax, ay] = caminho(tl, [[0, 950, 1400], [.1, 720, 862]]); cursor(ax, ay, tl, [.45]); cobra(540, 880, 1.9, t, clamp((tl - .45) / .3)); carimbo(tl, .9, 'A COBRA FUMOU', 540, 1380, 74, K.verde, -.08) });
 // 8 — mais de 25 mil brasileiros da FEB
 S(8, (tl, t) => { papel(t); const n = 25834 * out(tl / 2.2); txt(fmt(n), 540, 560, 210, K.verde, {serif: 1}); rot(tl, .2, 'PRACINHAS DA FORÇA EXPEDICIONÁRIA', 540, 650, K.tinta2, 30);
   for (let i = 0; i < 150; i++) { const r = Math.floor(i / 15), col = i % 15, u = stepR(tl - .2 - (r * 15 + col) * .012, 24, .8); if (u > 0) { c.save(); c.globalAlpha = u; iconeSoldado(120 + col * 60, 840 + r * 66 + (1 - u) * 20, .32, i < 150 * min(1, tl / 2.2) ? K.tinta : K.cinza, false); c.restore() } } rot(tl, 1.3, 'CADA FIGURA ≈ 170 SOLDADOS', 540, 1560 - 120, K.tinta2, 26) });
