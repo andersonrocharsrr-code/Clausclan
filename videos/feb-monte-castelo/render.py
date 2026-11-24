@@ -5,7 +5,7 @@ from playwright.async_api import async_playwright
 AQUI = pathlib.Path(__file__).resolve().parent; FPS, SUB, DUR = 30, 2, 105.0
 def servidor():
     h = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(AQUI)); h.log_message = lambda *a: None
-    s = http.server.ThreadingHTTPServer(('127.0.0.1', 8774 + (int(sys.argv[2]) + 1 if len(sys.argv) > 3 else 0)), h); threading.Thread(target=s.serve_forever, daemon=True).start(); return s
+    s = http.server.ThreadingHTTPServer(('127.0.0.1', 8774 + (int(sys.argv[2]) + 1 if sys.argv[1] == 'full' and len(sys.argv) > 3 else 0)), h); threading.Thread(target=s.serve_forever, daemon=True).start(); return s
 async def snap(pg, t):
     await pg.evaluate('t => seek(t)', t); await pg.evaluate('() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
     return await pg.locator('#c').screenshot(type='png')
