@@ -189,16 +189,20 @@ function cobra(x, y, s, t, fumaca = 1) { c.save(); c.translate(x, y); c.scale(s 
   c.font = '800 120px Arial, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#FFFFFF'; c.fillText('BRASIL', 790, 254);
   // corpo da cobra em S com laço embaixo
   const corpo = () => { c.beginPath(); c.moveTo(612, 890); c.bezierCurveTo(760, 876, 1000, 890, 1000, 770); c.bezierCurveTo(1000, 640, 850, 592, 700, 592); c.bezierCurveTo(520, 592, 470, 720, 560, 792); c.bezierCurveTo(650, 860, 810, 808, 830, 690); c.bezierCurveTo(852, 570, 722, 470, 722, 392); c.bezierCurveTo(722, 312, 822, 300, 880, 372) };
-  corpo(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 50; c.stroke(); corpo(); c.strokeStyle = '#2FA83A'; c.lineWidth = 40; c.stroke(); corpo(); c.strokeStyle = 'rgba(150,230,120,.55)'; c.lineWidth = 10; c.stroke();
+  corpo(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 50; c.stroke(); corpo(); c.strokeStyle = '#2FA83A'; c.lineWidth = 40; c.stroke(); corpo(); c.strokeStyle = 'rgba(150,230,120,.3)'; c.lineWidth = 6; c.stroke();
   c.beginPath(); c.moveTo(612, 890); c.lineTo(598, 896); c.strokeStyle = '#1D5E1E'; c.lineWidth = 14; c.stroke(); // ponta do rabo
-  // cabeça apontando para baixo à direita, língua vermelha e olho
-  c.save(); c.translate(912, 412); c.rotate(.85); c.beginPath(); c.ellipse(0, 0, 50, 28, 0, 0, 7); c.fillStyle = '#2FA83A'; c.fill(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 5; c.stroke(); c.restore();
-  c.beginPath(); c.ellipse(906, 397, 11, 9, 0, 0, 7); c.fillStyle = '#fff'; c.fill(); c.lineWidth = 3; c.stroke(); disc(908, 398, 4.5, '#111');
-  c.strokeStyle = '#D23A2A'; c.lineWidth = 8; c.beginPath(); c.moveTo(938, 452); c.quadraticCurveTo(950, 470, 966, 476); c.stroke();
-  // cachimbo
-  c.strokeStyle = '#8A3412'; c.lineWidth = 14; c.beginPath(); c.moveTo(944, 456); c.quadraticCurveTo(968, 498, 992, 512); c.stroke();
-  c.beginPath(); c.moveTo(990, 488); c.quadraticCurveTo(988, 560, 1020, 556); c.quadraticCurveTo(1050, 548, 1046, 492); c.closePath(); c.fillStyle = '#D9662A'; c.fill(); c.strokeStyle = '#7A2C0E'; c.lineWidth = 4; c.stroke();
-  c.beginPath(); c.ellipse(1018, 491, 28, 8, 0, 0, 7); c.fillStyle = '#4A1C08'; c.fill(); poly([[1000, 500], [1012, 500], [1010, 540], [1002, 534]], 'rgba(255,220,160,.35)');
+  // cabeça alongada apontando para baixo à direita, boca aberta segurando o cachimbo
+  const cab = (f, cor) => { c.beginPath(); f(); c.closePath(); c.fillStyle = cor; c.fill(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 5; c.stroke() };
+  cab(() => { c.moveTo(924, 456); c.lineTo(984, 462); c.lineTo(966, 504) }, '#C62828'); // boca aberta
+  cab(() => { c.moveTo(924, 456); c.quadraticCurveTo(950, 470, 966, 504); c.quadraticCurveTo(950, 510, 936, 492); c.quadraticCurveTo(910, 470, 884, 440) }, '#2FA83A'); // mandíbula
+  cab(() => { c.moveTo(852, 346); c.bezierCurveTo(900, 332, 950, 380, 986, 450); c.quadraticCurveTo(990, 464, 976, 462); c.lineTo(924, 456); c.quadraticCurveTo(890, 440, 866, 408); c.quadraticCurveTo(852, 380, 852, 346) }, '#2FA83A'); // cabeça
+  c.strokeStyle = '#1D5E1E'; c.lineWidth = 3; c.beginPath(); c.moveTo(906, 440); c.quadraticCurveTo(930, 452, 950, 452); c.stroke(); // linha da boca
+  disc(968, 438, 3.5, '#1D5E1E'); // narina
+  c.beginPath(); c.ellipse(902, 384, 14, 11, .5, 0, 7); c.fillStyle = '#fff'; c.fill(); c.strokeStyle = '#1D5E1E'; c.lineWidth = 3; c.stroke(); disc(905, 385, 5.5, '#111');
+  // cachimbo: piteira entrando na boca e fornilho arredondado
+  c.strokeStyle = '#5A1E08'; c.lineWidth = 16; c.beginPath(); c.moveTo(948, 478); c.quadraticCurveTo(962, 526, 990, 540); c.stroke(); c.strokeStyle = '#9A3A14'; c.lineWidth = 10; c.stroke();
+  c.beginPath(); c.moveTo(982, 494); c.lineTo(1048, 494); c.bezierCurveTo(1050, 540, 1036, 566, 1010, 566); c.bezierCurveTo(986, 566, 978, 540, 982, 494); c.closePath(); c.fillStyle = '#D9662A'; c.fill(); c.strokeStyle = '#7A2C0E'; c.lineWidth = 4; c.stroke();
+  c.beginPath(); c.ellipse(1015, 494, 33, 9, 0, 0, 7); c.fillStyle = '#3A1606'; c.fill(); c.stroke(); poly([[990, 504], [1000, 504], [1000, 548], [992, 540]], 'rgba(255,220,160,.35)');
   // fumaça em fitas cinzas ondulando
-  if (fumaca > 0) { c.lineWidth = 16; for (let k = 0; k < 3; k++) { c.globalAlpha = fumaca * (.85 - k * .2); c.strokeStyle = k ? '#C9CDD2' : '#E2E5E8'; c.beginPath(); for (let i = 0; i <= 20; i++) { const u = i / 20, yy = 478 - u * (170 + k * 20), xx = 1020 + k * 14 + sin(u * 7 - t * 4 + k) * 18 * u + u * 20; i ? c.lineTo(xx, yy) : c.moveTo(xx, yy) } c.stroke() } c.globalAlpha = 1 }
+  if (fumaca > 0) { c.lineWidth = 16; for (let k = 0; k < 3; k++) { c.globalAlpha = fumaca * (.85 - k * .2); c.strokeStyle = k ? '#C9CDD2' : '#E2E5E8'; c.beginPath(); for (let i = 0; i <= 20; i++) { const u = i / 20, yy = 482 - u * (170 + k * 20), xx = 1020 + k * 14 + sin(u * 7 - t * 4 + k) * 18 * u + u * 20; i ? c.lineTo(xx, yy) : c.moveTo(xx, yy) } c.stroke() } c.globalAlpha = 1 }
   c.restore() }
