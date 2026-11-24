@@ -1,0 +1,63 @@
+<!doctype html><meta charset="utf-8"><title>Vinheta Mistérios do Universo</title>
+<style>
+@font-face{font-family:"Fira";font-weight:800;src:url(fontes/fira-sans-extra-condensed-latin-800-normal.woff2)}
+@font-face{font-family:"Fira";font-weight:600;src:url(fontes/fira-sans-extra-condensed-latin-600-normal.woff2)}
+html,body{margin:0;background:#000;overflow:hidden}canvas{display:block;height:100vh;width:auto;margin:auto}
+#hud{position:fixed;left:8px;bottom:8px;color:#aaa;font:12px monospace}</style>
+<canvas id="c" width="1080" height="1920"></canvas><div id="hud"></div>
+<script>
+// Vinheta "Mistérios do Universo" — tudo é função do tempo: window.seek(t) desenha o quadro t (sem timers, sem estado entre quadros).
+const W = 1080, H = 1920, CX = 540, CY = 860, c = document.getElementById('c').getContext('2d');
+const { sin, cos, PI, exp, min, max, sqrt, abs, hypot } = Math;
+const clamp = (x, a = 0, b = 1) => min(b, max(a, x)), lerp = (a, b, u) => a + (b - a) * u, prog = (t, a, b) => clamp((t - a) / (b - a));
+const outExpo = u => u >= 1 ? 1 : 1 - Math.pow(2, -10 * u), io = u => u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2, out = u => 1 - Math.pow(1 - u, 3);
+// mola fechada (rigidez k, amortecimento d, massa 1): resposta ao degrau
+function mola(t, k = 170, d = 26) { if (t <= 0) return 0; const w0 = sqrt(k), z = d / (2 * w0); if (z >= 1) return 1 - exp(-w0 * t) * (1 + w0 * t); const wd = w0 * sqrt(1 - z * z); return 1 - exp(-z * w0 * t) * (cos(wd * t) + z * w0 / wd * sin(wd * t)) }
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296 } }
+const COR = { fundo0: '#03040a', fundo1: '#0a1024', creme: '#f4efe4', ouro: '#f2c46d', azul: '#7fb8ff', lilas: '#b9a6ff' }; // um único destaque: ouro
+let TL = null;
+// ---------- dados gerados uma vez (semente fixa) ----------
+const R1 = mulberry32(7), EST = Array.from({ length: 700 }, () => ({ x: (R1() - .5) * 2, y: (R1() - .5) * 2, z: .15 + R1() * .85, b: R1() }));
+const R2 = mulberry32(11), GAL = Array.from({ length: 4200 }, (_, i) => { const br = i % 2, u = sqrt(R2()), r = 24 + u * 470, a = br * PI + Math.log(r / 20) * 1.55 + (R2() - .5) * (.45 + u * .5); return { r: r + (R2() - .5) * 26, a, s: 1.4 + R2() * 3.2 * (1 - u * .5), cor: R2() < .12 ? COR.ouro : R2() < .45 ? COR.azul : R2() < .55 ? COR.lilas : COR.creme, d: R2() } });
+// ---------- quadro ----------
+function glow(x, y, r, rgb, a) { if (a <= 0 || r <= 0) return; const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(${rgb},${a})`); g.addColorStop(.4, `rgba(${rgb},${a * .35})`); g.addColorStop(1, `rgba(${rgb},0)`); c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill() }
+function fundo(t) { const g = c.createRadialGradient(CX, CY, 0, CX, CY, 1300); g.addColorStop(0, COR.fundo1); g.addColorStop(1, COR.fundo0); c.fillStyle = g; c.fillRect(0, 0, W, H) }
+// estrelas em 3D: antes do warp derivam devagar, no warp a câmera avança e elas viram riscos, depois do drop voltam a derivar
+function estrelas(t) { const s1 = TL.s1, s2 = TL.s2, aparece = prog(t, 0, 1.2);
+  const vel = (tt) => { const w = prog(tt, s1.warp, s1.warp + .4) * (1 - prog(tt, s2.drop - .5, s2.drop)); return .015 + w * w * 1.6 };
+  // posição z acumulada: integral simples por passos fixos (determinística)
+  const pos = (tt) => { let acc = 0; const n = Math.ceil(tt * 60); for (let i = 0; i < n; i++) acc += vel(i / 60) / 60; return acc }; const z0 = pos(t), z1 = pos(max(0, t - 1 / 30));
+  EST.forEach((e, i) => { const zz = ((e.z - z0) % 1 + 1) % 1 + .02, zp = ((e.z - z1) % 1 + 1) % 1 + .02, x = CX + e.x / zz * 260, y = CY + e.y / zz * 260, xp = CX + e.x / zp * 260, yp = CY + e.y / zp * 260; if (x < -50 || x > W + 50 || y < -50 || y > H + 50) return;
+    const br = clamp((1 - zz) * 1.3) * aparece * (.55 + .45 * sin(t * (1.3 + e.b * 2) + i)), sz = (1 - zz) * 3.2 + .6; if (hypot(x - xp, y - yp) > 3 && zp > zz) { c.strokeStyle = `rgba(220,232,255,${br})`; c.lineWidth = sz; c.beginPath(); c.moveTo(xp, yp); c.lineTo(x, y); c.stroke() } else { c.fillStyle = `rgba(235,240,255,${br})`; c.fillRect(x - sz / 2, y - sz / 2, sz, sz) } }) }
+function ponto(t) { const s1 = TL.s1, s2 = TL.s2; if (t < s1.ponto || t > s2.drop + .6) return; let r = 6 * out(prog(t, s1.ponto, s1.ponto + .5)); for (const p of s1.pulso) r += 8 * exp(-max(0, t - p) * 6) * (t >= p ? 1 : 0); r += 26 * prog(t, s1.warp, s2.drop) ** 2; const fade = 1 - prog(t, s2.drop, s2.drop + .6);
+  glow(CX, CY, r * 9, '255,214,150', .5 * fade); glow(CX, CY, r * 3, '255,240,210', .9 * fade); c.fillStyle = `rgba(255,255,255,${fade})`; c.beginPath(); c.arc(CX, CY, r * .6, 0, 7); c.fill() }
+function explosao(t) { const d = TL.s2.drop; if (t < d || t > d + 1.2) return; const u = prog(t, d, d + 1.2); const R = hypot(CX, H - CY) * 1.05 * outExpo(u); c.strokeStyle = `rgba(255,226,170,${.8 * (1 - u)})`; c.lineWidth = 40 * (1 - u) + 2; c.beginPath(); c.arc(CX, CY, R, 0, 7); c.stroke(); glow(CX, CY, 700 * outExpo(u), '255,230,190', .7 * (1 - u)); if (t < d + .08) { c.fillStyle = `rgba(255,250,240,${1 - (t - d) / .08})`; c.fillRect(0, 0, W, H) } }
+function galaxia(t) { const d = TL.s2.drop; if (t < d) return; const e = mola(t - d, 120, 20), giro = (t - d) * .25 + 1.2; c.save(); c.translate(CX, CY); c.rotate(-.35); c.scale(1, .52);
+  c.globalCompositeOperation = 'lighter'; // braços: faixas de brilho largas por baixo dos pontos
+  for (let br = 0; br < 2; br++) for (let k = 0; k < 60; k++) { const r = (30 + k * 7.4) * e, a = br * PI + Math.log(r / 24 + .01) * 1.55 + giro * (1.3 - r / 700); const nasce = clamp((t - d - k / 60 * .35) / .4); c.globalAlpha = .07 * nasce * (1 - k / 70); c.fillStyle = k % 3 ? '#7fb8ff' : '#b9a6ff'; c.beginPath(); c.arc(cos(a) * r, sin(a) * r, 34 - k * .25, 0, 7); c.fill() }
+  GAL.forEach(p => { const nasce = clamp((t - d - p.d * .35) / .4); if (nasce <= 0) return; const r = p.r * e, a = p.a + giro * (1.3 - p.r / 700); const x = cos(a) * r, y = sin(a) * r; c.globalAlpha = nasce * (.45 + .55 * (1 - p.r / 520)); c.fillStyle = p.cor; c.fillRect(x - p.s / 2, y - p.s / 2, p.s, p.s) }); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; c.restore();
+  glow(CX, CY, 230 * e, '255,214,160', .4); glow(CX, CY, 70 * e, '255,246,225', .95) }
+// título: cada palavra sobe de dentro de uma máscara (translateY 105% → 0), com leve rotação e mola de assentamento
+function palavra(t, t0, str, y, size, cor, ls = 6) { if (t < t0 - .01) return; const u = outExpo(prog(t, t0, t0 + .55)); c.font = `800 ${size}px Fira`; c.letterSpacing = ls + 'px'; c.textAlign = 'center'; c.textBaseline = 'alphabetic'; const wdt = c.measureText(str).width;
+  c.save(); c.beginPath(); c.rect(CX - wdt / 2 - 40, y - size * 1.02, wdt + 80, size * 1.25); c.clip(); c.translate(CX, y + size * 1.05 * (1 - u)); c.rotate((1 - u) * .06); c.fillStyle = cor; c.shadowColor = 'rgba(0,0,0,.6)'; c.shadowBlur = 24; c.fillText(str, 0, 0); c.restore();
+  return wdt }
+function titulo(t) { const s2 = TL.s2, s3 = TL.s3, punch = t > s2.drop ? 1 + .012 * exp(-((t - s2.drop) % .5) * 8) : 1; c.save(); c.translate(CX, 1420); c.scale(punch, punch); c.translate(-CX, -1420);
+  palavra(t, s2.palavra1, 'MISTÉRIOS', 1400, 190, COR.creme, 8); palavra(t, s2.palavra2, 'DO', 1490, 70, COR.creme, 20); const w = palavra(t, s2.palavra3, 'UNIVERSO', 1640, 150, COR.ouro, 12);
+  // brilho que atravessa o título no selo
+  if (t > s3.selo && t < s3.selo + .9) { const u = io(prog(t, s3.selo, s3.selo + .9)), x = lerp(-200, W + 200, u); c.save(); c.globalCompositeOperation = 'source-atop'; const g = c.createLinearGradient(x - 120, 0, x + 120, 0); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(.5, 'rgba(255,255,255,.85)'); g.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = g; c.fillRect(0, 1180, W, 520); c.restore() }
+  // traço dourado que cresce embaixo
+  const l = outExpo(prog(t, s2.palavra3 + .3, s2.palavra3 + 1)); if (l > 0) { c.fillStyle = COR.ouro; c.fillRect(CX - 260 * l, 1690, 520 * l, 6) } c.restore() }
+function anel(t) { const s3 = TL.s3; if (t < s3.anel) return; const u = io(prog(t, s3.anel, s3.anel + .9)); c.save(); c.translate(CX, CY); c.rotate(-.35); c.strokeStyle = 'rgba(242,196,109,.75)'; c.lineWidth = 4; c.beginPath(); c.ellipse(0, 0, 500, 160, 0, -PI / 2, -PI / 2 + PI * 2 * u); c.stroke();
+  if (t > s3.planeta) { const e = mola(t - s3.planeta, 320, 30), a = -PI / 2 + (t - s3.planeta) * .9 + 2.2, x = cos(a) * 500, y = sin(a) * 160; const p = [x, y]; const r = 26 * e; c.fillStyle = '#7fb8ff'; c.beginPath(); c.arc(p[0], p[1], r, 0, 7); c.fill(); c.fillStyle = 'rgba(3,4,10,.55)'; c.beginPath(); c.arc(p[0] + r * .45, p[1] + r * .3, r * 1.05, 0, 7); c.fill(); c.strokeStyle = 'rgba(255,255,255,.6)'; c.lineWidth = 2; c.beginPath(); c.arc(p[0], p[1], r, 2.6, 5.4); c.stroke() } c.restore() }
+const rot = (x, y, a) => [x * cos(a) - y * sin(a), x * sin(a) + y * cos(a)];
+function grao(t) { const R = mulberry32(Math.floor(t * 30) + 1); c.fillStyle = 'rgba(255,255,255,.035)'; for (let i = 0; i < 900; i++) c.fillRect(R() * W, R() * H, 2, 2) }
+window.seek = async (t) => { const s2 = TL.s2, s4 = TL.s4; // câmera: leve aproximação contínua (sem quadro parado) e "soco" a cada batida depois do drop
+  fundo(t); const zoom = Math.exp(lerp(Math.log(1), Math.log(1.06), prog(t, s2.drop, TL.duration))); c.save(); c.translate(CX, CY); c.scale(zoom, zoom); c.translate(-CX, -CY);
+  estrelas(t); galaxia(t); anel(t); ponto(t); explosao(t); c.restore(); titulo(t); grao(t);
+  const vig = c.createRadialGradient(CX, H / 2, 600, CX, H / 2, 1300); vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(0,0,0,.55)'); c.fillStyle = vig; c.fillRect(0, 0, W, H);
+  const f = max(1 - prog(t, 0, .3), prog(t, s4.fim, TL.duration)); if (f > 0) { c.fillStyle = `rgba(0,0,0,${f})`; c.fillRect(0, 0, W, H) } document.getElementById('hud').textContent = t.toFixed(2) + ' s' };
+// prévia: Espaço = play/pause, ←/→ = quadro anterior/seguinte, R = recomeça
+(async () => { TL = await (await fetch('timeline.json')).json(); await document.fonts.load('800 40px Fira'); await document.fonts.ready; window.ready = true;
+  if (location.search.includes('render')) return; let t = 0, play = true, last = performance.now(); addEventListener('keydown', e => { if (e.code === 'Space') play = !play; if (e.code === 'ArrowRight') t += 1 / 30; if (e.code === 'ArrowLeft') t -= 1 / 30; if (e.code === 'KeyR') t = 0 });
+  (function f(now) { if (play) t = (t + (now - last) / 1000) % TL.duration; last = now; seek(t); requestAnimationFrame(f) })(last) })();
+</script>

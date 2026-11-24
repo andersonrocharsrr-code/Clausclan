@@ -1,0 +1,9 @@
+{
+  "fps": 30,
+  "duration": 10.0,
+  "bpm": 120,
+  "s1": { "ponto": 0.3, "pulso": [1.0, 1.5], "warp": 2.0 },
+  "s2": { "drop": 4.0, "galaxia": 4.0, "palavra1": 4.5, "palavra2": 5.0, "palavra3": 5.5 },
+  "s3": { "anel": 6.5, "planeta": 7.0, "selo": 8.0 },
+  "s4": { "hold": 8.5, "fim": 9.6 }
+}
