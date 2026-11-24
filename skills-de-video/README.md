@@ -5,7 +5,7 @@
 As skills de verdade ficam em `.claude/skills/<nome>/`, porque é só ali que o Claude as reconhece. Esta pasta é só o
 guia; nada aqui precisa ser movido. As ferramentas de apoio (motores, exemplos, sons) ficam em `ferramentas/`.
 
-Total: **32 skills**: 31 de vídeo, instaladas entre nov/2026 e esta data, mais a `anatomy`, que já existia.
+Total: **47 skills**: 46 de vídeo, instaladas entre nov/2026 e esta data, mais a `anatomy`, que já existia.
 
 ---
 
@@ -23,6 +23,8 @@ Total: **32 skills**: 31 de vídeo, instaladas entre nov/2026 e esta data, mais 
 | Recortar uma pessoa ou objeto do fundo do vídeo | **object-separation** (melhor no seu computador) |
 | Simulação: enxames, partículas, máquina em 3D com a câmera voando | **web-sims** |
 | Entradas prontas tipo bounce/zoom/flip | **animate-css** |
+| Editar um vídeo seu falando para a câmera (cortar silêncios e erros, legendas, B-roll, gráficos) | **edit-video** / **short-form-edit** (Herk) |
+| Showreel de marca de 10–30 s cortado na música | **motion-showreel** (Herk) |
 | Ilustração técnica isométrica e interativa (site, explicação) | **anatomy** |
 
 ---
@@ -120,7 +122,31 @@ Biblioteca [Animate.css 4.1.1](https://github.com/animate-css/animate.css) · Hi
 |---|---|
 | `animate-css` | Usa as 97 animações prontas (bounceIn, zoomIn, flipInX…) sem quebrar o render quadro a quadro. Diz como posicionar cada animação no tempo exato e quais opções do navegador evitam diferenças entre renders. |
 
-## 9. Já existia antes
+## 9. Herk Edit Kit — Nate Herk (HyperFrames)
+
+Origem: [nateherkai/herk-edit-kit](https://github.com/nateherkai/herk-edit-kit) · MIT + permissão de uso (inclusive para vídeos comerciais); HyperFrames é Apache-2.0.
+Kit em `ferramentas/herk-edit-kit/` (scripts, 406 cartões de gráficos em 2 estilos, guias). Os vídeos de exemplo, os projetos de aula e a marca AIS do Nate não vieram.
+Ferramenta HyperFrames testada aqui: renderizou o exemplo inicial (8 s) em 15 s. O componente de GPU (CUDA) foi pulado na instalação, porque não há GPU neste ambiente.
+
+| Skill | Para que serve |
+|---|---|
+| `edit-video` | Edição completa de um vídeo bruto seu falando: transcrição, cortes de silêncio, revisão de erros, história visual, gráficos e render conferido. |
+| `cut-silences` | Corta silêncios e pausas mortas (pede transcrição palavra por palavra). |
+| `cut-mistakes` | Acha gaguejos, repetições e regravações e propõe cada corte para você aprovar. |
+| `short-form-edit` | Transforma a gravação num Reel, Short ou anúncio curto, com gancho, legendas, B-roll, música e efeitos. |
+| `video-storytelling` | Faz os gráficos de um vídeo longo como um "mundo" só por onde a câmera passeia. |
+| `hyperframes-video-beats` | Gráficos de apoio em vídeos longos: tarjas de vidro, telas de papel amassado e destaques no tempo da fala. |
+| `motion-showreel` | Showreel de marca de 10–30 s: um símbolo que se transforma por capítulos, cortes a 120–130 BPM e logo no final. |
+| `make-a-video` | Criador de vídeo para iniciantes: entrevista rápida e vídeo pronto, com conferência visual. |
+| `website-to-hyperframes` | Captura um site e faz um vídeo a partir dele. |
+| `style-library` | Escolhe ou cria estilos e cartões de gráficos da biblioteca do kit. |
+| `hyperframes` | Como montar composições HyperFrames: títulos, legendas, narração, transições e visual que reage ao som. |
+| `hyperframes-cli` | Comandos do HyperFrames: criar, conferir, prévia, render, transcrição, voz. |
+| `hyperframes-registry` | Instala blocos e componentes prontos do catálogo HyperFrames. |
+| `gsap` | Referência da biblioteca de animação GSAP usada pelo HyperFrames. |
+| `short-form-video` | Só para manter os Shorts antigos de aula do kit (não vieram); para Shorts novos use `short-form-edit`. |
+
+## 10. Já existia antes
 
 | Skill | Para que serve |
 |---|---|
