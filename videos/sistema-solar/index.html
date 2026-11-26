@@ -117,7 +117,7 @@ function estado(t) { let i = 0; while (i + 1 < SEG.length && t >= SEG[i + 1].v0)
   const a1 = A.pos.clone().add(A.pos.clone().sub(A.alvo).normalize().multiplyScalar(D * .3)).add(up.clone().multiplyScalar(D * .15));
   const b1 = B.pos.clone().add(B.pos.clone().sub(B.alvo).normalize().multiplyScalar(D * .35)).add(up.clone().multiplyScalar(D * .1));
   const g = s.id === 'final' ? e : ant === 'intro' ? 1 - e : 0;
-  return { pos: bez(A.pos, a1, b1, B.pos, e), alvo: A.alvo.clone().lerp(B.alvo, eio(cl(u * 1.15))), fov: lerp(A.fov, B.fov, e) + 16 * Math.sin(Math.PI * u), warp: Math.pow(Math.sin(Math.PI * u), 1.5), geral: g } }
+  return { pos: bez(A.pos, a1, b1, B.pos, e), alvo: A.alvo.clone().lerp(B.alvo, eio(cl(u / .4))), fov: lerp(A.fov, B.fov, e) + 16 * Math.sin(Math.PI * u), warp: Math.pow(Math.sin(Math.PI * u), 1.5), geral: g } }
 // ---------- estrelas passando (viagem) ----------
 const PASSA = (() => { const q = rng(77), a = []; for (let i = 0; i < 700; i++) a.push([(q() * 2 - 1) * 1.6, (q() * 2 - 1) * 1.6, q(), .4 + q() * .6]); return a })();
 function estrelasPassando(t, w) { if (w <= .02) return; hud.save(); hud.globalCompositeOperation = 'lighter'; hud.lineCap = 'round'; const viaja = t * 2.2;

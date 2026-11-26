@@ -22,6 +22,15 @@ async def main():
             cols = min(8, len(ims)); rows = (len(ims) + cols - 1) // cols; S = Image.new('RGB', (270 * cols, 480 * rows))
             for i, im in enumerate(ims): S.paste(im, ((i % cols) * 270, (i // cols) * 480))
             S.save(AQUI / 'probe/sheet.png'); print('probe/sheet.png')
+        elif modo == 'voos':
+            # só os trechos de viagem entre planetas (corrigidos), um mp4 por viagem
+            import math; SEGS = json.load(open(AQUI / 'tempos.json'))['SEG']; lista = []
+            for k, sg in enumerate(SEGS[1:], 1):
+                f0 = math.floor(sg['v0'] * FPS); f1 = math.ceil((sg['v0'] + 2.8) * FPS) + 1; saida = AQUI / f'out/voo{k}.mp4'
+                ff = subprocess.Popen(['ffmpeg', '-v', 'error', '-y', '-f', 'image2pipe', '-framerate', str(FPS), '-c:v', 'png', '-i', '-', '-vf', "scale=out_color_matrix=bt709:out_range=tv,format=yuv420p", '-c:v', 'libx264', '-preset', 'slow', '-crf', '17', '-tune', 'film', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-colorspace', 'bt709', str(saida)], stdin=subprocess.PIPE)
+                for f in range(f0, f1): ff.stdin.write(await snap(pg, f / FPS))
+                ff.stdin.close(); ff.wait(); lista.append([saida.name, f0]); print(saida.name, f0, f1, flush=True)
+            json.dump(lista, open(AQUI / 'out/voos.json', 'w'))
         else:
             parte = int(sys.argv[2]) if len(sys.argv) > 3 else 0; nparts = int(sys.argv[3]) if len(sys.argv) > 3 else 1
             (AQUI / 'out').mkdir(exist_ok=True); vf = f"scale=out_color_matrix=bt709:out_range=tv,format=yuv420p"
