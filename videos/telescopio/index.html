@@ -1,0 +1,196 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Telescópio</title>
+<style>html,body{margin:0;background:#000}canvas{display:block}</style></head>
+<body><canvas id="c"></canvas>
+<script id="fs" type="x-shader/x-fragment">
+precision highp float;
+uniform vec2 res;
+uniform float t;        // segundos
+uniform float zoom;     // fator do telescópio (1 = longe)
+uniform vec2 drift;     // tremida leve da mão/telescópio
+uniform float rot;      // giro da lua
+
+float h31(vec3 p){ p=fract(p*0.3183099+.1); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+vec3 h33(vec3 p){ return vec3(h31(p),h31(p+19.19),h31(p+47.7)); }
+float n3(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f);
+  return mix(mix(mix(h31(i),h31(i+vec3(1,0,0)),f.x),mix(h31(i+vec3(0,1,0)),h31(i+vec3(1,1,0)),f.x),f.y),
+             mix(mix(h31(i+vec3(0,0,1)),h31(i+vec3(1,0,1)),f.x),mix(h31(i+vec3(0,1,1)),h31(i+vec3(1,1,1)),f.x),f.y),f.z); }
+float fbm(vec3 p,int oct){ float a=.5,s=0.; for(int i=0;i<9;i++){ if(i>=oct)break; s+=a*n3(p); p=p*2.03+vec3(1.7,9.2,3.1); a*=.5;} return s; }
+
+// ---------- Júpiter ----------
+vec3 jupiterCor(vec3 n, float px){
+  // latitude com turbulência, faixas
+  float lat = n.y;
+  vec3 q = n*3.0;
+  float w = fbm(q*2.0+vec3(t*0.004,0,0),6);
+  float w2 = fbm(q*6.0+vec3(w*2.0),6);
+  float l = lat*7.0 + (w-.5)*0.9 + (w2-.5)*0.35;
+  float b = sin(l*3.1)*.5+.5;
+  float b2 = sin(l*7.3+1.3)*.5+.5;
+  vec3 creme = vec3(.92,.89,.84), ocre=vec3(.82,.62,.36), marrom=vec3(.55,.42,.32), cinza=vec3(.70,.70,.74);
+  vec3 c = mix(creme, ocre, smoothstep(.35,.9,b));
+  c = mix(c, marrom, smoothstep(.75,1.,b2)*.45);
+  c = mix(c, cinza, smoothstep(.6,.9,w2)*.35);
+  // redemoinhos finos
+  float f = fbm(q*18.0+vec3(w2*4.0, w*3.0, 0),6);
+  float f2 = fbm(vec3(q.x*30.0, l*9.0, q.z*30.0)+vec3(f*3.0),5);
+  c *= .86+.22*f+.10*(f2-.5);
+  c = mix(c, vec3(.96,.93,.88), smoothstep(.62,.8,f2)*.35);
+  return c;
+}
+
+// ---------- Lua (Amalteia inventada) ----------
+const vec3 EIX = vec3(1.25,1.0,1.0);
+mat3 rotY(float a){ float c=cos(a),s=sin(a); return mat3(c,0,-s, 0,1,0, s,0,c); }
+mat3 rotX(float a){ float c=cos(a),s=sin(a); return mat3(1,0,0, 0,c,s, 0,-s,c); }
+// forma batata: raio por direção
+float forma(vec3 d){
+  return 1.0 + .16*(n3(d*1.3+2.0)-.5)*2.0 + .07*(n3(d*3.1+7.0)-.5)*2.0 - .10*smoothstep(.55,1.0,dot(d,normalize(vec3(.7,-.4,.6))));
+}
+float smin(float a,float b,float k){float h=clamp(.5+.5*(b-a)/k,0.,1.);return mix(b,a,h)-k*h*(1.-h);}
+float smax(float a,float b,float k){return -smin(-a,-b,k);}
+// crateras numa escala
+float crateras(vec3 p, float esc, float seed, float dens){
+  p*=esc; vec3 i=floor(p), f=fract(p); float h=0.;
+  for(int z=-1;z<=1;z++)for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++){
+    vec3 g=vec3(x,y,z); vec3 r=h33(i+g+seed);
+    if(r.x>dens) continue;                    // nem toda célula tem cratera
+    vec3 c=g+.15+.7*h33(i+g+seed+3.3) - f; float d=length(c);
+    float rad=.10+.38*r.y*r.y*r.y;
+    float u=d/rad;
+    if(u>2.0) continue;
+    float jan = smoothstep(2.0,1.4,u);
+    float idade = r.z;                        // 0 nova, 1 gasta
+    float prof = mix(.45,.12,idade);
+    float rimH = mix(.22,.05,idade);
+    float cav = u*u - 1.0;
+    cav = smax(cav, -mix(.55,.85,idade), .25);           // fundo achatado
+    float fora = rimH*exp(-pow(max(u-1.0,0.)*mix(2.2,1.3,idade),2.0)*2.0);
+    float hh = smin(cav, fora, mix(.18,.45,idade));
+    h += hh*prof*rad*jan;
+  }
+  return h/esc;
+}
+float relevo(vec3 d, float px){
+  float h = 0.;
+  float esc=1.6; float s=11.0;
+  for(int k=0;k<8;k++){
+    if(1.0/esc < px*2.0) break;               // nada menor que o pixel
+    h += crateras(d, esc, s, k<2 ? .30 : .45);
+    // morros suaves entre as crateras
+    h += (n3(d*esc*1.7+s)-.5)*.10/esc;
+    esc*=2.2; s+=13.0;
+  }
+  return h;
+}
+
+void main(){
+  vec2 uv = (gl_FragCoord.xy - .5*res)/res.y*2.0;   // altura da tela = 2
+  vec2 p = uv/zoom + drift/zoom;                          // telescópio: campo de visão encolhe
+  float px = 2.0/res.y/zoom;                         // tamanho do pixel no "céu"
+  vec3 L = normalize(vec3(-.75,.55,.38));            // Sol
+  vec3 col = vec3(0.0);
+
+  // Júpiter atrás
+  vec2 jc = vec2(-2.6,2.2); float jr = 3.6;
+  vec2 jq = (p-jc)/jr; float jd = dot(jq,jq);
+  if(jd<1.0){
+    vec3 n = vec3(jq, sqrt(1.0-jd));
+    vec3 nr = rotX(-.35)*n;
+    vec3 c = jupiterCor(nr, px);
+    float dif = max(dot(n,normalize(vec3(.30,-.05,.95))),0.);
+    float limb = pow(n.z,.35);
+    col = c*(.01+1.15*pow(dif,.8))*mix(.35,1.,limb);
+    col *= smoothstep(1.0,.97,jd);
+    col = mix(col, col*vec3(.75,.82,1.0), smoothstep(.85,1.0,jd)*.6);
+  }
+
+  // Lua na frente (em 0,0), raio .055
+  float mr = .075;
+  vec3 ro = vec3(p/mr, 4.0); vec3 rd = vec3(0,0,-1);
+  mat3 R = rotY(rot)*rotX(.25);
+  float pxm = px/mr;
+  // marcha até a superfície (forma grossa)
+  float tt=0.; bool hit=false; vec3 pos;
+  if(length(ro.xy)<1.75){
+    for(int i=0;i<64;i++){
+      pos = ro+rd*tt;
+      vec3 pe = pos/EIX; float r=length(pe); vec3 d=pe/r;
+      float s = (r - forma(R*d))*.85;
+      if(s<.0005){hit=true;break;}
+      tt += s*.8;
+      if(tt>8.0)break;
+    }
+  }
+  if(hit){
+    // normal pelo relevo (diferenças finitas sobre a esfera)
+    float e = max(pxm*.75, .0004);
+    vec3 d = normalize(pos/EIX);
+    vec3 a = normalize(cross(d, vec3(0,1,0.001)));
+    vec3 b = cross(d,a);
+    #define H(dd) ((forma(R*(dd)) + relevo(R*(dd),pxm)))
+    vec3 d1=normalize(d+a*e), d2=normalize(d+b*e);
+    float h0=H(d), h1=H(d1), h2=H(d2);
+    vec3 P0=d*h0*EIX, P1=d1*h1*EIX, P2=d2*h2*EIX;
+    vec3 n = normalize(cross(P1-P0,P2-P0));
+    if(dot(n,d)<0.) n=-n;
+    vec3 dr=R*d;
+    float alb = .55 + .18*(fbm(dr*3.0,5)-.5)*2.0;
+    // faixa clara inclinada (como na referência)
+    alb += .16*exp(-pow(dot(dr,normalize(vec3(.6,.75,.2)))*4.5,2.0))*(.7+.6*fbm(dr*9.0,4));
+    alb *= .92+.16*fbm(dr*60.0,3);
+    vec3 albc = alb*vec3(.84,.78,.66);
+    // luz: Lambert com terminador duro + pouquinho de luz de Júpiter
+    float ci = max(dot(n,L),0.), ce = max(n.z,0.05);
+    float dif = ci/(ci+ce)*2.0*mix(.55,1.0,ci);
+    float sombra = smoothstep(-.02,.08,dot(d,L)); // terminador da forma
+    vec3 jup = vec3(.85,.80,.70)*.10*max(dot(n,normalize(vec3(-.5,.6,.6))),0.);
+    vec3 c = albc*(dif*1.5*mix(.25,1.,sombra) + jup);
+    col = c;
+  } else {
+    // anti-serrilhado da borda: nada (pixel inteiro é fundo)
+  }
+
+  // óptica do telescópio: vinheta suave
+  float v = 1.0 - .22*dot(uv*vec2(1.2,.7),uv*vec2(1.2,.7))*.35;
+  col *= v;
+  // tom de filme
+  col = col/(1.0+col*.25);
+  col = pow(col, vec3(1.0/1.12));
+  // grão
+  float g = h31(vec3(gl_FragCoord.xy, t*60.0))-.5;
+  col += g*.018;
+  gl_FragColor = vec4(col,1.0);
+}
+</script>
+<script>
+const W = +(new URLSearchParams(location.search).get('w')||540), Hh = Math.round(W*16/9);
+const cv=document.getElementById('c'); cv.width=W; cv.height=Hh;
+const gl=cv.getContext('webgl',{preserveDrawingBuffer:true,antialias:false});
+function sh(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw gl.getShaderInfoLog(s);return s;}
+const pr=gl.createProgram();
+gl.attachShader(pr,sh(gl.VERTEX_SHADER,'attribute vec2 a;void main(){gl_Position=vec4(a,0,1);}'));
+gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,document.getElementById('fs').text));
+gl.linkProgram(pr);gl.useProgram(pr);
+const bf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,bf);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
+const U=n=>gl.getUniformLocation(pr,n);
+const DUR=16;
+// curva do zoom (em log): parado, acelera, desacelera no fim
+function ease(x){x=Math.min(Math.max(x,0),1);return x*x*x*(x*(6*x-15)+10);}
+window.DUR=DUR;
+window.render=function(t){
+  const k=ease((t-1.0)/(DUR-1.8));
+  const kz=Math.pow(k,1.35);
+  const zoom=Math.exp(Math.log(140)*kz);
+  // enquadramento na tela (unidades de tela): a lua começa à esquerda e vai para o centro
+  const ox=0.30*(1-k)+0.35*k, oy=-0.10*(1-k)-0.30*k;
+  const sh=0.004; // tremida, em unidades de tela
+  const dx=ox+sh*(Math.sin(t*1.7)+.5*Math.sin(t*4.3)), dy=oy+sh*(Math.cos(t*1.3)+.5*Math.sin(t*3.7));
+  gl.viewport(0,0,W,Hh);
+  gl.uniform2f(U('res'),W,Hh);gl.uniform1f(U('t'),t);gl.uniform1f(U('zoom'),zoom);
+  gl.uniform2f(U('drift'),dx,dy);gl.uniform1f(U('rot'),0.6+t*0.05);
+  gl.drawArrays(gl.TRIANGLES,0,3);gl.finish();
+};
+</script></body></html>
