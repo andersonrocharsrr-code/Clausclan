@@ -26,6 +26,7 @@ async def main():
             # só os trechos de viagem entre planetas (corrigidos), um mp4 por viagem
             import math; SEGS = json.load(open(AQUI / 'tempos.json'))['SEG']; lista = []
             for k, sg in enumerate(SEGS[1:], 1):
+                if len(sys.argv) > 2 and str(k) not in sys.argv[2:]: continue
                 f0 = math.floor(sg['v0'] * FPS); f1 = math.ceil((sg['v0'] + 2.8) * FPS) + 1; saida = AQUI / f'out/voo{k}.mp4'
                 ff = subprocess.Popen(['ffmpeg', '-v', 'error', '-y', '-f', 'image2pipe', '-framerate', str(FPS), '-c:v', 'png', '-i', '-', '-vf', "scale=out_color_matrix=bt709:out_range=tv,format=yuv420p", '-c:v', 'libx264', '-preset', 'slow', '-crf', '17', '-tune', 'film', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-colorspace', 'bt709', str(saida)], stdin=subprocess.PIPE)
                 for f in range(f0, f1): ff.stdin.write(await snap(pg, f / FPS))
