@@ -185,6 +185,10 @@ function minimapa(t, id, a) { if (a <= 0) return; const cx = W - 180, cy = 240, 
   txt('ÓRBITAS AGORA', cx, cy + 128, 20, '#9FB3CC', { w: 600, ls: 5 }); hud.restore() }
 // ---------- quadro ----------
 function seek(t) { montar(t, 1); const E = estado(t); for (const n in P) P[n].piv.scale.setScalar(lerp(1, 1.9, E.geral)); for (const n in P) { P[n].orb.visible = true; P[n].orb.material.opacity = .04 + .24 * E.geral }
+  // brilho grande do Sol só perto dele (abertura, Sol, final e a saída do Sol); nos planetas o fundo fica escuro e nítido
+  { let i = 0; while (i + 1 < SEG.length && t >= SEG[i + 1].v0) i++; const id = SEG[i].id, u = cl((t - SEG[i].v0) / VIAGEM);
+    const f = ['intro', 'sol'].includes(id) ? 1 : id === 'final' ? eio(u) : SEG[i - 1].id === 'sol' ? 1 - eio(cl(u / .75)) : 0;
+    brilhos.forEach((b, k) => b.material.opacity = k ? f : Math.max(f, .5)) }
   cam.position.copy(E.pos); cam.lookAt(E.alvo);
   { const sa = P.saturno, d = E.pos.clone().sub(sa.piv.position); d.y = 0; d.normalize(); const ax = V(0, 1, 0).cross(d).normalize(); sa.eixo.quaternion.setFromAxisAngle(ax, .3) } cam.fov = E.fov; cam.updateProjectionMatrix(); bloom.strength = .9 + .5 * E.warp; comp.render();
   hud.setTransform(1, 0, 0, 1, 0, 0); hud.clearRect(0, 0, 2 * W, 2 * H); hud.setTransform(2, 0, 0, 2, 0, 0); estrelasPassando(t, E.warp);
