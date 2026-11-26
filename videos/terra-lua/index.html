@@ -13,6 +13,9 @@ uniform float tanf;  // tangente de meio campo de visão (vertical)
 uniform vec3 L;      // direção do Sol
 uniform float fade;
 uniform float rotE;
+uniform sampler2D texT, texL;
+uniform vec3 tZ, tX, tY;   // foto da Terra: eixo da frente, direita, cima
+uniform vec3 lZ, lX, lY;   // foto da Lua
 const float RM = 0.273;
 
 float h31(vec3 p){ p=fract(p*0.3183099+.1); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
@@ -101,6 +104,14 @@ vec3 terra(vec3 n, vec3 rd, float foot){
   return col;
 }
 
+vec3 terraFoto(vec3 n){
+  float z=dot(n,tZ);
+  if(z<0.) return vec3(0);
+  vec2 uv = .5 + .48*vec2(dot(n,tX), -dot(n,tY));
+  vec3 c = texture2D(texT, uv).rgb;
+  c = pow(c, vec3(2.2));               // para luz linear
+  return c*1.15;
+}
 // ---------------- LUA ----------------
 float crateras(vec3 p, float esc, float seed, float dens){
   p*=esc; vec3 i=floor(p), f=fract(p); float h=0.;
@@ -121,8 +132,12 @@ float crateras(vec3 p, float esc, float seed, float dens){
   }
   return h/esc;
 }
+float fotoL(vec3 d){
+  vec2 uv = .5 + .48*vec2(dot(d,lX), -dot(d,lY));
+  return dot(texture2D(texL, uv).rgb, vec3(.333));
+}
 float relevo(vec3 d, float px){
-  float h = 0.; float esc=2.0; float s=11.0;
+  float h = 0.; float esc=140.0; float s=11.0;
   for(int k=0;k<10;k++){
     if(1.0/esc < px*2.0) break;
     h += crateras(d, esc, s, k<2 ? .25 : .42);
@@ -136,22 +151,26 @@ vec3 lua(vec3 d, vec3 rd, float pxm){
   vec3 a = normalize(cross(d, vec3(0,1,0.001)));
   vec3 b = cross(d,a);
   vec3 d1=normalize(d+a*e), d2=normalize(d+b*e);
-  float h0=1.+relevo(d,pxm), h1=1.+relevo(d1,pxm), h2=1.+relevo(d2,pxm);
-  vec3 n = normalize(cross(d1*h1-d*h0, d2*h2-d*h0));
+  // inclinação do relevo desenhado (passo = pixel) e da foto (passo >= um ponto da foto)
+  float r0=relevo(d,pxm);
+  float sa=(relevo(d1,pxm)-r0)/e, sb=(relevo(d2,pxm)-r0)/e;
+  float ep=max(e, 1.5/983.0);
+  vec3 p1=normalize(d+a*ep), p2=normalize(d+b*ep);
+  float f0=fotoL(d);
+  float KF=.0035*smoothstep(.04,.4,e/ep);
+  sa += KF*(fotoL(p1)-f0)/ep; sb += KF*(fotoL(p2)-f0)/ep;
+  vec3 n = normalize(d - a*sa - b*sb);
   if(dot(n,d)<0.) n=-n;
-  // mares escuros e terras altas claras
-  float m = fbm(d*1.3+7.0,5);
-  float mare = smoothstep(.50,.58,m);
-  float alb = mix(.62,.30,mare);
-  alb *= .85+.3*fbm(d*8.0,5);
-  alb *= .90+.20*fbmL(d*90.0,90.0,pxm,6);
-  // raios claros de crateras novas (sutil)
-  alb += .10*smoothstep(.75,.95,fbm(d*4.0+2.0,4))*(1.0-mare);
+  float alb = pow(fotoL(d), 2.2)*1.6 + .015;
+  // detalhe fino quando a foto já não tem resolução
+  float perto = smoothstep(.002,.0004,pxm);
+  alb = mix(alb, .17, perto*.55);  // foto borrada de perto: suaviza as manchas
+  alb *= mix(1.0, .80+.40*fbmL(d*300.0,300.0,pxm,8), perto);
   vec3 albc = alb*vec3(.80,.77,.72);
   float ci = max(dot(n,L),0.), ce = max(dot(n,-rd),0.05);
   float dif = ci/(ci+ce)*2.0*mix(.35,1.0,ci);
   float term = smoothstep(-.03,.06,dot(d,L));
-  return albc*dif*1.75*mix(.15,1.,term);
+  return albc*dif*1.9*mix(.15,1.,term);
 }
 
 float esfera(vec3 ro, vec3 rd, float r){
@@ -179,19 +198,19 @@ void main(){
     if(along>0. && tE<0.){
       vec3 pc = camE + rd*along; vec3 nn = normalize(pc);
       float g = exp(-(b-1.0)/0.018);
-      col += vec3(.30,.55,1.0)*g*smoothstep(-.3,.3,dot(nn,L))*.9;
+      col += vec3(.25,.50,1.0)*g*.35;
     }
   }
   if(tE>0. && (tM<0. || tE<tM)){
     vec3 n = normalize(camE + rd*tE);
-    col = terra(n, rd, tE*pxa);
+    col = terraFoto(n);
   } else if(tM>0.){
     vec3 d = normalize(camM + rd*tM);
     col = lua(d, rd, tM*pxa/RM);
   }
   // tom
   col = col/(1.0+col*.22);
-  col = pow(max(col,0.), vec3(1.0/1.12));
+  col = pow(max(col,0.), vec3(1.0/2.2));
   col += (h31(vec3(gl_FragCoord.xy, t*60.0))-.5)*.014;
   gl_FragColor = vec4(col*fade,1.0);
 }
@@ -209,6 +228,13 @@ const bf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,bf);
 gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
 gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
 const U=n=>gl.getUniformLocation(pr,n);
+function textura(unid,src){return new Promise(ok=>{const im=new Image();im.onload=()=>{
+  const tx=gl.createTexture();gl.activeTexture(gl.TEXTURE0+unid);gl.bindTexture(gl.TEXTURE_2D,tx);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,im);gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);ok();};im.src=src;});}
+window.carregar=(t,l)=>Promise.all([textura(0,t),textura(1,l)]);
 
 // ---- vetores ----
 const add=(a,b)=>a.map((x,i)=>x+b[i]), sub=(a,b)=>a.map((x,i)=>x-b[i]), mul=(a,s)=>a.map(x=>x*s);
@@ -226,23 +252,18 @@ const perpL=nrm(cross(dm,[0,1,0]));
 const L=nrm(add(mul(dm,-0.45),mul(perpL,0.89)));   // Sol: Lua ~70% iluminada vista da Terra
 const u0=nrm(add(mul(dm,0.55),mul(L,0.83))); // ponto de partida na Terra (lado de dia)
 const Qn=nrm(sub(mul(dm,-1),mul(L,dot(mul(dm,-1),L))));
+const Yp0=nrm(sub([0,1,0],mul(u0,dot([0,1,0],u0))));
 const nLua=nrm(add(mul(L,0.38),mul(Qn,0.925)));  // onde chegamos na Lua (sol baixo: crateras com relevo)
 
 function camera(t){
   // A: 0–16 s sobe da Terra; B: 16–25 vira para a Lua; C: 25–56 viagem; D: 56–60 chegada
   let pos, look, fov, upRef=[0,1,0];
-  const kA=ease(seg(t,0,17));
-  const alt=Math.exp(lerp(Math.log(0.045),Math.log(3.2),kA));
-  const pA=mul(u0,1+alt);
-  if(t<17){ pos=pA;
-    const T=nrm(cross(u0,[0,1,0]));
-    const hor=nrm(add(mul(u0,-0.42),T));
-    look=slerp(hor,mul(u0,-1),ease(seg(t,2,14))); fov=50;
-    const Y=[0,1,0], Yp=nrm(sub(Y,mul(u0,dot(Y,u0))));
-    upRef=slerp(u0,Yp,ease(seg(t,2,14))); }
+  const kA=ease(seg(t,0,16.5));
+  const dist=Math.exp(lerp(Math.log(2.5),Math.log(4.4),kA));
+  if(t<17){ pos=mul(u0,dist); look=mul(u0,-1); fov=50; upRef=Yp0; }
   else {
     // viagem: distância à Lua em escala log
-    const pA_end=mul(u0,1+3.2);
+    const pA_end=mul(u0,4.4);
     const kC=ease(seg(t,24,57.5));
     const d0=len(sub(pA_end,M));
     const dir0=nrm(sub(pA_end,M));
@@ -275,6 +296,10 @@ window.render=function(t){
   gl.uniform3fv(U('cR'),R); gl.uniform3fv(U('cU'),Uv); gl.uniform3fv(U('cF'),F);
   gl.uniform1f(U('tanf'),Math.tan(c.fov*Math.PI/360));
   gl.uniform3fv(U('L'),L);
+  gl.uniform3fv(U('tZ'),u0); gl.uniform3fv(U('tY'),Yp0); gl.uniform3fv(U('tX'),cross(mul(u0,-1),Yp0));
+  const lZ=mul(dm,-1), lXv=nrm(cross(dm,[0,1,0])), lYv=cross(lXv,dm);
+  gl.uniform3fv(U('lZ'),lZ); gl.uniform3fv(U('lX'),lXv); gl.uniform3fv(U('lY'),lYv);
+  gl.uniform1i(U('texT'),0); gl.uniform1i(U('texL'),1);
   gl.uniform1f(U('rotE'),window.ROTE??0);
   gl.uniform1f(U('fade'),Math.min(1,t/1.0,(DUR-t)/1.2));
   gl.drawArrays(gl.TRIANGLES,0,3); gl.finish();

@@ -9,6 +9,8 @@ const path = require('path');
   const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const p = await b.newPage({ viewport: { width: 400, height: 400 } });
   await p.goto('file://' + path.join(__dirname, 'index.html') + '?w=' + W);
+  const fs = require('fs'), url64 = f => 'data:image/jpeg;base64,' + fs.readFileSync(path.join(__dirname, 'fotos', f)).toString('base64');
+  await p.evaluate(([a, b]) => carregar(a, b), [url64('terra-tex.jpg'), url64('lua-tex.jpg')]);
   const DUR = await p.evaluate('DUR');
   let tempos = so ? so.split(',').map(Number) : [...Array(Math.round(DUR * FPS)).keys()].map(i => i / FPS);
   // pedaços em paralelo: INI e FIM (índices de quadro)
