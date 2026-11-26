@@ -6,7 +6,7 @@ html, body { margin: 0; background: #000 } #tela { position: relative; width: 10
 #tela canvas { position: absolute; left: 0; top: 0 }
 </style>
 <script type="importmap">{ "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }</script>
-</head><body><div id="tela"><canvas id="gl" width="1080" height="1920"></canvas><canvas id="hud" width="1080" height="1920"></canvas></div>
+</head><body><div id="tela"><canvas id="gl" width="2160" height="3840" style="width:1080px;height:1920px"></canvas><canvas id="hud" width="2160" height="3840" style="width:1080px;height:1920px"></canvas></div>
 <script src="tempos.js"></script>
 <script type="module">
 // Sistema Solar realista: three.js com texturas reais (NASA / Solar System Scope, CC BY 4.0), luz do Sol no centro,
@@ -18,9 +18,9 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 const W = 1080, H = 1920;
 const ren = new THREE.WebGLRenderer({ canvas: document.getElementById('gl'), antialias: true, preserveDrawingBuffer: true });
-ren.setSize(W, H, false); ren.toneMapping = THREE.ACESFilmicToneMapping; ren.toneMappingExposure = 1.05; ren.outputColorSpace = THREE.SRGBColorSpace;
+ren.setPixelRatio(2); ren.setSize(W, H, false); ren.toneMapping = THREE.ACESFilmicToneMapping; ren.toneMappingExposure = 1.05; ren.outputColorSpace = THREE.SRGBColorSpace;
 const cena = new THREE.Scene(), cam = new THREE.PerspectiveCamera(32, W / H, .05, 20000);
-const comp = new EffectComposer(ren); comp.setSize(W, H); comp.addPass(new RenderPass(cena, cam));
+const comp = new EffectComposer(ren); comp.setPixelRatio(2); comp.setSize(W, H); comp.addPass(new RenderPass(cena, cam));
 const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), .9, .6, .82); comp.addPass(bloom); comp.addPass(new OutputPass());
 const ld = new THREE.TextureLoader(), esperar = [];
 const tex = (f, srgb = true) => { const t = ld.load('tex/' + f); esperar.push(new Promise(r => { const i = setInterval(() => { if (t.image && t.image.complete !== false && t.image.width) { clearInterval(i); r() } }, 30) })); if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t };
@@ -32,7 +32,7 @@ function rng(s) { return () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.im
     pos.set([x * 9000, y * 9000, z * 9000], i * 3); const tcor = q(); const c = tcor < .2 ? [1, .8, .6] : tcor < .45 ? [.7, .8, 1] : [1, .97, .92]; const b = faixa ? .25 + q() * .5 : .35 + q() * q() * 1.4; cor.set(c.map(v => v * b), i * 3); tam[i] = faixa ? 1.2 + q() * 1.5 : 1.4 + q() * q() * 4 }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(cor, 3)); g.setAttribute('tam', new THREE.BufferAttribute(tam, 1));
   const m = new THREE.ShaderMaterial({ vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    vertexShader: 'attribute float tam; varying vec3 vC; void main(){ vC = color; gl_PointSize = tam; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
+    vertexShader: 'attribute float tam; varying vec3 vC; void main(){ vC = color; gl_PointSize = tam * 2.; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
     fragmentShader: 'varying vec3 vC; void main(){ float d = length(gl_PointCoord-.5); float a = smoothstep(.5,.0,d); gl_FragColor = vec4(vC*a, a); }' });
   const ceu = new THREE.Points(g, m); ceu.name = 'ceu'; cena.add(ceu) }
 // nebulosidade suave da Via Láctea (sprite grande com gradiente)
@@ -102,11 +102,11 @@ const V = (x, y, z) => new THREE.Vector3(x, y, z);
 function pose(id, t, tl) {
   if (id === 'intro' || id === 'final' || id === 'geral') { const a = .6 + t * .012, d = id === 'final' ? lerp(165, 210, eo(tl / 14)) : 165; return { pos: V(Math.cos(a) * d, 62 * d / 165, Math.sin(a) * d), alvo: V(0, -14, 0), fov: 40 } }
   if (id === 'longe') { const a = .6; return { pos: V(Math.cos(a) * 1500, 520, Math.sin(a) * 1500), alvo: V(0, 0, 0), fov: 40 } }
-  if (id === 'sol') { const a = .25 * Math.sin(tl * .12); return { pos: V(Math.sin(a) * 40, 3, Math.cos(a) * 40), alvo: V(0, -6, 0), fov: 32 } }
+  if (id === 'sol') { const a = .25 * Math.sin(tl * .12); return { pos: V(Math.sin(a) * 47, 3, Math.cos(a) * 47), alvo: V(0, -9, 0), fov: 32 } }
   const p = P[id], c = p.piv.position.clone(), L = c.clone().normalize().multiplyScalar(-1); const giro = .12 * Math.sin(tl * .1);
-  const lado = V(-L.z, 0, L.x), dist = p.r * (id === 'saturno' ? 10.5 : 7.4) * (1 - .05 * cl(tl / 20)), ca = Math.cos(giro), sa = Math.sin(giro);
+  const lado = V(-L.z, 0, L.x), dist = p.r * (id === 'saturno' ? 12.5 : 8.8) * (1 - .05 * cl(tl / 20)), ca = Math.cos(giro), sa = Math.sin(giro);
   const dir = L.clone().multiplyScalar(.6 * ca - .8 * sa).add(lado.clone().multiplyScalar(.8 * ca + .6 * sa));
-  return { pos: c.clone().add(dir.multiplyScalar(dist)).add(V(0, p.r * (id === 'saturno' ? 1.4 : .9), 0)), alvo: V(c.x, c.y - p.r * .8, c.z), fov: 32 } }
+  return { pos: c.clone().add(dir.multiplyScalar(dist)).add(V(0, p.r * (id === 'saturno' ? 1.4 : .9), 0)), alvo: V(c.x, c.y - p.r * (id === 'saturno' ? 1.9 : 1.25), c.z), fov: 32 } }
 function bez(a, b, c, d, u) { const v = 1 - u; return a.clone().multiplyScalar(v * v * v).add(b.clone().multiplyScalar(3 * v * v * u)).add(c.clone().multiplyScalar(3 * v * u * u)).add(d.clone().multiplyScalar(u * u * u)) }
 // estado da câmera no tempo t → {pos, alvo, fov, warp, geral}
 function estado(t) { let i = 0; while (i + 1 < SEG.length && t >= SEG[i + 1].v0) i++; const s = SEG[i], tl = t - s.v0;
@@ -128,31 +128,60 @@ function estrelasPassando(t, w) { if (w <= .02) return; hud.save(); hud.globalCo
 // ---------- fichas animadas presas à fala ----------
 const fmt = (v, casas) => v.toFixed(casas).replace('.', ',');
 function quando(s, palavra, depois = 0) { const alvo = norm(palavra); const w = s.pal.find(([x, tt]) => norm(x) === alvo && tt >= depois); return w ? w[1] : null }
-function ficha(s, t, saida) { const id = s.id, [nome, idade, rot, itens] = FICHA[id], u = (t - s.n0 + .3) / .7; if (u <= 0) return; const fora = cl((t - saida) / .45), e = eo(u), y0 = 1280 + (1 - e) * 60 + fora * 40;
+const STATS = {
+  sol: [['GIRO NO EIXO', '25 DIAS'], ['VOLTA NA GALÁXIA', '230 MILHÕES DE ANOS'], ['VELOCIDADE DO GIRO', '7.200 KM/H'], ['VELOCIDADE NA GALÁXIA', '828.000 KM/H']],
+  mercurio: [['DURAÇÃO DO DIA', '1.408 HORAS'], ['VOLTA NO SOL', '88 DIAS'], ['GIRO NO EIXO', '10,9 KM/H'], ['VELOCIDADE NA ÓRBITA', '170.500 KM/H']],
+  venus: [['DURAÇÃO DO DIA', '5.832 HORAS'], ['VOLTA NO SOL', '225 DIAS'], ['GIRO NO EIXO', '6,5 KM/H'], ['VELOCIDADE NA ÓRBITA', '126.100 KM/H']],
+  terra: [['DURAÇÃO DO DIA', '24 HORAS'], ['VOLTA NO SOL', '365 DIAS'], ['GIRO NO EIXO', '1.670 KM/H'], ['VELOCIDADE NA ÓRBITA', '107.200 KM/H']],
+  marte: [['DURAÇÃO DO DIA', '24,6 HORAS'], ['VOLTA NO SOL', '687 DIAS'], ['GIRO NO EIXO', '868 KM/H'], ['VELOCIDADE NA ÓRBITA', '86.800 KM/H']],
+  jupiter: [['DURAÇÃO DO DIA', '9,9 HORAS'], ['VOLTA NO SOL', '11,9 ANOS'], ['GIRO NO EIXO', '45.300 KM/H'], ['VELOCIDADE NA ÓRBITA', '47.000 KM/H']],
+  saturno: [['DURAÇÃO DO DIA', '10,7 HORAS'], ['VOLTA NO SOL', '29,4 ANOS'], ['GIRO NO EIXO', '35.500 KM/H'], ['VELOCIDADE NA ÓRBITA', '34.700 KM/H']],
+  urano: [['DURAÇÃO DO DIA', '17,2 HORAS'], ['VOLTA NO SOL', '84 ANOS'], ['GIRO NO EIXO', '9.300 KM/H'], ['VELOCIDADE NA ÓRBITA', '24.500 KM/H']],
+  netuno: [['DURAÇÃO DO DIA', '16,1 HORAS'], ['VOLTA NO SOL', '165 ANOS'], ['GIRO NO EIXO', '9.700 KM/H'], ['VELOCIDADE NA ÓRBITA', '19.600 KM/H']] };
+// palavra da fala que faz cada número aparecer (dia, volta, giro, órbita)
+const GATILHO = { sol: ['dias', 'galáxia', 'dias', 'quilômetros'], mercurio: ['horas', 'dias', 'horas', 'quilômetros'], venus: ['dias', 'ano', 'dias', 'quilômetros'], terra: ['horas', 'ano', 'horas', 'quilômetros'],
+  marte: ['horas', 'ano', 'horas', 'quilômetros'], jupiter: ['horas', 'volta', 'horas', 'quilômetros'], saturno: ['horas', 'ano', 'horas', 'quilômetros'], urano: ['horas', 'ano', 'horas', 'quilômetros'], netuno: ['horas', 'volta', 'horas', 'quilômetros'] };
+// número que conta subindo até o valor ("170.500 KM/H", "10,9 HORAS")
+function contar(str, k) { const m = str.match(/[\d.]+(,\d+)?/); if (!m) return str; const tok = m[0], cas = (tok.split(',')[1] || '').length, val = parseFloat(tok.replace(/\./g, '').replace(',', '.'));
+  const v = (val * k).toFixed(cas).split('.'), int = v[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.'); return str.replace(tok, int + (cas ? ',' + v[1] : '')) }
+function ficha(s, t, saida) { const id = s.id, [nome, idade, rot, itens] = FICHA[id], u = (t - s.n0 + .3) / .7; if (u <= 0) return; const fora = cl((t - saida) / .45), e = eo(u), y0 = 1050 + (1 - e) * 60 + fora * 40;
   hud.save(); hud.globalAlpha = cl(u * 1.5) * (1 - fora);
-  const gr = hud.createLinearGradient(0, y0 - 260, 0, H); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(.35, 'rgba(0,0,0,.72)'); gr.addColorStop(1, 'rgba(0,0,0,.9)'); hud.fillStyle = gr; hud.fillRect(0, y0 - 260, W, H);
-  // nome entra letra a letra
+  const gr = hud.createLinearGradient(0, y0 - 300, 0, H); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(.3, 'rgba(0,0,0,.74)'); gr.addColorStop(1, 'rgba(0,0,0,.92)'); hud.fillStyle = gr; hud.fillRect(0, y0 - 300, W, H);
   const n = Math.floor(cl(u * 1.6) * nome.length + .001); txt(nome.slice(0, n), 80, y0, 120, '#FFFFFF', { al: 'left', ls: 2 }); hud.fillStyle = '#E8B04A'; hud.fillRect(84, y0 + 28, 160 * eo(u - .3), 5);
-  // idade: aparece quando ele fala "bilhões" e o número conta até o valor
+  // idade
   const ti = quando(s, 'bilhões') ?? s.n0 + 2, ui = cl((t - ti + .6) / .9);
   if (ui > 0) { const m = idade.match(/([\d,]+)/)[1], val = parseFloat(m.replace(',', '.')), cas = (m.split(',')[1] || '').length;
-    txt('IDADE', 84, y0 + 96, 26, '#9FB3CC', { al: 'left', w: 600, ls: 6, a: ui }); txt(idade.replace(m, fmt(val * eo(ui), cas)), 84, y0 + 146, 52, '#F4E7C8', { al: 'left', a: cl(ui * 3) }) }
+    txt('IDADE', 84, y0 + 86, 24, '#9FB3CC', { al: 'left', w: 600, ls: 6, a: ui }); txt(idade.replace(m, fmt(val * eo(ui), cas)), 84, y0 + 134, 48, '#F4E7C8', { al: 'left', a: cl(ui * 3) }) }
+  // quatro números: dia, volta no Sol, giro e velocidade na órbita
+  STATS[id].forEach(([rotulo, valor], j) => { const tg = (quando(s, GATILHO[id][j], ti + .3) ?? ti + 2 + j) + (j === 2 ? .5 : 0), k = cl((t - tg + .3) / .9); if (k <= 0) return;
+    const x = j % 2 ? 560 : 84, y = y0 + 196 + Math.floor(j / 2) * 104, ke = eo(k);
+    hud.fillStyle = `rgba(232,176,74,${.9 * cl(k * 2)})`; hud.fillRect(x, y - 20, 4, 70 * ke);
+    txt(rotulo, x + 18, y, 22, '#9FB3CC', { al: 'left', w: 600, ls: 4, a: cl(k * 2) }); txt(contar(valor, ke), x + 18 + (1 - ke) * 20, y + 46, 42, '#FFFFFF', { al: 'left', a: cl(k * 2.5) }) });
   // barras de cada gás crescem quando o gás é citado
   let tAnt = ti; const tr = cl((t - (quando(s, itens[0][0].split(' ')[0], ti) ?? ti + 3) + 1.2) / .6);
-  if (tr > 0) txt(rot, 84, y0 + 222, 26, '#9FB3CC', { al: 'left', w: 600, ls: 6, a: tr });
-  itens.forEach(([g, pc, cor], i) => { const tg = quando(s, g.split(' ')[0], tAnt) ?? tAnt + .7; tAnt = tg; const k = cl((t - tg + .25) / 1.0); if (k <= 0) return; const y = y0 + 270 + i * 62, ke = eo(k), cas = pc % 1 ? (pc * 10 % 1 ? 2 : 1) : 0;
-    txt(g, 84 + (1 - ke) * 30, y + 22, 34, '#FFFFFF', { al: 'left', w: 600, a: cl(k * 2) }); txt(fmt(pc * ke, cas) + '%', 996, y + 22, 34, cor, { al: 'right', a: cl(k * 2) });
-    hud.fillStyle = 'rgba(255,255,255,.12)'; hud.fillRect(84, y + 34, 912 * cl(k * 3), 8); hud.fillStyle = cor; hud.fillRect(84, y + 34, 912 * Math.max(.006, pc / 100) * ke, 8);
-    if (k < 1) { hud.globalCompositeOperation = 'lighter'; hud.fillStyle = cor; hud.globalAlpha *= .5 * (1 - k); hud.fillRect(84 + 912 * Math.max(.006, pc / 100) * ke - 30, y + 30, 30, 16); hud.globalAlpha /= Math.max(.001, .5 * (1 - k)); hud.globalCompositeOperation = 'source-over' } });
+  if (tr > 0) txt(rot, 84, y0 + 420, 24, '#9FB3CC', { al: 'left', w: 600, ls: 6, a: tr });
+  itens.forEach(([g, pc, cor], i) => { const tg = quando(s, g.split(' ')[0], tAnt) ?? tAnt + .7; tAnt = tg; const k = cl((t - tg + .25) / 1.0); if (k <= 0) return; const y = y0 + 446 + i * 58, ke = eo(k), cas = pc % 1 ? (pc * 10 % 1 ? 2 : 1) : 0;
+    txt(g, 84 + (1 - ke) * 30, y + 22, 32, '#FFFFFF', { al: 'left', w: 600, a: cl(k * 2) }); txt(fmt(pc * ke, cas) + '%', 996, y + 22, 32, cor, { al: 'right', a: cl(k * 2) });
+    hud.fillStyle = 'rgba(255,255,255,.12)'; hud.fillRect(84, y + 32, 912 * cl(k * 3), 8); hud.fillStyle = cor; hud.fillRect(84, y + 32, 912 * Math.max(.006, pc / 100) * ke, 8) });
   hud.restore();
-  // etiqueta no alto: posição na ordem
   const ord = ['mercurio', 'venus', 'terra', 'marte', 'jupiter', 'saturno', 'urano', 'netuno'].indexOf(id), et = id === 'sol' ? 'A ESTRELA' : `PLANETA ${ord + 1} DE 8`;
-  txt(et, 540, 190, 30, '#E8B04A', { w: 600, ls: 10, a: cl(u) * (1 - fora) }) }
+  txt(et, 80, 150, 28, '#E8B04A', { al: 'left', w: 600, ls: 10, a: cl(u) * (1 - fora) }); }
+// mini mapa no canto: os 8 planetas girando em volta do Sol agora, com o planeta da vez marcado
+const CORMAPA = { mercurio: '#B7B1A8', venus: '#E8C37A', terra: '#5AA8FF', marte: '#E07A4A', jupiter: '#D9B48A', saturno: '#E9D49A', urano: '#9FE8F0', netuno: '#5C7CFF' };
+function minimapa(t, id, a) { if (a <= 0) return; const cx = W - 180, cy = 240, T = tau(t); hud.save(); hud.globalAlpha = a;
+  hud.fillStyle = 'rgba(5,10,20,.55)'; hud.beginPath(); hud.ellipse(cx, cy, 160, 98, 0, 0, 7); hud.fill(); hud.strokeStyle = 'rgba(160,185,220,.25)'; hud.lineWidth = 1.5; hud.stroke();
+  const g = hud.createRadialGradient(cx, cy, 0, cx, cy, 16); g.addColorStop(0, '#FFF2C0'); g.addColorStop(.4, '#FFB040'); g.addColorStop(1, 'rgba(255,120,0,0)'); hud.fillStyle = g; hud.beginPath(); hud.arc(cx, cy, 16, 0, 7); hud.fill();
+  Object.keys(CORMAPA).forEach((n, k) => { const r = 24 + k * 16.5, p = P[n], ang = p.fase + T * Math.PI * 2 / p.per, x = cx + Math.cos(ang) * r, y = cy + Math.sin(ang) * r * .58;
+    hud.strokeStyle = n === id ? 'rgba(232,176,74,.8)' : 'rgba(160,185,220,.18)'; hud.lineWidth = n === id ? 2 : 1; hud.beginPath(); hud.ellipse(cx, cy, r, r * .58, 0, 0, 7); hud.stroke();
+    hud.fillStyle = CORMAPA[n]; hud.beginPath(); hud.arc(x, y, n === id ? 6 : 3.5, 0, 7); hud.fill();
+    if (n === id) { hud.strokeStyle = '#E8B04A'; hud.lineWidth = 2; hud.beginPath(); hud.arc(x, y, 11 + 3 * Math.sin(t * 4), 0, 7); hud.stroke() } });
+  if (id === 'sol') { hud.strokeStyle = '#E8B04A'; hud.lineWidth = 2; hud.beginPath(); hud.arc(cx, cy, 20 + 3 * Math.sin(t * 4), 0, 7); hud.stroke() }
+  txt('ÓRBITAS AGORA', cx, cy + 128, 20, '#9FB3CC', { w: 600, ls: 5 }); hud.restore() }
 // ---------- quadro ----------
 function seek(t) { montar(t, 1); const E = estado(t); for (const n in P) P[n].piv.scale.setScalar(lerp(1, 1.9, E.geral)); for (const n in P) { P[n].orb.visible = true; P[n].orb.material.opacity = .04 + .24 * E.geral }
   cam.position.copy(E.pos); cam.lookAt(E.alvo);
   { const sa = P.saturno, d = E.pos.clone().sub(sa.piv.position); d.y = 0; d.normalize(); const ax = V(0, 1, 0).cross(d).normalize(); sa.eixo.quaternion.setFromAxisAngle(ax, .3) } cam.fov = E.fov; cam.updateProjectionMatrix(); bloom.strength = .9 + .5 * E.warp; comp.render();
-  hud.clearRect(0, 0, W, H); estrelasPassando(t, E.warp);
+  hud.setTransform(1, 0, 0, 1, 0, 0); hud.clearRect(0, 0, 2 * W, 2 * H); hud.setTransform(2, 0, 0, 2, 0, 0); estrelasPassando(t, E.warp);
   let i = 0; while (i + 1 < SEG.length && t >= SEG[i + 1].v0) i++; const s = SEG[i];
   if (s.id === 'intro') { const a = cl((t - 1.2) / 1) * (1 - cl((t - s.n1 + .2) / .5)); txt('O SISTEMA SOLAR', 540, 300, 110, '#FFFFFF', { ls: 2, a }); txt('8 PLANETAS · 1 ESTRELA', 540, 370, 36, '#E8B04A', { w: 600, ls: 8, a: a * cl((t - 2.2) / .8) }) }
   else if (s.id === 'final') { const a = cl((t - s.n0) / 1); txt('8 PLANETAS', 540, 300, 110, '#FFFFFF', { ls: 2, a }); txt('1 ESTRELA · 4,6 BILHÕES DE ANOS', 540, 370, 36, '#E8B04A', { w: 600, ls: 6, a: a * cl((t - s.n0 - 1) / .8) });
