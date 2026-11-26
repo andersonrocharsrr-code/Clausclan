@@ -1,0 +1,59 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Universo em partículas</title>
+<style>html,body{margin:0;background:#000}canvas{display:block}</style></head><body><canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Amostra "universo em partículas": buraco negro com anéis de poeira, malha do espaço-tempo em partículas,
+// Sol com planetas em órbita espiral. Tudo é função pura de t (seek), desenhado num buffer com soma de luz.
+const W = 1080, H = 1920, cv = document.getElementById('c'), c = cv.getContext('2d'), DUR = 12;
+const {sin, cos, PI, sqrt, abs, min, max, exp} = Math;
+function rng(s) { return () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296 } }
+const ease = u => u < 0 ? 0 : u > 1 ? 1 : u * u * (3 - 2 * u), lerp = (a, b, u) => a + (b - a) * u;
+// ---------- partículas (geradas uma vez) ----------
+const q = rng(7), ANEIS = [], MALHA = [], ESTRELAS = [], LINHAS = [];
+for (let k = 0; k < 16; k++) { const r = 70 + k * 34 + q() * 10, n = 900 + k * 260, sq = 2.2 + k * .25; for (let i = 0; i < n; i++) { const a = q() * PI * 2; ANEIS.push([r * (1 + (q() - .5) * .05 + (k > 9 ? (q() - .5) * .18 : 0)), a, (q() - .5) * (4 + k * 1.5), sq, .5 + q() * .6, k]) } }
+// malha do espaço-tempo: um tubo que se abre como uma corneta à direita e um funil curvo à esquerda
+const raio = x => 210 + 150 * sin(x * .004 + 1.2) + max(0, x - 500) * 1.15 + max(0, -x - 450) * .55;
+for (let i = 0; i < 34000; i++) { const x = -900 + q() * 1900, v = q() * PI * 2, r = raio(x) * (1 + (q() - .5) * .05); MALHA.push([x, v, r, .3 + q() * .7]) }
+for (let i = 0; i < 2500; i++) ESTRELAS.push([q() * W, q() * H, q() * q() * .9, q() * 6]);
+for (let j = 0; j < 7; j++) LINHAS.push(q() * PI * 2);
+// ---------- câmera ----------
+let cam = {};
+function camera(t) { const u = t / DUR, ang = lerp(-.55, .85, ease(u)), tilt = lerp(.42, .62, ease(u)), dist = lerp(1700, 760, ease((u - .55) / .45)), fx = lerp(-60, 0, ease(u));
+  cam = {ca: cos(ang), sa: sin(ang), ct: cos(tilt), st: sin(tilt), dist, fx, f: 1900, cx: W / 2, cy: H * .5 } }
+function proj(x, y, z) { x -= cam.fx; const x1 = x * cam.ca - z * cam.sa, z1 = x * cam.sa + z * cam.ca; const y2 = y * cam.ct - z1 * cam.st, z2 = y * cam.st + z1 * cam.ct + cam.dist; if (z2 < 40) return null; const s = cam.f / z2; return [cam.cx + x1 * s, cam.cy - y2 * s, s, z2] }
+// ---------- buffer de luz ----------
+const BR = new Float32Array(W * H), BG = new Float32Array(W * H), BB = new Float32Array(W * H), img = c.createImageData(W, H);
+function pt(x, y, r, g, b) { const ix = x | 0, iy = y | 0; if (ix < 0 || iy < 0 || ix >= W - 1 || iy >= H - 1) return; const fx = x - ix, fy = y - iy, i = iy * W + ix;
+  const w00 = (1 - fx) * (1 - fy), w10 = fx * (1 - fy), w01 = (1 - fx) * fy, w11 = fx * fy;
+  BR[i] += r * w00; BG[i] += g * w00; BB[i] += b * w00; BR[i + 1] += r * w10; BG[i + 1] += g * w10; BB[i + 1] += b * w10;
+  BR[i + W] += r * w01; BG[i + W] += g * w01; BB[i + W] += b * w01; BR[i + W + 1] += r * w11; BG[i + W + 1] += g * w11; BB[i + W + 1] += b * w11 }
+function linha3(pts, r, g, b) { for (let i = 0; i < pts.length - 1; i++) { const A = proj(...pts[i]), B = proj(...pts[i + 1]); if (!A || !B) continue; const n = Math.ceil(Math.hypot(B[0] - A[0], B[1] - A[1])); for (let k = 0; k < n; k++) { const u = k / n; pt(lerp(A[0], B[0], u), lerp(A[1], B[1], u), r, g, b) } } }
+// ---------- cena ----------
+function seek(t) { camera(t); BR.fill(0); BG.fill(0); BB.fill(0);
+  for (const [x, y, a, ph] of ESTRELAS) { const v = a * (.7 + .3 * sin(t * 2 + ph)) * 120; pt(x, y, v, v, v * 1.1) }
+  // malha do espaço-tempo, ondulando
+  for (const [x, v, r0, a] of MALHA) { const r = r0 * (1 + .04 * sin(x * .01 - t * 1.5 + v * 3)), P = proj(x, r * cos(v) * .55, r * sin(v)); if (!P) continue; const k = a * 120 * min(1.6, P[2] * 1.2); pt(P[0], P[1], k * .85, k * .9, k) }
+  for (const v of LINHAS) { const pts = []; for (let x = -900; x <= 1000; x += 20) { const r = raio(x); pts.push([x, r * cos(v) * .55, r * sin(v)]) } linha3(pts, 90, 100, 120) }
+  { const pts = []; for (let a = 0; a <= PI * 2 + .01; a += .05) { const r = raio(1000); pts.push([1000, r * cos(a) * .55, r * sin(a)]) } linha3(pts, 70, 75, 90) }
+  // anéis de poeira girando em volta do buraco negro (mais rápido perto do centro)
+  for (const [r, a0, h, sq, b, k] of ANEIS) { const a = a0 + t * 9 / Math.pow(r / 70, 1.5), ca = cos(a), sa = sin(a); const e = Math.pow(abs(ca) ** sq + abs(sa) ** sq, -1 / sq);
+    const P = proj(r * e * ca * 1.25, h, r * e * sa * .9); if (!P) continue; const quente = exp(-(r - 70) / 140), lum = b * 260 * min(1.8, P[2] * 1.3);
+    pt(P[0], P[1], lum * (1 - .6 * quente), lum * (.97 - .2 * quente), lum * (.92 + .3 * quente)) }
+  // Sol com planetas em órbita espiral, atravessando a cena
+  const sx = lerp(-520, 420, t / DUR), sol = [sx, -40, 260], S = proj(...sol);
+  const orb = [[34, 2.4, [255, 140, 60]], [58, 1.5, [255, 190, 110]], [92, .9, [230, 120, 70]]];
+  orb.forEach(([R, w, cor], j) => { const pts = []; for (let a = 0; a <= PI * 2 + .01; a += .08) pts.push([sol[0] + R * cos(a) * .4, sol[1] + R * sin(a), sol[2] + R * cos(a) * .9]); linha3(pts, cor[0] * .35, cor[1] * .25, cor[2] * .15);
+    const rastro = []; for (let s = 0; s < 70; s++) { const tt = t - s * .03, xx = lerp(-520, 420, tt / DUR), a = tt * w * 2 + j * 2; rastro.push([xx + R * cos(a) * .4, -40 + R * sin(a), 260 + R * cos(a) * .9]) } linha3(rastro, cor[0] * .5, cor[1] * .35, cor[2] * .2) });
+  // revelar o buffer
+  const d = img.data; for (let i = 0, j = 0; i < W * H; i++, j += 4) { d[j] = min(255, BR[i]); d[j + 1] = min(255, BG[i]); d[j + 2] = min(255, BB[i]); d[j + 3] = 255 } c.putImageData(img, 0, 0);
+  // brilhos: núcleo azul, buraco negro, Sol e planetas
+  c.globalCompositeOperation = 'lighter'; const BH = proj(0, 0, 0);
+  if (BH) { const s = BH[2]; let g = c.createRadialGradient(BH[0], BH[1], 0, BH[0], BH[1], 190 * s); g.addColorStop(0, 'rgba(150,210,255,.95)'); g.addColorStop(.3, 'rgba(50,130,255,.4)'); g.addColorStop(1, 'rgba(0,40,120,0)'); c.fillStyle = g; c.beginPath(); c.ellipse(BH[0], BH[1], 220 * s, 150 * s, 0, 0, 7); c.fill() }
+  if (S) { const s = S[2]; let g = c.createRadialGradient(S[0], S[1], 0, S[0], S[1], 70 * s); g.addColorStop(0, 'rgba(255,240,200,1)'); g.addColorStop(.25, 'rgba(255,180,60,.9)'); g.addColorStop(1, 'rgba(255,90,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(S[0], S[1], 70 * s, 0, 7); c.fill();
+    orb.forEach(([R, w, cor], j) => { const a = t * w * 2 + j * 2, P = proj(sol[0] + R * cos(a) * .4, sol[1] + R * sin(a), sol[2] + R * cos(a) * .9); if (!P) return; const g2 = c.createRadialGradient(P[0], P[1], 0, P[0], P[1], 14 * P[2]); g2.addColorStop(0, `rgba(${cor},1)`); g2.addColorStop(1, `rgba(${cor},0)`); c.fillStyle = g2; c.beginPath(); c.arc(P[0], P[1], 14 * P[2], 0, 7); c.fill() }) }
+  c.globalCompositeOperation = 'source-over';
+  if (BH) { const s = BH[2]; c.fillStyle = '#000'; c.beginPath(); c.ellipse(BH[0], BH[1], 46 * s, 30 * s, -.15, 0, 7); c.fill(); c.strokeStyle = 'rgba(230,240,255,.95)'; c.lineWidth = 3 * s; c.beginPath(); c.ellipse(BH[0], BH[1], 50 * s, 34 * s, -.15, 0, 7); c.stroke();
+    c.strokeStyle = 'rgba(160,210,255,.6)'; c.lineWidth = 6 * s; c.beginPath(); c.ellipse(BH[0] - 4 * s, BH[1] + 4 * s, 64 * s, 18 * s, -.15, PI * .05, PI * .95); c.stroke(); }
+  // bloom leve
+  c.save(); c.globalCompositeOperation = 'lighter'; c.filter = 'blur(14px)'; c.globalAlpha = .45; c.drawImage(cv, 0, 0); c.restore() }
+window.READY = true; seek(0);
+</script></body></html>
