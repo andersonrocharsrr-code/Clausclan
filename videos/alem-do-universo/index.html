@@ -1,7 +1,9 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Além do Universo</title>
 <style>
-@font-face { font-family: Fira; src: url(fontes/fira-sans-extra-condensed-latin-800-normal.woff2) format('woff2'); font-weight: 800 }
-@font-face { font-family: Fira; src: url(fontes/fira-sans-extra-condensed-latin-600-normal.woff2) format('woff2'); font-weight: 600 }
+@font-face { font-family: Orb; src: url(fontes/orbitron-latin-800-normal.woff2) format('woff2'); font-weight: 800 }
+@font-face { font-family: Orb; src: url(fontes/orbitron-latin-500-normal.woff2) format('woff2'); font-weight: 500 }
+@font-face { font-family: Mont; src: url(fontes/montserrat-latin-800-normal.woff2) format('woff2'); font-weight: 800 }
+@font-face { font-family: Mont; src: url(fontes/montserrat-latin-600-normal.woff2) format('woff2'); font-weight: 600 }
 html, body { margin: 0; background: #000 } #tela { position: relative; width: 1080px; height: 1920px; overflow: hidden }
 #tela canvas { position: absolute; left: 0; top: 0 }
 </style>
@@ -75,18 +77,18 @@ const solLonge = brilho('rgba(255,245,225,1)', 'rgba(255,190,110,.35)', 60, gTer
 
 // ---------- 2) Sistema Solar ----------
 const gSis = new THREE.Group(); cena.add(gSis);
-const solM = new THREE.Mesh(new THREE.SphereGeometry(6, 96, 48), new THREE.MeshBasicMaterial({ map: tex('sun-1024.webp'), color: new THREE.Color(1.25, 1, .78) })); gSis.add(solM);
-[[4.2, 'rgba(255,240,210,.95)', 'rgba(255,170,60,.45)'], [9, 'rgba(255,200,120,.55)', 'rgba(255,120,30,.12)'], [20, 'rgba(255,170,80,.18)', 'rgba(255,90,20,.03)']].forEach(([k, a, b]) => brilho(a, b, 6 * k, gSis));
+const solM = new THREE.Mesh(new THREE.SphereGeometry(3.6, 96, 48), new THREE.MeshBasicMaterial({ map: tex('sun-1024.webp'), color: new THREE.Color(1.25, 1, .78) })); gSis.add(solM);
+[[4.2, 'rgba(255,240,210,.95)', 'rgba(255,170,60,.45)'], [9, 'rgba(255,200,120,.55)', 'rgba(255,120,30,.12)'], [20, 'rgba(255,170,80,.18)', 'rgba(255,90,20,.03)']].forEach(([k, a, b]) => brilho(a, b, 3.6 * k, gSis));
 gSis.add(new THREE.PointLight(0xfff4e6, 3.2, 0, 0)); gSis.add(new THREE.AmbientLight(0x223344, .05));
 const PL = [['mercury-1024.webp', .55, 14], ['venus-1024.webp', .95, 20], ['earth_color_4096x2048.jpg', 1, 27], ['mars-1024.webp', .7, 34], ['jupiter-1024.webp', 3.2, 50], ['saturn-1024.webp', 2.7, 68], ['uranus-1024.webp', 1.8, 84], ['neptune-1024.webp', 1.75, 98]];
-const PLM = PL.map(([f, r, d], i) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 96, 48), new THREE.MeshStandardMaterial({ map: tex(f), roughness: 1 })); gSis.add(m);
+const ALIN = .9; const PLM = PL.map(([f, r, d], i) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 96, 48), new THREE.MeshStandardMaterial({ map: tex(f), roughness: 1 })); gSis.add(m);
   if (i === 2) { m.material.emissiveMap = tex('earth_nightlights_2048x1024.jpg'); m.material.emissive = new THREE.Color(1, .85, .6); m.material.emissiveIntensity = 1.2; const at = atmosfera(r * 1.05, '#5AA8FF', 1.6, 2.4); at.material.uniforms.sol.value = V(0, 0, 0); at.onBeforeRender = () => at.material.uniforms.sol.value.copy(m.position).negate().normalize(); m.add(at) }
   if (i === 5) { const g = new THREE.RingGeometry(r * 1.24, r * 2.27, 128, 1), p = g.attributes.position, uv = g.attributes.uv; for (let j = 0; j < p.count; j++) uv.setXY(j, (Math.hypot(p.getX(j), p.getY(j)) - r * 1.24) / (r * 1.03), .5);
     const an = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: tex('saturn-ring-2048.webp'), transparent: true, side: THREE.DoubleSide, roughness: 1, depthWrite: false })); an.rotation.x = -Math.PI / 2 + .45; m.add(an) }
   const pts = []; for (let j = 0; j <= 256; j++) { const a = j / 256 * Math.PI * 2; pts.push(V(Math.cos(a) * d, 0, Math.sin(a) * d)) }
   gSis.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x6f86a8, transparent: true, opacity: .3 })));
-  return { m, d, fase: i * 1.37 + .4, per: 6 * Math.pow(d / 27, 1.5) } });
-function posPl(i, t) { const p = PLM[i], a = p.fase + t * Math.PI * 2 / p.per * .05; return V(Math.cos(a) * p.d, 0, Math.sin(a) * p.d) }
+  return { m, d, fase: ALIN + [.09, -.07, 0, .1, -.13, .12, -.1, .08][i], per: 6 * Math.pow(d / 27, 1.5) } });
+function posPl(i, t) { const p = PLM[i], a = p.fase + (t - 18) * Math.PI * 2 / p.per * .01; return V(Math.cos(a) * p.d, 0, Math.sin(a) * p.d) }
 
 // ---------- 3) galáxias espirais (Via Láctea e Andrômeda) ----------
 function espiral({ n, R, bracos = 4, passo = .23, seed = 1, corBraco = [.62, .74, 1], corBojo = [1, .82, .55], k = 300 }) {
@@ -173,84 +175,111 @@ const BOLHAS = (() => { const q = rng(81), arr = []; const nossa = { p: V(0, 0, 
   return arr.map((b, i) => { const s = new THREE.Mesh(new THREE.SphereGeometry(b.r, 64, 32), bolhaMat(rng(i + 3)())); s.position.copy(b.p); gMul.add(s);
     const inner = campoGalaxias(i === 0 ? 9000 : 2500, b.r * .9, 90 + i, { esfera: true, k: 60, min: .6, max: 6 }); inner.position.copy(b.p); inner.material.uniforms.alfa.value = .9; gMul.add(inner); return { ...b, s } }) })();
 
-// ---------- HUD ----------
-const hud = document.getElementById('hud').getContext('2d');
-function txt(s, x, y, tam, cor, o = {}) { hud.save(); hud.font = `${o.w || 800} ${tam}px Fira`; hud.textAlign = o.al || 'center'; hud.letterSpacing = (o.ls || 0) + 'px'; hud.fillStyle = cor; hud.shadowColor = 'rgba(0,0,0,.75)'; hud.shadowBlur = tam * .25; hud.globalAlpha = o.a ?? 1; hud.fillText(String(s).toUpperCase(), x, y); hud.restore() }
-const PASSA = (() => { const q = rng(77), a = []; for (let i = 0; i < 700; i++) a.push([(q() * 2 - 1) * 1.6, (q() * 2 - 1) * 1.6, q(), .4 + q() * .6]); return a })();
-function estrelasPassando(t, w, sentido = 1) { if (w <= .02) return; hud.save(); hud.globalCompositeOperation = 'lighter'; hud.lineCap = 'round'; const viaja = t * 2.2;
-  for (const [x, y, ph, b] of PASSA) { let z = 1 - (((ph + viaja) % 1)); if (sentido < 0) z = 1 - z; const z0 = Math.max(.04, z), z1 = Math.max(.04, z + .06 * w * sentido); const f = 380;
-    const X0 = W / 2 + x / z0 * f, Y0 = H / 2 + y / z0 * f, X1 = W / 2 + x / z1 * f, Y1 = H / 2 + y / z1 * f; if (X0 < -50 || X0 > W + 50 || Y0 < -50 || Y0 > H + 50) continue;
-    const a = w * b * cl((1 - z) * 2) * .9; hud.strokeStyle = `rgba(200,220,255,${a})`; hud.lineWidth = 1 + (1 - z) * 2.5; hud.beginPath(); hud.moveTo(X1, Y1); hud.lineTo(X0, Y0); hud.stroke() }
-  hud.restore() }
+
+
+// ---------- HUD (estilo próprio deste vídeo: legenda palavra por palavra, título no alto, régua de escala) ----------
+const hud = document.getElementById('hud').getContext('2d'), glc = document.getElementById('gl');
+const CIANO = '#6FE3FF';
+function txt(s, x, y, tam, cor, o = {}) { hud.save(); hud.font = `${o.w || 800} ${tam}px ${o.f || 'Mont'}`; hud.textAlign = o.al || 'center'; hud.letterSpacing = (o.ls || 0) + 'px'; hud.fillStyle = cor; hud.shadowColor = 'rgba(0,0,0,.85)'; hud.shadowBlur = o.sb ?? tam * .3; hud.globalAlpha = o.a ?? 1; hud.fillText(o.cx ? String(s) : String(s).toUpperCase(), x, y); hud.restore() }
+const larg = (s, tam, o = {}) => { hud.save(); hud.font = `${o.w || 800} ${tam}px ${o.f || 'Mont'}`; hud.letterSpacing = (o.ls || 0) + 'px'; const w = hud.measureText(s).width; hud.restore(); return w };
 const SEG = window.SEG, DUR = window.DUR;
+// título do lugar e a linha de números (cada número aparece quando é falado)
+const TITULO = {
+  terra: ['TERRA', [['12.742 KM DE DIÂMETRO', 'você'], ['1.670 KM/H', 'quilômetros']]],
+  espaco: ['ESPAÇO', [['A 100 KM DE ALTURA', 'cem'], ['LUA A 384.400 KM', 'lua']]],
+  sistema: ['SISTEMA SOLAR', [['8 PLANETAS', 'planetas'], ['4,6 BILHÕES DE ANOS', 'bilhões']]],
+  via: ['VIA LÁCTEA', [['400 BILHÕES DE ESTRELAS', 'estrelas'], ['100.000 ANOS-LUZ', 'mil']]],
+  andromeda: ['ANDRÔMEDA', [['2,5 MILHÕES DE ANOS-LUZ', 'milhões'], ['1 TRILHÃO DE ESTRELAS', 'trilhão']]],
+  galaxias: ['TEIA CÓSMICA', [['2 TRILHÕES DE GALÁXIAS', 'trilhões'], ['MATÉRIA ESCURA', 'escura']]],
+  universo: ['UNIVERSO OBSERVÁVEL', [['93 BILHÕES DE ANOS-LUZ', 'noventa'], ['13,8 BILHÕES DE ANOS', 'idade']]],
+  alem: ['ALÉM DO UNIVERSO', [['?', 'depois']]] };
 const norm = w => w.toLowerCase().replace(/[^a-zà-ÿ0-9]/g, '');
 function quando(s, palavra, depois = 0) { const alvo = norm(palavra); const w = s.pal.find(([x, tt]) => norm(x) === alvo && tt >= depois); return w ? w[1] : null }
 function contar(str, k) { const m = str.match(/[\d.]+(,\d+)?/); if (!m) return str; const tok = m[0], cas = (tok.split(',')[1] || '').length, val = parseFloat(tok.replace(/\./g, '').replace(',', '.'));
   const v = (val * k).toFixed(cas).split('.'), int = v[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.'); return str.replace(tok, int + (cas ? ',' + v[1] : '')) }
-// nome, etiqueta do canto, dois números com a palavra da fala que faz cada um aparecer
-const FICHA = {
-  terra: ['TERRA', 'VOCÊ ESTÁ AQUI', [['DIÂMETRO', '12.742 KM', 'diâmetro'], ['VELOCIDADE DO GIRO', '1.670 KM/H', 'quilômetros']]],
-  espaco: ['ESPAÇO', 'NÍVEL 2 DE 8', [['COMEÇA A', '100 KM DE ALTURA', 'cem'], ['DISTÂNCIA ATÉ A LUA', '384.400 KM', 'lua']]],
-  sistema: ['SISTEMA SOLAR', 'NÍVEL 3 DE 8', [['PLANETAS', '8', 'planetas'], ['IDADE', '4,6 BILHÕES DE ANOS', 'bilhões']]],
-  via: ['VIA LÁCTEA', 'NÍVEL 4 DE 8', [['ESTRELAS', '400 BILHÕES', 'estrelas'], ['TAMANHO', '100.000 ANOS-LUZ', 'mil']]],
-  andromeda: ['ANDRÔMEDA', 'NÍVEL 5 DE 8', [['DISTÂNCIA', '2,5 MILHÕES DE ANOS-LUZ', 'milhões'], ['ESTRELAS', '1 TRILHÃO', 'trilhão']]],
-  galaxias: ['TEIA CÓSMICA', 'NÍVEL 6 DE 8', [['GALÁXIAS', '2 TRILHÕES', 'trilhões'], ['FEITA DE', 'MATÉRIA ESCURA', 'escura']]],
-  universo: ['UNIVERSO OBSERVÁVEL', 'NÍVEL 7 DE 8', [['TAMANHO', '93 BILHÕES DE ANOS-LUZ', 'noventa'], ['IDADE', '13,8 BILHÕES DE ANOS', 'idade']]],
-  alem: ['E DEPOIS?', 'NÍVEL 8 DE 8', []] };
-function ficha(s, t, saida) { const [nome, et, st] = FICHA[s.id], u = (t - s.n0 + .3) / .7; if (u <= 0) return; const fora = cl((t - saida) / .45), e = eo(u), y0 = 1330 + (1 - e) * 60 + fora * 40;
-  hud.save(); hud.globalAlpha = cl(u * 1.5) * (1 - fora);
-  const gr = hud.createLinearGradient(0, y0 - 260, 0, H); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(.35, 'rgba(0,0,0,.66)'); gr.addColorStop(1, 'rgba(0,0,0,.9)'); hud.fillStyle = gr; hud.fillRect(0, y0 - 260, W, H);
-  const n = Math.floor(cl(u * 1.6) * nome.length + .001); txt(nome.slice(0, n), 80, y0, nome.length > 14 ? 100 : 120, '#FFFFFF', { al: 'left', ls: 2 }); hud.fillStyle = '#E8B04A'; hud.fillRect(84, y0 + 28, 160 * eo(u - .3), 5);
-  let tAnt = s.n0; st.forEach(([rot, val, pal], j) => { const tg = (quando(s, pal, tAnt) ?? s.n0 + 1.2 + j * 1.6); tAnt = tg; const k = cl((t - tg + .3) / .9); if (k <= 0) return; const y = y0 + 110 + j * 112, ke = eo(k);
-    hud.fillStyle = `rgba(232,176,74,${.9 * cl(k * 2)})`; hud.fillRect(84, y - 22, 4, 78 * ke);
-    txt(rot, 104, y, 24, '#9FB3CC', { al: 'left', w: 600, ls: 5, a: cl(k * 2) }); txt(contar(val, ke), 104 + (1 - ke) * 20, y + 50, 48, '#FFFFFF', { al: 'left', a: cl(k * 2.5) }) });
-  hud.restore(); txt(et, 80, 150, 28, '#E8B04A', { al: 'left', w: 600, ls: 10, a: cl(u) * (1 - fora) }) }
-// marcador "VOCÊ ESTÁ AQUI" preso a um ponto 3D
-function marca(p3, t0, t, rotulo, fim = 1e9) { const a = cl((t - t0) / .5) * (1 - cl((t - fim) / .4)); if (a <= 0) return; const p = p3.clone().project(cam); if (p.z > 1) return; const x = (p.x * .5 + .5) * W, y = (-p.y * .5 + .5) * H, r = 26 + 8 * Math.sin(t * 4);
-  hud.save(); hud.globalAlpha = a; hud.strokeStyle = '#E8B04A'; hud.lineWidth = 3; hud.beginPath(); hud.arc(x, y, r, 0, 7); hud.stroke(); hud.beginPath(); hud.moveTo(x + r * .7, y - r * .7); hud.lineTo(x + 70, y - 70); hud.lineTo(x + 110, y - 70); hud.stroke(); hud.restore();
-  txt(rotulo, x + 118, y - 60, 30, '#F4E7C8', { al: 'left', ls: 4, a }) }
+function titulo(s, t) { const [nome, itens] = TITULO[s.id], u = (t - s.n0) / .9, sai = cl((t - s.n1 - .2) / .4); if (u <= 0 || sai >= 1) return; const a = 1 - sai, y = 330;
+  // revelação por varredura: o texto abre do centro para os lados, com dois traços finos
+  const tt = Math.min(70, 70 * 940 / larg(nome, 70, { f: 'Orb', ls: 10 })), w = larg(nome, tt, { f: 'Orb', ls: 10 }), ab = eo(u); hud.save(); hud.globalAlpha = a; hud.beginPath(); hud.rect(W / 2 - w / 2 * ab - 4, y - 80, w * ab + 8, 110); hud.clip(); txt(nome, W / 2 + 5, y, tt, '#FFFFFF', { f: 'Orb', ls: 10 }); hud.restore();
+  hud.save(); hud.globalAlpha = a * cl(u * 2); hud.strokeStyle = CIANO; hud.lineWidth = 2; const L = 70 * eo(u - .3), xg = w / 2 * ab + 22; hud.beginPath(); hud.moveTo(W / 2 - xg, y - 24); hud.lineTo(W / 2 - xg - L, y - 24); hud.moveTo(W / 2 + xg, y - 24); hud.lineTo(W / 2 + xg + L, y - 24); hud.stroke(); hud.restore();
+  // números: aparecem na hora em que são falados, contando
+  let tAnt = s.n0, partes = []; itens.forEach(([v, pal]) => { const tg = (quando(s, pal, tAnt - .01) ?? tAnt + 1.2); tAnt = tg; const k = cl((t - tg + .2) / .8); if (k > 0) partes.push([contar(v, eo(k)), cl(k * 2)]) });
+  if (!partes.length) return; const sep = '   ·   ', tot = partes.map(p => p[0]).join(sep); let x = W / 2 - larg(tot, 30, { w: 600, ls: 3 }) / 2;
+  partes.forEach(([p, al], i) => { txt(p, x, y + 64, 30, CIANO, { al: 'left', w: 600, ls: 3, a: a * al }); x += larg(p, 30, { w: 600, ls: 3 }); if (i < partes.length - 1) { txt(sep, x, y + 64, 30, 'rgba(255,255,255,.5)', { al: 'left', w: 600, ls: 3, a: a }); x += larg(sep, 30, { w: 600, ls: 3 }) } }) }
+// legenda: frases curtas, palavra por palavra (a falada em ciano)
+const FRASES = SEG.flatMap(s => { const fr = []; let cur = []; s.pal.forEach((w, i) => { cur.push(w); const fim = /[.,!?:…]$/.test(w[0]) || cur.length >= 4 || i === s.pal.length - 1; if (fim) { fr.push(cur); cur = [] } }); return fr });
+function legenda(t) { const f = FRASES.find((fr, i) => t >= fr[0][1] - .12 && t < (FRASES[i + 1] && FRASES[i + 1][0][1] - .12 < fr[fr.length - 1][2] + .6 ? FRASES[i + 1][0][1] - .12 : fr[fr.length - 1][2] + .6)); if (!f) return;
+  const tam = 60, palavras = f.map(w => w[0].replace(/[,:]$/, '')), esp = tam * .3, ws = palavras.map(p => larg(p.toUpperCase(), tam)); const linhas = [[]]; let lw = 0;
+  palavras.forEach((p, i) => { if (lw + ws[i] > 900 && linhas[linhas.length - 1].length) { linhas.push([]); lw = 0 } linhas[linhas.length - 1].push(i); lw += ws[i] + esp });
+  const ent = eo((t - f[0][1] + .12) / .25), y0 = 1590 - (linhas.length - 1) * 38 + (1 - ent) * 18;
+  linhas.forEach((ln, li) => { const tw = ln.reduce((a, i) => a + ws[i], 0) + esp * (ln.length - 1); let x = W / 2 - tw / 2;
+    ln.forEach(i => { const [, a0] = f[i], dito = t >= a0 - .05, agora = dito && (i === f.length - 1 || t < f[i + 1][1] - .05), pop = agora ? 1 + .08 * (1 - eo((t - a0) / .18)) : 1;
+      hud.save(); hud.translate(x + ws[i] / 2, y0 + li * 76); hud.scale(pop, pop); txt(palavras[i], 0, 0, tam, agora ? CIANO : '#FFFFFF', { a: ent * (dito ? 1 : .35), sb: 18 }); hud.restore(); x += ws[i] + esp }) }) }
+// régua de escala no alto: quanto mede a largura da tela agora
+const ESC = { terra: [2.6e4, 5.5e4], espaco: [5.5e4, 1.4e6], sistema: [2e5, 1.6e10], via: [2.4e4 * 9.46e12, 2e5 * 9.46e12], andromeda: [2e5 * 9.46e12, 1.6e6 * 9.46e12], galaxias: [6e8 * 9.46e12, 2.5e8 * 9.46e12], universo: [9e10 * 9.46e12, 2.2e11 * 9.46e12] };
+function grande(n) { const f = (v, u1, u2) => { const s = v < 10 ? v.toFixed(1).replace('.', ',').replace(',0', '') : Math.round(v).toString(); return s + ' ' + (v < 2 ? u1 : u2) };
+  if (n < 1e3) return Math.round(n) + ''; if (n < 1e6) return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); if (n < 1e9) return f(n / 1e6, 'MILHÃO', 'MILHÕES'); if (n < 1e12) return f(n / 1e9, 'BILHÃO', 'BILHÕES'); return f(n / 1e12, 'TRILHÃO', 'TRILHÕES') }
+function regua(E, t) { let txtv; if (E.id === 'alem') txtv = '???'; else { const [a, b] = ESC[E.id], km = Math.exp(lerp(Math.log(a), Math.log(b), eio(E.u))); { const g = km < 9.46e11 ? grande(km) : grande(km / 9.46e12), de = /[A-Z]$/.test(g) ? ' DE ' : ' '; txtv = g + de + (km < 9.46e11 ? 'KM' : 'ANOS-LUZ') } }
+  const a = cl(t / 1) * cl((DUR - 4 - t) / .6); if (a <= 0) return; hud.save(); hud.globalAlpha = a * .95; const y = 118; hud.strokeStyle = 'rgba(111,227,255,.7)'; hud.lineWidth = 2;
+  hud.beginPath(); hud.moveTo(150, y); hud.lineTo(W - 150, y); for (let i = 0; i <= 20; i++) { const x = 150 + (W - 300) * i / 20, h = i % 5 ? 8 : 16; hud.moveTo(x, y); hud.lineTo(x, y + h) } hud.stroke();
+  hud.beginPath(); hud.moveTo(150, y - 14); hud.lineTo(150, y + 16); hud.moveTo(W - 150, y - 14); hud.lineTo(W - 150, y + 16); hud.stroke(); hud.restore();
+  txt('LARGURA DA TELA', W / 2, y - 28, 20, CIANO, { f: 'Orb', w: 500, ls: 8, a: a * .9 }); txt(txtv, W / 2, y + 66, 38, '#FFFFFF', { a }) }
+// mira em quatro cantos em volta de um ponto (o "você está aqui")
+function mira(p3, t0, t, rotulo, fim = 1e9) { const a = cl((t - t0) / .4) * (1 - cl((t - fim) / .4)); if (a <= 0) return; const p = p3.clone().project(cam); if (p.z > 1) return; const x = (p.x * .5 + .5) * W, y = (-p.y * .5 + .5) * H, r = 22 + 30 * (1 - eo((t - t0) / .5)), c = 10;
+  hud.save(); hud.globalAlpha = a; hud.strokeStyle = CIANO; hud.lineWidth = 3; for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { hud.beginPath(); hud.moveTo(x + sx * r, y + sy * (r - c)); hud.lineTo(x + sx * r, y + sy * r); hud.lineTo(x + sx * (r - c), y + sy * r); hud.stroke() }
+  hud.fillStyle = CIANO; hud.beginPath(); hud.arc(x, y, 3, 0, 7); hud.fill(); hud.restore(); txt(rotulo, x, y + r + 34, 20, '#FFFFFF', { f: 'Orb', w: 500, ls: 5, a }) }
 
 // ---------- câmera por trecho (u = 0 → 1 dentro do trecho) ----------
-const ORDEM = SEG.map(s => s.id), GRUPO = { terra: gTerra, espaco: gTerra, sistema: gSis, via: gGal, andromeda: gGal, galaxias: gWeb, universo: gUni, alem: gMul };
+const GRUPO = { terra: gTerra, espaco: gTerra, sistema: gSis, via: gGal, andromeda: gGal, galaxias: gWeb, universo: gUni, alem: gMul };
 const CONTINUA = { espaco: true, andromeda: true }; // sem corte: continua a mesma cena
-function poseOrb(alvo, dist, az, el, fov = 36, desce = .17) { const d = V(Math.cos(el) * Math.sin(az), Math.sin(el), Math.cos(el) * Math.cos(az)); return { pos: alvo.clone().add(d.multiplyScalar(dist)), alvo: alvo.clone().add(V(0, -dist * desce, 0)), fov } }
+function poseOrb(alvo, dist, az, el, fov = 36, desce = .03) { const d = V(Math.cos(el) * Math.sin(az), Math.sin(el), Math.cos(el) * Math.cos(az)); return { pos: alvo.clone().add(d.multiplyScalar(dist)), alvo: alvo.clone().add(V(0, -dist * desce, 0)), fov } }
+const DIRAL = V(Math.cos(ALIN), 0, Math.sin(ALIN)), LADOAL = V(-Math.sin(ALIN), 0, Math.cos(ALIN));
 function pose(id, u, t) {
-  if (id === 'terra') { const e = eio(u); return poseOrb(V(0, 0, 0), Math.exp(lerp(Math.log(2.3), Math.log(5), e)), -.35 + .2 * e, -.05 + .2 * e, 36, lerp(.12, .17, e)) }
-  if (id === 'espaco') { const e = eio(u); return poseOrb(V(0, 0, 0), Math.exp(lerp(Math.log(5), Math.log(26), e)), -.1 + .5 * e, .28 + .12 * e, 36, .2) }
-  if (id === 'sistema') { const e = eio(u), T = posPl(2, t); const d = Math.exp(lerp(Math.log(6), Math.log(250), e)); const az = Math.atan2(T.x, T.z) + .45 + .5 * e, el = lerp(.12, .95, e);
-    const P = poseOrb(T, d, az, el, 36, 0); P.alvo = T.clone().lerp(V(0, 0, 0), eio(cl(u * 1.3))).add(V(0, -d * .17, 0)); return P }
-  if (id === 'via') { const e = eio(u), d = Math.exp(lerp(Math.log(75), Math.log(190), e)); const al = SOLVL.clone().lerp(V(0, 0, 0), eio(cl(u * 1.2 - .1))); return poseOrb(al, d, Math.atan2(SOLVL.x, SOLVL.z) + .3 + .5 * e, lerp(.95, .85, e), 36, .18) }
-  if (id === 'andromeda') { const e = eio(u), A = poseOrb(V(0, 0, 0), 190, Math.atan2(SOLVL.x, SOLVL.z) + .8, .85, 36, .18); const dirA = V(0, Math.cos(1.25), Math.sin(1.25)).applyEuler(ANDROT); const B = { pos: AND.clone().add(dirA.multiplyScalar(260)).add(V(0, 60, 0)), alvo: AND.clone().add(V(0, -40, 0)), fov: 36 };
+  if (id === 'terra') { const e = eio(u); return poseOrb(V(0, 0, 0), Math.exp(lerp(Math.log(2.6), Math.log(5.5), e)), -.35 + .2 * e, -.05 + .2 * e, 36, .02) }
+  if (id === 'espaco') { const e = eio(u); return poseOrb(V(0, 0, 0), Math.exp(lerp(Math.log(5.5), Math.log(30), e)), -.15 + .5 * e, .15 + .12 * e, 36, .04) }
+  if (id === 'sistema') { const e = eio(u), d = Math.exp(lerp(Math.log(28.5), Math.log(300), e)); // recua pelo plano dos planetas, olhando para o Sol
+    return { pos: DIRAL.clone().multiplyScalar(d).add(LADOAL.clone().multiplyScalar(lerp(.8, 14, e))).add(V(0, lerp(.35, 26, e), 0)), alvo: V(0, lerp(0, -8, e), 0), fov: lerp(30, 34, e) } }
+  if (id === 'via') { const e = eio(u), d = Math.exp(lerp(Math.log(20), Math.log(190), e)); const al = SOLVL.clone().lerp(V(0, 0, 0), eio(cl(u * 1.2 - .1))); return poseOrb(al, d, Math.atan2(SOLVL.x, SOLVL.z) + .3 + .5 * e, lerp(1.0, .85, e), 36, .03) }
+  if (id === 'andromeda') { const e = eio(u), A = poseOrb(V(0, 0, 0), 190, Math.atan2(SOLVL.x, SOLVL.z) + .8, .85, 36, .03); const dirA = V(0, Math.cos(1.25), Math.sin(1.25)).applyEuler(ANDROT); const B = { pos: AND.clone().add(dirA.multiplyScalar(250)).add(V(0, 30, 0)), alvo: AND.clone().add(V(0, -5, 0)), fov: 36 };
     return { pos: A.pos.clone().lerp(B.pos, e), alvo: A.alvo.clone().lerp(B.alvo, eio(cl(u * 1.6))), fov: 36 } }
-  if (id === 'galaxias') { const e = u; return { pos: V(Math.sin(e * 1.3) * 40, 20 + e * 30, lerp(520, 60, e)), alvo: V(Math.sin(e * 1.3 + .4) * 40, -20, lerp(380, -100, e)), fov: 42 } }
-  if (id === 'universo') { const e = eio(u), d = Math.exp(lerp(Math.log(450), Math.log(1500), e)); return poseOrb(V(0, 0, 0), d, .3 + .4 * u, .25, 36, .16) }
-  if (id === 'alem') { const e = eio(u), d = Math.exp(lerp(Math.log(28), Math.log(420), e)); return poseOrb(V(0, 0, 0), d, .2 + .5 * u, .3, 36, .12) } }
-const VIA = .9; // meia viagem antes e depois de cada corte
+  if (id === 'galaxias') { const e = u; return { pos: V(Math.sin(e * 1.3) * 40, 20 + e * 30, lerp(520, 60, e)), alvo: V(Math.sin(e * 1.3 + .4) * 40, 10, lerp(380, -100, e)), fov: 42 } }
+  if (id === 'universo') { const e = eio(u), d = Math.exp(lerp(Math.log(450), Math.log(1500), e)); return poseOrb(V(0, 0, 0), d, .3 + .4 * u, .25, 36, .02) }
+  if (id === 'alem') { const e = eio(u), d = Math.exp(lerp(Math.log(26), Math.log(420), e)); return poseOrb(V(0, 0, 0), d, .2 + .5 * u, .3, 36, .02) } }
+// ponto da cena nova onde a anterior "cabe" (o círculo encolhe até ele)
+const FOCO = { sistema: () => PLM[2].m.position, via: () => SOLVL, galaxias: () => V(0, 0, 200), universo: () => V(0, 0, 0), alem: () => V(0, 0, 0) };
+const TR = 1.5;
 function estado(t) { let i = 0; while (i + 1 < SEG.length && t >= SEG[i + 1].v0) i++; const s = SEG[i], fim = i + 1 < SEG.length ? SEG[i + 1].v0 : DUR, u = cl((t - s.v0) / (fim - s.v0));
-  const P = pose(s.id, u, t); let warp = 0;
-  const corteDepois = i + 1 < SEG.length && !CONTINUA[SEG[i + 1].id], corteAntes = i > 0 && !CONTINUA[s.id];
-  if (corteDepois) { const k = cl((t - (fim - VIA)) / VIA); P.pos = P.alvo.clone().add(P.pos.clone().sub(P.alvo).multiplyScalar(1 + 2.5 * k * k)); warp = Math.max(warp, k) }
-  if (corteAntes) { const k = 1 - cl((t - s.v0) / VIA); P.pos = P.alvo.clone().add(P.pos.clone().sub(P.alvo).multiplyScalar(1 - .55 * k * k)); warp = Math.max(warp, k) }
-  return { ...P, warp, id: s.id, s, i, u, fim, escuro: (corteDepois ? cl(1 - (fim - t) / .22) : 0) + (corteAntes ? cl(1 - (t - s.v0) / .22) : 0) } }
-
+  const P = pose(s.id, u, t), corte = i > 0 && !CONTINUA[s.id], k = corte ? cl((t - s.v0) / TR) : 1;
+  return { ...P, id: s.id, s, i, u, fim, k, ant: corte && k < 1 ? SEG[i - 1] : null } }
+const foto = document.createElement('canvas'); foto.width = 2 * W; foto.height = 2 * H; const fctx = foto.getContext('2d');
+function mostrar(id, P, t) { for (const g of [gTerra, gSis, gGal, gWeb, gUni, gMul]) g.visible = g === GRUPO[id]; ceu.visible = ['terra', 'espaco', 'sistema'].includes(id);
+  cam.position.copy(P.pos); cam.lookAt(P.alvo); cam.fov = P.fov; cam.updateProjectionMatrix(); comp.render() }
 function seek(t) { const E = estado(t);
-  for (const g of [gTerra, gSis, gGal, gWeb, gUni, gMul]) g.visible = g === GRUPO[E.id];
-  ceu.visible = ['terra', 'espaco', 'sistema'].includes(E.id);
   corpoT.rotation.y = -.75 + t * .02; nuvens.rotation.y = -.75 + t * .024;
   PLM.forEach((p, i) => { p.m.position.copy(posPl(i, t)); p.m.rotation.y = t * .1 });
-  VL.g.rotation.y = -t * .004; casca.material.uniforms.a.value = 1;
-  BOLHAS.forEach((b, i) => { b.s.scale.setScalar(1 + .03 * Math.sin(t * 1.3 + i)) });
-  cam.position.copy(E.pos); cam.lookAt(E.alvo); cam.fov = E.fov + 14 * Math.sin(Math.PI * Math.min(1, E.warp)) * 0 + 10 * E.warp; cam.updateProjectionMatrix();
-  bloom.strength = .9 + .5 * E.warp; comp.render();
-  hud.setTransform(1, 0, 0, 1, 0, 0); hud.clearRect(0, 0, 2 * W, 2 * H); hud.setTransform(2, 0, 0, 2, 0, 0);
-  estrelasPassando(t, Math.pow(E.warp, 1.2), E.id === 'galaxias' ? 1 : -1);
-  if (E.escuro > 0) { hud.fillStyle = `rgba(0,0,0,${cl(E.escuro)})`; hud.fillRect(0, 0, W, H) }
-  if (E.id === 'via') marca(SOLVL, E.s.v0 + .6, t, 'VOCÊ ESTÁ AQUI', E.fim - 2.5);
-  if (E.id === 'terra') marca(ACRE.clone().applyEuler(corpoT.rotation), E.s.v0 + 2.5, t, 'VOCÊ ESTÁ AQUI', E.fim - .5);
-  if (E.id === 'alem') marca(V(0, 0, 0), E.s.v0 + 1.5, t, 'NOSSO UNIVERSO', E.fim - 4);
-  for (const s of SEG) { if (t < s.n0 - .3 || t > s.n1 + .6) continue; ficha(s, t, s.n1) }
-  if (E.id === 'alem') { const s = E.s, k = t - (s.fim ?? DUR) ; const q1 = cl((t - (DUR - 7)) / .6), linha = 'ONDE A GENTE ESTÁ?', n = Math.floor(cl((t - (DUR - 7)) / 1.4) * linha.length); if (q1 > 0) txt(linha.slice(0, n), W / 2, 760, 96, '#FFFFFF', { ls: 2, a: q1 }) }
-  const fade = cl((t - (DUR - 1)) / 1) + cl(1 - t / .6); if (fade > 0) { hud.fillStyle = `rgba(0,0,0,${cl(fade)})`; hud.fillRect(0, 0, W, H) } }
-window.seek = seek; window.dbg = t => { seek(t); return { cam: cam.position.toArray().map(v => +v.toFixed(2)), terra: PLM[2].m.position.toArray().map(v => +v.toFixed(2)) } };
-await Promise.all(esperar); await document.fonts.load('800 40px Fira'); await document.fonts.load('600 40px Fira'); seek(0); window.READY = true;
+  VL.g.rotation.y = -t * .004; BOLHAS.forEach((b, i) => b.s.scale.setScalar(1 + .03 * Math.sin(t * 1.3 + i)));
+  bloom.strength = .9;
+  hud.setTransform(1, 0, 0, 1, 0, 0); hud.clearRect(0, 0, 2 * W, 2 * H);
+  // transição: a cena anterior (parada no último quadro, ainda recuando) encolhe num círculo até virar um ponto da cena nova
+  let cx = W / 2, cy = H / 2, ke = 0;
+  if (E.ant) { const A = E.ant, fimA = E.s.v0, uA = 1; const PA = pose(A.id, uA, fimA); const ex = 1 + .6 * eio(E.k); PA.pos = PA.alvo.clone().add(PA.pos.clone().sub(PA.alvo).multiplyScalar(ex)); mostrar(A.id, PA, fimA + (t - E.s.v0)); fctx.clearRect(0, 0, 2 * W, 2 * H); fctx.drawImage(glc, 0, 0) }
+  mostrar(E.id, E, t);
+  hud.setTransform(2, 0, 0, 2, 0, 0);
+  if (E.ant) { const p = FOCO[E.id]().clone().project(cam); const fx = (p.x * .5 + .5) * W, fy = (-p.y * .5 + .5) * H; ke = eio(E.k); cx = lerp(W / 2, fx, ke); cy = lerp(H / 2, fy, ke);
+    const esc = Math.pow(1 - ke, 1.6) * .997 + .003, ww = W * esc, hh = H * esc, rr = Math.min(ww / 2, cl(ke * 1.6) * ww / 2), R = hh / 2;
+    const forma = () => { hud.beginPath(); hud.roundRect(cx - ww / 2, cy - hh / 2, ww, hh, rr) };
+    hud.save(); forma(); hud.clip(); hud.drawImage(foto, cx - ww / 2, cy - hh / 2, ww, hh); hud.restore();
+    hud.save(); hud.strokeStyle = CIANO; hud.globalAlpha = cl(ke * 6) * cl((1 - E.k) * 3) * .9; hud.lineWidth = 2.5; hud.shadowColor = CIANO; hud.shadowBlur = 18; forma(); hud.stroke(); hud.restore();
+    const zoom = Math.round(Math.pow(10, 1 + ke * 5)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); if (R > 40 && R < 650) txt('× ' + zoom, cx, cy - R - 30, 26, CIANO, { f: 'Orb', w: 500, ls: 4, a: cl((1 - E.k) * 3) }) }
+  regua(E, t);
+  if (E.id === 'terra') mira(ACRE.clone().applyEuler(corpoT.rotation), E.s.v0 + 2.2, t, 'VOCÊ ESTÁ AQUI', E.fim - .4);
+  if (E.id === 'via') mira(SOLVL, E.s.v0 + TR + .2, t, 'VOCÊ ESTÁ AQUI', E.fim - 2.5);
+  if (E.id === 'alem') mira(V(0, 0, 0), E.s.v0 + TR + .3, t, 'NOSSO UNIVERSO', E.fim - 4);
+  for (const s of SEG) titulo(s, t);
+  legenda(t);
+  // fecho: a pergunta final letra por letra, com piscadas
+  const tq = SEG[SEG.length - 1].n1 + .3; if (t > tq) { const linha = 'ONDE A GENTE ESTÁ?', n = Math.floor(cl((t - tq) / 1.2) * linha.length); const q = rng(Math.floor(t * 30)); hud.save(); hud.fillStyle = 'rgba(0,0,0,.35)'; hud.fillRect(0, 0, W, H); hud.restore();
+    txt(linha.slice(0, n) + (n < linha.length && q() < .7 ? '_' : ''), W / 2, H / 2 + 20, 64, '#FFFFFF', { f: 'Orb', ls: 6, a: q() < .06 && n < linha.length ? .4 : 1 }) }
+  const fade = cl((t - (DUR - .8)) / .8) + cl(1 - t / .5); if (fade > 0) { hud.fillStyle = `rgba(0,0,0,${cl(fade)})`; hud.fillRect(0, 0, W, H) } }
+window.seek = seek;
+await Promise.all(esperar); await document.fonts.load('800 40px Orb'); await document.fonts.load('500 40px Orb'); await document.fonts.load('800 40px Mont'); await document.fonts.load('600 40px Mont'); seek(0); window.READY = true;
 </script></body></html>
