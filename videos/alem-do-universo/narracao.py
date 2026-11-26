@@ -3,12 +3,12 @@ import json, os, subprocess, sys, urllib.request
 VOZ = '2xzOKgdTB2i5ia63CcIn'  # Rodrigo Custódio
 VEL = 1.2
 FALAS = {
- 'terra': 'Você está aqui. Num planeta azul que gira a mil seiscentos e setenta quilômetros por hora... e você nem sente.',
+ 'terra': 'Você está aqui. Num planeta azul, com oito bilhões de pessoas, girando a mil seiscentos e setenta quilômetros por hora... e você nem sente.',
  'espaco': 'Subindo só cem quilômetros, o céu azul acaba. Começa o espaço: escuro, silencioso, gelado. A Lua fica a trezentos e oitenta e quatro mil quilômetros.',
- 'sistema': 'Mais longe, a Terra vira um pontinho. Oito planetas girando em volta de uma estrela comum, o Sol, que tem quatro bilhões e seiscentos milhões de anos.',
- 'via': 'E o Sol é só uma entre quatrocentos bilhões de estrelas da Via Láctea. A luz leva cem mil anos para atravessar a nossa galáxia.',
- 'andromeda': 'Ali está Andrômeda, nossa vizinha, a dois milhões e meio de anos-luz, com um trilhão de estrelas. E ela está vindo na nossa direção.',
- 'galaxias': 'Depois dela, mais galáxias. Talvez dois trilhões, presas numa teia gigante de matéria escura.',
+ 'sistema': 'Mais longe, a Terra vira um pontinho. Oito planetas, centenas de luas e milhões de asteroides, girando em volta de uma estrela comum: o Sol, com quatro bilhões e seiscentos milhões de anos.',
+ 'via': 'E o Sol é só uma entre quatrocentos bilhões de estrelas da Via Láctea. Ao redor delas, mais de cem bilhões de planetas. A luz leva cem mil anos para atravessar a nossa galáxia.',
+ 'andromeda': 'Ali está Andrômeda, a dois milhões e meio de anos-luz, com um trilhão de estrelas e, talvez, trilhões de planetas. E ela está vindo na nossa direção.',
+ 'galaxias': 'Depois dela, mais galáxias. Talvez dois trilhões, presas numa teia gigante de matéria escura. Juntas, somam setenta sextilhões de estrelas: mais que todos os grãos de areia da Terra.',
  'universo': 'Tudo isso cabe no universo que a gente consegue ver: noventa e três bilhões de anos-luz, com treze bilhões e oitocentos milhões de anos de idade.',
  'alem': 'E depois? Onde o universo termina? Será que existe um limite... ou outros universos, como bolhas, cada um com suas próprias leis? Ninguém sabe. Mas tudo isso começa aqui, num pontinho azul. Então me diz: onde a gente está, de verdade?',
 }

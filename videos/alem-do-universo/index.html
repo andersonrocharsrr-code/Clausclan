@@ -185,12 +185,12 @@ const larg = (s, tam, o = {}) => { hud.save(); hud.font = `${o.w || 800} ${tam}p
 const SEG = window.SEG, DUR = window.DUR;
 // título do lugar e a linha de números (cada número aparece quando é falado)
 const TITULO = {
-  terra: ['TERRA', [['12.742 KM DE DIÂMETRO', 'você'], ['1.670 KM/H', 'quilômetros']]],
+  terra: ['TERRA', [['8 BILHÕES DE PESSOAS', 'bilhões'], ['1.670 KM/H', 'quilômetros']]],
   espaco: ['ESPAÇO', [['A 100 KM DE ALTURA', 'cem'], ['LUA A 384.400 KM', 'lua']]],
-  sistema: ['SISTEMA SOLAR', [['8 PLANETAS', 'planetas'], ['4,6 BILHÕES DE ANOS', 'bilhões']]],
-  via: ['VIA LÁCTEA', [['400 BILHÕES DE ESTRELAS', 'estrelas'], ['100.000 ANOS-LUZ', 'mil']]],
-  andromeda: ['ANDRÔMEDA', [['2,5 MILHÕES DE ANOS-LUZ', 'milhões'], ['1 TRILHÃO DE ESTRELAS', 'trilhão']]],
-  galaxias: ['TEIA CÓSMICA', [['2 TRILHÕES DE GALÁXIAS', 'trilhões'], ['MATÉRIA ESCURA', 'escura']]],
+  sistema: ['SISTEMA SOLAR', [['8 PLANETAS', 'planetas'], ['CENTENAS DE LUAS', 'luas'], ['MILHÕES DE ASTEROIDES', 'asteroides'], ['4,6 BILHÕES DE ANOS', 'bilhões']]],
+  via: ['VIA LÁCTEA', [['400 BILHÕES DE ESTRELAS', 'estrelas'], ['+100 BILHÕES DE PLANETAS', 'planetas'], ['100.000 ANOS-LUZ', 'mil']]],
+  andromeda: ['ANDRÔMEDA', [['2,5 MILHÕES DE ANOS-LUZ', 'milhões'], ['1 TRILHÃO DE ESTRELAS', 'trilhão'], ['TRILHÕES DE PLANETAS', 'planetas']]],
+  galaxias: ['TEIA CÓSMICA', [['2 TRILHÕES DE GALÁXIAS', 'trilhões'], ['70 SEXTILHÕES DE ESTRELAS', 'sextilhões']]],
   universo: ['UNIVERSO OBSERVÁVEL', [['93 BILHÕES DE ANOS-LUZ', 'noventa'], ['13,8 BILHÕES DE ANOS', 'idade']]],
   alem: ['ALÉM DO UNIVERSO', [['?', 'depois']]] };
 const norm = w => w.toLowerCase().replace(/[^a-zà-ÿ0-9]/g, '');
@@ -203,8 +203,11 @@ function titulo(s, t) { const [nome, itens] = TITULO[s.id], u = (t - s.n0) / .9,
   hud.save(); hud.globalAlpha = a * cl(u * 2); hud.strokeStyle = CIANO; hud.lineWidth = 2; const L = 70 * eo(u - .3), xg = w / 2 * ab + 22; hud.beginPath(); hud.moveTo(W / 2 - xg, y - 24); hud.lineTo(W / 2 - xg - L, y - 24); hud.moveTo(W / 2 + xg, y - 24); hud.lineTo(W / 2 + xg + L, y - 24); hud.stroke(); hud.restore();
   // números: aparecem na hora em que são falados, contando
   let tAnt = s.n0, partes = []; itens.forEach(([v, pal]) => { const tg = (quando(s, pal, tAnt - .01) ?? tAnt + 1.2); tAnt = tg; const k = cl((t - tg + .2) / .8); if (k > 0) partes.push([contar(v, eo(k)), cl(k * 2)]) });
-  if (!partes.length) return; const sep = '   ·   ', tot = partes.map(p => p[0]).join(sep); let x = W / 2 - larg(tot, 30, { w: 600, ls: 3 }) / 2;
-  partes.forEach(([p, al], i) => { txt(p, x, y + 64, 30, CIANO, { al: 'left', w: 600, ls: 3, a: a * al }); x += larg(p, 30, { w: 600, ls: 3 }); if (i < partes.length - 1) { txt(sep, x, y + 64, 30, 'rgba(255,255,255,.5)', { al: 'left', w: 600, ls: 3, a: a }); x += larg(sep, 30, { w: 600, ls: 3 }) } }) }
+  // números em linhas de no máximo 960 px, centralizadas, cada um numa "pílula" com borda fina
+  if (!partes.length) return; const F = 32, linhas = [[]]; let lw = 0; partes.forEach(p => { const w = larg(p[0], F, { w: 600, ls: 2 }) + 36; if (lw + w > 960 && linhas[linhas.length - 1].length) { linhas.push([]); lw = 0 } linhas[linhas.length - 1].push([...p, w]); lw += w + 14 });
+  linhas.forEach((ln, li) => { const tw = ln.reduce((q, p) => q + p[2], 0) + 14 * (ln.length - 1); let x = W / 2 - tw / 2; const yy = y + 50 + li * 62;
+    ln.forEach(([p, al, w]) => { hud.save(); hud.globalAlpha = a * al; hud.fillStyle = 'rgba(4,16,24,.55)'; hud.strokeStyle = 'rgba(111,227,255,.55)'; hud.lineWidth = 1.5; hud.beginPath(); hud.roundRect(x, yy, w, 46, 23); hud.fill(); hud.stroke(); hud.restore();
+      txt(p, x + w / 2, yy + 34, F, CIANO, { w: 600, ls: 2, a: a * al, sb: 6 }); x += w + 14 }) }) }
 // legenda: frases curtas, palavra por palavra (a falada em ciano)
 const FRASES = SEG.flatMap(s => { const fr = []; let cur = []; s.pal.forEach((w, i) => { cur.push(w); const fim = /[.,!?:…]$/.test(w[0]) || cur.length >= 4 || i === s.pal.length - 1; if (fim) { fr.push(cur); cur = [] } }); return fr });
 function legenda(t) { const f = FRASES.find((fr, i) => t >= fr[0][1] - .12 && t < (FRASES[i + 1] && FRASES[i + 1][0][1] - .12 < fr[fr.length - 1][2] + .6 ? FRASES[i + 1][0][1] - .12 : fr[fr.length - 1][2] + .6)); if (!f) return;
