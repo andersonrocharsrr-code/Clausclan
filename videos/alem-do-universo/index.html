@@ -1,0 +1,256 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Além do Universo</title>
+<style>
+@font-face { font-family: Fira; src: url(fontes/fira-sans-extra-condensed-latin-800-normal.woff2) format('woff2'); font-weight: 800 }
+@font-face { font-family: Fira; src: url(fontes/fira-sans-extra-condensed-latin-600-normal.woff2) format('woff2'); font-weight: 600 }
+html, body { margin: 0; background: #000 } #tela { position: relative; width: 1080px; height: 1920px; overflow: hidden }
+#tela canvas { position: absolute; left: 0; top: 0 }
+</style>
+<script type="importmap">{ "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }</script>
+</head><body><div id="tela"><canvas id="gl" width="2160" height="3840" style="width:1080px;height:1920px"></canvas><canvas id="hud" width="2160" height="3840" style="width:1080px;height:1920px"></canvas></div>
+<script src="tempos.js"></script>
+<script type="module">
+// Além do universo: da Terra até "depois do universo", no mesmo padrão do vídeo do Sistema Solar
+// (three.js, bloom, estrelas passando nas viagens, fichas que surgem com a fala). seek(t) é função pura do tempo.
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+const W = 1080, H = 1920, PR = 2;
+const ren = new THREE.WebGLRenderer({ canvas: document.getElementById('gl'), antialias: true, preserveDrawingBuffer: true });
+ren.setPixelRatio(PR); ren.setSize(W, H, false); ren.toneMapping = THREE.ACESFilmicToneMapping; ren.toneMappingExposure = 1.05; ren.outputColorSpace = THREE.SRGBColorSpace;
+const cena = new THREE.Scene(), cam = new THREE.PerspectiveCamera(36, W / H, .01, 50000);
+const comp = new EffectComposer(ren); comp.setPixelRatio(PR); comp.setSize(W, H); comp.addPass(new RenderPass(cena, cam));
+const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), .9, .6, .8); comp.addPass(bloom); comp.addPass(new OutputPass());
+const ld = new THREE.TextureLoader(), esperar = [];
+const tex = (f, srgb = true) => { const t = ld.load('tex/' + f); esperar.push(new Promise(r => { const i = setInterval(() => { if (t.image && t.image.complete !== false && t.image.width) { clearInterval(i); r() } }, 30) })); if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t };
+function rng(s) { return () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296 } }
+const gauss = q => (q() + q() + q() + q() - 2) * .87;
+const cl = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, u) => a + (b - a) * u, eio = u => u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2, eo = u => 1 - Math.pow(1 - cl(u), 3);
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+
+// pontos com tamanho que diminui com a distância (estrelas de galáxias, galáxias da teia)
+function pontos(pos, cor, tam, { k = 300, aditivo = true, atlas = null, cel = null, min = .6, max = 64, alfa = 1 } = {}) {
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(cor, 3)); g.setAttribute('tam', new THREE.BufferAttribute(tam, 1));
+  if (cel) g.setAttribute('cel', new THREE.BufferAttribute(cel, 1));
+  const m = new THREE.ShaderMaterial({ vertexColors: true, transparent: true, depthWrite: false, blending: aditivo ? THREE.AdditiveBlending : THREE.NormalBlending,
+    uniforms: { k: { value: k * PR }, mn: { value: min * PR }, mx: { value: max * PR }, alfa: { value: alfa }, atlas: { value: atlas } },
+    vertexShader: `attribute float tam; ${cel ? 'attribute float cel; varying float vCel;' : ''} uniform float k, mn, mx; varying vec3 vC; varying float vF;
+      void main(){ vC = color; ${cel ? 'vCel = cel;' : ''} vec4 mv = modelViewMatrix * vec4(position,1.); float s = tam * k / max(.001, -mv.z); vF = clamp(s / mn, 0., 1.); gl_PointSize = clamp(s, mn, mx); gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: atlas ? `uniform sampler2D atlas; uniform float alfa; varying vec3 vC; varying float vF; varying float vCel;
+      void main(){ vec2 c = vec2(mod(vCel, 4.), floor(vCel / 4.)); vec4 tx = texture2D(atlas, (c + vec2(gl_PointCoord.x, 1. - gl_PointCoord.y)) / 4.); gl_FragColor = vec4(tx.rgb * vC * vF * alfa, tx.a * vF * alfa); }`
+      : aditivo ? `uniform float alfa; varying vec3 vC; varying float vF; void main(){ float d = length(gl_PointCoord-.5); float a = pow(smoothstep(.5,.0,d), 1.6) * vF * alfa; gl_FragColor = vec4(vC*a, a); }`
+      : `uniform float alfa; varying vec3 vC; varying float vF; void main(){ float d = length(gl_PointCoord-.5); float a = smoothstep(.5,.0,d) * vF * alfa; gl_FragColor = vec4(vC, a); }` });
+  return new THREE.Points(g, m) }
+
+// ---------- céu de estrelas (Terra, espaço e Sistema Solar) ----------
+const ceu = (() => { const q = rng(11), n = 30000, pos = new Float32Array(n * 3), cor = new Float32Array(n * 3), tam = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const faixa = i < n * .55, u = q() * 2 - 1, a = q() * Math.PI * 2, s = Math.sqrt(1 - u * u); let x = s * Math.cos(a), y = u, z = s * Math.sin(a);
+    if (faixa) { y = gauss(q) * .12; const r = Math.hypot(x, z); x /= r; z /= r; const kk = Math.sqrt(1 - y * y); x *= kk; z *= kk; const rot = .55, yy = y * Math.cos(rot) - x * Math.sin(rot); x = y * Math.sin(rot) + x * Math.cos(rot); y = yy }
+    pos.set([x * 20000, y * 20000, z * 20000], i * 3); const tc = q(), c = tc < .2 ? [1, .8, .6] : tc < .45 ? [.7, .8, 1] : [1, .97, .92], b = faixa ? .25 + q() * .5 : .35 + q() * q() * 1.4; cor.set(c.map(v => v * b), i * 3); tam[i] = faixa ? 1.2 + q() * 1.5 : 1.4 + q() * q() * 4 }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(cor, 3)); g.setAttribute('tam', new THREE.BufferAttribute(tam, 1));
+  const m = new THREE.ShaderMaterial({ vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: { a: { value: 1 } },
+    vertexShader: 'attribute float tam; varying vec3 vC; void main(){ vC = color; gl_PointSize = tam * 2.; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
+    fragmentShader: 'uniform float a; varying vec3 vC; void main(){ float d = length(gl_PointCoord-.5); float k = smoothstep(.5,.0,d) * a; gl_FragColor = vec4(vC*k, k); }' });
+  const p = new THREE.Points(g, m); cena.add(p); return p })();
+function gradTex(paradas, tam = 256) { const cv = document.createElement('canvas'); cv.width = cv.height = tam; const x = cv.getContext('2d'), g = x.createRadialGradient(tam / 2, tam / 2, 0, tam / 2, tam / 2, tam / 2); paradas.forEach(([o, c]) => g.addColorStop(o, c)); x.fillStyle = g; x.fillRect(0, 0, tam, tam); const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t }
+function brilho(cor1, cor2, esc, grupo, pos = V(0, 0, 0)) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: gradTex([[0, cor1], [.25, cor2], [1, 'rgba(0,0,0,0)']]), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true })); s.scale.set(esc, esc, 1); s.position.copy(pos); grupo.add(s); return s }
+function atmosfera(r, cor, forca = 1, exp = 3.2) { return new THREE.Mesh(new THREE.SphereGeometry(r, 96, 48), new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.BackSide, blending: THREE.AdditiveBlending,
+  uniforms: { cor: { value: new THREE.Color(cor) }, forca: { value: forca }, ex: { value: exp }, sol: { value: V(1, 0, 0) } },
+  vertexShader: 'varying vec3 vN; varying vec3 vW; void main(){ vN = normalize(mat3(modelMatrix)*normal); vec4 w = modelMatrix*vec4(position,1.); vW = w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }',
+  fragmentShader: 'uniform vec3 cor, sol; uniform float forca, ex; varying vec3 vN; varying vec3 vW; void main(){ vec3 v = normalize(cameraPosition - vW); float d = -dot(normalize(vN), v); float g = pow(smoothstep(0., .3, d), ex * .5); float dia = smoothstep(-.3, .5, dot(normalize(vN), sol)); gl_FragColor = vec4(cor * forca * g * dia, 1.); }' })) }
+
+// ---------- 1) Terra e Lua ----------
+const gTerra = new THREE.Group(); cena.add(gTerra);
+const SOLDIR = V(.35, .3, 1).normalize();
+const luzT = new THREE.DirectionalLight(0xfff4e6, 3.0); luzT.position.copy(SOLDIR); gTerra.add(luzT); gTerra.add(new THREE.AmbientLight(0x223344, .04));
+const terra = new THREE.Group(); gTerra.add(terra);
+const matT = new THREE.MeshStandardMaterial({ map: tex('earth_color_4096x2048.jpg'), roughness: .75, emissiveMap: tex('earth_nightlights_2048x1024.jpg'), emissive: new THREE.Color(1, .85, .6), emissiveIntensity: .6 });
+const corpoT = new THREE.Mesh(new THREE.SphereGeometry(1, 192, 96), matT); terra.add(corpoT);
+const nuvens = new THREE.Mesh(new THREE.SphereGeometry(1.008, 192, 96), new THREE.MeshStandardMaterial({ color: 0xffffff, alphaMap: tex('earth_clouds_4096x2048.jpg', false), transparent: true, opacity: .9, depthWrite: false, roughness: 1 })); terra.add(nuvens);
+const atmT = atmosfera(1.045, '#5AA8FF', 1.5, 2.6); atmT.material.uniforms.sol.value = SOLDIR; gTerra.add(atmT);
+const ACRE = (() => { const lat = -9 * Math.PI / 180, ph = (-68 + 180) / 360 * Math.PI * 2; return V(-Math.cos(ph) * Math.cos(lat), Math.sin(lat), Math.sin(ph) * Math.cos(lat)) })();
+const lua = new THREE.Mesh(new THREE.SphereGeometry(.27, 96, 48), new THREE.MeshStandardMaterial({ map: tex('moon-1024.webp'), roughness: 1 })); lua.position.set(-5.2, 1.4, -9); gTerra.add(lua);
+const solLonge = brilho('rgba(255,245,225,1)', 'rgba(255,190,110,.35)', 60, gTerra, SOLDIR.clone().multiplyScalar(3000));
+
+// ---------- 2) Sistema Solar ----------
+const gSis = new THREE.Group(); cena.add(gSis);
+const solM = new THREE.Mesh(new THREE.SphereGeometry(6, 96, 48), new THREE.MeshBasicMaterial({ map: tex('sun-1024.webp'), color: new THREE.Color(1.25, 1, .78) })); gSis.add(solM);
+[[4.2, 'rgba(255,240,210,.95)', 'rgba(255,170,60,.45)'], [9, 'rgba(255,200,120,.55)', 'rgba(255,120,30,.12)'], [20, 'rgba(255,170,80,.18)', 'rgba(255,90,20,.03)']].forEach(([k, a, b]) => brilho(a, b, 6 * k, gSis));
+gSis.add(new THREE.PointLight(0xfff4e6, 3.2, 0, 0)); gSis.add(new THREE.AmbientLight(0x223344, .05));
+const PL = [['mercury-1024.webp', .55, 14], ['venus-1024.webp', .95, 20], ['earth_color_4096x2048.jpg', 1, 27], ['mars-1024.webp', .7, 34], ['jupiter-1024.webp', 3.2, 50], ['saturn-1024.webp', 2.7, 68], ['uranus-1024.webp', 1.8, 84], ['neptune-1024.webp', 1.75, 98]];
+const PLM = PL.map(([f, r, d], i) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 96, 48), new THREE.MeshStandardMaterial({ map: tex(f), roughness: 1 })); gSis.add(m);
+  if (i === 2) { m.material.emissiveMap = tex('earth_nightlights_2048x1024.jpg'); m.material.emissive = new THREE.Color(1, .85, .6); m.material.emissiveIntensity = 1.2; const at = atmosfera(r * 1.05, '#5AA8FF', 1.6, 2.4); at.material.uniforms.sol.value = V(0, 0, 0); at.onBeforeRender = () => at.material.uniforms.sol.value.copy(m.position).negate().normalize(); m.add(at) }
+  if (i === 5) { const g = new THREE.RingGeometry(r * 1.24, r * 2.27, 128, 1), p = g.attributes.position, uv = g.attributes.uv; for (let j = 0; j < p.count; j++) uv.setXY(j, (Math.hypot(p.getX(j), p.getY(j)) - r * 1.24) / (r * 1.03), .5);
+    const an = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: tex('saturn-ring-2048.webp'), transparent: true, side: THREE.DoubleSide, roughness: 1, depthWrite: false })); an.rotation.x = -Math.PI / 2 + .45; m.add(an) }
+  const pts = []; for (let j = 0; j <= 256; j++) { const a = j / 256 * Math.PI * 2; pts.push(V(Math.cos(a) * d, 0, Math.sin(a) * d)) }
+  gSis.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x6f86a8, transparent: true, opacity: .3 })));
+  return { m, d, fase: i * 1.37 + .4, per: 6 * Math.pow(d / 27, 1.5) } });
+function posPl(i, t) { const p = PLM[i], a = p.fase + t * Math.PI * 2 / p.per * .05; return V(Math.cos(a) * p.d, 0, Math.sin(a) * p.d) }
+
+// ---------- 3) galáxias espirais (Via Láctea e Andrômeda) ----------
+function espiral({ n, R, bracos = 4, passo = .23, seed = 1, corBraco = [.62, .74, 1], corBojo = [1, .82, .55], k = 300 }) {
+  const q = rng(seed), pos = new Float32Array(n * 3), cor = new Float32Array(n * 3), tam = new Float32Array(n);
+  const nd = Math.floor(n * .22), dpos = new Float32Array(nd * 3), dcor = new Float32Array(nd * 3), dtam = new Float32Array(nd);
+  const braco = (r, b) => b * Math.PI * 2 / bracos + Math.log(r / (R * .08)) / Math.tan(passo);
+  for (let i = 0; i < n; i++) { const tipo = q(); let x, y, z, c, s;
+    if (tipo < .16) { // bojo amarelado
+      const r = Math.abs(gauss(q)) * R * .13, a = q() * 6.283, u = q() * 2 - 1, sq = Math.sqrt(1 - u * u); x = r * sq * Math.cos(a) * 1.25; z = r * sq * Math.sin(a); y = r * u * .55;
+      const b = .5 + q() * .6; c = corBojo.map(v => v * b); s = 1.2 + q() * 1.8 }
+    else if (tipo < .8) { // braços espirais
+      const r = R * (.08 + .92 * Math.pow(q(), .85)), b = Math.floor(q() * bracos), lar = .28 + .5 * r / R, a = braco(r, b) + gauss(q) * lar * .75; const rr = r * (1 + gauss(q) * .05);
+      x = rr * Math.cos(a); z = rr * Math.sin(a); y = gauss(q) * R * .012 * (1.5 - r / R); const jov = q();
+      if (jov < .035) { c = [1, .42, .62].map(v => v * (.8 + q() * .6)); s = 2.2 + q() * 3 } // nebulosas rosadas
+      else if (jov < .45) { c = corBraco.map(v => v * (.6 + q() * .7)); s = 1 + q() * 2.2 } else { c = [1, .93, .85].map(v => v * (.35 + q() * .5)); s = .8 + q() * 1.4 } }
+    else { // disco entre os braços
+      const r = R * Math.pow(q(), .6), a = q() * 6.283; x = r * Math.cos(a); z = r * Math.sin(a); y = gauss(q) * R * .015; const b = .25 + q() * .35; c = [1, .9, .78].map(v => v * b); s = .8 + q() * 1.2 }
+    pos.set([x, y, z], i * 3); cor.set(c, i * 3); tam[i] = s }
+  for (let i = 0; i < nd; i++) { // poeira escura na borda interna dos braços
+    const r = R * (.12 + .8 * Math.pow(q(), .8)), b = Math.floor(q() * bracos), a = braco(r, b) - .16 + gauss(q) * .06;
+    dpos.set([r * Math.cos(a), gauss(q) * R * .006, r * Math.sin(a)], i * 3); dcor.set([.06, .04, .03], i * 3); dtam[i] = 1.2 + q() * 2 }
+  const g = new THREE.Group(); const est = pontos(pos, cor, tam, { k, min: .7, max: 5 }); const po = pontos(dpos, dcor, dtam, { k, aditivo: false, min: .8, max: 5, alfa: .28 }); po.renderOrder = 2; g.add(est); g.add(po);
+  // brilho do núcleo e névoa do disco
+  brilho('rgba(255,225,170,.55)', 'rgba(255,170,90,.18)', R * .5, g); const nv = brilho('rgba(150,170,255,.07)', 'rgba(120,140,255,.02)', R * 2.4, g);
+  return { g, braco } }
+const gGal = new THREE.Group(); cena.add(gGal);
+const RVL = 60, VL = espiral({ n: 420000, R: RVL, bracos: 4, passo: .24, seed: 5 }); gGal.add(VL.g);
+// onde está o Sol: braço de Órion, a uns 55% do raio
+const SOLVL = (() => { const r = RVL * .55, a = VL.braco(r, 1) + .1; return V(r * Math.cos(a), 0, r * Math.sin(a)) })();
+const AND = V(300, 70, -520), ANDROT = new THREE.Euler(1.2, .4, .3);
+const AN = espiral({ n: 360000, R: 75, bracos: 2, passo: .22, seed: 9, corBraco: [.72, .8, 1], corBojo: [1, .85, .62] }); AN.g.position.copy(AND); AN.g.rotation.copy(ANDROT); gGal.add(AN.g);
+// galáxias satélites de Andrômeda (M32 e M110) e Triângulo
+function eliptica(n, R, seed, cor) { const q = rng(seed), pos = new Float32Array(n * 3), c = new Float32Array(n * 3), t = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const r = Math.abs(gauss(q)) * R, a = q() * 6.283, u = q() * 2 - 1, s = Math.sqrt(1 - u * u); pos.set([r * s * Math.cos(a) * 1.4, r * u * .7, r * s * Math.sin(a)], i * 3); const b = .4 + q() * .6; c.set(cor.map(v => v * b), i * 3); t[i] = .8 + q() * 1.5 }
+  return pontos(pos, c, t, { min: .7, max: 16 }) }
+{ const m32 = eliptica(15000, 6, 21, [1, .85, .65]); m32.position.copy(AND).add(V(-40, 30, 60)); gGal.add(m32); const m110 = eliptica(22000, 10, 22, [1, .88, .7]); m110.position.copy(AND).add(V(70, -60, -30)); gGal.add(m110);
+  const tri = espiral({ n: 60000, R: 28, bracos: 2, passo: .3, seed: 23 }); tri.g.position.set(180, -120, -260); tri.g.rotation.set(.5, 0, .9); gGal.add(tri.g) }
+// fundo: galáxias distantes bem pequenas
+const ATLAS = (() => { const cv = document.createElement('canvas'), N = 256; cv.width = cv.height = N * 4; const x = cv.getContext('2d'), q = rng(31);
+  for (let k = 0; k < 16; k++) { const cx = (k % 4) * N + N / 2, cy = Math.floor(k / 4) * N + N / 2; x.save(); x.translate(cx, cy); x.rotate(q() * 6.28); x.scale(1, .25 + q() * .75);
+    const gc = x.createRadialGradient(0, 0, 0, 0, 0, N * .5); const eli = k % 4 === 3; gc.addColorStop(0, 'rgba(255,240,215,1)'); gc.addColorStop(eli ? .35 : .12, eli ? 'rgba(255,200,140,.5)' : 'rgba(255,215,170,.55)'); gc.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = gc; x.beginPath(); x.arc(0, 0, N * .5, 0, 7); x.fill();
+    if (!eli) { const br = 2 + Math.floor(q() * 2); for (let i = 0; i < 1400; i++) { const r = N * .06 + q() * N * .4, b = Math.floor(q() * br), a = b * 6.283 / br + Math.log(r / (N * .05)) / .3 + gauss(q) * .25; const al = .55 * (1 - r / (N * .48));
+      x.fillStyle = q() < .1 ? `rgba(255,150,190,${al})` : `rgba(170,195,255,${al})`; x.fillRect(Math.cos(a) * r, Math.sin(a) * r, 2.2, 2.2) } }
+    x.restore() }
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t })();
+function campoGalaxias(n, R, seed, { k = 300, min = .6, max = 48, filamentos = false, esfera = false } = {}) { const q = rng(seed), pos = new Float32Array(n * 3), cor = new Float32Array(n * 3), tam = new Float32Array(n), cel = new Float32Array(n);
+  let nos = []; if (filamentos) { for (let i = 0; i < 70; i++) nos.push(V((q() * 2 - 1) * R, (q() * 2 - 1) * R, (q() * 2 - 1) * R)) }
+  const lig = []; if (filamentos) nos.forEach((a, i) => { nos.map((b, j) => [a.distanceTo(b), j]).sort((u, v) => u[0] - v[0]).slice(1, 4).forEach(([, j]) => { if (j > i) lig.push([a, nos[j]]) }) });
+  for (let i = 0; i < n; i++) { let p;
+    if (filamentos) { const z = q(); if (z < .35) { const c = nos[Math.floor(q() * nos.length)]; p = c.clone().add(V(gauss(q), gauss(q), gauss(q)).multiplyScalar(R * .035)) } else if (z < .9) { const [a, b] = lig[Math.floor(q() * lig.length)]; p = a.clone().lerp(b, q()).add(V(gauss(q), gauss(q), gauss(q)).multiplyScalar(R * .014)) } else p = V((q() * 2 - 1) * R, (q() * 2 - 1) * R, (q() * 2 - 1) * R) }
+    else { const u = q() * 2 - 1, a = q() * 6.283, s = Math.sqrt(1 - u * u); p = V(s * Math.cos(a), u, s * Math.sin(a)).multiplyScalar(R * (esfera ? Math.cbrt(q()) : 1)) }
+    pos.set(p.toArray(), i * 3); const b = .5 + q() * .8, tc = q(); cor.set((tc < .3 ? [1, .85, .7] : tc < .6 ? [.8, .88, 1] : [1, 1, 1]).map(v => v * b), i * 3); tam[i] = (.6 + Math.pow(q(), 3) * 3) * (filamentos ? 1 : 1); cel[i] = Math.floor(q() * 16) }
+  const pts = pontos(pos, cor, tam, { k, atlas: ATLAS, cel, min, max }); pts.userData.lig = lig; pts.userData.nos = nos; return pts }
+const fundoGal = campoGalaxias(9000, 9000, 41, { k: 9000, min: .8, max: 10 }); gGal.add(fundoGal);
+
+// ---------- 4) teia cósmica: galáxias presas em filamentos ----------
+const gWeb = new THREE.Group(); cena.add(gWeb);
+const RW = 500, web = campoGalaxias(90000, RW, 51, { filamentos: true, k: 1800, min: 1.2, max: 90 }); gWeb.add(web);
+{ const lig = web.userData.lig, q = rng(52), n = 14000, pos = new Float32Array(n * 3), cor = new Float32Array(n * 3), tam = new Float32Array(n); // gás dos filamentos
+  for (let i = 0; i < n; i++) { const [a, b] = lig[Math.floor(q() * lig.length)]; pos.set(a.clone().lerp(b, q()).add(V(gauss(q), gauss(q), gauss(q)).multiplyScalar(RW * .02)).toArray(), i * 3); const tc = q(); cor.set(tc < .5 ? [.25, .2, .55] : [.15, .25, .5], i * 3); tam[i] = 14 + q() * 20 }
+  gWeb.add(pontos(pos, cor, tam, { k: 600, min: 1, max: 400, alfa: .16 })) }
+
+// ---------- 5) universo observável: a teia numa esfera com a "parede" da radiação cósmica de fundo ----------
+const gUni = new THREE.Group(); cena.add(gUni);
+const RU = 300, uniTeia = (() => { const p = campoGalaxias(110000, RU * 1.1, 61, { filamentos: true, k: 900, min: 1, max: 14 }); const a = p.geometry.attributes.position; for (let i = 0; i < a.count; i++) { const v = V(a.getX(i), a.getY(i), a.getZ(i)); if (v.length() > RU * .97) { v.setLength(RU * .97 * Math.cbrt(rng(i)())); a.setXYZ(i, v.x, v.y, v.z) } } return p })(); gUni.add(uniTeia);
+const CMB = (() => { const N = 1024, cv = document.createElement('canvas'); cv.width = N; cv.height = N / 2; const x = cv.getContext('2d'), img = x.createImageData(N, N / 2), q = rng(71);
+  const oct = [8, 16, 32, 64].map(f => { const g = []; for (let i = 0; i < f * (f / 2 + 1); i++) g.push(q()); return { f, g } });
+  const val = (u, v) => oct.reduce((s, { f, g }, o) => { const X = u * f, Y = v * f / 2, i = Math.floor(X), j = Math.floor(Y), fx = X - i, fy = Y - j, w = f, at = (a, b) => g[(b % (f / 2 + 1)) * w + (a % w)]; const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+    return s + (lerp(lerp(at(i, j), at(i + 1, j), sx), lerp(at(i, j + 1), at(i + 1, j + 1), sx), sy) - .5) / (o + 1) }, 0);
+  for (let j = 0; j < N / 2; j++) for (let i = 0; i < N; i++) { const v = cl(.5 + val(i / N, j / (N / 2)) * 1.4); const c = v < .5 ? [lerp(20, 60, v * 2), lerp(60, 150, v * 2), lerp(160, 230, v * 2)] : [lerp(60, 255, (v - .5) * 2), lerp(150, 140, (v - .5) * 2), lerp(230, 40, (v - .5) * 2)]; img.data.set([...c, 255], (j * N + i) * 4) }
+  x.putImageData(img, 0, 0); const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t })();
+const casca = new THREE.Mesh(new THREE.SphereGeometry(RU, 128, 64), new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, uniforms: { map: { value: CMB }, a: { value: 1 } },
+  vertexShader: 'varying vec2 vU; varying vec3 vN; varying vec3 vW; void main(){ vU = uv; vN = normalize(mat3(modelMatrix)*normal); vec4 w = modelMatrix*vec4(position,1.); vW = w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }',
+  fragmentShader: 'uniform sampler2D map; uniform float a; varying vec2 vU; varying vec3 vN; varying vec3 vW; void main(){ vec3 v = normalize(cameraPosition - vW); float f = 1. - abs(dot(vN, v)); vec3 c = texture2D(map, vU).rgb; gl_FragColor = vec4(c * (.03 + 1.6 * pow(f, 3.)) * a, 1.); }' }));
+gUni.add(casca);
+
+// ---------- 6) além: outros universos como bolhas ----------
+const gMul = new THREE.Group(); cena.add(gMul);
+const bolhaMat = (mat = 0) => new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: { m: { value: mat }, a: { value: 1 } },
+  vertexShader: 'varying vec3 vN; varying vec3 vW; void main(){ vN = normalize(mat3(modelMatrix)*normal); vec4 w = modelMatrix*vec4(position,1.); vW = w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }',
+  fragmentShader: 'uniform float m, a; varying vec3 vN; varying vec3 vW; void main(){ vec3 v = normalize(cameraPosition - vW); float f = 1. - abs(dot(vN, v)); vec3 c = .55 + .45 * cos(6.283 * (f * 1.3 + m + vec3(0., .33, .67))); gl_FragColor = vec4(c * pow(f, 2.2) * 1.1 * a, 1.); }' });
+const BOLHAS = (() => { const q = rng(81), arr = []; const nossa = { p: V(0, 0, 0), r: 10 }; arr.push(nossa);
+  for (let i = 0; i < 70; i++) { const r = 3 + Math.pow(q(), 2) * 16, p = V(gauss(q), gauss(q) * .7, gauss(q)).multiplyScalar(150); if (arr.some(b => b.p.distanceTo(p) < b.r + r + 4)) continue; arr.push({ p, r }) }
+  return arr.map((b, i) => { const s = new THREE.Mesh(new THREE.SphereGeometry(b.r, 64, 32), bolhaMat(rng(i + 3)())); s.position.copy(b.p); gMul.add(s);
+    const inner = campoGalaxias(i === 0 ? 9000 : 2500, b.r * .9, 90 + i, { esfera: true, k: 60, min: .6, max: 6 }); inner.position.copy(b.p); inner.material.uniforms.alfa.value = .9; gMul.add(inner); return { ...b, s } }) })();
+
+// ---------- HUD ----------
+const hud = document.getElementById('hud').getContext('2d');
+function txt(s, x, y, tam, cor, o = {}) { hud.save(); hud.font = `${o.w || 800} ${tam}px Fira`; hud.textAlign = o.al || 'center'; hud.letterSpacing = (o.ls || 0) + 'px'; hud.fillStyle = cor; hud.shadowColor = 'rgba(0,0,0,.75)'; hud.shadowBlur = tam * .25; hud.globalAlpha = o.a ?? 1; hud.fillText(String(s).toUpperCase(), x, y); hud.restore() }
+const PASSA = (() => { const q = rng(77), a = []; for (let i = 0; i < 700; i++) a.push([(q() * 2 - 1) * 1.6, (q() * 2 - 1) * 1.6, q(), .4 + q() * .6]); return a })();
+function estrelasPassando(t, w, sentido = 1) { if (w <= .02) return; hud.save(); hud.globalCompositeOperation = 'lighter'; hud.lineCap = 'round'; const viaja = t * 2.2;
+  for (const [x, y, ph, b] of PASSA) { let z = 1 - (((ph + viaja) % 1)); if (sentido < 0) z = 1 - z; const z0 = Math.max(.04, z), z1 = Math.max(.04, z + .06 * w * sentido); const f = 380;
+    const X0 = W / 2 + x / z0 * f, Y0 = H / 2 + y / z0 * f, X1 = W / 2 + x / z1 * f, Y1 = H / 2 + y / z1 * f; if (X0 < -50 || X0 > W + 50 || Y0 < -50 || Y0 > H + 50) continue;
+    const a = w * b * cl((1 - z) * 2) * .9; hud.strokeStyle = `rgba(200,220,255,${a})`; hud.lineWidth = 1 + (1 - z) * 2.5; hud.beginPath(); hud.moveTo(X1, Y1); hud.lineTo(X0, Y0); hud.stroke() }
+  hud.restore() }
+const SEG = window.SEG, DUR = window.DUR;
+const norm = w => w.toLowerCase().replace(/[^a-zà-ÿ0-9]/g, '');
+function quando(s, palavra, depois = 0) { const alvo = norm(palavra); const w = s.pal.find(([x, tt]) => norm(x) === alvo && tt >= depois); return w ? w[1] : null }
+function contar(str, k) { const m = str.match(/[\d.]+(,\d+)?/); if (!m) return str; const tok = m[0], cas = (tok.split(',')[1] || '').length, val = parseFloat(tok.replace(/\./g, '').replace(',', '.'));
+  const v = (val * k).toFixed(cas).split('.'), int = v[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.'); return str.replace(tok, int + (cas ? ',' + v[1] : '')) }
+// nome, etiqueta do canto, dois números com a palavra da fala que faz cada um aparecer
+const FICHA = {
+  terra: ['TERRA', 'VOCÊ ESTÁ AQUI', [['DIÂMETRO', '12.742 KM', 'diâmetro'], ['VELOCIDADE DO GIRO', '1.670 KM/H', 'quilômetros']]],
+  espaco: ['ESPAÇO', 'NÍVEL 2 DE 8', [['COMEÇA A', '100 KM DE ALTURA', 'cem'], ['DISTÂNCIA ATÉ A LUA', '384.400 KM', 'lua']]],
+  sistema: ['SISTEMA SOLAR', 'NÍVEL 3 DE 8', [['PLANETAS', '8', 'planetas'], ['IDADE', '4,6 BILHÕES DE ANOS', 'bilhões']]],
+  via: ['VIA LÁCTEA', 'NÍVEL 4 DE 8', [['ESTRELAS', '400 BILHÕES', 'estrelas'], ['TAMANHO', '100.000 ANOS-LUZ', 'mil']]],
+  andromeda: ['ANDRÔMEDA', 'NÍVEL 5 DE 8', [['DISTÂNCIA', '2,5 MILHÕES DE ANOS-LUZ', 'milhões'], ['ESTRELAS', '1 TRILHÃO', 'trilhão']]],
+  galaxias: ['TEIA CÓSMICA', 'NÍVEL 6 DE 8', [['GALÁXIAS', '2 TRILHÕES', 'trilhões'], ['FEITA DE', 'MATÉRIA ESCURA', 'escura']]],
+  universo: ['UNIVERSO OBSERVÁVEL', 'NÍVEL 7 DE 8', [['TAMANHO', '93 BILHÕES DE ANOS-LUZ', 'noventa'], ['IDADE', '13,8 BILHÕES DE ANOS', 'idade']]],
+  alem: ['E DEPOIS?', 'NÍVEL 8 DE 8', []] };
+function ficha(s, t, saida) { const [nome, et, st] = FICHA[s.id], u = (t - s.n0 + .3) / .7; if (u <= 0) return; const fora = cl((t - saida) / .45), e = eo(u), y0 = 1330 + (1 - e) * 60 + fora * 40;
+  hud.save(); hud.globalAlpha = cl(u * 1.5) * (1 - fora);
+  const gr = hud.createLinearGradient(0, y0 - 260, 0, H); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(.35, 'rgba(0,0,0,.66)'); gr.addColorStop(1, 'rgba(0,0,0,.9)'); hud.fillStyle = gr; hud.fillRect(0, y0 - 260, W, H);
+  const n = Math.floor(cl(u * 1.6) * nome.length + .001); txt(nome.slice(0, n), 80, y0, nome.length > 14 ? 100 : 120, '#FFFFFF', { al: 'left', ls: 2 }); hud.fillStyle = '#E8B04A'; hud.fillRect(84, y0 + 28, 160 * eo(u - .3), 5);
+  let tAnt = s.n0; st.forEach(([rot, val, pal], j) => { const tg = (quando(s, pal, tAnt) ?? s.n0 + 1.2 + j * 1.6); tAnt = tg; const k = cl((t - tg + .3) / .9); if (k <= 0) return; const y = y0 + 110 + j * 112, ke = eo(k);
+    hud.fillStyle = `rgba(232,176,74,${.9 * cl(k * 2)})`; hud.fillRect(84, y - 22, 4, 78 * ke);
+    txt(rot, 104, y, 24, '#9FB3CC', { al: 'left', w: 600, ls: 5, a: cl(k * 2) }); txt(contar(val, ke), 104 + (1 - ke) * 20, y + 50, 48, '#FFFFFF', { al: 'left', a: cl(k * 2.5) }) });
+  hud.restore(); txt(et, 80, 150, 28, '#E8B04A', { al: 'left', w: 600, ls: 10, a: cl(u) * (1 - fora) }) }
+// marcador "VOCÊ ESTÁ AQUI" preso a um ponto 3D
+function marca(p3, t0, t, rotulo, fim = 1e9) { const a = cl((t - t0) / .5) * (1 - cl((t - fim) / .4)); if (a <= 0) return; const p = p3.clone().project(cam); if (p.z > 1) return; const x = (p.x * .5 + .5) * W, y = (-p.y * .5 + .5) * H, r = 26 + 8 * Math.sin(t * 4);
+  hud.save(); hud.globalAlpha = a; hud.strokeStyle = '#E8B04A'; hud.lineWidth = 3; hud.beginPath(); hud.arc(x, y, r, 0, 7); hud.stroke(); hud.beginPath(); hud.moveTo(x + r * .7, y - r * .7); hud.lineTo(x + 70, y - 70); hud.lineTo(x + 110, y - 70); hud.stroke(); hud.restore();
+  txt(rotulo, x + 118, y - 60, 30, '#F4E7C8', { al: 'left', ls: 4, a }) }
+
+// ---------- câmera por trecho (u = 0 → 1 dentro do trecho) ----------
+const ORDEM = SEG.map(s => s.id), GRUPO = { terra: gTerra, espaco: gTerra, sistema: gSis, via: gGal, andromeda: gGal, galaxias: gWeb, universo: gUni, alem: gMul };
+const CONTINUA = { espaco: true, andromeda: true }; // sem corte: continua a mesma cena
+function poseOrb(alvo, dist, az, el, fov = 36, desce = .17) { const d = V(Math.cos(el) * Math.sin(az), Math.sin(el), Math.cos(el) * Math.cos(az)); return { pos: alvo.clone().add(d.multiplyScalar(dist)), alvo: alvo.clone().add(V(0, -dist * desce, 0)), fov } }
+function pose(id, u, t) {
+  if (id === 'terra') { const e = eio(u); return poseOrb(V(0, 0, 0), Math.exp(lerp(Math.log(2.3), Math.log(5), e)), -.35 + .2 * e, -.05 + .2 * e, 36, lerp(.12, .17, e)) }
+  if (id === 'espaco') { const e = eio(u); return poseOrb(V(0, 0, 0), Math.exp(lerp(Math.log(5), Math.log(26), e)), -.1 + .5 * e, .28 + .12 * e, 36, .2) }
+  if (id === 'sistema') { const e = eio(u), T = posPl(2, t); const d = Math.exp(lerp(Math.log(6), Math.log(250), e)); const az = Math.atan2(T.x, T.z) + .45 + .5 * e, el = lerp(.12, .95, e);
+    const P = poseOrb(T, d, az, el, 36, 0); P.alvo = T.clone().lerp(V(0, 0, 0), eio(cl(u * 1.3))).add(V(0, -d * .17, 0)); return P }
+  if (id === 'via') { const e = eio(u), d = Math.exp(lerp(Math.log(75), Math.log(190), e)); const al = SOLVL.clone().lerp(V(0, 0, 0), eio(cl(u * 1.2 - .1))); return poseOrb(al, d, Math.atan2(SOLVL.x, SOLVL.z) + .3 + .5 * e, lerp(.95, .85, e), 36, .18) }
+  if (id === 'andromeda') { const e = eio(u), A = poseOrb(V(0, 0, 0), 190, Math.atan2(SOLVL.x, SOLVL.z) + .8, .85, 36, .18); const dirA = V(0, Math.cos(1.25), Math.sin(1.25)).applyEuler(ANDROT); const B = { pos: AND.clone().add(dirA.multiplyScalar(260)).add(V(0, 60, 0)), alvo: AND.clone().add(V(0, -40, 0)), fov: 36 };
+    return { pos: A.pos.clone().lerp(B.pos, e), alvo: A.alvo.clone().lerp(B.alvo, eio(cl(u * 1.6))), fov: 36 } }
+  if (id === 'galaxias') { const e = u; return { pos: V(Math.sin(e * 1.3) * 40, 20 + e * 30, lerp(520, 60, e)), alvo: V(Math.sin(e * 1.3 + .4) * 40, -20, lerp(380, -100, e)), fov: 42 } }
+  if (id === 'universo') { const e = eio(u), d = Math.exp(lerp(Math.log(450), Math.log(1500), e)); return poseOrb(V(0, 0, 0), d, .3 + .4 * u, .25, 36, .16) }
+  if (id === 'alem') { const e = eio(u), d = Math.exp(lerp(Math.log(28), Math.log(420), e)); return poseOrb(V(0, 0, 0), d, .2 + .5 * u, .3, 36, .12) } }
+const VIA = .9; // meia viagem antes e depois de cada corte
+function estado(t) { let i = 0; while (i + 1 < SEG.length && t >= SEG[i + 1].v0) i++; const s = SEG[i], fim = i + 1 < SEG.length ? SEG[i + 1].v0 : DUR, u = cl((t - s.v0) / (fim - s.v0));
+  const P = pose(s.id, u, t); let warp = 0;
+  const corteDepois = i + 1 < SEG.length && !CONTINUA[SEG[i + 1].id], corteAntes = i > 0 && !CONTINUA[s.id];
+  if (corteDepois) { const k = cl((t - (fim - VIA)) / VIA); P.pos = P.alvo.clone().add(P.pos.clone().sub(P.alvo).multiplyScalar(1 + 2.5 * k * k)); warp = Math.max(warp, k) }
+  if (corteAntes) { const k = 1 - cl((t - s.v0) / VIA); P.pos = P.alvo.clone().add(P.pos.clone().sub(P.alvo).multiplyScalar(1 - .55 * k * k)); warp = Math.max(warp, k) }
+  return { ...P, warp, id: s.id, s, i, u, fim, escuro: (corteDepois ? cl(1 - (fim - t) / .22) : 0) + (corteAntes ? cl(1 - (t - s.v0) / .22) : 0) } }
+
+function seek(t) { const E = estado(t);
+  for (const g of [gTerra, gSis, gGal, gWeb, gUni, gMul]) g.visible = g === GRUPO[E.id];
+  ceu.visible = ['terra', 'espaco', 'sistema'].includes(E.id);
+  corpoT.rotation.y = -.75 + t * .02; nuvens.rotation.y = -.75 + t * .024;
+  PLM.forEach((p, i) => { p.m.position.copy(posPl(i, t)); p.m.rotation.y = t * .1 });
+  VL.g.rotation.y = -t * .004; casca.material.uniforms.a.value = 1;
+  BOLHAS.forEach((b, i) => { b.s.scale.setScalar(1 + .03 * Math.sin(t * 1.3 + i)) });
+  cam.position.copy(E.pos); cam.lookAt(E.alvo); cam.fov = E.fov + 14 * Math.sin(Math.PI * Math.min(1, E.warp)) * 0 + 10 * E.warp; cam.updateProjectionMatrix();
+  bloom.strength = .9 + .5 * E.warp; comp.render();
+  hud.setTransform(1, 0, 0, 1, 0, 0); hud.clearRect(0, 0, 2 * W, 2 * H); hud.setTransform(2, 0, 0, 2, 0, 0);
+  estrelasPassando(t, Math.pow(E.warp, 1.2), E.id === 'galaxias' ? 1 : -1);
+  if (E.escuro > 0) { hud.fillStyle = `rgba(0,0,0,${cl(E.escuro)})`; hud.fillRect(0, 0, W, H) }
+  if (E.id === 'via') marca(SOLVL, E.s.v0 + .6, t, 'VOCÊ ESTÁ AQUI', E.fim - 2.5);
+  if (E.id === 'terra') marca(ACRE.clone().applyEuler(corpoT.rotation), E.s.v0 + 2.5, t, 'VOCÊ ESTÁ AQUI', E.fim - .5);
+  if (E.id === 'alem') marca(V(0, 0, 0), E.s.v0 + 1.5, t, 'NOSSO UNIVERSO', E.fim - 4);
+  for (const s of SEG) { if (t < s.n0 - .3 || t > s.n1 + .6) continue; ficha(s, t, s.n1) }
+  if (E.id === 'alem') { const s = E.s, k = t - (s.fim ?? DUR) ; const q1 = cl((t - (DUR - 7)) / .6), linha = 'ONDE A GENTE ESTÁ?', n = Math.floor(cl((t - (DUR - 7)) / 1.4) * linha.length); if (q1 > 0) txt(linha.slice(0, n), W / 2, 760, 96, '#FFFFFF', { ls: 2, a: q1 }) }
+  const fade = cl((t - (DUR - 1)) / 1) + cl(1 - t / .6); if (fade > 0) { hud.fillStyle = `rgba(0,0,0,${cl(fade)})`; hud.fillRect(0, 0, W, H) } }
+window.seek = seek; window.dbg = t => { seek(t); return { cam: cam.position.toArray().map(v => +v.toFixed(2)), terra: PLM[2].m.position.toArray().map(v => +v.toFixed(2)) } };
+await Promise.all(esperar); await document.fonts.load('800 40px Fira'); await document.fonts.load('600 40px Fira'); seek(0); window.READY = true;
+</script></body></html>
