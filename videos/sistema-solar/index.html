@@ -98,14 +98,14 @@ function posPlaneta(n, T) { const p = P[n], a = p.fase + T * Math.PI * 2 / p.per
 function montar(t, escala) { const T = tau(t); for (const n in P) { const p = P[n]; p.piv.position.copy(posPlaneta(n, T)); p.piv.scale.setScalar(escala); p.corpo.rotation.y = t * (n === 'venus' ? -.03 : n === 'jupiter' || n === 'saturno' ? .16 : .1); if (p.nuvens) p.nuvens.rotation.y = t * .115 } sol.rotation.y = t * .015;
   const k = 1 + .02 * Math.sin(t * 1.3); brilhos.forEach((s, i) => s.scale.setScalar(SOL_R * [4.2, 9, 20][i] * (i ? k : 1))) }
 // pose da câmera para cada parada (calculada com os planetas onde estão agora)
-const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), LADO = {};
 function pose(id, t, tl) {
   if (id === 'intro' || id === 'final' || id === 'geral') { const a = .6 + t * .012, d = id === 'final' ? lerp(165, 210, eo(tl / 14)) : 165; return { pos: V(Math.cos(a) * d, 62 * d / 165, Math.sin(a) * d), alvo: V(0, -14, 0), fov: 40 } }
   if (id === 'longe') { const a = .6; return { pos: V(Math.cos(a) * 1500, 520, Math.sin(a) * 1500), alvo: V(0, 0, 0), fov: 40 } }
   if (id === 'sol') { const a = .25 * Math.sin(tl * .12); return { pos: V(Math.sin(a) * 47, 3, Math.cos(a) * 47), alvo: V(0, -9, 0), fov: 32 } }
   const p = P[id], c = p.piv.position.clone(), L = c.clone().normalize().multiplyScalar(-1); const giro = .12 * Math.sin(tl * .1);
-  const lado = V(-L.z, 0, L.x), dist = p.r * (id === 'saturno' ? 12.5 : 8.8) * (1 - .05 * cl(tl / 20)), ca = Math.cos(giro), sa = Math.sin(giro);
-  const dir = L.clone().multiplyScalar(.6 * ca - .8 * sa).add(lado.clone().multiplyScalar(.8 * ca + .6 * sa));
+  const lado = V(-L.z, 0, L.x).multiplyScalar(LADO[id] || 1), dist = p.r * (id === 'saturno' ? 12.5 : 8.8) * (1 - .05 * cl(tl / 20)), ca = Math.cos(giro), sa = Math.sin(giro);
+  const dir = L.clone().multiplyScalar(.5 * ca - .87 * sa).add(lado.clone().multiplyScalar(.87 * ca + .5 * sa));
   return { pos: c.clone().add(dir.multiplyScalar(dist)).add(V(0, p.r * (id === 'saturno' ? 1.4 : .9), 0)), alvo: V(c.x, c.y - p.r * (id === 'saturno' ? 1.9 : 1.25), c.z), fov: 32 } }
 function bez(a, b, c, d, u) { const v = 1 - u; return a.clone().multiplyScalar(v * v * v).add(b.clone().multiplyScalar(3 * v * v * u)).add(c.clone().multiplyScalar(3 * v * u * u)).add(d.clone().multiplyScalar(u * u * u)) }
 // estado da câmera no tempo t → {pos, alvo, fov, warp, geral}
@@ -114,10 +114,16 @@ function estado(t) { let i = 0; while (i + 1 < SEG.length && t >= SEG[i + 1].v0)
   const ant = SEG[i - 1].id, A = pose(ant, t, t - SEG[i - 1].v0), B = pose(s.id, t, tl), u = cl(tl / VIAGEM);
   if (u >= 1) return { ...B, warp: 0, geral: s.id === 'final' ? 1 : 0 };
   const e = eio(u), D = A.pos.distanceTo(B.pos), up = V(0, 1, 0);
-  const a1 = A.pos.clone().add(A.pos.clone().sub(A.alvo).normalize().multiplyScalar(D * .3)).add(up.clone().multiplyScalar(D * .15));
-  const b1 = B.pos.clone().add(B.pos.clone().sub(B.alvo).normalize().multiplyScalar(D * .35)).add(up.clone().multiplyScalar(D * .1));
+  // trajeto quase reto: sai em direção ao planeta e chega pelo mesmo eixo do enquadramento final (sem dar volta em torno dele)
+  const a1 = A.pos.clone().lerp(B.pos, .3).add(up.clone().multiplyScalar(D * .04));
+  const b1 = B.pos.clone().add(B.pos.clone().sub(B.alvo).normalize().multiplyScalar(D * .45));
   const g = s.id === 'final' ? e : ant === 'intro' ? 1 - e : 0;
-  return { pos: bez(A.pos, a1, b1, B.pos, e), alvo: A.alvo.clone().lerp(B.alvo, eio(cl(u / .4))), fov: lerp(A.fov, B.fov, e) + 16 * Math.sin(Math.PI * u), warp: Math.pow(Math.sin(Math.PI * u), 1.5), geral: g } }
+  if (P[s.id]) { // indo para um planeta: o ângulo muda de longe e devagar, depois a câmera entra reto (planeta sempre no centro)
+    const c = P[s.id].piv.position, vA = A.pos.clone().sub(c), vB = B.pos.clone().sub(c), rA = vA.length(), rB = vB.length();
+    const q = new THREE.Quaternion().setFromUnitVectors(vA.clone().normalize(), vB.clone().normalize()), q2 = new THREE.Quaternion().slerp(q, eio(cl(u / .6)));
+    const pos = c.clone().add(vA.normalize().applyQuaternion(q2).multiplyScalar(Math.exp(lerp(Math.log(rA), Math.log(rB), e))));
+    return { pos, alvo: A.alvo.clone().lerp(B.alvo, eio(cl(u / .35))), fov: lerp(A.fov, B.fov, e) + 16 * Math.sin(Math.PI * u), warp: Math.pow(Math.sin(Math.PI * u), 1.5), geral: g } }
+  return { pos: bez(A.pos, a1, b1, B.pos, e), alvo: A.alvo.clone().lerp(B.alvo, eio(cl(u / .35))), fov: lerp(A.fov, B.fov, e) + 16 * Math.sin(Math.PI * u), warp: Math.pow(Math.sin(Math.PI * u), 1.5), geral: g } }
 // ---------- estrelas passando (viagem) ----------
 const PASSA = (() => { const q = rng(77), a = []; for (let i = 0; i < 700; i++) a.push([(q() * 2 - 1) * 1.6, (q() * 2 - 1) * 1.6, q(), .4 + q() * .6]); return a })();
 function estrelasPassando(t, w) { if (w <= .02) return; hud.save(); hud.globalCompositeOperation = 'lighter'; hud.lineCap = 'round'; const viaja = t * 2.2;
@@ -191,5 +197,9 @@ function seek(t) { montar(t, 1); const E = estado(t); for (const n in P) P[n].pi
   if (i > 0 && t - s.v0 < .6 && FICHA[SEG[i - 1].id]) ficha(SEG[i - 1], t, s.v0) }
 window.seek = seek;
 window.previa = (nome, t) => { const s = SEG.find(x => x.id === nome); seek(s ? s.n0 + t : t) };
+// de que lado do planeta a câmera fica: o mesmo lado de onde ela vem, para a viagem ir reto até ele (sem dar a volta nele)
+for (let i = 1; i < SEG.length; i++) { const id = SEG[i].id; if (!P[id]) continue; montar(SEG[i].v0, 1);
+  const A = pose(SEG[i - 1].id, SEG[i].v0, SEG[i].v0 - SEG[i - 1].v0).pos, c = P[id].piv.position, L = c.clone().normalize().multiplyScalar(-1);
+  LADO[id] = V(-L.z, 0, L.x).dot(A.clone().sub(c)) >= 0 ? 1 : -1 }
 await Promise.all(esperar); await document.fonts.load('800 40px Fira'); await document.fonts.load('600 40px Fira'); window.READY = true;
 </script></body></html>
