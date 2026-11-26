@@ -211,14 +211,14 @@ function titulo(s, t) { const [nome, itens] = TITULO[s.id], u = (t - s.n0) / .9,
       txt(p, x + w / 2, yy + 34, F, CIANO, { w: 600, ls: 2, a: a * al, sb: 6 }); x += w + 14 }) }) }
 // legenda: frases curtas, palavra por palavra (a falada em ciano)
 const FRASES = SEG.flatMap(s => { const fr = []; let cur = []; s.pal.forEach((w, i) => { cur.push(w); const fim = /[.,!?:…]$/.test(w[0]) || cur.length >= 4 || i === s.pal.length - 1; if (fim) { fr.push(cur); cur = [] } }); return fr });
-function legenda(t) { const f = FRASES.find((fr, i) => t >= fr[0][1] - .12 && t < (FRASES[i + 1] && FRASES[i + 1][0][1] - .12 < fr[fr.length - 1][2] + .6 ? FRASES[i + 1][0][1] - .12 : fr[fr.length - 1][2] + .6)); if (!f) return;
+function legenda(t) { const f = FRASES.find((fr, i) => t >= fr[0][1] - .05 && t < (FRASES[i + 1] && FRASES[i + 1][0][1] - .05 < fr[fr.length - 1][2] + .6 ? FRASES[i + 1][0][1] - .05 : fr[fr.length - 1][2] + .6)); if (!f) return;
   const tam = 60, palavras = f.map(w => w[0].replace(/[,:]$/, '')), esp = tam * .4, ws = palavras.map(p => larg(p.toUpperCase(), tam)); const linhas = [[]]; let lw = 0;
   palavras.forEach((p, i) => { if (lw + ws[i] > 900 && linhas[linhas.length - 1].length) { linhas.push([]); lw = 0 } linhas[linhas.length - 1].push(i); lw += ws[i] + esp });
-  const ent = eo((t - f[0][1] + .12) / .25), y0 = 1590 - (linhas.length - 1) * 38 + (1 - ent) * 18;
+  const ent = eo((t - f[0][1] + .05) / .15), y0 = 1590 - (linhas.length - 1) * 38 + (1 - ent) * 18;
   linhas.forEach((ln, li) => { const tw = ln.reduce((a, i) => a + ws[i], 0) + esp * (ln.length - 1); let x = W / 2 - tw / 2;
     ln.forEach(i => { const [, a0] = f[i], dito = t >= a0 - .05, agora = dito && (i === f.length - 1 || t < f[i + 1][1] - .05), pop = agora ? 1 + .04 * (1 - eo((t - a0) / .18)) : 1;
       hud.save(); hud.translate(x + ws[i] / 2, y0 + li * 76); hud.scale(pop, pop); txt(palavras[i], 0, 0, tam, agora ? CIANO : '#FFFFFF', { a: ent * (dito ? 1 : .35), sb: 18 }); hud.restore(); x += ws[i] + esp }) }) }
-// régua de escala no alto: quanto mede a largura da tela agora
+// régua de escala no alto: a distância que cabe na tela agora
 const ESC = { terra: [2.6e4, 5.5e4], espaco: [5.5e4, 1.4e6], sistema: [2e5, 1.6e10], via: [2.4e4 * 9.46e12, 2e5 * 9.46e12], andromeda: [2e5 * 9.46e12, 1.6e6 * 9.46e12], galaxias: [6e8 * 9.46e12, 2.5e8 * 9.46e12], anoluz: [2.5e8 * 9.46e12, 2.8e8 * 9.46e12], universo: [9e10 * 9.46e12, 2.2e11 * 9.46e12] };
 function grande(n) { const f = (v, u1, u2) => { const s = v < 10 ? v.toFixed(1).replace('.', ',').replace(',0', '') : Math.round(v).toString(); return s + ' ' + (v < 2 ? u1 : u2) };
   if (n < 1e3) return Math.round(n) + ''; if (n < 1e6) return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); if (n < 1e9) return f(n / 1e6, 'MILHÃO', 'MILHÕES'); if (n < 1e12) return f(n / 1e9, 'BILHÃO', 'BILHÕES'); return f(n / 1e12, 'TRILHÃO', 'TRILHÕES') }
@@ -226,7 +226,7 @@ function regua(E, t) { let txtv; if (E.id === 'alem') txtv = '???'; else { const
   const a = cl(t / 1) * cl((DUR - 4 - t) / .6); if (a <= 0) return; hud.save(); hud.globalAlpha = a * .95; const y = 118; hud.strokeStyle = 'rgba(111,227,255,.7)'; hud.lineWidth = 2;
   hud.beginPath(); hud.moveTo(150, y); hud.lineTo(W - 150, y); for (let i = 0; i <= 20; i++) { const x = 150 + (W - 300) * i / 20, h = i % 5 ? 8 : 16; hud.moveTo(x, y); hud.lineTo(x, y + h) } hud.stroke();
   hud.beginPath(); hud.moveTo(150, y - 14); hud.lineTo(150, y + 16); hud.moveTo(W - 150, y - 14); hud.lineTo(W - 150, y + 16); hud.stroke(); hud.restore();
-  txt('LARGURA DA TELA', W / 2, y - 28, 20, CIANO, { f: 'Orb', w: 500, ls: 8, a: a * .9 }); txt(txtv, W / 2, y + 66, 38, '#FFFFFF', { a }) }
+  txt('DISTÂNCIA', W / 2, y - 28, 20, CIANO, { f: 'Orb', w: 500, ls: 8, a: a * .9 }); txt(txtv, W / 2, y + 66, 38, '#FFFFFF', { a }) }
 // duas barras: a viagem na velocidade da luz e o tempo que a humanidade existe
 function barras(s, t, fim) { const tv = quando(s, 'velocidade') ?? s.n0 + 6, th = quando(s, 'humanidade') ?? s.n0 + 11, sai = cl((t - fim + .8) / .5), x0 = 110, L = W - 220;
   const item = (y, t0, rot, val, frac, cor) => { const k = cl((t - t0 + .2) / 2.2); if (k <= 0) return; const a = cl(k * 4) * (1 - sai), ke = eo(k);
