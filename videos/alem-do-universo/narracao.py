@@ -9,6 +9,7 @@ FALAS = {
  'via': 'E o Sol é só uma entre quatrocentos bilhões de estrelas da Via Láctea. Ao redor delas, mais de cem bilhões de planetas. A luz leva cem mil anos para atravessar a nossa galáxia.',
  'andromeda': 'Ali está Andrômeda, a dois milhões e meio de anos-luz, com um trilhão de estrelas e, talvez, trilhões de planetas. E ela está vindo na nossa direção.',
  'galaxias': 'Depois dela, mais galáxias. Talvez dois trilhões, presas numa teia gigante de matéria escura. Juntas, somam setenta sextilhões de estrelas: mais que todos os grãos de areia da Terra.',
+ 'anoluz': 'Um ano-luz é quase dez trilhões de quilômetros. Para chegar a uma galáxia a duzentos e oitenta milhões de anos-luz, você teria que viajar na velocidade da luz por duzentos e oitenta milhões de anos. A humanidade só existe há trezentos mil anos. E o universo não para de crescer: muitas galáxias a gente nunca vai alcançar.',
  'universo': 'Tudo isso cabe no universo que a gente consegue ver: noventa e três bilhões de anos-luz, com treze bilhões e oitocentos milhões de anos de idade.',
  'alem': 'E depois? Onde o universo termina? Será que existe um limite... ou outros universos, como bolhas, cada um com suas próprias leis? Ninguém sabe. Mas tudo isso começa aqui, num pontinho azul. Então me diz: onde a gente está, de verdade?',
 }

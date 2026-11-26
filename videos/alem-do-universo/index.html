@@ -146,7 +146,7 @@ const fundoGal = campoGalaxias(9000, 9000, 41, { k: 9000, min: .8, max: 10 }); g
 
 // ---------- 4) teia cósmica: galáxias presas em filamentos ----------
 const gWeb = new THREE.Group(); cena.add(gWeb);
-const RW = 500, web = campoGalaxias(90000, RW, 51, { filamentos: true, k: 1800, min: 1.2, max: 90 }); gWeb.add(web);
+const GAL280 = V(Math.sin(1.7) * 40, 10, -175); const RW = 500, web = campoGalaxias(90000, RW, 51, { filamentos: true, k: 1800, min: 1.2, max: 90 }); gWeb.add(web); { const g = espiral({ n: 70000, R: 14, bracos: 2, passo: .25, seed: 33, k: 300 }); g.g.position.copy(GAL280); g.g.rotation.set(1.1, .3, .4); gWeb.add(g.g) }
 { const lig = web.userData.lig, q = rng(52), n = 14000, pos = new Float32Array(n * 3), cor = new Float32Array(n * 3), tam = new Float32Array(n); // gás dos filamentos
   for (let i = 0; i < n; i++) { const [a, b] = lig[Math.floor(q() * lig.length)]; pos.set(a.clone().lerp(b, q()).add(V(gauss(q), gauss(q), gauss(q)).multiplyScalar(RW * .02)).toArray(), i * 3); const tc = q(); cor.set(tc < .5 ? [.25, .2, .55] : [.15, .25, .5], i * 3); tam[i] = 14 + q() * 20 }
   gWeb.add(pontos(pos, cor, tam, { k: 600, min: 1, max: 400, alfa: .16 })) }
@@ -191,6 +191,7 @@ const TITULO = {
   via: ['VIA LÁCTEA', [['400 BILHÕES DE ESTRELAS', 'estrelas'], ['+100 BILHÕES DE PLANETAS', 'planetas'], ['100.000 ANOS-LUZ', 'mil']]],
   andromeda: ['ANDRÔMEDA', [['2,5 MILHÕES DE ANOS-LUZ', 'milhões'], ['1 TRILHÃO DE ESTRELAS', 'trilhão'], ['TRILHÕES DE PLANETAS', 'planetas']]],
   galaxias: ['TEIA CÓSMICA', [['2 TRILHÕES DE GALÁXIAS', 'trilhões'], ['70 SEXTILHÕES DE ESTRELAS', 'sextilhões']]],
+  anoluz: ['ANO-LUZ', [['≈ 9,46 TRILHÕES DE KM', 'trilhões']]],
   universo: ['UNIVERSO OBSERVÁVEL', [['93 BILHÕES DE ANOS-LUZ', 'noventa'], ['13,8 BILHÕES DE ANOS', 'idade']]],
   alem: ['ALÉM DO UNIVERSO', [['?', 'depois']]] };
 const norm = w => w.toLowerCase().replace(/[^a-zà-ÿ0-9]/g, '');
@@ -211,14 +212,14 @@ function titulo(s, t) { const [nome, itens] = TITULO[s.id], u = (t - s.n0) / .9,
 // legenda: frases curtas, palavra por palavra (a falada em ciano)
 const FRASES = SEG.flatMap(s => { const fr = []; let cur = []; s.pal.forEach((w, i) => { cur.push(w); const fim = /[.,!?:…]$/.test(w[0]) || cur.length >= 4 || i === s.pal.length - 1; if (fim) { fr.push(cur); cur = [] } }); return fr });
 function legenda(t) { const f = FRASES.find((fr, i) => t >= fr[0][1] - .12 && t < (FRASES[i + 1] && FRASES[i + 1][0][1] - .12 < fr[fr.length - 1][2] + .6 ? FRASES[i + 1][0][1] - .12 : fr[fr.length - 1][2] + .6)); if (!f) return;
-  const tam = 60, palavras = f.map(w => w[0].replace(/[,:]$/, '')), esp = tam * .3, ws = palavras.map(p => larg(p.toUpperCase(), tam)); const linhas = [[]]; let lw = 0;
+  const tam = 60, palavras = f.map(w => w[0].replace(/[,:]$/, '')), esp = tam * .4, ws = palavras.map(p => larg(p.toUpperCase(), tam)); const linhas = [[]]; let lw = 0;
   palavras.forEach((p, i) => { if (lw + ws[i] > 900 && linhas[linhas.length - 1].length) { linhas.push([]); lw = 0 } linhas[linhas.length - 1].push(i); lw += ws[i] + esp });
   const ent = eo((t - f[0][1] + .12) / .25), y0 = 1590 - (linhas.length - 1) * 38 + (1 - ent) * 18;
   linhas.forEach((ln, li) => { const tw = ln.reduce((a, i) => a + ws[i], 0) + esp * (ln.length - 1); let x = W / 2 - tw / 2;
-    ln.forEach(i => { const [, a0] = f[i], dito = t >= a0 - .05, agora = dito && (i === f.length - 1 || t < f[i + 1][1] - .05), pop = agora ? 1 + .08 * (1 - eo((t - a0) / .18)) : 1;
+    ln.forEach(i => { const [, a0] = f[i], dito = t >= a0 - .05, agora = dito && (i === f.length - 1 || t < f[i + 1][1] - .05), pop = agora ? 1 + .04 * (1 - eo((t - a0) / .18)) : 1;
       hud.save(); hud.translate(x + ws[i] / 2, y0 + li * 76); hud.scale(pop, pop); txt(palavras[i], 0, 0, tam, agora ? CIANO : '#FFFFFF', { a: ent * (dito ? 1 : .35), sb: 18 }); hud.restore(); x += ws[i] + esp }) }) }
 // régua de escala no alto: quanto mede a largura da tela agora
-const ESC = { terra: [2.6e4, 5.5e4], espaco: [5.5e4, 1.4e6], sistema: [2e5, 1.6e10], via: [2.4e4 * 9.46e12, 2e5 * 9.46e12], andromeda: [2e5 * 9.46e12, 1.6e6 * 9.46e12], galaxias: [6e8 * 9.46e12, 2.5e8 * 9.46e12], universo: [9e10 * 9.46e12, 2.2e11 * 9.46e12] };
+const ESC = { terra: [2.6e4, 5.5e4], espaco: [5.5e4, 1.4e6], sistema: [2e5, 1.6e10], via: [2.4e4 * 9.46e12, 2e5 * 9.46e12], andromeda: [2e5 * 9.46e12, 1.6e6 * 9.46e12], galaxias: [6e8 * 9.46e12, 2.5e8 * 9.46e12], anoluz: [2.5e8 * 9.46e12, 2.8e8 * 9.46e12], universo: [9e10 * 9.46e12, 2.2e11 * 9.46e12] };
 function grande(n) { const f = (v, u1, u2) => { const s = v < 10 ? v.toFixed(1).replace('.', ',').replace(',0', '') : Math.round(v).toString(); return s + ' ' + (v < 2 ? u1 : u2) };
   if (n < 1e3) return Math.round(n) + ''; if (n < 1e6) return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); if (n < 1e9) return f(n / 1e6, 'MILHÃO', 'MILHÕES'); if (n < 1e12) return f(n / 1e9, 'BILHÃO', 'BILHÕES'); return f(n / 1e12, 'TRILHÃO', 'TRILHÕES') }
 function regua(E, t) { let txtv; if (E.id === 'alem') txtv = '???'; else { const [a, b] = ESC[E.id], km = Math.exp(lerp(Math.log(a), Math.log(b), eio(E.u))); { const g = km < 9.46e11 ? grande(km) : grande(km / 9.46e12), de = /[A-Z]$/.test(g) ? ' DE ' : ' '; txtv = g + de + (km < 9.46e11 ? 'KM' : 'ANOS-LUZ') } }
@@ -226,14 +227,20 @@ function regua(E, t) { let txtv; if (E.id === 'alem') txtv = '???'; else { const
   hud.beginPath(); hud.moveTo(150, y); hud.lineTo(W - 150, y); for (let i = 0; i <= 20; i++) { const x = 150 + (W - 300) * i / 20, h = i % 5 ? 8 : 16; hud.moveTo(x, y); hud.lineTo(x, y + h) } hud.stroke();
   hud.beginPath(); hud.moveTo(150, y - 14); hud.lineTo(150, y + 16); hud.moveTo(W - 150, y - 14); hud.lineTo(W - 150, y + 16); hud.stroke(); hud.restore();
   txt('LARGURA DA TELA', W / 2, y - 28, 20, CIANO, { f: 'Orb', w: 500, ls: 8, a: a * .9 }); txt(txtv, W / 2, y + 66, 38, '#FFFFFF', { a }) }
+// duas barras: a viagem na velocidade da luz e o tempo que a humanidade existe
+function barras(s, t, fim) { const tv = quando(s, 'velocidade') ?? s.n0 + 6, th = quando(s, 'humanidade') ?? s.n0 + 11, sai = cl((t - fim + .8) / .5), x0 = 110, L = W - 220;
+  const item = (y, t0, rot, val, frac, cor) => { const k = cl((t - t0 + .2) / 2.2); if (k <= 0) return; const a = cl(k * 4) * (1 - sai), ke = eo(k);
+    txt(rot, x0, y, 22, 'rgba(255,255,255,.85)', { f: 'Orb', w: 500, ls: 4, al: 'left', a }); txt(contar(val, ke), x0 + L, y + 72, 34, cor, { al: 'right', a });
+    hud.save(); hud.globalAlpha = a; hud.fillStyle = 'rgba(255,255,255,.1)'; hud.fillRect(x0, y + 16, L, 14); hud.fillStyle = cor; hud.shadowColor = cor; hud.shadowBlur = 12; hud.fillRect(x0, y + 16, Math.max(3, L * frac * ke), 14); hud.restore() };
+  item(1180, tv, 'VIAJANDO NA VELOCIDADE DA LUZ', '280.000.000 ANOS', 1, CIANO); item(1320, th, 'A HUMANIDADE EXISTE HÁ', '300.000 ANOS', 300000 / 280000000, '#FFB347') }
 // mira em quatro cantos em volta de um ponto (o "você está aqui")
 function mira(p3, t0, t, rotulo, fim = 1e9) { const a = cl((t - t0) / .4) * (1 - cl((t - fim) / .4)); if (a <= 0) return; const p = p3.clone().project(cam); if (p.z > 1) return; const x = (p.x * .5 + .5) * W, y = (-p.y * .5 + .5) * H, r = 22 + 30 * (1 - eo((t - t0) / .5)), c = 10;
   hud.save(); hud.globalAlpha = a; hud.strokeStyle = CIANO; hud.lineWidth = 3; for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { hud.beginPath(); hud.moveTo(x + sx * r, y + sy * (r - c)); hud.lineTo(x + sx * r, y + sy * r); hud.lineTo(x + sx * (r - c), y + sy * r); hud.stroke() }
   hud.fillStyle = CIANO; hud.beginPath(); hud.arc(x, y, 3, 0, 7); hud.fill(); hud.restore(); txt(rotulo, x, y + r + 34, 20, '#FFFFFF', { f: 'Orb', w: 500, ls: 5, a }) }
 
 // ---------- câmera por trecho (u = 0 → 1 dentro do trecho) ----------
-const GRUPO = { terra: gTerra, espaco: gTerra, sistema: gSis, via: gGal, andromeda: gGal, galaxias: gWeb, universo: gUni, alem: gMul };
-const CONTINUA = { espaco: true, andromeda: true }; // sem corte: continua a mesma cena
+const GRUPO = { terra: gTerra, espaco: gTerra, sistema: gSis, via: gGal, andromeda: gGal, galaxias: gWeb, anoluz: gWeb, universo: gUni, alem: gMul };
+const CONTINUA = { espaco: true, andromeda: true, anoluz: true }; // sem corte: continua a mesma cena
 function poseOrb(alvo, dist, az, el, fov = 36, desce = .03) { const d = V(Math.cos(el) * Math.sin(az), Math.sin(el), Math.cos(el) * Math.cos(az)); return { pos: alvo.clone().add(d.multiplyScalar(dist)), alvo: alvo.clone().add(V(0, -dist * desce, 0)), fov } }
 const DIRAL = V(Math.cos(ALIN), 0, Math.sin(ALIN)), LADOAL = V(-Math.sin(ALIN), 0, Math.cos(ALIN));
 function pose(id, u, t) {
@@ -245,6 +252,7 @@ function pose(id, u, t) {
   if (id === 'andromeda') { const e = eio(u), A = poseOrb(V(0, 0, 0), 190, Math.atan2(SOLVL.x, SOLVL.z) + .8, .85, 36, .03); const dirA = V(0, Math.cos(1.25), Math.sin(1.25)).applyEuler(ANDROT); const B = { pos: AND.clone().add(dirA.multiplyScalar(250)).add(V(0, 30, 0)), alvo: AND.clone().add(V(0, -5, 0)), fov: 36 };
     return { pos: A.pos.clone().lerp(B.pos, e), alvo: A.alvo.clone().lerp(B.alvo, eio(cl(u * 1.6))), fov: 36 } }
   if (id === 'galaxias') { const e = u; return { pos: V(Math.sin(e * 1.3) * 40, 20 + e * 30, lerp(520, 60, e)), alvo: V(Math.sin(e * 1.3 + .4) * 40, 10, lerp(380, -100, e)), fov: 42 } }
+  if (id === 'anoluz') { const e = eio(u); return { pos: V(Math.sin(1.3) * 40, 50 - 25 * e, lerp(60, -5, e)), alvo: V(Math.sin(1.7) * 40, 10, -100).lerp(GAL280, eio(cl(u * 3))), fov: lerp(42, 34, e) } }
   if (id === 'universo') { const e = eio(u), d = Math.exp(lerp(Math.log(450), Math.log(1500), e)); return poseOrb(V(0, 0, 0), d, .3 + .4 * u, .25, 36, .02) }
   if (id === 'alem') { const e = eio(u), d = Math.exp(lerp(Math.log(26), Math.log(420), e)); return poseOrb(V(0, 0, 0), d, .2 + .5 * u, .3, 36, .02) } }
 // ponto da cena nova onde a anterior "cabe" (o círculo encolhe até ele)
@@ -278,6 +286,7 @@ function seek(t) { const E = estado(t);
   if (E.id === 'via') mira(SOLVL, E.s.v0 + TR + .2, t, 'VOCÊ ESTÁ AQUI', E.fim - 2.5);
   if (E.id === 'alem') mira(V(0, 0, 0), E.s.v0 + TR + .3, t, 'NOSSO UNIVERSO', E.fim - 4);
   for (const s of SEG) titulo(s, t);
+  if (E.id === 'anoluz') { mira(GAL280, quando(E.s, 'galáxia') ?? E.s.n0 + 3, t, 'GALÁXIA A 280 MILHÕES DE ANOS-LUZ', E.fim - .6); barras(E.s, t, E.fim) }
   legenda(t);
   // fecho: a pergunta final letra por letra, com piscadas
   const tq = SEG[SEG.length - 1].n1 + .3; if (t > tq) { const linha = 'ONDE A GENTE ESTÁ?', n = Math.floor(cl((t - tq) / 1.2) * linha.length); const q = rng(Math.floor(t * 30)); hud.save(); hud.fillStyle = 'rgba(0,0,0,.35)'; hud.fillRect(0, 0, W, H); hud.restore();
