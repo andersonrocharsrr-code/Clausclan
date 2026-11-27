@@ -380,7 +380,7 @@ function camera(t){
   const look=slerp(nrm(mul(pos,-1)),nrm(sub(M,pos)),kB);
   const ang=2*Math.asin(Math.min(1,RM/rM))*180/Math.PI;
   const x=seg(t,15.8,47.5), kS=1-(1-x)*(1-x)*(1-.4*x);
-  const sAlvo=Math.exp(lerp(Math.log(0.12),Math.log(0.56),kS));  // termina com Marte inteiro na largura da tela
+  const sAlvo=Math.exp(lerp(Math.log(0.15),Math.log(1.0),kS));  // termina com Marte enchendo a tela de cima a baixo
   const fTel=Math.min(50,Math.max(0.2,ang/sAlvo));
   const fov=Math.exp(lerp(Math.log(50),Math.log(fTel),ease(seg(t,12.5,16))));
   return {pos,look,fov,upRef:[0,1,0]};
