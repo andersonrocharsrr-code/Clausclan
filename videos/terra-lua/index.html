@@ -196,6 +196,17 @@ vec3 lua(vec3 d, vec3 rd, float pxm){
   return albc*dif*1.9*mix(.15,1.,term);
 }
 
+vec3 estrelas(vec3 rd, float pxa, float N, float prob, float sem){
+  vec3 sd = rd*N; vec3 si = floor(sd); float sr = h31(si+sem);
+  if(sr < 1.0-prob) return vec3(0);
+  vec3 sp = si + .5 + .3*(h33(si+sem)-.5);
+  float dpx = length(sd-sp)/N/pxa;                 // distância em pixels
+  float m = (sr-(1.0-prob))/prob;                  // 0..1
+  float bri = .35 + 2.4*pow(m, 4.0);               // poucas fortes, muitas fracas
+  float cor = h31(si+sem+3.7);
+  vec3 tint = mix(vec3(1.0,.85,.70), vec3(.75,.85,1.0), cor);
+  return tint*bri*exp(-dpx*dpx/.9);
+}
 float esfera(vec3 ro, vec3 rd, float r){
   float b=dot(ro,rd), c=dot(ro,ro)-r*r, h=b*b-c;
   if(h<0.) return -1.;
@@ -215,6 +226,15 @@ void main(){
   vec3 rd = normalize(cF + uv.x*tanf*cR + uv.y*tanf*cU);
   float pxa = 2.0*tanf/res.y; // ângulo de um pixel
   vec3 col = vec3(0);
+  // estrelas: sempre um pontinho de 1–2 pixels, mesmo com o zoom do telescópio
+  // camadas: quanto mais zoom, mais estrelas fracas aparecem (como num telescópio)
+  float Ns = 140.0;
+  for(int k=0;k<7;k++){
+    float cel = 1.0/(Ns*pxa);                       // tamanho da célula em pixels
+    float w = smoothstep(2.5, 6.0, cel) * (k==0 ? 1.6 : 1.0);
+    if(w>0.) col += w*estrelas(rd, pxa, Ns, .016, float(k)*17.0);
+    Ns *= 3.0;
+  }
   float tE = esfera(camE, rd, 1.0);
   float tM = esfera(camM, rd, RM);
   // brilho da atmosfera fora do disco
