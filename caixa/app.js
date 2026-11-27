@@ -369,6 +369,15 @@ function aplicarEdicao(nome, item, novo) {
     const valor = arred(numero(novo.valor) - numero(item.valor));
     if (valor) (item.acrescimos ||= []).push({ data: diaLanc(), valor });
   }
+  // Pepino extra pago em partes: ontem 200, hoje edita e põe o total 482 → os 282 entram só no relatório de hoje.
+  if (nome === 'extras' && item.dia && novo.dia === item.dia && item.dia !== diaLanc()) {
+    const valor = arred(numero(novo.valor) - numero(item.valor));
+    if (valor > 0) {
+      if (!item.pagamentos?.length) item.pagamentos = [{ data: item.dia, valor: arred(numero(item.valor)) }];
+      item.pagamentos.push({ data: diaLanc(), valor });
+      (item.acrescimos ||= []).push({ data: diaLanc(), valor }); // só para mostrar na linha
+    }
+  }
   Object.assign(item, novo);
 }
 
@@ -406,6 +415,8 @@ function linhaLista(nome, item, modo) { // modo: 'travada' | 'editando' | 'rascu
     (acr.length ? `<p class="item__acr">Lançado em ${fmtDia(item.data || item.dia)} · ${acr.join(' · ')}</p>` : '') +
     (edita && (nome === 'feitas' || nome === 'antecipadas') && modo === 'editando' && (item.data || item.dia) && (item.data || item.dia) !== diaLanc()
       ? `<p class="item__dica">O valor que você acrescentar entra no relatório do dia ${fmtDia(diaLanc())}.</p>` : '') +
+    (edita && nome === 'extras' && modo === 'editando' && item.dia && item.dia !== diaLanc()
+      ? `<p class="item__dica">Pagou mais uma parte? Coloque o <b>total</b> que ela já pagou: só a diferença entra no relatório do dia ${fmtDia(diaLanc())}.</p>` : '') +
     (item.nota ? `<p class="item__nota">⚠ ${esc(item.nota)}</p>` : '');
 
   // Antecipado: só aparece quando a bolinha "Antecipado" é marcada (ou se a nota já tem antecipado).
