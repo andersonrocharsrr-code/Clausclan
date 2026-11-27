@@ -13,6 +13,7 @@ uniform float tanf;  // tangente de meio campo de visão (vertical)
 uniform vec3 L;      // direção do Sol
 uniform float fade;
 uniform float rotE;
+uniform float agua;  // tremida de telescópio (turbulência do ar)
 uniform sampler2D texT, texL;
 uniform vec3 tZ, tX, tY;   // foto da Terra: eixo da frente, direita, cima
 uniform vec3 lZ, lX, lY;   // foto da Lua
@@ -183,6 +184,12 @@ float esfera(vec3 ro, vec3 rd, float r){
 
 void main(){
   vec2 uv = (gl_FragCoord.xy - .5*res)/res.y*2.0;
+  if(agua>0.){
+    // ondas lentas e grandes + ondinhas rápidas, como ar quente na frente da lente
+    vec2 o1 = vec2(n3(vec3(uv*2.2, t*.9)), n3(vec3(uv*2.2+7.3, t*.9+3.1))) - .5;
+    vec2 o2 = vec2(n3(vec3(uv*8.0+2.0, t*2.6)), n3(vec3(uv*8.0+9.1, t*2.6+5.0))) - .5;
+    uv += agua*(o1*.014 + o2*.005);
+  }
   vec3 rd = normalize(cF + uv.x*tanf*cR + uv.y*tanf*cU);
   float pxa = 2.0*tanf/res.y; // ângulo de um pixel
   vec3 col = vec3(0);
@@ -292,6 +299,7 @@ window.render=function(t){
   gl.uniform3fv(U('tZ'),u0); gl.uniform3fv(U('tY'),Yp0); gl.uniform3fv(U('tX'),cross(mul(u0,-1),Yp0));
   const lZ=mul(dm,-1), lXv=nrm(cross(dm,[0,1,0])), lYv=cross(lXv,dm);
   gl.uniform3fv(U('lZ'),lZ); gl.uniform3fv(U('lX'),lXv); gl.uniform3fv(U('lY'),lYv);
+  gl.uniform1f(U('agua'),ease(seg(t,36,46)));
   gl.uniform1i(U('texT'),0); gl.uniform1i(U('texL'),1);
   gl.uniform1f(U('rotE'),window.ROTE??0);
   gl.uniform1f(U('fade'),Math.min(1,t/1.0,(DUR-t)/1.2));
