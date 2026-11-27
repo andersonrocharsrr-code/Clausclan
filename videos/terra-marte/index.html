@@ -417,7 +417,7 @@ window.render=function(t){
   gl.uniform3fv(U('tZ'),u0); gl.uniform3fv(U('tY'),Yp0); gl.uniform3fv(U('tX'),cross(mul(u0,-1),Yp0));
   const lZ=DIR0, lXv=MX, lYv=MY;
   gl.uniform3fv(U('lZ'),lZ); gl.uniform3fv(U('lX'),lXv); gl.uniform3fv(U('lY'),lYv);
-  gl.uniform1f(U('agua'),ease(seg(t,27,35)));
+  gl.uniform1f(U('agua'),ease(seg(t,40,43)));  // turbulência só a partir dos 40 s
   gl.uniform3fv(U('aN'),nLua); gl.uniform3fv(U('aX'),AX); gl.uniform3fv(U('aY'),AY);
   gl.uniform1f(U('aEsc'),0.0016); gl.uniform1f(U('aRev'),0);
   gl.uniform1i(U('texA'),2); gl.uniform1i(U('texP'),3);
