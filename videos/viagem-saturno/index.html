@@ -1,0 +1,323 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Viagem até Saturno</title>
+<style>html,body{margin:0;background:#000}canvas{display:block}</style></head>
+<body><canvas id="c"></canvas>
+<script id="fs" type="x-shader/x-fragment">
+precision highp float;
+uniform vec2 res;
+uniform float t;
+uniform int cena;            // 1 galáxias (dobra espacial), 2 sistema solar, 3 Saturno de perto
+uniform vec3 cP, cR, cU, cF; // câmera
+uniform float tanf;
+uniform float fade;
+uniform float agua;
+// cena 1
+uniform float wT, wS;        // distância percorrida na dobra e velocidade (0..1)
+uniform vec3 gA, nA, aA1, aA2; uniform float sA, oA;   // Andrômeda: centro, normal, eixos, tamanho, brilho
+uniform vec3 gV, nV, aV1, aV2; uniform float sV, oV;   // Via Láctea
+// cena 2
+uniform sampler2D texT, texM, texP, texS, texC;
+uniform vec3 sol; uniform float solR;
+uniform vec3 pT; uniform float rT; uniform vec3 zT;     // Terra: centro, raio, lado da foto
+uniform vec3 pM; uniform float rMa; uniform vec3 zM;    // Marte
+uniform vec4 ast[48]; uniform float astRot[48];         // asteroides: xyz + tamanho
+uniform vec3 pS; uniform float wSat;                    // Saturno (foto plana)
+// cena 3
+uniform float zoomC; uniform vec2 panC;
+
+float h31(vec3 p){ p=fract(p*0.3183099+.1); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+vec3 h33(vec3 p){ return vec3(h31(p),h31(p+19.19),h31(p+47.7)); }
+float h11(float x){ return fract(sin(x*127.1)*43758.5453); }
+float n3(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f);
+  return mix(mix(mix(h31(i),h31(i+vec3(1,0,0)),f.x),mix(h31(i+vec3(0,1,0)),h31(i+vec3(1,1,0)),f.x),f.y),
+             mix(mix(h31(i+vec3(0,0,1)),h31(i+vec3(1,0,1)),f.x),mix(h31(i+vec3(0,1,1)),h31(i+vec3(1,1,1)),f.x),f.y),f.z); }
+float fbm(vec3 p,int oct){ float a=.5,s=0.; for(int i=0;i<8;i++){ if(i>=oct)break; s+=a*n3(p); p=p*2.03+vec3(1.7,9.2,3.1); a*=.5;} return s; }
+
+// estrelas: sempre pontinhos de 1–2 pixels
+vec3 estrelas(vec3 rd, float pxa, float N, float prob, float sem){
+  vec3 sd = rd*N; vec3 si = floor(sd); float sr = h31(si+sem);
+  if(sr < 1.0-prob) return vec3(0);
+  vec3 sp = si + .5 + .3*(h33(si+sem)-.5);
+  float dpx = length(sd-sp)/N/pxa;
+  float m = (sr-(1.0-prob))/prob;
+  float bri = .35 + 2.4*pow(m, 4.0);
+  vec3 tint = mix(vec3(1.0,.85,.70), vec3(.75,.85,1.0), h31(si+sem+3.7));
+  return tint*bri*exp(-dpx*dpx/.9);
+}
+vec3 ceu(vec3 rd, float pxa){
+  vec3 c=vec3(0); float Ns=140.0;
+  for(int k=0;k<5;k++){
+    float cel=1.0/(Ns*pxa); float w=smoothstep(2.5,6.0,cel)*(k==0?1.6:1.0);
+    if(w>0.) c += w*estrelas(rd,pxa,Ns,.016,float(k)*17.0);
+    Ns*=3.0;
+  }
+  return c;
+}
+
+// galáxia espiral (emite luz); q em unidades do raio da galáxia
+vec3 galaxia(vec2 q, float sem, float barra, float foot){
+  float r=length(q); if(r>1.25) return vec3(0);
+  float nevoa = smoothstep(0.00003, 0.0005, foot);
+  float a=atan(q.y,q.x);
+  float pitch=3.0;
+  float braco = pow(.5+.5*cos(2.0*(a - log(r+.03)*pitch)), 3.0);
+  float braco2 = pow(.5+.5*cos(2.0*(a - log(r+.03)*pitch) - .55), 5.0);
+  float ruido = fbm(vec3(q*7.0, sem), 6);
+  float disco = exp(-r/0.30);
+  vec2 qb = vec2(q.x*cos(.5)-q.y*sin(.5), q.x*sin(.5)+q.y*cos(.5));
+  float nucleo = exp(-length(qb*vec2(1.0, 1.0+barra*2.0))/0.06)*1.6 + exp(-r/0.14)*.55;
+  vec3 c = vec3(1.0,.82,.58)*nucleo
+         + vec3(.55,.72,1.0)*braco*disco*(0.55+0.9*ruido)*1.3
+         + vec3(.85,.82,.78)*disco*.28;
+  float poeira = smoothstep(.42,.70, fbm(vec3(q*16.0, sem+3.0), 6))*braco2*disco;
+  c *= 1.0 - .75*poeira;
+  c += vec3(1.0,.35,.55)*pow(fbm(vec3(q*45.0, sem+7.0),4),7.0)*braco*disco*14.0;   // nebulosas rosas
+  c *= nevoa;
+  // estrelas soltas no disco (aparecem quando chega perto)
+  float Ns=60.0;
+  for(int k=0;k<6;k++){
+    float cel = 1.0/(Ns*foot);
+    float w = smoothstep(2.5,6.0,cel);
+    if(w>0.){
+      vec2 g=q*Ns; vec2 gi=floor(g); float hh=h31(vec3(gi,sem+float(k)*11.0));
+      float dens = clamp((braco*disco*1.5+nucleo*.5+disco*.3)*(1.6-nevoa), 0., 1.);
+      if(hh > 1.0 - .25*dens){
+        vec2 sp=gi+.5+.3*(vec2(h31(vec3(gi,sem+5.0)),h31(vec3(gi,sem+9.0)))-.5);
+        float dpx=length(g-sp)/Ns/foot;
+        c += w*mix(vec3(1.,.85,.7),vec3(.7,.85,1.),h31(vec3(gi,sem+2.0)))*exp(-dpx*dpx/.8)*1.6;
+      }
+    }
+    Ns*=3.0;
+  }
+  return c*smoothstep(1.25,.85,r);
+}
+vec3 planoGal(vec3 ro, vec3 rd, vec3 G, vec3 N, vec3 E1, vec3 E2, float S, float sem, float barra, float pxa){
+  float dn=dot(rd,N); if(abs(dn)<1e-4) return vec3(0);
+  float tp=dot(G-ro,N)/dn; if(tp<=0.) return vec3(0);
+  vec3 p=ro+rd*tp-G; vec2 q=vec2(dot(p,E1),dot(p,E2))/S;
+  float foot = tp*pxa/S/max(abs(dn),.15);
+  return galaxia(q, sem, barra, foot);
+}
+
+// dobra espacial: riscos de luz saindo do centro
+vec3 dobra(vec2 uv, float T, float vel){
+  vec3 c=vec3(0); float r=length(uv); float a=atan(uv.y,uv.x);
+  float px=2.0/res.y;
+  for(int i=0;i<3;i++){
+    float K=55.0+float(i)*40.0;
+    float cel=floor((a+3.14159)/6.28318*K);
+    for(int j=0;j<1;j++){
+      float hh=h11(cel*1.37+float(i)*31.7+float(j)*7.1);
+      float ac=(cel+.5+(hh-.5)*.7)/K*6.28318-3.14159;
+      float da=abs(a-ac)*r;
+      float fase=fract(hh*7.31+T*(.20+.45*hh));
+      float rs=.02*exp(fase*4.6);
+      float len=vel*rs*.55+px*2.0;
+      float b=smoothstep(rs-len,rs,r)*step(r,rs)*exp(-pow(da/(px*1.1),2.0));
+      b*=smoothstep(0.,.25,fase)*(.25+.9*hh*hh)*.8;
+      c+=mix(vec3(.75,.85,1.0),vec3(1.,.95,.9),hh)*b;
+    }
+  }
+  return c;
+}
+
+float esfera(vec3 ro, vec3 rd, float r){
+  float b=dot(ro,rd), c=dot(ro,ro)-r*r, h=b*b-c;
+  if(h<0.) return -1.;
+  float t0=-b-sqrt(h); return t0>0.? t0 : -1.;
+}
+vec3 fotoEsfera(sampler2D tx, vec3 n, vec3 Z){
+  vec3 X=normalize(cross(vec3(0,1,0),Z)), Y=cross(Z,X);
+  float z=dot(n,Z);
+  if(z<0.) return vec3(0);                     // lado de trás: noite
+  vec2 uv=.5+.48*.985*vec2(dot(n,X), -dot(n,Y));
+  vec3 c=pow(texture2D(tx,uv).rgb, vec3(2.2))*1.1;
+  return c*smoothstep(0.,.12,z);
+}
+vec4 sprite(vec3 ro, vec3 rd, vec3 P, float S, float rot, sampler2D tx){
+  float tp=dot(P-ro,cF)/dot(rd,cF); if(tp<=0.) return vec4(0);
+  vec3 h=rd*tp+ro-P; vec2 q=vec2(dot(h,cR),dot(h,cU))/S;
+  float c=cos(rot), s=sin(rot); q=vec2(c*q.x-s*q.y, s*q.x+c*q.y);
+  vec2 uv=.5+q*vec2(.5,-.5);
+  if(uv.x<0.||uv.x>1.||uv.y<0.||uv.y>1.) return vec4(0);
+  vec4 p=texture2D(tx,uv); return vec4(pow(p.rgb,vec3(2.2)), p.a);
+}
+
+void main(){
+  vec2 uv=(gl_FragCoord.xy-.5*res)/res.y*2.0;
+  if(agua>0.){
+    vec2 o1=vec2(n3(vec3(uv*2.2,t*.9)),n3(vec3(uv*2.2+7.3,t*.9+3.1)))-.5;
+    vec2 o2=vec2(n3(vec3(uv*8.0+2.0,t*2.6)),n3(vec3(uv*8.0+9.1,t*2.6+5.0)))-.5;
+    uv+=agua*(o1*.012+o2*.004);
+  }
+  vec3 col=vec3(0);
+  float pxa=2.0*tanf/res.y;
+  vec3 rd=normalize(cF+uv.x*tanf*cR+uv.y*tanf*cU);
+
+  if(cena==1){
+    col += ceu(rd,pxa)*(1.0-wS*.8);
+    col += dobra(uv, wT, wS);
+    if(oA>0.) col += planoGal(cP,rd,gA,nA,aA1,aA2,sA,3.0,0.0,pxa)*oA;
+    if(oV>0.) col += planoGal(cP,rd,gV,nV,aV1,aV2,sV,11.0,1.0,pxa)*oV;
+  } else if(cena==2){
+    col += ceu(rd,pxa);
+    // Sol
+    vec3 vs=sol-cP; float ts=dot(vs,rd); float bS=length(cross(vs,rd));
+    if(ts>0.){
+      float g=solR/max(bS,1e-4);
+      float angS=bS/ts, raioS=solR/ts;
+      col += vec3(1.0,.85,.6)*(exp(-angS/0.035)*1.1 + pow(raioS/max(angS,1e-4),2.0)*.25);
+      col += vec3(1.0,.97,.9)*smoothstep(solR*1.02,solR*.98,bS)*3.0;
+    }
+    // planetas (esferas com foto)
+    float tT=esfera(cP-pT,rd,rT), tM=esfera(cP-pM,rd,rMa);
+    float tMin=1e9;
+    if(tT>0.){ col=fotoEsfera(texT, normalize(cP+rd*tT-pT), zT); tMin=tT; }
+    if(tM>0. && tM<tMin){ col=fotoEsfera(texM, normalize(cP+rd*tM-pM), zM); tMin=tM; }
+    // brilho azul da atmosfera da Terra
+    { vec3 v=pT-cP; float along=dot(v,rd); float b=length(cross(v,rd));
+      if(along>0. && tT<0.) col += vec3(.25,.5,1.0)*exp(-(b-rT)/(rT*.05))*.35; }
+    // Saturno (foto plana, de frente)
+    { vec4 s=sprite(cP,rd,pS,wSat,0.0,texS);
+      float tp=dot(pS-cP,cF)/dot(rd,cF);
+      if(s.a>0. && tp<tMin) col=mix(col, s.rgb*1.1, s.a); }
+    // cinturão de asteroides (fotos de rocha)
+    for(int i=0;i<48;i++){
+      vec4 A=ast[i];
+      float tp=dot(A.xyz-cP,cF)/dot(rd,cF);
+      if(tp<=0.05 || tp>tMin) continue;
+      vec4 s=sprite(cP,rd,A.xyz,A.w,astRot[i],texP);
+      if(s.a>0.){ col=mix(col, s.rgb*vec3(1.05,.95,.85)*.9, s.a); tMin=tp; }
+    }
+  } else {
+    // Saturno de perto (foto), com aproximação lenta
+    vec2 q=(gl_FragCoord.xy/res - .5);
+    float asp=res.x/res.y;              // 9/16
+    float imgAsp=4000.0/2800.0;
+    vec2 uvI=vec2(q.x*asp/imgAsp, q.y);  // cobre a altura
+    uvI = uvI/zoomC + panC + .5;
+    uvI.y = 1.0-uvI.y;
+    col = pow(texture2D(texC, uvI).rgb, vec3(2.2));
+    col += ceu(rd,pxa)*.6*step(dot(col,vec3(1)),.02);
+  }
+
+  col=col/(1.0+col*.22);
+  col=pow(max(col,0.),vec3(1.0/2.2));
+  col+=(h31(vec3(gl_FragCoord.xy,t*60.0))-.5)*.012;
+  gl_FragColor=vec4(col*fade,1.0);
+}
+</script>
+<script>
+const Q=new URLSearchParams(location.search);
+const W=+(Q.get('w')||540), Hh=Math.round(W*16/9), CENA=+(Q.get('cena')||1);
+const cv=document.getElementById('c'); cv.width=W; cv.height=Hh;
+const gl=cv.getContext('webgl',{preserveDrawingBuffer:true,antialias:false});
+function sh(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw gl.getShaderInfoLog(s);return s;}
+const pr=gl.createProgram();
+gl.attachShader(pr,sh(gl.VERTEX_SHADER,'attribute vec2 a;void main(){gl_Position=vec4(a,0,1);}'));
+gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,document.getElementById('fs').text));
+gl.linkProgram(pr);gl.useProgram(pr);
+const bf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,bf);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
+const U=n=>gl.getUniformLocation(pr,n);
+function textura(unid,src,rgba){return new Promise(ok=>{const im=new Image();im.onload=()=>{const F=rgba?gl.RGBA:gl.RGB;
+  const tx=gl.createTexture();gl.activeTexture(gl.TEXTURE0+unid);gl.bindTexture(gl.TEXTURE_2D,tx);
+  gl.texImage2D(gl.TEXTURE_2D,0,F,F,gl.UNSIGNED_BYTE,im);gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);ok();};im.src=src;});}
+// texturas: 0 Terra, 1 Marte, 2 Phobos (asteroides), 3 Saturno, 4 Saturno de perto
+window.carregar=(m)=>Promise.all([textura(0,m.terra),textura(1,m.marte),textura(2,m.phobos,true),textura(3,m.saturno,true),textura(4,m.perto)]);
+window.TEXTURAS={terra:'terra-tex.jpg',marte:'marte-tex.jpg',phobos:'phobos-tex.png',saturno:'saturno-tex.png',perto:'saturno-perto-tex.jpg'};
+
+const add=(a,b)=>a.map((x,i)=>x+b[i]), sub=(a,b)=>a.map((x,i)=>x-b[i]), mul=(a,s)=>a.map(x=>x*s);
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2], len=a=>Math.sqrt(dot(a,a)), nrm=a=>mul(a,1/len(a));
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const cl=x=>Math.min(1,Math.max(0,x)), ease=x=>{x=cl(x);return x*x*x*(x*(6*x-15)+10);}, lerp=(a,b,k)=>a+(b-a)*k;
+const seg=(t,a,b)=>cl((t-a)/(b-a));
+function rotX(v,a){const c=Math.cos(a),s=Math.sin(a);return [v[0],c*v[1]-s*v[2],s*v[1]+c*v[2]];}
+function rotY(v,a){const c=Math.cos(a),s=Math.sin(a);return [c*v[0]+s*v[2],v[1],-s*v[0]+c*v[2]];}
+// curva suave por pontos (tempo → valor)
+function curva(pts,t){ if(t<=pts[0][0]) return pts[0][1]; for(let i=0;i<pts.length-1;i++){const [t0,v0]=pts[i],[t1,v1]=pts[i+1]; if(t<=t1){const k=(t-t0)/(t1-t0); const p=pts[i-1]?pts[i-1][1]:v0, n=pts[i+2]?pts[i+2][1]:v1;
+  const m0=(v1-p)/2, m1=(n-v0)/2, k2=k*k, k3=k2*k; return (2*k3-3*k2+1)*v0+(k3-2*k2+k)*m0+(-2*k3+3*k2)*v1+(k3-k2)*m1;}} return pts[pts.length-1][1]; }
+function eixosDisco(inclX, giroY){ const N=nrm(rotY(rotX([0,0,-1],inclX),giroY)); const E1=nrm(cross([0,1,0],N)); const E2=cross(N,E1); return [N,E1,E2]; }
+
+const DURS={1:23, 2:31, 3:9};
+const DUR=DURS[CENA]; window.DUR=DUR;
+
+// ---------- cena 1: dobra espacial, Andrômeda passa, chegada na Via Láctea ----------
+function cena1(t){
+  const vel = ease(seg(t,0,3))*(1-ease(seg(t,12,18)))*0.95+0.05;   // acelera, depois freia perto da Via Láctea
+  // distância percorrida (integral aproximada)
+  let T=0; const dt=1/30; for(let s=0;s<t;s+=dt){ const v=ease(seg(s,0,3))*(1-ease(seg(s,12,18)))*0.95+0.05; T+=v*dt*2.2; }
+  // Andrômeda: vem da frente e passa pela esquerda (2–10 s)
+  const zA=lerp(48, 8, ease(seg(t,1.5,10.5))*0.5+seg(t,1.5,10.5)*0.5);
+  const [nA,a1,a2]=eixosDisco(1.25, 0.5);
+  const oA=ease(seg(t,1.5,3.5))*(1-ease(seg(t,9.2,10.5)));
+  // Via Láctea: aparece ao fundo e a câmera mergulha num braço (10–23 s)
+  const [nV,v1,v2]=eixosDisco(0.95,-0.3);
+  const alvoQ=[0.58,0.18];   // ponto no braço (onde fica o Sol)
+  const GV=[0,0,0];
+  const ponto=add(GV,add(mul(v1,alvoQ[0]*6),mul(v2,alvoQ[1]*6)));
+  const distV=Math.exp(lerp(Math.log(70),Math.log(0.25),ease(seg(t,10,22.5))));
+  // câmera vai do eixo do centro para o ponto do braço, olhando de cima (contra a normal)
+  const k=ease(seg(t,13,22.5));
+  const alvo=add(mul(GV,1-k),mul(ponto,k));
+  const pos=add(alvo,mul(nV,-distV));   // nV aponta para longe da câmera
+  const Fc=nrm(sub(alvo,pos)), Rc=nrm(cross(Fc,[0,1,0])), Uc=cross(Rc,Fc);
+  // Andrômeda: inclinada (vista quase de lado), vem da frente e passa pela esquerda
+  const GA=add(pos,add(mul(Fc,zA),add(mul(Rc,-4.6),mul(Uc,0.9))));
+  const NA=nrm(add(mul(Fc,Math.cos(1.25)),mul(Uc,-Math.sin(1.25))));
+  const A1=nrm(add(mul(Rc,Math.cos(.45)),mul(Uc,Math.sin(.45)))); const A1p=nrm(sub(A1,mul(NA,dot(A1,NA)))); const A2=cross(NA,A1p);
+  return {cam:{pos, F:Fc}, T, vel, A:{G:GA,N:NA,E1:A1p,E2:A2,S:2.4,o:oA*1.5},
+          V:{G:GV,N:nV,E1:v1,E2:v2,S:6.0,o:ease(seg(t,9,13))}, fov:50};
+}
+
+// ---------- cena 2: Sol, Terra, Marte, cinturão de asteroides, Saturno ----------
+const AST=[]; { let sd=5; const r=()=>{sd=(sd*16807)%2147483647;return sd/2147483647;};
+  for(let i=0;i<48;i++){ let x,y; do{ x=(r()-.5)*7; y=(r()-.5)*5; } while(Math.hypot(x,y*1.3)<0.55);
+    AST.push([x,y,52+r()*26, 0.04+0.22*Math.pow(r(),2.2)]); } }
+const ASTROT=AST.map((a,i)=>i*1.7);
+function cena2(t){
+  const z=curva([[0,0],[5,8],[10,19],[15,30],[19,40],[25,58],[31,76]],t);
+  const pos=[Math.sin(t*.35)*.08, Math.cos(t*.27)*.06, z];
+  const F=nrm([-pos[0]*.02, -pos[1]*.02, 1]);
+  return {cam:{pos,F}, fov:50};
+}
+
+// ---------- cena 3: Saturno de perto ----------
+function cena3(t){ return {cam:{pos:[0,0,0],F:[0,0,1]}, fov:50, zoom:1.0+0.12*ease(seg(t,0,9)), pan:[-0.03*seg(t,0,9),0.01*seg(t,0,9)]}; }
+
+window.render=function(t){
+  const S = CENA==1? cena1(t) : CENA==2? cena2(t) : cena3(t);
+  let F=nrm(S.cam.F); let up=[0,1,0]; if(Math.abs(dot(F,up))>0.99) up=[0,0,1];
+  const R=nrm(cross(F,up)), Uv=cross(R,F);
+  gl.viewport(0,0,W,Hh);
+  gl.uniform2f(U('res'),W,Hh); gl.uniform1f(U('t'),t); gl.uniform1i(U('cena'),CENA);
+  gl.uniform3fv(U('cP'),S.cam.pos); gl.uniform3fv(U('cR'),R); gl.uniform3fv(U('cU'),Uv); gl.uniform3fv(U('cF'),F);
+  gl.uniform1f(U('tanf'),Math.tan(S.fov*Math.PI/360));
+  gl.uniform1f(U('fade'),1.0); gl.uniform1f(U('agua'),0.0);
+  for(let i=0;i<5;i++) gl.uniform1i(U(['texT','texM','texP','texS','texC'][i]),i);
+  if(CENA==1){
+    gl.uniform1f(U('wT'),S.T); gl.uniform1f(U('wS'),S.vel);
+    gl.uniform3fv(U('gA'),S.A.G); gl.uniform3fv(U('nA'),S.A.N); gl.uniform3fv(U('aA1'),S.A.E1); gl.uniform3fv(U('aA2'),S.A.E2); gl.uniform1f(U('sA'),S.A.S); gl.uniform1f(U('oA'),S.A.o);
+    gl.uniform3fv(U('gV'),S.V.G); gl.uniform3fv(U('nV'),S.V.N); gl.uniform3fv(U('aV1'),S.V.E1); gl.uniform3fv(U('aV2'),S.V.E2); gl.uniform1f(U('sV'),S.V.S); gl.uniform1f(U('oV'),S.V.o);
+    gl.uniform1f(U('fade'),Math.min(1,t/1.0));
+  } else if(CENA==2){
+    gl.uniform3fv(U('sol'),[-2.2,0.5,9]); gl.uniform1f(U('solR'),0.35);
+    gl.uniform3fv(U('pT'),[1.5,-0.35,21]); gl.uniform1f(U('rT'),0.42); gl.uniform3fv(U('zT'),nrm([-0.75,0.1,-0.65]));
+    gl.uniform3fv(U('pM'),[-1.2,0.3,36]); gl.uniform1f(U('rMa'),0.26); gl.uniform3fv(U('zM'),nrm([0.7,-0.1,-0.7]));
+    gl.uniform4fv(U('ast'),new Float32Array(AST.flat())); gl.uniform1fv(U('astRot'),new Float32Array(ASTROT.map((r,i)=>r+t*(0.15+0.1*(i%5)))));
+    // Saturno: longe à frente; tamanho aparente controlado (pontinho → enche a tela no fim)
+    { const D=500, ang=Math.exp(lerp(Math.log(0.004),Math.log(0.62),Math.pow(ease(seg(t,15,31)),1.0)));
+      const c=cena2(t).cam.pos; gl.uniform3fv(U('pS'),[c[0]*0.0, 0.15*D*0.0+0.0, c[2]+D]); gl.uniform1f(U('wSat'),D*ang); }
+    gl.uniform1f(U('agua'),0.0);
+  } else {
+    gl.uniform1f(U('zoomC'),S.zoom); gl.uniform2fv(U('panC'),S.pan);
+    gl.uniform1f(U('agua'),0.35*ease(seg(t,1,4)));
+    gl.uniform1f(U('fade'),Math.min(1,(DUR-t)/1.5));
+  }
+  gl.drawArrays(gl.TRIANGLES,0,3); gl.finish();
+};
+</script></body></html>
