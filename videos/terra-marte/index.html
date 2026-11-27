@@ -365,6 +365,7 @@ const Qn=nrm(sub(mul(dm,-1),mul(L,dot(mul(dm,-1),L))));
 const Yp0=nrm(sub([0,1,0],mul(u0,dot([0,1,0],u0))));
 const nLua=nrm(add(mul(L,0.38),mul(Qn,0.925)));  // onde chegamos na Lua (sol baixo: crateras com relevo)
 
+const DIR0c=nrm(sub(mul(u0,7.0),M)), MXc=nrm(cross(mul(DIR0c,-1),[0,1,0])), MYc=cross(MXc,mul(DIR0c,-1));
 function camera(t){
   // 0–15,5 s: afasta da Terra; 10,5–14: vira para Marte; 12,5–16: zoom de telescópio;
   // depois Marte cresce sem pausa até encher a tela (câmera para a 4 raios, campo de telescópio)
@@ -377,10 +378,13 @@ function camera(t){
   const pos = t<15.5 ? mul(u0,dist) : add(M,mul(dir0,r));
   const rM=len(sub(pos,M));
   const kB=ease(seg(t,10.5,14));
-  const look=slerp(nrm(mul(pos,-1)),nrm(sub(M,pos)),kB);
+  // no fim, desce a mira para o Valles Marineris (o grande vale embaixo)
+  const kV=ease(seg(t,33,47.5));
+  const alvo=add(M,mul(add(mul(MXc,-0.14),mul(MYc,-0.56)),RM*kV));
+  const look=slerp(nrm(mul(pos,-1)),nrm(sub(alvo,pos)),kB);
   const ang=2*Math.asin(Math.min(1,RM/rM))*180/Math.PI;
-  const x=seg(t,15.8,47.5), kS=1-(1-x)*(1-x)*(1-.4*x);
-  const sAlvo=Math.exp(lerp(Math.log(0.15),Math.log(1.0),kS));  // termina com Marte enchendo a tela de cima a baixo
+  const x=seg(t,15.8,47.5), kS=Math.pow(x,1.45);
+  const sAlvo=Math.exp(lerp(Math.log(0.15),Math.log(2.6),kS));  // foto de 4000 px: chega bem perto
   const fTel=Math.min(50,Math.max(0.2,ang/sAlvo));
   const fov=Math.exp(lerp(Math.log(50),Math.log(fTel),ease(seg(t,12.5,16))));
   return {pos,look,fov,upRef:[0,1,0]};
