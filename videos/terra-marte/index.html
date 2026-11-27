@@ -111,7 +111,12 @@ vec3 terra(vec3 n, vec3 rd, float foot){
 vec3 terraFoto(vec3 n){
   float z=dot(n,tZ);
   if(z<0.) return vec3(0);
-  vec2 uv = .5 + .48*vec2(dot(n,tX), -dot(n,tY));
+  // giro lento da Terra (~1 grau por segundo), continente andando para a direita
+  float ga = (t-7.0)*0.0165, gc=cos(ga), gs=sin(ga);
+  float x0=dot(n,tX);
+  float xr = x0*gc - z*gs, zr = x0*gs + z*gc;
+  if(zr<0.) xr = sign(xr)*sqrt(max(0.,1.0-dot(n,tY)*dot(n,tY)));  // beirada que aparece: usa a borda
+  vec2 uv = .5 + .48*vec2(xr, -dot(n,tY));
   vec3 c = texture2D(texT, uv).rgb;
   c = pow(c, vec3(2.2));               // para luz linear
   return c*1.15;
