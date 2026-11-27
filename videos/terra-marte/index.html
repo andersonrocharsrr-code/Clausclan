@@ -1,0 +1,419 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Terra até Marte</title>
+<style>html,body{margin:0;background:#000}canvas{display:block}</style></head>
+<body><canvas id="c"></canvas>
+<script id="fs" type="x-shader/x-fragment">
+precision highp float;
+uniform vec2 res;
+uniform float t;
+uniform vec3 camE;   // câmera em relação ao centro da Terra (raio Terra = 1)
+uniform vec3 camM;   // câmera em relação ao centro da Lua
+uniform vec3 cR, cU, cF; // eixos da câmera
+uniform float tanf;  // tangente de meio campo de visão (vertical)
+uniform vec3 L;      // direção do Sol
+uniform float fade;
+uniform float rotE;
+uniform float agua;  // tremida de telescópio (turbulência do ar)
+uniform sampler2D texT, texL, texA, texP;
+uniform vec3 pP; uniform float pR, pA, pRot;   // Phobos: centro (rel. câmera), raio, opacidade, giro
+uniform vec3 aN, aX, aY;   // ponto da Lua onde está escrito e eixos do texto
+uniform float aEsc, aRev;  // meia-largura do texto (raio Lua = 1) e quanto já apareceu
+uniform vec3 tZ, tX, tY;   // foto da Terra: eixo da frente, direita, cima
+uniform vec3 lZ, lX, lY;   // foto da Lua
+const float RM = 0.53;   // raio de Marte (raio Terra = 1)
+
+float h31(vec3 p){ p=fract(p*0.3183099+.1); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+vec3 h33(vec3 p){ return vec3(h31(p),h31(p+19.19),h31(p+47.7)); }
+float n3(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f);
+  return mix(mix(mix(h31(i),h31(i+vec3(1,0,0)),f.x),mix(h31(i+vec3(0,1,0)),h31(i+vec3(1,1,0)),f.x),f.y),
+             mix(mix(h31(i+vec3(0,0,1)),h31(i+vec3(1,0,1)),f.x),mix(h31(i+vec3(0,1,1)),h31(i+vec3(1,1,1)),f.x),f.y),f.z); }
+// fbm que para quando o detalhe fica menor que o pixel
+float fbmG(vec3 p, float base, float foot, int maxo, float gan){
+  float a=.5,s=0.,fr=base, tot=0.;
+  for(int i=0;i<16;i++){
+    if(i>=maxo) break;
+    float w = clamp(1.5 - fr*foot*2.0, 0., 1.);  // some suavemente
+    if(w<=0.) break;
+    s+=a*w*(n3(p)-.5); tot+=a;
+    p=p*2.03+vec3(1.7,9.2,3.1); a*=gan; fr*=2.03;
+  }
+  return .5+s;
+}
+#define fbmL(p,b,f,m) fbmG(p,b,f,m,.5)
+float fbm(vec3 p,int oct){ return fbmL(p,1.,0.,oct); }
+
+float smin(float a,float b,float k){float h=clamp(.5+.5*(b-a)/k,0.,1.);return mix(b,a,h)-k*h*(1.-h);}
+float smax(float a,float b,float k){return -smin(-a,-b,k);}
+
+// ---------------- TERRA ----------------
+vec3 terra(vec3 n, vec3 rd, float foot){
+  float ang = rotE + t*0.004;
+  float c=cos(ang), s=sin(ang);
+  vec3 e = vec3(c*n.x+s*n.z, n.y, -s*n.x+c*n.z);
+  vec3 q = e + vec3(3.1,1.7,4.2);
+  // relevo dos continentes
+  float w = fbm(q*1.2, 3);
+  float h = fbmL(q*1.6 + w*.8, 1.6, foot, 15);
+  float mar = .515;
+  float lat = abs(e.y);
+  float terraM = smoothstep(mar, mar+.004+foot*3., h);
+  // cores da terra
+  float umid = fbm(q*3.0+5.0,4);
+  float alt = clamp((h-mar)*6.0,0.,1.);
+  vec3 verde = vec3(.10,.20,.07), floresta=vec3(.05,.13,.05), deserto=vec3(.55,.44,.28), seco=vec3(.38,.33,.22), rocha=vec3(.40,.37,.34);
+  float desertoM = smoothstep(.45,.65,1.0-umid)*smoothstep(.75,.25,abs(lat-.38)*2.2);
+  vec3 cl = mix(mix(floresta,verde,smoothstep(.3,.6,umid)), seco, smoothstep(.45,.62,1.0-umid));
+  cl = mix(cl, deserto, desertoM);
+  cl = mix(cl, rocha, smoothstep(.45,.9,alt));
+  float det = fbmL(q*60.0, 96.0, foot, 13);
+  cl *= .80+.40*det;
+  float gelo = smoothstep(.80,.88,lat+(w-.5)*.1) + smoothstep(.75,1.,alt)*.5;
+  cl = mix(cl, vec3(.85,.88,.92), clamp(gelo,0.,1.));
+  // oceano
+  float raso = smoothstep(mar-.05, mar, h);
+  vec3 oc = mix(vec3(.010,.035,.090), vec3(.03,.13,.20), raso*raso);
+  float gelomar = smoothstep(.86,.92,lat);
+  oc = mix(oc, vec3(.80,.85,.90), gelomar);
+  vec3 alb = mix(oc, cl, terraM);
+  // nuvens
+  vec3 qc = e*2.2 + vec3(t*0.006,0,0);
+  float wc = fbm(qc*1.5,4);
+  float wc2 = fbm(qc*5.0+wc*2.0,4);
+  float cn = fbmG(qc + vec3(wc*1.6+wc2*.5, wc*.6, wc2*.4)+vec3(0, e.y*2.0, 0), 2.2, foot, 16, .56);
+  float faixa = .55 + .25*cos(e.y*7.0);  // mais nuvens em algumas latitudes
+  float nuv = smoothstep(.53, .66, cn*.92 + faixa*.16);
+  nuv *= .75 + .5*fbmL(qc*14.0+wc2, 30.0, foot, 12);
+  nuv = clamp(nuv,0.,1.);
+  // luz
+  float ndl = dot(n,L);
+  float dif = max(ndl,0.);
+  float dia = smoothstep(-.08,.12,ndl);
+  vec3 col = alb*dif*1.6;
+  // brilho do sol no mar
+  vec3 hv = normalize(L - rd);
+  float spec = pow(max(dot(n,hv),0.), 60.0)*(.6+.8*fbmL(q*400.0,640.0,foot,6))*(1.0-terraM)*(1.0-nuv)*dif;
+  col += vec3(1.0,.92,.80)*spec*.9;
+  // nuvens por cima (com sombra fraca no chão)
+  col *= 1.0 - nuv*.25;
+  col = mix(col, vec3(1.0)*(dif*1.45+.01), nuv*.92);
+  // luzes das cidades no lado noturno
+  float cid = smoothstep(.62,.80, fbmL(q*45.0, 70.0, foot*.5, 8)) * terraM * (1.0-gelo) * (1.0-nuv*.8);
+  cid *= smoothstep(.1,.45, umid);
+  col += vec3(1.0,.62,.25)*cid*(1.0-dia)*.55;
+  // atmosfera (azul nas bordas e no lado iluminado)
+  float mu = max(dot(n,-rd),0.);
+  float bord = pow(1.0-mu, 2.5);
+  col = mix(col, vec3(.30,.55,1.0)*(dif*1.2+.02), bord*.75*smoothstep(-.2,.3,ndl));
+  col += vec3(.04,.09,.20)*dif*.6;
+  return col;
+}
+
+vec3 terraFoto(vec3 n){
+  float z=dot(n,tZ);
+  if(z<0.) return vec3(0);
+  vec2 uv = .5 + .48*vec2(dot(n,tX), -dot(n,tY));
+  vec3 c = texture2D(texT, uv).rgb;
+  c = pow(c, vec3(2.2));               // para luz linear
+  return c*1.15;
+}
+// ---------------- LUA ----------------
+float crateras(vec3 p, float esc, float seed, float dens){
+  p*=esc; vec3 i=floor(p), f=fract(p); float h=0.;
+  for(int z=-1;z<=1;z++)for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++){
+    vec3 g=vec3(x,y,z); vec3 r=h33(i+g+seed);
+    if(r.x>dens) continue;
+    vec3 c=g+.15+.7*h33(i+g+seed+3.3) - f; float d=length(c);
+    float rad=.10+.38*r.y*r.y*r.y;
+    float u=d/rad;
+    if(u>2.0) continue;
+    float jan = smoothstep(2.0,1.4,u);
+    float idade = r.z;
+    float prof = mix(.45,.12,idade);
+    float rimH = mix(.22,.05,idade);
+    float cav = smax(u*u - 1.0, -mix(.55,.85,idade), .25);
+    float fora = rimH*exp(-pow(max(u-1.0,0.)*mix(2.2,1.3,idade),2.0)*2.0);
+    h += smin(cav, fora, mix(.18,.45,idade))*prof*rad*jan;
+  }
+  return h/esc;
+}
+float fotoL(vec3 d){
+  vec2 uv = .5 + .48*vec2(dot(d,lX), -dot(d,lY));
+  return dot(texture2D(texL, uv).rgb, vec3(.333));
+}
+// "Amo Você" + coração riscados a lápis no chão da Lua
+vec2 risco(vec3 d){
+  if(aRev<=0.) return vec2(0);
+  vec3 v=d-aN; vec2 q=vec2(dot(v,aX),dot(v,aY))/aEsc;
+  vec2 uv=vec2(.5+q.x*.5, .5-q.y);
+  if(uv.x<0.||uv.x>1.||uv.y<0.||uv.y>1.) return vec2(0);
+  return texture2D(texA, uv, (1.0-aRev)*6.0).rg * smoothstep(0.,.55,aRev);
+}
+// altura: fundo do risco afundado, poeira empurrada formando bordinha
+float tinta(vec3 d){ vec2 r=risco(d); return .55*r.y - r.x; }
+float relevo(vec3 d, float px){
+  float h = 0.; float esc=140.0; float s=11.0;
+  for(int k=0;k<10;k++){
+    if(1.0/esc < px*2.0) break;
+    h += crateras(d, esc, s, k<2 ? .25 : .42);
+    h += (n3(d*esc*1.7+s)-.5)*.07/esc;
+    esc*=2.2; s+=13.0;
+  }
+  return h*.6;
+}
+vec3 lua(vec3 d, vec3 rd, float pxm){
+  float e = max(pxm*.75, 2e-6);
+  vec3 a = normalize(cross(d, vec3(0,1,0.001)));
+  vec3 b = cross(d,a);
+  vec3 d1=normalize(d+a*e), d2=normalize(d+b*e);
+  // inclinação do relevo desenhado (passo = pixel) e da foto (passo >= um ponto da foto)
+  float r0=relevo(d,pxm);
+  float sa=(relevo(d1,pxm)-r0)/e, sb=(relevo(d2,pxm)-r0)/e;
+  float ep=max(e, 1.5/983.0);
+  vec3 p1=normalize(d+a*ep), p2=normalize(d+b*ep);
+  float f0=fotoL(d);
+  float KF=.0035*smoothstep(.04,.4,e/ep);
+  sa += KF*(fotoL(p1)-f0)/ep; sb += KF*(fotoL(p2)-f0)/ep;
+  // sulco do lápis
+  float tk0=0.;
+  if(aRev>0.){
+    float et=max(e, aEsc*2.0/1024.0);
+    vec3 q1=normalize(d+a*et), q2=normalize(d+b*et);
+    tk0=tinta(d);
+    const float PROF=.0000110;
+    sa += PROF*(tinta(q1)-tk0)/et; sb += PROF*(tinta(q2)-tk0)/et;
+  }
+  vec3 n = normalize(d - a*sa - b*sb);
+  if(dot(n,d)<0.) n=-n;
+  float alb = pow(fotoL(d), 2.2)*1.6 + .015;
+  // detalhe fino quando a foto já não tem resolução
+  float perto = smoothstep(.002,.0004,pxm);
+  alb = mix(alb, .17, perto*.55);  // foto borrada de perto: suaviza as manchas
+  alb *= mix(1.0, .80+.40*fbmL(d*300.0,300.0,pxm,8), perto);
+  alb *= 1.0 - .30*risco(d).x;   // poeira mexida fica um pouco mais escura
+  vec3 albc = alb*vec3(.80,.77,.72);
+  float ci = max(dot(n,L),0.), ce = max(dot(n,-rd),0.05);
+  float dif = ci/(ci+ce)*2.0*mix(.35,1.0,ci);
+  float term = smoothstep(-.03,.06,dot(d,L));
+  return albc*dif*1.9*mix(.15,1.,term);
+}
+
+vec3 estrelas(vec3 rd, float pxa, float N, float prob, float sem){
+  vec3 sd = rd*N; vec3 si = floor(sd); float sr = h31(si+sem);
+  if(sr < 1.0-prob) return vec3(0);
+  vec3 sp = si + .5 + .3*(h33(si+sem)-.5);
+  float dpx = length(sd-sp)/N/pxa;                 // distância em pixels
+  float m = (sr-(1.0-prob))/prob;                  // 0..1
+  float bri = .35 + 2.4*pow(m, 4.0);               // poucas fortes, muitas fracas
+  float cor = h31(si+sem+3.7);
+  vec3 tint = mix(vec3(1.0,.85,.70), vec3(.75,.85,1.0), cor);
+  return tint*bri*exp(-dpx*dpx/.9);
+}
+float esfera(vec3 ro, vec3 rd, float r){
+  float b=dot(ro,rd), c=dot(ro,ro)-r*r, h=b*b-c;
+  if(h<0.) return -1.;
+  float s=sqrt(h); float t0=-b-s;
+  if(t0>0.) return t0;
+  return -1.;
+}
+
+void main(){
+  vec2 uv = (gl_FragCoord.xy - .5*res)/res.y*2.0;
+  if(agua>0.){
+    // ondas lentas e grandes + ondinhas rápidas, como ar quente na frente da lente
+    vec2 o1 = vec2(n3(vec3(uv*2.2, t*.9)), n3(vec3(uv*2.2+7.3, t*.9+3.1))) - .5;
+    vec2 o2 = vec2(n3(vec3(uv*8.0+2.0, t*2.6)), n3(vec3(uv*8.0+9.1, t*2.6+5.0))) - .5;
+    uv += agua*(o1*.014 + o2*.005);
+  }
+  vec3 rd = normalize(cF + uv.x*tanf*cR + uv.y*tanf*cU);
+  float pxa = 2.0*tanf/res.y; // ângulo de um pixel
+  vec3 col = vec3(0);
+  // estrelas: sempre um pontinho de 1–2 pixels, mesmo com o zoom do telescópio
+  // camadas: quanto mais zoom, mais estrelas fracas aparecem (como num telescópio)
+  float Ns = 140.0;
+  for(int k=0;k<7;k++){
+    float cel = 1.0/(Ns*pxa);                       // tamanho da célula em pixels
+    float w = smoothstep(2.5, 6.0, cel) * (k==0 ? 1.6 : 1.0);
+    if(w>0.) col += w*estrelas(rd, pxa, Ns, .016, float(k)*17.0);
+    Ns *= 3.0;
+  }
+  float tE = esfera(camE, rd, 1.0);
+  float tM = esfera(camM, rd, RM);
+  // brilho da atmosfera fora do disco
+  {
+    float b = length(cross(camE, rd)); float along = -dot(camE, rd);
+    if(along>0. && tE<0.){
+      vec3 pc = camE + rd*along; vec3 nn = normalize(pc);
+      float g = exp(-(b-1.0)/0.018);
+      col += vec3(.25,.50,1.0)*g*.30;
+    }
+  }
+  if(tE>0. && (tM<0. || tE<tM)){
+    vec3 n = normalize(camE + rd*tE);
+    col = terraFoto(n);
+  } else if(tM>0.){
+    vec3 d = normalize(camM + rd*tM);
+    vec2 uvm = .5 + .48*.985*vec2(dot(d,lX), -dot(d,lY));
+    vec3 cm = pow(texture2D(texL, uvm).rgb, vec3(2.2))*1.1;
+    float bM = length(cross(camM, rd));
+    // perto da borda, o preto da foto vira transparente (mostra o espaço)
+    float rr = length(vec2(dot(d,lX), dot(d,lY)));
+    float aM = mix(1.0, smoothstep(.002,.02, max(cm.r,max(cm.g,cm.b))), smoothstep(.80,.93,rr));
+    col = mix(col, cm, aM*clamp((RM-bM)/(tM*pxa), 0., 1.));
+  }
+  // Phobos (foto recortada), na frente de Marte
+  if(pA>0.){
+    float tp = dot(pP,cF)/dot(rd,cF);
+    if(tp>0. && (tM<0. || tp<tM)){
+      vec3 h = rd*tp - pP; vec2 q = vec2(dot(h,cR), dot(h,cU))/pR;
+      float c=cos(pRot), s=sin(pRot); q = vec2(c*q.x-s*q.y, s*q.x+c*q.y);
+      vec2 uvp = .5 + q*vec2(.5,-.5);
+      if(uvp.x>0.&&uvp.x<1.&&uvp.y>0.&&uvp.y<1.){
+        vec4 ph = texture2D(texP, uvp);
+        col = mix(col, pow(ph.rgb, vec3(2.2))*1.05, ph.a*pA);
+      }
+    }
+  }
+  // tom
+  col = col/(1.0+col*.22);
+  col = pow(max(col,0.), vec3(1.0/2.2));
+  col += (h31(vec3(gl_FragCoord.xy, t*60.0))-.5)*.014;
+  gl_FragColor = vec4(col*fade,1.0);
+}
+</script>
+<script>
+const W = +(new URLSearchParams(location.search).get('w')||540), Hh = Math.round(W*16/9);
+const cv=document.getElementById('c'); cv.width=W; cv.height=Hh;
+const gl=cv.getContext('webgl',{preserveDrawingBuffer:true,antialias:false});
+function sh(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw gl.getShaderInfoLog(s);return s;}
+const pr=gl.createProgram();
+gl.attachShader(pr,sh(gl.VERTEX_SHADER,'attribute vec2 a;void main(){gl_Position=vec4(a,0,1);}'));
+gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,document.getElementById('fs').text));
+gl.linkProgram(pr);gl.useProgram(pr);
+const bf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,bf);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
+const U=n=>gl.getUniformLocation(pr,n);
+function textura(unid,src,rgba){return new Promise(ok=>{const im=new Image();im.onload=()=>{const F=rgba?gl.RGBA:gl.RGB;
+  const tx=gl.createTexture();gl.activeTexture(gl.TEXTURE0+unid);gl.bindTexture(gl.TEXTURE_2D,tx);
+  gl.texImage2D(gl.TEXTURE_2D,0,F,F,gl.UNSIGNED_BYTE,im);gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);ok();};im.src=src;});}
+async function texturaTexto(){
+  const W=1024,H=512, A=document.createElement('canvas'); A.width=W; A.height=H; const g=A.getContext('2d');
+  g.fillStyle='#000'; g.fillRect(0,0,W,H);
+  let sd=11; const rnd=()=>{sd=(sd*16807)%2147483647;return sd/2147483647;};
+  const h=98, larg=h*.24;                 // altura da letra e largura do dedo
+  g.strokeStyle='#fff'; g.lineWidth=larg; g.lineCap='round'; g.lineJoin='round';
+  const tre=()=> (rnd()-.5)*h*.035;        // tremidinha da mão
+  function linha(ox,oy,pts){ g.beginPath(); pts.forEach(([x,y],i)=>{const X=ox+x*h+tre(),Y=oy+y*h+tre(); i?g.lineTo(X,Y):g.moveTo(X,Y);}); g.stroke(); }
+  function oval(ox,oy,a0,a1){ g.beginPath(); const n=40; for(let i=0;i<=n;i++){const a=a0+(a1-a0)*i/n; const r=1+(rnd()-.5)*.03;
+    const X=ox+(.36+.36*Math.cos(a)*r)*h, Y=oy+(.5+.5*Math.sin(a)*r)*h; i?g.lineTo(X,Y):g.moveTo(X,Y);} g.stroke(); }
+  const L={
+    A:[.72,(x,y)=>{linha(x,y,[[0,1],[.36,0],[.72,1]]); linha(x,y,[[.16,.62],[.56,.6]]);}],
+    M:[.84,(x,y)=>linha(x,y,[[0,1],[.04,0],[.42,.62],[.80,0],[.84,1]])],
+    O:[.72,(x,y)=>oval(x,y,0,Math.PI*2+.15)],
+    V:[.68,(x,y)=>linha(x,y,[[0,0],[.34,1],[.68,0]])],
+    C:[.70,(x,y)=>oval(x,y,-.75,-Math.PI*2+.75)],
+    Ê:[.56,(x,y)=>{linha(x,y,[[.56,0],[0,0],[0,1],[.56,1]]); linha(x,y,[[0,.5],[.44,.5]]); linha(x,y,[[.08,-.2],[.28,-.4],[.48,-.2]]);}],
+  };
+  const txt='AMO VOCÊ', esp=.26*h, pal=.62*h;
+  let tot=0; for(const c of txt) tot+= c===' '? pal : L[c][0]*h+esp; tot-=esp;
+  let x=(W-tot)/2; const y=200-h/2;
+  for(const c of txt){ if(c===' '){x+=pal;continue;} const yy=y+(rnd()-.5)*h*.06; L[c][1](x,yy); x+=L[c][0]*h+esp; }
+  // coração embaixo, do mesmo jeito
+  const cx=W/2, cy=395, s=.95;
+  g.beginPath(); g.moveTo(cx,cy+52*s);
+  g.bezierCurveTo(cx-34*s,cy+24*s,cx-70*s,cy,cx-66*s,cy-32*s); g.bezierCurveTo(cx-62*s,cy-66*s,cx-14*s,cy-70*s,cx,cy-32*s);
+  g.bezierCurveTo(cx+14*s,cy-70*s,cx+62*s,cy-66*s,cx+66*s,cy-32*s); g.bezierCurveTo(cx+70*s,cy,cx+34*s,cy+24*s,cx+2,cy+54*s);
+  g.stroke();
+  // R = fundo do risco (pouco desfocado), G = área da poeira empurrada (bem desfocado)
+  const c=document.createElement('canvas'); c.width=W; c.height=H; const o=c.getContext('2d');
+  const B=(px)=>{const t=document.createElement('canvas'); t.width=W; t.height=H; const k=t.getContext('2d'); k.filter='blur('+px+'px)'; k.drawImage(A,0,0); return k.getImageData(0,0,W,H).data;};
+  const r=B(4), gg=B(15), im=o.createImageData(W,H);
+  for(let i=0;i<im.data.length;i+=4){ im.data[i]=r[i]; im.data[i+1]=Math.min(255,gg[i]*1.6); im.data[i+2]=0; im.data[i+3]=255; }
+  o.putImageData(im,0,0);
+  const tx=gl.createTexture(); gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,tx);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,c); gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+}
+window.carregar=(t,l,p)=>Promise.all([textura(0,t),textura(1,l),textura(3,p,true)]);
+
+// ---- vetores ----
+const add=(a,b)=>a.map((x,i)=>x+b[i]), sub=(a,b)=>a.map((x,i)=>x-b[i]), mul=(a,s)=>a.map(x=>x*s);
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2], len=a=>Math.sqrt(dot(a,a)), nrm=a=>mul(a,1/len(a));
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+function slerp(a,b,k){const d=Math.min(1,Math.max(-1,dot(a,b)));const w=Math.acos(d);if(w<1e-6)return a;const s=Math.sin(w);return add(mul(a,Math.sin((1-k)*w)/s),mul(b,Math.sin(k*w)/s));}
+const cl=x=>Math.min(1,Math.max(0,x)), ease=x=>{x=cl(x);return x*x*x*(x*(6*x-15)+10);}, lerp=(a,b,k)=>a+(b-a)*k;
+const seg=(t,a,b)=>cl((t-a)/(b-a));
+
+const DUR=50; window.DUR=DUR;
+const RM=0.53, DIST=60;
+const dm=nrm([-0.25,0.12,-1]);            // direção de Marte
+const M=mul(dm,DIST);
+const perpL=nrm(cross(dm,[0,1,0]));
+const L=nrm(add(mul(dm,-0.45),mul(perpL,0.89)));   // Sol: Lua ~70% iluminada vista da Terra
+const u0=nrm(add(mul(dm,0.55),mul(L,0.83))); // ponto de partida na Terra (lado de dia)
+const Qn=nrm(sub(mul(dm,-1),mul(L,dot(mul(dm,-1),L))));
+const Yp0=nrm(sub([0,1,0],mul(u0,dot([0,1,0],u0))));
+const nLua=nrm(add(mul(L,0.38),mul(Qn,0.925)));  // onde chegamos na Lua (sol baixo: crateras com relevo)
+
+function camera(t){
+  // 0–15,5 s: afasta da Terra; 10,5–14: vira para Marte; 12,5–16: zoom de telescópio;
+  // depois Marte cresce sem pausa até encher a tela (câmera para a 4 raios, campo de telescópio)
+  const DA=5.2;
+  const dist=Math.exp(lerp(Math.log(2.5),Math.log(DA),ease(seg(t,0,15.5))));
+  const pA_end=mul(u0,DA);
+  const kC=ease(seg(t,15.5,47.5));
+  const d0=len(sub(pA_end,M)), dir0=nrm(sub(pA_end,M));
+  const r=Math.exp(lerp(Math.log(d0),Math.log(RM*4.0),kC));
+  const pos = t<15.5 ? mul(u0,dist) : add(M,mul(dir0,r));
+  const rM=len(sub(pos,M));
+  const kB=ease(seg(t,10.5,14));
+  const look=slerp(nrm(mul(pos,-1)),nrm(sub(M,pos)),kB);
+  const ang=2*Math.asin(Math.min(1,RM/rM))*180/Math.PI;
+  const x=seg(t,15.8,47.5), kS=1-(1-x)*(1-x)*(1-.4*x);
+  const sAlvo=Math.exp(lerp(Math.log(0.20),Math.log(1.02),kS));
+  const fTel=Math.min(50,Math.max(0.2,ang/sAlvo));
+  const fov=Math.exp(lerp(Math.log(50),Math.log(fTel),ease(seg(t,12.5,16))));
+  return {pos,look,fov,upRef:[0,1,0]};
+}
+// eixos da foto de Marte: virada para quem chega da Terra
+const DIR0=nrm(sub(mul(u0,5.2),M));
+const MX=nrm(cross(mul(DIR0,-1),[0,1,0])), MY=cross(MX,mul(DIR0,-1));
+let AX=[1,0,0],AY=[0,1,0];
+{ const c=camera(59.9); const F=nrm(c.look); AX=nrm(cross(F,[0,1,0])); AY=cross(AX,F); }
+window.render=function(t){
+  const c=camera(t);
+  // tremida leve
+  const tr=0.0012;
+  let F=nrm(c.look);
+  let up=c.upRef; if(Math.abs(dot(F,up))>0.995) up=[1,0,0];
+  let R=nrm(cross(F,up)), Uv=cross(R,F);
+  F=nrm(add(F,add(mul(R,tr*(Math.sin(t*1.3)+.5*Math.sin(t*3.1))),mul(Uv,tr*(Math.cos(t*1.1)+.5*Math.sin(t*2.7))))));
+  R=nrm(cross(F,up)); Uv=cross(R,F);
+  gl.viewport(0,0,W,Hh);
+  gl.uniform2f(U('res'),W,Hh); gl.uniform1f(U('t'),t);
+  gl.uniform3fv(U('camE'),c.pos); gl.uniform3fv(U('camM'),sub(c.pos,M));
+  gl.uniform3fv(U('cR'),R); gl.uniform3fv(U('cU'),Uv); gl.uniform3fv(U('cF'),F);
+  gl.uniform1f(U('tanf'),Math.tan(c.fov*Math.PI/360));
+  gl.uniform3fv(U('L'),L);
+  gl.uniform3fv(U('tZ'),u0); gl.uniform3fv(U('tY'),Yp0); gl.uniform3fv(U('tX'),cross(mul(u0,-1),Yp0));
+  const lZ=DIR0, lXv=MX, lYv=MY;
+  gl.uniform3fv(U('lZ'),lZ); gl.uniform3fv(U('lX'),lXv); gl.uniform3fv(U('lY'),lYv);
+  gl.uniform1f(U('agua'),ease(seg(t,27,35)));
+  gl.uniform3fv(U('aN'),nLua); gl.uniform3fv(U('aX'),AX); gl.uniform3fv(U('aY'),AY);
+  gl.uniform1f(U('aEsc'),0.0016); gl.uniform1f(U('aRev'),0);
+  gl.uniform1i(U('texA'),2); gl.uniform1i(U('texP'),3);
+  // Phobos: entre a câmera e Marte, passa devagar de um lado para o outro e some no fim
+  const P=add(M,add(mul(DIR0,2.8*RM),add(mul(MX,lerp(-0.55,0.22,seg(t,18,46))*RM),mul(MY,0.20*RM))));
+  gl.uniform3fv(U('pP'),sub(P,c.pos)); gl.uniform1f(U('pR'),0.03*RM);
+  gl.uniform1f(U('pA'),ease(seg(t,21,26))*(1-ease(seg(t,41,45.5)))); gl.uniform1f(U('pRot'),0.25+t*0.012);
+  gl.uniform1i(U('texT'),0); gl.uniform1i(U('texL'),1);
+  gl.uniform1f(U('rotE'),window.ROTE??0);
+  gl.uniform1f(U('fade'),Math.min(1,t/1.0,(DUR-t)/1.0));
+  gl.drawArrays(gl.TRIANGLES,0,3); gl.finish();
+};
+</script></body></html>
