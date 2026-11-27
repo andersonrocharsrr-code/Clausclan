@@ -263,7 +263,7 @@ void main(){
     // perto da borda, o preto da foto vira transparente (mostra o espaço)
     float rr = length(vec2(dot(d,lX), dot(d,lY)));
     float aM = mix(1.0, smoothstep(.002,.02, max(cm.r,max(cm.g,cm.b))), smoothstep(.80,.93,rr));
-    col = mix(col, cm, aM*clamp((RM-bM)/(tM*pxa), 0., 1.));
+    col = mix(col, cm, clamp((RM-bM)/(tM*pxa), 0., 1.));
   }
   // Phobos (foto recortada), na frente de Marte
   if(pA>0.){
@@ -368,8 +368,8 @@ const nLua=nrm(add(mul(L,0.38),mul(Qn,0.925)));  // onde chegamos na Lua (sol ba
 function camera(t){
   // 0–15,5 s: afasta da Terra; 10,5–14: vira para Marte; 12,5–16: zoom de telescópio;
   // depois Marte cresce sem pausa até encher a tela (câmera para a 4 raios, campo de telescópio)
-  const DA=5.2;
-  const dist=Math.exp(lerp(Math.log(2.5),Math.log(DA),ease(seg(t,0,15.5))));
+  const DA=7.0;
+  const dist=Math.exp(lerp(Math.log(4.0),Math.log(DA),ease(seg(t,0,15.5))));
   const pA_end=mul(u0,DA);
   const kC=ease(seg(t,15.5,47.5));
   const d0=len(sub(pA_end,M)), dir0=nrm(sub(pA_end,M));
@@ -386,7 +386,7 @@ function camera(t){
   return {pos,look,fov,upRef:[0,1,0]};
 }
 // eixos da foto de Marte: virada para quem chega da Terra
-const DIR0=nrm(sub(mul(u0,5.2),M));
+const DIR0=nrm(sub(mul(u0,7.0),M));
 const MX=nrm(cross(mul(DIR0,-1),[0,1,0])), MY=cross(MX,mul(DIR0,-1));
 let AX=[1,0,0],AY=[0,1,0];
 { const c=camera(59.9); const F=nrm(c.look); AX=nrm(cross(F,[0,1,0])); AY=cross(AX,F); }
@@ -414,8 +414,8 @@ window.render=function(t){
   gl.uniform1i(U('texA'),2); gl.uniform1i(U('texP'),3);
   // Phobos: entre a câmera e Marte, passa devagar de um lado para o outro e some no fim
   const P=add(M,add(mul(DIR0,2.8*RM),add(mul(MX,lerp(-0.55,0.22,seg(t,18,46))*RM),mul(MY,0.20*RM))));
-  gl.uniform3fv(U('pP'),sub(P,c.pos)); gl.uniform1f(U('pR'),0.03*RM);
-  gl.uniform1f(U('pA'),ease(seg(t,21,26))*(1-ease(seg(t,41,45.5)))); gl.uniform1f(U('pRot'),0.25+t*0.012);
+  gl.uniform3fv(U('pP'),sub(P,c.pos)); gl.uniform1f(U('pR'),0.014*RM);
+  gl.uniform1f(U('pA'),ease(seg(t,21,26))*(1-ease(seg(t,35,40.5)))); gl.uniform1f(U('pRot'),0.25+t*0.012);
   gl.uniform1i(U('texT'),0); gl.uniform1i(U('texL'),1);
   gl.uniform1f(U('rotE'),window.ROTE??0);
   gl.uniform1f(U('fade'),Math.min(1,t/1.0,(DUR-t)/1.0));
