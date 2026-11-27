@@ -504,3 +504,31 @@ Sem o segredo (ou fora do `main`) sai um APK de teste em "Artifacts" na execuç�
 - **Instagram** (mesma caixa do TikTok; o app reconhece o link): Reels e vídeos de posts de **perfis públicos**,
   em HD e MP3, lidos da página pública de incorporar do post (`baixar/instagram.js`). Sem login: perfil privado
   e Stories não funcionam. Baixados separados nas abas **TikTok** e **Instagram**.
+
+# Editor de Vídeo — colagem, cortes, música, extrair áudio e 4K (`editor/` e `editor-android/`)
+
+- **Editor**: junta vídeos e fotos numa linha do tempo. Em cada clipe: ✂ cortar e dividir, ⏩ velocidade
+  (0,25× a 4×), 🔊 volume, 🎨 filtros (Vivo, P&B, Sépia, Antigo…) e brilho/contraste/cor, T texto
+  (posição, cor, tamanho, contorno ou fundo), ↻ girar/espelhar, enquadrar (inteiro com fundo desfocado ou
+  preencher), ⋈ transição para o próximo (dissolver, escurecer, deslizar, zoom), duplicar, mover, apagar.
+  ↶ desfaz. O projeto fica guardado no aparelho (fechar o app não perde o trabalho).
+- **▦ Colagem**: 9 modelos (lado a lado, em cima/embaixo, 3, 4, 6 quadros, janelinha). Vídeos e fotos juntos,
+  com borda, cantos arredondados, zoom e de qual quadro sai o som. Vídeos curtos se repetem.
+- **♪ Música** de fundo: volume, ponto de início, repetir e abaixar no final.
+- **Salvar vídeo**: 720p, 1080p, 2K ou **4K** (vertical 2160×3840), 30 ou 60 quadros/s, MP4 H.264 → galeria em
+  *Filmes › Editor de Vídeo*. Se o celular só grava 4K "deitado", grava deitado com a marca de girar
+  (continua vertical na galeria). **📷 Foto** salva o quadro atual em JPG (ex.: colagem de fotos).
+- **Legendas automáticas**: o app ouve a fala dos vídeos (Whisper, no próprio celular) e escreve a legenda
+  palavra por palavra, com a palavra falada em destaque. Dá para corrigir cada frase, mudar posição, cor,
+  tamanho, maiúsculas e fundo. Na primeira vez baixa o reconhecedor (~76 MB, do huggingface.co); depois
+  funciona sem internet. A música de fundo não entra no reconhecimento.
+- **Tela inicial**: vários projetos guardados (capa, duração, data), "Novo projeto" e atalhos (Extrair áudio, Legendas, Converter 4K).
+  No editor, as ferramentas ficam em abas (Editar, Áudio, Texto, Efeitos, Formato) e a linha do tempo tem faixas de vídeo, texto/legenda e música.
+- **Ímã**: ao mover a música (segurar a faixa verde escolhida) ou puxar as alças, as pontas grudam no começo/fim dos vídeos, da música e na linha branca — o celular vibra e dá uma travadinha.
+- **🎵 Áudio e conversão**: extrair o áudio (MP3 128/192/320 ou M4A original, com trecho), tirar o som do vídeo
+  (sem perder qualidade) e mudar a resolução (480p até 4K).
+- Como funciona: tudo é feito no celular, sem internet. `editor/motor.js` usa o WebCodecs do Android
+  (aceleração de hardware) pela biblioteca *mediabunny* (`editor/vendor/`) para ler os quadros, desenhar e
+  gravar o MP4. A parte nativa (`GaleriaPlugin.java`) recebe o arquivo em pedaços e põe na galeria.
+- APK pelo `.github/workflows/editor-apk.yml`:
+  `https://github.com/andersonrocharsrr-code/Clausclan/releases/download/editor/editor.apk`.
