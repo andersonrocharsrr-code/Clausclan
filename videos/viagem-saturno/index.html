@@ -16,7 +16,7 @@ uniform float wT, wS;        // distância percorrida na dobra e velocidade (0..
 uniform vec3 gA, nA, aA1, aA2; uniform float sA, oA;   // Andrômeda: centro, normal, eixos, tamanho, brilho
 uniform vec3 gV, nV, aV1, aV2; uniform float sV, oV;   // Via Láctea
 // cena 2
-uniform sampler2D texT, texM, texP, texS, texC;
+uniform sampler2D texT, texM, texP, texS, texC, texA;
 uniform vec3 sol; uniform float solR;
 uniform vec3 pT; uniform float rT; uniform vec3 zT;     // Terra: centro, raio, lado da foto
 uniform vec3 pM; uniform float rMa; uniform vec3 zM;    // Marte
@@ -157,7 +157,15 @@ void main(){
   if(cena==1){
     col += ceu(rd,pxa)*(1.0-wS*.8);
     col += dobra(uv, wT, wS);
-    if(oA>0.) col += planoGal(cP,rd,gA,nA,aA1,aA2,sA,3.0,0.0,pxa)*oA;
+    if(oA>0.){   // Andrômeda (foto), de frente para a câmera, um pouco inclinada
+      float tp=dot(gA-cP,cF)/dot(rd,cF);
+      if(tp>0.){
+        vec3 h=rd*tp+cP-gA; vec2 q=vec2(dot(h,cR),dot(h,cU))/sA;
+        float c=cos(.35), s=sin(.35); q=vec2(c*q.x-s*q.y, s*q.x+c*q.y);
+        vec2 uvA=vec2(.5+q.x*.5, .5-q.y*.5*2.6);
+        if(uvA.x>0.&&uvA.x<1.&&uvA.y>0.&&uvA.y<1.) col += pow(texture2D(texA,uvA).rgb,vec3(2.2))*1.6*oA;
+      }
+    }
     if(oV>0.) col += planoGal(cP,rd,gV,nV,aV1,aV2,sV,11.0,1.0,pxa)*oV;
   } else if(cena==2){
     col += ceu(rd,pxa);
@@ -228,8 +236,8 @@ function textura(unid,src,rgba){return new Promise(ok=>{const im=new Image();im.
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);ok();};im.src=src;});}
 // texturas: 0 Terra, 1 Marte, 2 Phobos (asteroides), 3 Saturno, 4 Saturno de perto
-window.carregar=(m)=>Promise.all([textura(0,m.terra),textura(1,m.marte),textura(2,m.phobos,true),textura(3,m.saturno,true),textura(4,m.perto)]);
-window.TEXTURAS={terra:'terra-tex.jpg',marte:'marte-tex.jpg',phobos:'phobos-tex.png',saturno:'saturno-tex.png',perto:'saturno-perto-tex.jpg'};
+window.carregar=(m)=>Promise.all([textura(0,m.terra),textura(1,m.marte),textura(2,m.phobos,true),textura(3,m.saturno,true),textura(4,m.perto),textura(5,m.andromeda)]);
+window.TEXTURAS={terra:'terra-tex.jpg',marte:'marte-tex.jpg',phobos:'phobos-tex.png',saturno:'saturno-tex.png',perto:'saturno-perto-tex.jpg',andromeda:'andromeda-tex.jpg'};
 
 const add=(a,b)=>a.map((x,i)=>x+b[i]), sub=(a,b)=>a.map((x,i)=>x-b[i]), mul=(a,s)=>a.map(x=>x*s);
 const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2], len=a=>Math.sqrt(dot(a,a)), nrm=a=>mul(a,1/len(a));
@@ -270,7 +278,7 @@ function cena1(t){
   const GA=add(pos,add(mul(Fc,zA),add(mul(Rc,-4.6),mul(Uc,0.9))));
   const NA=nrm(add(mul(Fc,Math.cos(1.25)),mul(Uc,-Math.sin(1.25))));
   const A1=nrm(add(mul(Rc,Math.cos(.45)),mul(Uc,Math.sin(.45)))); const A1p=nrm(sub(A1,mul(NA,dot(A1,NA)))); const A2=cross(NA,A1p);
-  return {cam:{pos, F:Fc}, T, vel, A:{G:GA,N:NA,E1:A1p,E2:A2,S:2.4,o:oA*1.5},
+  return {cam:{pos, F:Fc}, T, vel, A:{G:GA,N:NA,E1:A1p,E2:A2,S:3.4,o:oA},
           V:{G:GV,N:nV,E1:v1,E2:v2,S:6.0,o:ease(seg(t,9,13))}, fov:50};
 }
 
@@ -298,7 +306,7 @@ window.render=function(t){
   gl.uniform3fv(U('cP'),S.cam.pos); gl.uniform3fv(U('cR'),R); gl.uniform3fv(U('cU'),Uv); gl.uniform3fv(U('cF'),F);
   gl.uniform1f(U('tanf'),Math.tan(S.fov*Math.PI/360));
   gl.uniform1f(U('fade'),1.0); gl.uniform1f(U('agua'),0.0);
-  for(let i=0;i<5;i++) gl.uniform1i(U(['texT','texM','texP','texS','texC'][i]),i);
+  for(let i=0;i<6;i++) gl.uniform1i(U(['texT','texM','texP','texS','texC','texA'][i]),i);
   if(CENA==1){
     gl.uniform1f(U('wT'),S.T); gl.uniform1f(U('wS'),S.vel);
     gl.uniform3fv(U('gA'),S.A.G); gl.uniform3fv(U('nA'),S.A.N); gl.uniform3fv(U('aA1'),S.A.E1); gl.uniform3fv(U('aA2'),S.A.E2); gl.uniform1f(U('sA'),S.A.S); gl.uniform1f(U('oA'),S.A.o);
