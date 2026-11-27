@@ -1,0 +1,104 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Voyager e a Via Láctea</title>
+<style>html,body{margin:0;background:#000}canvas{display:block}</style></head>
+<body><canvas id="c"></canvas>
+<script>
+// Afastamento: Voyager → braço da galáxia → Via Láctea inteira, com marcação do Sistema Solar.
+const Q=new URLSearchParams(location.search);
+const W=+(Q.get('w')||540), H=Math.round(W*16/9);
+const cv=document.getElementById('c'); cv.width=W; cv.height=H;
+const g=cv.getContext('2d'); g.imageSmoothingEnabled=true; g.imageSmoothingQuality='high';
+const DUR=22; window.DUR=DUR;
+const cl=x=>Math.min(1,Math.max(0,x)), ease=x=>{x=cl(x);return x*x*x*(x*(6*x-15)+10);}, lerp=(a,b,k)=>a+(b-a)*k;
+const seg=(t,a,b)=>cl((t-a)/(b-a));
+const IM={};
+window.carregar=m=>Promise.all(Object.entries(m).map(([k,src])=>new Promise(ok=>{const i=new Image();i.onload=()=>{IM[k]=i;ok();};i.src=src;})));
+window.IMAGENS={voy:'voyager.png',perto:'galaxia-perto-b.png',longe:'galaxia-longe-b.png'};
+
+// estrelas de fundo (fixas), para preencher fora das fotos
+const EST=[]; { let sd=3; const r=()=>{sd=(sd*16807)%2147483647;return sd/2147483647;};
+  for(let i=0;i<1400;i++) EST.push([r(),r(),Math.pow(r(),3)*1.6+0.3,r()]); }
+
+// mundo = pixels da foto "longe"; a foto "perto" é a mesma galáxia vista mais de perto
+const CORE1=[810,425], CORE3=[880,405], K=2.2;
+const P3=[1500,650];                                   // Sistema Solar na foto de perto (braço externo)
+const P1=[CORE1[0]+(P3[0]-CORE3[0])/K, CORE1[1]+(P3[1]-CORE3[1])/K];
+const GIRO=-1.15;                                       // gira a galáxia para caber em pé
+
+function estrelasFundo(o,esc){
+  g.save(); g.globalAlpha=o;
+  for(const [x,y,s,c] of EST){
+    const X=W/2+(x-.5)*W*esc, Y=H/2+(y-.5)*H*esc;
+    if(X<-2||X>W+2||Y<-2||Y>H+2) continue;
+    g.fillStyle=c<.33?'#ffd9b0':c<.66?'#ffffff':'#bcd2ff';
+    g.beginPath(); g.arc(X,Y,s*W/1080,0,6.283); g.fill();
+  }
+  g.restore();
+}
+// desenha a galáxia com a câmera: centro (mundo), altura vista (mundo)
+function mundo(cx,cy,h){ const s=H/h; g.translate(W/2,H/2); g.rotate(GIRO); g.scale(s,s); g.translate(-cx,-cy); }
+function marca(cx,cy,h,t,o){
+  if(o<=0) return;
+  // posição do Sistema Solar na tela
+  const s=H/h, dx=(P1[0]-cx)*s, dy=(P1[1]-cy)*s, c=Math.cos(GIRO), sn=Math.sin(GIRO);
+  const X=W/2+c*dx-sn*dy, Y=H/2+sn*dx+c*dy;
+  const u=W/1080;
+  g.save(); g.globalAlpha=o;
+  const pul=1+0.25*Math.sin(t*4);
+  g.strokeStyle='#ffd36b'; g.lineWidth=3*u; g.shadowColor='#ffb300'; g.shadowBlur=18*u;
+  g.beginPath(); g.arc(X,Y,22*u*pul,0,6.283); g.stroke();
+  g.fillStyle='#fff3c4'; g.beginPath(); g.arc(X,Y,5*u,0,6.283); g.fill();
+  // linha e textos (do lado esquerdo da marcação)
+  const lx=X-60*u, ly=Y-190*u;
+  g.shadowBlur=0; g.lineWidth=2.5*u; g.strokeStyle='rgba(255,230,160,.9)';
+  g.beginPath(); g.moveTo(X-16*u,Y-16*u); g.lineTo(lx+10*u,ly+10*u); g.lineTo(lx-380*u,ly+10*u); g.stroke();
+  g.textAlign='right'; g.fillStyle='#fff'; g.shadowColor='rgba(0,0,0,.9)'; g.shadowBlur=10*u;
+  g.font=`700 ${46*u}px Inter, sans-serif`; g.fillText('Sistema Solar',lx,ly-10*u);
+  g.fillStyle='#ffd36b'; g.font=`600 ${34*u}px Inter, sans-serif`; g.fillText('Voyager 1 está aqui',lx,ly+52*u);
+  g.fillStyle='rgba(255,255,255,.85)'; g.font=`400 ${26*u}px Inter, sans-serif`; g.fillText('a 25 bilhões de km do Sol',lx,ly+90*u);
+  g.restore();
+}
+function titulo(o){
+  if(o<=0) return; const u=W/1080;
+  g.save(); g.globalAlpha=o; g.textAlign='center'; g.fillStyle='#fff'; g.shadowColor='rgba(0,0,0,.9)'; g.shadowBlur=12*u;
+  g.font=`800 ${70*u}px Inter, sans-serif`; g.fillText('VIA LÁCTEA',W/2,H*0.90);
+  g.restore();
+}
+
+window.render=function(t){
+  g.setTransform(1,0,0,1,0,0); g.globalAlpha=1; g.fillStyle='#000'; g.fillRect(0,0,W,H);
+  // ---- câmera da galáxia (escala log) ----
+  const kz=ease(seg(t,5.5,20.5))*0.85+seg(t,5.5,20.5)*0.15;
+  const h=Math.exp(lerp(Math.log(110),Math.log(1500),kz));
+  const kc=ease(seg(t,10,20));
+  const cx=lerp(P1[0],CORE1[0],kc), cy=lerp(P1[1],CORE1[1],kc);
+  const oGal=ease(seg(t,5.5,8.5));
+  if(oGal>0){
+    estrelasFundo(oGal*ease(seg(t,12,18)), 1.0+0.25*(1-seg(t,10,22)));
+    // foto de perto (braço da galáxia) → depois a de longe (galáxia inteira)
+    const oLonge=ease(seg(t,12.5,16));
+    g.save(); mundo(cx,cy,h);
+    g.globalAlpha=oGal*(1-oLonge*0.0);
+    g.save(); g.translate(CORE1[0],CORE1[1]); g.scale(1/K,1/K); g.translate(-CORE3[0],-CORE3[1]);
+    g.globalAlpha=oGal*(1-oLonge); g.drawImage(IM.perto,0,0); g.restore();
+    g.globalAlpha=oGal*oLonge; g.drawImage(IM.longe,0,0);
+    g.restore();
+  }
+  // ---- Voyager (0–8,5 s): a câmera se afasta da sonda ----
+  const oVoy=1-ease(seg(t,5.5,8.5));
+  if(oVoy>0){
+    const im=IM.voy, iw=im.width, ih=im.height;
+    const z=Math.exp(lerp(Math.log(2.1),Math.log(1.0),ease(seg(t,0,8.5))*0.8+seg(t,0,8.5)*0.2));   // zoom
+    const vh=ih/z, vw=vh*W/H;                       // área da foto vista (em pé)
+    const fx=lerp(700,820,seg(t,0,8.5)), fy=lerp(450,470,seg(t,0,8.5));   // mira na sonda
+    const sx=Math.min(Math.max(fx-vw/2,0),iw-vw), sy=Math.min(Math.max(fy-vh/2,0),ih-vh);
+    g.save(); g.globalAlpha=oVoy; g.drawImage(im,sx,sy,vw,vh,0,0,W,H); g.restore();
+  }
+  // ---- marcação e título ----
+  marca(cx,cy,h,t,ease(seg(t,16,18)));
+  titulo(ease(seg(t,18.5,20)));
+  // escurece no começo e no fim
+  const f=Math.min(1,t/0.8,(DUR-t)/0.8);
+  if(f<1){ g.setTransform(1,0,0,1,0,0); g.globalAlpha=1-f; g.fillStyle='#000'; g.fillRect(0,0,W,H); g.globalAlpha=1; }
+};
+</script></body></html>
