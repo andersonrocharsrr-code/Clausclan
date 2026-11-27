@@ -394,6 +394,11 @@ const DIR0=nrm(sub(mul(u0,7.0),M));
 const MX=nrm(cross(mul(DIR0,-1),[0,1,0])), MY=cross(MX,mul(DIR0,-1));
 let AX=[1,0,0],AY=[0,1,0];
 { const c=camera(59.9); const F=nrm(c.look); AX=nrm(cross(F,[0,1,0])); AY=cross(AX,F); }
+// posição do Phobos na tela (para conferir que ele sai do quadro antes de sumir)
+window.phobosTela=function(t){ const c=camera(t); let F=nrm(c.look), R=nrm(cross(F,[0,1,0])), Uv=cross(R,F);
+  const P=add(M,add(mul(DIR0,2.8*RM),add(mul(MX,lerp(-0.55,0.22,seg(t,18,46))*RM),mul(MY,0.20*RM))));
+  const v=sub(P,c.pos), z=dot(v,F), tf=Math.tan(c.fov*Math.PI/360);
+  return [dot(v,R)/z/tf, dot(v,Uv)/z/tf]; };  // tela: y em [-1,1], x em [-0.5625,0.5625]
 window.render=function(t){
   const c=camera(t);
   // tremida leve
@@ -419,7 +424,7 @@ window.render=function(t){
   // Phobos: entre a câmera e Marte, passa devagar de um lado para o outro e some no fim
   const P=add(M,add(mul(DIR0,2.8*RM),add(mul(MX,lerp(-0.55,0.22,seg(t,18,46))*RM),mul(MY,0.20*RM))));
   gl.uniform3fv(U('pP'),sub(P,c.pos)); gl.uniform1f(U('pR'),0.014*RM);
-  gl.uniform1f(U('pA'),ease(seg(t,21,26))*(1-ease(seg(t,35,40.5)))); gl.uniform1f(U('pRot'),0.25+t*0.012);
+  gl.uniform1f(U('pA'),ease(seg(t,21,26)));  // não some na tela: sai pela borda do quadro gl.uniform1f(U('pRot'),0.25+t*0.012);
   gl.uniform1i(U('texT'),0); gl.uniform1i(U('texL'),1);
   gl.uniform1f(U('rotE'),window.ROTE??0);
   gl.uniform1f(U('fade'),Math.min(1,t/1.0,(DUR-t)/1.0));
