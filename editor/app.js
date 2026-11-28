@@ -537,7 +537,7 @@ function desenharLinha() {
         const m = midias.get(fontes[0] && fontes[0].midia);
         const local = Math.min(it.dur, (k * TILE + TILE / 2) / PX);
         const url = c.tipo === 'video' ? tiraMaisPerto(m, tempoOrigem(c, null, local, midias)) : m && m.thumb;
-        el.append(url ? h('img', { src: url, alt: '', draggable: false }) : h('span', { class: 'ladrilho', style: 'background:#2a2c34' }));
+        el.append(url ? h('img', { src: url, alt: '', draggable: false }) : h('span', { class: 'ladrilho', style: 'background:#262626' }));
       }
     }
     el.append(h('span', { class: 'clipe__rot' }, it.dur.toFixed(1).replace('.', ',') + 's'));
@@ -1316,7 +1316,7 @@ function quadrosDeAmostra(n) {
     else { x.fillStyle = cor; x.fillRect(0, 0, n, n); }
     return c;
   };
-  quadrosAB = { n, A: cria(fotosAmostra[0], '#f59e0b'), B: cria(fotosAmostra[1], '#1e3a8a') };
+  quadrosAB = { n, A: cria(fotosAmostra[0], '#3a3a3a'), B: cria(fotosAmostra[1], '#1c1c1c') };
   return quadrosAB;
 }
 
