@@ -629,7 +629,7 @@ function vPerfil() {
   <div class="card group look">
     <div class="look__prev"><div id="lookFig"></div></div>
     ${lookRows()}
-    <div class="btns"><button class="btn btn--ghost btn--sm" data-act="lookreset">Voltar ao padrão</button></div>
+    <div class="btns"><button class="btn btn--soft btn--sm" data-act="ver3d">Ver a instrutora em 3D</button><button class="btn btn--ghost btn--sm" data-act="lookreset">Voltar ao padrão</button></div>
   </div>
   <h3 class="sec-title">Prática</h3>
   <div class="card group">
@@ -669,6 +669,35 @@ function mountLook() {
 }
 
 const VIEWS = { inicio: vInicio, praticas: vPraticas, posturas: vPosturas, respirar: vRespirar, progresso: vProgresso, perfil: vPerfil };
+
+/* ---------------- Instrutora em 3D ---------------- */
+// Modelo gerado com IA (Tripo). O visualizador (~1 MB) só é carregado quando esta tela abre.
+let mvLoad = null;
+function loadModelViewer() {
+  if (customElements.get('model-viewer')) return Promise.resolve();
+  if (!mvLoad) {
+    mvLoad = new Promise((ok, fail) => {
+      const sc = document.createElement('script');
+      sc.type = 'module'; sc.src = 'vendor/model-viewer-4.3.1.min.js';
+      sc.onload = () => customElements.whenDefined('model-viewer').then(ok);
+      sc.onerror = () => { mvLoad = null; fail(new Error('model-viewer')); };
+      document.head.appendChild(sc);
+    });
+  }
+  return mvLoad;
+}
+function open3d() {
+  openSheet('Instrutora em 3D', `
+    <div class="v3d" id="v3d"><p class="v3d__msg">Carregando o modelo 3D…</p></div>
+    <p class="muted" style="margin-top:12px">Arraste para girar e use dois dedos para aproximar. Modelo 3D criado com inteligência artificial (Tripo), com a aparência padrão da instrutora.</p>`);
+  loadModelViewer().then(() => {
+    const box = $('#v3d'); if (!box) return;
+    box.innerHTML = `<model-viewer src="instrutora-3d.glb" alt="Instrutora do Sereno em 3D" camera-controls auto-rotate auto-rotate-delay="1500"
+      rotation-per-second="18deg" interaction-prompt="none" shadow-intensity="0.8" exposure="1.05" camera-orbit="20deg 80deg auto"
+      touch-action="pan-y" style="width:100%;height:100%"><p class="v3d__msg" slot="progress-bar"></p></model-viewer>`;
+    box.querySelector('model-viewer').addEventListener('error', () => { box.innerHTML = '<p class="v3d__msg">Não foi possível mostrar o modelo 3D neste aparelho.</p>'; });
+  }).catch(() => { const box = $('#v3d'); if (box) box.innerHTML = '<p class="v3d__msg">Não foi possível carregar o visualizador 3D.</p>'; });
+}
 
 /* ---------------- Folha de detalhes ---------------- */
 function openSheet(title, html) {
@@ -995,6 +1024,7 @@ document.addEventListener('click', (e) => {
     case 'jornada': openJornada(); break;
     case 'newcustom': edOpen(null); break;
     case 'ics': reminderIcs(); break;
+    case 'ver3d': open3d(); break;
     case 'ambtest':
       if (Amb.playing()) { Amb.stop(); el.textContent = 'Ouvir'; }
       else if (S.settings.amb === 'nenhum') toast('Escolha um som ambiente acima');
