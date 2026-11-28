@@ -1731,6 +1731,29 @@ function atualizarTudo(op) {
 
 let maxLado = null;
 
+/**
+ * Seletor segmentado (estilo iOS/Android moderno): uma faixa com as opções e um destaque que desliza
+ * até a escolhida. opcoes: [[valor, título, subtítulo?], …]
+ */
+function segmentado(opcoes, atual, aoEscolher) {
+  const n = opcoes.length;
+  const marca = h('span', { class: 'seg__marca' });
+  const caixa = h('div', { class: 'seg', role: 'radiogroup', style: `--n:${n}` }, marca);
+  const marcar = (v) => {
+    const i = Math.max(0, opcoes.findIndex(([x]) => String(x) === String(v)));
+    caixa.style.setProperty('--i', i);
+    caixa.querySelectorAll('.seg__op').forEach((b, k) => { b.classList.toggle('on', k === i); b.setAttribute('aria-checked', k === i); });
+  };
+  opcoes.forEach(([v, tit, sub]) => caixa.append(h('button', {
+    type: 'button', class: 'seg__op', role: 'radio',
+    onclick: () => { marcar(v); aoEscolher(v); }
+  }, h('b', {}, tit), sub ? h('small', {}, sub) : null)));
+  marcar(atual);
+  return caixa;
+}
+
+const RESOL_INFO = { 720: ['720p', 'HD'], 1080: ['1080p', 'Full HD'], 1440: ['2K', 'Quad HD'], 2160: ['4K', 'Ultra HD'] };
+
 async function abrirSalvar() {
   if (tocando) pausar();
   const l = linha();
@@ -1738,33 +1761,49 @@ async function abrirSalvar() {
   let lado = Number(localStorage.getItem('editor.lado')) || 2160;
   let fps = Number(localStorage.getItem('editor.fps')) || 30;
   let qual = localStorage.getItem('editor.qual') || 'normal';
-  abrirFolha('Salvar vídeo (até 4K)', (corpo) => {
-    const info = h('p', { class: 'dica' });
-    const resol = h('div');
-    const montar = () => {
+  abrirFolha('Salvar vídeo', (corpo) => {
+    // Resolução: cartões (o celular que não grava naquela resolução mostra "indisponível").
+    const cartoes = h('div', { class: 'resol' });
+    const desenharResol = () => {
+      cartoes.replaceChildren(...Object.keys(RESOLUCOES).map((k) => {
+        const [tit, sub] = RESOL_INFO[k];
+        const nao = maxLado && Number(k) > maxLado;
+        return h('button', {
+          type: 'button', class: 'resol__op' + (Number(k) === lado ? ' on' : '') + (nao ? ' nao' : ''),
+          onclick: () => {
+            if (nao) { aviso('Este celular não consegue gravar nessa resolução.', 'erro'); return; }
+            lado = Number(k); desenharResol(); resumo();
+          }
+        }, h('b', {}, tit), h('small', {}, nao ? 'indisponível' : sub));
+      }));
+    };
+    // Resumo: tamanho, duração e peso do arquivo.
+    const vTam = h('b'), vDur = h('b'), vMb = h('b');
+    const resumo = () => {
       const { w, h: hh } = tamanhoSaida(projeto.formato, lado);
       const mb = taxaVideo(w, hh, fps, qual) * l.total / 8 / 1048576 + l.total * 0.024;
-      info.textContent = `${w} × ${hh} · ${fps} quadros/s · ${fmt(l.total)} · cerca de ${mb < 10 ? mb.toFixed(1).replace('.', ',') : Math.round(mb)} MB`;
-      resol.replaceChildren(
-        h('p', { class: 'rot' }, 'Resolução'),
-        chips(Object.entries(RESOLUCOES).map(([k, n]) => [k, n + (maxLado && Number(k) > maxLado ? ' ✕' : '')]), lado, (v) => {
-          if (maxLado && Number(v) > maxLado) { aviso('Este celular não consegue gravar nessa resolução.', 'erro'); return; }
-          lado = Number(v); montar();
-        }),
-        h('p', { class: 'rot' }, 'Quadros por segundo'),
-        chips([[30, '30 (normal)'], [60, '60 (mais liso)']], fps, (v) => { fps = Number(v); montar(); }),
-        h('p', { class: 'rot' }, 'Qualidade'),
-        chips([['economica', 'Arquivo menor'], ['normal', 'Alta'], ['maxima', 'Máxima']], qual, (v) => { qual = v; montar(); }),
-        info);
+      vTam.textContent = `${w}×${hh}`;
+      vDur.textContent = mmss(l.total);
+      vMb.textContent = '~' + (mb < 10 ? mb.toFixed(1).replace('.', ',') : Math.round(mb)) + ' MB';
     };
-    montar();
-    if (maxLado == null) maiorResolucao(projeto.formato).then((v) => { maxLado = v; if (lado > v) lado = v; montar(); }).catch(() => {});
-    corpo.append(resol,
-      h('button', { type: 'button', class: 'btn btn--preto', onclick: () => {
+    desenharResol();
+    resumo();
+    if (maxLado == null) maiorResolucao(projeto.formato).then((v) => { maxLado = v; if (lado > v) lado = v; desenharResol(); resumo(); }).catch(() => {});
+    corpo.append(
+      h('p', { class: 'rot' }, 'Resolução'), cartoes,
+      h('p', { class: 'rot' }, 'Quadros por segundo'),
+      segmentado([[30, '30', 'normal'], [60, '60', 'mais liso']], fps, (v) => { fps = Number(v); resumo(); }),
+      h('p', { class: 'rot' }, 'Qualidade'),
+      segmentado([['economica', 'Leve', 'arquivo menor'], ['normal', 'Alta', 'recomendada'], ['maxima', 'Máxima', 'arquivo maior']], qual, (v) => { qual = v; resumo(); }),
+      h('div', { class: 'resumo' },
+        h('div', {}, vTam, h('small', {}, 'tamanho')),
+        h('div', {}, vDur, h('small', {}, 'duração')),
+        h('div', {}, vMb, h('small', {}, 'arquivo'))),
+      h('button', { type: 'button', class: 'btn btn--preto btn--grande', onclick: () => {
         localStorage.setItem('editor.lado', lado); localStorage.setItem('editor.fps', fps); localStorage.setItem('editor.qual', qual);
         fecharFolha(); desenharTopo(); salvarVideo(lado, fps, qual);
       } }, NATIVO ? '⬇ Salvar na galeria' : '⬇ Baixar o vídeo'),
-      h('p', { class: 'dica' }, 'Deixe o app aberto e a tela ligada enquanto salva. Em 4K demora mais.'));
+      h('p', { class: 'dica dica--centro' }, 'Deixe o app aberto e a tela ligada enquanto salva. Em 4K demora mais.'));
   });
 }
 
