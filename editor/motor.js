@@ -279,20 +279,40 @@ export function ativosEm(linha, t) {
 // ---------- Desenho de um quadro ----------
 
 let tmpBlur = null;
+const blurPrevia = new Map(); // na prévia: fundo desfocado guardado por fonte (refeito a cada 0,3 s)
 
 /** Fundo desfocado barato: desenha pequeno e estica (fica borrado sem custo). */
-function fundoDesfocado(ctx, img, iw, ih, x, y, w, h, filtro) {
-  if (!tmpBlur) tmpBlur = new OffscreenCanvas(48, 48);
+function fundoDesfocado(ctx, img, iw, ih, x, y, w, h, filtro, previa) {
   const tw = 48, th = Math.max(8, Math.round(48 * h / w));
-  tmpBlur.width = tw; tmpBlur.height = th;
-  const t = tmpBlur.getContext('2d');
-  const s = Math.max(tw / iw, th / ih);
-  t.filter = filtro && filtro !== 'none' ? filtro : 'none';
-  t.drawImage(img, (tw - iw * s) / 2, (th - ih * s) / 2, iw * s, ih * s);
+  let fonte;
+  if (previa) {
+    // Na prévia o fundo borrado quase não muda: refaz no máximo a cada 0,3 s (antes era a cada quadro).
+    const agora = performance.now();
+    let c = blurPrevia.get(img);
+    if (!c || c.cv.height !== th || agora - c.t > 300) {
+      if (!c) { c = { cv: new OffscreenCanvas(tw, th), t: 0 }; blurPrevia.set(img, c); if (blurPrevia.size > 12) blurPrevia.delete(blurPrevia.keys().next().value); }
+      if (c.cv.height !== th) c.cv.height = th;
+      const t = c.cv.getContext('2d');
+      const s = Math.max(tw / iw, th / ih);
+      t.filter = filtro && filtro !== 'none' ? filtro : 'none';
+      t.drawImage(img, (tw - iw * s) / 2, (th - ih * s) / 2, iw * s, ih * s);
+      c.t = agora;
+    }
+    fonte = c.cv;
+  } else {
+    if (!tmpBlur) tmpBlur = new OffscreenCanvas(tw, th);
+    if (tmpBlur.width !== tw) tmpBlur.width = tw;   // só muda o tamanho quando precisa
+    if (tmpBlur.height !== th) tmpBlur.height = th;
+    const t = tmpBlur.getContext('2d');
+    const s = Math.max(tw / iw, th / ih);
+    t.filter = filtro && filtro !== 'none' ? filtro : 'none';
+    t.drawImage(img, (tw - iw * s) / 2, (th - ih * s) / 2, iw * s, ih * s);
+    fonte = tmpBlur;
+  }
   ctx.save();
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(tmpBlur, x, y, w, h);
+  ctx.drawImage(fonte, x, y, w, h);
   ctx.fillStyle = 'rgba(0,0,0,.28)';
   ctx.fillRect(x, y, w, h);
   ctx.restore();
@@ -311,8 +331,10 @@ function desenharMidia(ctx, img, iw, ih, x, y, w, h, o) {
   ctx.beginPath();
   if (o.raio && ctx.roundRect) ctx.roundRect(x, y, w, h, o.raio); else ctx.rect(x, y, w, h);
   ctx.clip();
-  if (ajustar && o.fundo !== 'nenhum') {
-    if (o.fundo === 'desfocado') fundoDesfocado(ctx, img, iw, ih, x, y, w, h, o.filtro);
+  // O fundo só aparece se a imagem não cobre o espaço todo (vídeo no mesmo formato da tela: pula).
+  const cobre = ew * s >= w - 1 && eh * s >= h - 1;
+  if (ajustar && o.fundo !== 'nenhum' && !cobre) {
+    if (o.fundo === 'desfocado') fundoDesfocado(ctx, img, iw, ih, x, y, w, h, o.filtro, o.previa);
     else { ctx.fillStyle = o.fundo === 'branco' ? '#fff' : '#000'; ctx.fillRect(x, y, w, h); }
   }
   ctx.translate(x + w / 2 + (o.desloc ? o.desloc * w : 0), y + h / 2);
@@ -381,7 +403,8 @@ function desenharTexto(ctx, W, H, tx, alfa) {
  * Desenha o quadro do tempo t. `imagem(chave, tempoOrigem)` devolve { img, w, h } ou null.
  * Usado igual na prévia (com <video>) e ao salvar (com os quadros decodificados).
  */
-export function desenharQuadro(ctx, W, H, projeto, linha, midias, t, imagem) {
+export function desenharQuadro(ctx, W, H, projeto, linha, midias, t, imagem, op) {
+  const previa = !!(op && op.previa);
   ctx.save();
   ctx.globalAlpha = 1;
   ctx.filter = 'none';
@@ -430,7 +453,7 @@ export function desenharQuadro(ctx, W, H, projeto, linha, midias, t, imagem) {
           return;
         }
         const im = imagem(c.id + ':' + k, tempoOrigem(c, cel, a.local, midias));
-        if (im) desenharMidia(ctx, im.img, im.w, im.h, x + desloc * W, y, w, h, {
+        if (im) desenharMidia(ctx, im.img, im.w, im.h, x + desloc * W, y, w, h, { previa,
           filtro, raio, zoom: (cel.zoom || 1) * zoom, girar: cel.girar, espelhar: cel.espelhar, ajuste: 'preencher'
         });
       });
@@ -439,7 +462,7 @@ export function desenharQuadro(ctx, W, H, projeto, linha, midias, t, imagem) {
       const im = imagem(c.id + ':-1', s);
       let zf = zoom;
       if (c.tipo === 'foto' && c.kenBurns !== false) zf *= 1 + 0.08 * (a.local / a.dur); // foto vai aproximando devagar
-      if (im) desenharMidia(ctx, im.img, im.w, im.h, desloc * W, 0, W, H, {
+      if (im) desenharMidia(ctx, im.img, im.w, im.h, desloc * W, 0, W, H, { previa,
         filtro, ajuste: c.ajuste, fundo: projeto.fundo, girar: c.girar, espelhar: c.espelhar, zoom: zf
       });
     }

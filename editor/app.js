@@ -473,7 +473,7 @@ function desenhar() {
   ajustarTela();
   const l = linha();
   $('vazio').hidden = l.itens.length > 0;
-  desenharQuadro(ctxTela, tela.width, tela.height, projeto, l, midias, Math.min(tempo, Math.max(0, l.total - 0.001)), imagemPrevia);
+  desenharQuadro(ctxTela, tela.width, tela.height, projeto, l, midias, Math.min(tempo, Math.max(0, l.total - 0.001)), imagemPrevia, { previa: true });
   const tx = mmss(tempo) + '|' + mmss(l.total);
   if (tx !== textoTempo) { textoTempo = tx; $('tempo').innerHTML = '<b>' + mmss(tempo) + '</b> / ' + mmss(l.total); }
   rolarPara(tempo);
@@ -504,10 +504,28 @@ function pausar() {
   pedirDesenho();
 }
 
-function passo() {
+/** Só muda a propriedade do <video> se o valor for outro (mexer a cada quadro custa). */
+function ajustarEl(el, prop, v) { if (el[prop] !== v) el[prop] = v; }
+
+let ultimoDesenho = 0;
+function passo(agora) {
   if (!tocando) return;
   const l = linha();
-  tempo = base + (performance.now() - t0) / 1000;
+  agora = agora || performance.now();
+  tempo = base + (agora - t0) / 1000;
+  // Relógio: quando há um vídeo tocando, o tempo segue o próprio vídeo (antes o app "puxava" o
+  // vídeo para o tempo dele e isso dava engasgos). Só pula o vídeo se ele se perder de verdade.
+  let mestre = null;
+  for (const a of ativosEm(l, Math.min(tempo, l.total - 0.001))) {
+    if (a.c.tipo !== 'video' || (a.sobreEntrada && a.local < a.sobreEntrada)) continue;
+    const el = players.get(a.c.id + ':-1');
+    if (el && !el.paused && !el.seeking && el.readyState >= 3) { mestre = { el, a }; break; }
+  }
+  if (mestre) {
+    const { el, a } = mestre;
+    const t = a.ini + (el.currentTime - a.c.ini) / (a.c.vel || 1);
+    if (Math.abs(t - tempo) < 0.5) { tempo = t; base = t; t0 = agora; }
+  }
   if (tempo >= l.total) { tempo = l.total; pararEm = null; pausar(); return; }
   if (pararEm != null && tempo >= pararEm) { pararEm = null; pausar(); return; }
   const ativos = new Set();
@@ -520,16 +538,18 @@ function passo() {
       const el = player(f.chave, m);
       ativos.add(el);
       const vol = a.c.tipo === 'video' ? a.c.volume : (cel.som ? (a.c.volume == null ? 1 : a.c.volume) : 0);
-      el.muted = !vol;
-      el.volume = Math.min(1, vol || 0);
-      el.playbackRate = a.c.vel || 1;
+      ajustarEl(el, 'muted', !vol);
+      ajustarEl(el, 'volume', Math.min(1, vol || 0));
+      ajustarEl(el, 'playbackRate', a.c.vel || 1);
       if (el.paused) { if (Math.abs(el.currentTime - s) > 0.05) el.currentTime = s; el.play().catch(() => {}); }
-      else if (Math.abs(el.currentTime - s) > 0.35) el.currentTime = s;
+      else if (!mestre || mestre.el !== el) { if (!el.seeking && Math.abs(el.currentTime - s) > 0.6) el.currentTime = s; }
     }
   }
   for (const el of players.values()) if (!ativos.has(el) && !el.paused) el.pause();
   tocarMusica();
-  desenhar();
+  // Desenha no máximo ~30 vezes por segundo (o vídeo tem 30 imagens por segundo; o resto era repetido).
+  if (agora - ultimoDesenho >= 30) { ultimoDesenho = agora; desenhar(); }
+  else rolarPara(tempo); // a linha do tempo continua correndo suave
   requestAnimationFrame(passo);
 }
 
@@ -551,9 +571,9 @@ function tocarMusica() {
     let vol = a.volume;
     const l = linha();
     if (projeto.sumirMusica !== false && l.total > 3 && tempo > l.total - 2) vol *= Math.max(0, (l.total - tempo) / 2);
-    el.volume = Math.max(0, Math.min(1, vol));
+    ajustarEl(el, 'volume', Math.max(0, Math.min(1, vol)));
     if (el.paused) { el.currentTime = s; el.play().catch(() => {}); }
-    else if (Math.abs(el.currentTime - s) > 0.35) el.currentTime = s;
+    else if (!el.seeking && Math.abs(el.currentTime - s) > 0.6) el.currentTime = s; // só pula se se perder de verdade
   }
   for (const [id, el] of audiosEl) {
     if (!ativos.has(id) && !el.paused) el.pause();
