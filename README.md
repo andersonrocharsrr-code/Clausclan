@@ -235,9 +235,18 @@ Abra `ioga/index.html` por um servidor (GitHub Pages, ou `python3 -m http.server
 - **Aparência da instrutora** (Perfil): tom de pele, cor do cabelo, penteado (coque, rabo de cavalo, curto ou solto),
   cor da regata e da calça, com prévia ao vivo. A expressão muda com a postura: serena e focada nas de força e
   equilíbrio, sorrindo nas de descanso.
-- **Instrutora em 3D** (Perfil → Aparência): modelo 3D gerado com IA no Tripo, com esqueleto de 23 ossos no padrão
-  Mixamo (`ioga/instrutora-3d.glb`, para animar as posturas no futuro), que dá
-  para girar e aproximar com o dedo. O visualizador (`ioga/vendor/`, model-viewer) só é carregado ao abrir essa tela.
+- **Instrutora em 3D**: modelo 3D gerado com IA no Tripo (`ioga/instrutora-3d.glb`), com esqueleto de 23 ossos no
+  padrão Mixamo. Na prática guiada, o botão **2D/3D** troca entre a ilustração e a instrutora 3D, que passa
+  suavemente de uma postura para outra e vira de lado na troca de lado. Também aparece na ficha das posturas
+  (Perfil → "Instrutora em 3D" liga o modo como padrão) e em Perfil → Aparência → "Ver a instrutora em 3D",
+  onde dá para girar com o dedo. As posturas 3D usam os mesmos ângulos da ilustração, com ajustes do corpo 3D
+  (mãos espalmadas no chão, pés com o peito no tapete, tornozelo corrigido). Se o aparelho não tiver 3D (WebGL),
+  a ilustração continua.
+
+## Instrutora 3D (`ioga-3d/`)
+O código 3D fica em `ioga-3d/src/instrutora3d.js` (three.js 0.186.1). Para gerar o arquivo usado pelo app,
+`ioga/vendor/instrutora3d.min.js` (cerca de 600 KB, carregado só quando o 3D é usado), rode
+`cd ioga-3d && npm ci && npm run build` e salve o arquivo gerado junto com a mudança.
 
 ## App Android
 O projeto Capacitor fica em `ioga-android/`. O GitHub Actions (`.github/workflows/sereno-apk.yml`) gera o APK

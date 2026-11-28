@@ -1,7 +1,7 @@
 /* Service worker: o Sereno abre e funciona offline. */
-const CACHE = 'sereno-v7';
+const CACHE = 'sereno-v8';
 // Os arquivos levam "?v=" no index.html: ao mudar a versão, o celular nunca mistura CSS/JS antigo com HTML novo.
-const FILES = ['./', 'index.html', 'style.css?v=7', 'data.js?v=7', 'figure.js?v=7', 'ambient.js?v=7', 'app.js?v=7', 'icon.svg', 'icon-192.png', 'manifest.webmanifest'];
+const FILES = ['./', 'index.html', 'style.css?v=8', 'data.js?v=8', 'figure.js?v=8', 'ambient.js?v=8', 'app.js?v=8', 'icon.svg', 'icon-192.png', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));

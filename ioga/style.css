@@ -433,3 +433,12 @@ svg { display: block; }
 .v3d { height: min(62vh, 520px); border-radius: 22px; background: radial-gradient(circle at 50% 40%, var(--surface), var(--stage)); display: grid; place-items: center; overflow: hidden; }
 .v3d model-viewer { --poster-color: transparent; background: transparent; }
 .v3d__msg { color: var(--muted); font-size: 14px; text-align: center; padding: 20px; }
+
+/* Instrutora 3D na prática e nas fichas */
+.has3d { position: relative; }
+.fig3d { position: absolute; inset: -6% -10% 0; }
+.ready3d > svg { visibility: hidden; }
+.play__fig.has3d { width: min(100%, 420px); }
+.btn3d { font-size: 13px; font-weight: 800; letter-spacing: .02em; border: 1.5px solid var(--line); width: 40px; height: 32px; border-radius: 10px; }
+.btn3d[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.v3d { touch-action: pan-y; cursor: grab; }

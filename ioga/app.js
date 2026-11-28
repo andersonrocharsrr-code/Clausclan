@@ -22,7 +22,7 @@ const ICON = {
 
 /* ---------------- Dados salvos ---------------- */
 const KEY = 'sereno-v1';
-const DEFAULT = () => ({ v: 1, profile: null, settings: { voz: true, som: true, tema: 'auto', prep: 10, look: {}, amb: 'tacas', ambVol: 0.5, lembrete: { on: false, hora: '08:00' } }, hist: [], jornada: { feitos: {} }, minhas: [] });
+const DEFAULT = () => ({ v: 1, profile: null, settings: { voz: true, som: true, tema: 'auto', prep: 10, look: {}, amb: 'tacas', ambVol: 0.5, vis3d: false, lembrete: { on: false, hora: '08:00' } }, hist: [], jornada: { feitos: {} }, minhas: [] });
 let S = load();
 function load() {
   try {
@@ -551,7 +551,7 @@ function openPose(id) {
     <ol class="steps">${p.passos.map((s) => `<li>${s}</li>`).join('')}</ol>
     <div class="warn"><strong>Cuidado:</strong> ${p.cuidado}</div>
     <div class="sheet__foot"><button class="btn btn--primary btn--block btn--lg" data-act="try" data-id="${p.id}">Praticar 1 minuto</button></div>`);
-  sheetFig = Fig.mount($('#sheetFig'), 'fig--breathe');
+  sheetFig = mountFigure($('#sheetFig'), 'fig--breathe');
   sheetFig.set(POSE[base].f);
   sheetFig.mir = false; sheetFig.pose = p; sheetFig.base = base;
   setTimeout(() => sheetFig?.to(p.f, false, 1400), 350);
@@ -635,6 +635,7 @@ function vPerfil() {
   <div class="card group">
     <div class="row"><span>Guia por voz<small>Fala o nome de cada postura e a dica</small></span>${sw('stVoz', st.voz)}</div>
     <div class="row"><span>Sino<small>Toca ao começar cada postura e ao terminar</small></span>${sw('stSom', st.som)}</div>
+    <div class="row"><span>Instrutora em 3D<small>Mostra a instrutora em 3D na prática e nas posturas (gasta mais bateria)</small></span>${sw('stVis3d', st.vis3d)}</div>
     <div class="row"><span>Som ambiente<small>Toca durante a prática e a respiração</small></span>${sel('stAmb', Amb.SONS.map(([v, t]) => [v, t]), st.amb)}</div>
     <div class="row"><span>Volume do som ambiente</span><input type="range" id="stAmbVol" min="0" max="1" step="0.05" value="${st.ambVol}" aria-label="Volume do som ambiente"></div>
     <div class="row"><span>Ouvir o som ambiente</span><button type="button" class="btn btn--soft btn--sm" data-act="ambtest">${Amb.playing() ? 'Parar' : 'Ouvir'}</button></div>
@@ -671,37 +672,64 @@ function mountLook() {
 const VIEWS = { inicio: vInicio, praticas: vPraticas, posturas: vPosturas, respirar: vRespirar, progresso: vProgresso, perfil: vPerfil };
 
 /* ---------------- Instrutora em 3D ---------------- */
-// Modelo gerado com IA (Tripo). O visualizador (~1 MB) só é carregado quando esta tela abre.
-let mvLoad = null;
-function loadModelViewer() {
-  if (customElements.get('model-viewer')) return Promise.resolve();
-  if (!mvLoad) {
-    mvLoad = new Promise((ok, fail) => {
-      const sc = document.createElement('script');
-      sc.type = 'module'; sc.src = 'vendor/model-viewer-4.3.1.min.js';
-      sc.onload = () => customElements.whenDefined('model-viewer').then(ok);
-      sc.onerror = () => { mvLoad = null; fail(new Error('model-viewer')); };
-      document.head.appendChild(sc);
-    });
-  }
-  return mvLoad;
+// Modelo gerado com IA (Tripo), com esqueleto. O pacote 3D (vendor/instrutora3d.min.js, three.js) só é
+// carregado quando o 3D é usado. Se o aparelho não tiver 3D (WebGL), a ilustração continua.
+let mod3d = null;
+const load3d = () => (mod3d ||= import('./vendor/instrutora3d.min.js').catch((e) => { mod3d = null; throw e; }));
+const F2ID = new Map(POSES.map((p) => [p.f, p.id]));
+const matColor = () => getComputedStyle(document.documentElement).getPropertyValue('--mat').trim() || '#c9b8a4';
+// Figura da prática e da ficha: ilustração sempre; com o 3D ligado, a instrutora 3D aparece por cima quando carrega.
+function mountFigure(el, cls, force3d) {
+  const fig2 = Fig.mount(el, cls);
+  el.classList.remove('has3d', 'ready3d');
+  if (!(force3d ?? S.settings.vis3d)) return fig2;
+  let last = null, three = null, m = null, dead = false;
+  const box = document.createElement('div'); box.className = 'fig3d'; el.appendChild(box);
+  el.classList.add('has3d');
+  const p3 = (f) => m.pose3d(F2ID.get(f), Fig.angles(f));
+  load3d().then((mm) => {
+    if (dead) return; m = mm;
+    three = m.create(box, { model: 'instrutora-3d.glb', matColor: matColor() });
+    return three.ready.then(() => { if (dead) return; if (last) three.set(p3(last.f), last.mir); el.classList.add('ready3d'); });
+  }).catch(() => { box.remove(); el.classList.remove('has3d'); if (!dead) toast('Este aparelho não conseguiu abrir o 3D. Mostrando a ilustração.'); });
+  return {
+    set(f, mir) { last = { f, mir }; fig2.set(f, mir); if (three && m) three.set(p3(f), mir); },
+    to(f, mir, ms) { last = { f, mir }; fig2.to(f, mir, ms); if (three && m) three.to(p3(f), mir, ms); },
+    stop() { fig2.stop(); three?.stop(); },
+    dispose() { dead = true; fig2.stop(); three?.dispose(); },
+    is3d: true,
+  };
 }
+let viewer3d = null;
+const V3D_POSES = ['montanha', 'avanco', 'caocima', 'vaca', 'cadeira', 'guerreiro1', 'cachorro', 'arvore'];
 function open3d() {
   openSheet('Instrutora em 3D', `
     <div class="v3d" id="v3d"><p class="v3d__msg">Carregando o modelo 3D…</p></div>
-    <p class="muted" style="margin-top:12px">Arraste para girar e use dois dedos para aproximar. Modelo 3D criado com inteligência artificial (Tripo), com a aparência padrão da instrutora.</p>`);
-  loadModelViewer().then(() => {
-    const box = $('#v3d'); if (!box) return;
-    box.innerHTML = `<model-viewer src="instrutora-3d.glb" alt="Instrutora do Sereno em 3D" camera-controls auto-rotate auto-rotate-delay="1500"
-      rotation-per-second="18deg" interaction-prompt="none" shadow-intensity="0.8" exposure="1.05" camera-orbit="20deg 80deg auto"
-      touch-action="pan-y" style="width:100%;height:100%"><p class="v3d__msg" slot="progress-bar"></p></model-viewer>`;
-    box.querySelector('model-viewer').addEventListener('error', () => { box.innerHTML = '<p class="v3d__msg">Não foi possível mostrar o modelo 3D neste aparelho.</p>'; });
-  }).catch(() => { const box = $('#v3d'); if (box) box.innerHTML = '<p class="v3d__msg">Não foi possível carregar o visualizador 3D.</p>'; });
+    <div class="chips" style="margin-top:12px">${V3D_POSES.map((id, i) => `<button class="chip${i ? '' : ' on'}" data-act="v3dpose" data-id="${id}">${POSE[id].nome}</button>`).join('')}</div>
+    <p class="muted" style="margin-top:4px">Arraste para os lados para girar. Modelo 3D criado com inteligência artificial (Tripo), com a aparência padrão da instrutora.</p>`);
+  const box = $('#v3d');
+  load3d().then((m) => {
+    if (!box.isConnected) return;
+    box.innerHTML = '';
+    const v = m.create(box, { model: 'instrutora-3d.glb', matColor: matColor() });
+    viewer3d = { v, m };
+    v.set(m.pose3d('montanha', Fig.angles(POSE.montanha.f)), false);
+    let x0 = null;
+    box.addEventListener('pointerdown', (e) => { x0 = e.clientX; box.setPointerCapture(e.pointerId); });
+    box.addEventListener('pointermove', (e) => { if (x0 == null) return; v.orbit((e.clientX - x0) * -0.012); x0 = e.clientX; });
+    const up = () => { x0 = null; };
+    box.addEventListener('pointerup', up); box.addEventListener('pointercancel', up);
+  }).catch(() => { if (box.isConnected) box.innerHTML = '<p class="v3d__msg">Este aparelho não conseguiu abrir o 3D.</p>'; });
+}
+function disposeSheet3d() {
+  if (viewer3d) { viewer3d.v.dispose(); viewer3d = null; }
+  if (sheetFig) { sheetFig.dispose ? sheetFig.dispose() : sheetFig.stop(); sheetFig = null; }
 }
 
 /* ---------------- Folha de detalhes ---------------- */
 function openSheet(title, html) {
   const d = $('#sheet');
+  disposeSheet3d();
   $('#sheetTitle').textContent = title;
   $('#sheetBody').innerHTML = html;
   if (!d.open) d.showModal();
@@ -709,7 +737,7 @@ function openSheet(title, html) {
   d.scrollTop = 0;
 }
 function closeSheet() { const d = $('#sheet'); if (d.open) d.close(); }
-$('#sheet').addEventListener('close', () => { sheetFig?.stop(); sheetFig = null; });
+$('#sheet').addEventListener('close', () => disposeSheet3d());
 $('#sheet').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeSheet(); });
 $('#sheetClose').addEventListener('click', closeSheet);
 
@@ -725,7 +753,8 @@ function startSession(cfg) {
   $('#playName').textContent = cfg.nome;
   paintVoice(); paintAmb();
   ambStart();
-  playFig = Fig.mount($('#playFig'), 'fig--breathe');
+  playFig = mountFigure($('#playFig'), 'fig--breathe');
+  paint3dBtn();
   const s0 = P.steps[0];
   const base = POSE[s0.id].tipo === 'deitada' ? 'savasana' : ['sentada', 'apoio'].includes(POSE[s0.id].tipo) ? 'sentado' : 'montanha';
   playFig.set(POSE[base].f);
@@ -865,7 +894,7 @@ function record(secs, mood, full) {
 function afterPractice() { if (typeof syncReminder === 'function') syncReminder(); }
 function closePlay() {
   clearInterval(timer); hush(); keepAwake(false); Amb.stop();
-  playFig?.stop(); playFig = null; P = null;
+  playFig?.dispose ? playFig.dispose() : playFig?.stop(); playFig = null; P = null;
   $('#play').hidden = true;
   document.body.style.overflow = '';
   go(tab === 'perfil' ? 'inicio' : tab);
@@ -882,6 +911,15 @@ $('#playClose').addEventListener('click', () => {
 });
 $('#playPause').addEventListener('click', togglePause);
 $('#playAmb').addEventListener('click', cycleAmb);
+function paint3dBtn() { const b = $('#play3d'); b.textContent = S.settings.vis3d ? '3D' : '2D'; b.setAttribute('aria-label', S.settings.vis3d ? 'Instrutora em 3D. Toque para ver a ilustração.' : 'Ilustração. Toque para ver a instrutora em 3D.'); b.setAttribute('aria-pressed', String(!!S.settings.vis3d)); }
+$('#play3d').addEventListener('click', () => {
+  if (!P) return;
+  S.settings.vis3d = !S.settings.vis3d; save(); paint3dBtn();
+  playFig?.dispose ? playFig.dispose() : playFig?.stop();
+  playFig = mountFigure($('#playFig'), 'fig--breathe');
+  const s = P.steps[P.i]; playFig.set(POSE[s.id].f, s.side === 'e');
+  toast(S.settings.vis3d ? 'Instrutora em 3D' : 'Ilustração');
+});
 $('#brAmb').addEventListener('click', cycleAmb);
 $('#playSkip').addEventListener('click', skip);
 $('#playPrev').addEventListener('click', back);
@@ -1025,6 +1063,9 @@ document.addEventListener('click', (e) => {
     case 'newcustom': edOpen(null); break;
     case 'ics': reminderIcs(); break;
     case 'ver3d': open3d(); break;
+    case 'v3dpose':
+      if (viewer3d) { viewer3d.v.to(viewer3d.m.pose3d(id, Fig.angles(POSE[id].f)), false, 1300); $$('[data-act="v3dpose"]').forEach((b) => b.classList.toggle('on', b === el)); }
+      break;
     case 'ambtest':
       if (Amb.playing()) { Amb.stop(); el.textContent = 'Ouvir'; }
       else if (S.settings.amb === 'nenhum') toast('Escolha um som ambiente acima');
@@ -1102,6 +1143,7 @@ document.addEventListener('change', (e) => {
       save(); syncReminder();
     },
     stLemHora: () => { S.settings.lembrete = { ...(S.settings.lembrete || {}), hora: t.value || '08:00' }; syncReminder(); },
+    stVis3d: () => { S.settings.vis3d = t.checked; if (t.checked) load3d().catch(() => {}); },
     stAmb: () => { S.settings.amb = t.value; if (Amb.playing()) ambStart(); },
     stAmbVol: () => { S.settings.ambVol = Number(t.value); Amb.setVolume(S.settings.ambVol); }, stTema: () => { S.settings.tema = t.value; applyTheme(); },
   };

@@ -243,5 +243,5 @@
     };
   }
 
-  window.Fig = { svg, mount, look };
+  window.Fig = { svg, mount, look, angles };
 })();

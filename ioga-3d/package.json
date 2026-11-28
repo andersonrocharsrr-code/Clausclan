@@ -1,0 +1,14 @@
+{
+  "name": "sereno-3d",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Instrutora 3D do Sereno (three.js). Gera ioga/vendor/instrutora3d.min.js com: npm ci && npm run build",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/instrutora3d.js --bundle --minify --format=esm --target=es2020 --legal-comments=eof --outfile=../ioga/vendor/instrutora3d.min.js"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.10",
+    "three": "0.186.1"
+  }
+}
