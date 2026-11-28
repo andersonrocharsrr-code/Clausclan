@@ -3,6 +3,6 @@
   "appName": "Editor de Vídeo",
   "webDir": "www",
   "android": {
-    "backgroundColor": "#0b0d14"
+    "backgroundColor": "#0a0a0a"
   }
 }

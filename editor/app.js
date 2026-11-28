@@ -537,7 +537,7 @@ function desenharLinha() {
         const m = midias.get(fontes[0] && fontes[0].midia);
         const local = Math.min(it.dur, (k * TILE + TILE / 2) / PX);
         const url = c.tipo === 'video' ? tiraMaisPerto(m, tempoOrigem(c, null, local, midias)) : m && m.thumb;
-        el.append(url ? h('img', { src: url, alt: '', draggable: false }) : h('span', { class: 'ladrilho', style: 'background:#2a2c34' }));
+        el.append(url ? h('img', { src: url, alt: '', draggable: false }) : h('span', { class: 'ladrilho', style: 'background:#262626' }));
       }
     }
     el.append(h('span', { class: 'clipe__rot' }, it.dur.toFixed(1).replace('.', ',') + 's'));
@@ -1059,16 +1059,61 @@ function chips(opcoes, atual, aoEscolher, classe) {
     h('button', { type: 'button', class: 'chip' + (String(v) === String(atual) ? ' on' : ''), onclick: () => aoEscolher(v) }, nome)));
 }
 
+/**
+ * Cortar: faixa com as miniaturas do vídeo inteiro e duas alças (começo e fim).
+ * A parte que fica no vídeo aparece clara; o que é cortado fica escuro.
+ */
 function pCortar(c, el) {
   const m = midias.get(c.midia);
   const d = m ? m.dur : c.fim;
+  const pct = (t) => (t / d * 100).toFixed(3) + '%';
+  // Resumo em cima
+  const vIni = h('b'), vDur = h('b'), vFim = h('b');
+  const resumo = h('div', { class: 'resumo corte-resumo' },
+    h('div', {}, vIni, h('small', {}, 'começo')),
+    h('div', {}, vDur, h('small', {}, 'duração')),
+    h('div', {}, vFim, h('small', {}, 'fim')));
+  // Faixa de miniaturas
+  const tira = h('div', { class: 'corte__tira' });
+  const n = 9;
+  for (let k = 0; k < n; k++) {
+    const url = tiraMaisPerto(m, (k + 0.5) / n * d);
+    tira.append(url ? h('img', { src: url, alt: '', draggable: false }) : h('span'));
+  }
+  const sombraE = h('span', { class: 'corte__sombra corte__sombra--e' });
+  const sombraD = h('span', { class: 'corte__sombra corte__sombra--d' });
+  const janela = h('span', { class: 'corte__janela' });
+  const rIni = h('input', { type: 'range', class: 'corte__alca', min: 0, max: d, step: 0.05, value: c.ini, 'aria-label': 'Começo' });
+  const rFim = h('input', { type: 'range', class: 'corte__alca', min: 0, max: d, step: 0.05, value: c.fim, 'aria-label': 'Fim' });
+  const mostrar = () => {
+    sombraE.style.width = pct(c.ini);
+    sombraD.style.left = pct(c.fim);
+    janela.style.left = pct(c.ini);
+    janela.style.width = pct(c.fim - c.ini);
+    vIni.textContent = fmt(c.ini);
+    vFim.textContent = fmt(c.fim);
+    vDur.textContent = fmt((c.fim - c.ini) / (c.vel || 1));
+  };
+  rIni.addEventListener('input', () => {
+    const v = Math.min(Number(rIni.value), c.fim - 0.2);
+    rIni.value = v;
+    mudar(() => { c.ini = v; tempo = posClipe(c) + 0.01; }, 'corteIni', { semPainel: true });
+    mostrar();
+  });
+  rFim.addEventListener('input', () => {
+    const v = Math.max(Number(rFim.value), c.ini + 0.2);
+    rFim.value = v;
+    mudar(() => { c.fim = v; tempo = posClipe(c) + duracaoClipe(c, midias) - 0.05; }, 'corteFim', { semPainel: true });
+    mostrar();
+  });
+  mostrar();
   el.append(
-    deslizador('Começa em', 0, d, 0.05, c.ini, fmt, (v) => { c.ini = Math.min(v, c.fim - 0.2); tempo = posClipe(c) + 0.01; }),
-    deslizador('Termina em', 0, d, 0.05, c.fim, fmt, (v) => { c.fim = Math.max(v, c.ini + 0.2); tempo = posClipe(c) + duracaoClipe(c, midias) - 0.05; }),
-    h('div', { class: 'linha-btn' },
-      h('button', { type: 'button', class: 'btn btn--sec', onclick: dividir }, '✂ Dividir no ponto atual'),
-      h('button', { type: 'button', class: 'btn btn--sec', onclick: () => mudar(() => { c.ini = 0; c.fim = d; }) }, 'Vídeo inteiro')),
-    h('p', { class: 'dica' }, 'Arraste a faixa até a linha branca ficar no ponto e toque em Dividir. Ou puxe as alças amarelas nas pontas.')
+    resumo,
+    h('div', { class: 'corte' }, tira, sombraE, sombraD, janela, rIni, rFim),
+    h('div', { class: 'corte__tempos' }, h('span', {}, '0:00'), h('span', {}, fmt(d))),
+    h('div', { class: 'acoes-mod' },
+      h('button', { type: 'button', class: 'acao-mod', onclick: dividir }, icone('dividir'), h('span', {}, h('b', {}, 'Dividir aqui'), h('small', {}, 'na linha branca'))),
+      h('button', { type: 'button', class: 'acao-mod', onclick: () => mudar(() => { c.ini = 0; c.fim = d; }) }, icone('filme'), h('span', {}, h('b', {}, 'Vídeo inteiro'), h('small', {}, 'desfaz o corte'))))
   );
 }
 
@@ -1209,14 +1254,33 @@ function pTexto(c, el) {
   );
 }
 
+/** Girar: ângulos com desenho, espelhar como chave e enquadrar em cartões ilustrados. */
 function pGirar(c, el) {
+  const giro = ((c.girar || 0) % 360 + 360) % 360;
+  // Retângulo deitado girado no ângulo de cada opção (com uma marquinha para ver o lado de cima).
+  const desenho = (ang) => {
+    const s2 = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    s2.setAttribute('viewBox', '0 0 40 40'); s2.setAttribute('class', 'giro__img');
+    s2.innerHTML = `<g transform="rotate(${ang} 20 20)"><rect x="8" y="12" width="24" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="14" cy="17" r="2" fill="currentColor"/><path d="M10 26l6-5 4 3 5-4 5 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></g>`;
+    return s2;
+  };
   el.append(
-    h('div', { class: 'linha-btn' },
-      h('button', { type: 'button', class: 'btn btn--sec', onclick: () => mudar(() => { c.girar = ((c.girar || 0) + 90) % 360; }) }, '↻ Girar 90°'),
-      h('button', { type: 'button', class: 'btn btn--sec', onclick: () => mudar(() => { c.espelhar = !c.espelhar; }) }, '⇋ Espelhar')),
+    h('p', { class: 'rot' }, 'Girar'),
+    h('div', { class: 'giro' }, [0, 90, 180, 270].map((a) => h('button', {
+      type: 'button', class: 'giro__op' + (a === giro ? ' on' : ''), onclick: () => mudar(() => { c.girar = a; })
+    }, desenho(a), h('small', {}, a + '°')))),
+    h('button', {
+      type: 'button', class: 'chave' + (c.espelhar ? ' on' : ''), role: 'switch', 'aria-checked': !!c.espelhar,
+      onclick: () => mudar(() => { c.espelhar = !c.espelhar; })
+    }, h('span', { class: 'chave__txt' }, h('b', {}, '⇋ Espelhar'), h('small', {}, 'inverte esquerda e direita')), h('span', { class: 'chave__trilho' }, h('i'))),
     h('p', { class: 'rot' }, 'Enquadrar'),
-    chips([['ajustar', 'Mostrar inteiro'], ['preencher', 'Preencher a tela']], c.ajuste || 'ajustar', (v) => mudar(() => { c.ajuste = v; })),
-    h('p', { class: 'dica' }, 'Mostrar inteiro deixa o vídeo todo na tela e preenche as sobras com o fundo (desfocado, preto ou branco).')
+    h('div', { class: 'enq' }, [
+      ['ajustar', 'Mostrar inteiro', 'sobras com o fundo'],
+      ['preencher', 'Preencher a tela', 'corta as bordas']
+    ].map(([v, tit, sub]) => h('button', {
+      type: 'button', class: 'enq__op enq__op--' + v + ((c.ajuste || 'ajustar') === v ? ' on' : ''),
+      onclick: () => mudar(() => { c.ajuste = v; })
+    }, h('span', { class: 'enq__img' }, h('i')), h('b', {}, tit), h('small', {}, sub))))
   );
 }
 
@@ -1252,7 +1316,7 @@ function quadrosDeAmostra(n) {
     else { x.fillStyle = cor; x.fillRect(0, 0, n, n); }
     return c;
   };
-  quadrosAB = { n, A: cria(fotosAmostra[0], '#f59e0b'), B: cria(fotosAmostra[1], '#1e3a8a') };
+  quadrosAB = { n, A: cria(fotosAmostra[0], '#3a3a3a'), B: cria(fotosAmostra[1], '#1c1c1c') };
   return quadrosAB;
 }
 
