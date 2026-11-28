@@ -140,7 +140,7 @@ async function canvasParaUrl(canvas) {
 }
 
 /** Tira de miniaturas para a linha do tempo: [{ t, url }] ao longo do vídeo (até ~30). */
-export async function tiras(blob, tipo, dur) {
+export async function tiras(blob, tipo, dur, aoParcial) {
   if (tipo === 'foto') {
     const u = await miniatura(blob, 'foto');
     return u ? [{ t: 0, url: u }] : [];
@@ -150,15 +150,49 @@ export async function tiras(blob, tipo, dur) {
     const vt = await input.getPrimaryVideoTrack();
     if (!vt || !(await vt.canDecode())) return [];
     const ini = await vt.getFirstTimestamp();
-    const passo = Math.max(0.5, (dur || 1) / 30);
+    const passo = Math.max(1, (dur || 1) / 24);
     const ts = [];
     for (let t = ini; t < (dur || 1) - 0.05 || ts.length === 0; t += passo) ts.push(t);
     const sink = new CanvasSink(vt, { width: 72, height: 100, fit: 'cover' });
     const r = [];
     for await (const wc of sink.canvasesAtTimestamps(ts)) {
-      if (wc) r.push({ t: wc.timestamp, url: await canvasParaUrl(wc.canvas) });
+      if (wc) {
+        r.push({ t: wc.timestamp, url: await canvasParaUrl(wc.canvas) });
+        if (aoParcial && (r.length === 1 || r.length % 4 === 0)) aoParcial(r.slice()); // vai mostrando aos poucos
+      }
     }
     return r;
+  } finally {
+    input.dispose && input.dispose();
+  }
+}
+
+/**
+ * Relevo do som: o volume mais alto de cada pedacinho (porSeg por segundo), de 0 a 1.
+ * Lê o som em partes (não carrega o arquivo inteiro na memória).
+ */
+export async function picosDoSom(blob, porSeg = 20) {
+  const input = new Input({ source: new BlobSource(blob), formats: ALL_FORMATS });
+  try {
+    const at = await input.getPrimaryAudioTrack();
+    if (!at || !(await at.canDecode())) return null;
+    const dur = await input.computeDuration();
+    const picos = new Float32Array(Math.max(1, Math.ceil(dur * porSeg)));
+    const sink = new AudioBufferSink(at);
+    for await (const { buffer, timestamp } of sink.buffers()) {
+      const d = buffer.getChannelData(0);
+      const taxa = buffer.sampleRate;
+      const porPico = taxa / porSeg;
+      for (let i = 0; i < d.length; i += 16) { // pula amostras: só precisa do contorno
+        const k = Math.floor((timestamp + i / taxa) * porSeg);
+        if (k >= 0 && k < picos.length) { const v = Math.abs(d[i]); if (v > picos[k]) picos[k] = v; }
+      }
+      void porPico;
+    }
+    let max = 0;
+    for (const v of picos) if (v > max) max = v;
+    if (max > 0) for (let k = 0; k < picos.length; k++) picos[k] = Math.min(1, picos[k] / max);
+    return { porSeg, picos };
   } finally {
     input.dispose && input.dispose();
   }
@@ -419,6 +453,12 @@ export function desenharQuadro(ctx, W, H, projeto, linha, midias, t, imagem) {
     ctx.fillStyle = clarao.cor;
     ctx.fillRect(0, 0, W, H);
     ctx.restore();
+  }
+  // Textos soltos na linha do tempo (cada um com começo e fim próprios), aparecendo e sumindo suave.
+  for (const tx of projeto.textos || []) {
+    if (t < tx.ini || t >= tx.fim) continue;
+    const f = Math.min(1, (t - tx.ini) / 0.2, (tx.fim - t) / 0.2);
+    desenharTexto(ctx, W, H, tx, Math.max(0, f));
   }
   desenharLegenda(ctx, W, H, projeto.legendas, t);
   if (projeto.marca && projeto.marca.trim()) {
