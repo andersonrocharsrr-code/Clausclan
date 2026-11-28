@@ -553,3 +553,17 @@ input[type=range].corte__alca { /* mais forte que a regra geral das barrinhas */
 /* Tema preto: ícones das ferramentas rápidas em cinza e miniaturas das transições mais escuras */
 .rapida__ic { background: #1f1f1f; color: #f2f2f2; }
 .trans-op__tela { filter: brightness(.78) saturate(.7); }
+
+/* Relevo do som */
+.clipe__onda { position: absolute; left: 0; bottom: 0; pointer-events: none; background: linear-gradient(transparent, rgba(0,0,0,.65)); }
+.musica__onda { position: absolute; left: 0; top: 0; pointer-events: none; }
+.musica__nome { position: relative; text-shadow: 0 1px 2px #000; }
+
+/* Texto solto na faixa: escolhido ganha alças e dá para arrastar */
+.txt-chip { overflow: hidden; }
+.txt-chip__nome { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 22px; pointer-events: none; }
+.txt-chip.sel { overflow: visible; outline: 2px solid #f2f2f2; outline-offset: -1px; z-index: 3; touch-action: none; }
+.txt-chip .alca { top: -1px; bottom: -1px; width: 9px; }
+.txt-chip .alca::before { height: 10px; width: 2px; }
+.txt-chip .alca--esq { left: -8px; border-radius: 5px 0 0 5px; }
+.txt-chip .alca--dir { right: -8px; border-radius: 0 5px 5px 0; }

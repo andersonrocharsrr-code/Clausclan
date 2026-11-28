@@ -5,7 +5,7 @@ import {
   FORMATOS, RESOLUCOES, FILTROS, COLAGENS, TRANSICOES, CORES_TEXTO,
   analisarMidia, tiras, linhaDoTempo, ativosEm, tempoOrigem, fontesDoClipe, desenharQuadro,
   tamanhoSaida, taxaVideo, exportarVideo, maiorResolucao, converter, fotoDoQuadro, duracaoClipe,
-  audioDaFala, agruparLegendas, trocarTextoLegenda, ESTILO_LEGENDA, miniatura
+  audioDaFala, agruparLegendas, trocarTextoLegenda, ESTILO_LEGENDA, miniatura, picosDoSom
 } from './motor.js';
 import { guardarMidia, lerMidias, apagarMidia, listarProjetos, lerProjetoId, guardarProjetoId, apagarProjetoId, todosOsProjetos } from './armazem.js';
 
@@ -19,12 +19,13 @@ const haptics = plugin('Haptics');
 
 // ---------- Estado ----------
 
-const novoProjeto = () => ({ formato: '9:16', fundo: 'desfocado', clipes: [], audios: [], sumirMusica: true, marca: '', fadeIn: false, fadeOut: true });
+const novoProjeto = () => ({ formato: '9:16', fundo: 'desfocado', clipes: [], audios: [], textos: [], sumirMusica: true, marca: '', fadeIn: false, fadeOut: true });
 let projeto = novoProjeto();
 let projetoId = null;      // projeto aberto (null = tela inicial)
 const midias = new Map(); // id → { id, blob, nome, tipo, dur, w, h, temAudio, url, thumb, tiras }
 let sel = null;           // id do clipe escolhido
 let selAudio = null;      // id do trecho de música escolhido (faixa verde)
+let selTexto = null;      // id do texto escolhido (faixa de texto)
 let aba = 'cortar';       // ferramenta aberta no painel do clipe
 let painelAberto = false;
 let painelGeral = null;   // painel que não é de um clipe (ex.: 'legendas')
@@ -38,9 +39,19 @@ const refazer = [];
 let ultimoGrupo = '', ultimoGrupoT = 0;
 
 const uid = () => Math.random().toString(36).slice(2, 10);
-const linha = () => linhaDoTempo(projeto, midias);
+// Linha do tempo em cache: só é recalculada quando o projeto muda (antes era várias vezes por quadro).
+let versaoProj = 0, linhaCache = null, linhaVer = -1, linhaDe = null;
+const invalidar = () => { versaoProj++; };
+const linha = () => {
+  if (linhaVer !== versaoProj || linhaDe !== projeto) { linhaCache = linhaDoTempo(projeto, midias); linhaVer = versaoProj; linhaDe = projeto; }
+  return linhaCache;
+};
+// Fila de trabalhos pesados em segundo plano (miniaturas, ondas do som): um de cada vez, para não travar.
+let filaFundo = Promise.resolve();
+const naFila = (fn) => { filaFundo = filaFundo.then(() => fn()).catch(() => {}); return filaFundo; };
 const clipeSel = () => projeto.clipes.find((c) => c.id === sel) || null;
 const audioSel = () => (projeto.audios || []).find((a) => a.id === selAudio) || null;
+const textoSel = () => (projeto.textos || []).find((t) => t.id === selTexto) || null;
 const durTrecho = (a) => Math.max(0, a.fim - a.ini);
 const fmt = (s) => {
   s = Math.max(0, s || 0);
@@ -61,7 +72,9 @@ function mudar(fn, grupo, op) {
     refazer.length = 0;
   }
   ultimoGrupo = grupo || ''; ultimoGrupoT = agora;
+  invalidar();
   fn();
+  invalidar();
   salvar();
   atualizarTudo(op);
 }
@@ -82,8 +95,10 @@ function avancar() {
 
 function depoisDeTrocar() {
   ultimoGrupo = '';
+  invalidar();
   if (sel && !clipeSel()) { sel = null; painelAberto = false; }
   if (selAudio && !audioSel()) { selAudio = null; painelAberto = false; }
+  if (selTexto && !textoSel()) { selTexto = null; painelAberto = false; }
   salvar();
   atualizarTudo();
 }
@@ -231,20 +246,109 @@ async function adicionarMidia(file) {
   return m;
 }
 
+/**
+ * Miniaturas da faixa: uma mídia por vez (fila), aparecendo aos poucos. Se o leitor rápido (WebCodecs)
+ * não der conta em alguns segundos, tira as fotinhas pelo próprio <video> (funciona com tudo que toca).
+ */
 function carregarTiras(m) {
-  if (m.tipo === 'audio') return;
-  tiras(m.blob, m.tipo, m.dur).then((l) => {
-    m.tiras = l;
-    m.thumb = l[0] && l[0].url;
-    quandoMiniatura();
-  }).catch(() => {});
+  if (!m.onda && m.temAudio) carregarOnda(m);
+  if (m.tipo === 'audio' || m.tirasPedidas) return;
+  m.tirasPedidas = true;
+  naFila(async () => {
+    const mostrar = (l) => { if (l && l.length) { m.tiras = l; m.thumb = l[0].url; quandoMiniatura(); } };
+    let l = [];
+    try {
+      l = await Promise.race([
+        tiras(m.blob, m.tipo, m.dur, mostrar),
+        new Promise((ok) => setTimeout(() => ok(null), 12000))
+      ]) || m.tiras || [];
+    } catch (e) { l = m.tiras || []; }
+    if (m.tipo === 'video' && l.length < 2) l = await tirasPeloVideo(m, mostrar).catch(() => l);
+    mostrar(l);
+  });
 }
 
-// Miniaturas chegaram: redesenha a linha do tempo (e o painel, se ninguém estiver mexendo nele).
+/** Relevo do som (onda) de um vídeo ou música, calculado em segundo plano. */
+function carregarOnda(m) {
+  if (m.ondaPedida) return;
+  m.ondaPedida = true;
+  naFila(async () => {
+    let r = null;
+    try { r = await picosDoSom(m.blob, 20); } catch (e) {}
+    if (!r && m.blob.size < 40 * 1048576) {
+      // Reserva: o próprio Android decodifica (para arquivos de música comuns).
+      try {
+        const ac = new OfflineAudioContext(1, 1, 8000);
+        const buf = await ac.decodeAudioData(await m.blob.arrayBuffer());
+        const d = buf.getChannelData(0), porSeg = 20, picos = new Float32Array(Math.ceil(buf.duration * porSeg));
+        const passo = buf.sampleRate / porSeg;
+        for (let k = 0; k < picos.length; k++) { let mx = 0; for (let i = Math.floor(k * passo); i < Math.min(d.length, (k + 1) * passo); i += 8) mx = Math.max(mx, Math.abs(d[i])); picos[k] = mx; }
+        let max = 0; for (const v of picos) max = Math.max(max, v);
+        if (max > 0) for (let k = 0; k < picos.length; k++) picos[k] /= max;
+        r = { porSeg, picos };
+      } catch (e) {}
+    }
+    if (r) { m.onda = r; quandoMiniatura(); }
+  });
+}
+
+/** Desenha o relevo do som de [ini, fim] (segundos do arquivo) num canvas do tamanho da faixa. */
+function canvasOnda(m, ini, fim, larg, alt, cor, classe) {
+  if (!m || !m.onda || larg < 4) return null;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const w = Math.min(8000, Math.round(larg * dpr)), hh = Math.round(alt * dpr);
+  const cv = h('canvas', { class: classe, width: w, height: hh, 'aria-hidden': 'true' });
+  cv.style.width = larg + 'px'; cv.style.height = alt + 'px';
+  const x = cv.getContext('2d');
+  x.fillStyle = cor;
+  const { porSeg, picos } = m.onda;
+  const barra = 3 * dpr, gap = 1 * dpr;
+  for (let px = 0; px < w; px += barra + gap) {
+    const t0 = ini + (px / w) * (fim - ini), t1 = ini + ((px + barra) / w) * (fim - ini);
+    let v = 0;
+    for (let k = Math.floor(t0 * porSeg); k <= Math.floor(t1 * porSeg) && k < picos.length; k++) if (k >= 0 && picos[k] > v) v = picos[k];
+    const bh = Math.max(1 * dpr, v * hh);
+    x.fillRect(px, (hh - bh) / 2, barra, bh);
+  }
+  return cv;
+}
+
+/** Reserva: abre o vídeo num <video> escondido, vai para cada ponto e copia a imagem. */
+async function tirasPeloVideo(m, mostrar) {
+  const v = document.createElement('video');
+  v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = m.url;
+  await new Promise((ok, falha) => { v.onloadeddata = ok; v.onerror = falha; setTimeout(() => falha(new Error('demorou')), 15000); });
+  const cw = 72, ch = 100;
+  const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+  const x = cv.getContext('2d');
+  const n = Math.max(2, Math.min(20, Math.round((m.dur || 1) / 2)));
+  const r = [];
+  for (let k = 0; k < n; k++) {
+    const t = Math.min(Math.max(0, (m.dur || 0) - 0.05), (k + 0.5) * (m.dur || 0) / n);
+    await new Promise((ok) => { const f = () => { v.removeEventListener('seeked', f); ok(); }; v.addEventListener('seeked', f); v.currentTime = t; setTimeout(ok, 3000); });
+    if (!v.videoWidth) continue;
+    const s = Math.max(cw / v.videoWidth, ch / v.videoHeight);
+    x.drawImage(v, (cw - v.videoWidth * s) / 2, (ch - v.videoHeight * s) / 2, v.videoWidth * s, v.videoHeight * s);
+    const url = await new Promise((ok) => cv.toBlob((b) => ok(b ? URL.createObjectURL(b) : null), 'image/jpeg', 0.6));
+    if (url) { r.push({ t, url }); if (r.length === 1 || r.length % 4 === 0) mostrar(r.slice()); }
+  }
+  v.removeAttribute('src'); v.load();
+  return r;
+}
+
+// Miniaturas/ondas chegaram: redesenha a linha do tempo (no próximo quadro, uma vez só).
+let miniaturaPedida = false;
 function quandoMiniatura() {
-  desenharLinha();
-  const foco = document.activeElement;
-  if (!(foco && $('painel').contains(foco) && (foco.tagName === 'INPUT' || foco.tagName === 'TEXTAREA'))) desenharPainel();
+  versaoMidias++;
+  if (miniaturaPedida) return;
+  miniaturaPedida = true;
+  requestAnimationFrame(() => {
+    miniaturaPedida = false;
+    desenharLinha();
+    const foco = document.activeElement;
+    const mexendo = foco && $('painel').contains(foco) && (foco.tagName === 'INPUT' || foco.tagName === 'TEXTAREA');
+    if (!mexendo && painelAberto && ['quadros', 'cortar'].includes(aba)) desenharPainel();
+  });
 }
 
 async function importar(arquivos, onde) {
@@ -342,8 +446,11 @@ function imagemPrevia(chave, s) {
   return el.videoWidth && (el.readyState >= 2 || el.dataset.teveQuadro) ? { img: el, w: el.videoWidth, h: el.videoHeight } : null;
 }
 
+let telaMudou = true; // o palco mudou de tamanho (medir de novo)
 function ajustarTela() {
   const { w, h } = tamanhoSaida(projeto.formato, 540);
+  if (!telaMudou && tela.width === w && tela.height === h) return; // nada mudou: não mede a tela a cada quadro
+  telaMudou = false;
   if (tela.width !== w || tela.height !== h) { tela.width = w; tela.height = h; }
   // Ocupa o maior espaço possível do palco mantendo o formato.
   const p = $('palco');
@@ -367,9 +474,11 @@ function desenhar() {
   const l = linha();
   $('vazio').hidden = l.itens.length > 0;
   desenharQuadro(ctxTela, tela.width, tela.height, projeto, l, midias, Math.min(tempo, Math.max(0, l.total - 0.001)), imagemPrevia);
-  $('tempo').innerHTML = '<b>' + mmss(tempo) + '</b> / ' + mmss(l.total);
+  const tx = mmss(tempo) + '|' + mmss(l.total);
+  if (tx !== textoTempo) { textoTempo = tx; $('tempo').innerHTML = '<b>' + mmss(tempo) + '</b> / ' + mmss(l.total); }
   rolarPara(tempo);
 }
+let textoTempo = '';
 
 // Tocar: os <video> andam sozinhos e a tela desenha o que eles mostram.
 let t0 = 0, base = 0;
@@ -488,9 +597,15 @@ function tiraMaisPerto(m, s) {
   return melhor.url;
 }
 
-function desenharLinha() {
+let assinaturaLinha = '';
+let versaoMidias = 0; // sobe quando chegam miniaturas ou ondas do som
+function desenharLinha(forcar) {
   const l = linha();
   const m0 = meio();
+  // Só refaz a faixa quando algo mudou de verdade (refazer tudo a cada toque deixava o app lento).
+  const ass = [versaoProj, sel, selAudio, selTexto, m0, versaoMidias, !!arrasto].join('|');
+  if (!forcar && ass === assinaturaLinha && !arrasto) { rolarPara(tempo); return; }
+  assinaturaLinha = arrasto ? '' : ass;
   $('conteudo').style.width = (l.total * PX + m0 * 2) + 'px';
   // Durante o arraste da alça, só estica/encolhe o pedaço puxado: refazer a faixa trocaria a alça
   // que está embaixo do dedo e o celular perderia o toque.
@@ -540,6 +655,12 @@ function desenharLinha() {
         el.append(url ? h('img', { src: url, alt: '', draggable: false }) : h('span', { class: 'ladrilho', style: 'background:#262626' }));
       }
     }
+    // Relevo do som do vídeo, embaixo das miniaturas.
+    if (c.tipo === 'video' && c.volume) {
+      const mv2 = midias.get(c.midia);
+      const onda = canvasOnda(mv2, c.ini, c.fim, larg, 16, 'rgba(255,255,255,.75)', 'clipe__onda');
+      if (onda) el.append(onda);
+    }
     el.append(h('span', { class: 'clipe__rot' }, it.dur.toFixed(1).replace('.', ',') + 's'));
     const extras = [(c.vel || 1) !== 1 ? c.vel + '×' : '', c.texto && c.texto.txt ? 'T' : '', c.tipo === 'colagem' ? '▦' : ''].filter(Boolean).join(' ');
     if (extras) el.append(h('span', { class: 'clipe__rot clipe__rot--dir' }, extras));
@@ -572,19 +693,26 @@ function desenharLinha() {
       }, SIMBOLO_TRANS[tr] || '⋈'));
     }
   });
-  // Textos (roxo) e legendas (azul): toque para editar.
+  // Textos (cada um com começo e fim) e legendas: toque para escolher / editar.
   const tt = $('trilhaTexto');
   tt.textContent = '';
   let temTexto = false;
-  l.itens.forEach((it) => {
-    const c = it.c;
-    if (!c.texto || !c.texto.txt || !c.texto.txt.trim()) return;
+  for (const tx of projeto.textos || []) {
     temTexto = true;
-    tt.append(h('button', {
-      type: 'button', class: 'txt-chip', style: `left:${m0 + it.ini * PX + 1}px;width:${Math.max(16, it.dur * PX - 2)}px`,
-      onclick: () => { abaBarra = 'texto'; abrirFerramenta(c, 'texto'); }
-    }, 'T  ' + c.texto.txt));
-  });
+    const eSel = tx.id === selTexto;
+    const el = h('div', {
+      class: 'txt-chip' + (eSel ? ' sel' : ''), role: 'button', tabindex: 0,
+      style: `left:${m0 + tx.ini * PX}px;width:${Math.max(16, (tx.fim - tx.ini) * PX - 2)}px`,
+      onclick: () => escolherTexto(tx),
+      // Escolhido: segurar no meio e arrastar move o texto inteiro.
+      onpointerdown: eSel ? (e) => { if (!e.target.closest('.alca')) arrastar(e, alvoMoverTexto(tx), e.currentTarget); } : null
+    }, h('span', { class: 'txt-chip__nome' }, 'T  ' + (tx.txt || '')));
+    if (eSel) {
+      el.append(h('span', { class: 'alca alca--esq', onpointerdown: (e) => arrastar(e, alvoTexto(tx, 'esq')), 'aria-label': 'Puxar o começo do texto' }));
+      el.append(h('span', { class: 'alca alca--dir', onpointerdown: (e) => arrastar(e, alvoTexto(tx, 'dir')), 'aria-label': 'Puxar o fim do texto' }));
+    }
+    tt.append(el);
+  }
   const leg = projeto.legendas;
   if (leg && leg.itens && !leg.oculta) {
     for (const lg of leg.itens) {
@@ -592,12 +720,12 @@ function desenharLinha() {
       temTexto = true;
       tt.append(h('button', {
         type: 'button', class: 'leg-chip', style: `left:${m0 + t0 * PX}px;width:${Math.max(12, (t1 - t0) * PX - 2)}px`,
-        onclick: () => { abaBarra = 'texto'; abrirLegendas(); }
+        onclick: () => { if (performance.now() - arrastoSoltoEm < 350) return; tempo = t0 + 0.01; abaBarra = 'texto'; abrirLegendas(lg.id); }
       }, lg.palavras.map((w) => w.p).join(' ')));
     }
   }
   if (!temTexto && l.itens.length) {
-    tt.append(h('button', { type: 'button', class: 'musica-add txt-add', style: `left:${m0}px`, onclick: () => { abaBarra = 'texto'; atualizarTudo(); } }, 'T + Texto ou legenda'));
+    tt.append(h('button', { type: 'button', class: 'musica-add txt-add', style: `left:${m0}px`, onclick: criarTexto }, 'T + Texto'));
   }
   // Música: cada trecho na faixa verde (toque para escolher, alças para cortar)
   const tm = $('trilhaMusica');
@@ -612,7 +740,7 @@ function desenharLinha() {
       onclick: () => escolherAudio(a),
       // Escolhida: segurar no meio e arrastar move a música inteira.
       onpointerdown: eSel ? (e) => { if (!e.target.closest('.alca')) arrastar(e, alvoMoverAudio(a), e.currentTarget); } : null
-    }, h('span', { class: 'musica__nome' }, '♪ ' + mu.nome));
+    }, canvasOnda(mu, a.ini, a.fim, Math.max(12, durTrecho(a) * PX - 2), 22, 'rgba(255,255,255,.4)', 'musica__onda'), h('span', { class: 'musica__nome' }, '♪ ' + mu.nome));
     if (eSel) {
       el.append(h('span', { class: 'alca alca--esq', onpointerdown: (e) => arrastar(e, alvoAudio(a, 'esq')), 'aria-label': 'Puxar o começo da música' }));
       el.append(h('span', { class: 'alca alca--dir', onpointerdown: (e) => arrastar(e, alvoAudio(a, 'dir')), 'aria-label': 'Puxar o fim da música' }));
@@ -633,6 +761,7 @@ function escolherClipe(c, it) {
   if (abaBarra === 'audio') abaBarra = 'editar';
   painelGeral = null;
   selAudio = null;
+  selTexto = null;
   if (sel === c.id) { sel = null; painelAberto = false; }
   else {
     sel = c.id;
@@ -665,7 +794,7 @@ function vibrar() {
 }
 
 /** Pontos de encaixe: começo e fim de cada vídeo/foto, de cada trecho de música e a linha branca. */
-function pontosIma(semAudio, semClipesDepoisDe) {
+function pontosIma(semAudio, semClipesDepoisDe, semTexto) {
   const l = linha();
   const p = new Set([0]);
   for (const it of l.itens) {
@@ -674,6 +803,7 @@ function pontosIma(semAudio, semClipesDepoisDe) {
   }
   if (semClipesDepoisDe == null) p.add(l.total);
   for (const a of projeto.audios || []) if (a.id !== semAudio) { p.add(a.pos); p.add(a.pos + durTrecho(a)); }
+  for (const tx of projeto.textos || []) if (tx.id !== semTexto) { p.add(tx.ini); p.add(tx.fim); }
   if (arrasto && arrasto.tempo0 != null) p.add(arrasto.tempo0);
   return [...p];
 }
@@ -765,6 +895,48 @@ function alvoAudio(a, lado) {
     },
     tempo() { return lado === 'dir' ? a.pos + durTrecho(a) - 0.03 : a.pos + 0.01; },
     caixa() { return { left: a.pos * PX, width: Math.max(12, durTrecho(a) * PX - 2) }; }
+  };
+}
+
+/** Puxar a ponta de um texto (começo ou fim) na faixa de texto. */
+function alvoTexto(t, lado) {
+  const orig = { ini: t.ini, fim: t.fim };
+  const total = linha().total;
+  const lim = (v, x, y) => Math.max(x, Math.min(y, v));
+  return {
+    aplicar(ds) {
+      const borda = (lado === 'dir' ? orig.fim : orig.ini) + ds;
+      const enc = encaixe([{ t: borda, desloc: 0 }], pontosIma(null, undefined, t.id));
+      const b = enc ? enc.p : borda;
+      if (lado === 'dir') {
+        t.fim = lim(b, t.ini + 0.3, Math.max(total, t.ini + 0.3));
+        return { noLimite: ds < 0 ? t.fim <= t.ini + 0.3 + 1e-6 : t.fim >= total - 1e-6, ponto: enc ? enc.p : null };
+      }
+      t.ini = lim(b, 0, t.fim - 0.3);
+      return { noLimite: ds < 0 ? t.ini <= 1e-6 : t.ini >= t.fim - 0.3 - 1e-6, ponto: enc ? enc.p : null };
+    },
+    // A prévia mostra o texto já inteiro (ele entra e sai suave em 0,2 s).
+    tempo() { const d = Math.min(0.25, (t.fim - t.ini) / 2); return lado === 'dir' ? t.fim - d : t.ini + d; },
+    caixa() { return { left: t.ini * PX, width: Math.max(16, (t.fim - t.ini) * PX - 2) }; }
+  };
+}
+
+/** Mover o texto inteiro (segurar e arrastar o texto escolhido). */
+function alvoMoverTexto(t) {
+  const orig = { ini: t.ini };
+  const tam = t.fim - t.ini;
+  const total = linha().total;
+  const max = Math.max(0, total - Math.min(tam, 0.3));
+  return {
+    aplicar(ds) {
+      let ini = Math.min(max, Math.max(0, orig.ini + ds));
+      const enc = encaixe([{ t: ini, desloc: 0 }, { t: ini + tam, desloc: tam }], pontosIma(null, undefined, t.id));
+      if (enc) ini = Math.min(max, Math.max(0, enc.p - enc.desloc));
+      t.ini = ini; t.fim = ini + tam;
+      return { noLimite: (ini <= 0 && ds < 0) || (ini >= max && ds > 0), ponto: enc ? enc.p : null };
+    },
+    tempo() { return Math.min(total - 0.01, t.ini + Math.min(0.25, tam / 2)); },
+    caixa() { return { left: t.ini * PX, width: Math.max(16, tam * PX - 2) }; }
   };
 }
 
@@ -890,7 +1062,7 @@ function abas(c) {
   if (c.tipo === 'colagem') l.push('quadros');
   l.push(c.tipo === 'video' ? 'cortar' : 'duracao');
   if (c.tipo !== 'foto') l.push('vel', 'som');
-  l.push('filtro', 'texto');
+  l.push('filtro');
   if (c.tipo !== 'colagem') l.push('girar');
   l.push('trans', 'mais');
   return l;
@@ -910,6 +1082,7 @@ function abrirFerramenta(c, qual) {
   painelAberto = true;
   painelGeral = null;
   selAudio = null;
+  selTexto = null;
   const it = linha().itens.find((x) => x.c.id === c.id);
   if (it && (tempo < it.ini || tempo >= it.ini + it.dur)) tempo = it.ini + 0.01;
   atualizarTudo();
@@ -938,7 +1111,8 @@ function desenharBarra() {
   const b = $('barra');
   const c = clipeSel();
   const au = audioSel();
-  $('baixo').hidden = painelAberto && (!!c || !!painelGeral || !!au);
+  const txs = textoSel();
+  $('baixo').hidden = painelAberto && (!!c || !!painelGeral || !!au || !!txs);
   // Abas
   $('abas').replaceChildren(...ABAS_BAIXO.map(([k, ic, nome]) => h('button', {
     type: 'button', class: 'aba-b' + (k === abaBarra ? ' on' : ''),
@@ -983,8 +1157,18 @@ function desenharBarra() {
     if (!au && x && ok('som')) itens.push(botao('som', 'Volume do vídeo', comClipe((cc) => abrirFerramenta(cc, 'som'))));
     if (!au) itens.push(botao('conversor', 'Extrair áudio', () => mostrarPagina('ferramentas')));
   } else if (abaBarra === 'texto') {
-    itens.push(botao('texto', 'Texto', comClipe((cc) => abrirFerramenta(cc, 'texto'))));
-    itens.push(botao('legenda', 'Legendas', abrirLegendas));
+    if (txs) {
+      itens.push(botao('texto', 'Editar', () => { painelAberto = true; atualizarTudo(); focarTexto(); }));
+      itens.push(botao('duplicar', 'Duplicar', () => mudar(() => {
+        const n = { ...txs, id: uid(), ini: txs.fim, fim: txs.fim + (txs.fim - txs.ini) };
+        projeto.textos.push(n); selTexto = n.id;
+      })));
+      itens.push(botao('apagar', 'Apagar', () => mudar(() => {
+        projeto.textos = projeto.textos.filter((y) => y.id !== txs.id); selTexto = null; painelAberto = false;
+      }), 'ferr--perigo'));
+    }
+    itens.push(botao('adicionar', txs ? 'Mais texto' : 'Texto', criarTexto));
+    itens.push(botao('legenda', 'Legendas', () => abrirLegendas()));
   } else if (abaBarra === 'efeitos') {
     itens.push(botao('filtro', 'Filtros', comClipe((cc) => abrirFerramenta(cc, 'filtro'))));
     itens.push(botao('trans', 'Transições', comClipe((cc) => abrirFerramenta(cc, 'trans'))));
@@ -1006,6 +1190,15 @@ function desenharBarra() {
 function desenharPainel() {
   const p = $('painel');
   const c = clipeSel();
+  const txp = textoSel();
+  if (painelAberto && txp) {
+    p.hidden = false;
+    $('painelTitulo').textContent = 'Texto';
+    const corpo = $('painelCorpo');
+    corpo.textContent = '';
+    pTextoItem(txp, corpo);
+    return;
+  }
   if (painelAberto && !c && painelGeral) {
     p.hidden = false;
     $('painelTitulo').textContent = 'Legendas automáticas';
@@ -1235,6 +1428,75 @@ function pFiltro(c, el) {
       h('button', { type: 'button', class: 'btn btn--sec', onclick: () => mudar(() => { c.brilho = 100; c.contraste = 100; c.saturacao = 100; c.filtro = 'nenhum'; }) }, 'Limpar'),
       h('button', { type: 'button', class: 'btn btn--sec', onclick: () => mudar(() => projeto.clipes.forEach((x) => { x.filtro = c.filtro; x.brilho = c.brilho; x.contraste = c.contraste; x.saturacao = c.saturacao; })) }, 'Usar em todos'))
   );
+}
+
+/** Painel de um texto solto: escrever, posição, cor, estilo, tamanho e quando aparece. */
+function pTextoItem(t, el) {
+  const area = h('textarea', {
+    rows: 2, placeholder: 'Escreva o texto', value: t.txt || '',
+    oninput: () => mudar(() => { t.txt = area.value; }, 'texto', { semPainel: true })
+  });
+  el.append(area,
+    h('div', { class: 'resumo corte-resumo' },
+      h('div', {}, h('b', {}, fmt(t.ini)), h('small', {}, 'aparece')),
+      h('div', {}, h('b', {}, fmt(t.fim - t.ini)), h('small', {}, 'duração')),
+      h('div', {}, h('b', {}, fmt(t.fim)), h('small', {}, 'some'))),
+    h('p', { class: 'dica' }, 'Para mudar quando aparece, puxe as pontas do texto na faixa ou segure e arraste.'),
+    h('p', { class: 'rot' }, 'Posição'),
+    segmentado([['topo', 'Em cima'], ['meio', 'No meio'], ['baixo', 'Embaixo']], t.pos || 'baixo', (v) => mudar(() => { t.pos = v; }, null, { semPainel: true })),
+    h('p', { class: 'rot' }, 'Cor'),
+    h('div', { class: 'cores' }, CORES_TEXTO.map((cor) => h('button', {
+      type: 'button', class: 'cor' + ((t.cor || '#ffffff') === cor ? ' on' : ''), style: `background:${cor}`, 'aria-label': 'Cor ' + cor,
+      onclick: () => mudar(() => { t.cor = cor; })
+    }))),
+    h('p', { class: 'rot' }, 'Estilo'),
+    segmentado([['contorno', 'Contorno'], ['caixa', 'Com fundo']], t.estilo || 'contorno', (v) => mudar(() => { t.estilo = v; }, null, { semPainel: true })),
+    deslizador('Tamanho', 3, 16, 0.5, t.tam || 7, (v) => String(v).replace('.', ','), (v) => { t.tam = v; })
+  );
+}
+
+function focarTexto() {
+  requestAnimationFrame(() => { const a = $('painelCorpo').querySelector('textarea'); if (a) { a.focus(); a.select(); } });
+}
+
+/** Novo texto na linha branca (3 s), já escolhido e com o painel aberto para escrever. */
+function criarTexto() {
+  if (!projeto.clipes.length) { aviso('Coloque um vídeo primeiro.'); return; }
+  if (tocando) pausar();
+  const total = linha().total;
+  let ini = Math.max(0, Math.min(tempo, total - 0.5));
+  let fim = Math.min(total, ini + 3);
+  if (fim - ini < 1) { ini = Math.max(0, total - 3); fim = total; }
+  const t = { id: uid(), txt: 'Seu texto', pos: 'baixo', cor: '#ffffff', tam: 7, estilo: 'contorno', ini, fim };
+  mudar(() => {
+    projeto.textos = (projeto.textos || []).concat(t);
+    sel = null; selAudio = null; selTexto = t.id; abaBarra = 'texto'; painelAberto = true; painelGeral = null;
+    tempo = ini + Math.min(0.25, (fim - ini) / 2);
+  });
+  focarTexto();
+}
+
+function escolherTexto(t) {
+  if (performance.now() - arrastoSoltoEm < 350) return; // acabou de arrastar
+  if (tocando) pausar();
+  abaBarra = 'texto';
+  if (selTexto === t.id) { selTexto = null; painelAberto = false; }
+  else {
+    selTexto = t.id; sel = null; selAudio = null; painelGeral = null; painelAberto = false;
+    if (tempo < t.ini + 0.2 || tempo >= t.fim - 0.2) tempo = t.ini + Math.min(0.25, (t.fim - t.ini) / 2);
+  }
+  atualizarTudo();
+}
+
+/** Projetos antigos tinham o texto dentro de cada vídeo: vira um texto solto do mesmo tamanho do vídeo. */
+function migrarTextos() {
+  if (!projeto.textos) projeto.textos = [];
+  const l = linhaDoTempo(projeto, midias);
+  for (const it of l.itens) {
+    const c = it.c;
+    if (c.texto && c.texto.txt && c.texto.txt.trim()) projeto.textos.push({ ...c.texto, id: uid(), ini: it.ini, fim: it.ini + it.dur });
+    delete c.texto;
+  }
 }
 
 function pTexto(c, el) {
@@ -1543,7 +1805,7 @@ function escolherAudio(a) {
   abaBarra = 'audio';
   if (selAudio === a.id) { selAudio = null; painelAberto = false; }
   else {
-    selAudio = a.id; sel = null; painelGeral = null; painelAberto = false;
+    selAudio = a.id; sel = null; selTexto = null; painelGeral = null; painelAberto = false;
     if (tempo < a.pos || tempo >= a.pos + durTrecho(a)) tempo = a.pos + 0.01;
   }
   atualizarTudo();
@@ -1591,13 +1853,18 @@ function fecharFolha() { $('folha').hidden = true; }
 
 // ---------- Legendas automáticas (fala → texto, palavra por palavra) ----------
 
-function abrirLegendas() {
+/** Abre o painel das legendas; com focoId, já vai na frase tocada na faixa, pronta para corrigir. */
+function abrirLegendas(focoId) {
   if (!projeto.clipes.length) { aviso('Coloque um vídeo primeiro.'); return; }
   if (tocando) pausar();
-  sel = null;
+  sel = null; selAudio = null; selTexto = null;
   painelGeral = 'legendas';
   painelAberto = true;
   atualizarTudo();
+  if (focoId) requestAnimationFrame(() => {
+    const campo = $('painelCorpo').querySelector(`input[data-leg="${focoId}"]`);
+    if (campo) { campo.scrollIntoView({ block: 'center' }); campo.focus(); }
+  });
 }
 
 let trabalhador = null;
@@ -1689,7 +1956,7 @@ function pLegendas(el) {
   leg.itens.forEach((it, i) => {
     const ini = it.palavras[0].t0;
     const campo = h('input', {
-      type: 'text', value: it.palavras.map((w) => w.p).join(' '),
+      type: 'text', value: it.palavras.map((w) => w.p).join(' '), 'data-leg': it.id,
       onfocus: () => { tempo = ini + 0.01; pedirDesenho(); },
       onchange: () => mudar(() => { if (!trocarTextoLegenda(it, campo.value)) leg.itens.splice(i, 1); })
     });
@@ -2031,7 +2298,7 @@ function alternarTelaCheia() {
   const on = document.querySelector('.app').classList.toggle('tela-cheia');
   porIcone('telaCheia', on ? 'encolher' : 'cheia');
   pedirDesenho();
-  setTimeout(() => { desenharLinha(); pedirDesenho(); }, 50);
+  setTimeout(() => { telaMudou = true; desenharLinha(true); pedirDesenho(); }, 50);
 }
 
 // ---------- Ligações ----------
@@ -2083,7 +2350,7 @@ if (appCap) {
     else if (!$('pgFerramentas').hidden) mostrarPagina('editor');
     else if (document.querySelector('.app.tela-cheia')) alternarTelaCheia();
     else if (painelAberto) { painelAberto = false; painelGeral = null; atualizarTudo(); }
-    else if (sel || selAudio) { sel = null; selAudio = null; atualizarTudo(); }
+    else if (sel || selAudio || selTexto) { sel = null; selAudio = null; selTexto = null; atualizarTudo(); }
     else if ($('pgInicio').hidden) mostrarInicio();
     else appCap.minimizeApp();
   });
@@ -2159,12 +2426,13 @@ function desenharInicio() {
 }
 
 function limparEstado() {
-  sel = null; selAudio = null; painelAberto = false; painelGeral = null; abaBarra = 'editar';
+  sel = null; selAudio = null; selTexto = null; painelAberto = false; painelGeral = null; abaBarra = 'editar';
   tempo = 0; desfazer.length = 0; refazer.length = 0; ultimoGrupo = '';
   for (const el of players.values()) el.pause();
 }
 
 function abrirProjeto(id) {
+  invalidar();
   const p = lerProjetoId(id);
   if (!p) { aviso('Não achei esse projeto.', 'erro'); desenharInicio(); return; }
   limparEstado();
@@ -2174,11 +2442,14 @@ function abrirProjeto(id) {
   projeto.clipes = projeto.clipes.filter((c) => c.tipo === 'colagem' || midias.has(c.midia));
   projeto.clipes.forEach((c) => { if (c.tipo === 'colagem') c.celulas = c.celulas.map((x) => (x && midias.has(x.midia) ? x : null)); });
   migrarMusica();
+  migrarTextos();
   projeto.clipes.forEach((c) => { if ((c.vel || 1) > 2) c.vel = 2; });
   // Miniaturas só dos arquivos deste projeto.
   const usa = new Set();
   projeto.clipes.forEach((c) => fontesDoClipe(c).forEach((f) => usa.add(f.midia)));
+  (projeto.audios || []).forEach((a) => usa.add(a.midia));
   for (const mid of usa) { const m = midias.get(mid); if (m && !m.tiras) carregarTiras(m); }
+  invalidar();
   $('pgInicio').hidden = true;
   atualizarTudo();
 }
@@ -2188,6 +2459,7 @@ function criarProjeto(nome) {
   projeto = novoProjeto();
   projeto.nome = nome || 'Vídeo ' + (listarProjetos().length + 1);
   projetoId = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  invalidar();
   salvarAgora();
   $('pgInicio').hidden = true;
   atualizarTudo();
@@ -2244,8 +2516,9 @@ function salvarAgoraSemProjeto() {
   }
 }
 
-window.addEventListener('resize', () => { desenharLinha(); pedirDesenho(); });
+window.addEventListener('resize', () => { telaMudou = true; desenharLinha(true); pedirDesenho(); });
+new ResizeObserver(() => { telaMudou = true; pedirDesenho(); }).observe($('palco'));
 iniciar();
 
 // Para testes automáticos.
-window.__editor = { criarProjeto, abrirProjeto, mostrarInicio, get projetoId() { return projetoId; }, get projeto() { return projeto; }, midias, importar, exportarVideo, converter, linha, get tempo() { return tempo; }, set tempo(v) { tempo = v; pedirDesenho(); } };
+window.__editor = { atualizar: () => { invalidar(); atualizarTudo(); }, tirasPeloVideo, get textos() { return projeto.textos; }, criarProjeto, abrirProjeto, mostrarInicio, get projetoId() { return projetoId; }, get projeto() { return projeto; }, midias, importar, exportarVideo, converter, linha, get tempo() { return tempo; }, set tempo(v) { tempo = v; pedirDesenho(); } };
